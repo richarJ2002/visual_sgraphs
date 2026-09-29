@@ -34,11 +34,14 @@ namespace vs_graphs
 namespace core
 {
 
-vector<semantic::Room *> Map::getAllMarkerBasedMapRooms()
+MapStatus Map::getAllMarkerBasedMapRooms(
+    std::vector<semantic::Room *> &allMarkerBasedMapRooms_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return vector<semantic::Room *>(markerBasedRooms.begin(),
-                                    markerBasedRooms.end());
+    allMarkerBasedMapRooms_out =
+        std::vector<semantic::Room *>(markerBasedRooms.begin(),
+                                      markerBasedRooms.end());
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

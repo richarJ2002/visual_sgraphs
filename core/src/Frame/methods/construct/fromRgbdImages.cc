@@ -111,7 +111,14 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
     std::chrono::steady_clock::time_point timeStartExtOrb =
         std::chrono::steady_clock::now();
 #endif
-    extractOrbFeatures(0, imageGray_in, 0, 0);
+    if (extractOrbFeatures(0, imageGray_in, 0, 0) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: extractOrbFeatures returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point timeEndExtOrb =
         std::chrono::steady_clock::now();
@@ -126,9 +133,22 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
     if (keyPoints.empty())
         return;
 
-    undistortKeyPoints();
+    if (undistortKeyPoints() != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: undistortKeyPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    computeStereoFromRGBD(imageDepth_in);
+    if (computeStereoFromRGBD(imageDepth_in) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeStereoFromRGBD returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Initialize MapPoints
     mapPoints =
@@ -149,7 +169,14 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
     // calibration)
     if (areInitialComputationsDone)
     {
-        computeImageBounds(imageGray_in);
+        if (computeImageBounds(imageGray_in) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeImageBounds returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         gridElementWidthInverse = static_cast<float>(FRAME_GRID_COLS) /
                                   static_cast<float>(gridMaxX - gridMinX);
@@ -170,10 +197,39 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
 
     if (p_previousF_in)
     {
-        if (p_previousF_in->hasVelocity())
-            setVelocity(p_previousF_in->getVelocity());
+        bool previousFHasVelocity{};
+        if (p_previousF_in->hasVelocity(previousFHasVelocity) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (previousFHasVelocity)
+        {
+            Eigen::Vector3f previousFGetVelocity{};
+            if (p_previousF_in->getVelocity(previousFGetVelocity) !=
+                FrameStatus::FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (setVelocity(previousFGetVelocity) !=
+                FrameStatus::FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+        }
         else
+        {
             velocityVw.setZero();
+        }
     }
 
     // Set no stereo fisheye information
@@ -185,7 +241,13 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
     rightToLeftMatches = vector<int>(0);
     stereoPoints3D     = vector<Eigen::Vector3f>(0);
 
-    assignFeaturesToGrid();
+    if (assignFeaturesToGrid() != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: assignFeaturesToGrid returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

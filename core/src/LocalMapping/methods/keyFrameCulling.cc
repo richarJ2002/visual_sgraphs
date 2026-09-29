@@ -24,6 +24,7 @@
  */
 
 #include "LocalMapping.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -37,9 +38,23 @@ void LocalMapping::keyFrameCulling()
     // are seen in at least other 3 keyframes (in the same or finer scale) We
     // only consider close stereo points
     const int temporalWindowSize = 21;
-    p_currentKeyFrame->updateBestCovisibles();
-    vector<KeyFrame *> neighborKeyFrames =
-        p_currentKeyFrame->getVectorCovisibleKeyFrames();
+    if (p_currentKeyFrame->updateBestCovisibles() !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateBestCovisibles returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<KeyFrame *> neighborKeyFrames{};
+    if (p_currentKeyFrame->getVectorCovisibleKeyFrames(neighborKeyFrames) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getVectorCovisibleKeyFrames returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     float redundancyThreshold;
     if (!isInertial)
@@ -76,12 +91,45 @@ void LocalMapping::keyFrameCulling()
         processedKeyFrameCount++;
         KeyFrame *p_neighborKeyFrame = *neighborKeyFrameIt;
 
-        if ((p_neighborKeyFrame->id ==
-             p_neighborKeyFrame->getMap()->getInitKeyFrameId()) ||
-            p_neighborKeyFrame->isBad())
+        Map *p_neighborKeyFrameMap = nullptr;
+        if (p_neighborKeyFrame->getMap(p_neighborKeyFrameMap) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        unsigned long initKeyFrameId{};
+        if (p_neighborKeyFrameMap->getInitKeyFrameId(initKeyFrameId) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getInitKeyFrameId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        bool neighborKeyFrameIsBad{};
+        if (!(p_neighborKeyFrame->id == initKeyFrameId) &&
+            p_neighborKeyFrame->isBad(neighborKeyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if ((p_neighborKeyFrame->id == initKeyFrameId) || neighborKeyFrameIsBad)
             continue;
-        const vector<MapPoint *> neighborMapPoints =
-            p_neighborKeyFrame->getMapPointMatches();
+        std::vector<MapPoint *> neighborMapPoints{};
+        if (p_neighborKeyFrame->getMapPointMatches(neighborMapPoints) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPointMatches returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         int       observationCount          = 3;
         const int observationThreshold      = observationCount;
@@ -94,7 +142,16 @@ void LocalMapping::keyFrameCulling()
             MapPoint *p_mapPoint = neighborMapPoints[mapPointIndex];
             if (p_mapPoint)
             {
-                if (!p_mapPoint->isBad())
+                bool mapPointIsBad{};
+                if (p_mapPoint->isBad(mapPointIsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (!mapPointIsBad)
                 {
                     if (!isMonocular)
                     {
@@ -105,8 +162,18 @@ void LocalMapping::keyFrameCulling()
                     }
 
                     validMapPointCount++;
-                    if (p_mapPoint->getObservationCount() >
-                        observationThreshold)
+                    int mapPointObservationCount{};
+                    if (p_mapPoint->getObservationCount(
+                            mapPointObservationCount) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getObservationCount returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (mapPointObservationCount > observationThreshold)
                     {
                         // Reached only when Nleft != -1, i.e. the fisheye
                         // stereo case, where Nleft is a keypoint count >= 0.
@@ -123,9 +190,18 @@ void LocalMapping::keyFrameCulling()
                                 : p_neighborKeyFrame
                                       ->keyPointsRight[mapPointIndex]
                                       .octave;
-                        const map<KeyFrame *, tuple<int, int>>
-                            pointObservations = p_mapPoint->getObservations();
-                        int observationCount  = 0;
+                        std::map<KeyFrame *, std::tuple<int, int>>
+                            pointObservations{};
+                        if (p_mapPoint->getObservations(pointObservations) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getObservations returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        int observationCount = 0;
                         for (map<KeyFrame *, tuple<int, int>>::const_iterator
                                  observationIt  = pointObservations.begin(),
                                  observationEnd = pointObservations.end();
@@ -220,30 +296,101 @@ void LocalMapping::keyFrameCulling()
                             p_neighborKeyFrame->p_nextKF;
                         p_neighborKeyFrame->p_nextKF = nullptr;
                         p_neighborKeyFrame->p_prevKF = nullptr;
-                        p_neighborKeyFrame->setBadFlag();
+                        if (p_neighborKeyFrame->setBadFlag() !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: setBadFlag returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
                     }
-                    else if (!p_currentKeyFrame->getMap()->getInertialBA2() &&
-                             ((p_neighborKeyFrame->getImuPosition() -
-                               p_neighborKeyFrame->p_prevKF->getImuPosition())
-                                  .norm() < 0.02) &&
-                             (timeGap < 3))
+                    else
                     {
-                        p_neighborKeyFrame->p_nextKF->p_imuPreintegrated
-                            ->mergePrevious(
-                                p_neighborKeyFrame->p_imuPreintegrated);
-                        p_neighborKeyFrame->p_nextKF->p_prevKF =
-                            p_neighborKeyFrame->p_prevKF;
-                        p_neighborKeyFrame->p_prevKF->p_nextKF =
-                            p_neighborKeyFrame->p_nextKF;
-                        p_neighborKeyFrame->p_nextKF = nullptr;
-                        p_neighborKeyFrame->p_prevKF = nullptr;
-                        p_neighborKeyFrame->setBadFlag();
+                        Map *p_currentKeyFrameMap = nullptr;
+                        if (p_currentKeyFrame->getMap(p_currentKeyFrameMap) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getMap returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
+                        }
+                        bool inertialBA2{};
+                        if (p_currentKeyFrameMap->getInertialBA2(inertialBA2) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getInertialBA2 returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        Eigen::Vector3f neighborKeyFrameImuPosition{};
+                        if ((!inertialBA2) &&
+                            p_neighborKeyFrame->getImuPosition(
+                                neighborKeyFrameImuPosition) !=
+                                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getImuPosition returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        Eigen::Vector3f imuPosition{};
+                        if ((!inertialBA2) &&
+                            p_neighborKeyFrame->p_prevKF->getImuPosition(
+                                imuPosition) !=
+                                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getImuPosition returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (!inertialBA2 &&
+                            ((neighborKeyFrameImuPosition - imuPosition)
+                                 .norm() < 0.02) &&
+                            (timeGap < 3))
+                        {
+                            p_neighborKeyFrame->p_nextKF->p_imuPreintegrated
+                                ->mergePrevious(
+                                    p_neighborKeyFrame->p_imuPreintegrated);
+                            p_neighborKeyFrame->p_nextKF->p_prevKF =
+                                p_neighborKeyFrame->p_prevKF;
+                            p_neighborKeyFrame->p_prevKF->p_nextKF =
+                                p_neighborKeyFrame->p_nextKF;
+                            p_neighborKeyFrame->p_nextKF = nullptr;
+                            p_neighborKeyFrame->p_prevKF = nullptr;
+                            if (p_neighborKeyFrame->setBadFlag() !=
+                                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: setBadFlag returned a failure status "
+                                    "although it cannot fail; continuing as "
+                                    "before.",
+                                    __func__);
+                            }
+                        }
                     }
                 }
             }
             else
             {
-                p_neighborKeyFrame->setBadFlag();
+                if (p_neighborKeyFrame->setBadFlag() !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setBadFlag returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
         if ((processedKeyFrameCount > 20 && shouldAbortBa) ||

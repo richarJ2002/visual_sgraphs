@@ -44,12 +44,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::undistortKeyPoints()
+FrameStatus Frame::undistortKeyPoints()
 {
     if (distortionCoefficients.at<float>(0) == 0.0)
     {
         keyPointsUndistorted = keyPoints;
-        return;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
     // Fill matrix with points
@@ -81,6 +81,8 @@ void Frame::undistortKeyPoints()
         keyPoint.pt.y         = matrix.at<float>(keyPointIndex, 1);
         keyPointsUndistorted[keyPointIndex] = keyPoint;
     }
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

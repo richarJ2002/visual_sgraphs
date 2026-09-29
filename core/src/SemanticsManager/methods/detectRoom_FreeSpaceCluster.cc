@@ -813,9 +813,20 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
              * surviving in an old, now-inactive map would permanently block
              * every future map from ever bootstrapping its own first room. */
             Map *p_currentMapForBootstrapCheck = p_atlas->getCurrentMap();
+            std::vector<semantic::Room *> currentMapForBootstrapCheckAllRooms{};
+            if ((p_currentMapForBootstrapCheck != nullptr) &&
+                p_currentMapForBootstrapCheck->getAllRooms(
+                    currentMapForBootstrapCheckAllRooms) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllRooms returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             const std::vector<semantic::Room *> currentMapRooms =
                 p_currentMapForBootstrapCheck != nullptr
-                    ? p_currentMapForBootstrapCheck->getAllRooms()
+                    ? currentMapForBootstrapCheckAllRooms
                     : std::vector<semantic::Room *>();
             const bool anyConfirmedRoomExistsInCurrentMap = std::any_of(
                 currentMapRooms.begin(),
@@ -1562,13 +1573,34 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 {
                     static_cast<void>(observation);
 
-                    if (p_keyFrame == nullptr || p_keyFrame->isBad())
+                    bool keyFrameIsBad{};
+                    if (!(p_keyFrame == nullptr) &&
+                        p_keyFrame->isBad(keyFrameIsBad) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (p_keyFrame == nullptr || keyFrameIsBad)
                     {
                         continue;
                     }
 
+                    Eigen::Vector3f keyFrameCameraCenter{};
+                    if (p_keyFrame->getCameraCenter(keyFrameCameraCenter) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCameraCenter returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     const Eigen::Vector3d cameraCentre_World_m =
-                        p_keyFrame->getCameraCenter().cast<double>();
+                        keyFrameCameraCenter.cast<double>();
 
                     if (cameraCentre_World_m.allFinite())
                     {
@@ -1729,9 +1761,26 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
                     if (p_currentMap != nullptr)
                     {
-                        p_currentMap->eraseDetectedMapRoom(p_existingWallOwner);
-                        p_currentMap->eraseMarkerBasedMapRoom(
-                            p_existingWallOwner);
+                        if (p_currentMap->eraseDetectedMapRoom(
+                                p_existingWallOwner) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: eraseDetectedMapRoom returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (p_currentMap->eraseMarkerBasedMapRoom(
+                                p_existingWallOwner) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: eraseMarkerBasedMapRoom returned "
+                                         "a failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                     }
 
                     if (p_existingWallOwner->setBad() !=
@@ -2112,7 +2161,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 }
                 if (p_roomMap != nullptr)
                 {
-                    p_roomMap->promoteCandidateMapRoom(p_room);
+                    if (p_roomMap->promoteCandidateMapRoom(p_room) !=
+                        MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: promoteCandidateMapRoom returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
                 }
 
                 if (p_room->setRoomVariant(
@@ -2202,7 +2259,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 }
                 if (p_roomMap != nullptr)
                 {
-                    p_roomMap->promoteCandidateMapRoom(p_room);
+                    if (p_roomMap->promoteCandidateMapRoom(p_room) !=
+                        MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: promoteCandidateMapRoom returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
                 }
                 if (p_room->setRoomVariant(
                         vs_graphs::core::semantic::Room::RoomVariant::ROOM) !=

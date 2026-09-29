@@ -37,7 +37,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
+MapStatus Map::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
 {
     unique_lock<mutex> lock(mapMutex);
     // Add the plane to the hashmap
@@ -51,6 +51,8 @@ void Map::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
                      __func__);
     }
     roomWallPlaneIndex[planeGetId] = p_plane_in;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

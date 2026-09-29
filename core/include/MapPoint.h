@@ -26,6 +26,7 @@
 #ifndef MAPPOINT_H
 #define MAPPOINT_H
 
+#include "MapPointStatus.h"
 #include "Utils/Converter/objects/Converter.h"
 
 #include <boost/serialization/access.hpp>
@@ -33,6 +34,7 @@
 #include <mutex>
 #include <opencv2/core/core.hpp>
 #include <set>
+#include <tuple>
 
 namespace vs_graphs
 {
@@ -67,57 +69,67 @@ class MapPoint
              Frame                 *p_frame_inout,
              const int             &indexF_in);
 
-    void            setWorldPos(const Eigen::Vector3f &Pos_in);
-    Eigen::Vector3f getWorldPos();
+    [[nodiscard]] MapPointStatus setWorldPos(const Eigen::Vector3f &Pos_in);
+    [[nodiscard]] MapPointStatus getWorldPos(Eigen::Vector3f &worldPos_out);
 
-    Eigen::Vector3f getNormal();
-    void            setNormalVector(const Eigen::Vector3f &normal_in);
+    [[nodiscard]] MapPointStatus getNormal(Eigen::Vector3f &normal_out);
+    [[nodiscard]] MapPointStatus
+        setNormalVector(const Eigen::Vector3f &normal_in);
 
-    KeyFrame *getReferenceKeyFrame();
+    [[nodiscard]] MapPointStatus
+        getReferenceKeyFrame(KeyFrame *&p_referenceKeyFrame_out);
 
-    std::map<KeyFrame *, std::tuple<int, int>> getObservations();
-    int                                        getObservationCount();
+    [[nodiscard]] MapPointStatus getObservations(
+        std::map<KeyFrame *, std::tuple<int, int>> &observations_out);
+    [[nodiscard]] MapPointStatus getObservationCount(int &observationCount_out);
 
-    void addObservation(KeyFrame *p_keyFrame_inout, int index_in);
-    void eraseObservation(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] MapPointStatus addObservation(KeyFrame *p_keyFrame_inout,
+                                                int       index_in);
+    [[nodiscard]] MapPointStatus eraseObservation(KeyFrame *p_keyFrame_in);
 
-    std::tuple<int, int> getIndexInKeyFrame(KeyFrame *p_keyFrame_in);
-    bool                 isInKeyFrame(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] MapPointStatus
+                                 getIndexInKeyFrame(KeyFrame             *p_keyFrame_in,
+                                                    std::tuple<int, int> &indexInKeyFrame_out);
+    [[nodiscard]] MapPointStatus isInKeyFrame(KeyFrame *p_keyFrame_in,
+                                              bool     &isInKeyFrame_out);
 
-    void setBadFlag();
-    bool isBad();
+    [[nodiscard]] MapPointStatus setBadFlag();
+    [[nodiscard]] MapPointStatus isBad(bool &isBad_out);
 
-    void      replace(MapPoint *p_mapPoint_inout);
-    MapPoint *getReplaced();
+    [[nodiscard]] MapPointStatus replace(MapPoint *p_mapPoint_inout);
+    [[nodiscard]] MapPointStatus getReplaced(MapPoint *&p_replaced_out);
 
-    void       increaseVisible(int n_in = 1);
-    void       increaseFound(int n_in = 1);
-    float      getFoundRatio();
-    inline int getFound()
-    {
-        return foundCount;
-    }
+    [[nodiscard]] MapPointStatus increaseVisible(int n_in = 1);
+    [[nodiscard]] MapPointStatus increaseFound(int n_in = 1);
+    [[nodiscard]] MapPointStatus getFoundRatio(float &foundRatio_out);
 
-    void computeDistinctiveDescriptors();
+    [[nodiscard]] MapPointStatus computeDistinctiveDescriptors();
 
-    cv::Mat getDescriptor();
+    [[nodiscard]] MapPointStatus getDescriptor(cv::Mat &descriptor_out);
 
-    void updateNormalAndDepth();
+    [[nodiscard]] MapPointStatus updateNormalAndDepth();
 
-    float getMinDistanceInvariance();
-    float getMaxDistanceInvariance();
-    int predictScale(const float &currentDistance_in, KeyFrame *p_keyFrame_in);
-    int predictScale(const float &currentDistance_in, Frame *p_pF_in);
+    [[nodiscard]] MapPointStatus
+        getMinDistanceInvariance(float &minDistanceInvariance_out);
+    [[nodiscard]] MapPointStatus
+        getMaxDistanceInvariance(float &maxDistanceInvariance_out);
+    [[nodiscard]] MapPointStatus predictScale(const float &currentDistance_in,
+                                              KeyFrame    *p_keyFrame_in,
+                                              int         &scaleLevel_out);
+    [[nodiscard]] MapPointStatus predictScale(const float &currentDistance_in,
+                                              Frame       *p_pF_in,
+                                              int         &scaleLevel_out);
 
-    Map *getMap();
-    void updateMap(Map *p_map_in);
+    [[nodiscard]] MapPointStatus getMap(Map *&p_map_out);
+    [[nodiscard]] MapPointStatus updateMap(Map *p_map_in);
 
-    void printObservations();
+    [[nodiscard]] MapPointStatus printObservations();
 
-    void preSave(std::set<KeyFrame *> &keyFrames_in,
-                 std::set<MapPoint *> &mapPoints_in);
-    void postLoad(std::map<long unsigned int, KeyFrame *> &keyFrameId_in,
-                  std::map<long unsigned int, MapPoint *> &mapPointId_in);
+    [[nodiscard]] MapPointStatus preSave(std::set<KeyFrame *> &keyFrames_in,
+                                         std::set<MapPoint *> &mapPoints_in);
+    [[nodiscard]] MapPointStatus
+        postLoad(std::map<long unsigned int, KeyFrame *> &keyFrameId_in,
+                 std::map<long unsigned int, MapPoint *> &mapPointId_in);
 
   public:
     long unsigned int        id;

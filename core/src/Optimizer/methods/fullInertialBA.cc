@@ -29,6 +29,7 @@
 
 #include "../private_functions.h"
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -48,9 +49,35 @@ void Optimizer::fullInertialBA(
     [[maybe_unused]] bool            *p_hessianComputed_in,
     const std::atomic_bool           *p_stopRequested_in)
 {
-    long unsigned int        maxKeyFrameId = p_map_inout->getMaxKeyFrameId();
-    const vector<KeyFrame *> keyFrames     = p_map_inout->getAllKeyFrames();
-    const vector<MapPoint *> mapPoints     = p_map_inout->getAllMapPoints();
+    unsigned long maxKeyFrameIdValue{};
+    if (p_map_inout->getMaxKeyFrameId(maxKeyFrameIdValue) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMaxKeyFrameId returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    long unsigned int maxKeyFrameId =
+        static_cast<long unsigned int>(maxKeyFrameIdValue);
+    std::vector<KeyFrame *> keyFrames{};
+    if (p_map_inout->getAllKeyFrames(keyFrames) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<MapPoint *> mapPoints{};
+    if (p_map_inout->getAllMapPoints(mapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (keyFrames.empty())
     {
@@ -174,12 +201,30 @@ void Optimizer::fullInertialBA(
 
         if (p_keyFrame->p_prevKF && p_keyFrame->id <= maxKeyFrameId)
         {
-            if (p_keyFrame->isBad() || p_keyFrame->p_prevKF->id > maxKeyFrameId)
+            bool keyFrameIsBad{};
+            if (p_keyFrame->isBad(keyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (keyFrameIsBad || p_keyFrame->p_prevKF->id > maxKeyFrameId)
                 continue;
             if (p_keyFrame->isImu && p_keyFrame->p_prevKF->isImu)
             {
-                p_keyFrame->p_imuPreintegrated->setNewBias(
-                    p_keyFrame->p_prevKF->getImuBias());
+                IMU::Bias imuBias2{};
+                if (p_keyFrame->p_prevKF->getImuBias(imuBias2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getImuBias returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                p_keyFrame->p_imuPreintegrated->setNewBias(imuBias2);
                 g2o::HyperGraph::Vertex *p_previousPoseVertex =
                     optimizer.vertex(p_keyFrame->p_prevKF->id);
                 g2o::HyperGraph::Vertex *p_previousVelocityVertex =
@@ -362,15 +407,31 @@ void Optimizer::fullInertialBA(
     {
         MapPoint               *p_mapPoint       = mapPoints[elementIndex];
         g2o::VertexSBAPointXYZ *p_mapPointVertex = new g2o::VertexSBAPointXYZ();
-        p_mapPointVertex->setEstimate(p_mapPoint->getWorldPos().cast<double>());
+        Eigen::Vector3f         mapPointWorldPos{};
+        if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_mapPointVertex->setEstimate(mapPointWorldPos.cast<double>());
         unsigned long mapPointVertexId =
             p_mapPoint->id + mapPointVertexIdBase + 1;
         p_mapPointVertex->setId(mapPointVertexId);
         p_mapPointVertex->setMarginalized(true);
         optimizer.addVertex(p_mapPointVertex);
 
-        const map<KeyFrame *, tuple<int, int>> observations =
-            p_mapPoint->getObservations();
+        std::map<KeyFrame *, std::tuple<int, int>> observations{};
+        if (p_mapPoint->getObservations(observations) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         bool allVerticesFixed = true;
 
@@ -386,7 +447,16 @@ void Optimizer::fullInertialBA(
             if (p_keyFrame->id > maxKeyFrameId)
                 continue;
 
-            if (!p_keyFrame->isBad())
+            bool keyFrameIsBad2{};
+            if (p_keyFrame->isBad(keyFrameIsBad2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!keyFrameIsBad2)
             {
                 const int    leftIndex = get<0>(featureObservationIt->second);
                 cv::KeyPoint undistortedKeyPoint;
@@ -549,7 +619,14 @@ void Optimizer::fullInertialBA(
         {
             Sophus::SE3f Tcw(p_poseVertex->estimate().Rcw[0].cast<float>(),
                              p_poseVertex->estimate().tcw[0].cast<float>());
-            p_keyFrame->setPose(Tcw);
+            if (p_keyFrame->setPose(Tcw) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setPose returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
@@ -564,8 +641,16 @@ void Optimizer::fullInertialBA(
                 optimizer.vertex(maxKeyFrameId + 3 * (p_keyFrame->id) + 1));
             if (loopKeyFrameId_in == 0)
             {
-                p_keyFrame->setVelocity(
-                    p_velocityVertex->estimate().cast<float>());
+                if (p_keyFrame->setVelocity(
+                        p_velocityVertex->estimate().cast<float>()) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setVelocity returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
             }
             else
             {
@@ -600,7 +685,15 @@ void Optimizer::fullInertialBA(
                               biasVector[2]);
             if (loopKeyFrameId_in == 0)
             {
-                p_keyFrame->setNewBias(imuBias);
+                if (p_keyFrame->setNewBias(imuBias) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setNewBias returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
             }
             else
             {
@@ -623,8 +716,24 @@ void Optimizer::fullInertialBA(
 
         if (loopKeyFrameId_in == 0)
         {
-            p_mapPoint->setWorldPos(p_mapPointVertex->estimate().cast<float>());
-            p_mapPoint->updateNormalAndDepth();
+            if (p_mapPoint->setWorldPos(
+                    p_mapPointVertex->estimate().cast<float>()) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mapPoint->updateNormalAndDepth() !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: updateNormalAndDepth returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
         else
         {
@@ -633,7 +742,13 @@ void Optimizer::fullInertialBA(
         }
     }
 
-    p_map_inout->increaseChangeIndex();
+    if (p_map_inout->increaseChangeIndex() != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: increaseChangeIndex returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

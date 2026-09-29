@@ -25,6 +25,7 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -111,7 +112,16 @@ Sophus::SE3f Tracking::grabImageRGBD(
 
     track();
 
-    return currentFrame.getPose();
+    Sophus::SE3<float> currentFrameGetPose{};
+    if (currentFrame.getPose(currentFrameGetPose) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    return currentFrameGetPose;
 }
 
 } // namespace core

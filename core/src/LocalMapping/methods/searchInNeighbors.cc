@@ -26,6 +26,7 @@
 #include "LocalMapping.h"
 
 #include "ORBmatcher.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -38,8 +39,16 @@ void LocalMapping::searchInNeighbors()
     int neighborKeyFrameCount = 10;
     if (isMonocular)
         neighborKeyFrameCount = 30;
-    const vector<KeyFrame *> neighborKeyFrames =
-        p_currentKeyFrame->getBestCovisibilityKeyFrames(neighborKeyFrameCount);
+    std::vector<KeyFrame *> neighborKeyFrames{};
+    if (p_currentKeyFrame->getBestCovisibilityKeyFrames(neighborKeyFrameCount,
+                                                        neighborKeyFrames) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBestCovisibilityKeyFrames returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
     vector<KeyFrame *> targetKeyFrames;
     for (vector<KeyFrame *>::const_iterator
              targetKeyFrameIt  = neighborKeyFrames.begin(),
@@ -48,7 +57,16 @@ void LocalMapping::searchInNeighbors()
          targetKeyFrameIt++)
     {
         KeyFrame *p_targetKeyFrame = *targetKeyFrameIt;
-        if (p_targetKeyFrame->isBad() ||
+        bool      targetKeyFrameIsBad{};
+        if (p_targetKeyFrame->isBad(targetKeyFrameIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (targetKeyFrameIsBad ||
             p_targetKeyFrame->fuseTargetKeyFrameId == p_currentKeyFrame->id)
             continue;
         targetKeyFrames.push_back(p_targetKeyFrame);
@@ -61,8 +79,18 @@ void LocalMapping::searchInNeighbors()
          elementIndex < targetKeyFrameCount;
          elementIndex++)
     {
-        const vector<KeyFrame *> secondNeighborKeyFrames =
-            targetKeyFrames[elementIndex]->getBestCovisibilityKeyFrames(20);
+        std::vector<KeyFrame *> secondNeighborKeyFrames{};
+        if (targetKeyFrames[elementIndex]->getBestCovisibilityKeyFrames(
+                20,
+                secondNeighborKeyFrames) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getBestCovisibilityKeyFrames returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         for (vector<KeyFrame *>::const_iterator
                  secondNeighborKeyFrameIt  = secondNeighborKeyFrames.begin(),
                  secondNeighborKeyFrameEnd = secondNeighborKeyFrames.end();
@@ -70,7 +98,16 @@ void LocalMapping::searchInNeighbors()
              secondNeighborKeyFrameIt++)
         {
             KeyFrame *p_secondNeighborKeyFrame = *secondNeighborKeyFrameIt;
-            if (p_secondNeighborKeyFrame->isBad() ||
+            bool      secondNeighborKeyFrameIsBad{};
+            if (p_secondNeighborKeyFrame->isBad(secondNeighborKeyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (secondNeighborKeyFrameIsBad ||
                 p_secondNeighborKeyFrame->fuseTargetKeyFrameId ==
                     p_currentKeyFrame->id ||
                 p_secondNeighborKeyFrame->id == p_currentKeyFrame->id)
@@ -89,7 +126,16 @@ void LocalMapping::searchInNeighbors()
         KeyFrame *p_targetKeyFrame = p_currentKeyFrame->p_prevKF;
         while (targetKeyFrames.size() < 20 && p_targetKeyFrame)
         {
-            if (p_targetKeyFrame->isBad() ||
+            bool targetKeyFrameIsBad2{};
+            if (p_targetKeyFrame->isBad(targetKeyFrameIsBad2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (targetKeyFrameIsBad2 ||
                 p_targetKeyFrame->fuseTargetKeyFrameId == p_currentKeyFrame->id)
             {
                 p_targetKeyFrame = p_targetKeyFrame->p_prevKF;
@@ -102,9 +148,16 @@ void LocalMapping::searchInNeighbors()
     }
 
     // Search matches by projection from current KF in target KFs
-    ORBmatcher         matcher;
-    vector<MapPoint *> currentMapPointMatches =
-        p_currentKeyFrame->getMapPointMatches();
+    ORBmatcher              matcher;
+    std::vector<MapPoint *> currentMapPointMatches{};
+    if (p_currentKeyFrame->getMapPointMatches(currentMapPointMatches) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     for (vector<KeyFrame *>::iterator
              targetKeyFrameIt  = targetKeyFrames.begin(),
              targetKeyFrameEnd = targetKeyFrames.end();
@@ -134,8 +187,15 @@ void LocalMapping::searchInNeighbors()
     {
         KeyFrame *p_targetKeyFrame = *targetKeyFrameIt2;
 
-        vector<MapPoint *> targetMapPoints =
-            p_targetKeyFrame->getMapPointMatches();
+        std::vector<MapPoint *> targetMapPoints{};
+        if (p_targetKeyFrame->getMapPointMatches(targetMapPoints) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPointMatches returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (vector<MapPoint *>::iterator
                  targetMapPointIt  = targetMapPoints.begin(),
@@ -146,7 +206,16 @@ void LocalMapping::searchInNeighbors()
             MapPoint *p_mapPoint = *targetMapPointIt;
             if (!p_mapPoint)
                 continue;
-            if (p_mapPoint->isBad() ||
+            bool mapPointIsBad{};
+            if (p_mapPoint->isBad(mapPointIsBad) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mapPointIsBad ||
                 p_mapPoint->fuseCandidateKeyFrameId == p_currentKeyFrame->id)
                 continue;
             p_mapPoint->fuseCandidateKeyFrameId = p_currentKeyFrame->id;
@@ -159,7 +228,16 @@ void LocalMapping::searchInNeighbors()
         matcher.fuse(p_currentKeyFrame, fuseCandidateMapPoints, true);
 
     // Update points
-    currentMapPointMatches = p_currentKeyFrame->getMapPointMatches();
+    std::vector<MapPoint *> currentKeyFrameMapPointMatches{};
+    if (p_currentKeyFrame->getMapPointMatches(currentKeyFrameMapPointMatches) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    currentMapPointMatches = currentKeyFrameMapPointMatches;
     for (size_t elementIndex = 0, mapPointCount = currentMapPointMatches.size();
          elementIndex < mapPointCount;
          elementIndex++)
@@ -167,16 +245,48 @@ void LocalMapping::searchInNeighbors()
         MapPoint *p_mapPoint = currentMapPointMatches[elementIndex];
         if (p_mapPoint)
         {
-            if (!p_mapPoint->isBad())
+            bool mapPointIsBad2{};
+            if (p_mapPoint->isBad(mapPointIsBad2) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
             {
-                p_mapPoint->computeDistinctiveDescriptors();
-                p_mapPoint->updateNormalAndDepth();
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!mapPointIsBad2)
+            {
+                if (p_mapPoint->computeDistinctiveDescriptors() !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: computeDistinctiveDescriptors returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_mapPoint->updateNormalAndDepth() !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: updateNormalAndDepth returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
     }
 
     // Update connections in covisibility graph
-    p_currentKeyFrame->updateConnections();
+    if (p_currentKeyFrame->updateConnections() !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateConnections returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

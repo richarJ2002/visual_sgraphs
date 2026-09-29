@@ -34,13 +34,21 @@ namespace vs_graphs
 namespace core
 {
 
-tuple<int, int> MapPoint::getIndexInKeyFrame(KeyFrame *p_keyFrame_in)
+MapPointStatus
+    MapPoint::getIndexInKeyFrame(KeyFrame             *p_keyFrame_in,
+                                 std::tuple<int, int> &indexInKeyFrame_out)
 {
     unique_lock<mutex> lock(featuresMutex);
     if (observations.count(p_keyFrame_in))
-        return observations[p_keyFrame_in];
+    {
+        indexInKeyFrame_out = observations[p_keyFrame_in];
+        return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
+    }
     else
-        return tuple<int, int>(-1, -1);
+    {
+        indexInKeyFrame_out = std::tuple<int, int>(-1, -1);
+        return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

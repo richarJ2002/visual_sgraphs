@@ -61,13 +61,32 @@ PlaneStatus Plane::getObservationSideSnapshot(
     for (const auto &[p_keyFrame, observation] : getObservations2)
     {
         static_cast<void>(observation);
-        if (p_keyFrame == nullptr || p_keyFrame->isBad())
+        bool keyFrameIsBad{};
+        if (!(p_keyFrame == nullptr) &&
+            p_keyFrame->isBad(keyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_keyFrame == nullptr || keyFrameIsBad)
         {
             continue;
         }
 
+        Eigen::Vector3f keyFrameCameraCenter{};
+        if (p_keyFrame->getCameraCenter(keyFrameCameraCenter) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCameraCenter returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const Eigen::Vector3d cameraCenter_World_m =
-            p_keyFrame->getCameraCenter().cast<double>();
+            keyFrameCameraCenter.cast<double>();
         const double signedDistance_m =
             normalizedEquation_World_in.head<3>().dot(cameraCenter_World_m) +
             normalizedEquation_World_in(3);

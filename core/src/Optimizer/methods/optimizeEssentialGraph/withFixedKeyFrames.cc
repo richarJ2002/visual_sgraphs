@@ -61,7 +61,15 @@ void Optimizer::optimizeEssentialGraph(
     optimizer.setAlgorithm(p_solver);
 
     // Get map
-    Map *p_map = p_currentKeyFrame_in->getMap();
+    Map *p_map = nullptr;
+    if (p_currentKeyFrame_in->getMap(p_map) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     /*
      * Keyframe identifiers are Atlas-global. A source map can therefore
@@ -69,7 +77,15 @@ void Optimizer::optimizeEssentialGraph(
      * previous merge or loading a serialized Atlas. Size every ID-indexed
      * table from all optimizer inputs rather than from only the current map.
      */
-    unsigned long maximumKeyFrameId = p_map->getMaxKeyFrameId();
+    unsigned long maximumKeyFrameId{};
+    if (p_map->getMaxKeyFrameId(maximumKeyFrameId) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMaxKeyFrameId returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     const auto includeMaximumKeyFrameId =
         [&maximumKeyFrameId](const std::vector<KeyFrame *> &keyFrames_in)
@@ -102,14 +118,33 @@ void Optimizer::optimizeEssentialGraph(
     // Loop over fixed KeyFrames
     for (KeyFrame *p_fixedKeyFrame : fixedKeyFrames_in)
     {
-        if (p_fixedKeyFrame == nullptr || p_fixedKeyFrame->isBad())
+        bool fixedKeyFrameIsBad{};
+        if (!(p_fixedKeyFrame == nullptr) &&
+            p_fixedKeyFrame->isBad(fixedKeyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_fixedKeyFrame == nullptr || fixedKeyFrameIsBad)
             continue;
 
         g2o::VertexSim3Expmap *p_sim3Vertex = new g2o::VertexSim3Expmap();
 
         const int idCount = p_fixedKeyFrame->id;
 
-        Sophus::SE3d Tcw = p_fixedKeyFrame->getPose().cast<double>();
+        Sophus::SE3f fixedKeyFramePose{};
+        if (p_fixedKeyFrame->getPose(fixedKeyFramePose) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3d Tcw = fixedKeyFramePose.cast<double>();
         g2o::Sim3    Siw(Tcw.unit_quaternion(), Tcw.translation(), 1.0);
 
         vCorrectedSwc[idCount] = Siw.inverse();
@@ -131,14 +166,33 @@ void Optimizer::optimizeEssentialGraph(
     set<unsigned long> idKeyFrames;
     for (KeyFrame *p_fixedKeyFrame : fixedCorrectedKeyFrames_in)
     {
-        if (p_fixedKeyFrame == nullptr || p_fixedKeyFrame->isBad())
+        bool fixedKeyFrameIsBad2{};
+        if (!(p_fixedKeyFrame == nullptr) &&
+            p_fixedKeyFrame->isBad(fixedKeyFrameIsBad2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_fixedKeyFrame == nullptr || fixedKeyFrameIsBad2)
             continue;
 
         g2o::VertexSim3Expmap *p_sim3Vertex = new g2o::VertexSim3Expmap();
 
         const int idCount = p_fixedKeyFrame->id;
 
-        Sophus::SE3d Tcw = p_fixedKeyFrame->getPose().cast<double>();
+        Sophus::SE3f fixedKeyFramePose2{};
+        if (p_fixedKeyFrame->getPose(fixedKeyFramePose2) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3d Tcw = fixedKeyFramePose2.cast<double>();
         g2o::Sim3    Siw(Tcw.unit_quaternion(), Tcw.translation(), 1.0);
 
         vCorrectedSwc[idCount] = Siw.inverse();
@@ -165,7 +219,17 @@ void Optimizer::optimizeEssentialGraph(
     // Loop over non-fixed KeyFrames
     for (KeyFrame *p_fixedKeyFrame : nonFixedKeyFrames_in)
     {
-        if (p_fixedKeyFrame == nullptr || p_fixedKeyFrame->isBad())
+        bool fixedKeyFrameIsBad3{};
+        if (!(p_fixedKeyFrame == nullptr) &&
+            p_fixedKeyFrame->isBad(fixedKeyFrameIsBad3) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_fixedKeyFrame == nullptr || fixedKeyFrameIsBad3)
             continue;
 
         const int idCount = p_fixedKeyFrame->id;
@@ -176,7 +240,16 @@ void Optimizer::optimizeEssentialGraph(
 
         g2o::VertexSim3Expmap *p_sim3Vertex = new g2o::VertexSim3Expmap();
 
-        Sophus::SE3d Tcw = p_fixedKeyFrame->getPose().cast<double>();
+        Sophus::SE3f fixedKeyFramePose3{};
+        if (p_fixedKeyFrame->getPose(fixedKeyFramePose3) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3d Tcw = fixedKeyFramePose3.cast<double>();
         g2o::Sim3    Siw(Tcw.unit_quaternion(), Tcw.translation(), 1.0);
 
         vScw[idCount] = Siw;
@@ -208,7 +281,17 @@ void Optimizer::optimizeEssentialGraph(
     {
         for (KeyFrame *p_keyFrame : keyFrames_in)
         {
-            if (p_keyFrame == nullptr || p_keyFrame->isBad() ||
+            bool keyFrameIsBad{};
+            if (!(p_keyFrame == nullptr) &&
+                p_keyFrame->isBad(keyFrameIsBad) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_keyFrame == nullptr || keyFrameIsBad ||
                 optimizer.vertex(p_keyFrame->id) == nullptr ||
                 !keyFrames.insert(p_keyFrame).second)
             {
@@ -239,7 +322,15 @@ void Optimizer::optimizeEssentialGraph(
         if (badPoses[idCount])
             Swi = vScw[idCount].inverse();
 
-        KeyFrame *p_parentKeyFrame = p_fixedKeyFrame->getParent();
+        KeyFrame *p_parentKeyFrame = nullptr;
+        if (p_fixedKeyFrame->getParent(p_parentKeyFrame) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParent returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Spanning tree edge
         if (p_parentKeyFrame &&
@@ -279,7 +370,15 @@ void Optimizer::optimizeEssentialGraph(
         }
 
         // Loop edges
-        const set<KeyFrame *> loopEdges = p_fixedKeyFrame->getLoopEdges();
+        std::set<KeyFrame *> loopEdges{};
+        if (p_fixedKeyFrame->getLoopEdges(loopEdges) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getLoopEdges returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (set<KeyFrame *>::const_iterator sit  = loopEdges.begin(),
                                              send = loopEdges.end();
              sit != send;
@@ -322,19 +421,46 @@ void Optimizer::optimizeEssentialGraph(
         }
 
         // Covisibility graph edges
-        const vector<KeyFrame *> connectedKeyFrames =
-            p_fixedKeyFrame->getCovisiblesByWeight(minimumFeature);
+        std::vector<KeyFrame *> connectedKeyFrames{};
+        if (p_fixedKeyFrame->getCovisiblesByWeight(minimumFeature,
+                                                   connectedKeyFrames) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCovisiblesByWeight returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (vector<KeyFrame *>::const_iterator vit =
                  connectedKeyFrames.begin();
              vit != connectedKeyFrames.end();
              vit++)
         {
             KeyFrame *pKFn = *vit;
-            if (pKFn && pKFn != p_parentKeyFrame &&
-                !p_fixedKeyFrame->hasChild(pKFn) && !loopEdges.count(pKFn) &&
+            bool      fixedKeyFrameHasChild{};
+            if ((pKFn && pKFn != p_parentKeyFrame) &&
+                p_fixedKeyFrame->hasChild(pKFn, fixedKeyFrameHasChild) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: hasChild returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (pKFn && pKFn != p_parentKeyFrame && !fixedKeyFrameHasChild &&
+                !loopEdges.count(pKFn) &&
                 keyFrames.find(pKFn) != keyFrames.end())
             {
-                if (!pKFn->isBad() && pKFn->id < p_fixedKeyFrame->id)
+                bool pKFnIsBad{};
+                if (pKFn->isBad(pKFnIsBad) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (!pKFnIsBad && pKFn->id < p_fixedKeyFrame->id)
                 {
 
                     g2o::Sim3 Sni;
@@ -392,7 +518,17 @@ void Optimizer::optimizeEssentialGraph(
     std::cout << "- Correcting the poses of KeyFrames ..." << std::endl;
     for (KeyFrame *p_fixedKeyFrame : nonFixedKeyFrames_in)
     {
-        if (p_fixedKeyFrame == nullptr || p_fixedKeyFrame->isBad())
+        bool fixedKeyFrameIsBad4{};
+        if (!(p_fixedKeyFrame == nullptr) &&
+            p_fixedKeyFrame->isBad(fixedKeyFrameIsBad4) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_fixedKeyFrame == nullptr || fixedKeyFrameIsBad4)
             continue;
 
         const int idCount = p_fixedKeyFrame->id;
@@ -411,9 +547,34 @@ void Optimizer::optimizeEssentialGraph(
         Sophus::SE3d Tiw(CorrectedSiw.rotation(),
                          CorrectedSiw.translation() / s);
 
-        p_fixedKeyFrame->tcwBefMerge = p_fixedKeyFrame->getPose();
-        p_fixedKeyFrame->twcBefMerge = p_fixedKeyFrame->getPoseInverse();
-        p_fixedKeyFrame->setPose(Tiw.cast<float>());
+        Sophus::SE3f fixedKeyFramePose4{};
+        if (p_fixedKeyFrame->getPose(fixedKeyFramePose4) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_fixedKeyFrame->tcwBefMerge = fixedKeyFramePose4;
+        Sophus::SE3f fixedKeyFramePoseInverse{};
+        if (p_fixedKeyFrame->getPoseInverse(fixedKeyFramePoseInverse) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPoseInverse returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_fixedKeyFrame->twcBefMerge = fixedKeyFramePoseInverse;
+        if (p_fixedKeyFrame->setPose(Tiw.cast<float>()) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     // Transform to "non-optimized" reference keyframe pose and transform back
@@ -421,7 +582,17 @@ void Optimizer::optimizeEssentialGraph(
     std::cout << "- Correcting the poses of 3D mapped points ..." << std::endl;
     for (MapPoint *p_mapPoint : nonCorrectedMapPoints_in)
     {
-        if (p_mapPoint == nullptr || p_mapPoint->isBad())
+        bool mapPointIsBad{};
+        if (!(p_mapPoint == nullptr) &&
+            p_mapPoint->isBad(mapPointIsBad) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_mapPoint == nullptr || mapPointIsBad)
         {
             continue;
         }
@@ -431,18 +602,44 @@ void Optimizer::optimizeEssentialGraph(
         const auto canCorrectFromReference =
             [&badPoses](KeyFrame *p_keyFrame_in)
         {
-            return p_keyFrame_in != nullptr && !p_keyFrame_in->isBad() &&
+            bool keyFrameIsBad{};
+            if ((p_keyFrame_in != nullptr) &&
+                p_keyFrame_in->isBad(keyFrameIsBad) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            return p_keyFrame_in != nullptr && !keyFrameIsBad &&
                    p_keyFrame_in->id < badPoses.size() &&
                    badPoses[p_keyFrame_in->id];
         };
 
-        KeyFrame *p_referenceKeyFrame = p_mapPoint->getReferenceKeyFrame();
+        KeyFrame *p_referenceKeyFrame = nullptr;
+        if (p_mapPoint->getReferenceKeyFrame(p_referenceKeyFrame) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getReferenceKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (!canCorrectFromReference(p_referenceKeyFrame))
         {
             p_referenceKeyFrame = nullptr;
 
-            const auto observations = p_mapPoint->getObservations();
+            std::map<KeyFrame *, std::tuple<int, int>> observations{};
+            if (p_mapPoint->getObservations(observations) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getObservations returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             for (const auto &[p_observingKeyFrame, featureIndexes] :
                  observations)
             {
@@ -465,13 +662,45 @@ void Optimizer::optimizeEssentialGraph(
         else
         {
             Sophus::SE3f TNonCorrectedwr = p_referenceKeyFrame->twcBefMerge;
-            Sophus::SE3f Twr = p_referenceKeyFrame->getPoseInverse();
+            Sophus::SE3f Twr{};
+            if (p_referenceKeyFrame->getPoseInverse(Twr) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
+            Eigen::Vector3f mapPointWorldPos{};
+            if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             Eigen::Vector3f eigCorrectedP3Dw =
-                Twr * TNonCorrectedwr.inverse() * p_mapPoint->getWorldPos();
-            p_mapPoint->setWorldPos(eigCorrectedP3Dw);
+                Twr * TNonCorrectedwr.inverse() * mapPointWorldPos;
+            if (p_mapPoint->setWorldPos(eigCorrectedP3Dw) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
-            p_mapPoint->updateNormalAndDepth();
+            if (p_mapPoint->updateNormalAndDepth() !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: updateNormalAndDepth returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             mapPointWasTransformed = true;
         }
 
@@ -482,20 +711,58 @@ void Optimizer::optimizeEssentialGraph(
          */
         if (!mapPointWasTransformed)
         {
-            const Eigen::Vector3f position_mergeWorld_m =
-                p_mapPoint->getWorldPos();
-            const Eigen::Vector3f normal_mergeWorld = p_mapPoint->getNormal();
+            Eigen::Vector3f position_mergeWorld_m{};
+            if (p_mapPoint->getWorldPos(position_mergeWorld_m) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Eigen::Vector3f normal_mergeWorld{};
+            if (p_mapPoint->getNormal(normal_mergeWorld) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getNormal returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
 
-            p_mapPoint->setWorldPos(
-                transform_mergeWorldToCurrentWorld_in
-                    .map(position_mergeWorld_m.cast<double>())
-                    .cast<float>());
+            if (p_mapPoint->setWorldPos(
+                    transform_mergeWorldToCurrentWorld_in
+                        .map(position_mergeWorld_m.cast<double>())
+                        .cast<float>()) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
-            p_mapPoint->setNormalVector(
-                transform_mergeWorldToCurrentWorld_in.rotation().cast<float>() *
-                normal_mergeWorld);
+            if (p_mapPoint->setNormalVector(
+                    transform_mergeWorldToCurrentWorld_in.rotation()
+                        .cast<float>() *
+                    normal_mergeWorld) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setNormalVector returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
-            p_mapPoint->updateNormalAndDepth();
+            if (p_mapPoint->updateNormalAndDepth() !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: updateNormalAndDepth returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
     }
 
@@ -514,15 +781,34 @@ void Optimizer::optimizeEssentialGraph(
     {
         for (KeyFrame *p_keyFrame : keyFrames_in)
         {
-            if (p_keyFrame == nullptr || p_keyFrame->isBad())
+            bool keyFrameIsBad{};
+            if (!(p_keyFrame == nullptr) &&
+                p_keyFrame->isBad(keyFrameIsBad) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_keyFrame == nullptr || keyFrameIsBad)
             {
                 continue;
             }
 
             const Sophus::SE3d poseBefore_WorldToCamera =
                 p_keyFrame->tcwBefMerge.cast<double>();
+            Sophus::SE3f keyFramePose{};
+            if (p_keyFrame->getPose(keyFramePose) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPose returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             const Sophus::SE3d poseAfter_WorldToCamera =
-                p_keyFrame->getPose().cast<double>();
+                keyFramePose.cast<double>();
 
             keyFramePosesBefore_WorldToCamera.insert_or_assign(
                 p_keyFrame,

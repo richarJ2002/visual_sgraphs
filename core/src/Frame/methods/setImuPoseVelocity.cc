@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -43,9 +44,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::setImuPoseVelocity(const Eigen::Matrix3f &Rwb_in,
-                               const Eigen::Vector3f &twb_in,
-                               const Eigen::Vector3f &Vwb_in)
+FrameStatus Frame::setImuPoseVelocity(const Eigen::Matrix3f &Rwb_in,
+                                      const Eigen::Vector3f &twb_in,
+                                      const Eigen::Vector3f &Vwb_in)
 {
     velocityVw          = Vwb_in;
     isVelocityAvailable = true;
@@ -55,9 +56,17 @@ void Frame::setImuPoseVelocity(const Eigen::Matrix3f &Rwb_in,
 
     poseTcw = imuCalibration.mTcb * Tbw;
 
-    updatePoseMatrices();
+    if (updatePoseMatrices() != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updatePoseMatrices returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     isFrameSet      = true;
     isPoseAvailable = true;
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

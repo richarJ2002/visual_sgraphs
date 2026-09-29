@@ -22,6 +22,7 @@
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 using namespace std;
 
@@ -118,9 +119,19 @@ vector<KeyFrame *>
          scoredCandidateIt != scoredCandidateEnd;
          scoredCandidateIt++)
     {
-        KeyFrame          *p_candidateKeyFrame = scoredCandidateIt->second;
-        vector<KeyFrame *> covisibilityNeighborKeyFrames =
-            p_candidateKeyFrame->getBestCovisibilityKeyFrames(10);
+        KeyFrame               *p_candidateKeyFrame = scoredCandidateIt->second;
+        std::vector<KeyFrame *> covisibilityNeighborKeyFrames{};
+        if (p_candidateKeyFrame->getBestCovisibilityKeyFrames(
+                10,
+                covisibilityNeighborKeyFrames) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getBestCovisibilityKeyFrames returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         float     bestGroupScore        = scoredCandidateIt->first;
         float     accumulatedScore      = bestGroupScore;
@@ -163,8 +174,17 @@ vector<KeyFrame *>
         const float &candidateScore = scoredCandidateIt->first;
         if (candidateScore > minScoreToRetain)
         {
-            KeyFrame *p_candidateKeyFrame = scoredCandidateIt->second;
-            if (p_candidateKeyFrame->getMap() != p_map_in)
+            KeyFrame *p_candidateKeyFrame    = scoredCandidateIt->second;
+            Map      *p_candidateKeyFrameMap = nullptr;
+            if (p_candidateKeyFrame->getMap(p_candidateKeyFrameMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_candidateKeyFrameMap != p_map_in)
                 continue;
             if (!alreadyAddedKeyFrames.count(p_candidateKeyFrame))
             {

@@ -147,7 +147,8 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
         (GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane, wasPlaneRefit)),
         GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
     EXPECT_TRUE(wasPlaneRefit);
-    p_map->addMapPlane(&groundPlane);
+    ASSERT_EQ((p_map->addMapPlane(&groundPlane)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     // Known-side room
     semantic::Room knownRoom;
@@ -159,7 +160,8 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((knownRoom.setCentroid(Eigen::Vector3d(-1.0, -0.5, 5.5))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&knownRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&knownRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     // Far-side room (prospective)
     semantic::Room farRoom;
@@ -171,7 +173,8 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((farRoom.setCentroid(Eigen::Vector3d(1.0, -1.0, 6.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&farRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&farRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     // semantic::Passage#1 with geometry from the gate run
     semantic::Passage passage;
@@ -204,35 +207,41 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
                                            // is -X
     ASSERT_EQ((passage.setProspectiveRoom(&farRoom)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
     // --- KeyFrames (exactly 3) -------------------------------------------
     KeyFrame knownSideKeyFrame;
     knownSideKeyFrame.id = 0U;
-    knownSideKeyFrame.setPose(
-        Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                     Eigen::Vector3f(-KNOWN_SIDE_CAMERA_CENTER_X,
-                                     -KNOWN_SIDE_CAMERA_CENTER_Y,
-                                     -KNOWN_SIDE_CAMERA_CENTER_Z)));
-    p_map->addKeyFrame(&knownSideKeyFrame);
+    ASSERT_EQ((knownSideKeyFrame.setPose(
+                  Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                               Eigen::Vector3f(-KNOWN_SIDE_CAMERA_CENTER_X,
+                                               -KNOWN_SIDE_CAMERA_CENTER_Y,
+                                               -KNOWN_SIDE_CAMERA_CENTER_Z)))),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addKeyFrame(&knownSideKeyFrame)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     KeyFrame apertureKeyFrame;
     apertureKeyFrame.id = 1U;
-    apertureKeyFrame.setPose(
-        Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                     Eigen::Vector3f(-APERTURE_CAMERA_CENTER_X,
-                                     -APERTURE_CAMERA_CENTER_Y,
-                                     -APERTURE_CAMERA_CENTER_Z)));
-    p_map->addKeyFrame(&apertureKeyFrame);
+    ASSERT_EQ((apertureKeyFrame.setPose(
+                  Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                               Eigen::Vector3f(-APERTURE_CAMERA_CENTER_X,
+                                               -APERTURE_CAMERA_CENTER_Y,
+                                               -APERTURE_CAMERA_CENTER_Z)))),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addKeyFrame(&apertureKeyFrame)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     KeyFrame farSideKeyFrame;
     farSideKeyFrame.id = 2U;
-    farSideKeyFrame.setPose(
-        Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                     Eigen::Vector3f(-FAR_SIDE_CAMERA_CENTER_X,
-                                     -FAR_SIDE_CAMERA_CENTER_Y,
-                                     -FAR_SIDE_CAMERA_CENTER_Z)));
-    p_map->addKeyFrame(&farSideKeyFrame);
+    ASSERT_EQ((farSideKeyFrame.setPose(
+                  Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                               Eigen::Vector3f(-FAR_SIDE_CAMERA_CENTER_X,
+                                               -FAR_SIDE_CAMERA_CENTER_Y,
+                                               -FAR_SIDE_CAMERA_CENTER_Z)))),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addKeyFrame(&farSideKeyFrame)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     // --- SemanticsManager + traversal evidence -----------------------------
     SemanticsManager manager(&atlas);

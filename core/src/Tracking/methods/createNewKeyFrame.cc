@@ -54,7 +54,14 @@ void Tracking::createNewKeyFrame()
         p_keyFrame->isImu = true;
     }
 
-    p_keyFrame->setNewBias(currentFrame.imuBias);
+    if (p_keyFrame->setNewBias(currentFrame.imuBias) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setNewBias returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     p_referenceKF                    = p_keyFrame;
     currentFrame.p_referenceKeyFrame = p_keyFrame;
 
@@ -73,14 +80,29 @@ void Tracking::createNewKeyFrame()
     if (sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
         sensor == System::IMU_RGBD)
     {
+        IMU::Bias keyFrameImuBias{};
+        if (p_keyFrame->getImuBias(keyFrameImuBias) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuBias returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         p_imuPreintegratedFromLastKF =
-            new IMU::Preintegrated(p_keyFrame->getImuBias(),
-                                   p_keyFrame->imuCalibration);
+            new IMU::Preintegrated(keyFrameImuBias, p_keyFrame->imuCalibration);
     }
 
     if (sensor != System::MONOCULAR && sensor != System::IMU_MONOCULAR)
     {
-        currentFrame.updatePoseMatrices();
+        if (currentFrame.updatePoseMatrices() !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updatePoseMatrices returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         // We sort points by the measured depth by the stereo/RGBD sensor.
         // We create all those MapPoints whose depth < mThDepth.
         // If there are less than 100 close points we create the 100 closest.
@@ -122,11 +144,25 @@ void Tracking::createNewKeyFrame()
                 {
                     shouldCreateNewPoint = true;
                 }
-                else if (p_mapPoint->getObservationCount() < 1)
+                else
                 {
-                    shouldCreateNewPoint = true;
-                    currentFrame.mapPoints[keyPointIndex] =
-                        static_cast<MapPoint *>(nullptr);
+                    int mapPointObservationCount{};
+                    if (p_mapPoint->getObservationCount(
+                            mapPointObservationCount) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getObservationCount returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (mapPointObservationCount < 1)
+                    {
+                        shouldCreateNewPoint = true;
+                        currentFrame.mapPoints[keyPointIndex] =
+                            static_cast<MapPoint *>(nullptr);
+                    }
                 }
 
                 if (shouldCreateNewPoint)
@@ -135,17 +171,49 @@ void Tracking::createNewKeyFrame()
 
                     if (currentFrame.leftKeyPointCount == -1)
                     {
-                        currentFrame.unprojectStereo(keyPointIndex, x3D);
+                        bool currentFrameIsUnprojected{};
+                        if (currentFrame.unprojectStereo(
+                                keyPointIndex,
+                                x3D,
+                                currentFrameIsUnprojected) !=
+                            FrameStatus::FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: unprojectStereo returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                     }
                     else
                     {
-                        x3D =
-                            currentFrame.unprojectStereoFishEye(keyPointIndex);
+                        Eigen::Vector3f currentFrameStereoFishEye{};
+                        if (currentFrame.unprojectStereoFishEye(
+                                keyPointIndex,
+                                currentFrameStereoFishEye) !=
+                            FrameStatus::FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: unprojectStereoFishEye returned "
+                                         "a failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        x3D = currentFrameStereoFishEye;
                     }
 
                     MapPoint *p_newMapPoint =
                         new MapPoint(x3D, p_keyFrame, p_atlas->getCurrentMap());
-                    p_newMapPoint->addObservation(p_keyFrame, keyPointIndex);
+                    if (p_newMapPoint->addObservation(p_keyFrame,
+                                                      keyPointIndex) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addObservation returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     // Check if it is a stereo observation in order to not
                     // duplicate mappoints
@@ -156,19 +224,61 @@ void Tracking::createNewKeyFrame()
                             [currentFrame.leftKeyPointCount +
                              currentFrame.leftToRightMatches[keyPointIndex]] =
                             p_newMapPoint;
-                        p_newMapPoint->addObservation(
-                            p_keyFrame,
-                            currentFrame.leftKeyPointCount +
-                                currentFrame.leftToRightMatches[keyPointIndex]);
-                        p_keyFrame->addMapPoint(
-                            p_newMapPoint,
-                            currentFrame.leftKeyPointCount +
-                                currentFrame.leftToRightMatches[keyPointIndex]);
+                        if (p_newMapPoint->addObservation(
+                                p_keyFrame,
+                                currentFrame.leftKeyPointCount +
+                                    currentFrame
+                                        .leftToRightMatches[keyPointIndex]) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: addObservation returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (p_keyFrame->addMapPoint(
+                                p_newMapPoint,
+                                currentFrame.leftKeyPointCount +
+                                    currentFrame
+                                        .leftToRightMatches[keyPointIndex]) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: addMapPoint returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
                     }
 
-                    p_keyFrame->addMapPoint(p_newMapPoint, keyPointIndex);
-                    p_newMapPoint->computeDistinctiveDescriptors();
-                    p_newMapPoint->updateNormalAndDepth();
+                    if (p_keyFrame->addMapPoint(p_newMapPoint, keyPointIndex) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addMapPoint returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (p_newMapPoint->computeDistinctiveDescriptors() !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: computeDistinctiveDescriptors "
+                                     "returned a failure status although it "
+                                     "cannot fail; continuing as before.",
+                                     __func__);
+                    }
+                    if (p_newMapPoint->updateNormalAndDepth() !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: updateNormalAndDepth returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
                     p_atlas->addMapPoint(p_newMapPoint);
 
                     currentFrame.mapPoints[keyPointIndex] = p_newMapPoint;

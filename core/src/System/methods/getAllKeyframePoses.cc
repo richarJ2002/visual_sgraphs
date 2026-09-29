@@ -24,6 +24,7 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -42,7 +43,16 @@ vector<Sophus::SE3f> System::getAllKeyframePoses()
     {
         KeyFrame *p_keyFrame = keyFrames[keyFrameIndex];
 
-        if (p_keyFrame->isBad())
+        bool keyFrameIsBad{};
+        if (p_keyFrame->isBad(keyFrameIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (keyFrameIsBad)
             continue;
 
         // Twb can be world frame to cam0 frame (without IMU) or body in world
@@ -50,9 +60,31 @@ vector<Sophus::SE3f> System::getAllKeyframePoses()
         Sophus::SE3f Twb;
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD) // with IMU
-            Twb = keyFrames[keyFrameIndex]->getImuPose();
+        {
+            Sophus::SE3f imuPose{};
+            if (keyFrames[keyFrameIndex]->getImuPose(imuPose) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getImuPose returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Twb = imuPose;
+        }
         else // without IMU
-            Twb = keyFrames[keyFrameIndex]->getPoseInverse();
+        {
+            Sophus::SE3f poseInverse{};
+            if (keyFrames[keyFrameIndex]->getPoseInverse(poseInverse) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Twb = poseInverse;
+        }
 
         keyFramePoses.push_back(Twb);
     }

@@ -19,6 +19,7 @@
 #include "SemanticSegmentation.h"
 
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -28,9 +29,19 @@ namespace core
 void SemanticSegmentation::addSegmentedFrameToBuffer(
     std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in)
 {
-    const std::uint64_t keyFrameId = std::get<0>(*p_tuple_in);
-    KeyFrame           *p_keyFrame = p_atlas->getKeyFrameById(keyFrameId);
-    Map *p_sourceMap = p_keyFrame == nullptr ? nullptr : p_keyFrame->getMap();
+    const std::uint64_t keyFrameId    = std::get<0>(*p_tuple_in);
+    KeyFrame           *p_keyFrame    = p_atlas->getKeyFrameById(keyFrameId);
+    Map                *p_keyFrameMap = nullptr;
+    if (!(p_keyFrame == nullptr) &&
+        p_keyFrame->getMap(p_keyFrameMap) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Map *p_sourceMap = p_keyFrame == nullptr ? nullptr : p_keyFrameMap;
 
     WorkItem droppedItem;
     bool     didDrop = false;
@@ -44,10 +55,19 @@ void SemanticSegmentation::addSegmentedFrameToBuffer(
         }
 
         WorkItem workItem;
-        workItem.keyFrameId        = keyFrameId;
+        workItem.keyFrameId = keyFrameId;
+        unsigned long sourceMapId2{};
+        if (!(p_sourceMap == nullptr) &&
+            p_sourceMap->getId(sourceMapId2) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         workItem.sourceMapId       = p_sourceMap == nullptr
                                          ? std::numeric_limits<std::uint64_t>::max()
-                                         : p_sourceMap->getId();
+                                         : sourceMapId2;
         workItem.uncertaintyImage  = std::get<1>(*p_tuple_in);
         workItem.segmentationCloud = std::get<2>(*p_tuple_in);
         segmentedImageBuffer.push_back(std::move(workItem));

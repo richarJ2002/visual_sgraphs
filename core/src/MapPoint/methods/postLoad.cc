@@ -34,8 +34,9 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::postLoad(map<long unsigned int, KeyFrame *> &keyFrameId_in,
-                        map<long unsigned int, MapPoint *> &mapPointId_in)
+MapPointStatus
+    MapPoint::postLoad(std::map<long unsigned int, KeyFrame *> &keyFrameId_in,
+                       std::map<long unsigned int, MapPoint *> &mapPointId_in)
 {
     p_referenceKeyFrame = keyFrameId_in[backupRefKeyFrameId];
     if (!p_referenceKeyFrame)
@@ -73,6 +74,8 @@ void MapPoint::postLoad(map<long unsigned int, KeyFrame *> &keyFrameId_in,
 
     backupObservationIds1.clear();
     backupObservationIds2.clear();
+
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

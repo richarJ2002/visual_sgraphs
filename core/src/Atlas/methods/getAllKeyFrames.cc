@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,8 +33,17 @@ namespace core
 
 std::vector<KeyFrame *> Atlas::getAllKeyFrames()
 {
-    unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap->getAllKeyFrames();
+    unique_lock<mutex>      lock(atlasMutex);
+    std::vector<KeyFrame *> activeMapAllKeyFrames{};
+    if (p_activeMap->getAllKeyFrames(activeMapAllKeyFrames) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapAllKeyFrames;
 }
 
 } // namespace core

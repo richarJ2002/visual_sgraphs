@@ -24,6 +24,7 @@
  */
 
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,7 +33,16 @@ namespace core
 
 Eigen::Vector3f Tracking::getImuVwb()
 {
-    return currentFrame.getVelocity();
+    Eigen::Vector3f currentFrameGetVelocity{};
+    if (currentFrame.getVelocity(currentFrameGetVelocity) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getVelocity returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return currentFrameGetVelocity;
 }
 
 } // namespace core

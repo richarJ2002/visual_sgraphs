@@ -23,6 +23,7 @@
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
+#include <rclcpp/logging.hpp>
 #include <stdint-gcc.h>
 
 namespace vs_graphs
@@ -42,17 +43,47 @@ int ORBmatcher::searchBySim3(KeyFrame                *pKF1,
     const float &cy = pKF1->cy;
 
     // Camera 1 & 2 from world
-    Sophus::SE3f T1w = pKF1->getPose();
-    Sophus::SE3f T2w = pKF2->getPose();
+    Sophus::SE3f T1w{};
+    if (pKF1->getPose(T1w) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Sophus::SE3f T2w{};
+    if (pKF2->getPose(T2w) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     // Transformation between cameras
     Sophus::Sim3f S21 = S12.inverse();
 
-    const vector<MapPoint *> mapPoints1 = pKF1->getMapPointMatches();
-    const int                N1         = mapPoints1.size();
+    std::vector<MapPoint *> mapPoints1{};
+    if (pKF1->getMapPointMatches(mapPoints1) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const int N1 = mapPoints1.size();
 
-    const vector<MapPoint *> mapPoints2 = pKF2->getMapPointMatches();
-    const int                N2         = mapPoints2.size();
+    std::vector<MapPoint *> mapPoints2{};
+    if (pKF2->getMapPointMatches(mapPoints2) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const int N2 = mapPoints2.size();
 
     vector<bool> alreadyMatched1Flags(N1, false);
     vector<bool> alreadyMatched2Flags(N2, false);
@@ -63,7 +94,16 @@ int ORBmatcher::searchBySim3(KeyFrame                *pKF1,
         if (p_mapPoint)
         {
             alreadyMatched1Flags[keyPointIndex1] = true;
-            int index2 = get<0>(p_mapPoint->getIndexInKeyFrame(pKF2));
+            std::tuple<int, int> mapPointIndexInKeyFrame{};
+            if (p_mapPoint->getIndexInKeyFrame(pKF2, mapPointIndexInKeyFrame) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getIndexInKeyFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            int index2 = get<0>(mapPointIndexInKeyFrame);
             if (index2 >= 0 && index2 < N2)
                 alreadyMatched2Flags[index2] = true;
         }
@@ -80,10 +120,27 @@ int ORBmatcher::searchBySim3(KeyFrame                *pKF1,
         if (!p_mapPoint || alreadyMatched1Flags[i1])
             continue;
 
-        if (p_mapPoint->isBad())
+        bool mapPointIsBad{};
+        if (p_mapPoint->isBad(mapPointIsBad) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad)
             continue;
 
-        Eigen::Vector3f p3Dw  = p_mapPoint->getWorldPos();
+        Eigen::Vector3f p3Dw{};
+        if (p_mapPoint->getWorldPos(p3Dw) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         Eigen::Vector3f p3Dc1 = T1w * p3Dw;
         Eigen::Vector3f p3Dc2 = S21 * p3Dc1;
 
@@ -99,31 +156,81 @@ int ORBmatcher::searchBySim3(KeyFrame                *pKF1,
         const float v = fy * y + cy;
 
         // Point must be inside the image
-        if (!pKF2->isInImage(u, v))
+        bool pKF2IsInImage{};
+        if (pKF2->isInImage(u, v, pKF2IsInImage) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isInImage returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!pKF2IsInImage)
             continue;
 
-        const float maximumDistance = p_mapPoint->getMaxDistanceInvariance();
-        const float minimumDistance = p_mapPoint->getMinDistanceInvariance();
-        const float distance3d      = p3Dc2.norm();
+        float maximumDistance{};
+        if (p_mapPoint->getMaxDistanceInvariance(maximumDistance) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getMaxDistanceInvariance returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        float minimumDistance{};
+        if (p_mapPoint->getMinDistanceInvariance(minimumDistance) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getMinDistanceInvariance returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        const float distance3d = p3Dc2.norm();
 
         // Depth must be inside the scale invariance region
         if (distance3d < minimumDistance || distance3d > maximumDistance)
             continue;
 
         // Compute predicted octave
-        const int predictedLevelCount =
-            p_mapPoint->predictScale(distance3d, pKF2);
+        int predictedLevelCount{};
+        if (p_mapPoint->predictScale(distance3d, pKF2, predictedLevelCount) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: predictScale returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Search in a radius
         const float radius = th * pKF2->scaleFactors[predictedLevelCount];
 
-        const vector<size_t> indices = pKF2->getFeaturesInArea(u, v, radius);
+        std::vector<size_t> indices{};
+        if (pKF2->getFeaturesInArea(u, v, radius, indices) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getFeaturesInArea returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (indices.empty())
             continue;
 
         // Match to the most similar keypoint in the radius
-        const cv::Mat mapPointDescriptor = p_mapPoint->getDescriptor();
+        cv::Mat mapPointDescriptor{};
+        if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getDescriptor returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         int bestDistance = INT_MAX;
         int bestIndex    = -1;
@@ -168,10 +275,27 @@ int ORBmatcher::searchBySim3(KeyFrame                *pKF1,
         if (!p_mapPoint || alreadyMatched2Flags[i2])
             continue;
 
-        if (p_mapPoint->isBad())
+        bool mapPointIsBad2{};
+        if (p_mapPoint->isBad(mapPointIsBad2) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad2)
             continue;
 
-        Eigen::Vector3f p3Dw  = p_mapPoint->getWorldPos();
+        Eigen::Vector3f p3Dw{};
+        if (p_mapPoint->getWorldPos(p3Dw) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         Eigen::Vector3f p3Dc2 = T2w * p3Dw;
         Eigen::Vector3f p3Dc1 = S12 * p3Dc2;
 
@@ -187,31 +311,81 @@ int ORBmatcher::searchBySim3(KeyFrame                *pKF1,
         const float v = fy * y + cy;
 
         // Point must be inside the image
-        if (!pKF1->isInImage(u, v))
+        bool pKF1IsInImage{};
+        if (pKF1->isInImage(u, v, pKF1IsInImage) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isInImage returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!pKF1IsInImage)
             continue;
 
-        const float maximumDistance = p_mapPoint->getMaxDistanceInvariance();
-        const float minimumDistance = p_mapPoint->getMinDistanceInvariance();
-        const float distance3d      = p3Dc1.norm();
+        float maximumDistance{};
+        if (p_mapPoint->getMaxDistanceInvariance(maximumDistance) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getMaxDistanceInvariance returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        float minimumDistance{};
+        if (p_mapPoint->getMinDistanceInvariance(minimumDistance) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getMinDistanceInvariance returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        const float distance3d = p3Dc1.norm();
 
         // Depth must be inside the scale pyramid of the image
         if (distance3d < minimumDistance || distance3d > maximumDistance)
             continue;
 
         // Compute predicted octave
-        const int predictedLevelCount =
-            p_mapPoint->predictScale(distance3d, pKF1);
+        int predictedLevelCount{};
+        if (p_mapPoint->predictScale(distance3d, pKF1, predictedLevelCount) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: predictScale returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Search in a radius of 2.5*sigma(ScaleLevel)
         const float radius = th * pKF1->scaleFactors[predictedLevelCount];
 
-        const vector<size_t> indices = pKF1->getFeaturesInArea(u, v, radius);
+        std::vector<size_t> indices{};
+        if (pKF1->getFeaturesInArea(u, v, radius, indices) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getFeaturesInArea returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (indices.empty())
             continue;
 
         // Match to the most similar keypoint in the radius
-        const cv::Mat mapPointDescriptor = p_mapPoint->getDescriptor();
+        cv::Mat mapPointDescriptor{};
+        if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getDescriptor returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         int bestDistance = INT_MAX;
         int bestIndex    = -1;

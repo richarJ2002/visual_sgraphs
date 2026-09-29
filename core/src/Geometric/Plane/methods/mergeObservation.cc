@@ -37,7 +37,17 @@ namespace geometric
 PlaneStatus Plane::mergeObservation(core::KeyFrame    *p_keyFrame_inout,
                                     const Observation &observation_in)
 {
-    if (p_keyFrame_inout == nullptr || p_keyFrame_inout->isBad())
+    bool keyFrameIsBad{};
+    if (!(p_keyFrame_inout == nullptr) &&
+        p_keyFrame_inout->isBad(keyFrameIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_keyFrame_inout == nullptr || keyFrameIsBad)
     {
         return PlaneStatus::PLANE_STATUS_SUCCESS;
     }

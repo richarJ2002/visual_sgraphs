@@ -29,13 +29,14 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void KeyFrame::updateBestCovisibles()
+KeyFrameStatus KeyFrame::updateBestCovisibles()
 {
     unique_lock<mutex>            lock(connectionsMutex);
     vector<pair<int, KeyFrame *>> pairs;
@@ -54,7 +55,16 @@ void KeyFrame::updateBestCovisibles()
     {
         if (pairs[pairIndex].second != nullptr)
         {
-            if (!pairs[pairIndex].second->isBad())
+            bool isBad2{};
+            if (pairs[pairIndex].second->isBad(isBad2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!isBad2)
             {
                 keyFrames.push_front(pairs[pairIndex].second);
                 weights.push_front(pairs[pairIndex].first);
@@ -65,6 +75,8 @@ void KeyFrame::updateBestCovisibles()
     orderedConnectedKeyFrames =
         vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
     orderedWeights = vector<int>(weights.begin(), weights.end());
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

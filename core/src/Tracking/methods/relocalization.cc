@@ -43,7 +43,13 @@ bool Tracking::relocalization()
 {
     Verbose::printMess("Starting relocalization", Verbose::VERBOSITY_NORMAL);
     // Compute Bag of Words Vector
-    currentFrame.computeBagOfWords();
+    if (currentFrame.computeBagOfWords() != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeBagOfWords returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // STRUCTURAL PRIORS: Use room centroids from S-Graph to guide
     // relocalization In office corridors, room/passage markers provide strong
@@ -53,7 +59,15 @@ bool Tracking::relocalization()
     Map                     *p_currentMap = p_atlas->getCurrentMap();
     if (p_currentMap)
     {
-        const auto &rooms = p_currentMap->getAllDetectedMapRooms();
+        std::vector<semantic::Room *> rooms{};
+        if (p_currentMap->getAllDetectedMapRooms(rooms) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllDetectedMapRooms returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (semantic::Room *p_room : rooms)
         {
             bool roomIsBad{};
@@ -130,7 +144,16 @@ bool Tracking::relocalization()
     for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount; keyFrameIndex++)
     {
         KeyFrame *p_keyFrame = candidateKeyFrames[keyFrameIndex];
-        if (p_keyFrame->isBad())
+        bool      keyFrameIsBad{};
+        if (p_keyFrame->isBad(keyFrameIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (keyFrameIsBad)
             discardedFlags[keyFrameIndex] = true;
         else
         {
@@ -167,8 +190,17 @@ bool Tracking::relocalization()
     {
         // Get current frame's estimated position from IMU prediction or motion
         // model
+        Sophus::SE3<float> currentFrameGetPose{};
+        if (currentFrame.getPose(currentFrameGetPose) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         Eigen::Vector3f currentPosition =
-            currentFrame.getPose().translation().head<3>();
+            currentFrameGetPose.translation().head<3>();
 
         // Score candidates by: visual matches + proximity to known room
         // centroids
@@ -179,9 +211,18 @@ bool Tracking::relocalization()
             if (discardedFlags[keyFrameIndex])
                 continue;
 
-            KeyFrame       *p_keyFrame = candidateKeyFrames[keyFrameIndex];
+            KeyFrame    *p_keyFrame = candidateKeyFrames[keyFrameIndex];
+            Sophus::SE3f keyFramePose{};
+            if (p_keyFrame->getPose(keyFramePose) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPose returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             Eigen::Vector3f keyFramePosition =
-                p_keyFrame->getPose().translation().head<3>();
+                keyFramePose.translation().head<3>();
 
             // Visual match score (normalized)
             int nmatches = vvpMapPointMatches[keyFrameIndex].size();
@@ -265,7 +306,15 @@ bool Tracking::relocalization()
             if (bTcw)
             {
                 Sophus::SE3f Tcw(eigTcw);
-                currentFrame.setPose(Tcw);
+                if (currentFrame.setPose(Tcw) !=
+                    FrameStatus::FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 // Tcw.copyTo(mCurrentFrame.poseTcw);
 
                 set<MapPoint *> founds;

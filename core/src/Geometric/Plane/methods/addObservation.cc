@@ -25,6 +25,7 @@
 #include <limits>
 #include <mutex>
 #include <pcl/octree/octree_search.h>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 namespace vs_graphs
@@ -38,7 +39,17 @@ PlaneStatus Plane::addObservation(core::KeyFrame    *p_keyFrame_inout,
                                   const Observation &observation_in)
 {
     /* Confirm the keyframe is valid */
-    if (p_keyFrame_inout == nullptr || p_keyFrame_inout->isBad())
+    bool keyFrameIsBad{};
+    if (!(p_keyFrame_inout == nullptr) &&
+        p_keyFrame_inout->isBad(keyFrameIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_keyFrame_inout == nullptr || keyFrameIsBad)
     {
         return PlaneStatus::PLANE_STATUS_SUCCESS;
     }

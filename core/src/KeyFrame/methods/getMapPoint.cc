@@ -35,10 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-MapPoint *KeyFrame::getMapPoint(const size_t &index_in)
+KeyFrameStatus KeyFrame::getMapPoint(const size_t &index_in,
+                                     MapPoint    *&p_mapPoint_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return mapPoints[index_in];
+    p_mapPoint_out = mapPoints[index_in];
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-long unsigned int Map::getInitKeyFrameId()
+MapStatus Map::getInitKeyFrameId(unsigned long &initKeyFrameId_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return initKeyFrameId;
+    initKeyFrameId_out = initKeyFrameId;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

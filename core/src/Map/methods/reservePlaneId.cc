@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-int Map::reservePlaneId(void)
+MapStatus Map::reservePlaneId(int &planeId_out)
 {
     unique_lock<mutex> lock(mapMutex);
 
@@ -43,7 +43,8 @@ int Map::reservePlaneId(void)
         ++nextAvailablePlaneId;
     }
 
-    return nextAvailablePlaneId++;
+    planeId_out = nextAvailablePlaneId++;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

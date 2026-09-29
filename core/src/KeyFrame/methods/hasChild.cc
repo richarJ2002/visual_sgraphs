@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool KeyFrame::hasChild(KeyFrame *p_keyFrame_in)
+KeyFrameStatus KeyFrame::hasChild(KeyFrame *p_keyFrame_in, bool &hasChild_out)
 {
     unique_lock<mutex> lockCon(connectionsMutex);
-    return childrens.count(p_keyFrame_in);
+    hasChild_out = childrens.count(p_keyFrame_in);
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

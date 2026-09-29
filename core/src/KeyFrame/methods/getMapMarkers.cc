@@ -35,10 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<semantic::Marker *> KeyFrame::getMapMarkers()
+KeyFrameStatus
+    KeyFrame::getMapMarkers(std::vector<semantic::Marker *> &mapMarkers_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return mapMarkers;
+    mapMarkers_out = mapMarkers;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

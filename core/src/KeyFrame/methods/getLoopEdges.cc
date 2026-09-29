@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-set<KeyFrame *> KeyFrame::getLoopEdges()
+KeyFrameStatus KeyFrame::getLoopEdges(std::set<KeyFrame *> &loopEdges_out)
 {
     unique_lock<mutex> lockCon(connectionsMutex);
-    return loopEdges;
+    loopEdges_out = loopEdges;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

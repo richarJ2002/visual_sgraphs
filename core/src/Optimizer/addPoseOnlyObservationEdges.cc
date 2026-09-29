@@ -32,6 +32,7 @@
 
 #include <cmath>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -87,8 +88,18 @@ void addPoseOnlyObservationEdges(
                     Eigen::Matrix<double, 2, 1> observation;
                     observation << keyPointUn.pt.x, keyPointUn.pt.y;
 
+                    Eigen::Vector3f mapPointWorldPos{};
+                    if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getWorldPos returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     EdgeMonoOnlyPose *e =
-                        new EdgeMonoOnlyPose(p_mapPoint->getWorldPos(), 0);
+                        new EdgeMonoOnlyPose(mapPointWorldPos, 0);
 
                     e->setVertex(0, p_poseVertex_in);
                     e->setMeasurement(observation);
@@ -126,8 +137,18 @@ void addPoseOnlyObservationEdges(
                     observation << keyPointUn.pt.x, keyPointUn.pt.y,
                         rightKeyPointU;
 
+                    Eigen::Vector3f mapPointWorldPos2{};
+                    if (p_mapPoint->getWorldPos(mapPointWorldPos2) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getWorldPos returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     EdgeStereoOnlyPose *e =
-                        new EdgeStereoOnlyPose(p_mapPoint->getWorldPos());
+                        new EdgeStereoOnlyPose(mapPointWorldPos2);
 
                     e->setVertex(0, p_poseVertex_in);
                     e->setMeasurement(observation);
@@ -164,8 +185,18 @@ void addPoseOnlyObservationEdges(
                     Eigen::Matrix<double, 2, 1> observation;
                     observation << keyPointUn.pt.x, keyPointUn.pt.y;
 
+                    Eigen::Vector3f mapPointWorldPos3{};
+                    if (p_mapPoint->getWorldPos(mapPointWorldPos3) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getWorldPos returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     EdgeMonoOnlyPose *e =
-                        new EdgeMonoOnlyPose(p_mapPoint->getWorldPos(), 1);
+                        new EdgeMonoOnlyPose(mapPointWorldPos3, 1);
 
                     e->setVertex(0, p_poseVertex_in);
                     e->setMeasurement(observation);

@@ -34,8 +34,14 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
         return;
     }
 
-    std::vector<vs_graphs::core::semantic::Floor *> floors =
-        p_currentMap->getAllFloors();
+    std::vector<vs_graphs::core::semantic::Floor *> floors{};
+    if (p_currentMap->getAllFloors(floors) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     semantic::Floor *p_canonicalFloor = nullptr;
     if (semantic::Floor::selectBestObservedFloor(floors, p_canonicalFloor) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
@@ -75,8 +81,15 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
         return;
     }
 
-    geometric::Plane *p_canonicalGroundPlane =
-        p_currentMap->getBiggestGroundPlane();
+    geometric::Plane *p_canonicalGroundPlane = nullptr;
+    if (p_currentMap->getBiggestGroundPlane(p_canonicalGroundPlane) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (vs_graphs::core::semantic::Room *p_room :
          p_atlas->getAllDetectedMapRooms())

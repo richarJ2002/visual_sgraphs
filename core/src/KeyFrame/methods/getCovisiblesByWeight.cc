@@ -35,13 +35,16 @@ namespace vs_graphs
 namespace core
 {
 
-vector<KeyFrame *> KeyFrame::getCovisiblesByWeight(const int &w_in)
+KeyFrameStatus KeyFrame::getCovisiblesByWeight(
+    const int               &w_in,
+    std::vector<KeyFrame *> &covisiblesByWeight_out)
 {
     unique_lock<mutex> lock(connectionsMutex);
 
     if (orderedConnectedKeyFrames.empty())
     {
-        return vector<KeyFrame *>();
+        covisiblesByWeight_out = std::vector<KeyFrame *>();
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
     vector<int>::iterator weightIt = upper_bound(orderedWeights.begin(),
@@ -51,13 +54,16 @@ vector<KeyFrame *> KeyFrame::getCovisiblesByWeight(const int &w_in)
 
     if (weightIt == orderedWeights.end() && orderedWeights.back() < w_in)
     {
-        return vector<KeyFrame *>();
+        covisiblesByWeight_out = std::vector<KeyFrame *>();
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
     else
     {
         int n = weightIt - orderedWeights.begin();
-        return vector<KeyFrame *>(orderedConnectedKeyFrames.begin(),
-                                  orderedConnectedKeyFrames.begin() + n);
+        covisiblesByWeight_out =
+            std::vector<KeyFrame *>(orderedConnectedKeyFrames.begin(),
+                                    orderedConnectedKeyFrames.begin() + n);
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 }
 

@@ -31,6 +31,7 @@
 #include "Viewer.h"
 
 #include <iostream>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -92,9 +93,43 @@ void Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
 
     unsigned int index = firstFrameId;
     for (Map *p_map : p_atlas->getAllMaps())
-        if (p_map->getAllKeyFrames().size() > 0)
-            if (index > p_map->getLowerKeyFrameId())
-                index = p_map->getLowerKeyFrameId();
+    {
+        std::vector<KeyFrame *> mapAllKeyFrames{};
+        if (p_map->getAllKeyFrames(mapAllKeyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapAllKeyFrames.size() > 0)
+        {
+            unsigned int mapLowerKeyFrameId{};
+            if (p_map->getLowerKeyFrameId(mapLowerKeyFrameId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getLowerKeyFrameId returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (index > mapLowerKeyFrameId)
+            {
+                unsigned int mapLowerKeyFrameId2{};
+                if (p_map->getLowerKeyFrameId(mapLowerKeyFrameId2) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getLowerKeyFrameId returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                index = mapLowerKeyFrameId2;
+            }
+        }
+    }
 
     // Count lost frames
     std::list<bool> lbLost;

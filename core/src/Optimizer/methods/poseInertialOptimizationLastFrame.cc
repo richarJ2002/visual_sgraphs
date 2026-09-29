@@ -31,6 +31,7 @@
 #include "System.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -305,10 +306,17 @@ int Optimizer::poseInertialOptimizationLastFrame(Frame *p_frame_inout,
     inlierCount = inliersMonoCount + inliersStereoCount;
 
     // Recover optimized pose, velocity and biases
-    p_frame_inout->setImuPoseVelocity(
-        p_poseVertex->estimate().Rwb.cast<float>(),
-        p_poseVertex->estimate().twb.cast<float>(),
-        p_velocityVertex->estimate().cast<float>());
+    if (p_frame_inout->setImuPoseVelocity(
+            p_poseVertex->estimate().Rwb.cast<float>(),
+            p_poseVertex->estimate().twb.cast<float>(),
+            p_velocityVertex->estimate().cast<float>()) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setImuPoseVelocity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     Vector6d b;
     b << p_gyroBiasVertex->estimate(), p_accelerometerBiasVertex->estimate();
     p_frame_inout->imuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);

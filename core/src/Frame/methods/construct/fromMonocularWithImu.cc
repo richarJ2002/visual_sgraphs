@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -101,7 +102,14 @@ Frame::Frame(const cv::Mat                                   &imageColor_in,
     std::chrono::steady_clock::time_point timeStartExtOrb =
         std::chrono::steady_clock::now();
 #endif
-    extractOrbFeatures(0, imageGray_in, 0, 1000);
+    if (extractOrbFeatures(0, imageGray_in, 0, 1000) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: extractOrbFeatures returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point timeEndExtOrb =
         std::chrono::steady_clock::now();
@@ -117,7 +125,13 @@ Frame::Frame(const cv::Mat                                   &imageColor_in,
     if (keyPoints.empty())
         return;
 
-    undistortKeyPoints();
+    if (undistortKeyPoints() != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: undistortKeyPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Set no stereo information
     closeMapPointCount = 0;
@@ -140,7 +154,14 @@ Frame::Frame(const cv::Mat                                   &imageColor_in,
     // calibration)
     if (areInitialComputationsDone)
     {
-        computeImageBounds(imageGray_in);
+        if (computeImageBounds(imageGray_in) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeImageBounds returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         gridElementWidthInverse = static_cast<float>(FRAME_GRID_COLS) /
                                   static_cast<float>(gridMaxX - gridMinX);
@@ -176,13 +197,44 @@ Frame::Frame(const cv::Mat                                   &imageColor_in,
     rightToLeftMatches = vector<int>(0);
     stereoPoints3D     = vector<Eigen::Vector3f>(0);
 
-    assignFeaturesToGrid();
+    if (assignFeaturesToGrid() != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: assignFeaturesToGrid returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (p_previousF_in)
     {
-        if (p_previousF_in->hasVelocity())
+        bool previousFHasVelocity{};
+        if (p_previousF_in->hasVelocity(previousFHasVelocity) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
         {
-            setVelocity(p_previousF_in->getVelocity());
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (previousFHasVelocity)
+        {
+            Eigen::Vector3f previousFGetVelocity{};
+            if (p_previousF_in->getVelocity(previousFGetVelocity) !=
+                FrameStatus::FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (setVelocity(previousFGetVelocity) !=
+                FrameStatus::FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
     else

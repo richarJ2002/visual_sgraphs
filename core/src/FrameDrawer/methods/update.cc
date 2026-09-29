@@ -8,6 +8,7 @@
 #include "Tracking.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -68,7 +69,18 @@ void FrameDrawer::update(Tracking *p_tracker_in)
             {
                 if (!p_tracker_in->currentFrame.outlierFlags[keyPointIndex])
                 {
-                    if (p_mapPoint->getObservationCount() > 0)
+                    int mapPointObservationCount{};
+                    if (p_mapPoint->getObservationCount(
+                            mapPointObservationCount) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getObservationCount returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (mapPointObservationCount > 0)
                         isTrackedMapPoint[keyPointIndex] = true;
                     else
                         isVisualOdometryPoint[keyPointIndex] = true;

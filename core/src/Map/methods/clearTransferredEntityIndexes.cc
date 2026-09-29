@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::clearTransferredEntityIndexes()
+MapStatus Map::clearTransferredEntityIndexes()
 {
     unique_lock<mutex> lock(mapMutex);
     floorIndex.clear();
@@ -43,6 +43,8 @@ void Map::clearTransferredEntityIndexes()
     keyFrameIndex.clear();
     passageIndex.clear();
     roomWallPlaneIndex.clear();
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

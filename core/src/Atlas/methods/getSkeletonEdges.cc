@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -42,7 +43,17 @@ std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
     }
 
     /* Return the connected edges from the active map */
-    return p_activeMap->getSkeletonEdges();
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+        activeMapSkeletonEdges{};
+    if (p_activeMap->getSkeletonEdges(activeMapSkeletonEdges) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSkeletonEdges returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapSkeletonEdges;
 }
 
 } // namespace core

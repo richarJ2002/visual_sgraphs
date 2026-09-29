@@ -34,7 +34,8 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::addObservation(KeyFrame *p_keyFrame_inout, int index_in)
+MapPointStatus MapPoint::addObservation(KeyFrame *p_keyFrame_inout,
+                                        int       index_in)
 {
     unique_lock<mutex> lock(featuresMutex);
     tuple<int, int>    indexes;
@@ -64,6 +65,8 @@ void MapPoint::addObservation(KeyFrame *p_keyFrame_inout, int index_in)
         observationCount += 2;
     else
         observationCount++;
+
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -55,9 +55,22 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    std::vector<semantic::Passage *> passages = p_activeMap->getAllPassages();
-    const std::vector<semantic::Room *> activeRooms =
-        p_activeMap->getAllRooms();
+    std::vector<semantic::Passage *> passages{};
+    if (p_activeMap->getAllPassages(passages) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> activeRooms{};
+    if (p_activeMap->getAllRooms(activeRooms) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     const std::unordered_set<semantic::Room *> activeRoomSet(
         activeRooms.begin(),
         activeRooms.end());
@@ -578,7 +591,16 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                 }
             }
 
-            for (semantic::Room *p_room : p_activeMap->getAllRooms())
+            std::vector<semantic::Room *> activeMapAllRooms{};
+            if (p_activeMap->getAllRooms(activeMapAllRooms) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllRooms returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (semantic::Room *p_room : activeMapAllRooms)
             {
                 bool roomIsBad{};
                 if ((p_room != nullptr) &&
@@ -608,16 +630,52 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                 }
             }
 
-            for (KeyFrame *p_keyFrame : p_activeMap->getAllKeyFrames())
+            std::vector<KeyFrame *> activeMapAllKeyFrames{};
+            if (p_activeMap->getAllKeyFrames(activeMapAllKeyFrames) !=
+                MapStatus::MAP_STATUS_SUCCESS)
             {
-                if (p_keyFrame != nullptr && !p_keyFrame->isBad())
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllKeyFrames returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (KeyFrame *p_keyFrame : activeMapAllKeyFrames)
+            {
+                bool keyFrameIsBad{};
+                if ((p_keyFrame != nullptr) &&
+                    p_keyFrame->isBad(keyFrameIsBad) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                 {
-                    p_keyFrame->replaceMapPassage(p_candidatePassage,
-                                                  p_retainedPassage);
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_keyFrame != nullptr && !keyFrameIsBad)
+                {
+                    bool keyFrameWasReplaced{};
+                    if (p_keyFrame->replaceMapPassage(p_candidatePassage,
+                                                      p_retainedPassage,
+                                                      keyFrameWasReplaced) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        keyFrameWasReplaced = false;
+                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                    "%s: replaceMapPassage rejected its input; "
+                                    "continuing as before.",
+                                    __func__);
+                    }
                 }
             }
 
-            p_activeMap->eraseMapPassage(p_candidatePassage);
+            if (p_activeMap->eraseMapPassage(p_candidatePassage) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPassage returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (p_candidatePassage->setProspectiveRoom(nullptr) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {

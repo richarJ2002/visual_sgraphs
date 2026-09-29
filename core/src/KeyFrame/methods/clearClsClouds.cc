@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::clearClsClouds()
+KeyFrameStatus KeyFrame::clearClsClouds()
 {
     for (auto &p_clsCloud : currentClsCloudPtrs)
     {
@@ -43,6 +43,8 @@ void KeyFrame::clearClsClouds()
         p_clsCloud = nullptr;
     }
     currentClsCloudPtrs.clear();
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -43,9 +43,10 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f Frame::getVelocity() const
+FrameStatus Frame::getVelocity(Eigen::Vector3f &getVelocity_out) const
 {
-    return velocityVw;
+    getVelocity_out = velocityVw;
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -35,13 +35,14 @@ namespace vs_graphs
 namespace core
 {
 
-bool KeyFrame::replaceMapPlane(geometric::Plane *p_retiredPlane_in,
-                               geometric::Plane *p_retainedPlane_in)
+KeyFrameStatus KeyFrame::replaceMapPlane(geometric::Plane *p_retiredPlane_in,
+                                         geometric::Plane *p_retainedPlane_in,
+                                         bool             &wasReplaced_out)
 {
     if (p_retiredPlane_in == nullptr || p_retainedPlane_in == nullptr ||
         p_retiredPlane_in == p_retainedPlane_in)
     {
-        return false;
+        return KeyFrameStatus::KEY_FRAME_STATUS_INVALID_ARGUMENT;
     }
 
     unique_lock<mutex> lock(featuresMutex);
@@ -76,7 +77,8 @@ bool KeyFrame::replaceMapPlane(geometric::Plane *p_retiredPlane_in,
         mapPlanes.swap(rebuiltPlanes);
     }
 
-    return replacedRetiredPlane;
+    wasReplaced_out = replacedRetiredPlane;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

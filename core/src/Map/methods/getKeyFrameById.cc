@@ -34,12 +34,15 @@ namespace vs_graphs
 namespace core
 {
 
-KeyFrame *Map::getKeyFrameById(long unsigned int idCount_in)
+MapStatus Map::getKeyFrameById(long unsigned int idCount_in,
+                               KeyFrame        *&p_keyFrameById_out)
 {
     unique_lock<mutex> lock(mapMutex);
     const auto         keyFrameIterator = keyFrameIndex.find(idCount_in);
-    return keyFrameIterator != keyFrameIndex.end() ? keyFrameIterator->second
-                                                   : nullptr;
+    p_keyFrameById_out = keyFrameIterator != keyFrameIndex.end()
+                             ? keyFrameIterator->second
+                             : nullptr;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

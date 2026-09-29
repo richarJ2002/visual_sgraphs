@@ -30,6 +30,7 @@
 #include "Tracking.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -82,10 +83,25 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
     for (std::size_t keyFrameIndex = 1; keyFrameIndex < orderedKeyFrames.size();
          ++keyFrameIndex)
     {
-        accumulatedTranslation_m +=
-            (orderedKeyFrames[keyFrameIndex]->getCameraCenter() -
-             orderedKeyFrames[keyFrameIndex - 1]->getCameraCenter())
-                .norm();
+        Eigen::Vector3f cameraCenter{};
+        if (orderedKeyFrames[keyFrameIndex]->getCameraCenter(cameraCenter) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCameraCenter returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f cameraCenter2{};
+        if (orderedKeyFrames[keyFrameIndex - 1]->getCameraCenter(
+                cameraCenter2) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCameraCenter returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        accumulatedTranslation_m += (cameraCenter - cameraCenter2).norm();
     }
 
     constexpr double minimumInitializationTranslation_m = 0.05;
@@ -105,7 +121,25 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
     IMU::Bias zeroImuBias(0, 0, 0, 0, 0, 0);
 
     // Compute and KF velocities mRwg estimation
-    if (!p_currentKeyFrame->getMap()->isImuInitialized())
+    Map *p_currentKeyFrameMap = nullptr;
+    if (p_currentKeyFrame->getMap(p_currentKeyFrameMap) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    bool isImuInitialized2{};
+    if (p_currentKeyFrameMap->isImuInitialized(isImuInitialized2) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!isImuInitialized2)
     {
         Eigen::Matrix3f Rwg;
         Eigen::Vector3f gravityDirection;
@@ -120,16 +154,56 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
             if (!(*orderedKeyFrameIt)->p_prevKF)
                 continue;
 
+            Eigen::Matrix3f imuRotation{};
+            if ((*orderedKeyFrameIt)->p_prevKF->getImuRotation(imuRotation) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getImuRotation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             gravityDirection -=
-                (*orderedKeyFrameIt)->p_prevKF->getImuRotation() *
+                imuRotation *
                 (*orderedKeyFrameIt)
                     ->p_imuPreintegrated->getUpdatedDeltaVelocity();
+            Eigen::Vector3f imuPosition{};
+            if ((*orderedKeyFrameIt)->getImuPosition(imuPosition) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getImuPosition returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Eigen::Vector3f imuPosition2{};
+            if ((*orderedKeyFrameIt)->p_prevKF->getImuPosition(imuPosition2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getImuPosition returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             Eigen::Vector3f keyFrameVelocity =
-                ((*orderedKeyFrameIt)->getImuPosition() -
-                 (*orderedKeyFrameIt)->p_prevKF->getImuPosition()) /
+                (imuPosition - imuPosition2) /
                 (*orderedKeyFrameIt)->p_imuPreintegrated->dT;
-            (*orderedKeyFrameIt)->setVelocity(keyFrameVelocity);
-            (*orderedKeyFrameIt)->p_prevKF->setVelocity(keyFrameVelocity);
+            if ((*orderedKeyFrameIt)->setVelocity(keyFrameVelocity) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if ((*orderedKeyFrameIt)->p_prevKF->setVelocity(keyFrameVelocity) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         gravityDirection = gravityDirection / gravityDirection.norm();
@@ -151,8 +225,26 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
     else
     {
         mRwg = Eigen::Matrix3d::Identity();
-        mbg  = p_currentKeyFrame->getGyroBias().cast<double>();
-        mba  = p_currentKeyFrame->getAccBias().cast<double>();
+        Eigen::Vector3f currentKeyFrameGyroBias{};
+        if (p_currentKeyFrame->getGyroBias(currentKeyFrameGyroBias) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGyroBias returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        mbg = currentKeyFrameGyroBias.cast<double>();
+        Eigen::Vector3f currentKeyFrameAccBias{};
+        if (p_currentKeyFrame->getAccBias(currentKeyFrameAccBias) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAccBias returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        mba = currentKeyFrameAccBias.cast<double>();
     }
 
     scale = 1.0;
@@ -197,10 +289,25 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
         {
             Sophus::SE3f Twg(mRwg.cast<float>().transpose(),
                              Eigen::Vector3f::Zero());
-            p_activeMap->applyScaledRotation(Twg, scale, true);
-            p_tracker->updateFrameIMU(scale,
-                                      orderedKeyFrames[0]->getImuBias(),
-                                      p_currentKeyFrame);
+            if (p_activeMap->applyScaledRotation(Twg, scale, true) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: applyScaledRotation returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            IMU::Bias imuBias{};
+            if (orderedKeyFrames[0]->getImuBias(imuBias) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getImuBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            p_tracker->updateFrameIMU(scale, imuBias, p_currentKeyFrame);
         }
 
         // Check if initialization OK
@@ -213,9 +320,16 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
             }
     }
 
-    p_tracker->updateFrameIMU(1.0,
-                              orderedKeyFrames[0]->getImuBias(),
-                              p_currentKeyFrame);
+    IMU::Bias imuBias2{};
+    if (orderedKeyFrames[0]->getImuBias(imuBias2) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getImuBias returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    p_tracker->updateFrameIMU(1.0, imuBias2, p_currentKeyFrame);
     if (!p_atlas->isImuInitialized())
     {
         p_atlas->setImuInitialized();
@@ -270,29 +384,95 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
 
     while (!keyFramesToCorrect.empty())
     {
-        KeyFrame             *p_walkKeyFrame = keyFramesToCorrect.front();
-        const set<KeyFrame *> childKeyFrames = p_walkKeyFrame->getChilds();
-        Sophus::SE3f          Twc            = p_walkKeyFrame->getPoseInverse();
+        KeyFrame            *p_walkKeyFrame = keyFramesToCorrect.front();
+        std::set<KeyFrame *> childKeyFrames{};
+        if (p_walkKeyFrame->getChilds(childKeyFrames) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getChilds returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3f Twc{};
+        if (p_walkKeyFrame->getPoseInverse(Twc) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPoseInverse returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (set<KeyFrame *>::const_iterator childKeyFrameIt =
                  childKeyFrames.begin();
              childKeyFrameIt != childKeyFrames.end();
              childKeyFrameIt++)
         {
             KeyFrame *p_childKeyFrame = *childKeyFrameIt;
-            if (!p_childKeyFrame || p_childKeyFrame->isBad())
+            bool      childKeyFrameIsBad{};
+            if (!(!p_childKeyFrame) &&
+                p_childKeyFrame->isBad(childKeyFrameIsBad) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!p_childKeyFrame || childKeyFrameIsBad)
                 continue;
 
             if (p_childKeyFrame->baGlobalKeyFrameId != globalBaId)
             {
-                Sophus::SE3f Tchildc    = p_childKeyFrame->getPose() * Twc;
+                Sophus::SE3f childKeyFramePose{};
+                if (p_childKeyFrame->getPose(childKeyFramePose) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                Sophus::SE3f Tchildc    = childKeyFramePose * Twc;
                 p_childKeyFrame->tcwGBA = Tchildc * p_walkKeyFrame->tcwGBA;
 
-                Sophus::SO3f Rcor = p_childKeyFrame->tcwGBA.so3().inverse() *
-                                    p_childKeyFrame->getPose().so3();
-                if (p_childKeyFrame->isVelocitySet())
+                Sophus::SE3f childKeyFramePose2{};
+                if (p_childKeyFrame->getPose(childKeyFramePose2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                 {
-                    p_childKeyFrame->vwbGBA =
-                        Rcor * p_childKeyFrame->getVelocity();
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                Sophus::SO3f Rcor = p_childKeyFrame->tcwGBA.so3().inverse() *
+                                    childKeyFramePose2.so3();
+                bool childKeyFrameIsVelocitySet{};
+                if (p_childKeyFrame->isVelocitySet(
+                        childKeyFrameIsVelocitySet) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isVelocitySet returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (childKeyFrameIsVelocitySet)
+                {
+                    Eigen::Vector3f childKeyFrameVelocity{};
+                    if (p_childKeyFrame->getVelocity(childKeyFrameVelocity) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getVelocity returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    p_childKeyFrame->vwbGBA = Rcor * childKeyFrameVelocity;
                 }
                 else
                 {
@@ -300,20 +480,69 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
                                        Verbose::VERBOSITY_NORMAL);
                 }
 
-                p_childKeyFrame->biasGBA = p_childKeyFrame->getImuBias();
+                IMU::Bias childKeyFrameImuBias{};
+                if (p_childKeyFrame->getImuBias(childKeyFrameImuBias) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getImuBias returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                p_childKeyFrame->biasGBA            = childKeyFrameImuBias;
                 p_childKeyFrame->baGlobalKeyFrameId = globalBaId;
             }
             keyFramesToCorrect.push_back(p_childKeyFrame);
         }
 
-        p_walkKeyFrame->tcwBefGBA = p_walkKeyFrame->getPose();
-        p_walkKeyFrame->setPose(p_walkKeyFrame->tcwGBA);
+        Sophus::SE3f walkKeyFramePose{};
+        if (p_walkKeyFrame->getPose(walkKeyFramePose) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_walkKeyFrame->tcwBefGBA = walkKeyFramePose;
+        if (p_walkKeyFrame->setPose(p_walkKeyFrame->tcwGBA) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (p_walkKeyFrame->isImu)
         {
-            p_walkKeyFrame->vwbBefGBA = p_walkKeyFrame->getVelocity();
-            p_walkKeyFrame->setVelocity(p_walkKeyFrame->vwbGBA);
-            p_walkKeyFrame->setNewBias(p_walkKeyFrame->biasGBA);
+            Eigen::Vector3f walkKeyFrameVelocity{};
+            if (p_walkKeyFrame->getVelocity(walkKeyFrameVelocity) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            p_walkKeyFrame->vwbBefGBA = walkKeyFrameVelocity;
+            if (p_walkKeyFrame->setVelocity(p_walkKeyFrame->vwbGBA) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_walkKeyFrame->setNewBias(p_walkKeyFrame->biasGBA) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setNewBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
@@ -324,36 +553,94 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
     }
 
     // Correct MapPoints
-    const vector<MapPoint *> allMapPoints =
-        p_atlas->getCurrentMap()->getAllMapPoints();
+    std::vector<MapPoint *> allMapPoints{};
+    if (p_atlas->getCurrentMap()->getAllMapPoints(allMapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (size_t elementIndex = 0; elementIndex < allMapPoints.size();
          elementIndex++)
     {
         MapPoint *p_mapPoint = allMapPoints[elementIndex];
 
-        if (p_mapPoint->isBad())
+        bool mapPointIsBad{};
+        if (p_mapPoint->isBad(mapPointIsBad) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad)
             continue;
 
         if (p_mapPoint->baGlobalKeyFrameId == globalBaId)
         {
             // If optimized by Global BA, just update
-            p_mapPoint->setWorldPos(p_mapPoint->posGBA);
+            if (p_mapPoint->setWorldPos(p_mapPoint->posGBA) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
             // Update according to the correction of its reference keyframe
-            KeyFrame *p_referenceKeyFrame = p_mapPoint->getReferenceKeyFrame();
+            KeyFrame *p_referenceKeyFrame = nullptr;
+            if (p_mapPoint->getReferenceKeyFrame(p_referenceKeyFrame) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getReferenceKeyFrame returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             if (p_referenceKeyFrame->baGlobalKeyFrameId != globalBaId)
                 continue;
 
             // Map to non-corrected camera
+            Eigen::Vector3f mapPointWorldPos{};
+            if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             Eigen::Vector3f Xc =
-                p_referenceKeyFrame->tcwBefGBA * p_mapPoint->getWorldPos();
+                p_referenceKeyFrame->tcwBefGBA * mapPointWorldPos;
 
             // Backproject using corrected camera
-            p_mapPoint->setWorldPos(p_referenceKeyFrame->getPoseInverse() * Xc);
+            Sophus::SE3f referenceKeyFramePoseInverse{};
+            if (p_referenceKeyFrame->getPoseInverse(
+                    referenceKeyFramePoseInverse) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mapPoint->setWorldPos(referenceKeyFramePoseInverse * Xc) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
@@ -367,7 +654,14 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
          newKeyFrameIt != newKeyFrameEnd;
          newKeyFrameIt++)
     {
-        (*newKeyFrameIt)->setBadFlag();
+        if ((*newKeyFrameIt)->setBadFlag() !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBadFlag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         delete *newKeyFrameIt;
     }
     newKeyFrames.clear();
@@ -375,7 +669,23 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
     p_tracker->state           = Tracking::OK;
     isInitializationInProgress = false;
 
-    p_currentKeyFrame->getMap()->increaseChangeIndex();
+    Map *p_currentKeyFrameMap2 = nullptr;
+    if (p_currentKeyFrame->getMap(p_currentKeyFrameMap2) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_currentKeyFrameMap2->increaseChangeIndex() !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: increaseChangeIndex returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     return;
 }

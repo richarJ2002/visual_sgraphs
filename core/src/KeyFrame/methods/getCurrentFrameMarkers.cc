@@ -35,9 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<semantic::Marker *> KeyFrame::getCurrentFrameMarkers() const
+KeyFrameStatus KeyFrame::getCurrentFrameMarkers(
+    std::vector<semantic::Marker *> &getCurrentFrameMarkers_out) const
 {
-    return currentFrameMarkers;
+    getCurrentFrameMarkers_out = currentFrameMarkers;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

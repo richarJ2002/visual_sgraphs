@@ -26,6 +26,7 @@
 #include "LoopClosing.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -55,9 +56,37 @@ void LoopClosing::recordLoopCorrectionEvent(bool               accepted_in,
         {
             loopCorrectionStatus.lastCurrentKeyFrameId = p_currentKF->id;
             loopCorrectionStatus.lastCurrentTimestamp  = p_currentKF->timeStamp;
-            if (p_currentKF->getMap() != nullptr)
+            Map *p_currentKFMap                        = nullptr;
+            if (p_currentKF->getMap(p_currentKFMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
-                loopCorrectionStatus.lastMapId = p_currentKF->getMap()->getId();
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_currentKFMap != nullptr)
+            {
+                Map *p_currentKFMap2 = nullptr;
+                if (p_currentKF->getMap(p_currentKFMap2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                unsigned long id2{};
+                if (p_currentKFMap2->getId(id2) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                loopCorrectionStatus.lastMapId = id2;
             }
         }
         if (p_loopMatchedKF != nullptr)

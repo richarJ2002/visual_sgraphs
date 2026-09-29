@@ -23,6 +23,7 @@
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
+#include <rclcpp/logging.hpp>
 #include <stdint-gcc.h>
 
 namespace vs_graphs
@@ -34,7 +35,15 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
                             Frame              &F,
                             vector<MapPoint *> &vpMapPointMatches)
 {
-    const vector<MapPoint *> mapPointsKeyFrames = pKF->getMapPointMatches();
+    std::vector<MapPoint *> mapPointsKeyFrames{};
+    if (pKF->getMapPointMatches(mapPointsKeyFrames) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     vpMapPointMatches =
         vector<MapPoint *>(F.keyPointCount, static_cast<MapPoint *>(nullptr));
@@ -76,7 +85,16 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
                 if (!p_mapPoint)
                     continue;
 
-                if (p_mapPoint->isBad())
+                bool mapPointIsBad{};
+                if (p_mapPoint->isBad(mapPointIsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (mapPointIsBad)
                     continue;
 
                 const cv::Mat &keyFrameDescriptor =

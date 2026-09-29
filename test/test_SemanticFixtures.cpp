@@ -214,9 +214,13 @@ TEST(SemanticFixtures, MakeKeyFrameAtRegistersWithMapAndCameraCenter)
     makeKeyFrameAt(keyFrame, 42U, p_map, Eigen::Vector3f(1.0F, 2.0F, 3.0F));
 
     EXPECT_EQ(keyFrame.id, 42U);
-    EXPECT_TRUE(
-        keyFrame.getCameraCenter().isApprox(Eigen::Vector3f(1.0F, 2.0F, 3.0F)));
-    const auto allKeyFrames = p_map->getAllKeyFrames();
+    Eigen::Vector3f cameraCenter{};
+    ASSERT_EQ((keyFrame.getCameraCenter(cameraCenter)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    EXPECT_TRUE(cameraCenter.isApprox(Eigen::Vector3f(1.0F, 2.0F, 3.0F)));
+    std::vector<KeyFrame *> allKeyFrames{};
+    ASSERT_EQ((p_map->getAllKeyFrames(allKeyFrames)),
+              MapStatus::MAP_STATUS_SUCCESS);
     EXPECT_NE(std::find(allKeyFrames.begin(), allKeyFrames.end(), &keyFrame),
               allKeyFrames.end());
 }

@@ -22,6 +22,7 @@
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 using namespace std;
 
@@ -36,8 +37,15 @@ void KeyFrameDatabase::detectCandidates(
     vector<KeyFrame *> &loopCandidateKeyFrames_out,
     vector<KeyFrame *> &mergeCandidateKeyFrames_out)
 {
-    set<KeyFrame *> connectedKeyFrames =
-        p_currentKeyFrame_in->getConnectedKeyFrames();
+    std::set<KeyFrame *> connectedKeyFrames{};
+    if (p_currentKeyFrame_in->getConnectedKeyFrames(connectedKeyFrames) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getConnectedKeyFrames returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     list<KeyFrame *> keyFramesSharingWordsLoop, keyFramesSharingWordsMerge;
 
     // Search all keyframes that share a word with current keyframes
@@ -59,11 +67,31 @@ void KeyFrameDatabase::detectCandidates(
                  keyFrameIt != keyFrameEnd;
                  keyFrameIt++)
             {
-                KeyFrame *p_candidateKeyFrame = *keyFrameIt;
-                if (p_candidateKeyFrame->getMap() ==
-                    p_currentKeyFrame_in
-                        ->getMap()) // For consider a loop candidate it a
-                                    // candidate it must be in the same map
+                KeyFrame *p_candidateKeyFrame    = *keyFrameIt;
+                Map      *p_candidateKeyFrameMap = nullptr;
+                if (p_candidateKeyFrame->getMap(p_candidateKeyFrameMap) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                Map *p_currentKeyFrameMap = nullptr;
+                if (p_currentKeyFrame_in->getMap(p_currentKeyFrameMap) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_candidateKeyFrameMap ==
+                    p_currentKeyFrameMap) // For consider a loop candidate it a
+                                          // candidate it must be in the same
+                                          // map
                 {
                     if (p_candidateKeyFrame->loopQuery !=
                         p_currentKeyFrame_in->id)
@@ -79,21 +107,44 @@ void KeyFrameDatabase::detectCandidates(
                     }
                     p_candidateKeyFrame->loopWords++;
                 }
-                else if (!p_candidateKeyFrame->getMap()->isBad())
+                else
                 {
-                    if (p_candidateKeyFrame->mergeQuery !=
-                        p_currentKeyFrame_in->id)
+                    Map *p_candidateKeyFrameMap2 = nullptr;
+                    if (p_candidateKeyFrame->getMap(p_candidateKeyFrameMap2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                     {
-                        p_candidateKeyFrame->mergeWords = 0;
-                        if (!connectedKeyFrames.count(p_candidateKeyFrame))
-                        {
-                            p_candidateKeyFrame->mergeQuery =
-                                p_currentKeyFrame_in->id;
-                            keyFramesSharingWordsMerge.push_back(
-                                p_candidateKeyFrame);
-                        }
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getMap returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
-                    p_candidateKeyFrame->mergeWords++;
+                    bool isBad2{};
+                    if (p_candidateKeyFrameMap2->isBad(isBad2) !=
+                        MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (!isBad2)
+                    {
+                        if (p_candidateKeyFrame->mergeQuery !=
+                            p_currentKeyFrame_in->id)
+                        {
+                            p_candidateKeyFrame->mergeWords = 0;
+                            if (!connectedKeyFrames.count(p_candidateKeyFrame))
+                            {
+                                p_candidateKeyFrame->mergeQuery =
+                                    p_currentKeyFrame_in->id;
+                                keyFramesSharingWordsMerge.push_back(
+                                    p_candidateKeyFrame);
+                            }
+                        }
+                        p_candidateKeyFrame->mergeWords++;
+                    }
                 }
             }
         }
@@ -160,8 +211,18 @@ void KeyFrameDatabase::detectCandidates(
                  scoredCandidateIt++)
             {
                 KeyFrame *p_candidateKeyFrame = scoredCandidateIt->second;
-                vector<KeyFrame *> covisibilityNeighborKeyFrames =
-                    p_candidateKeyFrame->getBestCovisibilityKeyFrames(10);
+                std::vector<KeyFrame *> covisibilityNeighborKeyFrames{};
+                if (p_candidateKeyFrame->getBestCovisibilityKeyFrames(
+                        10,
+                        covisibilityNeighborKeyFrames) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getBestCovisibilityKeyFrames returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 float     bestGroupScore        = scoredCandidateIt->first;
                 float     accumulatedScore      = scoredCandidateIt->first;
@@ -278,8 +339,18 @@ void KeyFrameDatabase::detectCandidates(
                  scoredCandidateIt++)
             {
                 KeyFrame *p_candidateKeyFrame = scoredCandidateIt->second;
-                vector<KeyFrame *> covisibilityNeighborKeyFrames =
-                    p_candidateKeyFrame->getBestCovisibilityKeyFrames(10);
+                std::vector<KeyFrame *> covisibilityNeighborKeyFrames{};
+                if (p_candidateKeyFrame->getBestCovisibilityKeyFrames(
+                        10,
+                        covisibilityNeighborKeyFrames) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getBestCovisibilityKeyFrames returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 float     bestGroupScore        = scoredCandidateIt->first;
                 float     accumulatedScore      = scoredCandidateIt->first;

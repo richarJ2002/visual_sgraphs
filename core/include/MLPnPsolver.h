@@ -53,6 +53,7 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -88,7 +89,16 @@ class MLPnPsolver
 
             if (p_mapPoint)
             {
-                if (!p_mapPoint->isBad())
+                bool mapPointIsBad{};
+                if (p_mapPoint->isBad(mapPointIsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (!mapPointIsBad)
                 {
                     if (matchIndex >= frame_in.keyPointsUndistorted.size())
                         continue;
@@ -109,8 +119,16 @@ class MLPnPsolver
                     bearingVectors.push_back(bearingVector);
 
                     // 3D coordinates
-                    Eigen::Matrix<float, 3, 1> worldPositionEigen =
-                        p_mapPoint->getWorldPos();
+                    Eigen::Matrix<float, 3, 1> worldPositionEigen{};
+                    if (p_mapPoint->getWorldPos(worldPositionEigen) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getWorldPos returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     Point3 worldPosition(worldPositionEigen(0),
                                          worldPositionEigen(1),
                                          worldPositionEigen(2));

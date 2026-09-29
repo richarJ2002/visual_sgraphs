@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseMapPlane(geometric::Plane *p_plane_in)
+MapStatus Map::eraseMapPlane(geometric::Plane *p_plane_in)
 {
     unique_lock<mutex> lock(mapMutex);
     planes.erase(p_plane_in);
@@ -46,6 +46,8 @@ void Map::eraseMapPlane(geometric::Plane *p_plane_in)
                             ? planeIndex.erase(planeIterator)
                             : std::next(planeIterator);
     }
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

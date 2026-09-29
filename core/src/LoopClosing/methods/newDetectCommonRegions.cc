@@ -30,6 +30,7 @@
 
 #include <chrono>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,31 +52,102 @@ bool LoopClosing::newDetectCommonRegions()
         loopKeyFrameQueue.pop_front();
         // Avoid that a keyframe can be erased while it is being process by this
         // thread
-        p_currentKF->setNotErase();
+        if (p_currentKF->setNotErase() !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setNotErase returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         p_currentKF->isInCurrentPlaceRecognition = true;
 
-        p_lastMap = p_currentKF->getMap();
+        Map *p_currentKFMap = nullptr;
+        if (p_currentKF->getMap(p_currentKFMap) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_lastMap = p_currentKFMap;
     }
 
-    if (p_lastMap->isInertial() && !p_lastMap->getInertialBA2())
+    bool lastMapIsInertial{};
+    if (p_lastMap->isInertial(lastMapIsInertial) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isInertial returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool lastMapInertialBA2{};
+    if ((lastMapIsInertial) && p_lastMap->getInertialBA2(lastMapInertialBA2) !=
+                                   MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getInertialBA2 returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (lastMapIsInertial && !lastMapInertialBA2)
     {
         p_keyFrameDatabase->add(p_currentKF);
-        p_currentKF->setErase();
+        if (p_currentKF->setErase() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setErase returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         return false;
     }
 
+    std::vector<KeyFrame *> lastMapAllKeyFrames{};
+    if ((p_tracker->sensor == System::STEREO) &&
+        p_lastMap->getAllKeyFrames(lastMapAllKeyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_tracker->sensor == System::STEREO &&
-        p_lastMap->getAllKeyFrames().size() < 5) // 12
+        lastMapAllKeyFrames.size() < 5) // 12
     {
         p_keyFrameDatabase->add(p_currentKF);
-        p_currentKF->setErase();
+        if (p_currentKF->setErase() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setErase returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         return false;
     }
 
-    if (p_lastMap->getAllKeyFrames().size() < 12)
+    std::vector<KeyFrame *> lastMapAllKeyFrames2{};
+    if (p_lastMap->getAllKeyFrames(lastMapAllKeyFrames2) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (lastMapAllKeyFrames2.size() < 12)
     {
         p_keyFrameDatabase->add(p_currentKF);
-        p_currentKF->setErase();
+        if (p_currentKF->setErase() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setErase returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         return false;
     }
 
@@ -92,9 +164,26 @@ bool LoopClosing::newDetectCommonRegions()
     {
         shouldCheckSpatial = true;
         // Find from the last KF candidates
+        Sophus::SE3f currentKFPose{};
+        if (p_currentKF->getPose(currentKFPose) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3f loopLastCurrentKFPoseInverse{};
+        if (p_loopLastCurrentKF->getPoseInverse(loopLastCurrentKFPoseInverse) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPoseInverse returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         Sophus::SE3d mTcl =
-            (p_currentKF->getPose() * p_loopLastCurrentKF->getPoseInverse())
-                .cast<double>();
+            (currentKFPose * loopLastCurrentKFPoseInverse).cast<double>();
         g2o::Sim3 gScl(mTcl.unit_quaternion(), mTcl.translation(), 1.0);
         g2o::Sim3 gScw                 = gScl * mg2oLoopSlw;
         int       projectionMatchCount = 0;
@@ -112,7 +201,14 @@ bool LoopClosing::newDetectCommonRegions()
             isLoopDetectedInKeyFrame = true;
 
             loopNumCoincidences++;
-            p_loopLastCurrentKF->setErase();
+            if (p_loopLastCurrentKF->setErase() !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setErase returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             p_loopLastCurrentKF = p_currentKF;
             mg2oLoopSlw         = gScw;
             loopMatchedMPs      = matchedMapPoints;
@@ -128,8 +224,24 @@ bool LoopClosing::newDetectCommonRegions()
             if (loopNumNotFound >= 2)
             {
                 recordLoopCorrectionEvent(false, "geometric_validation");
-                p_loopLastCurrentKF->setErase();
-                p_loopMatchedKF->setErase();
+                if (p_loopLastCurrentKF->setErase() !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setErase returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_loopMatchedKF->setErase() !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setErase returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 loopNumCoincidences = 0;
                 loopMatchedMPs.clear();
                 loopMPs.clear();
@@ -143,9 +255,27 @@ bool LoopClosing::newDetectCommonRegions()
     if (mergeNumCoincidences > 0)
     {
         // Find from the last KF candidates
+        Sophus::SE3f currentKFPose2{};
+        if (p_currentKF->getPose(currentKFPose2) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3f mergeLastCurrentKFPoseInverse{};
+        if (p_mergeLastCurrentKF->getPoseInverse(
+                mergeLastCurrentKFPoseInverse) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPoseInverse returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         Sophus::SE3d mTcl =
-            (p_currentKF->getPose() * p_mergeLastCurrentKF->getPoseInverse())
-                .cast<double>();
+            (currentKFPose2 * mergeLastCurrentKFPoseInverse).cast<double>();
 
         g2o::Sim3 gScl(mTcl.unit_quaternion(), mTcl.translation(), 1.0);
         g2o::Sim3 gScw                 = gScl * mg2oMergeSlw;
@@ -163,7 +293,14 @@ bool LoopClosing::newDetectCommonRegions()
             isMergeDetectedInKeyFrame = true;
 
             mergeNumCoincidences++;
-            p_mergeLastCurrentKF->setErase();
+            if (p_mergeLastCurrentKF->setErase() !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setErase returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             p_mergeLastCurrentKF = p_currentKF;
             mg2oMergeSlw         = gScw;
             mergeMatchedMPs      = matchedMapPoints;
@@ -178,8 +315,24 @@ bool LoopClosing::newDetectCommonRegions()
             mergeNumNotFound++;
             if (mergeNumNotFound >= 2)
             {
-                p_mergeLastCurrentKF->setErase();
-                p_mergeMatchedKF->setErase();
+                if (p_mergeLastCurrentKF->setErase() !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setErase returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_mergeMatchedKF->setErase() !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setErase returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 mergeNumCoincidences = 0;
                 mergeMatchedMPs.clear();
                 mergeMPs.clear();
@@ -208,8 +361,15 @@ bool LoopClosing::newDetectCommonRegions()
 
     // TODO: This is only necessary if we use a minimun score for pick the best
     // candidates
-    const vector<KeyFrame *> connectedKeyFrames =
-        p_currentKF->getVectorCovisibleKeyFrames();
+    std::vector<KeyFrame *> connectedKeyFrames{};
+    if (p_currentKF->getVectorCovisibleKeyFrames(connectedKeyFrames) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getVectorCovisibleKeyFrames returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Extract candidates from the bag of words
     vector<KeyFrame *> mergeBowCandidates, loopBowCandidates;
@@ -282,7 +442,13 @@ bool LoopClosing::newDetectCommonRegions()
         return true;
     }
 
-    p_currentKF->setErase();
+    if (p_currentKF->setErase() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setErase returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     p_currentKF->isInCurrentPlaceRecognition = false;
 
     return false;

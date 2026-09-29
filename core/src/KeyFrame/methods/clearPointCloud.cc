@@ -35,13 +35,15 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::clearPointCloud()
+KeyFrameStatus KeyFrame::clearPointCloud()
 {
     currentFramePointClouds->clear();
     currentFramePointClouds = nullptr;
 
     // clear images
     colorImg.release();
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

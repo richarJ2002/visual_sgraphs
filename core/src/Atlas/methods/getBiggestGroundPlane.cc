@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,8 +34,17 @@ namespace core
 geometric::Plane *Atlas::getBiggestGroundPlane()
 {
     unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap != nullptr ? p_activeMap->getBiggestGroundPlane()
-                                  : nullptr;
+    geometric::Plane  *p_activeMapBiggestGroundPlane = nullptr;
+    if ((p_activeMap != nullptr) &&
+        p_activeMap->getBiggestGroundPlane(p_activeMapBiggestGroundPlane) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return p_activeMap != nullptr ? p_activeMapBiggestGroundPlane : nullptr;
 }
 
 } // namespace core

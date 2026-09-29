@@ -35,7 +35,8 @@ namespace vs_graphs
 namespace core
 {
 
-set<KeyFrame *> KeyFrame::getConnectedKeyFrames()
+KeyFrameStatus KeyFrame::getConnectedKeyFrames(
+    std::set<KeyFrame *> &connectedKeyFrames_out)
 {
     unique_lock<mutex> lock(connectionsMutex);
     set<KeyFrame *>    s;
@@ -43,7 +44,8 @@ set<KeyFrame *> KeyFrame::getConnectedKeyFrames()
          mit != connectedKeyFrameWeights.end();
          mit++)
         s.insert(mit->first);
-    return s;
+    connectedKeyFrames_out = s;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -27,6 +27,7 @@
 
 #include "OptimizableTypes.h"
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -55,10 +56,42 @@ int Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
     optimizer.setAlgorithm(p_solver);
 
     // Camera poses
-    const Eigen::Matrix3f R1w = p_keyFrame1_in->getRotation();
-    const Eigen::Vector3f t1w = p_keyFrame1_in->getTranslation();
-    const Eigen::Matrix3f R2w = p_keyFrame2_in->getRotation();
-    const Eigen::Vector3f t2w = p_keyFrame2_in->getTranslation();
+    Eigen::Matrix3f R1w{};
+    if (p_keyFrame1_in->getRotation(R1w) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRotation returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Vector3f t1w{};
+    if (p_keyFrame1_in->getTranslation(t1w) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getTranslation returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Matrix3f R2w{};
+    if (p_keyFrame2_in->getRotation(R2w) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRotation returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Vector3f t2w{};
+    if (p_keyFrame2_in->getTranslation(t2w) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getTranslation returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Set Sim3 vertex
     vs_graphs::core::VertexSim3Expmap *vSim3 =
@@ -72,8 +105,16 @@ int Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
     optimizer.addVertex(vSim3);
 
     // Set MapPoint vertices
-    const int                N          = matches1_inout.size();
-    const vector<MapPoint *> mapPoints1 = p_keyFrame1_in->getMapPointMatches();
+    const int               N = matches1_inout.size();
+    std::vector<MapPoint *> mapPoints1{};
+    if (p_keyFrame1_in->getMapPointMatches(mapPoints1) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     vector<vs_graphs::core::EdgeSim3ProjectXYZ *>        edges12;
     vector<vs_graphs::core::EdgeInverseSim3ProjectXYZ *> edges21;
     vector<size_t>                                       edgeIndices;
@@ -105,19 +146,57 @@ int Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
         const int id1 = 2 * edges12Index + 1;
         const int id2 = 2 * (edges12Index + 1);
 
-        const int i2 = get<0>(p_mapPoint2->getIndexInKeyFrame(p_keyFrame2_in));
+        std::tuple<int, int> mapPoint2IndexInKeyFrame{};
+        if (p_mapPoint2->getIndexInKeyFrame(p_keyFrame2_in,
+                                            mapPoint2IndexInKeyFrame) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getIndexInKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const int i2 = get<0>(mapPoint2IndexInKeyFrame);
 
         Eigen::Vector3f P3D1c;
         Eigen::Vector3f P3D2c;
 
         if (p_mapPoint1 && p_mapPoint2)
         {
-            if (!p_mapPoint1->isBad() && !p_mapPoint2->isBad())
+            bool mapPoint1IsBad{};
+            if (p_mapPoint1->isBad(mapPoint1IsBad) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            bool mapPoint2IsBad{};
+            if ((!mapPoint1IsBad) &&
+                p_mapPoint2->isBad(mapPoint2IsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!mapPoint1IsBad && !mapPoint2IsBad)
             {
                 g2o::VertexSBAPointXYZ *p_point1Vertex =
                     new g2o::VertexSBAPointXYZ();
-                Eigen::Vector3f P3D1w = p_mapPoint1->getWorldPos();
-                P3D1c                 = R1w * P3D1w + t1w;
+                Eigen::Vector3f P3D1w{};
+                if (p_mapPoint1->getWorldPos(P3D1w) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWorldPos returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                P3D1c = R1w * P3D1w + t1w;
                 p_point1Vertex->setEstimate(P3D1c.cast<double>());
                 p_point1Vertex->setId(id1);
                 p_point1Vertex->setFixed(true);
@@ -125,8 +204,17 @@ int Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
 
                 g2o::VertexSBAPointXYZ *p_point2Vertex =
                     new g2o::VertexSBAPointXYZ();
-                Eigen::Vector3f P3D2w = p_mapPoint2->getWorldPos();
-                P3D2c                 = R2w * P3D2w + t2w;
+                Eigen::Vector3f P3D2w{};
+                if (p_mapPoint2->getWorldPos(P3D2w) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWorldPos returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                P3D2c = R2w * P3D2w + t2w;
                 p_point2Vertex->setEstimate(P3D2c.cast<double>());
                 p_point2Vertex->setId(id2);
                 p_point2Vertex->setFixed(true);
@@ -143,12 +231,30 @@ int Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
             matchWithoutMapPointCount++;
 
             // TODO The 3D position in KF1 doesn't exist
-            if (!p_mapPoint2->isBad())
+            bool mapPoint2IsBad2{};
+            if (p_mapPoint2->isBad(mapPoint2IsBad2) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!mapPoint2IsBad2)
             {
                 g2o::VertexSBAPointXYZ *p_point2Vertex =
                     new g2o::VertexSBAPointXYZ();
-                Eigen::Vector3f P3D2w = p_mapPoint2->getWorldPos();
-                P3D2c                 = R2w * P3D2w + t2w;
+                Eigen::Vector3f P3D2w{};
+                if (p_mapPoint2->getWorldPos(P3D2w) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWorldPos returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                P3D2c = R2w * P3D2w + t2w;
                 p_point2Vertex->setEstimate(P3D2c.cast<double>());
                 p_point2Vertex->setId(id2);
                 p_point2Vertex->setFixed(true);

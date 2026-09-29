@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-float MapPoint::getFoundRatio()
+MapPointStatus MapPoint::getFoundRatio(float &foundRatio_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return static_cast<float>(foundCount) / visibleCount;
+    foundRatio_out = static_cast<float>(foundCount) / visibleCount;
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

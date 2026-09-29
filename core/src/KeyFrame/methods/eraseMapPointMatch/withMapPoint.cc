@@ -30,20 +30,31 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void KeyFrame::eraseMapPointMatch(MapPoint *p_mapPoint_in)
+KeyFrameStatus KeyFrame::eraseMapPointMatch(MapPoint *p_mapPoint_in)
 {
-    tuple<int, int> indexes   = p_mapPoint_in->getIndexInKeyFrame(this);
-    int             leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+    std::tuple<int, int> indexes{};
+    if (p_mapPoint_in->getIndexInKeyFrame(this, indexes) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getIndexInKeyFrame returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
     if (leftIndex != -1)
         mapPoints[leftIndex] = static_cast<MapPoint *>(nullptr);
     if (rightIndex != -1)
         mapPoints[rightIndex] = static_cast<MapPoint *>(nullptr);
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

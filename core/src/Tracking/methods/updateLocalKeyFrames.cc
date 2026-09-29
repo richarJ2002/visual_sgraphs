@@ -25,6 +25,7 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -44,10 +45,27 @@ void Tracking::updateLocalKeyFrames()
             MapPoint *p_mapPoint = currentFrame.mapPoints[keyPointIndex];
             if (p_mapPoint)
             {
-                if (!p_mapPoint->isBad())
+                bool mapPointIsBad{};
+                if (p_mapPoint->isBad(mapPointIsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
                 {
-                    const map<KeyFrame *, tuple<int, int>> observations =
-                        p_mapPoint->getObservations();
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (!mapPointIsBad)
+                {
+                    std::map<KeyFrame *, std::tuple<int, int>> observations{};
+                    if (p_mapPoint->getObservations(observations) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getObservations returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     for (map<KeyFrame *, tuple<int, int>>::const_iterator
                              keyFrameCounterIt = observations.begin(),
                              itend             = observations.end();
@@ -73,10 +91,27 @@ void Tracking::updateLocalKeyFrames()
                 MapPoint *p_mapPoint = lastFrame.mapPoints[keyPointIndex];
                 if (!p_mapPoint)
                     continue;
-                if (!p_mapPoint->isBad())
+                bool mapPointIsBad2{};
+                if (p_mapPoint->isBad(mapPointIsBad2) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
                 {
-                    const map<KeyFrame *, tuple<int, int>> observations =
-                        p_mapPoint->getObservations();
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (!mapPointIsBad2)
+                {
+                    std::map<KeyFrame *, std::tuple<int, int>> observations{};
+                    if (p_mapPoint->getObservations(observations) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getObservations returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     for (map<KeyFrame *, tuple<int, int>>::const_iterator
                              keyFrameCounterIt = observations.begin(),
                              itend             = observations.end();
@@ -109,7 +144,16 @@ void Tracking::updateLocalKeyFrames()
     {
         KeyFrame *p_keyFrame = keyFrameCounterIt->first;
 
-        if (p_keyFrame->isBad())
+        bool keyFrameIsBad{};
+        if (p_keyFrame->isBad(keyFrameIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (keyFrameIsBad)
             continue;
 
         if (keyFrameCounterIt->second > maximum)
@@ -139,8 +183,16 @@ void Tracking::updateLocalKeyFrames()
 
         KeyFrame *p_keyFrame = *itKeyFrame;
 
-        const vector<KeyFrame *> neighbors =
-            p_keyFrame->getBestCovisibilityKeyFrames(10);
+        std::vector<KeyFrame *> neighbors{};
+        if (p_keyFrame->getBestCovisibilityKeyFrames(10, neighbors) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getBestCovisibilityKeyFrames returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         for (vector<KeyFrame *>::const_iterator
                  itNeighborKeyFrame    = neighbors.begin(),
@@ -149,7 +201,16 @@ void Tracking::updateLocalKeyFrames()
              itNeighborKeyFrame++)
         {
             KeyFrame *p_neighborKeyFrame = *itNeighborKeyFrame;
-            if (!p_neighborKeyFrame->isBad())
+            bool      neighborKeyFrameIsBad{};
+            if (p_neighborKeyFrame->isBad(neighborKeyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!neighborKeyFrameIsBad)
             {
                 if (p_neighborKeyFrame->trackReferenceFrameId !=
                     currentFrame.id)
@@ -161,14 +222,31 @@ void Tracking::updateLocalKeyFrames()
             }
         }
 
-        const set<KeyFrame *> childs = p_keyFrame->getChilds();
+        std::set<KeyFrame *> childs{};
+        if (p_keyFrame->getChilds(childs) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getChilds returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         for (set<KeyFrame *>::const_iterator sit  = childs.begin(),
                                              send = childs.end();
              sit != send;
              sit++)
         {
             KeyFrame *p_childKeyFrame = *sit;
-            if (!p_childKeyFrame->isBad())
+            bool      childKeyFrameIsBad{};
+            if (p_childKeyFrame->isBad(childKeyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!childKeyFrameIsBad)
             {
                 if (p_childKeyFrame->trackReferenceFrameId != currentFrame.id)
                 {
@@ -179,7 +257,15 @@ void Tracking::updateLocalKeyFrames()
             }
         }
 
-        KeyFrame *p_parent = p_keyFrame->getParent();
+        KeyFrame *p_parent = nullptr;
+        if (p_keyFrame->getParent(p_parent) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParent returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         if (p_parent)
         {
             if (p_parent->trackReferenceFrameId != currentFrame.id)

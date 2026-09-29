@@ -26,6 +26,7 @@
 #include "Optimizer.h"
 
 #include "G2oTypes.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -38,9 +39,26 @@ void Optimizer::inertialOptimization(Map             *p_map_in,
                                      float            gyroBiasPriorWeight_in,
                                      float            accelBiasPriorWeight_in)
 {
-    int                      iterationCount = 200; // Check number of iterations
-    long unsigned int        maxKeyFrameId  = p_map_in->getMaxKeyFrameId();
-    const vector<KeyFrame *> keyFrames      = p_map_in->getAllKeyFrames();
+    int           iterationCount = 200; // Check number of iterations
+    unsigned long maxKeyFrameIdValue{};
+    if (p_map_in->getMaxKeyFrameId(maxKeyFrameIdValue) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMaxKeyFrameId returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    long unsigned int maxKeyFrameId =
+        static_cast<long unsigned int>(maxKeyFrameIdValue);
+    std::vector<KeyFrame *> keyFrames{};
+    if (p_map_in->getAllKeyFrames(keyFrames) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Setup optimizer
     g2o::SparseOptimizer                 optimizer;
@@ -134,11 +152,28 @@ void Optimizer::inertialOptimization(Map             *p_map_in,
 
         if (p_keyFrame->p_prevKF && p_keyFrame->id <= maxKeyFrameId)
         {
-            if (p_keyFrame->isBad() || p_keyFrame->p_prevKF->id > maxKeyFrameId)
+            bool keyFrameIsBad{};
+            if (p_keyFrame->isBad(keyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (keyFrameIsBad || p_keyFrame->p_prevKF->id > maxKeyFrameId)
                 continue;
 
-            p_keyFrame->p_imuPreintegrated->setNewBias(
-                p_keyFrame->p_prevKF->getImuBias());
+            IMU::Bias imuBias2{};
+            if (p_keyFrame->p_prevKF->getImuBias(imuBias2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getImuBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            p_keyFrame->p_imuPreintegrated->setNewBias(imuBias2);
             g2o::HyperGraph::Vertex *p_previousPoseVertex =
                 optimizer.vertex(p_keyFrame->p_prevKF->id);
             g2o::HyperGraph::Vertex *p_previousVelocityVertex =
@@ -246,17 +281,50 @@ void Optimizer::inertialOptimization(Map             *p_map_in,
         VertexVelocity *p_velocityVertex = static_cast<VertexVelocity *>(
             optimizer.vertex(maxKeyFrameId + (p_keyFrame->id) + 1));
         Eigen::Vector3d keyFrameVelocity = p_velocityVertex->estimate();
-        p_keyFrame->setVelocity(keyFrameVelocity.cast<float>());
-
-        if ((p_keyFrame->getGyroBias() - gyroBias_out.cast<float>()).norm() >
-            0.01)
+        if (p_keyFrame->setVelocity(keyFrameVelocity.cast<float>()) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
-            p_keyFrame->setNewBias(imuBias);
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        Eigen::Vector3f keyFrameGyroBias{};
+        if (p_keyFrame->getGyroBias(keyFrameGyroBias) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGyroBias returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if ((keyFrameGyroBias - gyroBias_out.cast<float>()).norm() > 0.01)
+        {
+            if (p_keyFrame->setNewBias(imuBias) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setNewBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (p_keyFrame->p_imuPreintegrated)
+            {
                 p_keyFrame->p_imuPreintegrated->reintegrate();
+            }
         }
         else
-            p_keyFrame->setNewBias(imuBias);
+        {
+            if (p_keyFrame->setNewBias(imuBias) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setNewBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+        }
     }
 }
 

@@ -43,10 +43,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::setVelocity(Eigen::Vector3f Vw_in)
+FrameStatus Frame::setVelocity(Eigen::Vector3f Vw_in)
 {
     velocityVw          = Vw_in;
     isVelocityAvailable = true;
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

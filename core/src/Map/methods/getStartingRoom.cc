@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Room *Map::getStartingRoom()
+MapStatus Map::getStartingRoom(semantic::Room *&p_startingRoom_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return p_startingRoom;
+    p_startingRoom_out = p_startingRoom;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

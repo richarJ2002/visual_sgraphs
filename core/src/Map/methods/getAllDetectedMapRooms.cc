@@ -34,10 +34,14 @@ namespace vs_graphs
 namespace core
 {
 
-vector<semantic::Room *> Map::getAllDetectedMapRooms()
+MapStatus Map::getAllDetectedMapRooms(
+    std::vector<semantic::Room *> &allDetectedMapRooms_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return vector<semantic::Room *>(detectedRooms.begin(), detectedRooms.end());
+    allDetectedMapRooms_out =
+        std::vector<semantic::Room *>(detectedRooms.begin(),
+                                      detectedRooms.end());
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

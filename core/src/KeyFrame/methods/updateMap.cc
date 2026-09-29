@@ -35,10 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::updateMap(Map *p_map_in)
+KeyFrameStatus KeyFrame::updateMap(Map *p_map_in)
 {
     unique_lock<mutex> lock(mapMutex);
     p_map = p_map_in;
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

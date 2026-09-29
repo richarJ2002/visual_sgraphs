@@ -30,13 +30,14 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void Map::preSave(
+MapStatus Map::preSave(
     std::set<camera_models::geometriccamera::GeometricCamera *> &cams_inout)
 {
     int mapPointWithoutObservationCount = 0;
@@ -46,25 +47,76 @@ void Map::preSave(
 
     for (MapPoint *p_mapPoint : temporaryMspMapPoints1)
     {
-        if (!p_mapPoint || p_mapPoint->isBad())
+        bool mapPointIsBad{};
+        if (!(!p_mapPoint) && p_mapPoint->isBad(mapPointIsBad) !=
+                                  MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_mapPoint || mapPointIsBad)
             continue;
 
-        if (p_mapPoint->getObservations().size() == 0)
+        std::map<KeyFrame *, std::tuple<int, int>> mapPointObservations{};
+        if (p_mapPoint->getObservations(mapPointObservations) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointObservations.size() == 0)
         {
             mapPointWithoutObservationCount++;
         }
-        map<KeyFrame *, std::tuple<int, int>> observations =
-            p_mapPoint->getObservations();
+        std::map<KeyFrame *, std::tuple<int, int>> observations{};
+        if (p_mapPoint->getObservations(observations) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (map<KeyFrame *, std::tuple<int, int>>::iterator
                  observationIt = observations.begin(),
                  end           = observations.end();
              observationIt != end;
              ++observationIt)
         {
-            if (observationIt->first->getMap() != this ||
-                observationIt->first->isBad())
+            Map *p_map = nullptr;
+            if (observationIt->first->getMap(p_map) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
-                p_mapPoint->eraseObservation(observationIt->first);
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            bool isBad2{};
+            if (!(p_map != this) &&
+                observationIt->first->isBad(isBad2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_map != this || isBad2)
+            {
+                if (p_mapPoint->eraseObservation(observationIt->first) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseObservation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
     }
@@ -86,22 +138,54 @@ void Map::preSave(
 
     for (MapPoint *p_mapPoint : temporaryMspMapPoints2)
     {
-        if (!p_mapPoint || p_mapPoint->isBad())
+        bool mapPointIsBad2{};
+        if (!(!p_mapPoint) && p_mapPoint->isBad(mapPointIsBad2) !=
+                                  MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_mapPoint || mapPointIsBad2)
             continue;
 
         backupMapPoints.push_back(p_mapPoint);
-        p_mapPoint->preSave(keyFrames, mapPoints);
+        if (p_mapPoint->preSave(keyFrames, mapPoints) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: preSave returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     // Backup of KeyFrames
     backupKeyFrames.clear();
     for (KeyFrame *p_keyFrame : keyFrames)
     {
-        if (!p_keyFrame || p_keyFrame->isBad())
+        bool keyFrameIsBad{};
+        if (!(!p_keyFrame) && p_keyFrame->isBad(keyFrameIsBad) !=
+                                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_keyFrame || keyFrameIsBad)
             continue;
 
         backupKeyFrames.push_back(p_keyFrame);
-        p_keyFrame->preSave(keyFrames, mapPoints, cams_inout);
+        if (p_keyFrame->preSave(keyFrames, mapPoints, cams_inout) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: preSave returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     backupInitialKeyFrameId = -1;
@@ -115,6 +199,8 @@ void Map::preSave(
     {
         backupLowerKeyFrameId = p_lowerIdKeyFrame->id;
     }
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

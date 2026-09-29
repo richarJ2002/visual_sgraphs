@@ -2262,7 +2262,14 @@ void clearKFClsClouds(std::vector<vs_graphs::core::KeyFrame *> keyframeVector_in
     /* Iterate through keyframes and clear the cls point clouds */
     for (auto &keyframe : keyframeVector_in)
     {
-        keyframe->clearClsClouds();
+        if (keyframe->clearClsClouds() !=
+            vs_graphs::core::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: clearClsClouds returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 }
 
@@ -2687,10 +2694,28 @@ sensor_msgs::msg::PointCloud2
     // Populate the point cloud with the map points
     for (unsigned int idx = 0; idx < cloud.width; idx++)
     {
-        if (mapPoints_in[idx] && !mapPoints_in[idx]->isBad())
+        bool isBad2{};
+        if ((mapPoints_in[idx]) &&
+            mapPoints_in[idx]->isBad(isBad2) !=
+                vs_graphs::core::MapPointStatus::MAP_POINT_STATUS_SUCCESS)
         {
-            Eigen::Vector3d P3Dw =
-                mapPoints_in[idx]->getWorldPos().cast<double>();
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPoints_in[idx] && !isBad2)
+        {
+            Eigen::Vector3f worldPos{};
+            if (mapPoints_in[idx]->getWorldPos(worldPos) !=
+                vs_graphs::core::MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Eigen::Vector3d P3Dw = worldPos.cast<double>();
             tf2::Vector3 pointTranslation(P3Dw.x(), P3Dw.y(), P3Dw.z());
             float        dataArray[numChannels] = {
                 static_cast<float>(pointTranslation.x()),
@@ -3406,24 +3431,110 @@ void maybeArchiveSGraph(
         vs_graphs::core::AtlasCurrentMapStatus mapStatus;
         std::vector<vs_graphs::core::Map *>    atlasMaps =
             p_atlas->getCoherentMapView(currentMapId, mapStatus);
-        std::sort(atlasMaps.begin(),
-                  atlasMaps.end(),
-                  [](vs_graphs::core::Map *first_in, vs_graphs::core::Map *second_in)
-                  { return first_in->getId() < second_in->getId(); });
+        std::sort(
+            atlasMaps.begin(),
+            atlasMaps.end(),
+            [](vs_graphs::core::Map *first_in, vs_graphs::core::Map *second_in)
+            {
+                unsigned long firstId{};
+                if (first_in->getId(firstId) !=
+                    vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                unsigned long secondId{};
+                if (second_in->getId(secondId) !=
+                    vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                return firstId < secondId;
+            });
         for (vs_graphs::core::Map *p_map : atlasMaps)
         {
-            if (p_map == nullptr || p_map->isBad())
+            bool mapIsBad{};
+            if (!(p_map == nullptr) &&
+                p_map->isBad(mapIsBad) !=
+                    vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_map == nullptr || mapIsBad)
             {
                 continue;
             }
             SgraphMapInput mapInput;
-            mapInput.mapId = static_cast<long>(p_map->getId());
+            unsigned long  mapId2{};
+            if (p_map->getId(mapId2) !=
+                vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            mapInput.mapId = static_cast<long>(mapId2);
+            unsigned long mapId3{};
+            if ((currentMapId.has_value()) &&
+                p_map->getId(mapId3) !=
+                    vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             mapInput.isActive =
-                currentMapId.has_value() && (*currentMapId == p_map->getId());
-            mapInput.worldFrameEpoch = p_map->getWorldFrameEpoch();
-            mapInput.floorsRaw       = p_map->getAllFloors();
-            mapInput.roomsRaw        = p_map->getAllRooms();
-            mapInput.passagesRaw     = p_map->getAllPassages();
+                currentMapId.has_value() && (*currentMapId == mapId3);
+            std::uint64_t mapWorldFrameEpoch{};
+            if (p_map->getWorldFrameEpoch(mapWorldFrameEpoch) !=
+                vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWorldFrameEpoch returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            mapInput.worldFrameEpoch = mapWorldFrameEpoch;
+            std::vector<vs_graphs::core::semantic::Floor *> mapAllFloors{};
+            if (p_map->getAllFloors(mapAllFloors) !=
+                vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllFloors returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            mapInput.floorsRaw = mapAllFloors;
+            std::vector<vs_graphs::core::semantic::Room *> mapAllRooms{};
+            if (p_map->getAllRooms(mapAllRooms) !=
+                vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllRooms returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            mapInput.roomsRaw = mapAllRooms;
+            std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
+            if (p_map->getAllPassages(mapAllPassages) !=
+                vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllPassages returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            mapInput.passagesRaw = mapAllPassages;
             mapInputs.push_back(std::move(mapInput));
         }
     }
@@ -5005,7 +5116,17 @@ void publishKeyFrameMarkers(
     /* Remove invalid keyframes before sorting */
     for (vs_graphs::core::KeyFrame *keyFrame : keyFrames_in)
     {
-        if (keyFrame == nullptr || keyFrame->isBad())
+        bool keyFrameIsBad{};
+        if (!(keyFrame == nullptr) &&
+            keyFrame->isBad(keyFrameIsBad) !=
+                vs_graphs::core::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (keyFrame == nullptr || keyFrameIsBad)
         {
             continue;
         }
@@ -5932,7 +6053,15 @@ void publishSegmentedCloud(
         }
 
         std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
-            candidateClassPointClouds = keyFrame->getClsCloudPtrs();
+            candidateClassPointClouds{};
+        if (keyFrame->getClsCloudPtrs(candidateClassPointClouds) !=
+            vs_graphs::core::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getClsCloudPtrs returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Determine whether at least one class cloud contains points */
         const bool hasSegmentedPoints = std::any_of(
@@ -5973,7 +6102,14 @@ void publishSegmentedCloud(
 
         if (olderKeyFrame != nullptr)
         {
-            olderKeyFrame->clearClsClouds();
+            if (olderKeyFrame->clearClsClouds() !=
+                vs_graphs::core::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: clearClsClouds returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
@@ -5991,7 +6127,14 @@ void publishSegmentedCloud(
 
     if (totalSegmentedPointCount == 0)
     {
-        selectedKeyFrame->clearClsClouds();
+        if (selectedKeyFrame->clearClsClouds() !=
+            vs_graphs::core::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: clearClsClouds returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         return;
     }
 
@@ -6076,7 +6219,14 @@ void publishSegmentedCloud(
      * The class clouds have now been consumed and should not be republished on
      * the next invocation.
      */
-    selectedKeyFrame->clearClsClouds();
+    if (selectedKeyFrame->clearClsClouds() !=
+        vs_graphs::core::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: clearClsClouds returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Return when every available point was invalid */
     if (segmentedPointCloud_camera.empty())
@@ -6521,10 +6671,27 @@ void publishTopics(
 
         if (p_activeMap != nullptr)
         {
-            const std::uint64_t mapId =
-                static_cast<std::uint64_t>(p_activeMap->getId());
+            unsigned long activeMapId{};
+            if (p_activeMap->getId(activeMapId) !=
+                vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            const std::uint64_t mapId = static_cast<std::uint64_t>(activeMapId);
 
-            const int mapChangeIndex = p_activeMap->getLastBigChangeIndex();
+            int mapChangeIndex{};
+            if (p_activeMap->getLastBigChangeIndex(mapChangeIndex) !=
+                vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getLastBigChangeIndex returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             const std::uint64_t nonNegativeMapChangeIndex =
                 mapChangeIndex > 0 ? static_cast<std::uint64_t>(mapChangeIndex)

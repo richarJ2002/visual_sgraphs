@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,8 +34,17 @@ namespace core
 KeyFrame *Atlas::getKeyFrameById(long unsigned int idCount_in)
 {
     unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap != nullptr ? p_activeMap->getKeyFrameById(idCount_in)
-                                  : nullptr;
+    KeyFrame          *p_activeMapKeyFrameById = nullptr;
+    if ((p_activeMap != nullptr) &&
+        p_activeMap->getKeyFrameById(idCount_in, p_activeMapKeyFrameById) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getKeyFrameById returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return p_activeMap != nullptr ? p_activeMapKeyFrameById : nullptr;
 }
 
 } // namespace core

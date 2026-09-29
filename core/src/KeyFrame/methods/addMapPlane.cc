@@ -35,11 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::addMapPlane(geometric::Plane *p_plane_in)
+KeyFrameStatus KeyFrame::addMapPlane(geometric::Plane *p_plane_in)
 {
     if (p_plane_in == nullptr)
     {
-        return;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
     unique_lock<mutex> lock(featuresMutex);
@@ -49,6 +49,8 @@ void KeyFrame::addMapPlane(geometric::Plane *p_plane_in)
     {
         mapPlanes.push_back(p_plane_in);
     }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

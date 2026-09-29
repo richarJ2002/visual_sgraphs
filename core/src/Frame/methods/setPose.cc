@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -43,13 +44,21 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::setPose(const Sophus::SE3<float> &Tcw_in)
+FrameStatus Frame::setPose(const Sophus::SE3<float> &Tcw_in)
 {
     poseTcw = Tcw_in;
 
-    updatePoseMatrices();
+    if (updatePoseMatrices() != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updatePoseMatrices returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     isFrameSet      = true;
     isPoseAvailable = true;
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

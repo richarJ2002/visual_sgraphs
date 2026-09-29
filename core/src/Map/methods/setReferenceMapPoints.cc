@@ -34,10 +34,13 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setReferenceMapPoints(const vector<MapPoint *> &mapPoints_in)
+MapStatus
+    Map::setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in)
 {
     unique_lock<mutex> lock(mapMutex);
     referenceMapPoints = mapPoints_in;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

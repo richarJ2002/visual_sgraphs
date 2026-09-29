@@ -27,6 +27,7 @@
 #include "Tracking.h"
 
 #include <iomanip>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -50,9 +51,26 @@ void System::saveTrajectoryEuRoC(const string &filename_in)
             continue;
         }
 
-        const std::size_t keyFrameCount = p_map->getAllKeyFrames().size();
+        std::vector<KeyFrame *> mapAllKeyFrames{};
+        if (p_map->getAllKeyFrames(mapAllKeyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const std::size_t keyFrameCount = mapAllKeyFrames.size();
 
-        std::cout << "  Map " << std::to_string(p_map->getId()) << " has "
+        unsigned long mapId{};
+        if (p_map->getId(mapId) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::cout << "  Map " << std::to_string(mapId) << " has "
                   << std::to_string(keyFrameCount) << " KFs" << std::endl;
         if (keyFrameCount > maximumKeyFrameCount)
         {
@@ -68,7 +86,15 @@ void System::saveTrajectoryEuRoC(const string &filename_in)
         return;
     }
 
-    vector<KeyFrame *> keyFrames = p_biggerMap->getAllKeyFrames();
+    std::vector<KeyFrame *> keyFrames{};
+    if (p_biggerMap->getAllKeyFrames(keyFrames) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
@@ -76,9 +102,31 @@ void System::saveTrajectoryEuRoC(const string &filename_in)
     Sophus::SE3f
         Twb; // Can be word to cam0 or world to b depending on IMU or not.
     if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO || sensor == IMU_RGBD)
-        Twb = keyFrames[0]->getImuPose();
+    {
+        Sophus::SE3f imuPose{};
+        if (keyFrames[0]->getImuPose(imuPose) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Twb = imuPose;
+    }
     else
-        Twb = keyFrames[0]->getPoseInverse();
+    {
+        Sophus::SE3f poseInverse{};
+        if (keyFrames[0]->getPoseInverse(poseInverse) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPoseInverse returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Twb = poseInverse;
+    }
 
     ofstream f;
     f.open(filename_in.c_str());
@@ -114,16 +162,56 @@ void System::saveTrajectoryEuRoC(const string &filename_in)
         if (!p_keyFrame)
             continue;
 
-        while (p_keyFrame->isBad())
+        for (;;)
         {
-            Trw        = Trw * p_keyFrame->tcp;
-            p_keyFrame = p_keyFrame->getParent();
+            bool keyFrameIsBad{};
+            if (p_keyFrame->isBad(keyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!(keyFrameIsBad))
+            {
+                break;
+            }
+            Trw                        = Trw * p_keyFrame->tcp;
+            KeyFrame *p_keyFrameParent = nullptr;
+            if (p_keyFrame->getParent(p_keyFrameParent) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParent returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            p_keyFrame = p_keyFrameParent;
         }
 
-        if (!p_keyFrame || p_keyFrame->getMap() != p_biggerMap)
+        Map *p_keyFrameMap = nullptr;
+        if (!(!p_keyFrame) && p_keyFrame->getMap(p_keyFrameMap) !=
+                                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_keyFrame || p_keyFrameMap != p_biggerMap)
             continue;
 
-        Trw = Trw * p_keyFrame->getPose() *
+        Sophus::SE3f keyFramePose{};
+        if (p_keyFrame->getPose(keyFramePose) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Trw = Trw * keyFramePose *
               Twb; // Tcp*Tpw*Twb0=Tcb0 where b0 is the new world reference
 
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||

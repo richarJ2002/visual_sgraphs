@@ -88,8 +88,16 @@ SemanticGraphSnapshotStatus entityRefForRoom(Room      *p_room_in,
                      "fail; continuing as before.",
                      __func__);
     }
-    EntityKey key2{};
-    if (makeKey(EntityKind::ROOM, p_map->getId(), room_inId2, key2) !=
+    EntityKey     key2{};
+    unsigned long mapId{};
+    if (p_map->getId(mapId) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (makeKey(EntityKind::ROOM, mapId, room_inId2, key2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,8 +34,17 @@ namespace core
 geometric::Plane *Atlas::getPlaneById(int planeId_in)
 {
     unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap != nullptr ? p_activeMap->getPlaneById(planeId_in)
-                                  : nullptr;
+    geometric::Plane  *p_activeMapPlaneById = nullptr;
+    if ((p_activeMap != nullptr) &&
+        p_activeMap->getPlaneById(planeId_in, p_activeMapPlaneById) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneById returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return p_activeMap != nullptr ? p_activeMapPlaneById : nullptr;
 }
 
 } // namespace core

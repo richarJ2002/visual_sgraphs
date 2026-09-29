@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setInertialSensor()
+MapStatus Map::setInertialSensor()
 {
     unique_lock<mutex> lock(mapMutex);
     isInertialMode = true;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

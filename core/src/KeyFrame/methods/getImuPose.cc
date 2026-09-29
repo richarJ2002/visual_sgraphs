@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f KeyFrame::getImuPose()
+KeyFrameStatus KeyFrame::getImuPose(Sophus::SE3f &imuPose_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return twc * imuCalibration.mTcb;
+    imuPose_out = twc * imuCalibration.mTcb;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

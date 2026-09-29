@@ -41,11 +41,20 @@ std::vector<MapPoint *> Tracking::findPointsCloseToLocation(
     std::vector<MapPoint *> closePoints;
     for (MapPoint *p_point : points_in)
     {
-        double distance{};
-        if (utils::utils::Utils::calculateEuclideanDistance(
-                p_point->getWorldPos(),
-                location_in,
-                distance) != utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
+        double          distance{};
+        Eigen::Vector3f pointWorldPos{};
+        if (p_point->getWorldPos(pointWorldPos) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (utils::utils::Utils::calculateEuclideanDistance(pointWorldPos,
+                                                            location_in,
+                                                            distance) !=
+            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
                 rclcpp::get_logger("vs_graphs"),

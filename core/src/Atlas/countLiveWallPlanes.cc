@@ -39,8 +39,16 @@ std::size_t countLiveWallPlanes(Map *p_map_in)
     {
         return 0U;
     }
-    std::size_t liveCount = 0U;
-    for (geometric::Plane *p_plane : p_map_in->getAllPlanes())
+    std::size_t                     liveCount = 0U;
+    std::vector<geometric::Plane *> mapAllPlanes{};
+    if (p_map_in->getAllPlanes(mapAllPlanes) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (geometric::Plane *p_plane : mapAllPlanes)
     {
         bool planeIsBad{};
         if ((p_plane != nullptr) &&

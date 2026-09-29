@@ -29,11 +29,28 @@ semantic::Room *SemanticsManager::findRoomByMapAndId(long unsigned int mapId_in,
 {
     for (Map *p_map : p_atlas->getAllMaps())
     {
-        if (p_map == nullptr || p_map->getId() != mapId_in)
+        unsigned long mapId{};
+        if (!(p_map == nullptr) &&
+            p_map->getId(mapId) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_map == nullptr || mapId != mapId_in)
         {
             continue;
         }
-        for (semantic::Room *p_room : p_map->getAllRooms())
+        std::vector<semantic::Room *> mapAllRooms{};
+        if (p_map->getAllRooms(mapAllRooms) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllRooms returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (semantic::Room *p_room : mapAllRooms)
         {
             bool roomIsBad{};
             if ((p_room != nullptr) &&

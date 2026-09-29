@@ -40,9 +40,24 @@ void Atlas::exportRoomContextFromCurrentMap()
      * Candidate rooms (prospective/provisional) may not have full wall loops
      * yet but still carry spatial identity needed for cross-restart matching.
      */
-    std::vector<semantic::Room *> rooms = p_activeMap->getAllDetectedMapRooms();
-    std::vector<semantic::Room *> candidateRooms =
-        p_activeMap->getAllCandidateMapRooms();
+    std::vector<semantic::Room *> rooms{};
+    if (p_activeMap->getAllDetectedMapRooms(rooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> candidateRooms{};
+    if (p_activeMap->getAllCandidateMapRooms(candidateRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllCandidateMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     rooms.insert(rooms.end(), candidateRooms.begin(), candidateRooms.end());
 
     if (rooms.empty())
@@ -51,7 +66,15 @@ void Atlas::exportRoomContextFromCurrentMap()
     std::vector<semantic::RoomContextSnapshot> snapshots;
     snapshots.reserve(rooms.size());
 
-    const long unsigned int mapId = p_activeMap->getId();
+    unsigned long mapIdValue{};
+    if (p_activeMap->getId(mapIdValue) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
 
     for (semantic::Room *p_room : rooms)
     {
@@ -489,7 +512,15 @@ void Atlas::exportRoomContextFromCurrentMap()
             }
             if (p_room != nullptr && !roomIsBad2 && roomId4 == departureRoomId)
             {
-                p_activeMap->setFinalRoom(p_room);
+                if (p_activeMap->setFinalRoom(p_room) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setFinalRoom returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
                 break;
             }
         }

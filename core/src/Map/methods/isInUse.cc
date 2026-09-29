@@ -34,9 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool Map::isInUse()
+MapStatus Map::isInUse(bool &isInUse_out)
 {
-    return isMapInUse;
+    isInUse_out = isMapInUse;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

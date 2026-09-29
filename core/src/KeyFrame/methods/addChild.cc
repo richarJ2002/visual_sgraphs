@@ -35,10 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::addChild(KeyFrame *p_keyFrame_in)
+KeyFrameStatus KeyFrame::addChild(KeyFrame *p_keyFrame_in)
 {
     unique_lock<mutex> lockCon(connectionsMutex);
     childrens.insert(p_keyFrame_in);
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -26,6 +26,7 @@
 #include "System.h"
 
 #include <iomanip>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,12 +52,29 @@ void System::saveKeyFrameTrajectoryTUM(const string &filename_in)
     {
         KeyFrame *p_keyFrame = keyFrames[keyFrameIndex];
 
-        if (p_keyFrame->isBad())
+        bool keyFrameIsBad{};
+        if (p_keyFrame->isBad(keyFrameIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (keyFrameIsBad)
             continue;
 
-        Sophus::SE3f       Twc = p_keyFrame->getPoseInverse();
-        Eigen::Quaternionf q   = Twc.unit_quaternion();
-        Eigen::Vector3f    t   = Twc.translation();
+        Sophus::SE3f Twc{};
+        if (p_keyFrame->getPoseInverse(Twc) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPoseInverse returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Quaternionf q = Twc.unit_quaternion();
+        Eigen::Vector3f    t = Twc.translation();
         f << setprecision(6) << p_keyFrame->timeStamp << setprecision(7) << " "
           << t(0) << " " << t(1) << " " << t(2) << " " << q.x() << " " << q.y()
           << " " << q.z() << " " << q.w() << endl;

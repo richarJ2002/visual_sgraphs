@@ -29,13 +29,14 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void KeyFrame::setErase()
+KeyFrameStatus KeyFrame::setErase()
 {
     {
         unique_lock<mutex> lock(connectionsMutex);
@@ -47,8 +48,16 @@ void KeyFrame::setErase()
 
     if (isPendingErase)
     {
-        setBadFlag();
+        if (setBadFlag() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBadFlag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

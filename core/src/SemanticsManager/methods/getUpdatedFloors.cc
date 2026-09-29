@@ -40,7 +40,16 @@ void SemanticsManager::getUpdatedFloors(void)
     }
 
     /* The current implementation supports one floor */
-    if (p_currentMap->getAllFloors().empty())
+    std::vector<semantic::Floor *> currentMapAllFloors{};
+    if (p_currentMap->getAllFloors(currentMapAllFloors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (currentMapAllFloors.empty())
     {
         /* A reset can reach this update before the new map has a usable
          * camera pose. Recover the semantic floor identity from the last
@@ -70,8 +79,14 @@ void SemanticsManager::getUpdatedFloors(void)
     }
 
     /* Collapse legacy/merge duplicates before writing any hierarchy edge. */
-    std::vector<vs_graphs::core::semantic::Floor *> floors =
-        p_currentMap->getAllFloors();
+    std::vector<vs_graphs::core::semantic::Floor *> floors{};
+    if (p_currentMap->getAllFloors(floors) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     semantic::Floor *p_keeperFloor = nullptr;
     if (semantic::Floor::selectBestObservedFloor(floors, p_keeperFloor) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
@@ -99,12 +114,27 @@ void SemanticsManager::getUpdatedFloors(void)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_currentMap->eraseMapFloor(p_duplicateFloor);
+        if (p_currentMap->eraseMapFloor(p_duplicateFloor) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseMapFloor returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     /* Refresh the comparable identity from the strongest observed ground. */
-    geometric::Plane *p_groundPlane = p_currentMap->getBiggestGroundPlane();
-    bool              groundIdentityUpdated = false;
+    geometric::Plane *p_groundPlane = nullptr;
+    if (p_currentMap->getBiggestGroundPlane(p_groundPlane) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool groundIdentityUpdated = false;
     if (p_groundPlane != nullptr)
     {
         geometric::Plane::GeometrySnapshot groundGeometry{};

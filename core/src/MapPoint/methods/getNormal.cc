@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f MapPoint::getNormal()
+MapPointStatus MapPoint::getNormal(Eigen::Vector3f &normal_out)
 {
     unique_lock<mutex> lock(positionMutex);
-    return normalVector;
+    normal_out = normalVector;
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

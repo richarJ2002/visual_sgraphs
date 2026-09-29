@@ -37,7 +37,7 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::preSave(
+KeyFrameStatus KeyFrame::preSave(
     set<KeyFrame *>                                        &keyFrames_in,
     set<MapPoint *>                                        &mapPoints_in,
     set<camera_models::geometriccamera::GeometricCamera *> &cameras_in)
@@ -166,6 +166,8 @@ void KeyFrame::preSave(
     {
         backupImuPreintegrated.copyFrom(p_imuPreintegrated);
     }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

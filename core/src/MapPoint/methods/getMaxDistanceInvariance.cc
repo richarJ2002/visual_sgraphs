@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-float MapPoint::getMaxDistanceInvariance()
+MapPointStatus
+    MapPoint::getMaxDistanceInvariance(float &maxDistanceInvariance_out)
 {
     unique_lock<mutex> lock(positionMutex);
-    return 1.2f * maxDistance;
+    maxDistanceInvariance_out = 1.2f * maxDistance;
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

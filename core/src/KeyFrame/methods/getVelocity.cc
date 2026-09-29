@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f KeyFrame::getVelocity()
+KeyFrameStatus KeyFrame::getVelocity(Eigen::Vector3f &velocity_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return velocityVw;
+    velocity_out = velocityVw;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

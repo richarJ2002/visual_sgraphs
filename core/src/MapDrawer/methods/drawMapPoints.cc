@@ -28,6 +28,7 @@
 #include "MapPoint.h"
 #include <mutex>
 #include <pangolin/pangolin.h>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -40,8 +41,24 @@ void MapDrawer::drawMapPoints()
     if (!p_activeMap)
         return;
 
-    const vector<MapPoint *> &mapPoints = p_activeMap->getAllMapPoints();
-    const vector<MapPoint *> &vpRefMPs  = p_activeMap->getReferenceMapPoints();
+    std::vector<MapPoint *> mapPoints{};
+    if (p_activeMap->getAllMapPoints(mapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<MapPoint *> vpRefMPs{};
+    if (p_activeMap->getReferenceMapPoints(vpRefMPs) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getReferenceMapPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     set<MapPoint *> referenceMapPoints(vpRefMPs.begin(), vpRefMPs.end());
 
@@ -56,11 +73,26 @@ void MapDrawer::drawMapPoints()
          mapPointIndex < iend;
          mapPointIndex++)
     {
-        if (mapPoints[mapPointIndex]->isBad() ||
-            referenceMapPoints.count(mapPoints[mapPointIndex]))
+        bool isBad2{};
+        if (mapPoints[mapPointIndex]->isBad(isBad2) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isBad2 || referenceMapPoints.count(mapPoints[mapPointIndex]))
             continue;
-        Eigen::Matrix<float, 3, 1> position =
-            mapPoints[mapPointIndex]->getWorldPos();
+        Eigen::Matrix<float, 3, 1> position{};
+        if (mapPoints[mapPointIndex]->getWorldPos(position) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         glVertex3f(position(0), position(1), position(2));
     }
     glEnd();
@@ -74,9 +106,25 @@ void MapDrawer::drawMapPoints()
          sit != send;
          sit++)
     {
-        if ((*sit)->isBad())
+        bool isBad3{};
+        if ((*sit)->isBad(isBad3) != MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isBad3)
             continue;
-        Eigen::Matrix<float, 3, 1> position = (*sit)->getWorldPos();
+        Eigen::Matrix<float, 3, 1> position{};
+        if ((*sit)->getWorldPos(position) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         glVertex3f(position(0), position(1), position(2));
     }
 

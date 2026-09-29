@@ -28,6 +28,7 @@
 #include "ORBmatcher.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -49,10 +50,26 @@ void LoopClosing::searchAndFuse(const vector<KeyFrame *> &conectedKeyFrames_in,
          mit != mend;
          mit++)
     {
-        int           replaceCount = 0;
-        KeyFrame     *p_keyFrame   = (*mit);
-        Map          *p_map        = p_keyFrame->getMap();
-        Sophus::SE3f  Tcw          = p_keyFrame->getPose();
+        int       replaceCount = 0;
+        KeyFrame *p_keyFrame   = (*mit);
+        Map      *p_map        = nullptr;
+        if (p_keyFrame->getMap(p_map) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3f Tcw{};
+        if (p_keyFrame->getPose(Tcw) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         Sophus::Sim3f Scw(Tcw.unit_quaternion(), Tcw.translation());
         Scw.setScale(1.f);
         /*std::cout << "These should be zeros: " <<
@@ -72,7 +89,15 @@ void LoopClosing::searchAndFuse(const vector<KeyFrame *> &conectedKeyFrames_in,
             if (p_rep)
             {
                 replaceCount += 1;
-                p_rep->replace(mapPoints_in[lpIndex]);
+                if (p_rep->replace(mapPoints_in[lpIndex]) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: replace returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
         /*cout << "FUSE-POSE: KF " << pKF->id << " ->" << num_replaces << "

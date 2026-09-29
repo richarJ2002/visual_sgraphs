@@ -56,7 +56,14 @@ void Atlas::addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
                      "fail; continuing as before.",
                      __func__);
     }
-    p_ownerMap->addMapPassage(p_passage_in);
+    if (p_ownerMap->addMapPassage(p_passage_in) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapPassage returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

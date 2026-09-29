@@ -39,8 +39,17 @@ std::size_t countLivePassages(Map *p_map_in)
     {
         return 0U;
     }
-    std::size_t liveCount = 0U;
-    for (semantic::Passage *p_passage : p_map_in->getAllPassages())
+    std::size_t                                       liveCount = 0U;
+    std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
+    if (p_map_in->getAllPassages(mapAllPassages) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Passage *p_passage : mapAllPassages)
     {
         bool passageIsBad{};
         if ((p_passage != nullptr) &&

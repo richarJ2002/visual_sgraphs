@@ -34,13 +34,14 @@ namespace vs_graphs
 namespace core
 {
 
-bool MapPoint::isBad()
+MapPointStatus MapPoint::isBad(bool &isBad_out)
 {
     unique_lock<mutex> lock1(featuresMutex, std::defer_lock);
     unique_lock<mutex> lock2(positionMutex, std::defer_lock);
     lock(lock1, lock2);
 
-    return isFlaggedBad;
+    isBad_out = isFlaggedBad;
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

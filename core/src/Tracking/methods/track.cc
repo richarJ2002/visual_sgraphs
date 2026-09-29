@@ -103,7 +103,17 @@ void Tracking::track()
                     cout << "Timestamp jump detected. State set to LOST. "
                             "Reseting IMU integration..."
                          << endl;
-                    if (!p_currentMap->getInertialBA2())
+                    bool currentMapInertialBA2{};
+                    if (p_currentMap->getInertialBA2(currentMapInertialBA2) !=
+                        MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getInertialBA2 returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (!currentMapInertialBA2)
                     {
                         p_system->requestResetActiveMapWithCause(
                             ResetCause::TIMESTAMP_JUMP_BEFORE_SECOND_IMU_BA);
@@ -137,7 +147,25 @@ void Tracking::track()
     if ((sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
          sensor == System::IMU_RGBD) &&
         p_lastKeyFrame)
-        currentFrame.setNewBias(p_lastKeyFrame->getImuBias());
+    {
+        IMU::Bias lastKeyFrameImuBias{};
+        if (p_lastKeyFrame->getImuBias(lastKeyFrameImuBias) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuBias returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (currentFrame.setNewBias(lastKeyFrameImuBias) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setNewBias returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
 
     if (state == NO_IMAGES_YET)
         state = NOT_INITIALIZED;
@@ -171,11 +199,34 @@ void Tracking::track()
 
     isMapUpdated = false;
 
-    int currentMapChangeIndexCount = p_currentMap->getMapChangeIndex();
-    int mapChangeIndexCount        = p_currentMap->getLastMapChange();
+    int currentMapChangeIndexCount{};
+    if (p_currentMap->getMapChangeIndex(currentMapChangeIndexCount) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapChangeIndex returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    int mapChangeIndexCount{};
+    if (p_currentMap->getLastMapChange(mapChangeIndexCount) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getLastMapChange returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (currentMapChangeIndexCount > mapChangeIndexCount)
     {
-        p_currentMap->setLastMapChange(currentMapChangeIndexCount);
+        if (p_currentMap->setLastMapChange(currentMapChangeIndexCount) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setLastMapChange returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         isMapUpdated = true;
     }
 
@@ -222,8 +273,18 @@ void Tracking::track()
                 // last frame
                 checkReplacedInLastFrame();
 
-                if ((!isVelocityAvailable &&
-                     !p_currentMap->isImuInitialized()) ||
+                bool currentMapIsImuInitialized{};
+                if ((!isVelocityAvailable) && p_currentMap->isImuInitialized(
+                                                  currentMapIsImuInitialized) !=
+                                                  MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isImuInitialized returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if ((!isVelocityAvailable && !currentMapIsImuInitialized) ||
                     currentFrame.id < lastRelocFrameId + 2)
                 {
                     Verbose::printMess(
@@ -250,16 +311,30 @@ void Tracking::track()
                     {
                         state = LOST;
                     }
-                    else if (p_currentMap->getKeyFrameCount() > 10)
-                    {
-                        // cout << "KF in map: " <<
-                        // pCurrentMap->KeyFramesInMap() << endl;
-                        state         = RECENTLY_LOST;
-                        timeStampLost = currentFrame.timeStamp;
-                    }
                     else
                     {
-                        state = LOST;
+                        unsigned long currentMapKeyFrameCount{};
+                        if (p_currentMap->getKeyFrameCount(
+                                currentMapKeyFrameCount) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getKeyFrameCount returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (currentMapKeyFrameCount > 10)
+                        {
+                            // cout << "KF in map: " <<
+                            // pCurrentMap->KeyFramesInMap() << endl;
+                            state         = RECENTLY_LOST;
+                            timeStampLost = currentFrame.timeStamp;
+                        }
+                        else
+                        {
+                            state = LOST;
+                        }
                     }
                 }
             }
@@ -276,7 +351,18 @@ void Tracking::track()
                          sensor == System::IMU_STEREO ||
                          sensor == System::IMU_RGBD))
                     {
-                        if (p_currentMap->isImuInitialized())
+                        bool currentMapIsImuInitialized2{};
+                        if (p_currentMap->isImuInitialized(
+                                currentMapIsImuInitialized2) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: isImuInitialized returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (currentMapIsImuInitialized2)
                             predictStateIMU();
                         else
                             isOk = false;
@@ -314,7 +400,18 @@ void Tracking::track()
                     Verbose::printMess("A new map is started...",
                                        Verbose::VERBOSITY_NORMAL);
 
-                    if (p_currentMap->getKeyFrameCount() < 10)
+                    unsigned long currentMapKeyFrameCount2{};
+                    if (p_currentMap->getKeyFrameCount(
+                            currentMapKeyFrameCount2) !=
+                        MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getKeyFrameCount returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (currentMapKeyFrameCount2 < 10)
                     {
                         p_system->requestResetActiveMapWithCause(
                             ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP);
@@ -388,13 +485,31 @@ void Tracking::track()
                         bOKMM        = trackWithMotionModel();
                         mapPointsMMs = currentFrame.mapPoints;
                         outMmFlags   = currentFrame.outlierFlags;
-                        TcwMM        = currentFrame.getPose();
+                        Sophus::SE3<float> currentFrameGetPose{};
+                        if (currentFrame.getPose(currentFrameGetPose) !=
+                            FrameStatus::FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getPose returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        TcwMM = currentFrameGetPose;
                     }
                     isOkReloc = relocalization();
 
                     if (bOKMM && !isOkReloc)
                     {
-                        currentFrame.setPose(TcwMM);
+                        if (currentFrame.setPose(TcwMM) !=
+                            FrameStatus::FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: setPose returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
                         currentFrame.mapPoints    = mapPointsMMs;
                         currentFrame.outlierFlags = outMmFlags;
 
@@ -407,8 +522,18 @@ void Tracking::track()
                                 if (currentFrame.mapPoints[keyPointIndex] &&
                                     !currentFrame.outlierFlags[keyPointIndex])
                                 {
-                                    currentFrame.mapPoints[keyPointIndex]
-                                        ->increaseFound();
+                                    if (currentFrame.mapPoints[keyPointIndex]
+                                            ->increaseFound() !=
+                                        MapPointStatus::
+                                            MAP_POINT_STATUS_SUCCESS)
+                                    {
+                                        RCLCPP_ERROR(
+                                            rclcpp::get_logger("vs_graphs"),
+                                            "%s: increaseFound returned a "
+                                            "failure status although it cannot "
+                                            "fail; continuing as before.",
+                                            __func__);
+                                    }
                                 }
                             }
                         }
@@ -487,7 +612,16 @@ void Tracking::track()
             //}
         }
 
-        if (p_currentMap->isImuInitialized())
+        bool currentMapIsImuInitialized3{};
+        if (p_currentMap->isImuInitialized(currentMapIsImuInitialized3) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isImuInitialized returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (currentMapIsImuInitialized3)
         {
             if (isOk)
             {
@@ -514,17 +648,75 @@ void Tracking::track()
 
         // Update drawer
         p_frameDrawer->update(this);
-        if (currentFrame.isSet())
-            p_mapDrawer->setCurrentCameraPose(currentFrame.getPose());
+        bool currentFrameIsSet{};
+        if (currentFrame.isSet(currentFrameIsSet) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isSet returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (currentFrameIsSet)
+        {
+            Sophus::SE3<float> currentFrameGetPose2{};
+            if (currentFrame.getPose(currentFrameGetPose2) !=
+                FrameStatus::FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPose returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            p_mapDrawer->setCurrentCameraPose(currentFrameGetPose2);
+        }
 
         if (isOk || state == RECENTLY_LOST)
         {
             // Update motion model
-            if (lastFrame.isSet() && currentFrame.isSet())
+            bool lastFrameIsSet{};
+            if (lastFrame.isSet(lastFrameIsSet) !=
+                FrameStatus::FRAME_STATUS_SUCCESS)
             {
-                Sophus::SE3f LastTwc = lastFrame.getPose().inverse();
-                velocity             = currentFrame.getPose() * LastTwc;
-                isVelocityAvailable  = true;
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isSet returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            bool currentFrameIsSet2{};
+            if ((lastFrameIsSet) && currentFrame.isSet(currentFrameIsSet2) !=
+                                        FrameStatus::FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isSet returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (lastFrameIsSet && currentFrameIsSet2)
+            {
+                Sophus::SE3<float> lastFrameGetPose{};
+                if (lastFrame.getPose(lastFrameGetPose) !=
+                    FrameStatus::FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                Sophus::SE3f       LastTwc = lastFrameGetPose.inverse();
+                Sophus::SE3<float> currentFrameGetPose3{};
+                if (currentFrame.getPose(currentFrameGetPose3) !=
+                    FrameStatus::FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                velocity            = currentFrameGetPose3 * LastTwc;
+                isVelocityAvailable = true;
             }
             else
             {
@@ -533,7 +725,19 @@ void Tracking::track()
 
             if (sensor == System::IMU_MONOCULAR ||
                 sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
-                p_mapDrawer->setCurrentCameraPose(currentFrame.getPose());
+            {
+                Sophus::SE3<float> currentFrameGetPose4{};
+                if (currentFrame.getPose(currentFrameGetPose4) !=
+                    FrameStatus::FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                p_mapDrawer->setCurrentCameraPose(currentFrameGetPose4);
+            }
 
             // Clean VO matches
             for (int keyPointIndex = 0;
@@ -542,12 +746,25 @@ void Tracking::track()
             {
                 MapPoint *p_mapPoint = currentFrame.mapPoints[keyPointIndex];
                 if (p_mapPoint)
-                    if (p_mapPoint->getObservationCount() < 1)
+                {
+                    int mapPointObservationCount{};
+                    if (p_mapPoint->getObservationCount(
+                            mapPointObservationCount) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getObservationCount returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (mapPointObservationCount < 1)
                     {
                         currentFrame.outlierFlags[keyPointIndex] = false;
                         currentFrame.mapPoints[keyPointIndex] =
                             static_cast<MapPoint *>(nullptr);
                     }
+                }
             }
 
             // Delete temporal MapPoints
@@ -610,7 +827,16 @@ void Tracking::track()
         // Reset if the camera get lost soon after initialization
         if (state == LOST)
         {
-            if (p_currentMap->getKeyFrameCount() <= 10)
+            unsigned long currentMapKeyFrameCount3{};
+            if (p_currentMap->getKeyFrameCount(currentMapKeyFrameCount3) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getKeyFrameCount returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (currentMapKeyFrameCount3 <= 10)
             {
                 p_system->requestResetActiveMapWithCause(
                     ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP);
@@ -618,7 +844,19 @@ void Tracking::track()
             }
             if (sensor == System::IMU_MONOCULAR ||
                 sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
-                if (!p_currentMap->isImuInitialized())
+            {
+                bool currentMapIsImuInitialized4{};
+                if (p_currentMap->isImuInitialized(
+                        currentMapIsImuInitialized4) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isImuInitialized returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (!currentMapIsImuInitialized4)
                 {
                     Verbose::printMess(
                         "Track lost before IMU initialisation, reseting...",
@@ -628,6 +866,7 @@ void Tracking::track()
                             VISUAL_TRACKING_LOST_BEFORE_IMU_INITIALIZATION);
                     return;
                 }
+            }
 
             if (reportResetAttribution(ResetCause::VISUAL_TRACKING_LOST_NEW_MAP,
                                        ResetAction::CREATE_MAP_EXECUTION) !=
@@ -654,11 +893,36 @@ void Tracking::track()
     {
         // Store frame pose information to retrieve the complete camera
         // trajectory afterwards.
-        if (currentFrame.isSet())
+        bool currentFrameIsSet3{};
+        if (currentFrame.isSet(currentFrameIsSet3) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
         {
-            Sophus::SE3f Tcr_ =
-                currentFrame.getPose() *
-                currentFrame.p_referenceKeyFrame->getPoseInverse();
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isSet returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (currentFrameIsSet3)
+        {
+            Sophus::SE3<float> currentFrameGetPose5{};
+            if (currentFrame.getPose(currentFrameGetPose5) !=
+                FrameStatus::FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPose returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Sophus::SE3f poseInverse{};
+            if (currentFrame.p_referenceKeyFrame->getPoseInverse(poseInverse) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Sophus::SE3f Tcr_ = currentFrameGetPose5 * poseInverse;
             relativeFramePoses.push_back(Tcr_);
             referenceKeyFrames.push_back(currentFrame.p_referenceKeyFrame);
             frameTimes.push_back(currentFrame.timeStamp);

@@ -43,19 +43,53 @@ void SemanticsManager::suppressUndefendedWalls(void)
         return;
     }
 
-    const std::vector<semantic::Room *> allRooms = p_currentMap->getAllRooms();
-    const std::vector<semantic::Passage *> allPassages =
-        p_currentMap->getAllPassages();
-    const std::vector<geometric::Plane *> allPlanes =
-        p_currentMap->getAllPlanes();
-    const std::vector<std::vector<Eigen::Vector3d>> skeletonClusters =
-        p_currentMap->getSkeletonClusterPoints();
+    std::vector<semantic::Room *> allRooms{};
+    if (p_currentMap->getAllRooms(allRooms) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Passage *> allPassages{};
+    if (p_currentMap->getAllPassages(allPassages) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<geometric::Plane *> allPlanes{};
+    if (p_currentMap->getAllPlanes(allPlanes) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<std::vector<Eigen::Vector3d>> skeletonClusters{};
+    if (p_currentMap->getSkeletonClusterPoints(skeletonClusters) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSkeletonClusterPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     std::unordered_set<int> mappedWallIds;
 
     /* Ground-aligned axes for evaluateWallAdmissionEvidence's height/width
      * gate (see the comment at its definition). */
-    geometric::Plane *p_groundPlaneForEvidence =
-        p_currentMap->getBiggestGroundPlane();
+    geometric::Plane *p_groundPlaneForEvidence = nullptr;
+    if (p_currentMap->getBiggestGroundPlane(p_groundPlaneForEvidence) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
     bool            groundPlaneForEvidenceIsBad{};
     if ((p_groundPlaneForEvidence != nullptr) &&
@@ -295,9 +329,18 @@ void SemanticsManager::suppressUndefendedWalls(void)
             if (hasCompatibleLiveCluster && !ownedByLiveRoom &&
                 !associatedWithPassage)
             {
+                unsigned long currentMapId{};
+                if (p_currentMap->getId(currentMapId) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
                 std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                              "\"map_id\":"
-                          << p_currentMap->getId()
+                          << currentMapId
                           << ",\"semantic_cycle\":" << pipelineSemanticCycle
                           << ",\"wall_id\":" << wallId
                           << ",\"class\":\"WALL\","
@@ -368,9 +411,18 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (state.unresolvedCycles <
             p_sysParams->roomSeg.minimumUndefendedWallHoldCycles)
         {
+            unsigned long currentMapId2{};
+            if (p_currentMap->getId(currentMapId2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                          "\"map_id\":"
-                      << p_currentMap->getId()
+                      << currentMapId2
                       << ",\"semantic_cycle\":" << pipelineSemanticCycle
                       << ",\"wall_id\":" << wallId
                       << ",\"class\":\"WALL\","
@@ -400,13 +452,28 @@ void SemanticsManager::suppressUndefendedWalls(void)
         /* Sweep every keyframe that references this plane, including
          * those that hold it in mvpMapPlanes without an Observation
          * entry, so no stale pointer survives retirement. */
-        const std::vector<KeyFrame *> allKeyFrames =
-            p_currentMap->getAllKeyFrames();
+        std::vector<KeyFrame *> allKeyFrames{};
+        if (p_currentMap->getAllKeyFrames(allKeyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (KeyFrame *p_keyFrame : allKeyFrames)
         {
             if (p_keyFrame != nullptr)
             {
-                p_keyFrame->removeMapPlane(p_wall);
+                if (p_keyFrame->removeMapPlane(p_wall) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: removeMapPlane returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
 
@@ -434,8 +501,22 @@ void SemanticsManager::suppressUndefendedWalls(void)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_currentMap->eraseRoomWallPlane(p_wall);
-        p_currentMap->eraseMapPlane(p_wall);
+        if (p_currentMap->eraseRoomWallPlane(p_wall) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseRoomWallPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_currentMap->eraseMapPlane(p_wall) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseMapPlane returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         p_wall->p_refKeyFrame = nullptr;
         if (p_wall->setMap(nullptr) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -449,9 +530,18 @@ void SemanticsManager::suppressUndefendedWalls(void)
 
         if (loggedRetiredWallIds.insert(wallId).second)
         {
+            unsigned long currentMapId3{};
+            if (p_currentMap->getId(currentMapId3) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "SG_PIPELINE {\"event\":\"wall_retirement\","
                          "\"map_id\":"
-                      << p_currentMap->getId()
+                      << currentMapId3
                       << ",\"semantic_cycle\":" << pipelineSemanticCycle
                       << ",\"wall_id\":" << wallId
                       << ",\"class\":\"WALL\",\"lifecycle\":\"RETIRED\","

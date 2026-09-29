@@ -29,13 +29,14 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void KeyFrame::eraseConnection(KeyFrame *p_keyFrame_in)
+KeyFrameStatus KeyFrame::eraseConnection(KeyFrame *p_keyFrame_in)
 {
     bool shouldUpdate = false;
     {
@@ -48,7 +49,17 @@ void KeyFrame::eraseConnection(KeyFrame *p_keyFrame_in)
     }
 
     if (shouldUpdate)
-        updateBestCovisibles();
+    {
+        if (updateBestCovisibles() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateBestCovisibles returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

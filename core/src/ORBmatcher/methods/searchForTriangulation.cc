@@ -23,6 +23,7 @@
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
+#include <rclcpp/logging.hpp>
 #include <stdint-gcc.h>
 
 namespace vs_graphs
@@ -41,11 +42,39 @@ int ORBmatcher::searchForTriangulation(
     const DBoW2::FeatureVector &featureVector2 = pKF2->featureVector;
 
     // Compute epipole in second image
-    Sophus::SE3f    T1w = pKF1->getPose();
-    Sophus::SE3f    T2w = pKF2->getPose();
-    Sophus::SE3f    Tw2 = pKF2->getPoseInverse(); // for convenience
-    Eigen::Vector3f Cw  = pKF1->getCameraCenter();
-    Eigen::Vector3f C2  = T2w * Cw;
+    Sophus::SE3f T1w{};
+    if (pKF1->getPose(T1w) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Sophus::SE3f T2w{};
+    if (pKF2->getPose(T2w) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Sophus::SE3f Tw2{};
+    if (pKF2->getPoseInverse(Tw2) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPoseInverse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    } // for convenience
+    Eigen::Vector3f Cw{};
+    if (pKF1->getCameraCenter(Cw) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCameraCenter returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Vector3f C2 = T2w * Cw;
 
     Eigen::Vector2f ep = pKF2->p_camera->project(C2);
     Sophus::SE3f    T12;
@@ -64,12 +93,28 @@ int ORBmatcher::searchForTriangulation(
     }
     else
     {
-        Sophus::SE3f Tr1w = pKF1->getRightPose();
-        Sophus::SE3f Twr2 = pKF2->getRightPoseInverse();
-        Tll               = T1w * Tw2;
-        Tlr               = T1w * Twr2;
-        Trl               = Tr1w * Tw2;
-        Trr               = Tr1w * Twr2;
+        Sophus::SE3f Tr1w{};
+        if (pKF1->getRightPose(Tr1w) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRightPose returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3f Twr2{};
+        if (pKF2->getRightPoseInverse(Twr2) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRightPoseInverse returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Tll = T1w * Tw2;
+        Tlr = T1w * Twr2;
+        Trl = Tr1w * Tw2;
+        Trr = Tr1w * Twr2;
     }
 
     Eigen::Matrix3f Rll = Tll.rotationMatrix(), Rlr = Tlr.rotationMatrix(),
@@ -110,7 +155,16 @@ int ORBmatcher::searchForTriangulation(
             {
                 const size_t index1 = firstFeatureIt->second[i1];
 
-                MapPoint *p_mapPoint1 = pKF1->getMapPoint(index1);
+                MapPoint *p_mapPoint1 = nullptr;
+                if (pKF1->getMapPoint(index1, p_mapPoint1) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMapPoint returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 // If there is already a MapPoint skip
                 if (p_mapPoint1)
@@ -150,7 +204,16 @@ int ORBmatcher::searchForTriangulation(
                 {
                     size_t index2 = secondFeatureIt->second[i2];
 
-                    MapPoint *p_mapPoint2 = pKF2->getMapPoint(index2);
+                    MapPoint *p_mapPoint2 = nullptr;
+                    if (pKF2->getMapPoint(index2, p_mapPoint2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getMapPoint returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     // If we have already matched or there is a MapPoint skip
                     if (matched2Flags[index2] || p_mapPoint2)

@@ -30,13 +30,16 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-int KeyFrame::getTrackedMapPointCount(const int &minimumObservation_in)
+KeyFrameStatus
+    KeyFrame::getTrackedMapPointCount(const int &minimumObservation_in,
+                                      int       &trackedMapPointCount_out)
 {
     unique_lock<mutex> lock(featuresMutex);
 
@@ -47,12 +50,31 @@ int KeyFrame::getTrackedMapPointCount(const int &minimumObservation_in)
         MapPoint *p_mapPoint = mapPoints[keyPointIndex];
         if (p_mapPoint)
         {
-            if (!p_mapPoint->isBad())
+            bool mapPointIsBad{};
+            if (p_mapPoint->isBad(mapPointIsBad) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!mapPointIsBad)
             {
                 if (shouldCheckObservations)
                 {
-                    if (mapPoints[keyPointIndex]->getObservationCount() >=
-                        minimumObservation_in)
+                    int observationCount{};
+                    if (mapPoints[keyPointIndex]->getObservationCount(
+                            observationCount) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getObservationCount returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (observationCount >= minimumObservation_in)
                         pointCount++;
                 }
                 else
@@ -61,7 +83,8 @@ int KeyFrame::getTrackedMapPointCount(const int &minimumObservation_in)
         }
     }
 
-    return pointCount;
+    trackedMapPointCount_out = pointCount;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

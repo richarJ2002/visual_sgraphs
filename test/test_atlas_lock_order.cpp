@@ -83,7 +83,8 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((priorRoom.setCentroid(Eigen::Vector3d::Zero())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    atlas.getCurrentMap()->addDetectedMapRoom(&priorRoom);
+    ASSERT_EQ((atlas.getCurrentMap()->addDetectedMapRoom(&priorRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     atlas.createNewMap();
     Map       *pNewMap = atlas.getCurrentMap();
@@ -98,7 +99,8 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((newRoom.setCentroid(Eigen::Vector3d::Zero())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    pNewMap->addDetectedMapRoom(&newRoom);
+    ASSERT_EQ((pNewMap->addDetectedMapRoom(&newRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     atlas.matchRoomsToContext(pNewMap);
     EXPECT_TRUE(atlas.tryLockRoomContext());

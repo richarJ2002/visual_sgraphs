@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -34,14 +35,36 @@ void Atlas::changeMap(Map *p_map_in)
 {
     unique_lock<mutex> atlasLock(atlasMutex);
     std::cout << "\n[Atlas]" << std::endl;
-    std::cout << "- Changing to map with MapId #" << p_map_in->getId() << " ..."
+    unsigned long mapId{};
+    if (p_map_in->getId(mapId) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    std::cout << "- Changing to map with MapId #" << mapId << " ..."
               << std::endl;
 
     if (p_activeMap)
-        p_activeMap->setStoredMap();
+    {
+        if (p_activeMap->setStoredMap() != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setStoredMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
 
     p_activeMap = p_map_in;
-    p_activeMap->setCurrentMap();
+    if (p_activeMap->setCurrentMap() != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

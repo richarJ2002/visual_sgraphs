@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,7 +34,16 @@ namespace core
 bool Atlas::isImuInitialized()
 {
     unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap->isImuInitialized();
+    bool               activeMapIsImuInitialized{};
+    if (p_activeMap->isImuInitialized(activeMapIsImuInitialized) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapIsImuInitialized;
 }
 
 } // namespace core

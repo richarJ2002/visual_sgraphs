@@ -43,10 +43,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::setIntegrated()
+FrameStatus Frame::setIntegrated()
 {
     unique_lock<std::mutex> lock(*p_imuMutex);
     hasImuPreintegration = true;
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

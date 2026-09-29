@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-vector<Door *> Map::getAllDoors()
+MapStatus Map::getAllDoors(std::vector<Door *> &allDoors_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return vector<Door *>(doors.begin(), doors.end());
+    allDoors_out = std::vector<Door *>(doors.begin(), doors.end());
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

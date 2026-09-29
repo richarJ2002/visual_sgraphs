@@ -43,7 +43,9 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::unprojectStereo(const int &index_in, Eigen::Vector3f &x3D_out)
+FrameStatus Frame::unprojectStereo(const int       &index_in,
+                                   Eigen::Vector3f &x3D_out,
+                                   bool            &isUnprojected_out)
 {
     const float z = depths[index_in];
     if (z > 0)
@@ -53,11 +55,15 @@ bool Frame::unprojectStereo(const int &index_in, Eigen::Vector3f &x3D_out)
         const float     x = (u - cx) * z * invfx;
         const float     y = (v - cy) * z * invfy;
         Eigen::Vector3f x3Dc(x, y, z);
-        x3D_out = rotationRwc * x3Dc + centerOw;
-        return true;
+        x3D_out           = rotationRwc * x3Dc + centerOw;
+        isUnprojected_out = true;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
     }
     else
-        return false;
+    {
+        isUnprojected_out = false;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

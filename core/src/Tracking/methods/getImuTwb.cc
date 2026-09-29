@@ -24,6 +24,7 @@
  */
 
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,7 +33,16 @@ namespace core
 
 Sophus::SE3f Tracking::getImuTwb()
 {
-    return currentFrame.getImuPose();
+    Sophus::SE3<float> currentFrameImuPose{};
+    if (currentFrame.getImuPose(currentFrameImuPose) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getImuPose returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return currentFrameImuPose;
 }
 
 } // namespace core

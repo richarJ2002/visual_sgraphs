@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-vector<semantic::Room *> Map::getAllRooms()
+MapStatus Map::getAllRooms(std::vector<semantic::Room *> &allRooms_out)
 {
     unique_lock<mutex>       lock(mapMutex);
     vector<semantic::Room *> allRooms;
@@ -42,7 +42,8 @@ vector<semantic::Room *> Map::getAllRooms()
     allRooms.insert(allRooms.end(),
                     markerBasedRooms.begin(),
                     markerBasedRooms.end());
-    return allRooms;
+    allRooms_out = allRooms;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

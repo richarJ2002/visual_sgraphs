@@ -35,10 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<KeyFrame *> KeyFrame::getVectorCovisibleKeyFrames()
+KeyFrameStatus KeyFrame::getVectorCovisibleKeyFrames(
+    std::vector<KeyFrame *> &vectorCovisibleKeyFrames_out)
 {
     unique_lock<mutex> lock(connectionsMutex);
-    return orderedConnectedKeyFrames;
+    vectorCovisibleKeyFrames_out = orderedConnectedKeyFrames;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

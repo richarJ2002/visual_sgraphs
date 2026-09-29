@@ -28,6 +28,7 @@
 #include "LocalMapping.h"
 #include "ORBmatcher.h"
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -45,13 +46,30 @@ void Tracking::searchLocalPoints()
         MapPoint *p_mapPoint = *vit;
         if (p_mapPoint)
         {
-            if (p_mapPoint->isBad())
+            bool mapPointIsBad{};
+            if (p_mapPoint->isBad(mapPointIsBad) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mapPointIsBad)
             {
                 *vit = static_cast<MapPoint *>(nullptr);
             }
             else
             {
-                p_mapPoint->increaseVisible();
+                if (p_mapPoint->increaseVisible() !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: increaseVisible returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 p_mapPoint->lastSeenFrameId      = currentFrame.id;
                 p_mapPoint->isTrackedInView      = false;
                 p_mapPoint->isTrackedInRightView = false;
@@ -71,12 +89,39 @@ void Tracking::searchLocalPoints()
 
         if (p_mapPoint->lastSeenFrameId == currentFrame.id)
             continue;
-        if (p_mapPoint->isBad())
+        bool mapPointIsBad2{};
+        if (p_mapPoint->isBad(mapPointIsBad2) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad2)
             continue;
         // Project (this fills MapPoint variables for matching)
-        if (currentFrame.isInFrustum(p_mapPoint, 0.5))
+        bool currentFrameIsInFrustum{};
+        if (currentFrame.isInFrustum(p_mapPoint,
+                                     0.5,
+                                     currentFrameIsInFrustum) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
         {
-            p_mapPoint->increaseVisible();
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isInFrustum returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (currentFrameIsInFrustum)
+        {
+            if (p_mapPoint->increaseVisible() !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: increaseVisible returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             toMatchCount++;
         }
         if (p_mapPoint->isTrackedInView)
@@ -94,7 +139,16 @@ void Tracking::searchLocalPoints()
             threshold = 3;
         if (p_atlas->isImuInitialized())
         {
-            if (p_atlas->getCurrentMap()->getInertialBA2())
+            bool inertialBA2{};
+            if (p_atlas->getCurrentMap()->getInertialBA2(inertialBA2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getInertialBA2 returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (inertialBA2)
                 threshold = 2;
             else
                 threshold = 6;

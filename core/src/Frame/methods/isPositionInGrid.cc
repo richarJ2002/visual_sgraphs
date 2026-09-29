@@ -43,9 +43,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::isPositionInGrid(const cv::KeyPoint &keyPoint_in,
-                             int                &positionX_out,
-                             int                &positionY_out)
+FrameStatus Frame::isPositionInGrid(const cv::KeyPoint &keyPoint_in,
+                                    int                &positionX_out,
+                                    int                &positionY_out,
+                                    bool               &isPositionInGrid_out)
 {
     positionX_out =
         round((keyPoint_in.pt.x - gridMinX) * gridElementWidthInverse);
@@ -56,9 +57,13 @@ bool Frame::isPositionInGrid(const cv::KeyPoint &keyPoint_in,
     // the image
     if (positionX_out < 0 || positionX_out >= FRAME_GRID_COLS ||
         positionY_out < 0 || positionY_out >= FRAME_GRID_ROWS)
-        return false;
+    {
+        isPositionInGrid_out = false;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
+    }
 
-    return true;
+    isPositionInGrid_out = true;
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

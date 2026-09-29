@@ -34,9 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-KeyFrame *Map::getOriginKeyFrame()
+MapStatus Map::getOriginKeyFrame(KeyFrame *&p_originKeyFrame_out)
 {
-    return p_initialKeyFrame;
+    p_originKeyFrame_out = p_initialKeyFrame;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

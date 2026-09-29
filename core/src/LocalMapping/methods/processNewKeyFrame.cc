@@ -26,6 +26,7 @@
 #include "LocalMapping.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,11 +42,25 @@ void LocalMapping::processNewKeyFrame()
     }
 
     // Compute Bags of Words structures
-    p_currentKeyFrame->computeBagOfWords();
+    if (p_currentKeyFrame->computeBagOfWords() !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeBagOfWords returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Associate MapPoints to the new keyframe and update normal and descriptor
-    const vector<MapPoint *> matchedMapPoints =
-        p_currentKeyFrame->getMapPointMatches();
+    std::vector<MapPoint *> matchedMapPoints{};
+    if (p_currentKeyFrame->getMapPointMatches(matchedMapPoints) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (size_t mapPointIndex = 0; mapPointIndex < matchedMapPoints.size();
          mapPointIndex++)
@@ -53,14 +68,58 @@ void LocalMapping::processNewKeyFrame()
         MapPoint *p_mapPoint = matchedMapPoints[mapPointIndex];
         if (p_mapPoint)
         {
-            if (!p_mapPoint->isBad())
+            bool mapPointIsBad{};
+            if (p_mapPoint->isBad(mapPointIsBad) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
             {
-                if (!p_mapPoint->isInKeyFrame(p_currentKeyFrame))
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!mapPointIsBad)
+            {
+                bool mapPointIsInKeyFrame{};
+                if (p_mapPoint->isInKeyFrame(p_currentKeyFrame,
+                                             mapPointIsInKeyFrame) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
                 {
-                    p_mapPoint->addObservation(p_currentKeyFrame,
-                                               mapPointIndex);
-                    p_mapPoint->updateNormalAndDepth();
-                    p_mapPoint->computeDistinctiveDescriptors();
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isInKeyFrame returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (!mapPointIsInKeyFrame)
+                {
+                    if (p_mapPoint->addObservation(p_currentKeyFrame,
+                                                   mapPointIndex) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addObservation returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (p_mapPoint->updateNormalAndDepth() !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: updateNormalAndDepth returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
+                    if (p_mapPoint->computeDistinctiveDescriptors() !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: computeDistinctiveDescriptors "
+                                     "returned a failure status although it "
+                                     "cannot fail; continuing as before.",
+                                     __func__);
+                    }
                 }
                 else // this can only happen for new stereo points inserted by
                      // the Tracking
@@ -72,7 +131,14 @@ void LocalMapping::processNewKeyFrame()
     }
 
     // Update links in the Covisibility Graph
-    p_currentKeyFrame->updateConnections();
+    if (p_currentKeyFrame->updateConnections() !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateConnections returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Insert Keyframe in Map
     p_atlas->addKeyFrame(p_currentKeyFrame);

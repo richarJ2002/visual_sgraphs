@@ -600,28 +600,60 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
     ref_keyframe.p_imuPreintegrated = nullptr;
 
     MapPoint original(Eigen::Vector3f(1.0F, 2.0F, 3.0F), &ref_keyframe, &map);
-    original.setNormalVector(Eigen::Vector3f(0.0F, 0.0F, 1.0F));
+    ASSERT_EQ((original.setNormalVector(Eigen::Vector3f(0.0F, 0.0F, 1.0F))),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
     const long unsigned int original_id = original.id;
 
     std::set<KeyFrame *> keyframe_set{&ref_keyframe};
     std::set<MapPoint *> mappoint_set{&original};
-    original.preSave(keyframe_set, mappoint_set);
+    ASSERT_EQ((original.preSave(keyframe_set, mappoint_set)),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
 
     MapPoint loaded;
     RoundTripBinaryInto(original, loaded);
     EXPECT_EQ(original_id, loaded.id);
     EXPECT_EQ(original.firstKeyFrameId, loaded.firstKeyFrameId);
     EXPECT_EQ(original.observationCount, loaded.observationCount);
-    EXPECT_TRUE(original.getWorldPos().isApprox(loaded.getWorldPos(), 1.0e-6F));
-    EXPECT_TRUE(original.getNormal().isApprox(loaded.getNormal(), 1.0e-6F));
-    EXPECT_EQ(original.isBad(), loaded.isBad());
-    EXPECT_FLOAT_EQ(original.getMinDistanceInvariance(),
-                    loaded.getMinDistanceInvariance());
-    EXPECT_FLOAT_EQ(original.getMaxDistanceInvariance(),
-                    loaded.getMaxDistanceInvariance());
+    Eigen::Vector3f worldPos{};
+    ASSERT_EQ((original.getWorldPos(worldPos)),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
+    Eigen::Vector3f worldPos2{};
+    ASSERT_EQ((loaded.getWorldPos(worldPos2)),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
+    EXPECT_TRUE(worldPos.isApprox(worldPos2, 1.0e-6F));
+    Eigen::Vector3f normal{};
+    ASSERT_EQ((original.getNormal(normal)),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
+    Eigen::Vector3f normal2{};
+    ASSERT_EQ((loaded.getNormal(normal2)),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
+    EXPECT_TRUE(normal.isApprox(normal2, 1.0e-6F));
+    bool isBad2{};
+    ASSERT_EQ((original.isBad(isBad2)),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
+    bool isBad3{};
+    ASSERT_EQ((loaded.isBad(isBad3)), MapPointStatus::MAP_POINT_STATUS_SUCCESS);
+    EXPECT_EQ(isBad2, isBad3);
+    float minDistanceInvariance{};
+    ASSERT_EQ((original.getMinDistanceInvariance(minDistanceInvariance)),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
+    float minDistanceInvariance2{};
+    ASSERT_EQ((loaded.getMinDistanceInvariance(minDistanceInvariance2)),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
+    EXPECT_FLOAT_EQ(minDistanceInvariance, minDistanceInvariance2);
+    float maxDistanceInvariance{};
+    ASSERT_EQ((original.getMaxDistanceInvariance(maxDistanceInvariance)),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
+    float maxDistanceInvariance2{};
+    ASSERT_EQ((loaded.getMaxDistanceInvariance(maxDistanceInvariance2)),
+              MapPointStatus::MAP_POINT_STATUS_SUCCESS);
+    EXPECT_FLOAT_EQ(maxDistanceInvariance, maxDistanceInvariance2);
     // SKIP mutexes (positionMutex/featuresMutex/mapMutex): post-load object
     // must be usable through its public getters (exercised above).
-    EXPECT_NO_THROW(loaded.setWorldPos(Eigen::Vector3f(4.0F, 5.0F, 6.0F)));
+    MapPointStatus setWorldPosStatus{};
+    EXPECT_NO_THROW(setWorldPosStatus =
+                        loaded.setWorldPos(Eigen::Vector3f(4.0F, 5.0F, 6.0F)));
+    EXPECT_EQ(setWorldPosStatus, MapPointStatus::MAP_POINT_STATUS_SUCCESS);
 }
 
 TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
@@ -664,15 +696,21 @@ TEST(SerializationKeyFrame, DefaultRoundTrip)
     original.p_camera           = nullptr;
     original.p_camera2          = nullptr;
     original.p_imuPreintegrated = nullptr;
-    original.setPose(Sophus::SE3f(Eigen::Quaternionf::Identity(),
-                                  Eigen::Vector3f(1.0F, 0.0F, 0.0F)));
-    original.setVelocity(Eigen::Vector3f(0.1F, 0.2F, 0.3F));
-    original.setNewBias(IMU::Bias(0.01F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F));
+    ASSERT_EQ(
+        (original.setPose(Sophus::SE3f(Eigen::Quaternionf::Identity(),
+                                       Eigen::Vector3f(1.0F, 0.0F, 0.0F)))),
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    ASSERT_EQ((original.setVelocity(Eigen::Vector3f(0.1F, 0.2F, 0.3F))),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (original.setNewBias(IMU::Bias(0.01F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F))),
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
 
     std::set<KeyFrame *>                                        keyframe_set;
     std::set<MapPoint *>                                        mappoint_set;
     std::set<camera_models::geometriccamera::GeometricCamera *> camera_set;
-    original.preSave(keyframe_set, mappoint_set, camera_set);
+    ASSERT_EQ((original.preSave(keyframe_set, mappoint_set, camera_set)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
 
     KeyFrame loaded;
     loaded.p_camera           = nullptr;
@@ -681,39 +719,112 @@ TEST(SerializationKeyFrame, DefaultRoundTrip)
     RoundTripBinaryInto(original, loaded);
     EXPECT_EQ(original.id, loaded.id);
     EXPECT_EQ(original.keyPointCount, loaded.keyPointCount);
-    EXPECT_EQ(original.isBad(), loaded.isBad());
-    ExpectSophusEqual(original.getPose(), loaded.getPose());
-    EXPECT_TRUE(original.getVelocity().isApprox(loaded.getVelocity(), 1.0e-5F));
-    EXPECT_FLOAT_EQ(original.getImuBias().bax, loaded.getImuBias().bax);
+    bool isBad2{};
+    ASSERT_EQ((original.isBad(isBad2)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    bool isBad3{};
+    ASSERT_EQ((loaded.isBad(isBad3)), KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    EXPECT_EQ(isBad2, isBad3);
+    Sophus::SE3f originalPose{};
+    ASSERT_EQ((original.getPose(originalPose)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    Sophus::SE3f loadedPose{};
+    ASSERT_EQ((loaded.getPose(loadedPose)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    ExpectSophusEqual(originalPose, loadedPose);
+    Eigen::Vector3f velocity{};
+    ASSERT_EQ((original.getVelocity(velocity)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    Eigen::Vector3f velocity2{};
+    ASSERT_EQ((loaded.getVelocity(velocity2)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    EXPECT_TRUE(velocity.isApprox(velocity2, 1.0e-5F));
+    IMU::Bias imuBias{};
+    ASSERT_EQ((original.getImuBias(imuBias)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    IMU::Bias imuBias2{};
+    ASSERT_EQ((loaded.getImuBias(imuBias2)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    EXPECT_FLOAT_EQ(imuBias.bax, imuBias2.bax);
     // SKIP mutexes/atomic/thread handles: loaded frame must remain
     // usable (pose getter + new pose set must not deadlock).
-    EXPECT_NO_THROW(loaded.setPose(Sophus::SE3f()));
+    KeyFrameStatus setPoseStatus{};
+    EXPECT_NO_THROW(setPoseStatus = loaded.setPose(Sophus::SE3f()));
+    EXPECT_EQ(setPoseStatus, KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
 }
 
 TEST(SerializationMap, EmptyRoundTripMemoryAndTmpFile)
 {
-    Map original(5);
-    EXPECT_EQ(0U, original.getKeyFrameCount());
-    EXPECT_EQ(0U, original.getMapPointCount());
+    Map           original(5);
+    unsigned long keyFrameCount{};
+    ASSERT_EQ((original.getKeyFrameCount(keyFrameCount)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(0U, keyFrameCount);
+    unsigned long mapPointCount{};
+    ASSERT_EQ((original.getMapPointCount(mapPointCount)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(0U, mapPointCount);
 
     Map loaded;
     RoundTripBinaryInto(original, loaded);
-    EXPECT_EQ(original.getId(), loaded.getId());
-    EXPECT_EQ(original.getInitKeyFrameId(), loaded.getInitKeyFrameId());
-    EXPECT_EQ(original.getMaxKeyFrameId(), loaded.getMaxKeyFrameId());
-    EXPECT_EQ(original.isImuInitialized(), loaded.isImuInitialized());
-    EXPECT_EQ(original.isInertial(), loaded.isInertial());
-    EXPECT_EQ(original.isBad(), loaded.isBad());
-    EXPECT_EQ(0U, loaded.getKeyFrameCount());
+    unsigned long id{};
+    ASSERT_EQ((original.getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    unsigned long id2{};
+    ASSERT_EQ((loaded.getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(id, id2);
+    unsigned long initKeyFrameId{};
+    ASSERT_EQ((original.getInitKeyFrameId(initKeyFrameId)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    unsigned long initKeyFrameId2{};
+    ASSERT_EQ((loaded.getInitKeyFrameId(initKeyFrameId2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(initKeyFrameId, initKeyFrameId2);
+    unsigned long maxKeyFrameId{};
+    ASSERT_EQ((original.getMaxKeyFrameId(maxKeyFrameId)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    unsigned long maxKeyFrameId2{};
+    ASSERT_EQ((loaded.getMaxKeyFrameId(maxKeyFrameId2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(maxKeyFrameId, maxKeyFrameId2);
+    bool isImuInitialized2{};
+    ASSERT_EQ((original.isImuInitialized(isImuInitialized2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    bool isImuInitialized3{};
+    ASSERT_EQ((loaded.isImuInitialized(isImuInitialized3)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(isImuInitialized2, isImuInitialized3);
+    bool isInertial2{};
+    ASSERT_EQ((original.isInertial(isInertial2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    bool isInertial3{};
+    ASSERT_EQ((loaded.isInertial(isInertial3)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(isInertial2, isInertial3);
+    bool isBad2{};
+    ASSERT_EQ((original.isBad(isBad2)), MapStatus::MAP_STATUS_SUCCESS);
+    bool isBad3{};
+    ASSERT_EQ((loaded.isBad(isBad3)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(isBad2, isBad3);
+    unsigned long keyFrameCount2{};
+    ASSERT_EQ((loaded.getKeyFrameCount(keyFrameCount2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(0U, keyFrameCount2);
 
     const std::string path = TmpPath("map.bin");
     Map               file_loaded;
     RoundTripTextFileInto(original, path, file_loaded);
-    EXPECT_EQ(original.getId(), file_loaded.getId());
+    unsigned long id3{};
+    ASSERT_EQ((original.getId(id3)), MapStatus::MAP_STATUS_SUCCESS);
+    unsigned long id4{};
+    ASSERT_EQ((file_loaded.getId(id4)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(id3, id4);
     std::remove(path.c_str());
 
     // SKIP mutex/atomic/thumbnail: post-load map must be queryable.
-    EXPECT_NO_THROW(loaded.getAllKeyFrames());
+    std::vector<KeyFrame *> loadedKeyFrames;
+    MapStatus               getAllKeyFramesStatus{};
+    EXPECT_NO_THROW(getAllKeyFramesStatus =
+                        loaded.getAllKeyFrames(loadedKeyFrames));
+    EXPECT_EQ(getAllKeyFramesStatus, MapStatus::MAP_STATUS_SUCCESS);
 }
 
 TEST(SerializationAtlas, EmptyAndCameraRoundTrip)

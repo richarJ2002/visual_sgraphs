@@ -30,16 +30,21 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-float KeyFrame::computeSceneMedianDepth(const int q_in)
+KeyFrameStatus KeyFrame::computeSceneMedianDepth(const int q_in,
+                                                 float    &sceneMedianDepth_out)
 {
     if (keyPointCount == 0)
-        return -1.0;
+    {
+        sceneMedianDepth_out = -1.0;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
 
     vector<MapPoint *> keyFrameMapPoints;
     Eigen::Matrix3f    Rcw;
@@ -61,15 +66,24 @@ float KeyFrame::computeSceneMedianDepth(const int q_in)
         if (mapPoints[keyPointIndex])
         {
             MapPoint       *p_mapPoint = mapPoints[keyPointIndex];
-            Eigen::Vector3f x3Dw       = p_mapPoint->getWorldPos();
-            float           z          = Rcw2.dot(x3Dw) + zcw;
+            Eigen::Vector3f x3Dw{};
+            if (p_mapPoint->getWorldPos(x3Dw) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            float z = Rcw2.dot(x3Dw) + zcw;
             mapPointDepths.push_back(z);
         }
     }
 
     sort(mapPointDepths.begin(), mapPointDepths.end());
 
-    return mapPointDepths[(mapPointDepths.size() - 1) / q_in];
+    sceneMedianDepth_out = mapPointDepths[(mapPointDepths.size() - 1) / q_in];
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

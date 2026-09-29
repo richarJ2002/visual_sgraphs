@@ -93,16 +93,44 @@ SemanticGraphSnapshotStatus
         {
             continue;
         }
-        const long unsigned int mapId = p_map->getId();
-        std::set<Room *>        roomsInMap;
-        for (Room *p_room : p_map->getAllDetectedMapRooms())
+        unsigned long mapIdValue{};
+        if (p_map->getId(mapIdValue) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        const long unsigned int mapId =
+            static_cast<long unsigned int>(mapIdValue);
+        std::set<Room *>              roomsInMap;
+        std::vector<semantic::Room *> mapAllDetectedMapRooms{};
+        if (p_map->getAllDetectedMapRooms(mapAllDetectedMapRooms) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllDetectedMapRooms returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (Room *p_room : mapAllDetectedMapRooms)
         {
             if (p_room != nullptr)
             {
                 roomsInMap.insert(p_room);
             }
         }
-        for (Room *p_room : p_map->getAllMarkerBasedMapRooms())
+        std::vector<semantic::Room *> mapAllMarkerBasedMapRooms{};
+        if (p_map->getAllMarkerBasedMapRooms(mapAllMarkerBasedMapRooms) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getAllMarkerBasedMapRooms returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        for (Room *p_room : mapAllMarkerBasedMapRooms)
         {
             if (p_room != nullptr)
             {
@@ -182,8 +210,16 @@ SemanticGraphSnapshotStatus
             continue;
         }
 
-        MapSnapshot mapSnapshot;
-        mapSnapshot.mapId = p_map->getId();
+        MapSnapshot   mapSnapshot;
+        unsigned long mapId2{};
+        if (p_map->getId(mapId2) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        mapSnapshot.mapId = mapId2;
         mapSnapshot.isCurrentMap =
             snapshot.currentMapId.has_value() &&
             (*snapshot.currentMapId == mapSnapshot.mapId);
@@ -192,16 +228,35 @@ SemanticGraphSnapshotStatus
          * separately per RoomRecord (isDetectedMember/isMarkerBasedMember)
          * so a room present in both collections stays diagnosable rather
          * than being collapsed by a single union enumeration. */
-        std::set<Room *> detectedRooms;
-        for (Room *p_room : p_map->getAllDetectedMapRooms())
+        std::set<Room *>              detectedRooms;
+        std::vector<semantic::Room *> mapAllDetectedMapRooms2{};
+        if (p_map->getAllDetectedMapRooms(mapAllDetectedMapRooms2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllDetectedMapRooms returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (Room *p_room : mapAllDetectedMapRooms2)
         {
             if (p_room != nullptr)
             {
                 detectedRooms.insert(p_room);
             }
         }
-        std::set<Room *> markerBasedRooms;
-        for (Room *p_room : p_map->getAllMarkerBasedMapRooms())
+        std::set<Room *>              markerBasedRooms;
+        std::vector<semantic::Room *> mapAllMarkerBasedMapRooms2{};
+        if (p_map->getAllMarkerBasedMapRooms(mapAllMarkerBasedMapRooms2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getAllMarkerBasedMapRooms returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        for (Room *p_room : mapAllMarkerBasedMapRooms2)
         {
             if (p_room != nullptr)
             {
@@ -238,7 +293,15 @@ SemanticGraphSnapshotStatus
                          __func__);
         }
 
-        for (geometric::Plane *p_plane : p_map->getAllPlanes())
+        std::vector<geometric::Plane *> mapAllPlanes{};
+        if (p_map->getAllPlanes(mapAllPlanes) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPlanes returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (geometric::Plane *p_plane : mapAllPlanes)
         {
             geometric::Plane::PlaneVariant planeType{};
             if (!(p_plane == nullptr) &&
@@ -279,7 +342,16 @@ SemanticGraphSnapshotStatus
                          __func__);
         }
 
-        for (Passage *p_passage : p_map->getAllPassages())
+        std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
+        if (p_map->getAllPassages(mapAllPassages) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (Passage *p_passage : mapAllPassages)
         {
             if (p_passage == nullptr)
             {
@@ -306,7 +378,15 @@ SemanticGraphSnapshotStatus
                          __func__);
         }
 
-        for (Floor *p_floor : p_map->getAllFloors())
+        std::vector<semantic::Floor *> mapAllFloors{};
+        if (p_map->getAllFloors(mapAllFloors) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllFloors returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (Floor *p_floor : mapAllFloors)
         {
             if (p_floor == nullptr)
             {

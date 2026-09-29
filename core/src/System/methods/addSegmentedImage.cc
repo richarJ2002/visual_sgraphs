@@ -56,7 +56,14 @@ void System::addSegmentedImage(
             p_atlas->getKeyFrameById(std::get<0>(*p_tuple_in));
         if (p_keyFrame)
         {
-            p_keyFrame->clearPointCloud();
+            if (p_keyFrame->clearPointCloud() !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: clearPointCloud returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         segmentationReturnedCount.fetch_add(1U, std::memory_order_relaxed);
         lastReturnedKeyFrameId.store(std::get<0>(*p_tuple_in),

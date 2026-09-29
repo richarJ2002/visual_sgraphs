@@ -29,13 +29,14 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void KeyFrame::postLoad(
+KeyFrameStatus KeyFrame::postLoad(
     map<long unsigned int, KeyFrame *> &keyFrameId_in,
     map<long unsigned int, MapPoint *> &mapPointId_in,
     map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
@@ -44,7 +45,13 @@ void KeyFrame::postLoad(
     // Rebuild the empty variables
 
     // Pose
-    setPose(poseTcw);
+    if (setPose(poseTcw) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     poseTrl = poseTlr.inverse();
 
@@ -141,7 +148,15 @@ void KeyFrame::postLoad(
     backupChildrensId.clear();
     backupLoopEdgesId.clear();
 
-    updateBestCovisibles();
+    if (updateBestCovisibles() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateBestCovisibles returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

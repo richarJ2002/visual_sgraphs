@@ -24,6 +24,7 @@
  */
 
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -39,7 +40,15 @@ void Tracking::checkReplacedInLastFrame()
 
         if (p_mapPoint)
         {
-            MapPoint *p_rep = p_mapPoint->getReplaced();
+            MapPoint *p_rep = nullptr;
+            if (p_mapPoint->getReplaced(p_rep) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getReplaced returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (p_rep)
             {
                 lastFrame.mapPoints[keyPointIndex] = p_rep;

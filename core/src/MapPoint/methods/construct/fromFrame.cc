@@ -29,6 +29,7 @@
 #include "ORBmatcher.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -53,7 +54,6 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
     correctedByKeyFrameId(0),
     correctedReferenceKeyFrameId(0),
     baGlobalKeyFrameId(0),
-    originMapId(p_map_in->getId()),
     p_referenceKeyFrame(static_cast<KeyFrame *>(nullptr)),
     visibleCount(1),
     foundCount(1),
@@ -61,19 +61,71 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
     p_replaced(nullptr),
     p_map(p_map_in)
 {
-    setWorldPos(Pos_in);
+    /* Assigned here, not in the initialiser list, so the status of each
+     * getter can be checked. */
+    unsigned long mapId{};
+    if (p_map_in->getId(mapId) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    originMapId = mapId;
+
+    if (setWorldPos(Pos_in) != MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setWorldPos returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     Eigen::Vector3f Ow;
     if (p_frame_inout->leftKeyPointCount == -1 ||
         indexF_in < p_frame_inout->leftKeyPointCount)
     {
-        Ow = p_frame_inout->getCameraCenter();
+        Eigen::Vector3f frameGetCameraCenter{};
+        if (p_frame_inout->getCameraCenter(frameGetCameraCenter) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCameraCenter returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Ow = frameGetCameraCenter;
     }
     else
     {
-        Eigen::Matrix3f Rwl = p_frame_inout->getRotationRwc();
-        Eigen::Vector3f tlr = p_frame_inout->getRelativePoseTlr().translation();
-        Eigen::Vector3f twl = p_frame_inout->getCenterOw();
+        Eigen::Matrix3f Rwl{};
+        if (p_frame_inout->getRotationRwc(Rwl) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRotationRwc returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3f frameRelativePoseTlr{};
+        if (p_frame_inout->getRelativePoseTlr(frameRelativePoseTlr) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRelativePoseTlr returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f tlr = frameRelativePoseTlr.translation();
+        Eigen::Vector3f twl{};
+        if (p_frame_inout->getCameraCenter(twl) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCameraCenter returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         Ow = Rwl * tlr + twl;
     }

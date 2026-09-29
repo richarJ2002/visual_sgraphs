@@ -24,6 +24,7 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,7 +34,16 @@ namespace core
 std::vector<vs_graphs::core::semantic::Passage *> System::getAllPassages()
 {
     Map *p_activeMap = p_atlas->getCurrentMap();
-    return p_activeMap->getAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> activeMapAllPassages{};
+    if (p_activeMap->getAllPassages(activeMapAllPassages) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapAllPassages;
 }
 
 } // namespace core

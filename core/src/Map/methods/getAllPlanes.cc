@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<geometric::Plane *> Map::getAllPlanes()
+MapStatus Map::getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return vector<geometric::Plane *>(planes.begin(), planes.end());
+    allPlanes_out =
+        std::vector<geometric::Plane *>(planes.begin(), planes.end());
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

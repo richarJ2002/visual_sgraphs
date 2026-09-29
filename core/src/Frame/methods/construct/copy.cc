@@ -129,11 +129,51 @@ Frame::Frame(const Frame &frame_in) :
         }
 
     if (frame_in.isPoseAvailable)
-        setPose(frame_in.getPose());
-
-    if (frame_in.hasVelocity())
     {
-        setVelocity(frame_in.getVelocity());
+        Sophus::SE3<float> frameGetPose{};
+        if (frame_in.getPose(frameGetPose) != FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (setPose(frameGetPose) != FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+
+    bool frameHasVelocity{};
+    if (frame_in.hasVelocity(frameHasVelocity) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasVelocity returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (frameHasVelocity)
+    {
+        Eigen::Vector3f frameGetVelocity{};
+        if (frame_in.getVelocity(frameGetVelocity) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (setVelocity(frameGetVelocity) != FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     projectedPoints = frame_in.projectedPoints;

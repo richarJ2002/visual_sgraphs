@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addMapDoor(Door *p_door_in)
+MapStatus Map::addMapDoor(Door *p_door_in)
 {
     unique_lock<mutex> lock(mapMutex);
     doors.insert(p_door_in);
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

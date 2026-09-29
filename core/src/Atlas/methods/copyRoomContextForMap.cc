@@ -37,9 +37,24 @@ std::vector<semantic::RoomContextSnapshot>
     std::vector<semantic::RoomContextSnapshot> snapshots;
     if (p_map_in == nullptr)
         return snapshots;
-    std::vector<semantic::Room *> rooms = p_map_in->getAllDetectedMapRooms();
-    std::vector<semantic::Room *> candidateRooms =
-        p_map_in->getAllCandidateMapRooms();
+    std::vector<semantic::Room *> rooms{};
+    if (p_map_in->getAllDetectedMapRooms(rooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> candidateRooms{};
+    if (p_map_in->getAllCandidateMapRooms(candidateRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllCandidateMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     rooms.insert(rooms.end(), candidateRooms.begin(), candidateRooms.end());
     for (semantic::Room *p_room : rooms)
     {

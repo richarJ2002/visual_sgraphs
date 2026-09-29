@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setSkeletonEdges(
+MapStatus Map::setSkeletonEdges(
     const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
         &newSkeletonEdges_in)
 {
@@ -43,6 +43,8 @@ void Map::setSkeletonEdges(
 
     /* Replace the previous connected skeleton edge collection */
     skeletonEdges = newSkeletonEdges_in;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

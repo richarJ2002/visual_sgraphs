@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setImuInitialized()
+MapStatus Map::setImuInitialized()
 {
     unique_lock<mutex> lock(mapMutex);
     hasImuInitialization = true;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -38,8 +38,17 @@ SemanticVerifyStatus checkConsecutiveFloors(core::Map       *p_survivingMap_in,
                                             std::string     &decision_out,
                                             bool            &floorsMatch_out)
 {
-    Floor *p_survivingFloor = nullptr;
-    if (Floor::selectBestObservedFloor(p_survivingMap_in->getAllFloors(),
+    Floor                         *p_survivingFloor = nullptr;
+    std::vector<semantic::Floor *> survivingMapAllFloors{};
+    if (p_survivingMap_in->getAllFloors(survivingMapAllFloors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (Floor::selectBestObservedFloor(survivingMapAllFloors,
                                        p_survivingFloor) !=
         FloorStatus::FLOOR_STATUS_SUCCESS)
     {
@@ -48,9 +57,17 @@ SemanticVerifyStatus checkConsecutiveFloors(core::Map       *p_survivingMap_in,
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Floor *p_absorbedFloor = nullptr;
-    if (Floor::selectBestObservedFloor(p_absorbedMap_in->getAllFloors(),
-                                       p_absorbedFloor) !=
+    Floor                         *p_absorbedFloor = nullptr;
+    std::vector<semantic::Floor *> absorbedMapAllFloors{};
+    if (p_absorbedMap_in->getAllFloors(absorbedMapAllFloors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (Floor::selectBestObservedFloor(absorbedMapAllFloors, p_absorbedFloor) !=
         FloorStatus::FLOOR_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

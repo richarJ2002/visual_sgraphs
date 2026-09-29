@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseMapFloor(vs_graphs::core::semantic::Floor *p_floor_in)
+MapStatus Map::eraseMapFloor(vs_graphs::core::semantic::Floor *p_floor_in)
 {
     unique_lock<mutex> lock(mapMutex);
     floors.erase(p_floor_in);
@@ -46,6 +46,8 @@ void Map::eraseMapFloor(vs_graphs::core::semantic::Floor *p_floor_in)
                             ? floorIndex.erase(floorIterator)
                             : std::next(floorIterator);
     }
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

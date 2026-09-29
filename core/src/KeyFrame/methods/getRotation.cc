@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3f KeyFrame::getRotation()
+KeyFrameStatus KeyFrame::getRotation(Eigen::Matrix3f &rotation_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return rotationRcw;
+    rotation_out = rotationRcw;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

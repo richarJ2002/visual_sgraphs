@@ -53,7 +53,15 @@ void LoopClosing::searchAndFuse(const KeyFrameAndPose &correctedPosesMap_in,
     {
         int       replaceCount = 0;
         KeyFrame *p_keyFrame   = mit->first;
-        Map      *p_map        = p_keyFrame->getMap();
+        Map      *p_map        = nullptr;
+        if (p_keyFrame->getMap(p_map) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         g2o::Sim3     g2oScw = mit->second;
         Sophus::Sim3f Scw{};
@@ -81,7 +89,15 @@ void LoopClosing::searchAndFuse(const KeyFrameAndPose &correctedPosesMap_in,
             {
 
                 replaceCount += 1;
-                p_rep->replace(mapPoints_in[lpIndex]);
+                if (p_rep->replace(mapPoints_in[lpIndex]) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: replace returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
 

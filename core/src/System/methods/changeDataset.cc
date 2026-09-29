@@ -34,7 +34,16 @@ namespace core
 
 void System::changeDataset()
 {
-    if (p_atlas->getCurrentMap()->getKeyFrameCount() < 12)
+    unsigned long keyFrameCount{};
+    if (p_atlas->getCurrentMap()->getKeyFrameCount(keyFrameCount) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getKeyFrameCount returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (keyFrameCount < 12)
     {
         if (reportResetAttribution(ResetCause::DATASET_CHANGE_SMALL_MAP,
                                    ResetAction::RESET_ACTIVE_MAP_EXECUTION) !=

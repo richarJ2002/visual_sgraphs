@@ -43,10 +43,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::isImuPreintegrated()
+FrameStatus Frame::isImuPreintegrated(bool &isImuPreintegrated_out)
 {
     unique_lock<std::mutex> lock(*p_imuMutex);
-    return hasImuPreintegration;
+    isImuPreintegrated_out = hasImuPreintegration;
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

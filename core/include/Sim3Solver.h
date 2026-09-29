@@ -19,6 +19,7 @@
 #define SIM3SOLVER_H
 
 #include <opencv2/core.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "KeyFrame.h"
@@ -56,8 +57,15 @@ class Sim3Solver
         p_keyFrame1 = p_keyFrame1_inout;
         p_keyFrame2 = p_keyFrame2_inout;
 
-        vector<MapPoint *> keyFrameMapPoint1 =
-            p_keyFrame1_inout->getMapPointMatches();
+        std::vector<MapPoint *> keyFrameMapPoint1{};
+        if (p_keyFrame1_inout->getMapPointMatches(keyFrameMapPoint1) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPointMatches returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         firstMatchCount = matched12_in.size();
 
@@ -68,10 +76,42 @@ class Sim3Solver
         points3Dc1.reserve(firstMatchCount);
         points3Dc2.reserve(firstMatchCount);
 
-        Eigen::Matrix3f Rcw1 = p_keyFrame1_inout->getRotation();
-        Eigen::Vector3f tcw1 = p_keyFrame1_inout->getTranslation();
-        Eigen::Matrix3f Rcw2 = p_keyFrame2_inout->getRotation();
-        Eigen::Vector3f tcw2 = p_keyFrame2_inout->getTranslation();
+        Eigen::Matrix3f Rcw1{};
+        if (p_keyFrame1_inout->getRotation(Rcw1) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRotation returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f tcw1{};
+        if (p_keyFrame1_inout->getTranslation(tcw1) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTranslation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Matrix3f Rcw2{};
+        if (p_keyFrame2_inout->getRotation(Rcw2) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRotation returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f tcw2{};
+        if (p_keyFrame2_inout->getTranslation(tcw2) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTranslation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         allIndices.reserve(firstMatchCount);
 
@@ -88,16 +128,55 @@ class Sim3Solver
                 if (!p_mapPoint1)
                     continue;
 
-                if (p_mapPoint1->isBad() || p_mapPoint2->isBad())
+                bool mapPoint1IsBad{};
+                if (p_mapPoint1->isBad(mapPoint1IsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                bool mapPoint2IsBad{};
+                if (!(mapPoint1IsBad) &&
+                    p_mapPoint2->isBad(mapPoint2IsBad) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (mapPoint1IsBad || mapPoint2IsBad)
                     continue;
 
                 if (areKeyFramesDifferent)
                     pKFm = keyFrameMatchedMapPoints_in[i1];
 
-                int indexKeyFrame1 =
-                    get<0>(p_mapPoint1->getIndexInKeyFrame(p_keyFrame1_inout));
-                int indexKeyFrame2 =
-                    get<0>(p_mapPoint2->getIndexInKeyFrame(pKFm));
+                std::tuple<int, int> mapPoint1IndexInKeyFrame{};
+                if (p_mapPoint1->getIndexInKeyFrame(p_keyFrame1_inout,
+                                                    mapPoint1IndexInKeyFrame) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getIndexInKeyFrame returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                int indexKeyFrame1 = get<0>(mapPoint1IndexInKeyFrame);
+                std::tuple<int, int> mapPoint2IndexInKeyFrame{};
+                if (p_mapPoint2->getIndexInKeyFrame(pKFm,
+                                                    mapPoint2IndexInKeyFrame) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getIndexInKeyFrame returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                int indexKeyFrame2 = get<0>(mapPoint2IndexInKeyFrame);
 
                 if (indexKeyFrame1 < 0 || indexKeyFrame2 < 0)
                     continue;
@@ -119,10 +198,28 @@ class Sim3Solver
                 mapPoints2.push_back(p_mapPoint2);
                 indices1.push_back(i1);
 
-                Eigen::Vector3f X3D1w = p_mapPoint1->getWorldPos();
+                Eigen::Vector3f X3D1w{};
+                if (p_mapPoint1->getWorldPos(X3D1w) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWorldPos returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 points3Dc1.push_back(Rcw1 * X3D1w + tcw1);
 
-                Eigen::Vector3f X3D2w = p_mapPoint2->getWorldPos();
+                Eigen::Vector3f X3D2w{};
+                if (p_mapPoint2->getWorldPos(X3D2w) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWorldPos returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 points3Dc2.push_back(Rcw2 * X3D2w + tcw2);
 
                 allIndices.push_back(idx);

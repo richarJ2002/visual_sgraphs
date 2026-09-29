@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -38,7 +39,16 @@ bool Atlas::isActiveMap(Map *p_map_in)
     }
 
     unique_lock<mutex> lock(atlasMutex);
-    return maps.count(p_map_in) > 0 && !p_map_in->isBad();
+    bool               mapIsBad{};
+    if ((maps.count(p_map_in) > 0) &&
+        p_map_in->isBad(mapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    return maps.count(p_map_in) > 0 && !mapIsBad;
 }
 
 } // namespace core

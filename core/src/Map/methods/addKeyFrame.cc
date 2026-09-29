@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addKeyFrame(KeyFrame *p_keyFrame_inout)
+MapStatus Map::addKeyFrame(KeyFrame *p_keyFrame_inout)
 {
     unique_lock<mutex> lock(mapMutex);
 
@@ -61,6 +61,8 @@ void Map::addKeyFrame(KeyFrame *p_keyFrame_inout)
         p_lowerIdKeyFrame = p_keyFrame_inout;
 
     keyFrameIndex[p_keyFrame_inout->id] = p_keyFrame_inout;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -34,11 +34,13 @@ namespace vs_graphs
 namespace core
 {
 
-Door *Map::getDoorById(int doorId_in)
+MapStatus Map::getDoorById(int doorId_in, Door *&p_doorById_out)
 {
     unique_lock<mutex> lock(mapMutex);
     const auto         doorIterator = doorIndex.find(doorId_in);
-    return doorIterator != doorIndex.end() ? doorIterator->second : nullptr;
+    p_doorById_out =
+        doorIterator != doorIndex.end() ? doorIterator->second : nullptr;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

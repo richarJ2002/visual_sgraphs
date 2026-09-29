@@ -34,9 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setBad()
+MapStatus Map::setBad()
 {
     isFlaggedBad.store(true, std::memory_order_release);
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

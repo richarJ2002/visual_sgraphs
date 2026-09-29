@@ -7,15 +7,19 @@ set(VS_GRAPHS_FRAME_SOURCES
   core/src/Frame/methods/computeStereoFromRGBD.cc
   core/src/Frame/methods/computeStereoMatches.cc
   core/src/Frame/methods/extractOrbFeatures.cc
+  core/src/Frame/methods/getCameraCenter.cc
   core/src/Frame/methods/getFeaturesInArea.cc
   core/src/Frame/methods/getImuPose.cc
   core/src/Frame/methods/getImuPosition.cc
+  core/src/Frame/methods/getPose.cc
   core/src/Frame/methods/getImuRotation.cc
   core/src/Frame/methods/getRelativePoseTlr.cc
   core/src/Frame/methods/getRelativePoseTlrRotation.cc
   core/src/Frame/methods/getRelativePoseTlrTranslation.cc
   core/src/Frame/methods/getRelativePoseTrl.cc
+  core/src/Frame/methods/getRotationRwc.cc
   core/src/Frame/methods/getVelocity.cc
+  core/src/Frame/methods/hasVelocity.cc
   core/src/Frame/methods/inReferenceCoordinates.cc
   core/src/Frame/methods/isImuPreintegrated.cc
   core/src/Frame/methods/isInFrustum.cc

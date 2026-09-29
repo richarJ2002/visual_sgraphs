@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseKeyFrame(KeyFrame *p_keyFrame_inout)
+MapStatus Map::eraseKeyFrame(KeyFrame *p_keyFrame_inout)
 {
     unique_lock<mutex> lock(mapMutex);
     keyFrames.erase(p_keyFrame_inout);
@@ -79,6 +79,8 @@ void Map::eraseKeyFrame(KeyFrame *p_keyFrame_inout)
 
     // TODO: This only erase the pointer.
     // Delete the MapPoint
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

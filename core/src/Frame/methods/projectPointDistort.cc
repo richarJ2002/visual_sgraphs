@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -43,14 +44,23 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::projectPointDistort(MapPoint    *p_mapPoint_in,
-                                cv::Point2f &keyPoint_out,
-                                float       &u_out,
-                                float       &v_out)
+FrameStatus Frame::projectPointDistort(MapPoint    *p_mapPoint_in,
+                                       cv::Point2f &keyPoint_out,
+                                       float       &u_out,
+                                       float       &v_out,
+                                       bool        &isProjected_out)
 {
 
     // 3D in absolute coordinates
-    Eigen::Vector3f P = p_mapPoint_in->getWorldPos();
+    Eigen::Vector3f P{};
+    if (p_mapPoint_in->getWorldPos(P) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWorldPos returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // 3D in camera coordinates
     const Eigen::Vector3f Pc  = rotationRcw * P + translationTcw;
@@ -62,7 +72,8 @@ bool Frame::projectPointDistort(MapPoint    *p_mapPoint_in,
     if (PcZ < 0.0f)
     {
         cout << "Negative depth: " << PcZ << endl;
-        return false;
+        isProjected_out = false;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
     // Project in image and check it is not outside
@@ -71,9 +82,15 @@ bool Frame::projectPointDistort(MapPoint    *p_mapPoint_in,
     v_out            = fy * PcY * invz + cy;
 
     if (u_out < gridMinX || u_out > gridMaxX)
-        return false;
+    {
+        isProjected_out = false;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
+    }
     if (v_out < gridMinY || v_out > gridMaxY)
-        return false;
+    {
+        isProjected_out = false;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
+    }
 
     float distortedU, distort;
 
@@ -106,7 +123,8 @@ bool Frame::projectPointDistort(MapPoint    *p_mapPoint_in,
 
     keyPoint_out = cv::Point2f(u_out, v_out);
 
-    return true;
+    isProjected_out = true;
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

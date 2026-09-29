@@ -35,14 +35,16 @@ namespace vs_graphs
 namespace core
 {
 
-unsigned int Map::getLowerKeyFrameId()
+MapStatus Map::getLowerKeyFrameId(unsigned int &lowerKeyFrameId_out)
 {
     unique_lock<mutex> lock(mapMutex);
     if (p_lowerIdKeyFrame)
     {
-        return p_lowerIdKeyFrame->id;
+        lowerKeyFrameId_out = p_lowerIdKeyFrame->id;
+        return MapStatus::MAP_STATUS_SUCCESS;
     }
-    return 0;
+    lowerKeyFrameId_out = 0;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

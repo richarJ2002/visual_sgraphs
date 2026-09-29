@@ -35,11 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3<float> KeyFrame::getRightPose()
+KeyFrameStatus KeyFrame::getRightPose(Sophus::SE3<float> &rightPose_out)
 {
     unique_lock<mutex> lock(poseMutex);
 
-    return poseTrl * poseTcw;
+    rightPose_out = poseTrl * poseTcw;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

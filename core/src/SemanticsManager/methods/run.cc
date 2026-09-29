@@ -384,7 +384,15 @@ void SemanticsManager::run(void)
                     }
                     if (p_candidateMap != nullptr)
                     {
-                        p_candidateMap->eraseMarkerBasedMapRoom(p_candidate);
+                        if (p_candidateMap->eraseMarkerBasedMapRoom(
+                                p_candidate) != MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: eraseMarkerBasedMapRoom returned "
+                                         "a failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                     }
                     if (p_candidate->setBad() !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -482,8 +490,16 @@ void SemanticsManager::run(void)
                 p_atlas->copyRoomContextForMapChecked(p_candidateMap, true);
             if (currentSnapshot.status == Atlas::SnapshotCopyStatus::COMPLETE)
             {
-                copiedContext[p_candidateMap->getId()] =
-                    currentSnapshot.snapshots;
+                unsigned long candidateMapId{};
+                if (p_candidateMap->getId(candidateMapId) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                copiedContext[candidateMapId] = currentSnapshot.snapshots;
             }
         }
         semantic::SemanticCandidateConfig candidateConfiguration;
@@ -551,30 +567,95 @@ void SemanticsManager::run(void)
         /* Compact Phase-1 heartbeat: all values come from this completed
          * semantic transaction and are therefore mutually consistent. */
         Map *p_pipelineMap = p_atlas->getCurrentMap();
+        std::vector<geometric::Plane *> pipelineMapAllPlanes{};
+        if ((p_pipelineMap != nullptr) &&
+            p_pipelineMap->getAllPlanes(pipelineMapAllPlanes) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPlanes returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         const std::vector<geometric::Plane *> pipelinePlanes =
-            p_pipelineMap != nullptr ? p_pipelineMap->getAllPlanes()
+            p_pipelineMap != nullptr ? pipelineMapAllPlanes
                                      : std::vector<geometric::Plane *>();
+        std::vector<semantic::Room *> pipelineMapAllRooms{};
+        if ((p_pipelineMap != nullptr) &&
+            p_pipelineMap->getAllRooms(pipelineMapAllRooms) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllRooms returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         const std::vector<semantic::Room *> pipelineRooms =
-            p_pipelineMap != nullptr ? p_pipelineMap->getAllRooms()
+            p_pipelineMap != nullptr ? pipelineMapAllRooms
                                      : std::vector<semantic::Room *>();
+        std::vector<vs_graphs::core::semantic::Passage *>
+            pipelineMapAllPassages{};
+        if ((p_pipelineMap != nullptr) &&
+            p_pipelineMap->getAllPassages(pipelineMapAllPassages) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const std::vector<semantic::Passage *> pipelinePassages =
-            p_pipelineMap != nullptr ? p_pipelineMap->getAllPassages()
+            p_pipelineMap != nullptr ? pipelineMapAllPassages
                                      : std::vector<semantic::Passage *>();
+        std::vector<semantic::Floor *> pipelineMapAllFloors{};
+        if ((p_pipelineMap != nullptr) &&
+            p_pipelineMap->getAllFloors(pipelineMapAllFloors) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllFloors returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         const std::vector<semantic::Floor *> pipelineFloors =
-            p_pipelineMap != nullptr ? p_pipelineMap->getAllFloors()
+            p_pipelineMap != nullptr ? pipelineMapAllFloors
                                      : std::vector<semantic::Floor *>();
+        std::vector<std::vector<Eigen::Vector3d>>
+            pipelineMapSkeletonClusterPoints{};
+        if ((p_pipelineMap != nullptr) &&
+            p_pipelineMap->getSkeletonClusterPoints(
+                pipelineMapSkeletonClusterPoints) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getSkeletonClusterPoints returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         const std::vector<std::vector<Eigen::Vector3d>> pipelineClusters =
             p_pipelineMap != nullptr
-                ? p_pipelineMap->getSkeletonClusterPoints()
+                ? pipelineMapSkeletonClusterPoints
                 : std::vector<std::vector<Eigen::Vector3d>>();
 
         std::size_t             wallClassCount      = 0U;
         std::size_t             admissibleWallCount = 0U;
         std::size_t             ownedWallCount      = 0U;
         std::unordered_set<int> ownedWallIds;
-        geometric::Plane       *p_pipelineGround =
-            p_pipelineMap != nullptr ? p_pipelineMap->getBiggestGroundPlane()
-                                           : nullptr;
+        geometric::Plane       *p_pipelineMapBiggestGroundPlane = nullptr;
+        if ((p_pipelineMap != nullptr) &&
+            p_pipelineMap->getBiggestGroundPlane(
+                p_pipelineMapBiggestGroundPlane) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getBiggestGroundPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        geometric::Plane *p_pipelineGround =
+            p_pipelineMap != nullptr ? p_pipelineMapBiggestGroundPlane
+                                     : nullptr;
         Eigen::Vector3d pipelineGroundNormal_World = Eigen::Vector3d::Zero();
         bool            pipelineGroundIsBad{};
         if ((p_pipelineGround != nullptr) &&
@@ -742,9 +823,29 @@ void SemanticsManager::run(void)
                 }
                 return p_passage != nullptr && !passageIsBad;
             });
+        unsigned long pipelineMapId{};
+        if ((p_pipelineMap != nullptr) && p_pipelineMap->getId(pipelineMapId) !=
+                                              MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+            pipelineMapSkeletonEdges{};
+        if ((p_pipelineMap != nullptr) &&
+            p_pipelineMap->getSkeletonEdges(pipelineMapSkeletonEdges) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getSkeletonEdges returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         std::cout << "SG_PIPELINE {\"event\":\"heartbeat\",\"map_id\":"
                   << (p_pipelineMap != nullptr
-                          ? static_cast<long long>(p_pipelineMap->getId())
+                          ? static_cast<long long>(pipelineMapId)
                           : -1)
                   << ",\"semantic_cycle\":" << pipelineSemanticCycle
                   << ",\"current_room_id\":" << getCurrentRoomId()
@@ -756,9 +857,8 @@ void SemanticsManager::run(void)
                   << ",\"skeleton_clusters\":" << pipelineClusters.size()
                   << ",\"skeleton_vertices\":" << skeletonVertexCount
                   << ",\"skeleton_edges\":"
-                  << (p_pipelineMap != nullptr
-                          ? p_pipelineMap->getSkeletonEdges().size()
-                          : 0U)
+                  << (p_pipelineMap != nullptr ? pipelineMapSkeletonEdges.size()
+                                               : 0U)
                   << ",\"real_rooms\":" << realRoomCount
                   << ",\"prospective_rooms\":" << prospectiveRoomCount
                   << ",\"passages\":" << livePassageCount
@@ -798,11 +898,31 @@ void SemanticsManager::run(void)
         std::optional<int> currentMapRevision;
         if (snapshot.currentMapId.has_value())
         {
-            Map *p_currentMap = p_atlas->getCurrentMap();
-            if (p_currentMap != nullptr &&
-                p_currentMap->getId() == *snapshot.currentMapId)
+            Map          *p_currentMap = p_atlas->getCurrentMap();
+            unsigned long currentMapId2{};
+            if ((p_currentMap != nullptr) &&
+                p_currentMap->getId(currentMapId2) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
             {
-                currentMapRevision = p_currentMap->getMapChangeIndex();
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_currentMap != nullptr &&
+                currentMapId2 == *snapshot.currentMapId)
+            {
+                int currentMapMapChangeIndex{};
+                if (p_currentMap->getMapChangeIndex(currentMapMapChangeIndex) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMapChangeIndex returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                currentMapRevision = currentMapMapChangeIndex;
             }
         }
 

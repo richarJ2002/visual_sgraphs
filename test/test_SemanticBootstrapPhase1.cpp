@@ -117,8 +117,15 @@ semantic::Room *bootstrap(SemanticsManager &manager_inout, Atlas &atlas_inout)
     EXPECT_GE(manager_inout.ensureActiveMapBootstrapHierarchyForTest(
                   Eigen::Vector3d(0.0, 0.0, 1.0)),
               0);
-    const std::vector<semantic::Room *> rooms =
-        atlas_inout.getCurrentMap()->getAllRooms();
+    std::vector<semantic::Room *> rooms{};
+    if (atlas_inout.getCurrentMap()->getAllRooms(rooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     EXPECT_EQ(rooms.size(), 1U);
     return rooms.empty() ? nullptr : rooms.front();
 }
@@ -134,9 +141,18 @@ TEST(SemanticBootstrapPhase1, BootstrapInitializationIsIdempotent)
     manager.ensureActiveMapBootstrapHierarchyForTest(
         Eigen::Vector3d(9.0, 9.0, 9.0));
 
-    ASSERT_EQ(atlas.getCurrentMap()->getAllRooms().size(), 1U);
-    EXPECT_EQ(atlas.getCurrentMap()->getAllRooms().front(), p_firstRoom);
-    EXPECT_EQ(atlas.getCurrentMap()->getAllFloors().size(), 1U);
+    std::vector<semantic::Room *> allRooms{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllRooms(allRooms)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ(allRooms.size(), 1U);
+    std::vector<semantic::Room *> allRooms2{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllRooms(allRooms2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(allRooms2.front(), p_firstRoom);
+    std::vector<semantic::Floor *> allFloors{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllFloors(allFloors)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(allFloors.size(), 1U);
     int id{};
     ASSERT_EQ((p_firstRoom->getId(id)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -145,12 +161,18 @@ TEST(SemanticBootstrapPhase1, BootstrapInitializationIsIdempotent)
     ASSERT_EQ((p_firstRoom->getName(name)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     EXPECT_EQ(name, "semantic::Room#0");
-    int id2{};
-    ASSERT_EQ((atlas.getCurrentMap()->getAllFloors().front()->getId(id2)),
+    int                            id2{};
+    std::vector<semantic::Floor *> allFloors2{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllFloors(allFloors2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((allFloors2.front()->getId(id2)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     EXPECT_EQ(id2, 0);
-    std::string name2{};
-    ASSERT_EQ((atlas.getCurrentMap()->getAllFloors().front()->getName(name2)),
+    std::string                    name2{};
+    std::vector<semantic::Floor *> allFloors3{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllFloors(allFloors3)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((allFloors3.front()->getName(name2)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     EXPECT_EQ(name2, "semantic::Floor#0");
 }
@@ -195,8 +217,9 @@ TEST(SemanticBootstrapPhase1,
                   recoveredCameraPosition_World_m),
               0);
 
-    const std::vector<semantic::Room *> recoveredRooms =
-        p_recoveryMap->getAllRooms();
+    std::vector<semantic::Room *> recoveredRooms{};
+    ASSERT_EQ((p_recoveryMap->getAllRooms(recoveredRooms)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ(recoveredRooms.size(), 1U);
     semantic::Room *p_recoveredRoom = recoveredRooms.front();
     int             id{};
@@ -247,8 +270,9 @@ TEST(SemanticBootstrapPhase1,
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     EXPECT_EQ(rooms2.front(), p_recoveredRoom);
 
-    const std::vector<semantic::Passage *> recoveredPassages =
-        p_recoveryMap->getAllPassages();
+    std::vector<semantic::Passage *> recoveredPassages{};
+    ASSERT_EQ((p_recoveryMap->getAllPassages(recoveredPassages)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ(recoveredPassages.size(), 1U);
     int id3{};
     ASSERT_EQ((recoveredPassages.front()->getId(id3)),
@@ -339,8 +363,9 @@ TEST(SemanticBootstrapPhase1,
                 std::numeric_limits<double>::quiet_NaN()));
         manager.getUpdatedFloorsForTest();
 
-        const std::vector<semantic::Floor *> earlyFloors =
-            p_recoveryMap->getAllFloors();
+        std::vector<semantic::Floor *> earlyFloors{};
+        ASSERT_EQ((p_recoveryMap->getAllFloors(earlyFloors)),
+                  MapStatus::MAP_STATUS_SUCCESS);
         ASSERT_EQ(earlyFloors.size(), 1U);
         int id2{};
         ASSERT_EQ((earlyFloors.front()->getId(id2)),
@@ -360,8 +385,9 @@ TEST(SemanticBootstrapPhase1,
                       recoveredCameraPosition_World_m),
                   0);
 
-        const std::vector<semantic::Room *> recoveredRooms =
-            p_recoveryMap->getAllRooms();
+        std::vector<semantic::Room *> recoveredRooms{};
+        ASSERT_EQ((p_recoveryMap->getAllRooms(recoveredRooms)),
+                  MapStatus::MAP_STATUS_SUCCESS);
         ASSERT_EQ(recoveredRooms.size(), 1U);
         semantic::Room *p_recoveredRoom = recoveredRooms.front();
         int             id3{};
@@ -402,8 +428,14 @@ TEST(SemanticBootstrapPhase1,
     /* Same-map reset (Tracking::ResetActiveMap): Map::clear() wipes the live
      * sets. Atlas::clearMap() must have exported the hierarchy first. */
     atlas.clearMap();
-    EXPECT_TRUE(atlas.getCurrentMap()->getAllRooms().empty());
-    EXPECT_TRUE(atlas.getCurrentMap()->getAllFloors().empty());
+    std::vector<semantic::Room *> allRooms{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllRooms(allRooms)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_TRUE(allRooms.empty());
+    std::vector<semantic::Floor *> allFloors{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllFloors(allFloors)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_TRUE(allFloors.empty());
 
     /* No keyframes exist after the clear, so no usable camera pose. Recovery
      * must still recreate semantic::Room#0/semantic::Floor#0 from the snapshot
@@ -413,8 +445,9 @@ TEST(SemanticBootstrapPhase1,
                       std::numeric_limits<double>::quiet_NaN())),
               1);
 
-    const std::vector<semantic::Room *> recoveredRooms =
-        atlas.getCurrentMap()->getAllRooms();
+    std::vector<semantic::Room *> recoveredRooms{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllRooms(recoveredRooms)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ(recoveredRooms.size(), 1U);
     int id2{};
     ASSERT_EQ((recoveredRooms.front()->getId(id2)),
@@ -668,8 +701,14 @@ TEST(SemanticBootstrapPhase1, RoomAndFloorOwnershipIsReciprocal)
     SemanticsManager manager(&atlas);
     semantic::Room  *p_room = bootstrap(manager, atlas);
     ASSERT_NE(p_room, nullptr);
-    ASSERT_EQ(atlas.getCurrentMap()->getAllFloors().size(), 1U);
-    semantic::Floor *p_floor = atlas.getCurrentMap()->getAllFloors().front();
+    std::vector<semantic::Floor *> allFloors{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllFloors(allFloors)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ(allFloors.size(), 1U);
+    std::vector<semantic::Floor *> allFloors2{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllFloors(allFloors2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    semantic::Floor                  *p_floor  = allFloors2.front();
     vs_graphs::core::semantic::Floor *p_floor2 = nullptr;
     ASSERT_EQ((p_room->getFloor(p_floor2)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -1084,8 +1123,9 @@ TEST(SemanticBootstrapPhase1, ResetRestoresVisitedFlag)
                       std::numeric_limits<double>::quiet_NaN())),
               1);
 
-    const std::vector<semantic::Room *> recoveredRooms =
-        atlas.getCurrentMap()->getAllRooms();
+    std::vector<semantic::Room *> recoveredRooms{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllRooms(recoveredRooms)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ(recoveredRooms.size(), 1U);
     int id{};
     ASSERT_EQ((recoveredRooms.front()->getId(id)),
@@ -1143,8 +1183,9 @@ TEST(SemanticBootstrapPhase1, ResetRestoresPassageIdentityWithoutGeometry)
                   Eigen::Vector3d(8.0, 2.0, 1.0)),
               0);
 
-    const std::vector<semantic::Passage *> recoveredPassages =
-        p_recoveryMap->getAllPassages();
+    std::vector<semantic::Passage *> recoveredPassages{};
+    ASSERT_EQ((p_recoveryMap->getAllPassages(recoveredPassages)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ(recoveredPassages.size(), 1U);
     int id{};
     ASSERT_EQ((recoveredPassages.front()->getId(id)),
@@ -1189,25 +1230,44 @@ TEST(SemanticBootstrapPhase1, MapChainLinksStartingFinalAndFollowingRooms)
     Map             *p_mapZero  = atlas.getCurrentMap();
     semantic::Room  *p_roomZero = bootstrap(manager, atlas);
     ASSERT_NE(p_roomZero, nullptr);
-    EXPECT_EQ(p_mapZero->getStartingRoom(), p_roomZero);
-    EXPECT_EQ(p_mapZero->getFollowingMap(), nullptr);
+    semantic::Room *p_startingRoom = nullptr;
+    ASSERT_EQ((p_mapZero->getStartingRoom(p_startingRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_startingRoom, p_roomZero);
+    Map *p_followingMap = nullptr;
+    ASSERT_EQ((p_mapZero->getFollowingMap(p_followingMap)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_followingMap, nullptr);
 
     atlas.createNewMap();
     Map *p_mapOne = atlas.getCurrentMap();
     ASSERT_NE(p_mapOne, p_mapZero);
-    EXPECT_EQ(p_mapZero->getFollowingMap(), p_mapOne);
-    EXPECT_EQ(p_mapZero->getFinalRoom(), p_roomZero);
+    Map *p_followingMap2 = nullptr;
+    ASSERT_EQ((p_mapZero->getFollowingMap(p_followingMap2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_followingMap2, p_mapOne);
+    semantic::Room *p_finalRoom = nullptr;
+    ASSERT_EQ((p_mapZero->getFinalRoom(p_finalRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_finalRoom, p_roomZero);
 
     EXPECT_GE(manager.ensureActiveMapBootstrapHierarchyForTest(
                   Eigen::Vector3d(8.0, 2.0, 1.0)),
               0);
-    const std::vector<semantic::Room *> recoveredRooms =
-        p_mapOne->getAllRooms();
+    std::vector<semantic::Room *> recoveredRooms{};
+    ASSERT_EQ((p_mapOne->getAllRooms(recoveredRooms)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ(recoveredRooms.size(), 1U);
-    EXPECT_EQ(p_mapOne->getStartingRoom(), recoveredRooms.front());
+    semantic::Room *p_startingRoom2 = nullptr;
+    ASSERT_EQ((p_mapOne->getStartingRoom(p_startingRoom2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_startingRoom2, recoveredRooms.front());
 
     atlas.clearMap();
-    EXPECT_EQ(p_mapOne->getFollowingMap(), nullptr);
+    Map *p_followingMap3 = nullptr;
+    ASSERT_EQ((p_mapOne->getFollowingMap(p_followingMap3)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_followingMap3, nullptr);
 }
 
 TEST(SemanticBootstrapPhase1, ZeroPoseKeyFrameFallsBackToSnapshotCentroid)
@@ -1239,17 +1299,21 @@ TEST(SemanticBootstrapPhase1, ZeroPoseKeyFrameFallsBackToSnapshotCentroid)
 
     /* Uninitialized first-frame pose: finite but exactly zero. */
     KeyFrame zeroPoseKeyFrame;
-    zeroPoseKeyFrame.setPose(
-        Sophus::SE3f(Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero()));
-    atlas.getCurrentMap()->addKeyFrame(&zeroPoseKeyFrame);
+    ASSERT_EQ(
+        (zeroPoseKeyFrame.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                                               Eigen::Vector3f::Zero()))),
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.getCurrentMap()->addKeyFrame(&zeroPoseKeyFrame)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     EXPECT_EQ(manager.ensureActiveMapBootstrapHierarchyForTest(
                   Eigen::Vector3d::Constant(
                       std::numeric_limits<double>::quiet_NaN())),
               1);
 
-    const std::vector<semantic::Room *> recoveredRooms =
-        atlas.getCurrentMap()->getAllRooms();
+    std::vector<semantic::Room *> recoveredRooms{};
+    ASSERT_EQ((atlas.getCurrentMap()->getAllRooms(recoveredRooms)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ(recoveredRooms.size(), 1U);
     int id{};
     ASSERT_EQ((recoveredRooms.front()->getId(id)),

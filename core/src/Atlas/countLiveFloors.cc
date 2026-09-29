@@ -39,8 +39,16 @@ std::size_t countLiveFloors(Map *p_map_in)
     {
         return 0U;
     }
-    std::size_t liveCount = 0U;
-    for (semantic::Floor *p_floor : p_map_in->getAllFloors())
+    std::size_t                    liveCount = 0U;
+    std::vector<semantic::Floor *> mapAllFloors{};
+    if (p_map_in->getAllFloors(mapAllFloors) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Floor *p_floor : mapAllFloors)
     {
         bool floorHasPlaneIdentity{};
         if ((p_floor != nullptr) &&

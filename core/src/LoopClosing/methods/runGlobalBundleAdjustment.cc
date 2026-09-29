@@ -66,7 +66,15 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
      */
     bool optimizerStopRequested = false;
 
-    const bool isImuInitialized = p_activeMap_inout->isImuInitialized();
+    bool isImuInitialized{};
+    if (p_activeMap_inout->isImuInitialized(isImuInitialized) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (!isImuInitialized)
         Optimizer::globalBundleAdjustment(
@@ -120,7 +128,17 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
             return;
         }
 
-        if (!isImuInitialized && p_activeMap_inout->isImuInitialized())
+        bool activeMapIsImuInitialized{};
+        if ((!isImuInitialized) &&
+            p_activeMap_inout->isImuInitialized(activeMapIsImuInitialized) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isImuInitialized returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!isImuInitialized && activeMapIsImuInitialized)
         {
             hasGbaFinished = true;
             isGbaRunning   = false;
@@ -157,41 +175,131 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
 
             while (!keyFramesToCheck.empty())
             {
-                KeyFrame             *p_keyFrame = keyFramesToCheck.front();
-                const set<KeyFrame *> childs     = p_keyFrame->getChilds();
-                Sophus::SE3f          Twc        = p_keyFrame->getPoseInverse();
+                KeyFrame            *p_keyFrame = keyFramesToCheck.front();
+                std::set<KeyFrame *> childs{};
+                if (p_keyFrame->getChilds(childs) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getChilds returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                Sophus::SE3f Twc{};
+                if (p_keyFrame->getPoseInverse(Twc) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPoseInverse returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
                 for (set<KeyFrame *>::const_iterator sit = childs.begin();
                      sit != childs.end();
                      sit++)
                 {
                     KeyFrame *p_child = *sit;
-                    if (!p_child || p_child->isBad())
+                    bool      childIsBad{};
+                    if (!(!p_child) &&
+                        p_child->isBad(childIsBad) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (!p_child || childIsBad)
                         continue;
 
                     if (p_child->baGlobalKeyFrameId != loopKeyFrameCount_in)
                     {
-                        Sophus::SE3f tchildc = p_child->getPose() * Twc;
+                        Sophus::SE3f childPose{};
+                        if (p_child->getPose(childPose) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getPose returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        Sophus::SE3f tchildc = childPose * Twc;
                         p_child->tcwGBA =
                             tchildc * p_keyFrame->tcwGBA; //*Tcorc*pKF->mTcwGBA;
 
-                        Sophus::SO3f Rcor = p_child->tcwGBA.so3().inverse() *
-                                            p_child->getPose().so3();
-                        if (p_child->isVelocitySet())
+                        Sophus::SE3f childPose2{};
+                        if (p_child->getPose(childPose2) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                         {
-                            p_child->vwbGBA = Rcor * p_child->getVelocity();
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getPose returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        Sophus::SO3f Rcor =
+                            p_child->tcwGBA.so3().inverse() * childPose2.so3();
+                        bool childIsVelocitySet{};
+                        if (p_child->isVelocitySet(childIsVelocitySet) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: isVelocitySet returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        if (childIsVelocitySet)
+                        {
+                            Eigen::Vector3f childVelocity{};
+                            if (p_child->getVelocity(childVelocity) !=
+                                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: getVelocity returned a failure status "
+                                    "although it cannot fail; continuing as "
+                                    "before.",
+                                    __func__);
+                            }
+                            p_child->vwbGBA = Rcor * childVelocity;
                         }
                         else
                             Verbose::printMess("Child velocity empty!! ",
                                                Verbose::VERBOSITY_NORMAL);
 
-                        p_child->biasGBA = p_child->getImuBias();
+                        IMU::Bias childImuBias{};
+                        if (p_child->getImuBias(childImuBias) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getImuBias returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        p_child->biasGBA = childImuBias;
 
                         p_child->baGlobalKeyFrameId = loopKeyFrameCount_in;
                     }
                     keyFramesToCheck.push_back(p_child);
                 }
 
-                p_keyFrame->tcwBefGBA = p_keyFrame->getPose();
+                Sophus::SE3f keyFramePose{};
+                if (p_keyFrame->getPose(keyFramePose) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                p_keyFrame->tcwBefGBA = keyFramePose;
 
                 const Sophus::SE3d poseBefore_WorldToCamera =
                     p_keyFrame->tcwBefGBA.cast<double>();
@@ -202,10 +310,28 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                               poseBefore_WorldToCamera.translation(),
                               1.0));
 
-                p_keyFrame->setPose(p_keyFrame->tcwGBA);
+                if (p_keyFrame->setPose(p_keyFrame->tcwGBA) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
 
+                Sophus::SE3f keyFramePose2{};
+                if (p_keyFrame->getPose(keyFramePose2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 const Sophus::SE3d poseAfter_WorldToCamera =
-                    p_keyFrame->getPose().cast<double>();
+                    keyFramePose2.cast<double>();
 
                 keyFramePosesAfter_WorldToCamera.insert_or_assign(
                     p_keyFrame,
@@ -215,25 +341,68 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
 
                 if (p_keyFrame->isImu)
                 {
-                    p_keyFrame->vwbBefGBA = p_keyFrame->getVelocity();
+                    Eigen::Vector3f keyFrameVelocity{};
+                    if (p_keyFrame->getVelocity(keyFrameVelocity) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getVelocity returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    p_keyFrame->vwbBefGBA = keyFrameVelocity;
 
-                    p_keyFrame->setVelocity(p_keyFrame->vwbGBA);
-                    p_keyFrame->setNewBias(p_keyFrame->biasGBA);
+                    if (p_keyFrame->setVelocity(p_keyFrame->vwbGBA) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setVelocity returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (p_keyFrame->setNewBias(p_keyFrame->biasGBA) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setNewBias returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
                 }
 
                 keyFramesToCheck.pop_front();
             }
 
             // Correct MapPoints
-            const vector<MapPoint *> mapPoints =
-                p_activeMap_inout->getAllMapPoints();
+            std::vector<MapPoint *> mapPoints{};
+            if (p_activeMap_inout->getAllMapPoints(mapPoints) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllMapPoints returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             for (size_t mapPointIndex = 0; mapPointIndex < mapPoints.size();
                  mapPointIndex++)
             {
                 MapPoint *p_mapPoint = mapPoints[mapPointIndex];
 
-                if (p_mapPoint == nullptr || p_mapPoint->isBad())
+                bool mapPointIsBad{};
+                if (!(p_mapPoint == nullptr) &&
+                    p_mapPoint->isBad(mapPointIsBad) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_mapPoint == nullptr || mapPointIsBad)
                     continue;
 
                 bool mapPointWasCorrected = false;
@@ -241,35 +410,108 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                 if (p_mapPoint->baGlobalKeyFrameId == loopKeyFrameCount_in)
                 {
                     // If optimized by Global BA, just update
-                    p_mapPoint->setWorldPos(p_mapPoint->posGBA);
+                    if (p_mapPoint->setWorldPos(p_mapPoint->posGBA) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setWorldPos returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     mapPointWasCorrected = true;
                 }
                 else
                 {
                     // Update according to the correction of its reference
                     // keyframe
-                    KeyFrame *p_referenceKeyFrame =
-                        p_mapPoint->getReferenceKeyFrame();
+                    KeyFrame *p_referenceKeyFrame = nullptr;
+                    if (p_mapPoint->getReferenceKeyFrame(p_referenceKeyFrame) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: getReferenceKeyFrame returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
 
+                    bool referenceKeyFrameIsBad{};
+                    if (!(p_referenceKeyFrame == nullptr) &&
+                        p_referenceKeyFrame->isBad(referenceKeyFrameIsBad) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    Map *p_referenceKeyFrameMap = nullptr;
+                    if (!(p_referenceKeyFrame == nullptr ||
+                          referenceKeyFrameIsBad) &&
+                        p_referenceKeyFrame->getMap(p_referenceKeyFrameMap) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getMap returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
                     if (p_referenceKeyFrame == nullptr ||
-                        p_referenceKeyFrame->isBad() ||
-                        p_referenceKeyFrame->getMap() != p_activeMap_inout ||
+                        referenceKeyFrameIsBad ||
+                        p_referenceKeyFrameMap != p_activeMap_inout ||
                         p_referenceKeyFrame->baGlobalKeyFrameId !=
                             loopKeyFrameCount_in)
                     {
                         p_referenceKeyFrame = nullptr;
 
-                        const auto observations = p_mapPoint->getObservations();
+                        std::map<KeyFrame *, std::tuple<int, int>>
+                            observations{};
+                        if (p_mapPoint->getObservations(observations) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getObservations returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
 
                         for (const auto &[p_observingKeyFrame, featureIndexes] :
                              observations)
                         {
                             (void)featureIndexes;
 
+                            bool observingKeyFrameIsBad{};
+                            if (!(p_observingKeyFrame == nullptr) &&
+                                p_observingKeyFrame->isBad(
+                                    observingKeyFrameIsBad) !=
+                                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: isBad returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
+                            }
+                            Map *p_observingKeyFrameMap = nullptr;
+                            if (!(p_observingKeyFrame == nullptr ||
+                                  observingKeyFrameIsBad) &&
+                                p_observingKeyFrame->getMap(
+                                    p_observingKeyFrameMap) !=
+                                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: getMap returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
+                            }
                             if (p_observingKeyFrame == nullptr ||
-                                p_observingKeyFrame->isBad() ||
-                                p_observingKeyFrame->getMap() !=
-                                    p_activeMap_inout ||
+                                observingKeyFrameIsBad ||
+                                p_observingKeyFrameMap != p_activeMap_inout ||
                                 p_observingKeyFrame->baGlobalKeyFrameId !=
                                     loopKeyFrameCount_in)
                             {
@@ -297,18 +539,55 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                     // cv::Mat Rcw =
                     // pRefKF->mTcwBefGBA.rowRange(0,3).colRange(0,3); cv::Mat
                     // tcw = pRefKF->mTcwBefGBA.rowRange(0,3).col(3);
-                    Eigen::Vector3f Xc = p_referenceKeyFrame->tcwBefGBA *
-                                         p_mapPoint->getWorldPos();
+                    Eigen::Vector3f mapPointWorldPos{};
+                    if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getWorldPos returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    Eigen::Vector3f Xc =
+                        p_referenceKeyFrame->tcwBefGBA * mapPointWorldPos;
 
                     // Backproject using corrected camera
-                    p_mapPoint->setWorldPos(
-                        p_referenceKeyFrame->getPoseInverse() * Xc);
+                    Sophus::SE3f referenceKeyFramePoseInverse{};
+                    if (p_referenceKeyFrame->getPoseInverse(
+                            referenceKeyFramePoseInverse) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPoseInverse returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (p_mapPoint->setWorldPos(referenceKeyFramePoseInverse *
+                                                Xc) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setWorldPos returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     mapPointWasCorrected = true;
                 }
 
                 if (mapPointWasCorrected)
                 {
-                    p_mapPoint->updateNormalAndDepth();
+                    if (p_mapPoint->updateNormalAndDepth() !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: updateNormalAndDepth returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
                 }
             }
 
@@ -330,7 +609,16 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
             }
 
             /* Preserve plane variables which were optimized directly by GBA. */
-            for (geometric::Plane *p_plane : p_activeMap_inout->getAllPlanes())
+            std::vector<geometric::Plane *> activeMapAllPlanes{};
+            if (p_activeMap_inout->getAllPlanes(activeMapAllPlanes) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllPlanes returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (geometric::Plane *p_plane : activeMapAllPlanes)
             {
                 bool planeIsBad{};
                 if (!(p_plane == nullptr) &&
@@ -359,8 +647,23 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                 }
             }
 
-            p_activeMap_inout->informNewBigChange();
-            p_activeMap_inout->increaseChangeIndex();
+            if (p_activeMap_inout->informNewBigChange() !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: informNewBigChange returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_activeMap_inout->increaseChangeIndex() !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: increaseChangeIndex returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             // TODO Check this update
             // mpTracker->UpdateFrameIMU(1.0f,

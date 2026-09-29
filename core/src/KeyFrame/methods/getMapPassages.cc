@@ -35,11 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<vs_graphs::core::semantic::Passage *>
-    vs_graphs::core::KeyFrame::getMapPassages()
+KeyFrameStatus vs_graphs::core::KeyFrame::getMapPassages(
+    std::vector<vs_graphs::core::semantic::Passage *> &mapPassages_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return mapPassages;
+    mapPassages_out = mapPassages;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

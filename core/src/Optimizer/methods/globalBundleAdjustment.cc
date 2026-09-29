@@ -24,6 +24,7 @@
  */
 
 #include "Optimizer.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -39,20 +40,64 @@ void Optimizer::globalBundleAdjustment(
     double                  markerImpact_in,
     const std::atomic_bool *p_stopRequested_in)
 {
-    std::vector<vs_graphs::core::semantic::Room *> allRooms =
-        p_map_in->getAllRooms();
-    std::vector<vs_graphs::core::semantic::Floor *> allFloors =
-        p_map_in->getAllFloors();
-    std::vector<vs_graphs::core::geometric::Plane *> allPlanes =
-        p_map_in->getAllPlanes();
-    std::vector<vs_graphs::core::semantic::Marker *> allMarkers =
-        p_map_in->getAllMarkers();
-    std::vector<vs_graphs::core::semantic::Passage *> allPassages =
-        p_map_in->getAllPassages();
-    std::vector<vs_graphs::core::MapPoint *> allMapPoints =
-        p_map_in->getAllMapPoints();
-    std::vector<vs_graphs::core::KeyFrame *> allKeyFrames =
-        p_map_in->getAllKeyFrames();
+    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
+    if (p_map_in->getAllRooms(allRooms) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<vs_graphs::core::semantic::Floor *> allFloors{};
+    if (p_map_in->getAllFloors(allFloors) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<vs_graphs::core::geometric::Plane *> allPlanes{};
+    if (p_map_in->getAllPlanes(allPlanes) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<vs_graphs::core::semantic::Marker *> allMarkers{};
+    if (p_map_in->getAllMarkers(allMarkers) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkers returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
+    if (p_map_in->getAllPassages(allPassages) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<vs_graphs::core::MapPoint *> allMapPoints{};
+    if (p_map_in->getAllMapPoints(allMapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<vs_graphs::core::KeyFrame *> allKeyFrames{};
+    if (p_map_in->getAllKeyFrames(allKeyFrames) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     bundleAdjustment(allKeyFrames,
                      allMapPoints,

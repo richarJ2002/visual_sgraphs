@@ -43,10 +43,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::extractOrbFeatures(int            flag_in,
-                               const cv::Mat &imageGray_in,
-                               const int      x0_in,
-                               const int      x1_in)
+FrameStatus Frame::extractOrbFeatures(int            flag_in,
+                                      const cv::Mat &imageGray_in,
+                                      const int      x0_in,
+                                      const int      x1_in)
 {
     vector<int> lappings = {x0_in, x1_in};
     // Compute ORB based on the flag (0: left, 1: right)
@@ -62,6 +62,8 @@ void Frame::extractOrbFeatures(int            flag_in,
                                            keyPointsRight,
                                            descriptorsRight,
                                            lappings);
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

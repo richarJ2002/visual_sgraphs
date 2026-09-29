@@ -44,7 +44,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::computeImageBounds(const cv::Mat &imageLeft_in)
+FrameStatus Frame::computeImageBounds(const cv::Mat &imageLeft_in)
 {
     if (distortionCoefficients.at<float>(0) != 0.0)
     {
@@ -81,6 +81,8 @@ void Frame::computeImageBounds(const cv::Mat &imageLeft_in)
         gridMinY = 0.0f;
         gridMaxY = imageLeft_in.rows;
     }
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

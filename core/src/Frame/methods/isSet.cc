@@ -43,9 +43,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::isSet() const
+FrameStatus Frame::isSet(bool &isSet_out) const
 {
-    return isFrameSet;
+    isSet_out = isFrameSet;
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

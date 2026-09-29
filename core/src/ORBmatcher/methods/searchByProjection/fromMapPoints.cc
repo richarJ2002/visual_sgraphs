@@ -23,6 +23,7 @@
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
+#include <rclcpp/logging.hpp>
 #include <stdint-gcc.h>
 
 namespace vs_graphs
@@ -51,7 +52,16 @@ int ORBmatcher::searchByProjection(Frame                      &F,
         if (bFarPoints && p_mapPoint->trackDepth > thFarPoints)
             continue;
 
-        if (p_mapPoint->isBad())
+        bool mapPointIsBad{};
+        if (p_mapPoint->isBad(mapPointIsBad) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad)
             continue;
 
         if (p_mapPoint->isTrackedInView)
@@ -74,16 +84,33 @@ int ORBmatcher::searchByProjection(Frame                      &F,
                     r *= 1.2f;
             }
 
-            const vector<size_t> indices =
-                F.getFeaturesInArea(p_mapPoint->trackProjX,
+            std::vector<size_t> indices{};
+            if (F.getFeaturesInArea(p_mapPoint->trackProjX,
                                     p_mapPoint->trackProjY,
                                     r * F.scaleFactors[predictedLevelCount],
+                                    indices,
                                     predictedLevelCount - 1,
-                                    predictedLevelCount);
+                                    predictedLevelCount) !=
+                FrameStatus::FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getFeaturesInArea returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             if (!indices.empty())
             {
-                const cv::Mat mapPointDescriptor = p_mapPoint->getDescriptor();
+                cv::Mat mapPointDescriptor{};
+                if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getDescriptor returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 int bestDistance  = 256;
                 int bestLevel     = -1;
@@ -100,9 +127,23 @@ int ORBmatcher::searchByProjection(Frame                      &F,
                     const size_t featureIndex = *vit;
 
                     if (F.mapPoints[featureIndex])
-                        if (F.mapPoints[featureIndex]->getObservationCount() >
-                            0)
+                    {
+                        int observationCount{};
+                        if (F.mapPoints[featureIndex]->getObservationCount(
+                                observationCount) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getObservationCount returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (observationCount > 0)
+                        {
                             continue;
+                        }
+                    }
 
                     if (F.leftKeyPointCount == -1 && F.uRight[featureIndex] > 0)
                     {
@@ -193,18 +234,36 @@ int ORBmatcher::searchByProjection(Frame                      &F,
                         r *= 1.2f;
                 }
 
-                const vector<size_t> indices =
-                    F.getFeaturesInArea(p_mapPoint->trackProjXR,
+                std::vector<size_t> indices{};
+                if (F.getFeaturesInArea(p_mapPoint->trackProjXR,
                                         p_mapPoint->trackProjYR,
                                         r * F.scaleFactors[predictedLevelCount],
+                                        indices,
                                         predictedLevelCount - 1,
                                         predictedLevelCount,
-                                        true);
+                                        true) !=
+                    FrameStatus::FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getFeaturesInArea returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 if (indices.empty())
                     continue;
 
-                const cv::Mat mapPointDescriptor = p_mapPoint->getDescriptor();
+                cv::Mat mapPointDescriptor{};
+                if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getDescriptor returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 int bestDistance  = 256;
                 int bestLevel     = -1;
@@ -221,9 +280,23 @@ int ORBmatcher::searchByProjection(Frame                      &F,
                     const size_t featureIndex = *vit;
 
                     if (F.mapPoints[featureIndex + F.leftKeyPointCount])
+                    {
+                        int observationCount2{};
                         if (F.mapPoints[featureIndex + F.leftKeyPointCount]
-                                ->getObservationCount() > 0)
+                                ->getObservationCount(observationCount2) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getObservationCount returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (observationCount2 > 0)
+                        {
                             continue;
+                        }
+                    }
 
                     const cv::Mat &d =
                         F.descriptors.row(featureIndex + F.leftKeyPointCount);

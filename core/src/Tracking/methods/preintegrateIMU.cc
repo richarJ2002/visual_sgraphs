@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -39,7 +40,13 @@ void Tracking::preintegrateIMU()
     if (!currentFrame.p_previousFrame)
     {
         Verbose::printMess("non prev frame ", Verbose::VERBOSITY_NORMAL);
-        currentFrame.setIntegrated();
+        if (currentFrame.setIntegrated() != FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setIntegrated returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         return;
     }
 
@@ -49,7 +56,13 @@ void Tracking::preintegrateIMU()
     {
         Verbose::printMess("Not IMU data in mlQueueImuData!!",
                            Verbose::VERBOSITY_NORMAL);
-        currentFrame.setIntegrated();
+        if (currentFrame.setIntegrated() != FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setIntegrated returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         return;
     }
 
@@ -175,7 +188,13 @@ void Tracking::preintegrateIMU()
     currentFrame.p_imuPreintegrated      = p_imuPreintegratedFromLastKF;
     currentFrame.p_lastKeyFrame          = p_lastKeyFrame;
 
-    currentFrame.setIntegrated();
+    if (currentFrame.setIntegrated() != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setIntegrated returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Verbose::PrintMess("Preintegration is finished!! ",
     // Verbose::VERBOSITY_DEBUG);

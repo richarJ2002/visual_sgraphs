@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,7 +34,13 @@ namespace core
 void Atlas::setInertialSensor()
 {
     unique_lock<mutex> lock(atlasMutex);
-    p_activeMap->setInertialSensor();
+    if (p_activeMap->setInertialSensor() != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setInertialSensor returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

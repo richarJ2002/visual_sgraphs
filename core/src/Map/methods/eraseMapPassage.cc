@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
+MapStatus Map::eraseMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
 {
     unique_lock<mutex> lock(mapMutex);
     passages.erase(p_passage_in);
@@ -46,6 +46,8 @@ void Map::eraseMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
                               ? passageIndex.erase(passageIterator)
                               : std::next(passageIterator);
     }
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

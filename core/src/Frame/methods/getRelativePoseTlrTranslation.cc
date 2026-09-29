@@ -43,9 +43,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f Frame::getRelativePoseTlrTranslation()
+FrameStatus Frame::getRelativePoseTlrTranslation(
+    Eigen::Vector3f &relativePoseTlrTranslation_out)
 {
-    return poseTlr.translation();
+    relativePoseTlrTranslation_out = poseTlr.translation();
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

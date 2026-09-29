@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -35,7 +36,15 @@ map<long unsigned int, KeyFrame *> Atlas::getAtlasKeyFrames()
     map<long unsigned int, KeyFrame *> idKeyFrames;
     for (Map *p_backupMap : backupMaps)
     {
-        vector<KeyFrame *> backupKeyFrames = p_backupMap->getAllKeyFrames();
+        std::vector<KeyFrame *> backupKeyFrames{};
+        if (p_backupMap->getAllKeyFrames(backupKeyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (KeyFrame *p_backupKeyFrame : backupKeyFrames)
         {

@@ -34,9 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setCurrentMap()
+MapStatus Map::setCurrentMap()
 {
     isMapInUse = true;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

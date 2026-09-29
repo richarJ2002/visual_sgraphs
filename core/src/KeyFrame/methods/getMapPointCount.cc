@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-int KeyFrame::getMapPointCount()
+KeyFrameStatus KeyFrame::getMapPointCount(int &mapPointCount_out)
 {
     unique_lock<mutex> lock(featuresMutex);
     int                numberMapPoints = 0;
@@ -47,7 +47,8 @@ int KeyFrame::getMapPointCount()
             continue;
         numberMapPoints++;
     }
-    return numberMapPoints;
+    mapPointCount_out = numberMapPoints;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

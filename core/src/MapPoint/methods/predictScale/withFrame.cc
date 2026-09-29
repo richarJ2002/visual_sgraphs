@@ -34,10 +34,15 @@ namespace vs_graphs
 namespace core
 {
 
-int MapPoint::predictScale(const float &currentDistance_in, Frame *p_pF_in)
+MapPointStatus MapPoint::predictScale(const float &currentDistance_in,
+                                      Frame       *p_pF_in,
+                                      int         &scaleLevel_out)
 {
     if (currentDistance_in == 0.0f)
-        return 0;
+    {
+        scaleLevel_out = 0;
+        return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
+    }
 
     float ratio;
     {
@@ -51,7 +56,8 @@ int MapPoint::predictScale(const float &currentDistance_in, Frame *p_pF_in)
     else if (scaleCount >= p_pF_in->scaleLevelCount)
         scaleCount = p_pF_in->scaleLevelCount - 1;
 
-    return scaleCount;
+    scaleLevel_out = scaleCount;
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

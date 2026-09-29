@@ -30,8 +30,15 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
     std::vector<vs_graphs::core::semantic::Room *> envRooms_in)
 {
     // Get the markers from the current KeyFrame
-    std::vector<semantic::Marker *> mapMarkers =
-        p_keyFrame_in->getCurrentFrameMarkers();
+    std::vector<semantic::Marker *> mapMarkers{};
+    if (p_keyFrame_in->getCurrentFrameMarkers(mapMarkers) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentFrameMarkers returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (semantic::Marker *p_currentMarker : mapMarkers)
     {
@@ -103,7 +110,16 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (p_currentMarker->setGlobalPose(p_keyFrame_in->getPoseInverse() *
+            Sophus::SE3f keyFramePoseInverse{};
+            if (p_keyFrame_in->getPoseInverse(keyFramePoseInverse) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_currentMarker->setGlobalPose(keyFramePoseInverse *
                                                currentMarkerLocalPose) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {

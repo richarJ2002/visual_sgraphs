@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -39,29 +40,76 @@ void Atlas::createNewMapWhileAtlasLocked()
 
     if (p_activeMap)
     {
-        if (!maps.empty() &&
-            lastInitKeyFrameId < p_activeMap->getMaxKeyFrameId())
-            lastInitKeyFrameId = p_activeMap->getMaxKeyFrameId() + 1;
+        unsigned long activeMapMaxKeyFrameId{};
+        if ((!maps.empty()) &&
+            p_activeMap->getMaxKeyFrameId(activeMapMaxKeyFrameId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMaxKeyFrameId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!maps.empty() && lastInitKeyFrameId < activeMapMaxKeyFrameId)
+        {
+            unsigned long activeMapMaxKeyFrameId2{};
+            if (p_activeMap->getMaxKeyFrameId(activeMapMaxKeyFrameId2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMaxKeyFrameId returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            lastInitKeyFrameId = activeMapMaxKeyFrameId2 + 1;
+        }
 
         /* Snapshot room geometry before the map is stranded so that
          * rooms in the new map can inherit identity tags.            */
         exportRoomContextFromCurrentMap();
 
-        p_activeMap->setStoredMap();
-        std::cout << "- The created map with MapId #" << p_activeMap->getId()
+        if (p_activeMap->setStoredMap() != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setStoredMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        unsigned long activeMapId{};
+        if (p_activeMap->getId(activeMapId) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::cout << "- The created map with MapId #" << activeMapId
                   << " has been stored!" << std::endl;
     }
 
     Map *p_previousMap = p_activeMap;
     p_activeMap        = new Map(lastInitKeyFrameId);
-    p_activeMap->setCurrentMap();
+    if (p_activeMap->setCurrentMap() != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     maps.insert(p_activeMap);
     if (p_previousMap != nullptr)
     {
         /* Mission-chain trace link: the stranded map points at its
          * successor. Same-map clears never pass through here, so the link
          * stays null for them by construction. */
-        p_previousMap->setFollowingMap(p_activeMap);
+        if (p_previousMap->setFollowingMap(p_activeMap) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setFollowingMap returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
     {
         std::lock_guard<std::mutex> contextLock(roomContextMutex);

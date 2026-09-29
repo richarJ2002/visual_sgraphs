@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,9 +33,18 @@ namespace core
 
 vs_graphs::core::semantic::Passage *Atlas::getPassageById(int passageId_in)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap != nullptr ? p_activeMap->getPassageById(passageId_in)
-                                  : nullptr;
+    unique_lock<mutex>                  lock(atlasMutex);
+    vs_graphs::core::semantic::Passage *p_activeMapPassageById = nullptr;
+    if ((p_activeMap != nullptr) &&
+        p_activeMap->getPassageById(passageId_in, p_activeMapPassageById) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPassageById returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return p_activeMap != nullptr ? p_activeMapPassageById : nullptr;
 }
 
 } // namespace core

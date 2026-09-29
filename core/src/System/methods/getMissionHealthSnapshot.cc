@@ -132,14 +132,39 @@ System::MissionHealthSnapshot
 
     if (p_activeMap != nullptr)
     {
-        snapshot.mapId = static_cast<std::uint64_t>(p_activeMap->getId());
-        const std::vector<KeyFrame *> keyFrames =
-            p_activeMap->getAllKeyFrames();
+        unsigned long activeMapId{};
+        if (p_activeMap->getId(activeMapId) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        snapshot.mapId = static_cast<std::uint64_t>(activeMapId);
+        std::vector<KeyFrame *> keyFrames{};
+        if (p_activeMap->getAllKeyFrames(keyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         snapshot.keyFrameCount = static_cast<std::uint32_t>(keyFrames.size());
         KeyFrame *p_latestKeyFrame = nullptr;
         for (KeyFrame *p_keyFrame : keyFrames)
         {
-            if (p_keyFrame != nullptr && !p_keyFrame->isBad() &&
+            bool keyFrameIsBad{};
+            if ((p_keyFrame != nullptr) &&
+                p_keyFrame->isBad(keyFrameIsBad) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_keyFrame != nullptr && !keyFrameIsBad &&
                 (p_latestKeyFrame == nullptr ||
                  p_keyFrame->id > p_latestKeyFrame->id))
             {
@@ -149,8 +174,16 @@ System::MissionHealthSnapshot
         if (p_latestKeyFrame != nullptr)
         {
             snapshot.latestKeyFrameTimestamp = p_latestKeyFrame->timeStamp;
-            snapshot.latestKeyFramePose_World =
-                p_latestKeyFrame->getPoseInverse();
+            Sophus::SE3f latestKeyFramePoseInverse{};
+            if (p_latestKeyFrame->getPoseInverse(latestKeyFramePoseInverse) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            snapshot.latestKeyFramePose_World = latestKeyFramePoseInverse;
             snapshot.isLatestKeyFramePoseValid =
                 snapshot.latestKeyFramePose_World.translation().allFinite() &&
                 snapshot.latestKeyFramePose_World.rotationMatrix().allFinite();
@@ -158,7 +191,16 @@ System::MissionHealthSnapshot
 
         if (includeSemantics_in)
         {
-            for (semantic::Room *p_room : p_activeMap->getAllRooms())
+            std::vector<semantic::Room *> activeMapAllRooms{};
+            if (p_activeMap->getAllRooms(activeMapAllRooms) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllRooms returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (semantic::Room *p_room : activeMapAllRooms)
             {
                 bool roomIsBad{};
                 if (!(p_room == nullptr) &&
@@ -234,7 +276,16 @@ System::MissionHealthSnapshot
                 snapshot.rooms.push_back(std::move(room));
             }
 
-            for (semantic::Floor *p_floor : p_activeMap->getAllFloors())
+            std::vector<semantic::Floor *> activeMapAllFloors{};
+            if (p_activeMap->getAllFloors(activeMapAllFloors) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllFloors returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (semantic::Floor *p_floor : activeMapAllFloors)
             {
                 if (p_floor == nullptr)
                 {
@@ -306,7 +357,17 @@ System::MissionHealthSnapshot
                 snapshot.floors.push_back(std::move(floor));
             }
 
-            for (semantic::Passage *p_passage : p_activeMap->getAllPassages())
+            std::vector<vs_graphs::core::semantic::Passage *>
+                activeMapAllPassages{};
+            if (p_activeMap->getAllPassages(activeMapAllPassages) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllPassages returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (semantic::Passage *p_passage : activeMapAllPassages)
             {
                 if (p_passage == nullptr)
                 {

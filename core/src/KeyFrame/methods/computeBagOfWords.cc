@@ -36,7 +36,7 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::computeBagOfWords()
+KeyFrameStatus KeyFrame::computeBagOfWords()
 {
     if (bowVector.empty() || featureVector.empty())
     {
@@ -59,6 +59,8 @@ void KeyFrame::computeBagOfWords()
                                    featureVector,
                                    4);
     }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

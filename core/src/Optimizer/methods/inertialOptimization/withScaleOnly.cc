@@ -27,6 +27,7 @@
 
 #include "G2oTypes.h"
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -37,9 +38,26 @@ void Optimizer::inertialOptimization(Map             *p_map_in,
                                      Eigen::Matrix3d &Rwg_inout,
                                      double          &scale_inout)
 {
-    int                      its               = 10;
-    long unsigned int        maximumKeyFrameId = p_map_in->getMaxKeyFrameId();
-    const vector<KeyFrame *> keyFrames         = p_map_in->getAllKeyFrames();
+    int           its = 10;
+    unsigned long maximumKeyFrameIdValue{};
+    if (p_map_in->getMaxKeyFrameId(maximumKeyFrameIdValue) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMaxKeyFrameId returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    long unsigned int maximumKeyFrameId =
+        static_cast<long unsigned int>(maximumKeyFrameIdValue);
+    std::vector<KeyFrame *> keyFrames{};
+    if (p_map_in->getAllKeyFrames(keyFrames) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Setup optimizer
     g2o::SparseOptimizer                 optimizer;
@@ -104,8 +122,16 @@ void Optimizer::inertialOptimization(Map             *p_map_in,
 
         if (p_keyFrame->p_prevKF && p_keyFrame->id <= maximumKeyFrameId)
         {
-            if (p_keyFrame->isBad() ||
-                p_keyFrame->p_prevKF->id > maximumKeyFrameId)
+            bool keyFrameIsBad{};
+            if (p_keyFrame->isBad(keyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (keyFrameIsBad || p_keyFrame->p_prevKF->id > maximumKeyFrameId)
                 continue;
 
             g2o::HyperGraph::Vertex *p_firstPoseVertex =

@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,8 +33,17 @@ namespace core
 
 std::vector<semantic::Marker *> Atlas::getAllMarkers()
 {
-    unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap->getAllMarkers();
+    unique_lock<mutex>              lock(atlasMutex);
+    std::vector<semantic::Marker *> activeMapAllMarkers{};
+    if (p_activeMap->getAllMarkers(activeMapAllMarkers) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkers returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapAllMarkers;
 }
 
 } // namespace core

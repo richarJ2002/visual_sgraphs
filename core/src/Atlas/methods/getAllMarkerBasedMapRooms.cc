@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,8 +33,17 @@ namespace core
 
 std::vector<semantic::Room *> Atlas::getAllMarkerBasedMapRooms()
 {
-    unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap->getAllMarkerBasedMapRooms();
+    unique_lock<mutex>            lock(atlasMutex);
+    std::vector<semantic::Room *> activeMapAllMarkerBasedMapRooms{};
+    if (p_activeMap->getAllMarkerBasedMapRooms(
+            activeMapAllMarkerBasedMapRooms) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkerBasedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapAllMarkerBasedMapRooms;
 }
 
 } // namespace core

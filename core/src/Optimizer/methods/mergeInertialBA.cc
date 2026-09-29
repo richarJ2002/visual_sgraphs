@@ -31,6 +31,7 @@
 #include "System.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -146,8 +147,15 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
     map<MapPoint *, int> localObservationCounts;
     for (int i = 0; i < N; i++)
     {
-        vector<MapPoint *> mapPoints =
-            optimizableKeyFrames[i]->getMapPointMatches();
+        std::vector<MapPoint *> mapPoints{};
+        if (optimizableKeyFrames[i]->getMapPointMatches(mapPoints) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPointMatches returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (vector<MapPoint *>::iterator vit  = mapPoints.begin(),
                                           vend = mapPoints.end();
              vit != vend;
@@ -157,7 +165,17 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
             // added several times to localMapPointList
             MapPoint *p_mapPoint = *vit;
             if (p_mapPoint)
-                if (!p_mapPoint->isBad())
+            {
+                bool mapPointIsBad{};
+                if (p_mapPoint->isBad(mapPointIsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (!mapPointIsBad)
                 {
                     if (p_mapPoint->baLocalKeyFrameId !=
                         p_currentKeyFrame_inout->id)
@@ -172,6 +190,7 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
                         localObservationCounts[p_mapPoint]++;
                     }
                 }
+            }
         }
     }
 
@@ -191,8 +210,15 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
          lit != lend;
          lit++, i++)
     {
-        map<KeyFrame *, tuple<int, int>> observations =
-            lit->first->getObservations();
+        std::map<KeyFrame *, std::tuple<int, int>> observations{};
+        if (lit->first->getObservations(observations) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (i >= maximumCovisibleKeyFrameCount)
             break;
         for (map<KeyFrame *, tuple<int, int>>::iterator
@@ -209,7 +235,16 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
                         ->id) // If optimizable or already included...
             {
                 p_keyFrame->baLocalKeyFrameId = p_currentKeyFrame_inout->id;
-                if (!p_keyFrame->isBad())
+                bool keyFrameIsBad{};
+                if (p_keyFrame->isBad(keyFrameIsBad) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (!keyFrameIsBad)
                 {
                     optimizableCovisibleKeyFrames.push_back(p_keyFrame);
                     break;
@@ -348,8 +383,16 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
         if (p_keyFrame->isImu && p_keyFrame->p_prevKF->isImu &&
             p_keyFrame->p_imuPreintegrated)
         {
-            p_keyFrame->p_imuPreintegrated->setNewBias(
-                p_keyFrame->p_prevKF->getImuBias());
+            IMU::Bias imuBias{};
+            if (p_keyFrame->p_prevKF->getImuBias(imuBias) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getImuBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            p_keyFrame->p_imuPreintegrated->setNewBias(imuBias);
             g2o::HyperGraph::Vertex *p_firstPoseVertex =
                 optimizer.vertex(p_keyFrame->p_prevKF->id);
             g2o::HyperGraph::Vertex *p_firstVelocityVertex = optimizer.vertex(
@@ -479,15 +522,31 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
             continue;
 
         g2o::VertexSBAPointXYZ *p_pointVertex = new g2o::VertexSBAPointXYZ();
-        p_pointVertex->setEstimate(p_mapPoint->getWorldPos().cast<double>());
+        Eigen::Vector3f         mapPointWorldPos{};
+        if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_pointVertex->setEstimate(mapPointWorldPos.cast<double>());
 
         unsigned long id = p_mapPoint->id + initialMapPointId + 1;
         p_pointVertex->setId(id);
         p_pointVertex->setMarginalized(true);
         optimizer.addVertex(p_pointVertex);
 
-        const map<KeyFrame *, tuple<int, int>> observations =
-            p_mapPoint->getObservations();
+        std::map<KeyFrame *, std::tuple<int, int>> observations{};
+        if (p_mapPoint->getObservations(observations) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Create visual constraints
         for (map<KeyFrame *, tuple<int, int>>::const_iterator
@@ -515,7 +574,16 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
                 optimizer.vertex(p_keyFrame->id) == nullptr)
                 continue;
 
-            if (!p_keyFrame->isBad())
+            bool keyFrameIsBad2{};
+            if (p_keyFrame->isBad(keyFrameIsBad2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!keyFrameIsBad2)
             {
                 const cv::KeyPoint &keyPointUn =
                     p_keyFrame->keyPointsUndistorted[get<0>(mit->second)];
@@ -602,7 +670,16 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
         EdgeMono *e          = edgesMonos[i];
         MapPoint *p_mapPoint = mapPointEdgeMonos[i];
 
-        if (p_mapPoint->isBad())
+        bool mapPointIsBad2{};
+        if (p_mapPoint->isBad(mapPointIsBad2) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad2)
             continue;
 
         if (e->chi2() > chi2Mono2)
@@ -618,7 +695,16 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
         EdgeStereo *e          = edgesStereos[i];
         MapPoint   *p_mapPoint = mapPointEdgeStereos[i];
 
-        if (p_mapPoint->isBad())
+        bool mapPointIsBad3{};
+        if (p_mapPoint->isBad(mapPointIsBad3) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad3)
             continue;
 
         if (e->chi2() > chi2Stereo2)
@@ -636,8 +722,22 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
         {
             KeyFrame *p_keyFrame        = vToErase[i].first;
             MapPoint *p_mapPointToErase = vToErase[i].second;
-            p_keyFrame->eraseMapPointMatch(p_mapPointToErase);
-            p_mapPointToErase->eraseObservation(p_keyFrame);
+            if (p_keyFrame->eraseMapPointMatch(p_mapPointToErase) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPointMatch returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mapPointToErase->eraseObservation(p_keyFrame) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseObservation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
@@ -651,9 +751,25 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
             static_cast<VertexPose *>(optimizer.vertex(p_keyFrame->id));
         Sophus::SE3f Tcw(p_poseVertex->estimate().Rcw[0].cast<float>(),
                          p_poseVertex->estimate().tcw[0].cast<float>());
-        p_keyFrame->setPose(Tcw);
+        if (p_keyFrame->setPose(Tcw) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        Sophus::SE3d Tiw = p_keyFrame->getPose().cast<double>();
+        Sophus::SE3f keyFramePose{};
+        if (p_keyFrame->getPose(keyFramePose) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3d Tiw = keyFramePose.cast<double>();
         g2o::Sim3    g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
         corrPoses_inout[p_keyFrame] = g2oSiw;
 
@@ -661,7 +777,15 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
         {
             VertexVelocity *p_velocityVertex = static_cast<VertexVelocity *>(
                 optimizer.vertex(maximumKeyFrameId + 3 * (p_keyFrame->id) + 1));
-            p_keyFrame->setVelocity(p_velocityVertex->estimate().cast<float>());
+            if (p_keyFrame->setVelocity(
+                    p_velocityVertex->estimate().cast<float>()) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             VertexGyroBias *p_gyroBiasVertex = static_cast<VertexGyroBias *>(
                 optimizer.vertex(maximumKeyFrameId + 3 * (p_keyFrame->id) + 2));
             VertexAccBias *p_accelerometerBiasVertex =
@@ -670,8 +794,15 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
             Vector6d b;
             b << p_gyroBiasVertex->estimate(),
                 p_accelerometerBiasVertex->estimate();
-            p_keyFrame->setNewBias(
-                IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]));
+            if (p_keyFrame->setNewBias(
+                    IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2])) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setNewBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
@@ -683,9 +814,25 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
             static_cast<VertexPose *>(optimizer.vertex(p_keyFrame->id));
         Sophus::SE3f Tcw(p_poseVertex->estimate().Rcw[0].cast<float>(),
                          p_poseVertex->estimate().tcw[0].cast<float>());
-        p_keyFrame->setPose(Tcw);
+        if (p_keyFrame->setPose(Tcw) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        Sophus::SE3d Tiw = p_keyFrame->getPose().cast<double>();
+        Sophus::SE3f keyFramePose2{};
+        if (p_keyFrame->getPose(keyFramePose2) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3d Tiw = keyFramePose2.cast<double>();
         g2o::Sim3    g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
         corrPoses_inout[p_keyFrame] = g2oSiw;
 
@@ -693,7 +840,15 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
         {
             VertexVelocity *p_velocityVertex = static_cast<VertexVelocity *>(
                 optimizer.vertex(maximumKeyFrameId + 3 * (p_keyFrame->id) + 1));
-            p_keyFrame->setVelocity(p_velocityVertex->estimate().cast<float>());
+            if (p_keyFrame->setVelocity(
+                    p_velocityVertex->estimate().cast<float>()) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             VertexGyroBias *p_gyroBiasVertex = static_cast<VertexGyroBias *>(
                 optimizer.vertex(maximumKeyFrameId + 3 * (p_keyFrame->id) + 2));
             VertexAccBias *p_accelerometerBiasVertex =
@@ -702,8 +857,15 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
             Vector6d b;
             b << p_gyroBiasVertex->estimate(),
                 p_accelerometerBiasVertex->estimate();
-            p_keyFrame->setNewBias(
-                IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]));
+            if (p_keyFrame->setNewBias(
+                    IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2])) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setNewBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
@@ -717,11 +879,31 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
         g2o::VertexSBAPointXYZ *p_pointVertex =
             static_cast<g2o::VertexSBAPointXYZ *>(
                 optimizer.vertex(p_mapPoint->id + initialMapPointId + 1));
-        p_mapPoint->setWorldPos(p_pointVertex->estimate().cast<float>());
-        p_mapPoint->updateNormalAndDepth();
+        if (p_mapPoint->setWorldPos(p_pointVertex->estimate().cast<float>()) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_mapPoint->updateNormalAndDepth() !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateNormalAndDepth returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
-    p_map_inout->increaseChangeIndex();
+    if (p_map_inout->increaseChangeIndex() != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: increaseChangeIndex returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

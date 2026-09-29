@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -38,12 +39,24 @@ void Atlas::clearMap()
      * the bootstrap recovery path can recreate the same stable identities
      * afterwards; otherwise the next cycle allocates fresh RoomN/FloorM. */
     exportRoomContextFromCurrentMap();
-    p_activeMap->clear();
+    if (p_activeMap->clear() != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: clear returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     /* A same-map clear keeps the map id, so the visualization/voxblox
      * revision token would not observe the reset and stale markers and
      * clouds would persist alongside the fresh map. A clear is at least as
      * big a change as the loop-closure corrections this index exists for. */
-    p_activeMap->informNewBigChange();
+    if (p_activeMap->informNewBigChange() != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: informNewBigChange returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

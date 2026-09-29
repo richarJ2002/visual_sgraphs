@@ -28,14 +28,15 @@
 #include "ORBmatcher.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void MapPoint::preSave(set<KeyFrame *> &keyFrames_in,
-                       set<MapPoint *> &mapPoints_in)
+MapPointStatus MapPoint::preSave(std::set<KeyFrame *> &keyFrames_in,
+                                 std::set<MapPoint *> &mapPoints_in)
 {
     backupReplacedId = -1;
 
@@ -70,7 +71,14 @@ void MapPoint::preSave(set<KeyFrame *> &keyFrames_in,
         }
         else
         {
-            eraseObservation(p_keyFrame);
+            if (eraseObservation(p_keyFrame) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseObservation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
@@ -80,6 +88,8 @@ void MapPoint::preSave(set<KeyFrame *> &keyFrames_in,
     {
         backupRefKeyFrameId = p_referenceKeyFrame->id;
     }
+
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

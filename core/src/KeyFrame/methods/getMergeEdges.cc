@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-set<KeyFrame *> KeyFrame::getMergeEdges()
+KeyFrameStatus KeyFrame::getMergeEdges(std::set<KeyFrame *> &mergeEdges_out)
 {
     unique_lock<mutex> lockCon(connectionsMutex);
-    return mergeEdges;
+    mergeEdges_out = mergeEdges;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -24,6 +24,7 @@
  */
 
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -34,7 +35,15 @@ void Tracking::updateFrameIMU(const float      s_in,
                               const IMU::Bias &b_in,
                               KeyFrame        *p_currentKeyFrame_in)
 {
-    Map *p_map = p_currentKeyFrame_in->getMap();
+    Map *p_map = nullptr;
+    if (p_currentKeyFrame_in->getMap(p_map) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     list<vs_graphs::core::KeyFrame *>::iterator rits =
         referenceKeyFrames.begin();
     list<bool>::iterator lbL = lostFlags.begin();
@@ -47,12 +56,52 @@ void Tracking::updateFrameIMU(const float      s_in,
 
         KeyFrame *p_keyFrame = *rits;
 
-        while (p_keyFrame->isBad() && p_keyFrame->getParent())
+        for (;;)
         {
-            p_keyFrame = p_keyFrame->getParent();
+            bool keyFrameIsBad{};
+            if (p_keyFrame->isBad(keyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            KeyFrame *p_keyFrameParent = nullptr;
+            if ((keyFrameIsBad) && p_keyFrame->getParent(p_keyFrameParent) !=
+                                       KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParent returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!(keyFrameIsBad && p_keyFrameParent))
+            {
+                break;
+            }
+            KeyFrame *p_keyFrameParent2 = nullptr;
+            if (p_keyFrame->getParent(p_keyFrameParent2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParent returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            p_keyFrame = p_keyFrameParent2;
         }
 
-        if (p_keyFrame->getMap() == p_map)
+        Map *p_keyFrameMap = nullptr;
+        if (p_keyFrame->getMap(p_keyFrameMap) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_keyFrameMap == p_map)
         {
             (*lit).translation() *= s_in;
         }
@@ -62,58 +111,178 @@ void Tracking::updateFrameIMU(const float      s_in,
 
     p_lastKeyFrame = p_currentKeyFrame_in;
 
-    lastFrame.setNewBias(lastBias);
-    currentFrame.setNewBias(lastBias);
-
-    while (!currentFrame.isImuPreintegrated())
+    if (lastFrame.setNewBias(lastBias) != FrameStatus::FRAME_STATUS_SUCCESS)
     {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setNewBias returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (currentFrame.setNewBias(lastBias) != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setNewBias returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    for (;;)
+    {
+        bool currentFrameIsImuPreintegrated{};
+        if (currentFrame.isImuPreintegrated(currentFrameIsImuPreintegrated) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isImuPreintegrated returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (currentFrameIsImuPreintegrated)
+        {
+            break;
+        }
         usleep(500);
     }
 
     if (lastFrame.id == lastFrame.p_lastKeyFrame->frameId)
     {
-        lastFrame.setImuPoseVelocity(lastFrame.p_lastKeyFrame->getImuRotation(),
-                                     lastFrame.p_lastKeyFrame->getImuPosition(),
-                                     lastFrame.p_lastKeyFrame->getVelocity());
+        Eigen::Matrix3f imuRotation{};
+        if (lastFrame.p_lastKeyFrame->getImuRotation(imuRotation) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f imuPosition{};
+        if (lastFrame.p_lastKeyFrame->getImuPosition(imuPosition) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuPosition returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f velocity{};
+        if (lastFrame.p_lastKeyFrame->getVelocity(velocity) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (lastFrame.setImuPoseVelocity(imuRotation, imuPosition, velocity) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setImuPoseVelocity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
     else
     {
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-        const Eigen::Vector3f twb1 = lastFrame.p_lastKeyFrame->getImuPosition();
-        const Eigen::Matrix3f Rwb1 = lastFrame.p_lastKeyFrame->getImuRotation();
-        const Eigen::Vector3f Vwb1 = lastFrame.p_lastKeyFrame->getVelocity();
-        float                 t12  = lastFrame.p_imuPreintegrated->dT;
+        Eigen::Vector3f       twb1{};
+        if (lastFrame.p_lastKeyFrame->getImuPosition(twb1) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuPosition returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Matrix3f Rwb1{};
+        if (lastFrame.p_lastKeyFrame->getImuRotation(Rwb1) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f Vwb1{};
+        if (lastFrame.p_lastKeyFrame->getVelocity(Vwb1) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        float t12 = lastFrame.p_imuPreintegrated->dT;
 
-        lastFrame.setImuPoseVelocity(
-            IMU::normalizeRotation(
-                Rwb1 * lastFrame.p_imuPreintegrated->getUpdatedDeltaRotation()),
-            twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
-                Rwb1 * lastFrame.p_imuPreintegrated->getUpdatedDeltaPosition(),
-            Vwb1 + Gz * t12 +
-                Rwb1 * lastFrame.p_imuPreintegrated->getUpdatedDeltaVelocity());
+        if (lastFrame.setImuPoseVelocity(
+                IMU::normalizeRotation(
+                    Rwb1 *
+                    lastFrame.p_imuPreintegrated->getUpdatedDeltaRotation()),
+                twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
+                    Rwb1 *
+                        lastFrame.p_imuPreintegrated->getUpdatedDeltaPosition(),
+                Vwb1 + Gz * t12 +
+                    Rwb1 * lastFrame.p_imuPreintegrated
+                               ->getUpdatedDeltaVelocity()) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setImuPoseVelocity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     if (currentFrame.p_imuPreintegrated)
     {
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
 
-        const Eigen::Vector3f twb1 =
-            currentFrame.p_lastKeyFrame->getImuPosition();
-        const Eigen::Matrix3f Rwb1 =
-            currentFrame.p_lastKeyFrame->getImuRotation();
-        const Eigen::Vector3f Vwb1 = currentFrame.p_lastKeyFrame->getVelocity();
-        float                 t12  = currentFrame.p_imuPreintegrated->dT;
+        Eigen::Vector3f twb1{};
+        if (currentFrame.p_lastKeyFrame->getImuPosition(twb1) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuPosition returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Matrix3f Rwb1{};
+        if (currentFrame.p_lastKeyFrame->getImuRotation(Rwb1) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f Vwb1{};
+        if (currentFrame.p_lastKeyFrame->getVelocity(Vwb1) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        float t12 = currentFrame.p_imuPreintegrated->dT;
 
-        currentFrame.setImuPoseVelocity(
-            IMU::normalizeRotation(
-                Rwb1 *
-                currentFrame.p_imuPreintegrated->getUpdatedDeltaRotation()),
-            twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
-                Rwb1 *
-                    currentFrame.p_imuPreintegrated->getUpdatedDeltaPosition(),
-            Vwb1 + Gz * t12 +
-                Rwb1 *
-                    currentFrame.p_imuPreintegrated->getUpdatedDeltaVelocity());
+        if (currentFrame.setImuPoseVelocity(
+                IMU::normalizeRotation(
+                    Rwb1 *
+                    currentFrame.p_imuPreintegrated->getUpdatedDeltaRotation()),
+                twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
+                    Rwb1 * currentFrame.p_imuPreintegrated
+                               ->getUpdatedDeltaPosition(),
+                Vwb1 + Gz * t12 +
+                    Rwb1 * currentFrame.p_imuPreintegrated
+                               ->getUpdatedDeltaVelocity()) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setImuPoseVelocity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     firstImuFrameId = currentFrame.id;

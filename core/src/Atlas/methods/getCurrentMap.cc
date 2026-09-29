@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -39,8 +40,21 @@ Map *Atlas::getCurrentMap()
         createNewMapWhileAtlasLocked();
     }
 
-    while (p_activeMap != nullptr && p_activeMap->isBad())
+    for (;;)
     {
+        bool activeMapIsBad{};
+        if ((p_activeMap != nullptr) &&
+            p_activeMap->isBad(activeMapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!(p_activeMap != nullptr && activeMapIsBad))
+        {
+            break;
+        }
         /* Allow ChangeMap() to install the merge survivor while waiting. */
         atlasLock.unlock();
         usleep(3000);

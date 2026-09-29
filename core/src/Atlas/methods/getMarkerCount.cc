@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,7 +34,16 @@ namespace core
 long unsigned int Atlas::getMarkerCount()
 {
     unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap->getMarkerCount();
+    unsigned long      activeMapMarkerCount{};
+    if (p_activeMap->getMarkerCount(activeMapMarkerCount) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMarkerCount returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapMarkerCount;
 }
 
 } // namespace core

@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-long unsigned int Map::getKeyFrameCount()
+MapStatus Map::getKeyFrameCount(unsigned long &keyFrameCount_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return keyFrames.size();
+    keyFrameCount_out = keyFrames.size();
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

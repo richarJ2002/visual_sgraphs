@@ -103,7 +103,8 @@ class ProductionCrossingScene
                                                             wasPlaneRefit)),
                   GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
         groundPlaneValid = wasPlaneRefit;
-        p_map->addMapPlane(&groundPlane);
+        EXPECT_EQ((p_map->addMapPlane(&groundPlane)),
+                  MapStatus::MAP_STATUS_SUCCESS);
 
         EXPECT_EQ((knownWall.setId(1)),
                   geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
@@ -118,8 +119,10 @@ class ProductionCrossingScene
                   geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
         EXPECT_EQ((farWall.setPlaneType(geometric::Plane::PlaneVariant::WALL)),
                   geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-        p_map->addMapPlane(&knownWall);
-        p_map->addMapPlane(&farWall);
+        EXPECT_EQ((p_map->addMapPlane(&knownWall)),
+                  MapStatus::MAP_STATUS_SUCCESS);
+        EXPECT_EQ((p_map->addMapPlane(&farWall)),
+                  MapStatus::MAP_STATUS_SUCCESS);
 
         EXPECT_EQ((knownRoom.setId(10)),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -137,8 +140,10 @@ class ProductionCrossingScene
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
         EXPECT_EQ((farRoom.setWalls(&farWall)),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-        p_map->addDetectedMapRoom(&knownRoom);
-        p_map->addDetectedMapRoom(&farRoom);
+        EXPECT_EQ((p_map->addDetectedMapRoom(&knownRoom)),
+                  MapStatus::MAP_STATUS_SUCCESS);
+        EXPECT_EQ((p_map->addDetectedMapRoom(&farRoom)),
+                  MapStatus::MAP_STATUS_SUCCESS);
 
         EXPECT_EQ(
             (passage.setId(20)),
@@ -171,7 +176,8 @@ class ProductionCrossingScene
         EXPECT_EQ(
             (passage.setProspectiveRoom(&farRoom)),
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-        p_map->addMapPassage(&passage);
+        EXPECT_EQ((p_map->addMapPassage(&passage)),
+                  MapStatus::MAP_STATUS_SUCCESS);
 
         addKeyFrame(knownSideKeyFrame,
                     keyFrameIdBase_in,
@@ -180,13 +186,15 @@ class ProductionCrossingScene
                     keyFrameIdBase_in + 1U,
                     Eigen::Vector3f(1.0F, 0.0F, 1.0F));
         returnSideKeyFrame.id = keyFrameIdBase_in + 2U;
-        returnSideKeyFrame.setPose(
-            Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                         Eigen::Vector3f(1.0F, 0.0F, -1.0F)));
+        EXPECT_EQ((returnSideKeyFrame.setPose(
+                      Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                                   Eigen::Vector3f(1.0F, 0.0F, -1.0F)))),
+                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
         thirdCrossingKeyFrame.id = keyFrameIdBase_in + 3U;
-        thirdCrossingKeyFrame.setPose(
-            Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                         Eigen::Vector3f(-1.0F, 0.0F, 1.0F)));
+        EXPECT_EQ((thirdCrossingKeyFrame.setPose(
+                      Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                                   Eigen::Vector3f(-1.0F, 0.0F, 1.0F)))),
+                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
     }
 
     void confirmFirstRoom(double now_s_in)
@@ -204,7 +212,8 @@ class ProductionCrossingScene
     {
         if (!returnKeyFrameAdded)
         {
-            p_map->addKeyFrame(&returnSideKeyFrame);
+            ASSERT_EQ((p_map->addKeyFrame(&returnSideKeyFrame)),
+                      MapStatus::MAP_STATUS_SUCCESS);
             returnKeyFrameAdded = true;
         }
     }
@@ -213,7 +222,8 @@ class ProductionCrossingScene
     {
         if (!thirdCrossingKeyFrameAdded)
         {
-            p_map->addKeyFrame(&thirdCrossingKeyFrame);
+            ASSERT_EQ((p_map->addKeyFrame(&thirdCrossingKeyFrame)),
+                      MapStatus::MAP_STATUS_SUCCESS);
             thirdCrossingKeyFrameAdded = true;
         }
     }
@@ -225,9 +235,11 @@ class ProductionCrossingScene
         const Eigen::Vector3f cameraCenter_World_m =
             farSide_in ? Eigen::Vector3f(1.0F, 0.0F, 1.0F)
                        : Eigen::Vector3f(-1.0F, 0.0F, 1.0F);
-        p_keyFrame->setPose(
-            Sophus::SE3f(Eigen::Matrix3f::Identity(), -cameraCenter_World_m));
-        p_map->addKeyFrame(p_keyFrame.get());
+        ASSERT_EQ((p_keyFrame->setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                                                    -cameraCenter_World_m))),
+                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+        ASSERT_EQ((p_map->addKeyFrame(p_keyFrame.get())),
+                  MapStatus::MAP_STATUS_SUCCESS);
         extraCrossingKeyFrames.push_back(std::move(p_keyFrame));
     }
 
@@ -257,9 +269,12 @@ class ProductionCrossingScene
                      const Eigen::Vector3f &cameraCenter_World_m_in)
     {
         keyFrame_inout.id = keyFrameId_in;
-        keyFrame_inout.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                                            -cameraCenter_World_m_in));
-        p_map->addKeyFrame(&keyFrame_inout);
+        ASSERT_EQ(
+            (keyFrame_inout.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                                                 -cameraCenter_World_m_in))),
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+        ASSERT_EQ((p_map->addKeyFrame(&keyFrame_inout)),
+                  MapStatus::MAP_STATUS_SUCCESS);
     }
 
     bool returnKeyFrameAdded;
@@ -749,7 +764,8 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
         (GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane, wasPlaneRefit)),
         GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS);
     ASSERT_TRUE(wasPlaneRefit);
-    p_map->addMapPlane(&groundPlane);
+    ASSERT_EQ((p_map->addMapPlane(&groundPlane)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Known room: entered earlier, so already visited. */
     semantic::Room knownRoom;
@@ -763,7 +779,8 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((knownRoom.setPreviouslyVisited(true)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&knownRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&knownRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Prospective far-side room: observed but never entered. */
     semantic::Room farRoom;
@@ -775,7 +792,8 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((farRoom.setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&farRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&farRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Passage passage;
     ASSERT_EQ((passage.setId(20)),
@@ -799,21 +817,27 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((passage.setProspectiveRoom(&farRoom)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
     /* Camera trajectory crossing the aperture from the known side. SetPose
      * takes world-to-camera, so the translation is the negated center. */
     KeyFrame nearKeyFrame;
     nearKeyFrame.id = 0U;
-    nearKeyFrame.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                                      Eigen::Vector3f(1.0F, 0.0F, -1.0F)));
-    p_map->addKeyFrame(&nearKeyFrame);
+    ASSERT_EQ((nearKeyFrame.setPose(
+                  Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                               Eigen::Vector3f(1.0F, 0.0F, -1.0F)))),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addKeyFrame(&nearKeyFrame)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     KeyFrame farKeyFrame;
     farKeyFrame.id = 1U;
-    farKeyFrame.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                                     Eigen::Vector3f(-1.0F, 0.0F, -1.0F)));
-    p_map->addKeyFrame(&farKeyFrame);
+    ASSERT_EQ((farKeyFrame.setPose(
+                  Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                               Eigen::Vector3f(-1.0F, 0.0F, -1.0F)))),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addKeyFrame(&farKeyFrame)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     bool hasPreviouslyVisited2{};
     ASSERT_EQ((farRoom.hasPreviouslyVisited(hasPreviouslyVisited2)),
@@ -848,7 +872,8 @@ TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setCentroid(Eigen::Vector3d(0.0, 0.0, 1.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     manager.setCurrentRoomIdForTest(-1);
     manager.seedCurrentRoomFromActiveMapForTest(p_map);

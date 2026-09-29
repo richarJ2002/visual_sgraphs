@@ -405,11 +405,25 @@ void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
     /* KeyFrame::SetPose takes T_camera_World (world -> camera); a camera
      * sitting at cameraCenter_World_m_in under identity orientation has
      * translation -cameraCenter_World_m_in in that convention. */
-    keyFrame_inout.setPose(
-        Sophus::SE3f(Eigen::Matrix3f::Identity(), -cameraCenter_World_m_in));
+    if (keyFrame_inout.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                                            -cameraCenter_World_m_in)) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     if (p_map_in != nullptr)
     {
-        p_map_in->addKeyFrame(&keyFrame_inout);
+        if (p_map_in->addKeyFrame(&keyFrame_inout) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addKeyFrame returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 }
 

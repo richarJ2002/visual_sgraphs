@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-int Map::getLastBigChangeIndex()
+MapStatus Map::getLastBigChangeIndex(int &lastBigChangeIndex_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return bigChangeIndex;
+    lastBigChangeIndex_out = bigChangeIndex;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

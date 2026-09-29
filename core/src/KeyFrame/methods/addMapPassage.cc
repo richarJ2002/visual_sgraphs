@@ -35,12 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-void vs_graphs::core::KeyFrame::addMapPassage(
+KeyFrameStatus vs_graphs::core::KeyFrame::addMapPassage(
     vs_graphs::core::semantic::Passage *p_passage_in)
 {
     if (p_passage_in == nullptr)
     {
-        return;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
     unique_lock<mutex> lock(featuresMutex);
@@ -50,6 +50,8 @@ void vs_graphs::core::KeyFrame::addMapPassage(
     {
         mapPassages.push_back(p_passage_in);
     }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -35,14 +35,15 @@ namespace vs_graphs
 namespace core
 {
 
-bool vs_graphs::core::KeyFrame::replaceMapPassage(
+KeyFrameStatus vs_graphs::core::KeyFrame::replaceMapPassage(
     vs_graphs::core::semantic::Passage *p_retiredPassage_in,
-    vs_graphs::core::semantic::Passage *p_retainedPassage_in)
+    vs_graphs::core::semantic::Passage *p_retainedPassage_in,
+    bool                               &wasReplaced_out)
 {
     if (p_retiredPassage_in == nullptr || p_retainedPassage_in == nullptr ||
         p_retiredPassage_in == p_retainedPassage_in)
     {
-        return false;
+        return KeyFrameStatus::KEY_FRAME_STATUS_INVALID_ARGUMENT;
     }
 
     unique_lock<mutex> lock(featuresMutex);
@@ -78,7 +79,8 @@ bool vs_graphs::core::KeyFrame::replaceMapPassage(
         mapPassages.swap(rebuiltPassages);
     }
 
-    return replacedAssociation;
+    wasReplaced_out = replacedAssociation;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

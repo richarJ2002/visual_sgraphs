@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<MapPoint *> Map::getAllMapPoints()
+MapStatus Map::getAllMapPoints(std::vector<MapPoint *> &allMapPoints_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return vector<MapPoint *>(mapPoints.begin(), mapPoints.end());
+    allMapPoints_out =
+        std::vector<MapPoint *>(mapPoints.begin(), mapPoints.end());
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

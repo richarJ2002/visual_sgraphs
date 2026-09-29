@@ -28,6 +28,7 @@
 #include "ORBmatcher.h"
 #include "Optimizer.h"
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,7 +52,23 @@ bool Tracking::trackWithMotionModel()
     }
     else
     {
-        currentFrame.setPose(velocity * lastFrame.getPose());
+        Sophus::SE3<float> lastFrameGetPose{};
+        if (lastFrame.getPose(lastFrameGetPose) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (currentFrame.setPose(velocity * lastFrameGetPose) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     fill(currentFrame.mapPoints.begin(),
@@ -143,9 +160,24 @@ bool Tracking::trackWithMotionModel()
                 p_mapPoint->lastSeenFrameId = currentFrame.id;
                 nmatches--;
             }
-            else if (currentFrame.mapPoints[keyPointIndex]
-                         ->getObservationCount() > 0)
-                nmatchesMap++;
+            else
+            {
+                int observationCount{};
+                if (currentFrame.mapPoints[keyPointIndex]->getObservationCount(
+                        observationCount) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getObservationCount returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (observationCount > 0)
+                {
+                    nmatchesMap++;
+                }
+            }
         }
     }
 

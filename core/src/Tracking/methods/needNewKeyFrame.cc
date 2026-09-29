@@ -28,6 +28,7 @@
 #include "Tracking.h"
 
 #include <iostream>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -36,9 +37,20 @@ namespace core
 
 bool Tracking::needNewKeyFrame()
 {
+    bool isImuInitialized2{};
+    if (((sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
+          sensor == System::IMU_RGBD)) &&
+        p_atlas->getCurrentMap()->isImuInitialized(isImuInitialized2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     if ((sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
          sensor == System::IMU_RGBD) &&
-        !p_atlas->getCurrentMap()->isImuInitialized())
+        !isImuInitialized2)
     {
         if (sensor == System::IMU_MONOCULAR &&
             (currentFrame.timeStamp - p_lastKeyFrame->timeStamp) >= 0.25)
@@ -77,8 +89,16 @@ bool Tracking::needNewKeyFrame()
     int minimumObservationCount = 3;
     if (keyFrameCount <= 2)
         minimumObservationCount = 2;
-    int referenceMatchCount =
-        p_referenceKF->getTrackedMapPointCount(minimumObservationCount);
+    int referenceMatchCount{};
+    if (p_referenceKF->getTrackedMapPointCount(minimumObservationCount,
+                                               referenceMatchCount) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getTrackedMapPointCount returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Check how many "close" points are being tracked and how many could be
     // potentially created.

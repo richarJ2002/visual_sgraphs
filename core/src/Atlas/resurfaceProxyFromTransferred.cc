@@ -415,10 +415,19 @@ bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
                      "fail; continuing as before.",
                      __func__);
     }
+    unsigned long proxy_inoutMapId{};
+    if (p_proxy_inoutMap->getId(proxy_inoutMapId) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     std::cout << "SG_PIPELINE {\"event\":\"passage_resurfaced\","
                  "\"map_id\":"
-              << p_proxy_inoutMap->getId()
-              << ",\"passage_id\":" << proxy_inoutId << "}" << std::endl;
+              << proxy_inoutMapId << ",\"passage_id\":" << proxy_inoutId << "}"
+              << std::endl;
     return true;
 }
 

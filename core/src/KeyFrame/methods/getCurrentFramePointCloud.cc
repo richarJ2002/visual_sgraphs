@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr
-    KeyFrame::getCurrentFramePointCloud() const
+KeyFrameStatus KeyFrame::getCurrentFramePointCloud(
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr &getCurrentFramePointCloud_out) const
 {
-    return currentFramePointClouds;
+    getCurrentFramePointCloud_out = currentFramePointClouds;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

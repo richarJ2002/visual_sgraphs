@@ -39,18 +39,36 @@ UtilsStatus Utils::pointOnPlane(Eigen::Vector4d planeEquation_in,
                                 MapPoint       *p_mapPoint_in,
                                 bool           &isOnPlane_out)
 {
-    if (p_mapPoint_in->isBad())
+    bool mapPointIsBad{};
+    if (p_mapPoint_in->isBad(mapPointIsBad) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (mapPointIsBad)
     {
         isOnPlane_out = false;
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
     // Find the distance of the point from a given plane
-    double pointPlaneDistance{};
-    if (calculateDistancePointToPlane(
-            planeEquation_in,
-            p_mapPoint_in->getWorldPos().cast<double>(),
-            pointPlaneDistance) != UtilsStatus::UTILS_STATUS_SUCCESS)
+    double          pointPlaneDistance{};
+    Eigen::Vector3f mapPointWorldPos{};
+    if (p_mapPoint_in->getWorldPos(mapPointWorldPos) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWorldPos returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (calculateDistancePointToPlane(planeEquation_in,
+                                      mapPointWorldPos.cast<double>(),
+                                      pointPlaneDistance) !=
+        UtilsStatus::UTILS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: calculateDistancePointToPlane returned a failure "

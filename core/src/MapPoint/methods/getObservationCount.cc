@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-int MapPoint::getObservationCount()
+MapPointStatus MapPoint::getObservationCount(int &observationCount_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return observationCount;
+    observationCount_out = observationCount;
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

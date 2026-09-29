@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f KeyFrame::getPoseInverse()
+KeyFrameStatus KeyFrame::getPoseInverse(Sophus::SE3f &poseInverse_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return twc;
+    poseInverse_out = twc;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

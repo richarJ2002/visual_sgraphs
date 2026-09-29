@@ -47,7 +47,16 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
      * codebase acquires these in reverse, so the order
      * semantic-update -> atlas -> map-update is deadlock-free. */
     Map *p_currentMap = getCurrentMap();
-    if (p_currentMap == nullptr || p_currentMap->isBad())
+    bool currentMapIsBad{};
+    if (!(p_currentMap == nullptr) &&
+        p_currentMap->isBad(currentMapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_currentMap == nullptr || currentMapIsBad)
     {
         return;
     }
@@ -82,8 +91,16 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
 
     for (Map *p_oldMap : getAllMaps())
     {
-        if (p_oldMap == nullptr || p_oldMap == p_currentMap ||
-            p_oldMap->isBad())
+        bool oldMapIsBad{};
+        if (!(p_oldMap == nullptr || p_oldMap == p_currentMap) &&
+            p_oldMap->isBad(oldMapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_oldMap == nullptr || p_oldMap == p_currentMap || oldMapIsBad)
         {
             continue;
         }
@@ -101,8 +118,17 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             continue;
         }
 
-        const long unsigned int oldMapId = p_oldMap->getId();
-        const std::size_t       contentHash =
+        unsigned long oldMapIdValue{};
+        if (p_oldMap->getId(oldMapIdValue) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        const long unsigned int oldMapId =
+            static_cast<long unsigned int>(oldMapIdValue);
+        const std::size_t contentHash =
             consecutiveContentHash(p_oldMap, p_currentMap);
         const std::chrono::steady_clock::time_point now =
             std::chrono::steady_clock::now();
@@ -142,8 +168,16 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         /* The seed room itself must be anchored: matching side rooms while
          * the prior-link room takes part nowhere would fuse on a
          * coincidental resemblance. Same DEFER as too few anchors. */
-        semantic::Room *p_oldFinalRoom = p_oldMap->getFinalRoom();
-        bool            oldFinalRoomHasRoomTag{};
+        semantic::Room *p_oldFinalRoom = nullptr;
+        if (p_oldMap->getFinalRoom(p_oldFinalRoom) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getFinalRoom returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        bool oldFinalRoomHasRoomTag{};
         if ((p_oldFinalRoom != nullptr) &&
             p_oldFinalRoom->hasRoomTag(oldFinalRoomHasRoomTag) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -169,9 +203,18 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         if (anchorCount < minimumAnchors || !isSeedAnchored)
         {
             recordAttempt();
+            unsigned long currentMapId{};
+            if (p_currentMap->getId(currentMapId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
                          "attempt\",\"old_map_id\":"
-                      << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
+                      << oldMapId << ",\"new_map_id\":" << currentMapId
                       << ",\"anchors\":" << anchorCount
                       << ",\"decision\":\"DEFER\",\"reason\":\""
                          "SHARED_ROOM_IDENTITY_MISSING\"}"
@@ -201,9 +244,18 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         if (!hasEnoughCorrespondences)
         {
             recordAttempt();
+            unsigned long currentMapId2{};
+            if (p_currentMap->getId(currentMapId2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
                          "attempt\",\"old_map_id\":"
-                      << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
+                      << oldMapId << ",\"new_map_id\":" << currentMapId2
                       << ",\"anchors\":" << anchorCount
                       << ",\"decision\":\"DEFER\",\"reason\":\""
                          "WALL_EVIDENCE_MISSING\"}"
@@ -228,9 +280,18 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         if (!transformOldToCurrent.matrix().allFinite())
         {
             recordAttempt();
+            unsigned long currentMapId3{};
+            if (p_currentMap->getId(currentMapId3) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
                          "attempt\",\"old_map_id\":"
-                      << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
+                      << oldMapId << ",\"new_map_id\":" << currentMapId3
                       << ",\"anchors\":" << anchorCount
                       << ",\"decision\":\"DEFER\",\"reason\":\""
                          "WALL_EVIDENCE_MISSING\"}"
@@ -276,9 +337,17 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
+        unsigned long currentMapId4{};
+        if (p_currentMap->getId(currentMapId4) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_attempt\","
                      "\"old_map_id\":"
-                  << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
+                  << oldMapId << ",\"new_map_id\":" << currentMapId4
                   << ",\"anchors\":" << anchorCount << ",\"decision\":\""
                   << p_name << "\",\"reason\":\"" << p_name2
                   << "\",\"matched_walls\":" << gateResult.matchedWallCount
@@ -289,10 +358,18 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             continue;
         }
         mergeMapPair(p_currentMap, p_oldMap);
+        unsigned long currentMapId5{};
+        if (p_currentMap->getId(currentMapId5) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_"
                      "committed\",\"old_map_id\":"
-                  << oldMapId << ",\"new_map_id\":" << p_currentMap->getId()
-                  << "}" << std::endl;
+                  << oldMapId << ",\"new_map_id\":" << currentMapId5 << "}"
+                  << std::endl;
         /* One merge per call: the current map changed shape, so remaining
          * pairs re-evaluate from scratch next cycle. */
         break;

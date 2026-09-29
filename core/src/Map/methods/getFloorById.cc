@@ -34,11 +34,13 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Floor *Map::getFloorById(int floorId_in)
+MapStatus Map::getFloorById(int floorId_in, semantic::Floor *&p_floorById_out)
 {
     unique_lock<mutex> lock(mapMutex);
     const auto         floorIterator = floorIndex.find(floorId_in);
-    return floorIterator != floorIndex.end() ? floorIterator->second : nullptr;
+    p_floorById_out =
+        floorIterator != floorIndex.end() ? floorIterator->second : nullptr;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

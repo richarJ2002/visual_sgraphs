@@ -35,13 +35,19 @@ namespace vs_graphs
 namespace core
 {
 
-int KeyFrame::getWeight(KeyFrame *p_keyFrame_in)
+KeyFrameStatus KeyFrame::getWeight(KeyFrame *p_keyFrame_in, int &weight_out)
 {
     unique_lock<mutex> lock(connectionsMutex);
     if (connectedKeyFrameWeights.count(p_keyFrame_in))
-        return connectedKeyFrameWeights[p_keyFrame_in];
+    {
+        weight_out = connectedKeyFrameWeights[p_keyFrame_in];
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
     else
-        return 0;
+    {
+        weight_out = 0;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

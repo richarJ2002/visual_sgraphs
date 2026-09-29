@@ -28,13 +28,14 @@
 #include "ORBmatcher.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void MapPoint::computeDistinctiveDescriptors()
+MapPointStatus MapPoint::computeDistinctiveDescriptors()
 {
     // Retrieve all observed descriptors
     vector<cv::Mat> descriptors;
@@ -44,12 +45,12 @@ void MapPoint::computeDistinctiveDescriptors()
     {
         unique_lock<mutex> lock1(featuresMutex);
         if (isFlaggedBad)
-            return;
+            return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
         observedKeyFrames = observations;
     }
 
     if (observedKeyFrames.empty())
-        return;
+        return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 
     descriptors.reserve(observedKeyFrames.size());
 
@@ -61,7 +62,16 @@ void MapPoint::computeDistinctiveDescriptors()
     {
         KeyFrame *p_keyFrame = mit->first;
 
-        if (!p_keyFrame->isBad())
+        bool keyFrameIsBad{};
+        if (p_keyFrame->isBad(keyFrameIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!keyFrameIsBad)
         {
             tuple<int, int> indexes = mit->second;
             int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
@@ -78,7 +88,7 @@ void MapPoint::computeDistinctiveDescriptors()
     }
 
     if (descriptors.empty())
-        return;
+        return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 
     // Compute distances between them
     const size_t N = descriptors.size();
@@ -122,6 +132,8 @@ void MapPoint::computeDistinctiveDescriptors()
         unique_lock<mutex> lock(featuresMutex);
         descriptor = descriptors[bestIndex].clone();
     }
+
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

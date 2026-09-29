@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-IMU::Bias KeyFrame::getImuBias()
+KeyFrameStatus KeyFrame::getImuBias(IMU::Bias &imuBias_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return imuBias;
+    imuBias_out = imuBias;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

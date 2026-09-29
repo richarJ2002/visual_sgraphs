@@ -35,10 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
-    KeyFrame::getClsCloudPtrs() const
+KeyFrameStatus KeyFrame::getClsCloudPtrs(
+    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &getClsCloudPtrs_out)
+    const
 {
-    return currentClsCloudPtrs;
+    getClsCloudPtrs_out = currentClsCloudPtrs;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

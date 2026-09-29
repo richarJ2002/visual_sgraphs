@@ -263,8 +263,15 @@ std::unique_ptr<KeyFrame>
      * Negate here so the resulting camera centre is the position callers
      * actually asked for. */
     auto keyFrame = std::make_unique<KeyFrame>();
-    keyFrame->setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                                   -cameraCenter_World_in.cast<float>()));
+    if (keyFrame->setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
+                                       -cameraCenter_World_in.cast<float>())) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     return keyFrame;
 }
 

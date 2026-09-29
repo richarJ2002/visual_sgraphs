@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -37,7 +38,23 @@ vector<Map *> Atlas::getAllMaps()
     {
         inline bool operator()(Map *p_elem1_inout, Map *p_elem2_inout)
         {
-            return p_elem1_inout->getId() < p_elem2_inout->getId();
+            unsigned long elem1Id{};
+            if (p_elem1_inout->getId(elem1Id) != MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            unsigned long elem2Id{};
+            if (p_elem2_inout->getId(elem2Id) != MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            return elem1Id < elem2Id;
         }
     };
     vector<Map *> mapList(maps.begin(), maps.end());

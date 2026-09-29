@@ -43,9 +43,10 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3<float> Frame::getImuPose()
+FrameStatus Frame::getImuPose(Sophus::SE3<float> &imuPose_out)
 {
-    return poseTcw.inverse() * imuCalibration.mTcb;
+    imuPose_out = poseTcw.inverse() * imuCalibration.mTcb;
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

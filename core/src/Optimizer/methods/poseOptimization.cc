@@ -64,7 +64,14 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
 
     // Set Frame vertex
     g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
-    Sophus::SE3<float>    Tcw         = p_frame_inout->getPose();
+    Sophus::SE3<float>    Tcw{};
+    if (p_frame_inout->getPose(Tcw) != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     p_se3Vertex->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
                                           Tcw.translation().cast<double>()));
     p_se3Vertex->setId(0);
@@ -139,7 +146,17 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                         p_robustKernel->setDelta(deltaMono);
 
                         e->p_camera = p_frame_inout->p_camera;
-                        e->Xw       = p_mapPoint->getWorldPos().cast<double>();
+                        Eigen::Vector3f mapPointWorldPos{};
+                        if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getWorldPos returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        e->Xw = mapPointWorldPos.cast<double>();
 
                         optimizer.addEdge(e);
 
@@ -184,7 +201,17 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                         e->cx = p_frame_inout->cx;
                         e->cy = p_frame_inout->cy;
                         e->bf = p_frame_inout->mbf;
-                        e->Xw = p_mapPoint->getWorldPos().cast<double>();
+                        Eigen::Vector3f mapPointWorldPos2{};
+                        if (p_mapPoint->getWorldPos(mapPointWorldPos2) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getWorldPos returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        e->Xw = mapPointWorldPos2.cast<double>();
 
                         optimizer.addEdge(e);
 
@@ -228,7 +255,17 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                         p_robustKernel->setDelta(deltaMono);
 
                         e->p_camera = p_frame_inout->p_camera;
-                        e->Xw       = p_mapPoint->getWorldPos().cast<double>();
+                        Eigen::Vector3f mapPointWorldPos3{};
+                        if (p_mapPoint->getWorldPos(mapPointWorldPos3) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getWorldPos returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        e->Xw = mapPointWorldPos3.cast<double>();
 
                         optimizer.addEdge(e);
 
@@ -267,15 +304,44 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                         p_robustKernel->setDelta(deltaMono);
 
                         e->p_camera = p_frame_inout->p_camera2;
-                        e->Xw       = p_mapPoint->getWorldPos().cast<double>();
+                        Eigen::Vector3f mapPointWorldPos4{};
+                        if (p_mapPoint->getWorldPos(mapPointWorldPos4) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getWorldPos returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        e->Xw = mapPointWorldPos4.cast<double>();
 
-                        e->mTrl =
-                            g2o::SE3Quat(p_frame_inout->getRelativePoseTrl()
-                                             .unit_quaternion()
-                                             .cast<double>(),
-                                         p_frame_inout->getRelativePoseTrl()
-                                             .translation()
-                                             .cast<double>());
+                        Sophus::SE3f frameRelativePoseTrl{};
+                        if (p_frame_inout->getRelativePoseTrl(
+                                frameRelativePoseTrl) !=
+                            FrameStatus::FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getRelativePoseTrl returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        Sophus::SE3f frameRelativePoseTrl2{};
+                        if (p_frame_inout->getRelativePoseTrl(
+                                frameRelativePoseTrl2) !=
+                            FrameStatus::FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getRelativePoseTrl returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        e->mTrl = g2o::SE3Quat(
+                            frameRelativePoseTrl.unit_quaternion()
+                                .cast<double>(),
+                            frameRelativePoseTrl2.translation().cast<double>());
 
                         optimizer.addEdge(e);
 
@@ -331,7 +397,17 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                     p_robustKernel->setDelta(deltaDepth);
 
                     e->p_camera = p_frame_inout->p_camera;
-                    e->Xw       = p_mapPoint->getWorldPos().cast<double>();
+                    Eigen::Vector3f mapPointWorldPos5{};
+                    if (p_mapPoint->getWorldPos(mapPointWorldPos5) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getWorldPos returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    e->Xw = mapPointWorldPos5.cast<double>();
 
                     optimizer.addEdge(e);
 
@@ -355,7 +431,16 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
     int badCount = 0;
     for (size_t iterationIndex = 0; iterationIndex < 4; iterationIndex++)
     {
-        Tcw = p_frame_inout->getPose();
+        Sophus::SE3<float> frameGetPose{};
+        if (p_frame_inout->getPose(frameGetPose) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Tcw = frameGetPose;
         p_se3Vertex->setEstimate(
             g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
                          Tcw.translation().cast<double>()));
@@ -373,12 +458,32 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
 
             // populate the vector of planes using the covisibility graph of the
             // reference keyframe
-            vector<KeyFrame *> referenceCovisibleKeyFrames =
-                p_referenceKeyFrame->getBestCovisibilityKeyFrames(25);
+            std::vector<KeyFrame *> referenceCovisibleKeyFrames{};
+            if (p_referenceKeyFrame->getBestCovisibilityKeyFrames(
+                    25,
+                    referenceCovisibleKeyFrames) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getBestCovisibilityKeyFrames returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
             referenceCovisibleKeyFrames.push_back(p_referenceKeyFrame);
             for (const auto &keyFrame : referenceCovisibleKeyFrames)
             {
-                for (const auto &plane : keyFrame->getMapPlanes())
+                std::vector<geometric::Plane *> keyFrameMapPlanes{};
+                if (keyFrame->getMapPlanes(keyFrameMapPlanes) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMapPlanes returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                for (const auto &plane : keyFrameMapPlanes)
                 {
                     if (!plane)
                         continue;
@@ -467,12 +572,32 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                      j++)
                 {
                     MapPoint *p_mapPoint = p_frame_inout->mapPoints[j];
-                    if (!p_mapPoint || p_mapPoint->isBad())
+                    bool      mapPointIsBad{};
+                    if (!(!p_mapPoint) &&
+                        p_mapPoint->isBad(mapPointIsBad) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (!p_mapPoint || mapPointIsBad)
                         continue;
 
                     // calculate distance from the map point to the plane
-                    Eigen::Vector3d pMPw =
-                        p_mapPoint->getWorldPos().cast<double>();
+                    Eigen::Vector3f mapPointWorldPos6{};
+                    if (p_mapPoint->getWorldPos(mapPointWorldPos6) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getWorldPos returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    Eigen::Vector3d pMPw = mapPointWorldPos6.cast<double>();
                     double distance = planeEq.head<3>().dot(pMPw) + planeEq(3);
                     if (distance <
                         -p_sysParams->refineMapPoints.maxDistanceForDelete)
@@ -503,7 +628,16 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                         }
                         if (candidatePlaneIsPointinPlaneCloud)
                         {
-                            p_frame_inout->mapPoints[j]->setBadFlag();
+                            if (p_frame_inout->mapPoints[j]->setBadFlag() !=
+                                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: setBadFlag returned a failure status "
+                                    "although it cannot fail; continuing as "
+                                    "before.",
+                                    __func__);
+                            }
                             p_frame_inout->mapPoints[j] =
                                 static_cast<MapPoint *>(nullptr);
                             p_frame_inout->outlierFlags[j] = true;
@@ -673,7 +807,13 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
     g2o::SE3Quat       recoveredPose = p_recoveredPoseVertex->estimate();
     Sophus::SE3<float> pose(recoveredPose.rotation().cast<float>(),
                             recoveredPose.translation().cast<float>());
-    p_frame_inout->setPose(pose);
+    if (p_frame_inout->setPose(pose) != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     return initialCorrespondenceCount - badCount;
 }

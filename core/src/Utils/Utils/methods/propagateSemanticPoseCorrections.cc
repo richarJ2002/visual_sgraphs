@@ -76,7 +76,17 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     for (const auto &[p_keyFrame, poseBefore_WorldToCamera] :
          keyFramePosesBefore_WorldToCamera_in)
     {
-        if (p_keyFrame == nullptr || p_keyFrame->isBad() ||
+        bool keyFrameIsBad{};
+        if (!(p_keyFrame == nullptr) &&
+            p_keyFrame->isBad(keyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_keyFrame == nullptr || keyFrameIsBad ||
             !isFiniteSim3(poseBefore_WorldToCamera))
         {
             continue;
@@ -179,7 +189,16 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     std::map<geometric::Plane *, g2o::Sim3> planeCorrections_oldWorldToNewWorld;
     std::map<geometric::Plane *, Eigen::Vector3d> planeCentroids_OldWorld_m;
 
-    for (geometric::Plane *p_plane : p_map_inout->getAllPlanes())
+    std::vector<geometric::Plane *> mapAllPlanes{};
+    if (p_map_inout->getAllPlanes(mapAllPlanes) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (geometric::Plane *p_plane : mapAllPlanes)
     {
         bool planeIsBad{};
         if (!(p_plane == nullptr) &&
@@ -274,7 +293,16 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     std::map<semantic::Marker *, g2o::Sim3>
         markerCorrections_oldWorldToNewWorld;
 
-    for (semantic::Marker *p_marker : p_map_inout->getAllMarkers())
+    std::vector<semantic::Marker *> mapAllMarkers{};
+    if (p_map_inout->getAllMarkers(mapAllMarkers) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkers returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Marker *p_marker : mapAllMarkers)
     {
         if (p_marker == nullptr)
         {
@@ -356,8 +384,16 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             markerCorrection_oldWorldToNewWorld);
     }
 
-    for (vs_graphs::core::semantic::Passage *p_passage :
-         p_map_inout->getAllPassages())
+    std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
+    if (p_map_inout->getAllPassages(mapAllPassages) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (vs_graphs::core::semantic::Passage *p_passage : mapAllPassages)
     {
         if (p_passage == nullptr)
         {
@@ -460,9 +496,24 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     std::map<semantic::Room *, g2o::Sim3> roomCorrections_oldWorldToNewWorld;
     std::map<semantic::Room *, Eigen::Vector3d> roomCentroids_OldWorld_m;
     std::set<semantic::Room *>                  correctedRooms;
-    std::vector<semantic::Room *> rooms = p_map_inout->getAllDetectedMapRooms();
-    const std::vector<semantic::Room *> markerRooms =
-        p_map_inout->getAllMarkerBasedMapRooms();
+    std::vector<semantic::Room *>               rooms{};
+    if (p_map_inout->getAllDetectedMapRooms(rooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> markerRooms{};
+    if (p_map_inout->getAllMarkerBasedMapRooms(markerRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkerBasedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     rooms.insert(rooms.end(), markerRooms.begin(), markerRooms.end());
 
     for (semantic::Room *p_room : rooms)
@@ -576,7 +627,16 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             roomCorrection_oldWorldToNewWorld);
     }
 
-    for (semantic::Floor *p_floor : p_map_inout->getAllFloors())
+    std::vector<semantic::Floor *> mapAllFloors{};
+    if (p_map_inout->getAllFloors(mapAllFloors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Floor *p_floor : mapAllFloors)
     {
         if (p_floor == nullptr)
         {
@@ -668,7 +728,15 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         }
     }
 
-    auto skeletonClusters_OldWorld_m = p_map_inout->getSkeletonClusterPoints();
+    std::vector<std::vector<Eigen::Vector3d>> skeletonClusters_OldWorld_m{};
+    if (p_map_inout->getSkeletonClusterPoints(skeletonClusters_OldWorld_m) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSkeletonClusterPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (std::vector<Eigen::Vector3d> &cluster_OldWorld_m :
          skeletonClusters_OldWorld_m)
@@ -696,9 +764,25 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         }
     }
 
-    p_map_inout->setSkeletonClusterPoints(skeletonClusters_OldWorld_m);
+    if (p_map_inout->setSkeletonClusterPoints(skeletonClusters_OldWorld_m) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setSkeletonClusterPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    auto skeletonEdges_OldWorld_m = p_map_inout->getSkeletonEdges();
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+        skeletonEdges_OldWorld_m{};
+    if (p_map_inout->getSkeletonEdges(skeletonEdges_OldWorld_m) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSkeletonEdges returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (auto &edge_OldWorld_m : skeletonEdges_OldWorld_m)
     {
@@ -714,7 +798,14 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                 .map(secondEndpoint_OldWorld_m);
     }
 
-    p_map_inout->setSkeletonEdges(skeletonEdges_OldWorld_m);
+    if (p_map_inout->setSkeletonEdges(skeletonEdges_OldWorld_m) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setSkeletonEdges returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }

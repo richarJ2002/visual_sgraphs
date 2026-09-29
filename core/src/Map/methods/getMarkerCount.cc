@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-long unsigned int Map::getMarkerCount()
+MapStatus Map::getMarkerCount(unsigned long &markerCount_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return markers.size();
+    markerCount_out = markers.size();
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

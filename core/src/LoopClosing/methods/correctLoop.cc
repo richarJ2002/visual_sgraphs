@@ -32,6 +32,7 @@
 
 #include <chrono>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -53,18 +54,50 @@ void LoopClosing::correctLoop()
         usleep(1000);
 
     // Ensure current keyframe is updated
-    p_currentKF->updateConnections();
+    if (p_currentKF->updateConnections() !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateConnections returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Retrive keyframes connected to the current keyframe and compute corrected
     // Sim3 pose by propagation
-    currentConnectedKFs = p_currentKF->getVectorCovisibleKeyFrames();
+    std::vector<KeyFrame *> currentKFVectorCovisibleKeyFrames{};
+    if (p_currentKF->getVectorCovisibleKeyFrames(
+            currentKFVectorCovisibleKeyFrames) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getVectorCovisibleKeyFrames returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    currentConnectedKFs = currentKFVectorCovisibleKeyFrames;
     currentConnectedKFs.push_back(p_currentKF);
 
     KeyFrameAndPose CorrectedSim3, NonCorrectedSim3;
     CorrectedSim3[p_currentKF] = mg2oLoopScw;
-    Sophus::SE3f Twc           = p_currentKF->getPoseInverse();
-    Sophus::SE3f Tcw           = p_currentKF->getPose();
-    g2o::Sim3    g2oScw(Tcw.unit_quaternion().cast<double>(),
+    Sophus::SE3f Twc{};
+    if (p_currentKF->getPoseInverse(Twc) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPoseInverse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    Sophus::SE3f Tcw{};
+    if (p_currentKF->getPose(Tcw) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    g2o::Sim3 g2oScw(Tcw.unit_quaternion().cast<double>(),
                      Tcw.translation().cast<double>(),
                      1.0);
     NonCorrectedSim3[p_currentKF] = g2oScw;
@@ -73,9 +106,24 @@ void LoopClosing::correctLoop()
     // (scale translation)
     Sophus::SE3d correctedTcw(mg2oLoopScw.rotation(),
                               mg2oLoopScw.translation() / mg2oLoopScw.scale());
-    p_currentKF->setPose(correctedTcw.cast<float>());
+    if (p_currentKF->setPose(correctedTcw.cast<float>()) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
-    Map *p_loopMap = p_currentKF->getMap();
+    Map *p_loopMap = nullptr;
+    if (p_currentKF->getMap(p_loopMap) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point timeStartFusion =
@@ -86,7 +134,15 @@ void LoopClosing::correctLoop()
         // Get Map Mutex
         unique_lock<mutex> lock(p_loopMap->mapUpdateMutex);
 
-        const bool isImuInitialized = p_loopMap->isImuInitialized();
+        bool isImuInitialized{};
+        if (p_loopMap->isImuInitialized(isImuInitialized) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isImuInitialized returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (vector<KeyFrame *>::iterator vit  = currentConnectedKFs.begin(),
                                           vend = currentConnectedKFs.end();
@@ -97,7 +153,16 @@ void LoopClosing::correctLoop()
 
             if (p_keyFrame != p_currentKF)
             {
-                Sophus::SE3f Tiw = p_keyFrame->getPose();
+                Sophus::SE3f Tiw{};
+                if (p_keyFrame->getPose(Tiw) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 Sophus::SE3d Tic = (Tiw * Twc).cast<double>();
                 g2o::Sim3 g2oSic(Tic.unit_quaternion(), Tic.translation(), 1.0);
                 g2o::Sim3 g2oCorrectedSiw = g2oSic * mg2oLoopScw;
@@ -109,7 +174,15 @@ void LoopClosing::correctLoop()
                 Sophus::SE3d correctedTiw(g2oCorrectedSiw.rotation(),
                                           g2oCorrectedSiw.translation() /
                                               g2oCorrectedSiw.scale());
-                p_keyFrame->setPose(correctedTiw.cast<float>());
+                if (p_keyFrame->setPose(correctedTiw.cast<float>()) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setPose returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 // Pose without correction
                 g2o::Sim3 g2oSiw(Tiw.unit_quaternion().cast<double>(),
@@ -139,7 +212,15 @@ void LoopClosing::correctLoop()
             / g2oCorrectedSiw.scale());
             pKFi->setPose(correctedTiw.cast<float>());*/
 
-            vector<MapPoint *> mapPoints = p_keyFrame->getMapPointMatches();
+            std::vector<MapPoint *> mapPoints{};
+            if (p_keyFrame->getMapPointMatches(mapPoints) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMapPointMatches returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             for (size_t mapPointIndex = 0, endMapPoint = mapPoints.size();
                  mapPointIndex < endMapPoint;
                  mapPointIndex++)
@@ -147,21 +228,56 @@ void LoopClosing::correctLoop()
                 MapPoint *p_mapPoint = mapPoints[mapPointIndex];
                 if (!p_mapPoint)
                     continue;
-                if (p_mapPoint->isBad())
+                bool mapPointIsBad{};
+                if (p_mapPoint->isBad(mapPointIsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (mapPointIsBad)
                     continue;
                 if (p_mapPoint->correctedByKeyFrameId == p_currentKF->id)
                     continue;
 
                 // Project with non-corrected pose and project back with
                 // corrected pose
-                Eigen::Vector3d P3Dw = p_mapPoint->getWorldPos().cast<double>();
+                Eigen::Vector3f mapPointWorldPos{};
+                if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWorldPos returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                Eigen::Vector3d P3Dw = mapPointWorldPos.cast<double>();
                 Eigen::Vector3d eigCorrectedP3Dw =
                     g2oCorrectedSwi.map(g2oSiw.map(P3Dw));
 
-                p_mapPoint->setWorldPos(eigCorrectedP3Dw.cast<float>());
+                if (p_mapPoint->setWorldPos(eigCorrectedP3Dw.cast<float>()) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setWorldPos returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 p_mapPoint->correctedByKeyFrameId        = p_currentKF->id;
                 p_mapPoint->correctedReferenceKeyFrameId = p_keyFrame->id;
-                p_mapPoint->updateNormalAndDepth();
+                if (p_mapPoint->updateNormalAndDepth() !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: updateNormalAndDepth returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
 
             // Correct velocity according to orientation correction
@@ -170,14 +286,46 @@ void LoopClosing::correctLoop()
                 Eigen::Quaternionf Rcor =
                     (g2oCorrectedSiw.rotation().inverse() * g2oSiw.rotation())
                         .cast<float>();
-                p_keyFrame->setVelocity(Rcor * p_keyFrame->getVelocity());
+                Eigen::Vector3f keyFrameVelocity{};
+                if (p_keyFrame->getVelocity(keyFrameVelocity) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getVelocity returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_keyFrame->setVelocity(Rcor * keyFrameVelocity) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setVelocity returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
             }
 
             // Make sure connections are updated
-            p_keyFrame->updateConnections();
+            if (p_keyFrame->updateConnections() !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updateConnections returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         // TODO Check this index increasement
-        p_atlas->getCurrentMap()->increaseChangeIndex();
+        if (p_atlas->getCurrentMap()->increaseChangeIndex() !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: increaseChangeIndex returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Start Loop Fusion
         // Update matched map points and replace if duplicated
@@ -189,17 +337,61 @@ void LoopClosing::correctLoop()
             {
                 MapPoint *p_loopMapPoint =
                     loopMatchedMPs[loopMatchedMapPointIndex];
-                MapPoint *p_currentMapPoint =
-                    p_currentKF->getMapPoint(loopMatchedMapPointIndex);
+                MapPoint *p_currentMapPoint = nullptr;
+                if (p_currentKF->getMapPoint(loopMatchedMapPointIndex,
+                                             p_currentMapPoint) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMapPoint returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 if (p_currentMapPoint)
-                    p_currentMapPoint->replace(p_loopMapPoint);
+                {
+                    if (p_currentMapPoint->replace(p_loopMapPoint) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: replace returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                }
                 else
                 {
-                    p_currentKF->addMapPoint(p_loopMapPoint,
-                                             loopMatchedMapPointIndex);
-                    p_loopMapPoint->addObservation(p_currentKF,
-                                                   loopMatchedMapPointIndex);
-                    p_loopMapPoint->computeDistinctiveDescriptors();
+                    if (p_currentKF->addMapPoint(p_loopMapPoint,
+                                                 loopMatchedMapPointIndex) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addMapPoint returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (p_loopMapPoint->addObservation(
+                            p_currentKF,
+                            loopMatchedMapPointIndex) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addObservation returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (p_loopMapPoint->computeDistinctiveDescriptors() !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: computeDistinctiveDescriptors "
+                                     "returned a failure status although it "
+                                     "cannot fail; continuing as before.",
+                                     __func__);
+                    }
                 }
             }
         }
@@ -220,13 +412,37 @@ void LoopClosing::correctLoop()
          vit != vend;
          vit++)
     {
-        KeyFrame          *p_keyFrame = *vit;
-        vector<KeyFrame *> previousNeighbors =
-            p_keyFrame->getVectorCovisibleKeyFrames();
+        KeyFrame               *p_keyFrame = *vit;
+        std::vector<KeyFrame *> previousNeighbors{};
+        if (p_keyFrame->getVectorCovisibleKeyFrames(previousNeighbors) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getVectorCovisibleKeyFrames returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         // Update connections. Detect new links.
-        p_keyFrame->updateConnections();
-        loopConnections[p_keyFrame] = p_keyFrame->getConnectedKeyFrames();
+        if (p_keyFrame->updateConnections() !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateConnections returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::set<KeyFrame *> keyFrameConnectedKeyFrames{};
+        if (p_keyFrame->getConnectedKeyFrames(keyFrameConnectedKeyFrames) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getConnectedKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        loopConnections[p_keyFrame] = keyFrameConnectedKeyFrames;
         for (vector<KeyFrame *>::iterator
                  vitPrevious  = previousNeighbors.begin(),
                  vendPrevious = previousNeighbors.end();
@@ -247,8 +463,27 @@ void LoopClosing::correctLoop()
     // Optimize graph
     bool isFixedScale = isScaleFixed;
     // TODO CHECK; Solo para el monocular inertial
-    if (p_tracker->sensor == System::IMU_MONOCULAR &&
-        !p_currentKF->getMap()->getInertialBA2())
+    Map *p_currentKFMap = nullptr;
+    if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
+        p_currentKF->getMap(p_currentKFMap) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    bool inertialBA2{};
+    if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
+        p_currentKFMap->getInertialBA2(inertialBA2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getInertialBA2 returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_tracker->sensor == System::IMU_MONOCULAR && !inertialBA2)
         isFixedScale = false;
 
 #ifdef REGISTER_TIMES
@@ -262,7 +497,26 @@ void LoopClosing::correctLoop()
     loopFusionTimes_ms.push_back(timeFusion);
 #endif
     // cout << "Optimize essential graph" << endl;
-    if (p_loopMap->isInertial() && p_loopMap->isImuInitialized())
+    bool loopMapIsInertial{};
+    if (p_loopMap->isInertial(loopMapIsInertial) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isInertial returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool loopMapIsImuInitialized{};
+    if ((loopMapIsInertial) &&
+        p_loopMap->isImuInitialized(loopMapIsImuInitialized) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (loopMapIsInertial && loopMapIsImuInitialized)
     {
         Optimizer::optimizeEssentialGraph4DoF(p_loopMap,
                                               p_loopMatchedKF,
@@ -296,13 +550,46 @@ void LoopClosing::correctLoop()
     p_atlas->informNewBigChange();
 
     // Add loop edge
-    p_loopMatchedKF->addLoopEdge(p_currentKF);
-    p_currentKF->addLoopEdge(p_loopMatchedKF);
+    if (p_loopMatchedKF->addLoopEdge(p_currentKF) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addLoopEdge returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_currentKF->addLoopEdge(p_loopMatchedKF) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addLoopEdge returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Launch a new thread to perform Global Bundle Adjustment (Only if few
     // keyframes, if not it would take too much time)
-    if (!p_loopMap->isImuInitialized() ||
-        (p_loopMap->getKeyFrameCount() < 200 && p_atlas->countMaps() == 1))
+    bool loopMapIsImuInitialized2{};
+    if (p_loopMap->isImuInitialized(loopMapIsImuInitialized2) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    unsigned long loopMapKeyFrameCount{};
+    if (!(!loopMapIsImuInitialized2) &&
+        p_loopMap->getKeyFrameCount(loopMapKeyFrameCount) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getKeyFrameCount returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!loopMapIsImuInitialized2 ||
+        (loopMapKeyFrameCount < 200 && p_atlas->countMaps() == 1))
     {
         std::unique_lock<std::mutex> globalBundleAdjustmentLock(gbaMutex);
         isGbaRunning   = true;

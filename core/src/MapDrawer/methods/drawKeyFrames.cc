@@ -28,6 +28,7 @@
 #include "MapPoint.h"
 #include <mutex>
 #include <pangolin/pangolin.h>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,22 +52,48 @@ void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
     if (!p_activeMap)
         return;
 
-    const vector<KeyFrame *> keyFrames = p_activeMap->getAllKeyFrames();
+    std::vector<KeyFrame *> keyFrames{};
+    if (p_activeMap->getAllKeyFrames(keyFrames) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (shouldDrawKeyFrames_in)
     {
         for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
              keyFrameIndex++)
         {
-            KeyFrame       *p_keyFrame = keyFrames[keyFrameIndex];
-            Eigen::Matrix4f Twc        = p_keyFrame->getPoseInverse().matrix();
+            KeyFrame    *p_keyFrame = keyFrames[keyFrameIndex];
+            Sophus::SE3f keyFramePoseInverse{};
+            if (p_keyFrame->getPoseInverse(keyFramePoseInverse) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Eigen::Matrix4f Twc        = keyFramePoseInverse.matrix();
             unsigned int    indexColor = p_keyFrame->originMapId;
 
             glPushMatrix();
 
             glMultMatrixf((GLfloat *)Twc.data());
 
-            if (!p_keyFrame->getParent()) // It is the first KF in the map
+            KeyFrame *p_keyFrameParent = nullptr;
+            if (p_keyFrame->getParent(p_keyFrameParent) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParent returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!p_keyFrameParent) // It is the first KF in the map
             {
                 glLineWidth(keyFrameLineWidth * 5);
                 glColor3f(1.0f, 0.0f, 0.0f);
@@ -138,9 +165,27 @@ void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
              keyFrameIndex++)
         {
             // Covisibility Graph
-            const vector<KeyFrame *> covisibleKeyFrames =
-                keyFrames[keyFrameIndex]->getCovisiblesByWeight(100);
-            Eigen::Vector3f Ow = keyFrames[keyFrameIndex]->getCameraCenter();
+            std::vector<KeyFrame *> covisibleKeyFrames{};
+            if (keyFrames[keyFrameIndex]->getCovisiblesByWeight(
+                    100,
+                    covisibleKeyFrames) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getCovisiblesByWeight returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            Eigen::Vector3f Ow{};
+            if (keyFrames[keyFrameIndex]->getCameraCenter(Ow) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCameraCenter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (!covisibleKeyFrames.empty())
             {
                 for (vector<KeyFrame *>::const_iterator
@@ -151,24 +196,57 @@ void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                 {
                     if ((*vit)->id < keyFrames[keyFrameIndex]->id)
                         continue;
-                    Eigen::Vector3f Ow2 = (*vit)->getCameraCenter();
+                    Eigen::Vector3f Ow2{};
+                    if ((*vit)->getCameraCenter(Ow2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCameraCenter returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     glVertex3f(Ow(0), Ow(1), Ow(2));
                     glVertex3f(Ow2(0), Ow2(1), Ow2(2));
                 }
             }
 
             // Spanning tree
-            KeyFrame *p_parent = keyFrames[keyFrameIndex]->getParent();
+            KeyFrame *p_parent = nullptr;
+            if (keyFrames[keyFrameIndex]->getParent(p_parent) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParent returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (p_parent)
             {
-                Eigen::Vector3f Owp = p_parent->getCameraCenter();
+                Eigen::Vector3f Owp{};
+                if (p_parent->getCameraCenter(Owp) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCameraCenter returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 glVertex3f(Ow(0), Ow(1), Ow(2));
                 glVertex3f(Owp(0), Owp(1), Owp(2));
             }
 
             // Loops
-            set<KeyFrame *> loopKeyFrames =
-                keyFrames[keyFrameIndex]->getLoopEdges();
+            std::set<KeyFrame *> loopKeyFrames{};
+            if (keyFrames[keyFrameIndex]->getLoopEdges(loopKeyFrames) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getLoopEdges returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             for (set<KeyFrame *>::iterator sit  = loopKeyFrames.begin(),
                                            send = loopKeyFrames.end();
                  sit != send;
@@ -176,7 +254,16 @@ void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
             {
                 if ((*sit)->id < keyFrames[keyFrameIndex]->id)
                     continue;
-                Eigen::Vector3f Owl = (*sit)->getCameraCenter();
+                Eigen::Vector3f Owl{};
+                if ((*sit)->getCameraCenter(Owl) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCameraCenter returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 glVertex3f(Ow(0), Ow(1), Ow(2));
                 glVertex3f(Owl(0), Owl(1), Owl(2));
             }
@@ -185,7 +272,17 @@ void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
         glEnd();
     }
 
-    if (shouldDrawInertialGraph_in && p_activeMap->isImuInitialized())
+    bool activeMapIsImuInitialized{};
+    if ((shouldDrawInertialGraph_in) &&
+        p_activeMap->isImuInitialized(activeMapIsImuInitialized) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (shouldDrawInertialGraph_in && activeMapIsImuInitialized)
     {
         glLineWidth(graphLineWidth);
         glColor4f(1.0f, 0.0f, 0.0f, 0.6f);
@@ -196,11 +293,28 @@ void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
              keyFrameIndex++)
         {
             KeyFrame       *p_drawnKeyFrame = keyFrames[keyFrameIndex];
-            Eigen::Vector3f Ow     = p_drawnKeyFrame->getCameraCenter();
-            KeyFrame       *p_next = p_drawnKeyFrame->p_nextKF;
+            Eigen::Vector3f Ow{};
+            if (p_drawnKeyFrame->getCameraCenter(Ow) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCameraCenter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            KeyFrame *p_next = p_drawnKeyFrame->p_nextKF;
             if (p_next)
             {
-                Eigen::Vector3f Owp = p_next->getCameraCenter();
+                Eigen::Vector3f Owp{};
+                if (p_next->getCameraCenter(Owp) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCameraCenter returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 glVertex3f(Ow(0), Ow(1), Ow(2));
                 glVertex3f(Owp(0), Owp(1), Owp(2));
             }
@@ -218,21 +332,48 @@ void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
             if (p_map == p_activeMap)
                 continue;
 
-            vector<KeyFrame *> keyFrames = p_map->getAllKeyFrames();
+            std::vector<KeyFrame *> keyFrames{};
+            if (p_map->getAllKeyFrames(keyFrames) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllKeyFrames returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
                  keyFrameIndex++)
             {
-                KeyFrame       *p_keyFrame = keyFrames[keyFrameIndex];
-                Eigen::Matrix4f Twc = p_keyFrame->getPoseInverse().matrix();
+                KeyFrame    *p_keyFrame = keyFrames[keyFrameIndex];
+                Sophus::SE3f keyFramePoseInverse2{};
+                if (p_keyFrame->getPoseInverse(keyFramePoseInverse2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPoseInverse returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                Eigen::Matrix4f Twc        = keyFramePoseInverse2.matrix();
                 unsigned int    indexColor = p_keyFrame->originMapId;
 
                 glPushMatrix();
 
                 glMultMatrixf((GLfloat *)Twc.data());
 
-                if (!keyFrames[keyFrameIndex]
-                         ->getParent()) // It is the first KF in the map
+                KeyFrame *p_parent2 = nullptr;
+                if (keyFrames[keyFrameIndex]->getParent(p_parent2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getParent returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (!p_parent2) // It is the first KF in the map
                 {
                     glLineWidth(keyFrameLineWidth * 5);
                     glColor3f(1.0f, 0.0f, 0.0f);

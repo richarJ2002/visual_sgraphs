@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -40,7 +41,13 @@ void Atlas::setMapBad(Map *p_map_inout)
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
     maps.erase(p_map_inout);
-    p_map_inout->setBad();
+    if (p_map_inout->setBad() != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     badMaps.insert(p_map_inout);
 }

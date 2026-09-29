@@ -158,9 +158,23 @@ std::unique_ptr<SyntheticRoomFixture>
     }
     for (const std::unique_ptr<geometric::Plane> &p_wall : fixture->ownedWalls)
     {
-        p_map_in->addMapPlane(p_wall.get());
+        if (p_map_in->addMapPlane(p_wall.get()) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapPlane returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
-    p_map_in->addDetectedMapRoom(&fixture->room);
+    if (p_map_in->addDetectedMapRoom(&fixture->room) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addDetectedMapRoom returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (fixture->floor.setId(floorId_in) !=
         vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
@@ -196,7 +210,13 @@ std::unique_ptr<SyntheticRoomFixture>
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    p_map_in->addMapFloor(&fixture->floor);
+    if (p_map_in->addMapFloor(&fixture->floor) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     return fixture;
 }
@@ -207,7 +227,15 @@ semantic::SemanticCandidate makeCandidate(Map            *p_mapA_in,
                                           semantic::Room *p_roomB_in)
 {
     semantic::SemanticCandidate candidate;
-    candidate.mapAId = p_mapA_in->getId();
+    unsigned long               mapAId2{};
+    if (p_mapA_in->getId(mapAId2) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    candidate.mapAId = mapAId2;
     int roomA_inId{};
     if (p_roomA_in->getId(roomA_inId) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -218,7 +246,15 @@ semantic::SemanticCandidate makeCandidate(Map            *p_mapA_in,
                      __func__);
     }
     candidate.roomAId = roomA_inId;
-    candidate.mapBId  = p_mapB_in->getId();
+    unsigned long mapBId2{};
+    if (p_mapB_in->getId(mapBId2) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    candidate.mapBId = mapBId2;
     int roomB_inId{};
     if (p_roomB_in->getId(roomB_inId) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)

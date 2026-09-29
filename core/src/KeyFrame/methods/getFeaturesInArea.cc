@@ -35,10 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<size_t> KeyFrame::getFeaturesInArea(const float &x_in,
-                                           const float &y_in,
-                                           const float &r_in,
-                                           const bool   isRightCamera_in) const
+KeyFrameStatus
+    KeyFrame::getFeaturesInArea(const float         &x_in,
+                                const float         &y_in,
+                                const float         &r_in,
+                                std::vector<size_t> &featuresInArea_out,
+                                const bool           isRightCamera_in) const
 {
     vector<size_t> indices;
     indices.reserve(keyPointCount);
@@ -50,25 +52,37 @@ vector<size_t> KeyFrame::getFeaturesInArea(const float &x_in,
         max(0,
             (int)floor((x_in - gridMinX - factorX) * gridElementWidthInverse));
     if (minimumCellXCount >= gridCols)
-        return indices;
+    {
+        featuresInArea_out = indices;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
 
     const int maximumCellXCount =
         min((int)gridCols - 1,
             (int)ceil((x_in - gridMinX + factorX) * gridElementWidthInverse));
     if (maximumCellXCount < 0)
-        return indices;
+    {
+        featuresInArea_out = indices;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
 
     const int minimumCellYCount =
         max(0,
             (int)floor((y_in - gridMinY - factorY) * gridElementHeightInverse));
     if (minimumCellYCount >= gridRows)
-        return indices;
+    {
+        featuresInArea_out = indices;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
 
     const int maximumCellYCount =
         min((int)gridRows - 1,
             (int)ceil((y_in - gridMinY + factorY) * gridElementHeightInverse));
     if (maximumCellYCount < 0)
-        return indices;
+    {
+        featuresInArea_out = indices;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
 
     for (int ix = minimumCellXCount; ix <= maximumCellXCount; ix++)
     {
@@ -95,7 +109,8 @@ vector<size_t> KeyFrame::getFeaturesInArea(const float &x_in,
         }
     }
 
-    return indices;
+    featuresInArea_out = indices;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

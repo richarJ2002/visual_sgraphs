@@ -24,6 +24,7 @@
  */
 
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -42,8 +43,16 @@ void Tracking::updateLocalPoints()
          itKeyFrame != itEndKeyFrame;
          ++itKeyFrame)
     {
-        KeyFrame                *p_keyFrame = *itKeyFrame;
-        const vector<MapPoint *> mapPoints  = p_keyFrame->getMapPointMatches();
+        KeyFrame               *p_keyFrame = *itKeyFrame;
+        std::vector<MapPoint *> mapPoints{};
+        if (p_keyFrame->getMapPointMatches(mapPoints) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPointMatches returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (vector<MapPoint *>::const_iterator itMapPoint = mapPoints.begin(),
                                                 itEndMapPoint = mapPoints.end();
@@ -56,7 +65,16 @@ void Tracking::updateLocalPoints()
                 continue;
             if (p_mapPoint->trackReferenceFrameId == currentFrame.id)
                 continue;
-            if (!p_mapPoint->isBad())
+            bool mapPointIsBad{};
+            if (p_mapPoint->isBad(mapPointIsBad) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!mapPointIsBad)
             {
                 pointCount++;
                 localMapPoints.push_back(p_mapPoint);

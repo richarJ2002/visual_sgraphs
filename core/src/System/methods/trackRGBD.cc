@@ -155,7 +155,17 @@ Sophus::SE3f System::trackRGBD(
         Map *p_currentMap = p_atlas->getCurrentMap();
         if (p_currentMap)
         {
-            long unsigned int mapId = p_currentMap->getId();
+            unsigned long mapIdValue{};
+            if (p_currentMap->getId(mapIdValue) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            long unsigned int mapId =
+                static_cast<long unsigned int>(mapIdValue);
             if (isAwaitingFirstMap)
             {
                 lastProcessedMapId = mapId;

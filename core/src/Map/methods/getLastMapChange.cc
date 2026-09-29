@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-int Map::getLastMapChange()
+MapStatus Map::getLastMapChange(int &lastMapChange_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return mapChangeNotified;
+    lastMapChange_out = mapChangeNotified;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

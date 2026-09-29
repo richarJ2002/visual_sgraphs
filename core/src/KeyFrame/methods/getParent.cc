@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-KeyFrame *KeyFrame::getParent()
+KeyFrameStatus KeyFrame::getParent(KeyFrame *&p_parent_out)
 {
     unique_lock<mutex> lockCon(connectionsMutex);
-    return p_parent;
+    p_parent_out = p_parent;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

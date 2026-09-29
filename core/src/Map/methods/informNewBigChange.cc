@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::informNewBigChange()
+MapStatus Map::informNewBigChange()
 {
     unique_lock<mutex> lock(mapMutex);
     bigChangeIndex++;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -44,7 +44,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::computeBagOfWords()
+FrameStatus Frame::computeBagOfWords()
 {
     if (bowVector.empty())
     {
@@ -64,6 +64,8 @@ void Frame::computeBagOfWords()
                                    featureVector,
                                    4);
     }
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

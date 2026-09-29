@@ -46,7 +46,16 @@ namespace core
 bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
 {
     std::unordered_set<std::string> firstMapRoomTags;
-    for (semantic::Room *p_room : p_firstMap_in->getAllDetectedMapRooms())
+    std::vector<semantic::Room *>   firstMapAllDetectedMapRooms{};
+    if (p_firstMap_in->getAllDetectedMapRooms(firstMapAllDetectedMapRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Room *p_room : firstMapAllDetectedMapRooms)
     {
         bool roomHasRoomTag{};
         if (p_room->hasRoomTag(roomHasRoomTag) !=
@@ -71,7 +80,16 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
             firstMapRoomTags.insert(roomTag);
         }
     }
-    for (semantic::Room *p_room : p_firstMap_in->getAllMarkerBasedMapRooms())
+    std::vector<semantic::Room *> firstMapAllMarkerBasedMapRooms{};
+    if (p_firstMap_in->getAllMarkerBasedMapRooms(
+            firstMapAllMarkerBasedMapRooms) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkerBasedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Room *p_room : firstMapAllMarkerBasedMapRooms)
     {
         bool roomHasRoomTag2{};
         if (p_room->hasRoomTag(roomHasRoomTag2) !=
@@ -99,17 +117,52 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
 
     if (firstMapRoomTags.empty())
     {
-        std::cout << "[SemMgr] sharesRoomNameTag: first map (id="
-                  << p_firstMap_in->getId()
+        unsigned long firstMapId{};
+        if (p_firstMap_in->getId(firstMapId) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<semantic::Room *> firstMapAllDetectedMapRooms2{};
+        if (p_firstMap_in->getAllDetectedMapRooms(
+                firstMapAllDetectedMapRooms2) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllDetectedMapRooms returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<semantic::Room *> firstMapAllMarkerBasedMapRooms2{};
+        if (p_firstMap_in->getAllMarkerBasedMapRooms(
+                firstMapAllMarkerBasedMapRooms2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getAllMarkerBasedMapRooms returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        std::cout << "[SemMgr] sharesRoomNameTag: first map (id=" << firstMapId
                   << ") has NO tagged rooms (detected="
-                  << p_firstMap_in->getAllDetectedMapRooms().size()
-                  << ", marker="
-                  << p_firstMap_in->getAllMarkerBasedMapRooms().size() << ")"
-                  << std::endl;
+                  << firstMapAllDetectedMapRooms2.size()
+                  << ", marker=" << firstMapAllMarkerBasedMapRooms2.size()
+                  << ")" << std::endl;
         return false;
     }
 
-    for (semantic::Room *p_room : p_secondMap_in->getAllDetectedMapRooms())
+    std::vector<semantic::Room *> secondMapAllDetectedMapRooms{};
+    if (p_secondMap_in->getAllDetectedMapRooms(secondMapAllDetectedMapRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Room *p_room : secondMapAllDetectedMapRooms)
     {
         bool roomHasRoomTag3{};
         if (p_room->hasRoomTag(roomHasRoomTag3) !=
@@ -140,13 +193,40 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
+            unsigned long firstMapId2{};
+            if (p_firstMap_in->getId(firstMapId2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            unsigned long secondMapId{};
+            if (p_secondMap_in->getId(secondMapId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "[SemMgr] sharesRoomNameTag: MATCH found tag "
-                      << roomTag4 << " between maps " << p_firstMap_in->getId()
-                      << " and " << p_secondMap_in->getId() << std::endl;
+                      << roomTag4 << " between maps " << firstMapId2 << " and "
+                      << secondMapId << std::endl;
             return true;
         }
     }
-    for (semantic::Room *p_room : p_secondMap_in->getAllMarkerBasedMapRooms())
+    std::vector<semantic::Room *> secondMapAllMarkerBasedMapRooms{};
+    if (p_secondMap_in->getAllMarkerBasedMapRooms(
+            secondMapAllMarkerBasedMapRooms) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkerBasedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Room *p_room : secondMapAllMarkerBasedMapRooms)
     {
         bool roomHasRoomTag4{};
         if (p_room->hasRoomTag(roomHasRoomTag4) !=
@@ -177,18 +257,70 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
+            unsigned long firstMapId3{};
+            if (p_firstMap_in->getId(firstMapId3) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            unsigned long secondMapId2{};
+            if (p_secondMap_in->getId(secondMapId2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "[SemMgr] sharesRoomNameTag: MATCH found tag "
-                      << roomTag6 << " between maps " << p_firstMap_in->getId()
-                      << " and " << p_secondMap_in->getId() << std::endl;
+                      << roomTag6 << " between maps " << firstMapId3 << " and "
+                      << secondMapId2 << std::endl;
             return true;
         }
     }
 
+    unsigned long firstMapId4{};
+    if (p_firstMap_in->getId(firstMapId4) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    unsigned long secondMapId3{};
+    if (p_secondMap_in->getId(secondMapId3) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> secondMapAllDetectedMapRooms2{};
+    if (p_secondMap_in->getAllDetectedMapRooms(secondMapAllDetectedMapRooms2) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> secondMapAllMarkerBasedMapRooms2{};
+    if (p_secondMap_in->getAllMarkerBasedMapRooms(
+            secondMapAllMarkerBasedMapRooms2) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkerBasedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     std::cout << "[SemMgr] sharesRoomNameTag: NO match. First map (id="
-              << p_firstMap_in->getId() << ") tags: " << firstMapRoomTags.size()
-              << ", second map (id=" << p_secondMap_in->getId() << ") detected="
-              << p_secondMap_in->getAllDetectedMapRooms().size() << " marker="
-              << p_secondMap_in->getAllMarkerBasedMapRooms().size()
+              << firstMapId4 << ") tags: " << firstMapRoomTags.size()
+              << ", second map (id=" << secondMapId3
+              << ") detected=" << secondMapAllDetectedMapRooms2.size()
+              << " marker=" << secondMapAllMarkerBasedMapRooms2.size()
               << std::endl;
 
     return false;

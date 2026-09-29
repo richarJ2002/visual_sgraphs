@@ -55,9 +55,34 @@ void Atlas::postLoad()
     for (Map *p_map : backupMaps)
     {
         maps.insert(p_map);
-        p_map->postLoad(p_keyFrameDatabase, p_orbVocabulary, camerasById);
-        keyFrameCount += p_map->getAllKeyFrames().size();
-        mapPointCount += p_map->getAllMapPoints().size();
+        if (p_map->postLoad(p_keyFrameDatabase, p_orbVocabulary, camerasById) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: postLoad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<KeyFrame *> mapAllKeyFrames{};
+        if (p_map->getAllKeyFrames(mapAllKeyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        keyFrameCount += mapAllKeyFrames.size();
+        std::vector<MapPoint *> mapAllMapPoints{};
+        if (p_map->getAllMapPoints(mapAllMapPoints) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        mapPointCount += mapAllMapPoints.size();
     }
     backupMaps.clear();
 }

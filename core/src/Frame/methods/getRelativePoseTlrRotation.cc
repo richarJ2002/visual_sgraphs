@@ -43,9 +43,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3f Frame::getRelativePoseTlrRotation()
+FrameStatus Frame::getRelativePoseTlrRotation(
+    Eigen::Matrix3f &relativePoseTlrRotation_out)
 {
-    return poseTlr.rotationMatrix();
+    relativePoseTlrRotation_out = poseTlr.rotationMatrix();
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

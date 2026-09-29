@@ -42,23 +42,47 @@ int LoopClosing::findMatchesByProjection(
     vector<MapPoint *> &mapPoints_out,
     vector<MapPoint *> &matchedMapPoints_out)
 {
-    int                countCovisibleCount = 10;
-    vector<KeyFrame *> covisibleKeyFrames =
-        p_matchedKFw_in->getBestCovisibilityKeyFrames(countCovisibleCount);
+    int                     countCovisibleCount = 10;
+    std::vector<KeyFrame *> covisibleKeyFrames{};
+    if (p_matchedKFw_in->getBestCovisibilityKeyFrames(countCovisibleCount,
+                                                      covisibleKeyFrames) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBestCovisibilityKeyFrames returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
     int initialCovisibleCount = covisibleKeyFrames.size();
     covisibleKeyFrames.push_back(p_matchedKFw_in);
-    set<KeyFrame *> checkKeyFrames(covisibleKeyFrames.begin(),
+    set<KeyFrame *>      checkKeyFrames(covisibleKeyFrames.begin(),
                                    covisibleKeyFrames.end());
-    set<KeyFrame *> currentCovisbles =
-        p_currentKeyFrame_in->getConnectedKeyFrames();
+    std::set<KeyFrame *> currentCovisbles{};
+    if (p_currentKeyFrame_in->getConnectedKeyFrames(currentCovisbles) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getConnectedKeyFrames returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (initialCovisibleCount < countCovisibleCount)
     {
         for (int covisibleIndex = 0; covisibleIndex < initialCovisibleCount;
              ++covisibleIndex)
         {
-            vector<KeyFrame *> keyFrames =
-                covisibleKeyFrames[covisibleIndex]
-                    ->getBestCovisibilityKeyFrames(countCovisibleCount);
+            std::vector<KeyFrame *> keyFrames{};
+            if (covisibleKeyFrames[covisibleIndex]
+                    ->getBestCovisibilityKeyFrames(countCovisibleCount,
+                                                   keyFrames) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getBestCovisibilityKeyFrames returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
             int insertedCount = 0;
             int j             = 0;
             while (j < keyFrames.size() && insertedCount < countCovisibleCount)
@@ -82,9 +106,28 @@ int LoopClosing::findMatchesByProjection(
     matchedMapPoints_out.clear();
     for (KeyFrame *p_keyFrame : covisibleKeyFrames)
     {
-        for (MapPoint *p_candidateMapPoint : p_keyFrame->getMapPointMatches())
+        std::vector<MapPoint *> keyFrameMapPointMatches{};
+        if (p_keyFrame->getMapPointMatches(keyFrameMapPointMatches) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
-            if (!p_candidateMapPoint || p_candidateMapPoint->isBad())
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPointMatches returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (MapPoint *p_candidateMapPoint : keyFrameMapPointMatches)
+        {
+            bool candidateMapPointIsBad{};
+            if (!(!p_candidateMapPoint) &&
+                p_candidateMapPoint->isBad(candidateMapPointIsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!p_candidateMapPoint || candidateMapPointIsBad)
                 continue;
 
             if (mapPoints.find(p_candidateMapPoint) == mapPoints.end())
@@ -106,9 +149,18 @@ int LoopClosing::findMatchesByProjection(
     }
     ORBmatcher matcher(0.9, true);
 
-    matchedMapPoints_out.resize(
-        p_currentKeyFrame_in->getMapPointMatches().size(),
-        static_cast<MapPoint *>(nullptr));
+    std::vector<MapPoint *> currentKeyFrameMapPointMatches{};
+    if (p_currentKeyFrame_in->getMapPointMatches(
+            currentKeyFrameMapPointMatches) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    matchedMapPoints_out.resize(currentKeyFrameMapPointMatches.size(),
+                                static_cast<MapPoint *>(nullptr));
     int matchCount = matcher.searchByProjection(p_currentKeyFrame_in,
                                                 correctedPose,
                                                 mapPoints_out,

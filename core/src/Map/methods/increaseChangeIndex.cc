@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::increaseChangeIndex()
+MapStatus Map::increaseChangeIndex()
 {
     unique_lock<mutex> lock(mapMutex);
     mapChange++;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -43,12 +43,13 @@ namespace vs_graphs
 namespace core
 {
 
-vector<size_t> Frame::getFeaturesInArea(const float &x_in,
-                                        const float &y_in,
-                                        const float &r_in,
-                                        const int    minimumLevel_in,
-                                        const int    maximumLevel_in,
-                                        const bool   isRightCamera_in) const
+FrameStatus Frame::getFeaturesInArea(const float         &x_in,
+                                     const float         &y_in,
+                                     const float         &r_in,
+                                     std::vector<size_t> &featuresInArea_out,
+                                     const int            minimumLevel_in,
+                                     const int            maximumLevel_in,
+                                     const bool isRightCamera_in) const
 {
     vector<size_t> indices;
     indices.reserve(keyPointCount);
@@ -61,7 +62,8 @@ vector<size_t> Frame::getFeaturesInArea(const float &x_in,
             (int)floor((x_in - gridMinX - factorX) * gridElementWidthInverse));
     if (minimumCellXCount >= FRAME_GRID_COLS)
     {
-        return indices;
+        featuresInArea_out = indices;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
     const int maximumCellXCount =
@@ -69,7 +71,8 @@ vector<size_t> Frame::getFeaturesInArea(const float &x_in,
             (int)ceil((x_in - gridMinX + factorX) * gridElementWidthInverse));
     if (maximumCellXCount < 0)
     {
-        return indices;
+        featuresInArea_out = indices;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
     const int minimumCellYCount =
@@ -77,7 +80,8 @@ vector<size_t> Frame::getFeaturesInArea(const float &x_in,
             (int)floor((y_in - gridMinY - factorY) * gridElementHeightInverse));
     if (minimumCellYCount >= FRAME_GRID_ROWS)
     {
-        return indices;
+        featuresInArea_out = indices;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
     const int maximumCellYCount =
@@ -85,7 +89,8 @@ vector<size_t> Frame::getFeaturesInArea(const float &x_in,
             (int)ceil((y_in - gridMinY + factorY) * gridElementHeightInverse));
     if (maximumCellYCount < 0)
     {
-        return indices;
+        featuresInArea_out = indices;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
     const bool shouldCheckLevels =
@@ -128,7 +133,8 @@ vector<size_t> Frame::getFeaturesInArea(const float &x_in,
         }
     }
 
-    return indices;
+    featuresInArea_out = indices;
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

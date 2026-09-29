@@ -39,8 +39,16 @@ std::size_t countLiveRooms(Map *p_map_in)
     {
         return 0U;
     }
-    std::size_t liveCount = 0U;
-    for (semantic::Room *p_room : p_map_in->getAllRooms())
+    std::size_t                   liveCount = 0U;
+    std::vector<semantic::Room *> mapAllRooms{};
+    if (p_map_in->getAllRooms(mapAllRooms) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Room *p_room : mapAllRooms)
     {
         bool roomIsBad{};
         if ((p_room != nullptr) &&

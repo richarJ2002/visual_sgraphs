@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<semantic::Floor *> Map::getAllFloors()
+MapStatus Map::getAllFloors(std::vector<semantic::Floor *> &allFloors_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return vector<semantic::Floor *>(floors.begin(), floors.end());
+    allFloors_out =
+        std::vector<semantic::Floor *>(floors.begin(), floors.end());
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

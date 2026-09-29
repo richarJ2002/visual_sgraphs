@@ -41,7 +41,7 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::updateConnections(bool upParent_in)
+KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
 {
     map<KeyFrame *, int> keyFrameCounter;
 
@@ -104,8 +104,28 @@ void KeyFrame::updateConnections(bool upParent_in)
                  mit != mend;
                  mit++)
             {
-                if (mit->first->id == id || mit->first->isBad() ||
-                    mit->first->getMap() != p_map)
+                bool isBad2{};
+                if (!(mit->first->id == id) &&
+                    mit->first->isBad(isBad2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                Map *p_map2 = nullptr;
+                if (!(mit->first->id == id || isBad2) &&
+                    mit->first->getMap(p_map2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (mit->first->id == id || isBad2 || p_map2 != p_map)
                     continue;
 
                 geometric::Plane::PlaneVariant planeType{};
@@ -140,11 +160,27 @@ void KeyFrame::updateConnections(bool upParent_in)
         if (!p_mapPoint)
             continue;
 
-        if (p_mapPoint->isBad())
+        bool mapPointIsBad{};
+        if (p_mapPoint->isBad(mapPointIsBad) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad)
             continue;
 
-        map<KeyFrame *, tuple<int, int>> observations =
-            p_mapPoint->getObservations();
+        std::map<KeyFrame *, std::tuple<int, int>> observations{};
+        if (p_mapPoint->getObservations(observations) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (map<KeyFrame *, tuple<int, int>>::iterator
                  mit  = observations.begin(),
@@ -152,8 +188,27 @@ void KeyFrame::updateConnections(bool upParent_in)
              mit != mend;
              mit++)
         {
-            if (mit->first->id == id || mit->first->isBad() ||
-                mit->first->getMap() != p_map)
+            bool isBad3{};
+            if (!(mit->first->id == id) &&
+                mit->first->isBad(isBad3) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            Map *p_map3 = nullptr;
+            if (!(mit->first->id == id || isBad3) &&
+                mit->first->getMap(p_map3) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mit->first->id == id || isBad3 || p_map3 != p_map)
                 continue;
             keyFrameCounter[mit->first]++;
         }
@@ -161,7 +216,7 @@ void KeyFrame::updateConnections(bool upParent_in)
 
     // This should not happen
     if (keyFrameCounter.empty())
-        return;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 
     // If the counter is greater than threshold add connection
     // In case no keyframe counter is over threshold add the one with maximum
@@ -190,14 +245,28 @@ void KeyFrame::updateConnections(bool upParent_in)
         if (mit->second >= threshold)
         {
             pairs.push_back(make_pair(mit->second, mit->first));
-            (mit->first)->addConnection(this, mit->second);
+            if ((mit->first)->addConnection(this, mit->second) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addConnection returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
     if (pairs.empty())
     {
         pairs.push_back(make_pair(nmax, p_keyFrameMaximum));
-        p_keyFrameMaximum->addConnection(this, nmax);
+        if (p_keyFrameMaximum->addConnection(this, nmax) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addConnection returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     sort(pairs.begin(), pairs.end());
@@ -217,13 +286,32 @@ void KeyFrame::updateConnections(bool upParent_in)
             vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
         orderedWeights = vector<int>(weights.begin(), weights.end());
 
-        if (isFirstConnection && id != p_map->getInitKeyFrameId())
+        unsigned long mapInitKeyFrameId{};
+        if ((isFirstConnection) &&
+            p_map->getInitKeyFrameId(mapInitKeyFrameId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getInitKeyFrameId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isFirstConnection && id != mapInitKeyFrameId)
         {
             p_parent = orderedConnectedKeyFrames.front();
-            p_parent->addChild(this);
+            if (p_parent->addChild(this) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addChild returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             isFirstConnection = false;
         }
     }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -48,18 +48,75 @@ namespace core
 semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 {
     /* Reject stale place-recognition candidates before stopping workers */
+    bool currentKFIsBad{};
+    if (!(p_currentKF == nullptr || p_mergeMatchedKF == nullptr) &&
+        p_currentKF->isBad(currentKFIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    bool mergeMatchedKFIsBad{};
+    if (!(p_currentKF == nullptr || p_mergeMatchedKF == nullptr ||
+          currentKFIsBad) &&
+        p_mergeMatchedKF->isBad(mergeMatchedKFIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     if (p_currentKF == nullptr || p_mergeMatchedKF == nullptr ||
-        p_currentKF->isBad() || p_mergeMatchedKF->isBad())
+        currentKFIsBad || mergeMatchedKFIsBad)
     {
         return semantic::SemanticMergeDecision::REJECT;
     }
 
-    Map *p_currentMap = p_currentKF->getMap();
-    Map *p_mergeMap   = p_mergeMatchedKF->getMap();
+    Map *p_currentMap = nullptr;
+    if (p_currentKF->getMap(p_currentMap) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Map *p_mergeMap = nullptr;
+    if (p_mergeMatchedKF->getMap(p_mergeMap) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
+    bool currentMapIsBad{};
+    if (!(p_currentMap == nullptr || p_mergeMap == nullptr ||
+          p_currentMap == p_mergeMap) &&
+        p_currentMap->isBad(currentMapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    bool mergeMapIsBad{};
+    if (!(p_currentMap == nullptr || p_mergeMap == nullptr ||
+          p_currentMap == p_mergeMap || currentMapIsBad) &&
+        p_mergeMap->isBad(mergeMapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     if (p_currentMap == nullptr || p_mergeMap == nullptr ||
-        p_currentMap == p_mergeMap || p_currentMap->isBad() ||
-        p_mergeMap->isBad() || !p_atlas->isActiveMap(p_currentMap) ||
+        p_currentMap == p_mergeMap || currentMapIsBad || mergeMapIsBad ||
+        !p_atlas->isActiveMap(p_currentMap) ||
         !p_atlas->isActiveMap(p_mergeMap))
     {
         return semantic::SemanticMergeDecision::REJECT;
@@ -96,9 +153,47 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     std::unique_lock<std::mutex> semanticUpdateLock =
         p_atlas->acquireSemanticUpdateLock();
 
-    if (p_currentKF->isBad() || p_mergeMatchedKF->isBad() ||
-        p_currentKF->getMap() != p_currentMap ||
-        p_mergeMatchedKF->getMap() != p_mergeMap ||
+    bool currentKFIsBad2{};
+    if (p_currentKF->isBad(currentKFIsBad2) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    bool mergeMatchedKFIsBad2{};
+    if (!(currentKFIsBad2) && p_mergeMatchedKF->isBad(mergeMatchedKFIsBad2) !=
+                                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Map *p_currentKFMap = nullptr;
+    if (!(currentKFIsBad2 || mergeMatchedKFIsBad2) &&
+        p_currentKF->getMap(p_currentKFMap) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Map *p_mergeMatchedKFMap = nullptr;
+    if (!(currentKFIsBad2 || mergeMatchedKFIsBad2 ||
+          p_currentKFMap != p_currentMap) &&
+        p_mergeMatchedKF->getMap(p_mergeMatchedKFMap) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (currentKFIsBad2 || mergeMatchedKFIsBad2 ||
+        p_currentKFMap != p_currentMap || p_mergeMatchedKFMap != p_mergeMap ||
         !p_atlas->isActiveMap(p_currentMap) ||
         !p_atlas->isActiveMap(p_mergeMap))
     {
@@ -151,9 +246,25 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    std::cout << "[SemanticMergeGate] surviving_map=" << p_currentMap->getId()
-              << " absorbed_map=" << p_mergeMap->getId()
-              << " decision=" << p_name << " reason=" << p_name2
+    unsigned long currentMapId{};
+    if (p_currentMap->getId(currentMapId) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    unsigned long mergeMapId{};
+    if (p_mergeMap->getId(mergeMapId) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    std::cout << "[SemanticMergeGate] surviving_map=" << currentMapId
+              << " absorbed_map=" << mergeMapId << " decision=" << p_name
+              << " reason=" << p_name2
               << " shared_rooms=" << semanticMergeGate.sharedRoomCount
               << " aligned_rooms=" << semanticMergeGate.alignedRoomCount
               << " matched_walls=" << semanticMergeGate.matchedWallCount
@@ -185,21 +296,60 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         bool shouldScaleVelocity = false;
         if (s_on != 1)
             shouldScaleVelocity = true;
-        p_currentMap->applyScaledRotation(T_on, s_on, shouldScaleVelocity);
+        if (p_currentMap->applyScaledRotation(T_on,
+                                              s_on,
+                                              shouldScaleVelocity) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyScaledRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        IMU::Bias currentKFImuBias{};
+        if (p_currentKF->getImuBias(currentKFImuBias) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuBias returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         p_tracker->updateFrameIMU(s_on,
-                                  p_currentKF->getImuBias(),
+                                  currentKFImuBias,
                                   p_tracker->getLastKeyFrame());
 
         std::chrono::steady_clock::time_point t3 =
             std::chrono::steady_clock::now();
     }
 
-    const int keyFrameNewCount = p_currentMap->getKeyFrameCount();
+    unsigned long keyFrameNewCountValue{};
+    if (p_currentMap->getKeyFrameCount(keyFrameNewCountValue) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getKeyFrameCount returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const int keyFrameNewCount = static_cast<int>(keyFrameNewCountValue);
 
+    bool currentMapInertialBA2{};
+    if (((p_tracker->sensor == System::IMU_MONOCULAR ||
+          p_tracker->sensor == System::IMU_STEREO ||
+          p_tracker->sensor == System::IMU_RGBD)) &&
+        p_currentMap->getInertialBA2(currentMapInertialBA2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getInertialBA2 returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if ((p_tracker->sensor == System::IMU_MONOCULAR ||
          p_tracker->sensor == System::IMU_STEREO ||
          p_tracker->sensor == System::IMU_RGBD) &&
-        !p_currentMap->getInertialBA2())
+        !currentMapInertialBA2)
     {
         /* Map is not completly initialized */
         Eigen::Vector3d bg, ba;
@@ -212,9 +362,27 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         p_tracker->updateFrameIMU(1.0f, b, p_tracker->getLastKeyFrame());
 
         /* Set map initialized */
-        p_currentMap->setInertialBA2();
-        p_currentMap->setInertialBA1();
-        p_currentMap->setImuInitialized();
+        if (p_currentMap->setInertialBA2() != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setInertialBA2 returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_currentMap->setInertialBA1() != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setInertialBA1 returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_currentMap->setImuInitialized() != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setImuInitialized returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     /* Retain imported room identities for post-optimization reconciliation. */
@@ -230,18 +398,79 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         std::scoped_lock mapUpdateLocks(p_currentMap->mapUpdateMutex,
                                         p_mergeMap->mapUpdateMutex);
 
-        vector<KeyFrame *> mergeMapKeyFrames = p_mergeMap->getAllKeyFrames();
-        vector<MapPoint *> mergeMapMapPoints = p_mergeMap->getAllMapPoints();
-        vector<geometric::Plane *> mergeMapPlanes = p_mergeMap->getAllPlanes();
-        vector<semantic::Marker *> mergeMapMarkers =
-            p_mergeMap->getAllMarkers();
-        vector<vs_graphs::core::semantic::Passage *> mergeMapPassages =
-            p_mergeMap->getAllPassages();
-        vector<semantic::Room *> mergeMapDetectedRooms =
-            p_mergeMap->getAllDetectedMapRooms();
-        vector<semantic::Room *> mergeMapMarkerRooms =
-            p_mergeMap->getAllMarkerBasedMapRooms();
-        vector<semantic::Floor *> mergeMapFloors = p_mergeMap->getAllFloors();
+        std::vector<KeyFrame *> mergeMapKeyFrames{};
+        if (p_mergeMap->getAllKeyFrames(mergeMapKeyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<MapPoint *> mergeMapMapPoints{};
+        if (p_mergeMap->getAllMapPoints(mergeMapMapPoints) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<geometric::Plane *> mergeMapPlanes{};
+        if (p_mergeMap->getAllPlanes(mergeMapPlanes) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPlanes returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<semantic::Marker *> mergeMapMarkers{};
+        if (p_mergeMap->getAllMarkers(mergeMapMarkers) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllMarkers returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<vs_graphs::core::semantic::Passage *> mergeMapPassages{};
+        if (p_mergeMap->getAllPassages(mergeMapPassages) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<semantic::Room *> mergeMapDetectedRooms{};
+        if (p_mergeMap->getAllDetectedMapRooms(mergeMapDetectedRooms) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllDetectedMapRooms returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::vector<semantic::Room *> mergeMapMarkerRooms{};
+        if (p_mergeMap->getAllMarkerBasedMapRooms(mergeMapMarkerRooms) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getAllMarkerBasedMapRooms returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        std::vector<semantic::Floor *> mergeMapFloors{};
+        if (p_mergeMap->getAllFloors(mergeMapFloors) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllFloors returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         importedRooms = mergeMapDetectedRooms;
         importedRooms.insert(importedRooms.end(),
@@ -250,31 +479,118 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
         for (KeyFrame *p_keyFrame : mergeMapKeyFrames)
         {
-            if (!p_keyFrame || p_keyFrame->isBad() ||
-                p_keyFrame->getMap() != p_mergeMap)
+            bool keyFrameIsBad{};
+            if (!(!p_keyFrame) && p_keyFrame->isBad(keyFrameIsBad) !=
+                                      KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            Map *p_keyFrameMap = nullptr;
+            if (!(!p_keyFrame || keyFrameIsBad) &&
+                p_keyFrame->getMap(p_keyFrameMap) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!p_keyFrame || keyFrameIsBad || p_keyFrameMap != p_mergeMap)
             {
                 continue;
             }
 
             // Make sure connections are updated
-            p_keyFrame->updateMap(p_currentMap);
-            p_currentMap->addKeyFrame(p_keyFrame);
-            p_mergeMap->eraseKeyFrame(p_keyFrame);
+            if (p_keyFrame->updateMap(p_currentMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updateMap returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_currentMap->addKeyFrame(p_keyFrame) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addKeyFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mergeMap->eraseKeyFrame(p_keyFrame) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseKeyFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         for (MapPoint *p_mapPoint : mergeMapMapPoints)
         {
-            if (!p_mapPoint || p_mapPoint->isBad() ||
-                p_mapPoint->getMap() != p_mergeMap)
+            bool mapPointIsBad{};
+            if (!(!p_mapPoint) && p_mapPoint->isBad(mapPointIsBad) !=
+                                      MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            Map *p_mapPointMap = nullptr;
+            if (!(!p_mapPoint || mapPointIsBad) &&
+                p_mapPoint->getMap(p_mapPointMap) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!p_mapPoint || mapPointIsBad || p_mapPointMap != p_mergeMap)
                 continue;
 
-            p_mapPoint->updateMap(p_currentMap);
-            p_currentMap->addMapPoint(p_mapPoint);
-            p_mergeMap->eraseMapPoint(p_mapPoint);
+            if (p_mapPoint->updateMap(p_currentMap) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updateMap returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_currentMap->addMapPoint(p_mapPoint) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPoint returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mergeMap->eraseMapPoint(p_mapPoint) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPoint returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
-        int nextPlaneId = 0;
-        for (geometric::Plane *p_existingPlane : p_currentMap->getAllPlanes())
+        int                             nextPlaneId = 0;
+        std::vector<geometric::Plane *> currentMapAllPlanes{};
+        if (p_currentMap->getAllPlanes(currentMapAllPlanes) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPlanes returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (geometric::Plane *p_existingPlane : currentMapAllPlanes)
         {
             if (p_existingPlane != nullptr)
             {
@@ -324,12 +640,35 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_currentMap->addMapPlane(p_plane);
-            p_mergeMap->eraseMapPlane(p_plane);
+            if (p_currentMap->addMapPlane(p_plane) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mergeMap->eraseMapPlane(p_plane) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
-        int nextMarkerId = 0;
-        for (semantic::Marker *p_existingMarker : p_currentMap->getAllMarkers())
+        int                             nextMarkerId = 0;
+        std::vector<semantic::Marker *> currentMapAllMarkers{};
+        if (p_currentMap->getAllMarkers(currentMapAllMarkers) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllMarkers returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (semantic::Marker *p_existingMarker : currentMapAllMarkers)
         {
             if (p_existingMarker != nullptr)
             {
@@ -369,8 +708,22 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_currentMap->addMapMarker(p_marker);
-            p_mergeMap->eraseMapMarker(p_marker);
+            if (p_currentMap->addMapMarker(p_marker) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapMarker returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mergeMap->eraseMapMarker(p_marker) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapMarker returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         for (vs_graphs::core::semantic::Passage *p_passage : mergeMapPassages)
@@ -381,8 +734,17 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             }
 
             semantic::Passage *p_retainedPassage = nullptr;
-            for (semantic::Passage *p_existingPassage :
-                 p_currentMap->getAllPassages())
+            std::vector<vs_graphs::core::semantic::Passage *>
+                currentMapAllPassages{};
+            if (p_currentMap->getAllPassages(currentMapAllPassages) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllPassages returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (semantic::Passage *p_existingPassage : currentMapAllPassages)
             {
                 int existingPassageId{};
                 if ((p_existingPassage != nullptr) &&
@@ -412,7 +774,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                 }
             }
 
-            p_mergeMap->eraseMapPassage(p_passage);
+            if (p_mergeMap->eraseMapPassage(p_passage) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPassage returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (p_retainedPassage != nullptr)
             {
                 bool retainedPassageWasGeometryReplaced{};
@@ -487,7 +856,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_currentMap->addMapPassage(p_passage);
+            if (p_currentMap->addMapPassage(p_passage) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPassage returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         for (semantic::Room *p_room : mergeMapDetectedRooms)
@@ -515,8 +891,23 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_currentMap->addDetectedMapRoom(p_room);
-            p_mergeMap->eraseDetectedMapRoom(p_room);
+            if (p_currentMap->addDetectedMapRoom(p_room) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addDetectedMapRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mergeMap->eraseDetectedMapRoom(p_room) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: eraseDetectedMapRoom returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
 
         for (semantic::Room *p_room : mergeMapMarkerRooms)
@@ -544,8 +935,24 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_currentMap->addCandidateMapRoom(p_room);
-            p_mergeMap->eraseMarkerBasedMapRoom(p_room);
+            if (p_currentMap->addCandidateMapRoom(p_room) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: addCandidateMapRoom returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (p_mergeMap->eraseMarkerBasedMapRoom(p_room) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: eraseMarkerBasedMapRoom returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
 
         for (semantic::Floor *p_floor : mergeMapFloors)
@@ -555,10 +962,25 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                 continue;
             }
 
-            p_mergeMap->eraseMapFloor(p_floor);
-            semantic::Floor *p_retainedFloor = nullptr;
-            for (semantic::Floor *p_existingFloor :
-                 p_currentMap->getAllFloors())
+            if (p_mergeMap->eraseMapFloor(p_floor) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapFloor returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            semantic::Floor               *p_retainedFloor = nullptr;
+            std::vector<semantic::Floor *> currentMapAllFloors{};
+            if (p_currentMap->getAllFloors(currentMapAllFloors) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllFloors returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (semantic::Floor *p_existingFloor : currentMapAllFloors)
             {
                 int existingFloorId{};
                 if ((p_existingFloor != nullptr) &&
@@ -599,16 +1021,46 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_currentMap->addMapFloor(p_floor);
+            if (p_currentMap->addMapFloor(p_floor) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapFloor returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         collapseMergedFloors(p_currentMap);
 
         /* Rebuild derived free-space topology in the corrected map frame. */
-        p_currentMap->setSkeletonClusterPoints({});
-        p_currentMap->setSkeletonEdges({});
+        if (p_currentMap->setSkeletonClusterPoints({}) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: setSkeletonClusterPoints returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (p_currentMap->setSkeletonEdges({}) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setSkeletonEdges returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        for (semantic::Room *p_room : p_currentMap->getAllRooms())
+        std::vector<semantic::Room *> currentMapAllRooms{};
+        if (p_currentMap->getAllRooms(currentMapAllRooms) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllRooms returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (semantic::Room *p_room : currentMapAllRooms)
         {
             bool roomIsBad3{};
             if (!(p_room == nullptr) &&
@@ -648,39 +1100,125 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                 }
                 if (p_wall != nullptr && !wallIsBad)
                 {
-                    p_currentMap->addRoomWallPlane(p_wall);
+                    if (p_currentMap->addRoomWallPlane(p_wall) !=
+                        MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addRoomWallPlane returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                 }
             }
         }
 
         // Save non corrected poses (already merged maps)
-        vector<KeyFrame *> keyFrames = p_currentMap->getAllKeyFrames();
+        std::vector<KeyFrame *> keyFrames{};
+        if (p_currentMap->getAllKeyFrames(keyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (KeyFrame *p_keyFrame : keyFrames)
         {
-            Sophus::SE3d Tiw = (p_keyFrame->getPose()).cast<double>();
+            Sophus::SE3f keyFramePose{};
+            if (p_keyFrame->getPose(keyFramePose) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPose returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Sophus::SE3d Tiw = (keyFramePose).cast<double>();
             g2o::Sim3    g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
             NonCorrectedSim3[p_keyFrame] = g2oSiw;
         }
     }
 
-    if (p_mergeMap->getOriginKeyFrame() != nullptr)
+    KeyFrame *p_mergeMapOriginKeyFrame = nullptr;
+    if (p_mergeMap->getOriginKeyFrame(p_mergeMapOriginKeyFrame) !=
+        MapStatus::MAP_STATUS_SUCCESS)
     {
-        p_mergeMap->getOriginKeyFrame()->setFirstConnection(false);
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getOriginKeyFrame returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
-    p_newChild =
-        p_mergeMatchedKF
-            ->getParent(); // Old parent, it will be the new child of this KF
+    if (p_mergeMapOriginKeyFrame != nullptr)
+    {
+        KeyFrame *p_mergeMapOriginKeyFrame2 = nullptr;
+        if (p_mergeMap->getOriginKeyFrame(p_mergeMapOriginKeyFrame2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getOriginKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_mergeMapOriginKeyFrame2->setFirstConnection(false) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setFirstConnection returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+    KeyFrame *p_mergeMatchedKFParent = nullptr;
+    if (p_mergeMatchedKF->getParent(p_mergeMatchedKFParent) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParent returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    p_newChild = p_mergeMatchedKFParent; // Old parent, it will be the new child
+                                         // of this KF
     p_newParent = p_mergeMatchedKF; // Old child, now it will be the parent of
                                     // its own parent(we need eliminate this KF
                                     // from children list in its old parent)
-    p_mergeMatchedKF->changeParent(p_currentKF);
+    if (p_mergeMatchedKF->changeParent(p_currentKF) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: changeParent returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     while (p_newChild)
     {
-        p_newChild->eraseChild(
-            p_newParent); // We remove the relation between the old parent and
-                          // the new for avoid loop
-        KeyFrame *p_oldParent = p_newChild->getParent();
-        p_newChild->changeParent(p_newParent);
+        if (p_newChild->eraseChild(p_newParent) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseChild returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        } // We remove the relation between the old parent and
+          // the new for avoid loop
+        KeyFrame *p_oldParent = nullptr;
+        if (p_newChild->getParent(p_oldParent) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParent returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_newChild->changeParent(p_newParent) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: changeParent returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         p_newParent = p_newChild;
         p_newChild  = p_oldParent;
     }
@@ -692,15 +1230,40 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
     mergeConnectedKFs.clear();
     mergeConnectedKFs.push_back(p_mergeMatchedKF);
-    vector<KeyFrame *> aux = p_mergeMatchedKF->getVectorCovisibleKeyFrames();
+    std::vector<KeyFrame *> aux{};
+    if (p_mergeMatchedKF->getVectorCovisibleKeyFrames(aux) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getVectorCovisibleKeyFrames returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
     mergeConnectedKFs.insert(mergeConnectedKFs.end(), aux.begin(), aux.end());
     if (mergeConnectedKFs.size() > 6)
         mergeConnectedKFs.erase(mergeConnectedKFs.begin() + 6,
                                 mergeConnectedKFs.end());
 
-    p_currentKF->updateConnections();
+    if (p_currentKF->updateConnections() !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateConnections returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     currentConnectedKeyFrames.push_back(p_currentKF);
-    aux = p_currentKF->getVectorCovisibleKeyFrames();
+    std::vector<KeyFrame *> currentKFVectorCovisibleKeyFrames{};
+    if (p_currentKF->getVectorCovisibleKeyFrames(
+            currentKFVectorCovisibleKeyFrames) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getVectorCovisibleKeyFrames returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    aux = currentKFVectorCovisibleKeyFrames;
     currentConnectedKeyFrames.insert(currentConnectedKeyFrames.end(),
                                      aux.begin(),
                                      aux.end());
@@ -711,7 +1274,15 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     set<MapPoint *> mapPointMerges;
     for (KeyFrame *p_keyFrame : mergeConnectedKFs)
     {
-        set<MapPoint *> mapPoints = p_keyFrame->getMapPoints();
+        std::set<MapPoint *> mapPoints{};
+        if (p_keyFrame->getMapPoints(mapPoints) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPoints returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         mapPointMerges.insert(mapPoints.begin(), mapPoints.end());
         if (mapPointMerges.size() > 1000)
             break;
@@ -725,24 +1296,67 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
     for (KeyFrame *p_keyFrame : currentConnectedKeyFrames)
     {
-        if (!p_keyFrame || p_keyFrame->isBad())
+        bool keyFrameIsBad2{};
+        if (!(!p_keyFrame) && p_keyFrame->isBad(keyFrameIsBad2) !=
+                                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_keyFrame || keyFrameIsBad2)
             continue;
 
-        p_keyFrame->updateConnections();
+        if (p_keyFrame->updateConnections() !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateConnections returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     const auto finalizeInertialMerge = [this, p_currentMap, p_mergeMap]()
     {
-        p_mergeMatchedKF->addMergeEdge(p_currentKF);
-        p_currentKF->addMergeEdge(p_mergeMatchedKF);
-        p_currentMap->increaseChangeIndex();
+        if (p_mergeMatchedKF->addMergeEdge(p_currentKF) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMergeEdge returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_currentKF->addMergeEdge(p_mergeMatchedKF) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMergeEdge returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_currentMap->increaseChangeIndex() !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: increaseChangeIndex returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /*!
          * Inertial welding changes the same derived-map coordinate contract
          * as a visual merge. Increment the externally observed revision after
          * all corrected poses and semantic entities have become authoritative.
          */
-        p_currentMap->informNewBigChange();
+        if (p_currentMap->informNewBigChange() != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: informNewBigChange returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         p_atlas->changeMap(p_currentMap);
         p_atlas->setMapBad(p_mergeMap);
@@ -750,10 +1364,26 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     };
     for (KeyFrame *p_keyFrame : mergeConnectedKFs)
     {
-        if (!p_keyFrame || p_keyFrame->isBad())
+        bool keyFrameIsBad3{};
+        if (!(!p_keyFrame) && p_keyFrame->isBad(keyFrameIsBad3) !=
+                                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_keyFrame || keyFrameIsBad3)
             continue;
 
-        p_keyFrame->updateConnections();
+        if (p_keyFrame->updateConnections() !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateConnections returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     /* A sufficiently established current map can support inertial welding BA.
@@ -784,14 +1414,43 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         {
             (void)poseBefore_WorldToCamera;
 
-            if (p_keyFrame == nullptr || p_keyFrame->isBad() ||
-                p_keyFrame->getMap() != p_currentMap)
+            bool keyFrameIsBad4{};
+            if (!(p_keyFrame == nullptr) &&
+                p_keyFrame->isBad(keyFrameIsBad4) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            Map *p_keyFrameMap2 = nullptr;
+            if (!(p_keyFrame == nullptr || keyFrameIsBad4) &&
+                p_keyFrame->getMap(p_keyFrameMap2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_keyFrame == nullptr || keyFrameIsBad4 ||
+                p_keyFrameMap2 != p_currentMap)
             {
                 continue;
             }
 
+            Sophus::SE3f keyFramePose2{};
+            if (p_keyFrame->getPose(keyFramePose2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPose returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             const Sophus::SE3d poseAfter_WorldToCamera =
-                p_keyFrame->getPose().cast<double>();
+                keyFramePose2.cast<double>();
 
             CorrectedSim3.insert_or_assign(
                 p_keyFrame,
@@ -887,8 +1546,24 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
     finalizeInertialMerge();
 
-    std::cout << "[SemanticMergeGate] surviving_map=" << p_currentMap->getId()
-              << " absorbed_map=" << p_mergeMap->getId()
+    unsigned long currentMapId2{};
+    if (p_currentMap->getId(currentMapId2) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    unsigned long mergeMapId2{};
+    if (p_mergeMap->getId(mergeMapId2) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    std::cout << "[SemanticMergeGate] surviving_map=" << currentMapId2
+              << " absorbed_map=" << mergeMapId2
               << " decision=ACCEPT reason=ALIGNED"
               << " floor=" << floorVerificationResult << " committed=1"
               << std::endl;
@@ -899,9 +1574,29 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
 
     p_localMapper->release();
 
+    bool currentMapIsImuInitialized{};
+    if ((shouldRelaunchBa) &&
+        p_currentMap->isImuInitialized(currentMapIsImuInitialized) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    unsigned long currentMapKeyFrameCount{};
+    if ((shouldRelaunchBa) && !(!currentMapIsImuInitialized) &&
+        p_currentMap->getKeyFrameCount(currentMapKeyFrameCount) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getKeyFrameCount returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (shouldRelaunchBa &&
-        (!p_currentMap->isImuInitialized() ||
-         (p_currentMap->getKeyFrameCount() < 200 && p_atlas->countMaps() == 1)))
+        (!currentMapIsImuInitialized ||
+         (currentMapKeyFrameCount < 200 && p_atlas->countMaps() == 1)))
     {
         relaunchGlobalBundleAdjustment(p_currentMap);
     }

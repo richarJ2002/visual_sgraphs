@@ -83,7 +83,16 @@ SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
     }
     if (p_declaredMap != nullptr)
     {
-        record.declaredMapId = p_declaredMap->getId();
+        unsigned long declaredMapId2{};
+        if (p_declaredMap->getId(declaredMapId2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        record.declaredMapId = declaredMapId2;
     }
 
     Passage::PassageVariant passage_inPassageType{};

@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -43,7 +44,9 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::isInFrustum(MapPoint *p_mapPoint_inout, float viewingCosLimit_in)
+FrameStatus Frame::isInFrustum(MapPoint *p_mapPoint_inout,
+                               float     viewingCosLimit_in,
+                               bool     &isInFrustum_out)
 {
     if (leftKeyPointCount == -1)
     {
@@ -52,7 +55,15 @@ bool Frame::isInFrustum(MapPoint *p_mapPoint_inout, float viewingCosLimit_in)
         p_mapPoint_inout->trackProjY      = -1;
 
         // 3D in absolute coordinates
-        Eigen::Matrix<float, 3, 1> P = p_mapPoint_inout->getWorldPos();
+        Eigen::Matrix<float, 3, 1> P{};
+        if (p_mapPoint_inout->getWorldPos(P) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // 3D in camera coordinates
         const Eigen::Matrix<float, 3, 1> Pc = rotationRcw * P + translationTcw;
@@ -62,40 +73,88 @@ bool Frame::isInFrustum(MapPoint *p_mapPoint_inout, float viewingCosLimit_in)
         const float &PcZ  = Pc(2);
         const float  invz = 1.0f / PcZ;
         if (PcZ < 0.0f)
-            return false;
+        {
+            isInFrustum_out = false;
+            return FrameStatus::FRAME_STATUS_SUCCESS;
+        }
 
         const Eigen::Vector2f uv = p_camera->project(Pc);
 
         if (uv(0) < gridMinX || uv(0) > gridMaxX)
-            return false;
+        {
+            isInFrustum_out = false;
+            return FrameStatus::FRAME_STATUS_SUCCESS;
+        }
         if (uv(1) < gridMinY || uv(1) > gridMaxY)
-            return false;
+        {
+            isInFrustum_out = false;
+            return FrameStatus::FRAME_STATUS_SUCCESS;
+        }
 
         p_mapPoint_inout->trackProjX = uv(0);
         p_mapPoint_inout->trackProjY = uv(1);
 
         // Check distance is in the scale invariance region of the MapPoint
-        const float maximumDistance =
-            p_mapPoint_inout->getMaxDistanceInvariance();
-        const float minimumDistance =
-            p_mapPoint_inout->getMinDistanceInvariance();
+        float maximumDistance{};
+        if (p_mapPoint_inout->getMaxDistanceInvariance(maximumDistance) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getMaxDistanceInvariance returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        float minimumDistance{};
+        if (p_mapPoint_inout->getMinDistanceInvariance(minimumDistance) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getMinDistanceInvariance returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         const Eigen::Vector3f PO       = P - centerOw;
         const float           distance = PO.norm();
 
         if (distance < minimumDistance || distance > maximumDistance)
-            return false;
+        {
+            isInFrustum_out = false;
+            return FrameStatus::FRAME_STATUS_SUCCESS;
+        }
 
         // Check viewing angle
-        Eigen::Vector3f Pn = p_mapPoint_inout->getNormal();
+        Eigen::Vector3f Pn{};
+        if (p_mapPoint_inout->getNormal(Pn) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getNormal returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         const float viewCos = PO.dot(Pn) / distance;
 
         if (viewCos < viewingCosLimit_in)
-            return false;
+        {
+            isInFrustum_out = false;
+            return FrameStatus::FRAME_STATUS_SUCCESS;
+        }
 
         // Predict scale in the image
-        const int predictedLevelCount =
-            p_mapPoint_inout->predictScale(distance, this);
+        int predictedLevelCount{};
+        if (p_mapPoint_inout->predictScale(distance,
+                                           this,
+                                           predictedLevelCount) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: predictScale returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Data used by the tracking
         p_mapPoint_inout->isTrackedInView = true;
@@ -108,7 +167,8 @@ bool Frame::isInFrustum(MapPoint *p_mapPoint_inout, float viewingCosLimit_in)
         p_mapPoint_inout->trackScaleLevel = predictedLevelCount;
         p_mapPoint_inout->trackViewCos    = viewCos;
 
-        return true;
+        isInFrustum_out = true;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
     }
     else
     {
@@ -117,13 +177,34 @@ bool Frame::isInFrustum(MapPoint *p_mapPoint_inout, float viewingCosLimit_in)
         p_mapPoint_inout->trackScaleLevel      = -1;
         p_mapPoint_inout->trackScaleLevelR     = -1;
 
-        p_mapPoint_inout->isTrackedInView =
-            isInFrustumChecks(p_mapPoint_inout, viewingCosLimit_in);
-        p_mapPoint_inout->isTrackedInRightView =
-            isInFrustumChecks(p_mapPoint_inout, viewingCosLimit_in, true);
+        bool isInFrustumChecks2{};
+        if (isInFrustumChecks(p_mapPoint_inout,
+                              viewingCosLimit_in,
+                              isInFrustumChecks2) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isInFrustumChecks returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_mapPoint_inout->isTrackedInView = isInFrustumChecks2;
+        bool isInFrustumChecks3{};
+        if (isInFrustumChecks(p_mapPoint_inout,
+                              viewingCosLimit_in,
+                              isInFrustumChecks3,
+                              true) != FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isInFrustumChecks returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_mapPoint_inout->isTrackedInRightView = isInFrustumChecks3;
 
-        return p_mapPoint_inout->isTrackedInView ||
-               p_mapPoint_inout->isTrackedInRightView;
+        isInFrustum_out = p_mapPoint_inout->isTrackedInView ||
+                          p_mapPoint_inout->isTrackedInRightView;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 }
 

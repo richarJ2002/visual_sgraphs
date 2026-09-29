@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f KeyFrame::getCameraCenter()
+KeyFrameStatus KeyFrame::getCameraCenter(Eigen::Vector3f &cameraCenter_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return twc.translation();
+    cameraCenter_out = twc.translation();
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

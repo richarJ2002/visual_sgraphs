@@ -28,6 +28,7 @@
 #include "LocalMapping.h"
 #include "Optimizer.h"
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -110,11 +111,29 @@ bool Tracking::trackLocalMap()
         {
             if (!currentFrame.outlierFlags[keyPointIndex])
             {
-                currentFrame.mapPoints[keyPointIndex]->increaseFound();
+                if (currentFrame.mapPoints[keyPointIndex]->increaseFound() !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: increaseFound returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
                 if (!isTrackingOnlyMode)
                 {
+                    int observationCount{};
                     if (currentFrame.mapPoints[keyPointIndex]
-                            ->getObservationCount() > 0)
+                            ->getObservationCount(observationCount) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getObservationCount returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (observationCount > 0)
                         matchesInliers++;
                 }
                 else

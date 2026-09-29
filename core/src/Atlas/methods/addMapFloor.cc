@@ -56,7 +56,13 @@ void Atlas::addMapFloor(semantic::Floor *p_floor_in)
                      "fail; continuing as before.",
                      __func__);
     }
-    p_ownerMap->addMapFloor(p_floor_in);
+    if (p_ownerMap->addMapFloor(p_floor_in) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

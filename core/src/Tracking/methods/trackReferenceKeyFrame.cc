@@ -30,6 +30,7 @@
 #include "System.h"
 
 #include <iostream>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -39,7 +40,13 @@ namespace core
 bool Tracking::trackReferenceKeyFrame()
 {
     // Compute Bag of Words vector
-    currentFrame.computeBagOfWords();
+    if (currentFrame.computeBagOfWords() != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeBagOfWords returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
@@ -57,9 +64,23 @@ bool Tracking::trackReferenceKeyFrame()
     }
 
     currentFrame.mapPoints = mapPointMatches;
-    currentFrame.setPose(lastFrame.getPose());
-
-    // mCurrentFrame.printPointDistribution();
+    Sophus::SE3<float> lastFrameGetPose{};
+    if (lastFrame.getPose(lastFrameGetPose) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (currentFrame.setPose(lastFrameGetPose) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     Optimizer::poseOptimization(&currentFrame);
 
@@ -90,9 +111,24 @@ bool Tracking::trackReferenceKeyFrame()
                 p_mapPoint->lastSeenFrameId = currentFrame.id;
                 nmatches--;
             }
-            else if (currentFrame.mapPoints[keyPointIndex]
-                         ->getObservationCount() > 0)
-                nmatchesMap++;
+            else
+            {
+                int observationCount{};
+                if (currentFrame.mapPoints[keyPointIndex]->getObservationCount(
+                        observationCount) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getObservationCount returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (observationCount > 0)
+                {
+                    nmatchesMap++;
+                }
+            }
         }
     }
 

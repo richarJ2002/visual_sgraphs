@@ -34,11 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-MapPoint *MapPoint::getReplaced()
+MapPointStatus MapPoint::getReplaced(MapPoint *&p_replaced_out)
 {
     unique_lock<mutex> lock1(featuresMutex);
     unique_lock<mutex> lock2(positionMutex);
-    return p_replaced;
+    p_replaced_out = p_replaced;
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

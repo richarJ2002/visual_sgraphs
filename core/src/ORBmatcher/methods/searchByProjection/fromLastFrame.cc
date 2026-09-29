@@ -23,6 +23,7 @@
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
+#include <rclcpp/logging.hpp>
 #include <stdint-gcc.h>
 
 namespace vs_graphs
@@ -44,10 +45,24 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
         rotHist[histogramBinIndex].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
-    const Sophus::SE3f    Tcw = CurrentFrame.getPose();
+    Sophus::SE3f Tcw{};
+    if (CurrentFrame.getPose(Tcw) != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     const Eigen::Vector3f twc = Tcw.inverse().translation();
 
-    const Sophus::SE3f    Tlw = LastFrame.getPose();
+    Sophus::SE3f Tlw{};
+    if (LastFrame.getPose(Tlw) != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     const Eigen::Vector3f tlc = Tlw * twc;
 
     const bool isMovingForward  = tlc(2) > CurrentFrame.mb && !bMono;
@@ -62,7 +77,16 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
             if (!LastFrame.outlierFlags[histogramBinIndex])
             {
                 // Project
-                Eigen::Vector3f x3Dw = p_mapPoint->getWorldPos();
+                Eigen::Vector3f x3Dw{};
+                if (p_mapPoint->getWorldPos(x3Dw) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWorldPos returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 Eigen::Vector3f x3Dc = Tcw * x3Dw;
 
                 const float invzc = 1.0 / x3Dc(2);
@@ -94,28 +118,78 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                 vector<size_t> indices2;
 
                 if (isMovingForward)
-                    indices2 = CurrentFrame.getFeaturesInArea(uv(0),
-                                                              uv(1),
-                                                              radius,
-                                                              lastOctaveCount);
+                {
+                    std::vector<size_t> CurrentFrameFeaturesInArea{};
+                    if (CurrentFrame.getFeaturesInArea(
+                            uv(0),
+                            uv(1),
+                            radius,
+                            CurrentFrameFeaturesInArea,
+                            lastOctaveCount) !=
+                        FrameStatus::FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getFeaturesInArea returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    indices2 = CurrentFrameFeaturesInArea;
+                }
                 else if (isMovingBackward)
-                    indices2 = CurrentFrame.getFeaturesInArea(uv(0),
-                                                              uv(1),
-                                                              radius,
-                                                              0,
-                                                              lastOctaveCount);
+                {
+                    std::vector<size_t> CurrentFrameFeaturesInArea2{};
+                    if (CurrentFrame.getFeaturesInArea(
+                            uv(0),
+                            uv(1),
+                            radius,
+                            CurrentFrameFeaturesInArea2,
+                            0,
+                            lastOctaveCount) !=
+                        FrameStatus::FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getFeaturesInArea returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    indices2 = CurrentFrameFeaturesInArea2;
+                }
                 else
-                    indices2 =
-                        CurrentFrame.getFeaturesInArea(uv(0),
-                                                       uv(1),
-                                                       radius,
-                                                       lastOctaveCount - 1,
-                                                       lastOctaveCount + 1);
+                {
+                    std::vector<size_t> CurrentFrameFeaturesInArea3{};
+                    if (CurrentFrame.getFeaturesInArea(
+                            uv(0),
+                            uv(1),
+                            radius,
+                            CurrentFrameFeaturesInArea3,
+                            lastOctaveCount - 1,
+                            lastOctaveCount + 1) !=
+                        FrameStatus::FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getFeaturesInArea returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    indices2 = CurrentFrameFeaturesInArea3;
+                }
 
                 if (indices2.empty())
                     continue;
 
-                const cv::Mat mapPointDescriptor = p_mapPoint->getDescriptor();
+                cv::Mat mapPointDescriptor{};
+                if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getDescriptor returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 int bestDistance = 256;
                 int bestIndex2   = -1;
@@ -128,9 +202,23 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                     const size_t i2 = *vit;
 
                     if (CurrentFrame.mapPoints[i2])
-                        if (CurrentFrame.mapPoints[i2]->getObservationCount() >
-                            0)
+                    {
+                        int observationCount{};
+                        if (CurrentFrame.mapPoints[i2]->getObservationCount(
+                                observationCount) !=
+                            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getObservationCount returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (observationCount > 0)
+                        {
                             continue;
+                        }
+                    }
 
                     if (CurrentFrame.leftKeyPointCount == -1 &&
                         CurrentFrame.uRight[i2] > 0)
@@ -190,9 +278,19 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                 }
                 if (CurrentFrame.leftKeyPointCount != -1)
                 {
-                    Eigen::Vector3f x3Dr =
-                        CurrentFrame.getRelativePoseTrl() * x3Dc;
-                    Eigen::Vector2f uv = CurrentFrame.p_camera->project(x3Dr);
+                    Sophus::SE3f CurrentFrameRelativePoseTrl{};
+                    if (CurrentFrame.getRelativePoseTrl(
+                            CurrentFrameRelativePoseTrl) !=
+                        FrameStatus::FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getRelativePoseTrl returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    Eigen::Vector3f x3Dr = CurrentFrameRelativePoseTrl * x3Dc;
+                    Eigen::Vector2f uv   = CurrentFrame.p_camera->project(x3Dr);
 
                     int lastOctaveCount =
                         (LastFrame.leftKeyPointCount == -1 ||
@@ -210,32 +308,76 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                     vector<size_t> indices2;
 
                     if (isMovingForward)
-                        indices2 =
-                            CurrentFrame.getFeaturesInArea(uv(0),
-                                                           uv(1),
-                                                           radius,
-                                                           lastOctaveCount,
-                                                           -1,
-                                                           true);
+                    {
+                        std::vector<size_t> CurrentFrameFeaturesInArea4{};
+                        if (CurrentFrame.getFeaturesInArea(
+                                uv(0),
+                                uv(1),
+                                radius,
+                                CurrentFrameFeaturesInArea4,
+                                lastOctaveCount,
+                                -1,
+                                true) != FrameStatus::FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getFeaturesInArea returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        indices2 = CurrentFrameFeaturesInArea4;
+                    }
                     else if (isMovingBackward)
-                        indices2 =
-                            CurrentFrame.getFeaturesInArea(uv(0),
-                                                           uv(1),
-                                                           radius,
-                                                           0,
-                                                           lastOctaveCount,
-                                                           true);
+                    {
+                        std::vector<size_t> CurrentFrameFeaturesInArea5{};
+                        if (CurrentFrame.getFeaturesInArea(
+                                uv(0),
+                                uv(1),
+                                radius,
+                                CurrentFrameFeaturesInArea5,
+                                0,
+                                lastOctaveCount,
+                                true) != FrameStatus::FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getFeaturesInArea returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        indices2 = CurrentFrameFeaturesInArea5;
+                    }
                     else
-                        indices2 =
-                            CurrentFrame.getFeaturesInArea(uv(0),
-                                                           uv(1),
-                                                           radius,
-                                                           lastOctaveCount - 1,
-                                                           lastOctaveCount + 1,
-                                                           true);
+                    {
+                        std::vector<size_t> CurrentFrameFeaturesInArea6{};
+                        if (CurrentFrame.getFeaturesInArea(
+                                uv(0),
+                                uv(1),
+                                radius,
+                                CurrentFrameFeaturesInArea6,
+                                lastOctaveCount - 1,
+                                lastOctaveCount + 1,
+                                true) != FrameStatus::FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getFeaturesInArea returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        indices2 = CurrentFrameFeaturesInArea6;
+                    }
 
-                    const cv::Mat mapPointDescriptor =
-                        p_mapPoint->getDescriptor();
+                    cv::Mat mapPointDescriptor{};
+                    if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getDescriptor returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     int bestDistance = 256;
                     int bestIndex2   = -1;
@@ -248,11 +390,26 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                         const size_t i2 = *vit;
                         if (CurrentFrame
                                 .mapPoints[i2 + CurrentFrame.leftKeyPointCount])
+                        {
+                            int observationCount2{};
                             if (CurrentFrame
                                     .mapPoints[i2 +
                                                CurrentFrame.leftKeyPointCount]
-                                    ->getObservationCount() > 0)
+                                    ->getObservationCount(observationCount2) !=
+                                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: getObservationCount returned a "
+                                    "failure status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
+                            if (observationCount2 > 0)
+                            {
                                 continue;
+                            }
+                        }
 
                         const cv::Mat &d = CurrentFrame.descriptors.row(
                             i2 + CurrentFrame.leftKeyPointCount);

@@ -41,8 +41,14 @@ SemanticsManager::ActiveMapBootstrapResult
         return ActiveMapBootstrapResult::NO_ACTIVE_MAP;
     }
 
-    const std::vector<semantic::Room *> activeRooms =
-        p_activeMap->getAllRooms();
+    std::vector<semantic::Room *> activeRooms{};
+    if (p_activeMap->getAllRooms(activeRooms) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     const auto resolveLiveRoomById =
         [&activeRooms](const int roomId_in) -> semantic::Room *
     {
@@ -183,7 +189,15 @@ SemanticsManager::ActiveMapBootstrapResult
     }
     else
     {
-        std::vector<KeyFrame *> keyFrames = p_activeMap->getAllKeyFrames();
+        std::vector<KeyFrame *> keyFrames{};
+        if (p_activeMap->getAllKeyFrames(keyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         std::sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
         for (std::vector<KeyFrame *>::reverse_iterator keyFrameIterator =
                  keyFrames.rbegin();
@@ -191,12 +205,31 @@ SemanticsManager::ActiveMapBootstrapResult
              ++keyFrameIterator)
         {
             KeyFrame *p_keyFrame = *keyFrameIterator;
-            if (p_keyFrame == nullptr || p_keyFrame->isBad())
+            bool      keyFrameIsBad{};
+            if (!(p_keyFrame == nullptr) &&
+                p_keyFrame->isBad(keyFrameIsBad) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_keyFrame == nullptr || keyFrameIsBad)
             {
                 continue;
             }
+            Eigen::Vector3f keyFrameCameraCenter{};
+            if (p_keyFrame->getCameraCenter(keyFrameCameraCenter) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCameraCenter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             const Eigen::Vector3d candidatePosition_World_m =
-                p_keyFrame->getCameraCenter().cast<double>();
+                keyFrameCameraCenter.cast<double>();
             /* An exactly-zero center marks an uninitialized first-frame pose
              * (live-observed: brand-new map, identity pose, room planted at
              * the origin), never a genuine measurement: real computed centers
@@ -228,9 +261,18 @@ SemanticsManager::ActiveMapBootstrapResult
         }
         else
         {
+            unsigned long activeMapId{};
+            if (p_activeMap->getId(activeMapId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "SG_PIPELINE {\"event\":\"initialization\","
                          "\"map_id\":"
-                      << p_activeMap->getId()
+                      << activeMapId
                       << ",\"reason\":\"NO_USABLE_CAMERA_POSE\","
                          "\"semantic_cycle\":"
                       << pipelineSemanticCycle << "}" << std::endl;
@@ -261,16 +303,33 @@ SemanticsManager::ActiveMapBootstrapResult
         p_bootstrapRoom = p_blankRoomCandidate;
         if (p_bootstrapRoom == nullptr)
         {
+            unsigned long activeMapId2{};
+            if (p_activeMap->getId(activeMapId2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "SG_PIPELINE {\"event\":\"initialization\","
                          "\"map_id\":"
-                      << p_activeMap->getId()
+                      << activeMapId2
                       << ",\"reason\":\"ROOM_CREATION_FAILED\","
                          "\"semantic_cycle\":"
                       << pipelineSemanticCycle << "}" << std::endl;
             return ActiveMapBootstrapResult::ROOM_CREATION_FAILED;
         }
         p_atlas->addCandidateMapRoom(p_bootstrapRoom);
-        p_activeMap->promoteCandidateMapRoom(p_bootstrapRoom);
+        if (p_activeMap->promoteCandidateMapRoom(p_bootstrapRoom) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: promoteCandidateMapRoom returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (p_bootstrapRoom->setRoomVariant(
                 semantic::Room::RoomVariant::ROOM) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -354,8 +413,15 @@ SemanticsManager::ActiveMapBootstrapResult
         recoveredRoom   = recoveryContext.has_value();
     }
 
-    std::vector<semantic::Floor *> floors = p_activeMap->getAllFloors();
-    semantic::Floor               *p_canonicalFloor = nullptr;
+    std::vector<semantic::Floor *> floors{};
+    if (p_activeMap->getAllFloors(floors) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    semantic::Floor *p_canonicalFloor = nullptr;
     if (semantic::Floor::selectBestObservedFloor(floors, p_canonicalFloor) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
@@ -378,7 +444,16 @@ SemanticsManager::ActiveMapBootstrapResult
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        floors                       = p_activeMap->getAllFloors();
+        std::vector<semantic::Floor *> activeMapAllFloors{};
+        if (p_activeMap->getAllFloors(activeMapAllFloors) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllFloors returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        floors                       = activeMapAllFloors;
         semantic::Floor *p_bestFloor = nullptr;
         if (semantic::Floor::selectBestObservedFloor(floors, p_bestFloor) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
@@ -402,9 +477,17 @@ SemanticsManager::ActiveMapBootstrapResult
                          "cannot fail; continuing as before.",
                          __func__);
         }
+        unsigned long activeMapId3{};
+        if (p_activeMap->getId(activeMapId3) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         std::cout << "SG_PIPELINE {\"event\":\"initialization\","
                      "\"map_id\":"
-                  << p_activeMap->getId()
+                  << activeMapId3
                   << ",\"reason\":\"FLOOR_CREATION_FAILED\","
                      "\"room_id\":"
                   << bootstrapRoomId4
@@ -458,9 +541,25 @@ SemanticsManager::ActiveMapBootstrapResult
         }
         /* Mission-chain trace: the room this map started with. Set once;
          * later bootstrap cycles must not overwrite it. */
-        if (p_activeMap->getStartingRoom() == nullptr)
+        semantic::Room *p_activeMapStartingRoom = nullptr;
+        if (p_activeMap->getStartingRoom(p_activeMapStartingRoom) !=
+            MapStatus::MAP_STATUS_SUCCESS)
         {
-            p_activeMap->setStartingRoom(p_bootstrapRoom);
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getStartingRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_activeMapStartingRoom == nullptr)
+        {
+            if (p_activeMap->setStartingRoom(p_bootstrapRoom) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setStartingRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
@@ -470,8 +569,16 @@ SemanticsManager::ActiveMapBootstrapResult
         for (const semantic::PassageContext &passageContext :
              recoveryContext->passageContexts)
         {
-            semantic::Passage *p_recoveryPassage =
-                p_activeMap->getPassageById(passageContext.id);
+            semantic::Passage *p_recoveryPassage = nullptr;
+            if (p_activeMap->getPassageById(passageContext.id,
+                                            p_recoveryPassage) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPassageById returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (p_recoveryPassage == nullptr)
             {
                 /* New object, stable ID: position, orientation, and aperture
@@ -681,9 +788,17 @@ SemanticsManager::ActiveMapBootstrapResult
                          "cannot fail; continuing as before.",
                          __func__);
         }
+        unsigned long activeMapId4{};
+        if (p_activeMap->getId(activeMapId4) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         std::cout << "SG_PIPELINE {\"event\":\"initialization\","
                      "\"map_id\":"
-                  << p_activeMap->getId()
+                  << activeMapId4
                   << ",\"reason\":\"BOOTSTRAP_CREATED\",\"room_id\":"
                   << bootstrapRoomId9 << ",\"floor_id\":" << canonicalFloorId
                   << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
@@ -711,9 +826,17 @@ SemanticsManager::ActiveMapBootstrapResult
                          "cannot fail; continuing as before.",
                          __func__);
         }
+        unsigned long activeMapId5{};
+        if (p_activeMap->getId(activeMapId5) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         std::cout << "SG_PIPELINE {\"event\":\"initialization\","
                      "\"map_id\":"
-                  << p_activeMap->getId()
+                  << activeMapId5
                   << ",\"reason\":\"RECOVERY_RESTORED\",\"room_id\":"
                   << bootstrapRoomId10 << ",\"floor_id\":" << canonicalFloorId2
                   << ",\"restored_passages\":" << restoredPassageCount

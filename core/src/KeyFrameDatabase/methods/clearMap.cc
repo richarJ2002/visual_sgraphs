@@ -21,6 +21,7 @@
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 using namespace std;
 
@@ -47,8 +48,17 @@ void KeyFrameDatabase::clearMap(Map *p_map_in)
                                         keyFrameEnd = keyFramesForWord.end();
              keyFrameIt != keyFrameEnd;)
         {
-            KeyFrame *p_candidateKeyFrame = *keyFrameIt;
-            if (p_map_in == p_candidateKeyFrame->getMap())
+            KeyFrame *p_candidateKeyFrame    = *keyFrameIt;
+            Map      *p_candidateKeyFrameMap = nullptr;
+            if (p_candidateKeyFrame->getMap(p_candidateKeyFrameMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_map_in == p_candidateKeyFrameMap)
             {
                 keyFrameIt = keyFramesForWord.erase(keyFrameIt);
                 // Dont delete the KF because the class Map clean all the KF

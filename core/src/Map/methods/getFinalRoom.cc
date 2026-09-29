@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Room *Map::getFinalRoom()
+MapStatus Map::getFinalRoom(semantic::Room *&p_finalRoom_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return p_finalRoom;
+    p_finalRoom_out = p_finalRoom;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

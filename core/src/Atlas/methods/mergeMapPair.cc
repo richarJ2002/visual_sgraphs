@@ -63,7 +63,25 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
         return;
     }
 
-    if (p_currentMap_inout->isBad() || p_otherMap_inout->isBad())
+    bool currentMapIsBad{};
+    if (p_currentMap_inout->isBad(currentMapIsBad) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    bool otherMapIsBad{};
+    if (!(currentMapIsBad) &&
+        p_otherMap_inout->isBad(otherMapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (currentMapIsBad || otherMapIsBad)
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: a map is bad."
                   << std::endl;
@@ -130,20 +148,38 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     /* Compare floor identities in the surviving map frame without mutating
      * either map. A mismatch rejects the merge before any entity is moved. */
-    semantic::Floor *p_currentFloor = nullptr;
-    if (semantic::Floor::selectBestObservedFloor(
-            p_currentMap_inout->getAllFloors(),
-            p_currentFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    semantic::Floor               *p_currentFloor = nullptr;
+    std::vector<semantic::Floor *> currentMapAllFloors{};
+    if (p_currentMap_inout->getAllFloors(currentMapAllFloors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (semantic::Floor::selectBestObservedFloor(currentMapAllFloors,
+                                                 p_currentFloor) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: selectBestObservedFloor returned a failure status "
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    semantic::Floor *p_otherFloor = nullptr;
-    if (semantic::Floor::selectBestObservedFloor(
-            p_otherMap_inout->getAllFloors(),
-            p_otherFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    semantic::Floor               *p_otherFloor = nullptr;
+    std::vector<semantic::Floor *> otherMapAllFloors{};
+    if (p_otherMap_inout->getAllFloors(otherMapAllFloors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (semantic::Floor::selectBestObservedFloor(otherMapAllFloors,
+                                                 p_otherFloor) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: selectBestObservedFloor returned a failure status "
@@ -218,9 +254,26 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
         }
         if (!transformedOtherFloorIdentity.has_value() || !isMatch)
         {
-            std::cerr << "[FloorVerify] Rejecting merge: Map#"
-                      << p_currentMap_inout->getId() << " and Map#"
-                      << p_otherMap_inout->getId()
+            unsigned long currentMapId{};
+            if (p_currentMap_inout->getId(currentMapId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            unsigned long otherMapId{};
+            if (p_otherMap_inout->getId(otherMapId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            std::cerr << "[FloorVerify] Rejecting merge: Map#" << currentMapId
+                      << " and Map#" << otherMapId
                       << " floor planes mismatch (angle="
                       << floorNormalAngle_deg
                       << " deg, offset=" << floorOffset_m << " m; limits="
@@ -230,17 +283,52 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             return;
         }
 
-        std::cout << "[FloorVerify] Map#" << p_currentMap_inout->getId()
-                  << " and Map#" << p_otherMap_inout->getId()
+        unsigned long currentMapId2{};
+        if (p_currentMap_inout->getId(currentMapId2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        unsigned long otherMapId2{};
+        if (p_otherMap_inout->getId(otherMapId2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::cout << "[FloorVerify] Map#" << currentMapId2 << " and Map#"
+                  << otherMapId2
                   << " floor planes match (angle=" << floorNormalAngle_deg
                   << " deg, offset=" << floorOffset_m
                   << " m). result=ACCEPTED committed=0" << std::endl;
     }
     else
     {
-        std::cout << "[FloorVerify] Map#" << p_currentMap_inout->getId()
-                  << " and Map#" << p_otherMap_inout->getId()
-                  << " floor verification deferred (current="
+        unsigned long currentMapId3{};
+        if (p_currentMap_inout->getId(currentMapId3) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        unsigned long otherMapId3{};
+        if (p_otherMap_inout->getId(otherMapId3) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::cout << "[FloorVerify] Map#" << currentMapId3 << " and Map#"
+                  << otherMapId3 << " floor verification deferred (current="
                   << (currentFloorIdentity.has_value() ? "valid" : "missing")
                   << ", other="
                   << (otherFloorIdentity.has_value() ? "valid" : "missing")
@@ -250,22 +338,78 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     /* Snapshot every source-owned object and preflight destination indexes
      * before changing geometry, ownership, or any externally visible ID. */
-    std::vector<KeyFrame *> importedKeyFrames =
-        p_otherMap_inout->getAllKeyFrames();
-    std::vector<MapPoint *> importedMapPoints =
-        p_otherMap_inout->getAllMapPoints();
-    std::vector<semantic::Room *> importedDetectedRooms =
-        p_otherMap_inout->getAllDetectedMapRooms();
-    std::vector<semantic::Room *> importedMarkerRooms =
-        p_otherMap_inout->getAllMarkerBasedMapRooms();
-    std::vector<geometric::Plane *> importedPlanes =
-        p_otherMap_inout->getAllPlanes();
-    std::vector<vs_graphs::core::semantic::Passage *> importedPassages =
-        p_otherMap_inout->getAllPassages();
-    std::vector<vs_graphs::core::semantic::Floor *> importedFloors =
-        p_otherMap_inout->getAllFloors();
-    std::vector<semantic::Marker *> importedMarkers =
-        p_otherMap_inout->getAllMarkers();
+    std::vector<KeyFrame *> importedKeyFrames{};
+    if (p_otherMap_inout->getAllKeyFrames(importedKeyFrames) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<MapPoint *> importedMapPoints{};
+    if (p_otherMap_inout->getAllMapPoints(importedMapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> importedDetectedRooms{};
+    if (p_otherMap_inout->getAllDetectedMapRooms(importedDetectedRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> importedMarkerRooms{};
+    if (p_otherMap_inout->getAllMarkerBasedMapRooms(importedMarkerRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkerBasedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<geometric::Plane *> importedPlanes{};
+    if (p_otherMap_inout->getAllPlanes(importedPlanes) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<vs_graphs::core::semantic::Passage *> importedPassages{};
+    if (p_otherMap_inout->getAllPassages(importedPassages) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<vs_graphs::core::semantic::Floor *> importedFloors{};
+    if (p_otherMap_inout->getAllFloors(importedFloors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Marker *> importedMarkers{};
+    if (p_otherMap_inout->getAllMarkers(importedMarkers) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkers returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     const std::set<semantic::Room *> importedDetectedRoomSet(
         importedDetectedRooms.begin(),
@@ -285,21 +429,44 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
     const auto ownerIsTransferable = [p_otherMap_inout](Map *p_ownerMap)
     { return p_ownerMap == p_otherMap_inout; };
 
-    const std::vector<KeyFrame *> destinationKeyFrames =
-        p_currentMap_inout->getAllKeyFrames();
+    std::vector<KeyFrame *> destinationKeyFrames{};
+    if (p_currentMap_inout->getAllKeyFrames(destinationKeyFrames) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     const std::set<KeyFrame *> destinationKeyFrameSet(
         destinationKeyFrames.begin(),
         destinationKeyFrames.end());
-    const std::vector<MapPoint *> destinationMapPoints =
-        p_currentMap_inout->getAllMapPoints();
+    std::vector<MapPoint *> destinationMapPoints{};
+    if (p_currentMap_inout->getAllMapPoints(destinationMapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     const std::set<MapPoint *> destinationMapPointSet(
         destinationMapPoints.begin(),
         destinationMapPoints.end());
 
     for (KeyFrame *p_keyFrame : importedKeyFrames)
     {
-        if (p_keyFrame == nullptr ||
-            !ownerIsTransferable(p_keyFrame->getMap()) ||
+        Map *p_keyFrameMap = nullptr;
+        if (!(p_keyFrame == nullptr) &&
+            p_keyFrame->getMap(p_keyFrameMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_keyFrame == nullptr || !ownerIsTransferable(p_keyFrameMap) ||
             destinationKeyFrameSet.count(p_keyFrame) > 0U)
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source "
@@ -308,8 +475,16 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             return;
         }
 
-        KeyFrame *p_indexedKeyFrame =
-            p_currentMap_inout->getKeyFrameById(p_keyFrame->id);
+        KeyFrame *p_indexedKeyFrame = nullptr;
+        if (p_currentMap_inout->getKeyFrameById(p_keyFrame->id,
+                                                p_indexedKeyFrame) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getKeyFrameById returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (p_indexedKeyFrame != nullptr && p_indexedKeyFrame != p_keyFrame)
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: KeyFrame ID "
@@ -321,8 +496,17 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     for (MapPoint *p_mapPoint : importedMapPoints)
     {
-        if (p_mapPoint == nullptr ||
-            !ownerIsTransferable(p_mapPoint->getMap()) ||
+        Map *p_mapPointMap = nullptr;
+        if (!(p_mapPoint == nullptr) &&
+            p_mapPoint->getMap(p_mapPointMap) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_mapPoint == nullptr || !ownerIsTransferable(p_mapPointMap) ||
             destinationMapPointSet.count(p_mapPoint) > 0U)
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source map "
@@ -443,23 +627,81 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
     std::vector<std::pair<semantic::Room *, int>>    roomIdAssignments;
     std::vector<std::pair<semantic::Floor *, int>>   floorIdAssignments;
 
-    if (!planImportedIds(p_currentMap_inout->getAllPlanes(),
+    /* Plan the ids of each entity kind in turn; stop at the first failure. */
+    std::vector<geometric::Plane *> currentMapAllPlanes{};
+    if (p_currentMap_inout->getAllPlanes(currentMapAllPlanes) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!planImportedIds(currentMapAllPlanes,
                          importedPlanes,
                          "plane",
-                         planeIdAssignments) ||
-        !planImportedIds(p_currentMap_inout->getAllMarkers(),
+                         planeIdAssignments))
+    {
+        return;
+    }
+    std::vector<semantic::Marker *> currentMapAllMarkers{};
+    if (p_currentMap_inout->getAllMarkers(currentMapAllMarkers) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkers returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!planImportedIds(currentMapAllMarkers,
                          importedMarkers,
                          "marker",
-                         markerIdAssignments) ||
-        !planImportedIds(p_currentMap_inout->getAllPassages(),
+                         markerIdAssignments))
+    {
+        return;
+    }
+    std::vector<vs_graphs::core::semantic::Passage *> currentMapAllPassages{};
+    if (p_currentMap_inout->getAllPassages(currentMapAllPassages) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!planImportedIds(currentMapAllPassages,
                          importedPassages,
                          "passage",
-                         passageIdAssignments) ||
-        !planImportedIds(p_currentMap_inout->getAllRooms(),
+                         passageIdAssignments))
+    {
+        return;
+    }
+    std::vector<semantic::Room *> currentMapAllRooms{};
+    if (p_currentMap_inout->getAllRooms(currentMapAllRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!planImportedIds(currentMapAllRooms,
                          importedRooms,
                          "room",
-                         roomIdAssignments) ||
-        !planImportedIds(p_currentMap_inout->getAllFloors(),
+                         roomIdAssignments))
+    {
+        return;
+    }
+    std::vector<semantic::Floor *> currentMapAllFloors2{};
+    if (p_currentMap_inout->getAllFloors(currentMapAllFloors2) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!planImportedIds(currentMapAllFloors2,
                          importedFloors,
                          "floor",
                          floorIdAssignments))
@@ -467,8 +709,15 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
         return;
     }
 
-    const std::vector<MapPoint *> importedReferenceMapPoints =
-        p_otherMap_inout->getReferenceMapPoints();
+    std::vector<MapPoint *> importedReferenceMapPoints{};
+    if (p_otherMap_inout->getReferenceMapPoints(importedReferenceMapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getReferenceMapPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     const std::vector<KeyFrame *> importedKeyFrameOrigins =
         p_otherMap_inout->keyFrameOrigins;
     KeyFrame *p_importedFirstRegionKeyFrame =
@@ -482,22 +731,71 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
         std::scoped_lock mapUpdateLocks(p_currentMap_inout->mapUpdateMutex,
                                         p_otherMap_inout->mapUpdateMutex);
 
-        p_otherMap_inout->applyScaledRotation(T_otherToCurrent_SE3f,
-                                              1.0f,
-                                              false);
+        if (p_otherMap_inout->applyScaledRotation(T_otherToCurrent_SE3f,
+                                                  1.0f,
+                                                  false) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyScaledRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (KeyFrame *p_keyFrame : importedKeyFrames)
         {
-            p_keyFrame->updateMap(p_currentMap_inout);
-            p_currentMap_inout->addKeyFrame(p_keyFrame);
-            p_otherMap_inout->eraseKeyFrame(p_keyFrame);
+            if (p_keyFrame->updateMap(p_currentMap_inout) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updateMap returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_currentMap_inout->addKeyFrame(p_keyFrame) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addKeyFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_otherMap_inout->eraseKeyFrame(p_keyFrame) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseKeyFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         for (MapPoint *p_mapPoint : importedMapPoints)
         {
-            p_mapPoint->updateMap(p_currentMap_inout);
-            p_currentMap_inout->addMapPoint(p_mapPoint);
-            p_otherMap_inout->eraseMapPoint(p_mapPoint);
+            if (p_mapPoint->updateMap(p_currentMap_inout) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updateMap returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_currentMap_inout->addMapPoint(p_mapPoint) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPoint returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_otherMap_inout->eraseMapPoint(p_mapPoint) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPoint returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         for (const auto &[p_plane, assignedId] : planeIdAssignments)
@@ -518,9 +816,30 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_currentMap_inout->addMapPlane(p_plane);
-            p_otherMap_inout->eraseRoomWallPlane(p_plane);
-            p_otherMap_inout->eraseMapPlane(p_plane);
+            if (p_currentMap_inout->addMapPlane(p_plane) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_otherMap_inout->eraseRoomWallPlane(p_plane) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseRoomWallPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_otherMap_inout->eraseMapPlane(p_plane) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         std::unordered_map<int, int> importedMarkerIdRemap;
@@ -552,8 +871,22 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_currentMap_inout->addMapMarker(p_marker);
-            p_otherMap_inout->eraseMapMarker(p_marker);
+            if (p_currentMap_inout->addMapMarker(p_marker) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapMarker returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_otherMap_inout->eraseMapMarker(p_marker) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapMarker returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         for (const auto &[p_passage, assignedId] : passageIdAssignments)
@@ -571,8 +904,15 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            semantic::Passage *p_proxy =
-                p_currentMap_inout->getPassageById(passageId);
+            semantic::Passage *p_proxy = nullptr;
+            if (p_currentMap_inout->getPassageById(passageId, p_proxy) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPassageById returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (p_proxy != nullptr &&
                 resurfaceProxyFromTransferred(p_proxy, p_passage))
             {
@@ -603,8 +943,22 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_currentMap_inout->addMapPassage(p_passage);
-            p_otherMap_inout->eraseMapPassage(p_passage);
+            if (p_currentMap_inout->addMapPassage(p_passage) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPassage returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_otherMap_inout->eraseMapPassage(p_passage) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPassage returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         for (semantic::Room *p_room : importedRooms)
@@ -688,14 +1042,46 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             }
             if (importedDetectedRoomSet.count(p_room) > 0U)
             {
-                p_currentMap_inout->addDetectedMapRoom(p_room);
+                if (p_currentMap_inout->addDetectedMapRoom(p_room) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: addDetectedMapRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
             else
             {
-                p_currentMap_inout->addCandidateMapRoom(p_room);
+                if (p_currentMap_inout->addCandidateMapRoom(p_room) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: addCandidateMapRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
-            p_otherMap_inout->eraseDetectedMapRoom(p_room);
-            p_otherMap_inout->eraseMarkerBasedMapRoom(p_room);
+            if (p_otherMap_inout->eraseDetectedMapRoom(p_room) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: eraseDetectedMapRoom returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (p_otherMap_inout->eraseMarkerBasedMapRoom(p_room) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: eraseMarkerBasedMapRoom returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
 
         for (const auto &[p_floor, assignedId] : floorIdAssignments)
@@ -716,16 +1102,46 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_currentMap_inout->addMapFloor(p_floor);
-            p_otherMap_inout->eraseMapFloor(p_floor);
+            if (p_currentMap_inout->addMapFloor(p_floor) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapFloor returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_otherMap_inout->eraseMapFloor(p_floor) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapFloor returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
-        std::vector<MapPoint *> mergedReferenceMapPoints =
-            p_currentMap_inout->getReferenceMapPoints();
+        std::vector<MapPoint *> mergedReferenceMapPoints{};
+        if (p_currentMap_inout->getReferenceMapPoints(
+                mergedReferenceMapPoints) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getReferenceMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (MapPoint *p_mapPoint : importedReferenceMapPoints)
         {
-            if (p_mapPoint != nullptr &&
-                p_mapPoint->getMap() == p_currentMap_inout &&
+            Map *p_mapPointMap2 = nullptr;
+            if ((p_mapPoint != nullptr) &&
+                p_mapPoint->getMap(p_mapPointMap2) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mapPoint != nullptr && p_mapPointMap2 == p_currentMap_inout &&
                 std::find(mergedReferenceMapPoints.begin(),
                           mergedReferenceMapPoints.end(),
                           p_mapPoint) == mergedReferenceMapPoints.end())
@@ -733,13 +1149,37 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                 mergedReferenceMapPoints.push_back(p_mapPoint);
             }
         }
-        p_currentMap_inout->setReferenceMapPoints(mergedReferenceMapPoints);
-        p_otherMap_inout->setReferenceMapPoints({});
+        if (p_currentMap_inout->setReferenceMapPoints(
+                mergedReferenceMapPoints) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setReferenceMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_otherMap_inout->setReferenceMapPoints({}) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setReferenceMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (KeyFrame *p_originKeyFrame : importedKeyFrameOrigins)
         {
+            Map *p_originKeyFrameMap = nullptr;
+            if ((p_originKeyFrame != nullptr) &&
+                p_originKeyFrame->getMap(p_originKeyFrameMap) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             if (p_originKeyFrame != nullptr &&
-                p_originKeyFrame->getMap() == p_currentMap_inout &&
+                p_originKeyFrameMap == p_currentMap_inout &&
                 std::find(p_currentMap_inout->keyFrameOrigins.begin(),
                           p_currentMap_inout->keyFrameOrigins.end(),
                           p_originKeyFrame) ==
@@ -750,26 +1190,83 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
         }
         p_otherMap_inout->keyFrameOrigins.clear();
 
+        Map *p_importedFirstRegionKeyFrameMap = nullptr;
+        if ((p_currentMap_inout->p_firstRegionKeyFrame == nullptr &&
+             p_importedFirstRegionKeyFrame != nullptr) &&
+            p_importedFirstRegionKeyFrame->getMap(
+                p_importedFirstRegionKeyFrameMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         if (p_currentMap_inout->p_firstRegionKeyFrame == nullptr &&
             p_importedFirstRegionKeyFrame != nullptr &&
-            p_importedFirstRegionKeyFrame->getMap() == p_currentMap_inout)
+            p_importedFirstRegionKeyFrameMap == p_currentMap_inout)
         {
             p_currentMap_inout->p_firstRegionKeyFrame =
                 p_importedFirstRegionKeyFrame;
         }
         p_otherMap_inout->p_firstRegionKeyFrame = nullptr;
 
-        p_currentMap_inout->setSkeletonClusterPoints({});
-        p_currentMap_inout->setSkeletonEdges({});
-        p_otherMap_inout->setSkeletonClusterPoints({});
-        p_otherMap_inout->setSkeletonEdges({});
-        p_otherMap_inout->clearTransferredEntityIndexes();
+        if (p_currentMap_inout->setSkeletonClusterPoints({}) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: setSkeletonClusterPoints returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (p_currentMap_inout->setSkeletonEdges({}) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setSkeletonEdges returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_otherMap_inout->setSkeletonClusterPoints({}) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: setSkeletonClusterPoints returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (p_otherMap_inout->setSkeletonEdges({}) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setSkeletonEdges returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_otherMap_inout->clearTransferredEntityIndexes() !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: clearTransferredEntityIndexes returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* Fuse duplicate floors: keep only one floor per map (system supports
          * single-floor semantics). Reassign rooms from duplicate floors to the
          * primary floor and erase the extras. */
-        std::vector<semantic::Floor *> allFloors =
-            p_currentMap_inout->getAllFloors();
+        std::vector<semantic::Floor *> allFloors{};
+        if (p_currentMap_inout->getAllFloors(allFloors) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllFloors returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (allFloors.size() > 1)
         {
             semantic::Floor *p_keeperFloor = nullptr;
@@ -829,7 +1326,15 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                     }
                 }
 
-                p_currentMap_inout->eraseMapFloor(p_duplicateFloor);
+                if (p_currentMap_inout->eraseMapFloor(p_duplicateFloor) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseMapFloor returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
                 int duplicateFloorId{};
                 if (p_duplicateFloor->getId(duplicateFloorId) !=
                     semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
@@ -869,10 +1374,19 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                 __func__);
         }
 
-        semantic::Floor *p_mergedFloor = nullptr;
-        if (semantic::Floor::selectBestObservedFloor(
-                p_currentMap_inout->getAllFloors(),
-                p_mergedFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+        semantic::Floor               *p_mergedFloor = nullptr;
+        std::vector<semantic::Floor *> currentMapAllFloors3{};
+        if (p_currentMap_inout->getAllFloors(currentMapAllFloors3) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllFloors returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (semantic::Floor::selectBestObservedFloor(currentMapAllFloors3,
+                                                     p_mergedFloor) !=
+            semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
                 rclcpp::get_logger("vs_graphs"),
@@ -882,8 +1396,18 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
         }
         if (p_mergedFloor != nullptr)
         {
-            for (semantic::Room *p_room :
-                 p_currentMap_inout->getAllDetectedMapRooms())
+            std::vector<semantic::Room *> currentMapAllDetectedMapRooms{};
+            if (p_currentMap_inout->getAllDetectedMapRooms(
+                    currentMapAllDetectedMapRooms) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getAllDetectedMapRooms returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            for (semantic::Room *p_room : currentMapAllDetectedMapRooms)
             {
                 bool roomIsBad2{};
                 if ((p_room != nullptr) &&
@@ -910,7 +1434,16 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             }
         }
 
-        for (semantic::Room *p_room : p_currentMap_inout->getAllRooms())
+        std::vector<semantic::Room *> currentMapAllRooms2{};
+        if (p_currentMap_inout->getAllRooms(currentMapAllRooms2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllRooms returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (semantic::Room *p_room : currentMapAllRooms2)
         {
             bool roomIsBad3{};
             if (!(p_room == nullptr) &&
@@ -950,7 +1483,15 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                 }
                 if (p_wall != nullptr && !wallIsBad)
                 {
-                    p_currentMap_inout->addRoomWallPlane(p_wall);
+                    if (p_currentMap_inout->addRoomWallPlane(p_wall) !=
+                        MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addRoomWallPlane returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                 }
             }
         }
@@ -969,17 +1510,56 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
     setMapBad(p_otherMap_inout);
     changeMap(p_currentMap_inout);
 
-    std::cout << "[Atlas::MergeMapPair] Merged map "
-              << p_otherMap_inout->getId() << " into map "
-              << p_currentMap_inout->getId() << " fused "
+    unsigned long otherMapId4{};
+    if (p_otherMap_inout->getId(otherMapId4) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    unsigned long currentMapId4{};
+    if (p_currentMap_inout->getId(currentMapId4) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    std::cout << "[Atlas::MergeMapPair] Merged map " << otherMapId4
+              << " into map " << currentMapId4 << " fused "
               << importedRooms.size() << " rooms into current map."
               << std::endl;
-    std::cout << "[FloorVerify] Map#" << p_currentMap_inout->getId()
-              << " and Map#" << p_otherMap_inout->getId()
-              << " result=ACCEPTED committed=1" << std::endl;
+    unsigned long currentMapId5{};
+    if (p_currentMap_inout->getId(currentMapId5) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    unsigned long otherMapId5{};
+    if (p_otherMap_inout->getId(otherMapId5) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    std::cout << "[FloorVerify] Map#" << currentMapId5 << " and Map#"
+              << otherMapId5 << " result=ACCEPTED committed=1" << std::endl;
 
     /* Notify downstream consumers that the current map changed. */
-    p_currentMap_inout->increaseChangeIndex();
+    if (p_currentMap_inout->increaseChangeIndex() !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: increaseChangeIndex returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

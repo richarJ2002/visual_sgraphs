@@ -37,11 +37,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addMapFloor(semantic::Floor *p_floor_inout)
+MapStatus Map::addMapFloor(semantic::Floor *p_floor_inout)
 {
     if (p_floor_inout == nullptr)
     {
-        return;
+        return MapStatus::MAP_STATUS_SUCCESS;
     }
 
     unique_lock<mutex> lock(mapMutex);
@@ -143,6 +143,8 @@ void Map::addMapFloor(semantic::Floor *p_floor_inout)
                      __func__);
     }
     floorIndex.insert_or_assign(floor_inoutId6, p_floor_inout);
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

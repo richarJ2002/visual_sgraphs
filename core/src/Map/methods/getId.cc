@@ -34,9 +34,10 @@ namespace vs_graphs
 namespace core
 {
 
-long unsigned int Map::getId()
+MapStatus Map::getId(unsigned long &id_out)
 {
-    return id;
+    id_out = id;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

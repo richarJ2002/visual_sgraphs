@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,8 +34,17 @@ namespace core
 semantic::Marker *Atlas::getMarkerById(int markerId_in)
 {
     unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap != nullptr ? p_activeMap->getMarkerById(markerId_in)
-                                  : nullptr;
+    semantic::Marker  *p_activeMapMarkerById = nullptr;
+    if ((p_activeMap != nullptr) &&
+        p_activeMap->getMarkerById(markerId_in, p_activeMapMarkerById) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMarkerById returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return p_activeMap != nullptr ? p_activeMapMarkerById : nullptr;
 }
 
 } // namespace core

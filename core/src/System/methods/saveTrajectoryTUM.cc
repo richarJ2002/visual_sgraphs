@@ -27,6 +27,7 @@
 #include "Tracking.h"
 
 #include <iomanip>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -49,7 +50,15 @@ void System::saveTrajectoryTUM(const string &filename_in)
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
-    Sophus::SE3f Two = keyFrames[0]->getPoseInverse();
+    Sophus::SE3f Two{};
+    if (keyFrames[0]->getPoseInverse(Two) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPoseInverse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     ofstream f;
     f.open(filename_in.c_str());
@@ -81,13 +90,44 @@ void System::saveTrajectoryTUM(const string &filename_in)
 
         // If the reference keyframe was culled, traverse the spanning tree to
         // get a suitable keyframe.
-        while (p_keyFrame->isBad())
+        for (;;)
         {
-            Trw        = Trw * p_keyFrame->tcp;
-            p_keyFrame = p_keyFrame->getParent();
+            bool keyFrameIsBad{};
+            if (p_keyFrame->isBad(keyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!(keyFrameIsBad))
+            {
+                break;
+            }
+            Trw                        = Trw * p_keyFrame->tcp;
+            KeyFrame *p_keyFrameParent = nullptr;
+            if (p_keyFrame->getParent(p_keyFrameParent) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParent returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            p_keyFrame = p_keyFrameParent;
         }
 
-        Trw = Trw * p_keyFrame->getPose() * Two;
+        Sophus::SE3f keyFramePose{};
+        if (p_keyFrame->getPose(keyFramePose) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Trw = Trw * keyFramePose * Two;
 
         Sophus::SE3f Tcw = (*lit) * Trw;
         Sophus::SE3f Twc = Tcw.inverse();

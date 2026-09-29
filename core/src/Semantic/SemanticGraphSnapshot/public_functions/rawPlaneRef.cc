@@ -90,7 +90,15 @@ SemanticGraphSnapshotStatus rawPlaneRef(geometric::Plane *p_plane_in,
     }
     if (p_map != nullptr)
     {
-        reference.mapId = p_map->getId();
+        unsigned long mapId2{};
+        if (p_map->getId(mapId2) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        reference.mapId = mapId2;
         if (reference.planeType == geometric::Plane::PlaneVariant::WALL)
         {
             EntityKey key{};
@@ -103,7 +111,15 @@ SemanticGraphSnapshotStatus rawPlaneRef(geometric::Plane *p_plane_in,
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            if (makeKey(EntityKind::WALL, p_map->getId(), planeGetId2, key) !=
+            unsigned long mapId3{};
+            if (p_map->getId(mapId3) != MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (makeKey(EntityKind::WALL, mapId3, planeGetId2, key) !=
                 SemanticGraphSnapshotStatus::
                     SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
             {

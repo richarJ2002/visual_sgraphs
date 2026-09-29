@@ -25,6 +25,7 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -37,7 +38,23 @@ void Tracking::updateLastFrame()
     KeyFrame    *p_reference = lastFrame.p_referenceKeyFrame;
     Sophus::SE3f Tlr =
         relativeFramePoses.empty() ? Sophus::SE3f() : relativeFramePoses.back();
-    lastFrame.setPose(Tlr * p_reference->getPose());
+    Sophus::SE3f referencePose{};
+    if (p_reference->getPose(referencePose) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (lastFrame.setPose(Tlr * referencePose) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     if (lastKeyFrameId == lastFrame.id || sensor == System::MONOCULAR ||
         sensor == System::IMU_MONOCULAR || !isTrackingOnlyMode)
@@ -78,9 +95,26 @@ void Tracking::updateLastFrame()
         MapPoint *p_mapPoint = lastFrame.mapPoints[featureIndex];
 
         if (!p_mapPoint)
+        {
             shouldCreateNewPoint = true;
-        else if (p_mapPoint->getObservationCount() < 1)
-            shouldCreateNewPoint = true;
+        }
+        else
+        {
+            int mapPointObservationCount{};
+            if (p_mapPoint->getObservationCount(mapPointObservationCount) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getObservationCount returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (mapPointObservationCount < 1)
+            {
+                shouldCreateNewPoint = true;
+            }
+        }
 
         if (shouldCreateNewPoint)
         {
@@ -88,11 +122,33 @@ void Tracking::updateLastFrame()
 
             if (lastFrame.leftKeyPointCount == -1)
             {
-                lastFrame.unprojectStereo(featureIndex, x3D);
+                bool lastFrameIsUnprojected{};
+                if (lastFrame.unprojectStereo(featureIndex,
+                                              x3D,
+                                              lastFrameIsUnprojected) !=
+                    FrameStatus::FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: unprojectStereo returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
             else
             {
-                x3D = lastFrame.unprojectStereoFishEye(featureIndex);
+                Eigen::Vector3f lastFrameStereoFishEye{};
+                if (lastFrame.unprojectStereoFishEye(featureIndex,
+                                                     lastFrameStereoFishEye) !=
+                    FrameStatus::FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: unprojectStereoFishEye returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                x3D = lastFrameStereoFishEye;
             }
 
             MapPoint *p_newMapPoint           = new MapPoint(x3D,

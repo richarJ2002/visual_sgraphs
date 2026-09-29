@@ -24,6 +24,7 @@
  */
 
 #include "LoopClosing.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -37,17 +38,42 @@ void LoopClosing::checkObservations(set<KeyFrame *> &keyFramesMap1_in,
     for (KeyFrame *p_keyFrameInMap1 : keyFramesMap1_in)
     {
         map<KeyFrame *, int> matchedMapPointCounts;
-        set<MapPoint *>      mapPoints = p_keyFrameInMap1->getMapPoints();
+        std::set<MapPoint *> mapPoints{};
+        if (p_keyFrameInMap1->getMapPoints(mapPoints) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPoints returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (MapPoint *p_sharedMapPoint : mapPoints)
         {
-            if (!p_sharedMapPoint || p_sharedMapPoint->isBad())
+            bool sharedMapPointIsBad{};
+            if (!(!p_sharedMapPoint) &&
+                p_sharedMapPoint->isBad(sharedMapPointIsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!p_sharedMapPoint || sharedMapPointIsBad)
             {
                 continue;
             }
 
-            map<KeyFrame *, tuple<int, int>> mapPointObservations =
-                p_sharedMapPoint->getObservations();
+            std::map<KeyFrame *, std::tuple<int, int>> mapPointObservations{};
+            if (p_sharedMapPoint->getObservations(mapPointObservations) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getObservations returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             for (KeyFrame *p_keyFrameInMap2 : keyFramesMap2_in)
             {
                 if (mapPointObservations.find(p_keyFrameInMap2) !=

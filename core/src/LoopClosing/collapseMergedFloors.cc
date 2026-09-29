@@ -38,8 +38,15 @@ void collapseMergedFloors(Map *p_survivingMap_inout)
         return;
     }
 
-    const std::vector<semantic::Floor *> allFloors =
-        p_survivingMap_inout->getAllFloors();
+    std::vector<semantic::Floor *> allFloors{};
+    if (p_survivingMap_inout->getAllFloors(allFloors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (allFloors.size() <= 1U)
     {
         return;
@@ -101,7 +108,14 @@ void collapseMergedFloors(Map *p_survivingMap_inout)
             }
         }
 
-        p_survivingMap_inout->eraseMapFloor(p_duplicateFloor);
+        if (p_survivingMap_inout->eraseMapFloor(p_duplicateFloor) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseMapFloor returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         int duplicateFloorId{};
         if (p_duplicateFloor->getId(duplicateFloorId) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
@@ -127,8 +141,16 @@ void collapseMergedFloors(Map *p_survivingMap_inout)
                   << std::endl;
     }
 
-    for (semantic::Room *p_room :
-         p_survivingMap_inout->getAllDetectedMapRooms())
+    std::vector<semantic::Room *> survivingMapAllDetectedMapRooms{};
+    if (p_survivingMap_inout->getAllDetectedMapRooms(
+            survivingMapAllDetectedMapRooms) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Room *p_room : survivingMapAllDetectedMapRooms)
     {
         bool roomIsBad2{};
         if ((p_room != nullptr) &&

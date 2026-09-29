@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addDetectedMapRoom(semantic::Room *p_room_in)
+MapStatus Map::addDetectedMapRoom(semantic::Room *p_room_in)
 {
     unique_lock<mutex> lock(mapMutex);
     detectedRooms.insert(p_room_in);
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

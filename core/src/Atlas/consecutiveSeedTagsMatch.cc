@@ -45,9 +45,25 @@ bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in)
     {
         return false;
     }
-    semantic::Room *p_oldFinalRoom = p_oldMap_in->getFinalRoom();
-    semantic::Room *p_newStartRoom = p_currentMap_in->getStartingRoom();
-    bool            oldFinalRoomHasRoomTag{};
+    semantic::Room *p_oldFinalRoom = nullptr;
+    if (p_oldMap_in->getFinalRoom(p_oldFinalRoom) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFinalRoom returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    semantic::Room *p_newStartRoom = nullptr;
+    if (p_currentMap_in->getStartingRoom(p_newStartRoom) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getStartingRoom returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool oldFinalRoomHasRoomTag{};
     if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr) &&
         p_oldFinalRoom->hasRoomTag(oldFinalRoomHasRoomTag) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)

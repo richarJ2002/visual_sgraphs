@@ -86,9 +86,11 @@ TEST(RoomContextPersist, NullCurrentMapExportIsNoOp)
 
 TEST(RoomContextPersist, EmptyRoomCollectionExportIsNoOp)
 {
-    Atlas                   atlas(0);
-    Map                    *p_map = atlas.getCurrentMap();
-    const long unsigned int mapId = p_map->getId();
+    Atlas         atlas(0);
+    Map          *p_map = atlas.getCurrentMap();
+    unsigned long mapIdValue{};
+    ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
+    const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
 
     atlas.exportRoomContextFromCurrentMap();
 
@@ -103,7 +105,7 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
 
     geometric::Plane wall;
     makeRefitWallPlane(wall, 1, p_map);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Room room;
     ASSERT_EQ((room.setId(7)),
@@ -119,9 +121,12 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
     ASSERT_EQ(
         (room.setBoundaryStatus(semantic::Room::BoundaryStatus::INCOMPLETE)),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
-    const long unsigned int mapId = p_map->getId();
+    unsigned long mapIdValue{};
+    ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
+    const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
     atlas.exportRoomContextFromCurrentMap();
 
     const auto history = atlas.copyRoomContextHistory();
@@ -172,14 +177,14 @@ TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
 
     geometric::Plane wall;
     makeRefitWallPlane(wall, 1, p_map);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Floor floor;
     ASSERT_EQ((floor.setId(42)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     ASSERT_EQ((floor.setMap(p_map)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Room room;
     ASSERT_EQ((room.setId(8)),
@@ -192,9 +197,12 @@ TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setFloor(&floor)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
-    const long unsigned int mapId = p_map->getId();
+    unsigned long mapIdValue{};
+    ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
+    const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
     atlas.exportRoomContextFromCurrentMap();
 
     const auto history = atlas.copyRoomContextHistory();
@@ -211,7 +219,7 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
 
     geometric::Plane refitWall;
     makeRefitWallPlane(refitWall, 1, p_map);
-    p_map->addMapPlane(&refitWall);
+    ASSERT_EQ((p_map->addMapPlane(&refitWall)), MapStatus::MAP_STATUS_SUCCESS);
 
     geometric::Plane
         unrefitWall; // Never assigned a cloud: bounds stay at the
@@ -225,12 +233,13 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
     ASSERT_EQ((unrefitWall.setGlobalEquation(
                   g2o::Plane3D(Eigen::Vector4d(0.0, 1.0, 0.0, 0.0)))),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    p_map->addMapPlane(&unrefitWall);
+    ASSERT_EQ((p_map->addMapPlane(&unrefitWall)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     geometric::Plane badWall;
     makeRefitWallPlane(badWall, 3, p_map);
     ASSERT_EQ((badWall.setBad()), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    p_map->addMapPlane(&badWall);
+    ASSERT_EQ((p_map->addMapPlane(&badWall)), MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Room room;
     ASSERT_EQ((room.setId(9)),
@@ -245,9 +254,12 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setWalls(&badWall)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
-    const long unsigned int mapId = p_map->getId();
+    unsigned long mapIdValue{};
+    ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
+    const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
     atlas.exportRoomContextFromCurrentMap();
 
     const auto history = atlas.copyRoomContextHistory();
@@ -278,18 +290,21 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((knownRoom.setMap(p_map)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&knownRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&knownRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Room farRoom;
     ASSERT_EQ((farRoom.setId(21)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((farRoom.setMap(p_map)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&farRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&farRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     geometric::Plane associatedWall;
     makeRefitWallPlane(associatedWall, 30, p_map);
-    p_map->addMapPlane(&associatedWall);
+    ASSERT_EQ((p_map->addMapPlane(&associatedWall)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* semantic::Passage A: fully specified -- valid aperture, known far-side
      * room, known-side direction, mixed traversal evidence, one associated
@@ -331,7 +346,8 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     ASSERT_EQ((fullPassage.addTraversalObservation(
                   semantic::Passage::TraversalDirection::UNKNOWN)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_map->addMapPassage(&fullPassage);
+    ASSERT_EQ((p_map->addMapPassage(&fullPassage)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((knownRoom.setDoorways(&fullPassage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -353,7 +369,8 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     ASSERT_EQ((sparsePassage.setGlobalEquation(
                   g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -2.0)))),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_map->addMapPassage(&sparsePassage);
+    ASSERT_EQ((p_map->addMapPassage(&sparsePassage)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((knownRoom.setDoorways(&sparsePassage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -369,11 +386,14 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((nonFinitePassage.setCentroid(Eigen::Vector3d(3.0, 1.0, 1.0))),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_map->addMapPassage(&nonFinitePassage);
+    ASSERT_EQ((p_map->addMapPassage(&nonFinitePassage)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((knownRoom.setDoorways(&nonFinitePassage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const long unsigned int mapId = p_map->getId();
+    unsigned long mapIdValue{};
+    ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
+    const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
     atlas.exportRoomContextFromCurrentMap();
 
     const auto history = atlas.copyRoomContextHistory();
@@ -448,14 +468,15 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
     ASSERT_EQ((badWall.setMap(p_map)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ((badWall.setBad()), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    p_map->addMapPlane(&badWall);
+    ASSERT_EQ((p_map->addMapPlane(&badWall)), MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Passage defaultPassage;
     ASSERT_EQ((defaultPassage.setId(50)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((defaultPassage.setMap(p_map)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_map->addMapPassage(&defaultPassage);
+    ASSERT_EQ((p_map->addMapPassage(&defaultPassage)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Room room;
     ASSERT_EQ((room.setId(30)),
@@ -466,9 +487,12 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setDoorways(&defaultPassage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
-    const long unsigned int mapId = p_map->getId();
+    unsigned long mapIdValue{};
+    ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
+    const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
     EXPECT_NO_THROW(atlas.exportRoomContextFromCurrentMap());
 
     const auto history = atlas.copyRoomContextHistory();
@@ -490,10 +514,15 @@ TEST(RoomContextPersist, ClearMapBumpsRevisionGeneration)
     Atlas atlas(0);
     Map  *p_map = atlas.getCurrentMap();
 
-    const int changeIndexBefore = p_map->getLastBigChangeIndex();
+    int changeIndexBefore{};
+    ASSERT_EQ((p_map->getLastBigChangeIndex(changeIndexBefore)),
+              MapStatus::MAP_STATUS_SUCCESS);
     atlas.clearMap();
 
-    EXPECT_EQ(p_map->getLastBigChangeIndex(), changeIndexBefore + 1);
+    int lastBigChangeIndex{};
+    ASSERT_EQ((p_map->getLastBigChangeIndex(lastBigChangeIndex)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(lastBigChangeIndex, changeIndexBefore + 1);
 }
 
 TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
@@ -510,7 +539,8 @@ TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((visitedRoom.setPreviouslyVisited(true)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_oldMap->addDetectedMapRoom(&visitedRoom);
+    ASSERT_EQ((p_oldMap->addDetectedMapRoom(&visitedRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Room freshRoom;
     ASSERT_EQ((freshRoom.setId(6)),
@@ -519,9 +549,13 @@ TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((freshRoom.setCentroid(Eigen::Vector3d(2.0, 2.0, 2.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_oldMap->addDetectedMapRoom(&freshRoom);
+    ASSERT_EQ((p_oldMap->addDetectedMapRoom(&freshRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
-    const long unsigned int oldMapId = p_oldMap->getId();
+    unsigned long oldMapIdValue{};
+    ASSERT_EQ((p_oldMap->getId(oldMapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
+    const long unsigned int oldMapId =
+        static_cast<long unsigned int>(oldMapIdValue);
     atlas.createNewMap();
 
     const auto history = atlas.copyRoomContextHistory();
@@ -554,7 +588,7 @@ TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
 
     geometric::Plane wall;
     makeRefitWallPlane(wall, 1, p_oldMap);
-    p_oldMap->addMapPlane(&wall);
+    ASSERT_EQ((p_oldMap->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Room room;
     ASSERT_EQ((room.setId(5)),
@@ -565,9 +599,13 @@ TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setWalls(&wall)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_oldMap->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_oldMap->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
-    const long unsigned int oldMapId = p_oldMap->getId();
+    unsigned long oldMapIdValue{};
+    ASSERT_EQ((p_oldMap->getId(oldMapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
+    const long unsigned int oldMapId =
+        static_cast<long unsigned int>(oldMapIdValue);
 
     /* Genuine tracking-loss/new-map boundary: Tracking.cc calls
      * Atlas::CreateNewMap() directly; it internally exports the outgoing
@@ -586,7 +624,9 @@ TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
 
     /* Map identity is carried by the history container key alone; no
      * separate snapshot-level mapId is introduced. */
-    EXPECT_EQ(history.count(p_newMap->getId()), 0U);
+    unsigned long id{};
+    ASSERT_EQ((p_newMap->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(history.count(id), 0U);
 }
 
 TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
@@ -599,7 +639,8 @@ TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
 
         geometric::Plane wall;
         makeRefitWallPlane(wall, 1, p_oldMap);
-        p_oldMap->addMapPlane(&wall);
+        ASSERT_EQ((p_oldMap->addMapPlane(&wall)),
+                  MapStatus::MAP_STATUS_SUCCESS);
 
         semantic::Room room;
         ASSERT_EQ((room.setId(static_cast<int>(iteration))),
@@ -610,9 +651,14 @@ TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
         ASSERT_EQ((room.setWalls(&wall)),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-        p_oldMap->addDetectedMapRoom(&room);
+        ASSERT_EQ((p_oldMap->addDetectedMapRoom(&room)),
+                  MapStatus::MAP_STATUS_SUCCESS);
 
-        const long unsigned int oldMapId = p_oldMap->getId();
+        unsigned long oldMapIdValue{};
+        ASSERT_EQ((p_oldMap->getId(oldMapIdValue)),
+                  MapStatus::MAP_STATUS_SUCCESS);
+        const long unsigned int oldMapId =
+            static_cast<long unsigned int>(oldMapIdValue);
         atlas.createNewMap();
 
         const auto history = atlas.copyRoomContextHistory();
@@ -677,7 +723,8 @@ TEST(RoomContextPersist,
 
         auto p_wall = std::make_unique<geometric::Plane>();
         makeRefitWallPlane(*p_wall, static_cast<int>(iteration) + 1, p_map);
-        p_map->addMapPlane(p_wall.get());
+        ASSERT_EQ((p_map->addMapPlane(p_wall.get())),
+                  MapStatus::MAP_STATUS_SUCCESS);
 
         auto p_room = std::make_unique<semantic::Room>();
         ASSERT_EQ((p_room->setId(static_cast<int>(iteration))),
@@ -688,7 +735,8 @@ TEST(RoomContextPersist,
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
         ASSERT_EQ((p_room->setWalls(p_wall.get())),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-        p_map->addDetectedMapRoom(p_room.get());
+        ASSERT_EQ((p_map->addDetectedMapRoom(p_room.get())),
+                  MapStatus::MAP_STATUS_SUCCESS);
 
         walls.push_back(std::move(p_wall));
         rooms.push_back(std::move(p_room));

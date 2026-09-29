@@ -34,9 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setStoredMap()
+MapStatus Map::setStoredMap()
 {
     isMapInUse = false;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

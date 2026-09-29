@@ -29,16 +29,17 @@
 #include "ORBmatcher.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void MapPoint::replace(MapPoint *p_mapPoint_inout)
+MapPointStatus MapPoint::replace(MapPoint *p_mapPoint_inout)
 {
     if (p_mapPoint_inout->id == this->id)
-        return;
+        return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 
     int                              nvisible, nfound;
     map<KeyFrame *, tuple<int, int>> observation;
@@ -64,36 +65,124 @@ void MapPoint::replace(MapPoint *p_mapPoint_inout)
         tuple<int, int> indexes = mit->second;
         int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
 
-        if (!p_mapPoint_inout->isInKeyFrame(p_keyFrame))
+        bool mapPointIsInKeyFrame{};
+        if (p_mapPoint_inout->isInKeyFrame(p_keyFrame, mapPointIsInKeyFrame) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isInKeyFrame returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!mapPointIsInKeyFrame)
         {
             if (leftIndex != -1)
             {
-                p_keyFrame->replaceMapPointMatch(leftIndex, p_mapPoint_inout);
-                p_mapPoint_inout->addObservation(p_keyFrame, leftIndex);
+                if (p_keyFrame->replaceMapPointMatch(leftIndex,
+                                                     p_mapPoint_inout) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: replaceMapPointMatch returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_mapPoint_inout->addObservation(p_keyFrame, leftIndex) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: addObservation returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
             if (rightIndex != -1)
             {
-                p_keyFrame->replaceMapPointMatch(rightIndex, p_mapPoint_inout);
-                p_mapPoint_inout->addObservation(p_keyFrame, rightIndex);
+                if (p_keyFrame->replaceMapPointMatch(rightIndex,
+                                                     p_mapPoint_inout) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: replaceMapPointMatch returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_mapPoint_inout->addObservation(p_keyFrame, rightIndex) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: addObservation returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
         else
         {
             if (leftIndex != -1)
             {
-                p_keyFrame->eraseMapPointMatch(leftIndex);
+                if (p_keyFrame->eraseMapPointMatch(leftIndex) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseMapPointMatch returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
             if (rightIndex != -1)
             {
-                p_keyFrame->eraseMapPointMatch(rightIndex);
+                if (p_keyFrame->eraseMapPointMatch(rightIndex) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseMapPointMatch returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
     }
-    p_mapPoint_inout->increaseFound(nfound);
-    p_mapPoint_inout->increaseVisible(nvisible);
-    p_mapPoint_inout->computeDistinctiveDescriptors();
+    if (p_mapPoint_inout->increaseFound(nfound) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: increaseFound returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_mapPoint_inout->increaseVisible(nvisible) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: increaseVisible returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_mapPoint_inout->computeDistinctiveDescriptors() !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeDistinctiveDescriptors returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    p_map->eraseMapPoint(this);
+    if (p_map->eraseMapPoint(this) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: eraseMapPoint returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

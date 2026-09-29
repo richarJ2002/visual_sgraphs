@@ -24,6 +24,7 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -37,16 +38,41 @@ bool System::saveMapPointsAsPCD(const string &filename_in)
         // make a pointcloud out of all map points
         pcl::PointCloud<pcl::PointXYZ>::Ptr p_cloud(
             new pcl::PointCloud<pcl::PointXYZ>);
-        vector<MapPoint *> mapPoints =
-            p_atlas->getCurrentMap()->getAllMapPoints();
+        std::vector<MapPoint *> mapPoints{};
+        if (p_atlas->getCurrentMap()->getAllMapPoints(mapPoints) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (size_t mapPointIndex = 0; mapPointIndex < mapPoints.size();
              mapPointIndex++)
         {
             MapPoint *p_mapPoint = mapPoints[mapPointIndex];
-            if (p_mapPoint->isBad())
+            bool      mapPointIsBad{};
+            if (p_mapPoint->isBad(mapPointIsBad) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mapPointIsBad)
                 continue;
 
-            Eigen::Vector3d P3Dw = p_mapPoint->getWorldPos().cast<double>();
+            Eigen::Vector3f mapPointWorldPos{};
+            if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Eigen::Vector3d P3Dw = mapPointWorldPos.cast<double>();
             pcl::PointXYZ   point;
             point.x = P3Dw.x();
             point.y = P3Dw.y();

@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -43,7 +44,14 @@ void Atlas::setSkeletonEdges(
     }
 
     /* Store the connected edges in the active map */
-    p_activeMap->setSkeletonEdges(newSkeletonEdges_in);
+    if (p_activeMap->setSkeletonEdges(newSkeletonEdges_in) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setSkeletonEdges returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

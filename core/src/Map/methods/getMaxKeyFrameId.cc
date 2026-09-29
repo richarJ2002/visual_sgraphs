@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-long unsigned int Map::getMaxKeyFrameId()
+MapStatus Map::getMaxKeyFrameId(unsigned long &maxKeyFrameId_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return maxKeyFrameId;
+    maxKeyFrameId_out = maxKeyFrameId;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

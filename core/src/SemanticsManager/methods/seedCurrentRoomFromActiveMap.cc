@@ -37,7 +37,14 @@ void SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
         return;
     }
 
-    const std::vector<semantic::Room *> rooms = p_activeMap_in->getAllRooms();
+    std::vector<semantic::Room *> rooms{};
+    if (p_activeMap_in->getAllRooms(rooms) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     for (semantic::Room *p_room : rooms)
     {
         bool roomIsBad{};

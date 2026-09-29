@@ -417,10 +417,30 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
             {
                 static_cast<void>(observation);
 
-                if (p_keyFrame != nullptr && !p_keyFrame->isBad())
+                bool keyFrameIsBad{};
+                if ((p_keyFrame != nullptr) &&
+                    p_keyFrame->isBad(keyFrameIsBad) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                 {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_keyFrame != nullptr && !keyFrameIsBad)
+                {
+                    Eigen::Vector3f keyFrameCameraCenter{};
+                    if (p_keyFrame->getCameraCenter(keyFrameCameraCenter) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCameraCenter returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     const Eigen::Vector3d cameraCenter_World_m =
-                        p_keyFrame->getCameraCenter().cast<double>();
+                        keyFrameCameraCenter.cast<double>();
 
                     if (cameraCenter_World_m.allFinite())
                     {

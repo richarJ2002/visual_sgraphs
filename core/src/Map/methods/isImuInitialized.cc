@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool Map::isImuInitialized()
+MapStatus Map::isImuInitialized(bool &isImuInitialized_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return hasImuInitialization;
+    isImuInitialized_out = hasImuInitialization;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

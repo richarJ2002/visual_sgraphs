@@ -35,9 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<MapPoint *> KeyFrame::getCurrentFrameMapPoints() const
+KeyFrameStatus KeyFrame::getCurrentFrameMapPoints(
+    std::vector<MapPoint *> &getCurrentFrameMapPoints_out) const
 {
-    return currentFrameMapPoints;
+    getCurrentFrameMapPoints_out = currentFrameMapPoints;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

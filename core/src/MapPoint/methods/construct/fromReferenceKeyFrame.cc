@@ -29,6 +29,7 @@
 #include "ORBmatcher.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -52,7 +53,6 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
     correctedByKeyFrameId(0),
     correctedReferenceKeyFrameId(0),
     baGlobalKeyFrameId(0),
-    originMapId(p_map_in->getId()),
     p_referenceKeyFrame(p_referenceKeyFrame_in),
     visibleCount(1),
     foundCount(1),
@@ -62,7 +62,25 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
     maxDistance(0),
     p_map(p_map_in)
 {
-    setWorldPos(Pos_in);
+    /* Assigned here, not in the initialiser list, so the status of each
+     * getter can be checked. */
+    unsigned long mapId{};
+    if (p_map_in->getId(mapId) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    originMapId = mapId;
+
+    if (setWorldPos(Pos_in) != MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setWorldPos returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     normalVector.setZero();
 

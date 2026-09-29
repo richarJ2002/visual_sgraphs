@@ -53,7 +53,15 @@ bool LoopClosing::detectCommonRegionsFromBoW(
     int projectionMatchCount    = 50;
     int projectionOptMatchCount = 80;
 
-    set<KeyFrame *> connectedKeyFrames = p_currentKF->getConnectedKeyFrames();
+    std::set<KeyFrame *> connectedKeyFrames{};
+    if (p_currentKF->getConnectedKeyFrames(connectedKeyFrames) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getConnectedKeyFrames returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     int countCovisibleCount = 10;
 
@@ -78,13 +86,31 @@ bool LoopClosing::detectCommonRegionsFromBoW(
     // Verbose::VERBOSITY_DEBUG);
     for (KeyFrame *p_keyFrame : bowCandidates_in)
     {
-        if (!p_keyFrame || p_keyFrame->isBad())
+        bool keyFrameIsBad{};
+        if (!(!p_keyFrame) && p_keyFrame->isBad(keyFrameIsBad) !=
+                                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_keyFrame || keyFrameIsBad)
             continue;
 
         // std::cout << "KF candidate: " << pKFi->id << std::endl;
         // Current KF against KF with covisibles version
-        std::vector<KeyFrame *> covisibleKeyFrames =
-            p_keyFrame->getBestCovisibilityKeyFrames(countCovisibleCount);
+        std::vector<KeyFrame *> covisibleKeyFrames{};
+        if (p_keyFrame->getBestCovisibilityKeyFrames(countCovisibleCount,
+                                                     covisibleKeyFrames) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getBestCovisibilityKeyFrames returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (covisibleKeyFrames.empty())
         {
             // std::cout << "Covisible list empty" << std::endl;
@@ -126,11 +152,29 @@ bool LoopClosing::detectCommonRegionsFromBoW(
         KeyFrame *p_mostBowMatchesKeyFrame = p_keyFrame;
         int       mostBowCountMatchCount   = 0;
 
+        std::vector<MapPoint *> currentKFMapPointMatches{};
+        if (p_currentKF->getMapPointMatches(currentKFMapPointMatches) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPointMatches returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         std::vector<MapPoint *> matchedPoints =
-            std::vector<MapPoint *>(p_currentKF->getMapPointMatches().size(),
+            std::vector<MapPoint *>(currentKFMapPointMatches.size(),
                                     static_cast<MapPoint *>(nullptr));
+        std::vector<MapPoint *> currentKFMapPointMatches2{};
+        if (p_currentKF->getMapPointMatches(currentKFMapPointMatches2) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPointMatches returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         std::vector<KeyFrame *> keyFrameMatchedMapPoints =
-            std::vector<KeyFrame *>(p_currentKF->getMapPointMatches().size(),
+            std::vector<KeyFrame *>(currentKFMapPointMatches2.size(),
                                     static_cast<KeyFrame *>(nullptr));
 
         int indexMostBowMatchesKeyFrameCount = 0;
@@ -138,8 +182,17 @@ bool LoopClosing::detectCommonRegionsFromBoW(
              covisibleKeyFrameIndex < covisibleKeyFrames.size();
              ++covisibleKeyFrameIndex)
         {
-            if (!covisibleKeyFrames[covisibleKeyFrameIndex] ||
-                covisibleKeyFrames[covisibleKeyFrameIndex]->isBad())
+            bool isBad2{};
+            if (!(!covisibleKeyFrames[covisibleKeyFrameIndex]) &&
+                covisibleKeyFrames[covisibleKeyFrameIndex]->isBad(isBad2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!covisibleKeyFrames[covisibleKeyFrameIndex] || isBad2)
                 continue;
 
             int count = matcherBow.searchByBoW(
@@ -164,7 +217,17 @@ bool LoopClosing::detectCommonRegionsFromBoW(
             {
                 MapPoint *p_matchedMapPoint =
                     vvpMatchedMapPoints[covisibleKeyFrameIndex][matchIndex];
-                if (!p_matchedMapPoint || p_matchedMapPoint->isBad())
+                bool matchedMapPointIsBad{};
+                if (!(!p_matchedMapPoint) &&
+                    p_matchedMapPoint->isBad(matchedMapPointIsBad) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (!p_matchedMapPoint || matchedMapPointIsBad)
                     continue;
 
                 if (matchedMapPoints.find(p_matchedMapPoint) ==
@@ -185,9 +248,28 @@ bool LoopClosing::detectCommonRegionsFromBoW(
         if (numBoWMatches >= bowMatchCount) // TODO pick a good threshold
         {
             // Geometric validation
-            bool isFixedScale = isScaleFixed;
-            if (p_tracker->sensor == System::IMU_MONOCULAR &&
-                !p_currentKF->getMap()->getInertialBA2())
+            bool isFixedScale   = isScaleFixed;
+            Map *p_currentKFMap = nullptr;
+            if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
+                p_currentKF->getMap(p_currentKFMap) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            bool inertialBA2{};
+            if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
+                p_currentKFMap->getInertialBA2(inertialBA2) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getInertialBA2 returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_tracker->sensor == System::IMU_MONOCULAR && !inertialBA2)
                 isFixedScale = false;
 
             Sim3Solver solver = Sim3Solver(p_currentKF,
@@ -227,9 +309,21 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                 // Verbose::VERBOSITY_DEBUG);
                 //  Match by reprojection
                 covisibleKeyFrames.clear();
+                std::vector<KeyFrame *>
+                    mostBowMatchesKeyFrameBestCovisibilityKeyFrames{};
+                if (p_mostBowMatchesKeyFrame->getBestCovisibilityKeyFrames(
+                        countCovisibleCount,
+                        mostBowMatchesKeyFrameBestCovisibilityKeyFrames) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getBestCovisibilityKeyFrames returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 covisibleKeyFrames =
-                    p_mostBowMatchesKeyFrame->getBestCovisibilityKeyFrames(
-                        countCovisibleCount);
+                    mostBowMatchesKeyFrameBestCovisibilityKeyFrames;
                 covisibleKeyFrames.push_back(p_mostBowMatchesKeyFrame);
                 set<KeyFrame *> checkKeyFrames(covisibleKeyFrames.begin(),
                                                covisibleKeyFrames.end());
@@ -242,11 +336,33 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                 vector<KeyFrame *> keyFrames;
                 for (KeyFrame *p_covisibleKeyFrame : covisibleKeyFrames)
                 {
-                    for (MapPoint *p_covisibleMapPoint :
-                         p_covisibleKeyFrame->getMapPointMatches())
+                    std::vector<MapPoint *> covisibleKeyFrameMapPointMatches{};
+                    if (p_covisibleKeyFrame->getMapPointMatches(
+                            covisibleKeyFrameMapPointMatches) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                     {
-                        if (!p_covisibleMapPoint ||
-                            p_covisibleMapPoint->isBad())
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getMapPointMatches returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    for (MapPoint *p_covisibleMapPoint :
+                         covisibleKeyFrameMapPointMatches)
+                    {
+                        bool covisibleMapPointIsBad{};
+                        if (!(!p_covisibleMapPoint) &&
+                            p_covisibleMapPoint->isBad(
+                                covisibleMapPointIsBad) !=
+                                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: isBad returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
+                        }
+                        if (!p_covisibleMapPoint || covisibleMapPointIsBad)
                             continue;
 
                         if (mapPoints.find(p_covisibleMapPoint) ==
@@ -265,10 +381,31 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                 g2o::Sim3 gScm(solver.getEstimatedRotation().cast<double>(),
                                solver.getEstimatedTranslation().cast<double>(),
                                (double)solver.getEstimatedScale());
-                g2o::Sim3 gSmw(
-                    p_mostBowMatchesKeyFrame->getRotation().cast<double>(),
-                    p_mostBowMatchesKeyFrame->getTranslation().cast<double>(),
-                    1.0);
+                Eigen::Matrix3f mostBowMatchesKeyFrameRotation{};
+                if (p_mostBowMatchesKeyFrame->getRotation(
+                        mostBowMatchesKeyFrameRotation) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRotation returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                Eigen::Vector3f mostBowMatchesKeyFrameTranslation{};
+                if (p_mostBowMatchesKeyFrame->getTranslation(
+                        mostBowMatchesKeyFrameTranslation) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getTranslation returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                g2o::Sim3 gSmw(mostBowMatchesKeyFrameRotation.cast<double>(),
+                               mostBowMatchesKeyFrameTranslation.cast<double>(),
+                               1.0);
                 g2o::Sim3 gScw = gScm * gSmw; // Similarity matrix of current
                                               // from the world position
                 Sophus::Sim3f correctedPose{};
@@ -283,14 +420,34 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                         __func__);
                 }
 
-                vector<MapPoint *> bowMatchedMapPoints;
-                bowMatchedMapPoints.resize(
-                    p_currentKF->getMapPointMatches().size(),
-                    static_cast<MapPoint *>(nullptr));
-                vector<KeyFrame *> matchedKeyFrames;
-                matchedKeyFrames.resize(
-                    p_currentKF->getMapPointMatches().size(),
-                    static_cast<KeyFrame *>(nullptr));
+                vector<MapPoint *>      bowMatchedMapPoints;
+                std::vector<MapPoint *> currentKFMapPointMatches3{};
+                if (p_currentKF->getMapPointMatches(
+                        currentKFMapPointMatches3) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMapPointMatches returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                bowMatchedMapPoints.resize(currentKFMapPointMatches3.size(),
+                                           static_cast<MapPoint *>(nullptr));
+                vector<KeyFrame *>      matchedKeyFrames;
+                std::vector<MapPoint *> currentKFMapPointMatches4{};
+                if (p_currentKF->getMapPointMatches(
+                        currentKFMapPointMatches4) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMapPointMatches returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                matchedKeyFrames.resize(currentKFMapPointMatches4.size(),
+                                        static_cast<KeyFrame *>(nullptr));
                 int numProjMatches =
                     matcher.searchByProjection(p_currentKF,
                                                correctedPose,
@@ -308,9 +465,31 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                     // Optimize Sim3 transformation with every matches
                     Eigen::Matrix<double, 7, 7> hessian7x7;
 
-                    bool isFixedScale = isScaleFixed;
+                    bool isFixedScale    = isScaleFixed;
+                    Map *p_currentKFMap2 = nullptr;
+                    if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
+                        p_currentKF->getMap(p_currentKFMap2) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getMap returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    bool inertialBA22{};
+                    if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
+                        p_currentKFMap2->getInertialBA2(inertialBA22) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getInertialBA2 returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     if (p_tracker->sensor == System::IMU_MONOCULAR &&
-                        !p_currentKF->getMap()->getInertialBA2())
+                        !inertialBA22)
                         isFixedScale = false;
 
                     int optMatchCount =
@@ -325,11 +504,31 @@ bool LoopClosing::detectCommonRegionsFromBoW(
 
                     if (optMatchCount >= nSim3Inliers)
                     {
+                        Eigen::Matrix3f mostBowMatchesKeyFrameRotation2{};
+                        if (p_mostBowMatchesKeyFrame->getRotation(
+                                mostBowMatchesKeyFrameRotation2) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getRotation returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        Eigen::Vector3f mostBowMatchesKeyFrameTranslation2{};
+                        if (p_mostBowMatchesKeyFrame->getTranslation(
+                                mostBowMatchesKeyFrameTranslation2) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getTranslation returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                         g2o::Sim3 gSmw(
-                            p_mostBowMatchesKeyFrame->getRotation()
-                                .cast<double>(),
-                            p_mostBowMatchesKeyFrame->getTranslation()
-                                .cast<double>(),
+                            mostBowMatchesKeyFrameRotation2.cast<double>(),
+                            mostBowMatchesKeyFrameTranslation2.cast<double>(),
                             1.0);
                         g2o::Sim3 gScw =
                             gScm * gSmw; // Similarity matrix of current from
@@ -348,9 +547,20 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                                          __func__);
                         }
 
-                        vector<MapPoint *> bowMatchedMapPoints;
+                        vector<MapPoint *>      bowMatchedMapPoints;
+                        std::vector<MapPoint *> currentKFMapPointMatches5{};
+                        if (p_currentKF->getMapPointMatches(
+                                currentKFMapPointMatches5) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getMapPointMatches returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                         bowMatchedMapPoints.resize(
-                            p_currentKF->getMapPointMatches().size(),
+                            currentKFMapPointMatches5.size(),
                             static_cast<MapPoint *>(nullptr));
                         int optimizedProjectionMatchCount =
                             matcher.searchByProjection(p_currentKF,
@@ -367,13 +577,39 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                             int maximumY = -1, minimumY = 1000000;
                             for (MapPoint *p_mapPoint : bowMatchedMapPoints)
                             {
-                                if (!p_mapPoint || p_mapPoint->isBad())
+                                bool mapPointIsBad{};
+                                if (!(!p_mapPoint) &&
+                                    p_mapPoint->isBad(mapPointIsBad) !=
+                                        MapPointStatus::
+                                            MAP_POINT_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: isBad returned a failure status "
+                                        "although it cannot fail; continuing "
+                                        "as before.",
+                                        __func__);
+                                }
+                                if (!p_mapPoint || mapPointIsBad)
                                 {
                                     continue;
                                 }
 
+                                std::tuple<int, int> mapPointIndexInKeyFrame{};
+                                if (p_mapPoint->getIndexInKeyFrame(
+                                        p_keyFrame,
+                                        mapPointIndexInKeyFrame) !=
+                                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: getIndexInKeyFrame returned a "
+                                        "failure status although it cannot "
+                                        "fail; continuing as before.",
+                                        __func__);
+                                }
                                 tuple<size_t, size_t> indexes =
-                                    p_mapPoint->getIndexInKeyFrame(p_keyFrame);
+                                    mapPointIndexInKeyFrame;
                                 int index = get<0>(indexes);
                                 if (index >= 0)
                                 {
@@ -402,14 +638,24 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                                 }
                             }
 
-                            int                countKeyFrameCount = 0;
+                            int                     countKeyFrameCount = 0;
                             // vpMatchedMPs = vpMatchedMP;
                             // vpMPs = vpMapPoints;
                             //  Check the Sim3 transformation with the current
                             //  KeyFrame covisibles
-                            vector<KeyFrame *> currentCovisibleKeyFrames =
-                                p_currentKF->getBestCovisibilityKeyFrames(
-                                    countCovisibleCount);
+                            std::vector<KeyFrame *> currentCovisibleKeyFrames{};
+                            if (p_currentKF->getBestCovisibilityKeyFrames(
+                                    countCovisibleCount,
+                                    currentCovisibleKeyFrames) !=
+                                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: getBestCovisibilityKeyFrames returned "
+                                    "a failure status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
 
                             int covisibleKeyFrameIndex = 0;
                             while (countKeyFrameCount < 3 &&
@@ -419,9 +665,33 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                                 KeyFrame *p_currentCovisibleKeyFrame =
                                     currentCovisibleKeyFrames
                                         [covisibleKeyFrameIndex];
+                                Sophus::SE3f currentCovisibleKeyFramePose{};
+                                if (p_currentCovisibleKeyFrame->getPose(
+                                        currentCovisibleKeyFramePose) !=
+                                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: getPose returned a failure status "
+                                        "although it cannot fail; continuing "
+                                        "as before.",
+                                        __func__);
+                                }
+                                Sophus::SE3f currentKFPoseInverse{};
+                                if (p_currentKF->getPoseInverse(
+                                        currentKFPoseInverse) !=
+                                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: getPoseInverse returned a failure "
+                                        "status although it cannot fail; "
+                                        "continuing as before.",
+                                        __func__);
+                                }
                                 Sophus::SE3d mTjc =
-                                    (p_currentCovisibleKeyFrame->getPose() *
-                                     p_currentKF->getPoseInverse())
+                                    (currentCovisibleKeyFramePose *
+                                     currentKFPoseInverse)
                                         .cast<double>();
                                 g2o::Sim3 gSjc(mTjc.unit_quaternion(),
                                                mTjc.translation(),
@@ -439,10 +709,31 @@ bool LoopClosing::detectCommonRegionsFromBoW(
 
                                 if (isValid)
                                 {
-                                    Sophus::SE3f Tc_w = p_currentKF->getPose();
-                                    Sophus::SE3f Tw_cj =
-                                        p_currentCovisibleKeyFrame
-                                            ->getPoseInverse();
+                                    Sophus::SE3f Tc_w{};
+                                    if (p_currentKF->getPose(Tc_w) !=
+                                        KeyFrameStatus::
+                                            KEY_FRAME_STATUS_SUCCESS)
+                                    {
+                                        RCLCPP_ERROR(
+                                            rclcpp::get_logger("vs_graphs"),
+                                            "%s: getPose returned a failure "
+                                            "status although it cannot fail; "
+                                            "continuing as before.",
+                                            __func__);
+                                    }
+                                    Sophus::SE3f Tw_cj{};
+                                    if (p_currentCovisibleKeyFrame
+                                            ->getPoseInverse(Tw_cj) !=
+                                        KeyFrameStatus::
+                                            KEY_FRAME_STATUS_SUCCESS)
+                                    {
+                                        RCLCPP_ERROR(
+                                            rclcpp::get_logger("vs_graphs"),
+                                            "%s: getPoseInverse returned a "
+                                            "failure status although it cannot "
+                                            "fail; continuing as before.",
+                                            __func__);
+                                    }
                                     Sophus::SE3f    Tc_cj = Tc_w * Tw_cj;
                                     Eigen::Vector3f vectorDistance =
                                         Tc_cj.translation();
@@ -482,7 +773,14 @@ bool LoopClosing::detectCommonRegionsFromBoW(
         lastCurrentKeyFrame_out   = p_currentKF;
         countCoincidenceCount_out = bestCountCoindicendeCount;
         matchedKeyFrame_out       = p_bestMatchedKeyFrame;
-        matchedKeyFrame_out->setNotErase();
+        if (matchedKeyFrame_out->setNotErase() !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setNotErase returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         g2oScw_out           = g2oBestScw;
         mapPoints_out        = bestMapPoints;
         matchedMapPoints_out = bestMatchedMapPoints;

@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void MapPoint::increaseFound(int n_in)
+MapPointStatus MapPoint::increaseFound(int n_in)
 {
     unique_lock<mutex> lock(featuresMutex);
     foundCount += n_in;
+
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,8 +33,17 @@ namespace core
 
 std::vector<std::vector<Eigen::Vector3d>> Atlas::getSkeletonClusterPoints()
 {
-    unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap->getSkeletonClusterPoints();
+    unique_lock<mutex>                        lock(atlasMutex);
+    std::vector<std::vector<Eigen::Vector3d>> activeMapSkeletonClusterPoints{};
+    if (p_activeMap->getSkeletonClusterPoints(activeMapSkeletonClusterPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSkeletonClusterPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapSkeletonClusterPoints;
 }
 
 } // namespace core

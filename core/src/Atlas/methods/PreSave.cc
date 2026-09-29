@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -34,18 +35,56 @@ void Atlas::preSave()
 {
     if (p_activeMap)
     {
-        if (!maps.empty() &&
-            lastInitKeyFrameId < p_activeMap->getMaxKeyFrameId())
+        unsigned long activeMapMaxKeyFrameId{};
+        if ((!maps.empty()) &&
+            p_activeMap->getMaxKeyFrameId(activeMapMaxKeyFrameId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMaxKeyFrameId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!maps.empty() && lastInitKeyFrameId < activeMapMaxKeyFrameId)
+        {
+            unsigned long activeMapMaxKeyFrameId2{};
+            if (p_activeMap->getMaxKeyFrameId(activeMapMaxKeyFrameId2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMaxKeyFrameId returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             lastInitKeyFrameId =
-                p_activeMap->getMaxKeyFrameId() +
+                activeMapMaxKeyFrameId2 +
                 1; // The init KF is the next of current maximum
+        }
     }
 
     struct CompFunctor
     {
         inline bool operator()(Map *p_firstMap_in, Map *p_secondMap_in)
         {
-            return p_firstMap_in->getId() < p_secondMap_in->getId();
+            unsigned long firstMapId{};
+            if (p_firstMap_in->getId(firstMapId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            unsigned long secondMapId{};
+            if (p_secondMap_in->getId(secondMapId) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            return firstMapId < secondMapId;
         }
     };
     std::copy(maps.begin(), maps.end(), std::back_inserter(backupMaps));
@@ -56,16 +95,40 @@ void Atlas::preSave()
         cameras.end());
     for (Map *p_map : backupMaps)
     {
-        if (!p_map || p_map->isBad())
+        bool mapIsBad{};
+        if (!(!p_map) &&
+            p_map->isBad(mapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_map || mapIsBad)
             continue;
 
-        if (p_map->getAllKeyFrames().size() == 0)
+        std::vector<KeyFrame *> mapAllKeyFrames{};
+        if (p_map->getAllKeyFrames(mapAllKeyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapAllKeyFrames.size() == 0)
         {
             // Empty map, erase before of save it.
             setMapBad(p_map);
             continue;
         }
-        p_map->preSave(cameraSet);
+        if (p_map->preSave(cameraSet) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: preSave returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
     removeBadMaps();
 }

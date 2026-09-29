@@ -37,13 +37,22 @@ namespace vs_graphs
 namespace core
 {
 
-geometric::Plane *Map::getBiggestGroundPlane()
+MapStatus
+    Map::getBiggestGroundPlane(geometric::Plane *&p_biggestGroundPlane_out)
 {
     geometric::Plane                         *p_bestGroundPlane = nullptr;
     std::tuple<std::size_t, std::size_t, int> bestEvidence{0U, 0U, 0};
     bool                                      hasBestEvidence = false;
 
-    for (geometric::Plane *p_plane : getAllPlanes())
+    std::vector<geometric::Plane *> allPlanes{};
+    if (getAllPlanes(allPlanes) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (geometric::Plane *p_plane : allPlanes)
     {
         bool planeIsBad{};
         if (!(p_plane == nullptr) &&
@@ -113,7 +122,8 @@ geometric::Plane *Map::getBiggestGroundPlane()
             hasBestEvidence   = true;
         }
     }
-    return p_bestGroundPlane;
+    p_biggestGroundPlane_out = p_bestGroundPlane;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

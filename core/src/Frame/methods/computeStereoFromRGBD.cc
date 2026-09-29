@@ -43,7 +43,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::computeStereoFromRGBD(const cv::Mat &imageDepth_in)
+FrameStatus Frame::computeStereoFromRGBD(const cv::Mat &imageDepth_in)
 {
     uRight = vector<float>(keyPointCount, -1);
     depths = vector<float>(keyPointCount, -1);
@@ -64,6 +64,8 @@ void Frame::computeStereoFromRGBD(const cv::Mat &imageDepth_in)
             uRight[keyPointIndex] = keyPointU.pt.x - mbf / d;
         }
     }
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

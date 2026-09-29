@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-cv::Mat MapPoint::getDescriptor()
+MapPointStatus MapPoint::getDescriptor(cv::Mat &descriptor_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return descriptor.clone();
+    descriptor_out = descriptor.clone();
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

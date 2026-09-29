@@ -48,14 +48,34 @@ void SemanticsManager::updateTraversalEvidence(
 
     seedCurrentRoomFromActiveMap(p_activeMap);
 
-    std::vector<KeyFrame *> orderedKeyFrames = p_activeMap->getAllKeyFrames();
-    orderedKeyFrames.erase(std::remove_if(orderedKeyFrames.begin(),
-                                          orderedKeyFrames.end(),
-                                          [](KeyFrame *p_keyFrame) {
-                                              return p_keyFrame == nullptr ||
-                                                     p_keyFrame->isBad();
-                                          }),
-                           orderedKeyFrames.end());
+    std::vector<KeyFrame *> orderedKeyFrames{};
+    if (p_activeMap->getAllKeyFrames(orderedKeyFrames) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    orderedKeyFrames.erase(
+        std::remove_if(
+            orderedKeyFrames.begin(),
+            orderedKeyFrames.end(),
+            [](KeyFrame *p_keyFrame)
+            {
+                bool keyFrameIsBad{};
+                if (!(p_keyFrame == nullptr) &&
+                    p_keyFrame->isBad(keyFrameIsBad) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                return p_keyFrame == nullptr || keyFrameIsBad;
+            }),
+        orderedKeyFrames.end());
     std::sort(orderedKeyFrames.begin(),
               orderedKeyFrames.end(),
               [](const KeyFrame *p_first, const KeyFrame *p_second)
@@ -123,8 +143,14 @@ void SemanticsManager::updateTraversalEvidence(
         p_sysParams->roomSeg.passagePartition.openingMargin_m);
     const double minimumSideDistance_m = static_cast<double>(
         p_sysParams->roomSeg.passagePartition.minimumSideDistance_m);
-    const std::vector<semantic::Passage *> passages =
-        p_activeMap->getAllPassages();
+    std::vector<semantic::Passage *> passages{};
+    if (p_activeMap->getAllPassages(passages) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Passage confirmation is delayed relative to flight. Replay a bounded
      * recent trajectory on every semantic cycle; Passage deduplicates segment
@@ -135,9 +161,17 @@ void SemanticsManager::updateTraversalEvidence(
         orderedKeyFrames.size() > maximumTraversalHistoryKeyFrames
                 ? orderedKeyFrames.size() - maximumTraversalHistoryKeyFrames
                 : 0U;
-    KeyFrame *p_seedKeyFrame = orderedKeyFrames[historyStartIndex];
-    currentCameraCenter_World_m =
-        p_seedKeyFrame->getCameraCenter().cast<double>();
+    KeyFrame       *p_seedKeyFrame = orderedKeyFrames[historyStartIndex];
+    Eigen::Vector3f seedKeyFrameCameraCenter{};
+    if (p_seedKeyFrame->getCameraCenter(seedKeyFrameCameraCenter) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCameraCenter returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    currentCameraCenter_World_m = seedKeyFrameCameraCenter.cast<double>();
     if (!currentCameraCenter_World_m.allFinite())
     {
         return;
@@ -151,8 +185,17 @@ void SemanticsManager::updateTraversalEvidence(
     {
         KeyFrame *p_keyFrame = orderedKeyFrames[keyFrameIndex];
 
+        Eigen::Vector3f keyFrameCameraCenter{};
+        if (p_keyFrame->getCameraCenter(keyFrameCameraCenter) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCameraCenter returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const Eigen::Vector3d nextCameraCenter_World_m =
-            p_keyFrame->getCameraCenter().cast<double>();
+            keyFrameCameraCenter.cast<double>();
 
         lastTraversalFrameId    = p_keyFrame->frameId;
         lastTraversalKeyFrameId = p_keyFrame->id;
@@ -336,8 +379,16 @@ void SemanticsManager::updateTraversalEvidence(
                 {
                     p_reachedRoom = knownSide.p_room;
                 }
-                const std::vector<semantic::Room *> activeRooms =
-                    p_activeMap->getAllRooms();
+                std::vector<semantic::Room *> activeRooms{};
+                if (p_activeMap->getAllRooms(activeRooms) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getAllRooms returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 bool reachedRoomIsBad{};
                 if ((p_reachedRoom != nullptr) &&
                     p_reachedRoom->isBad(reachedRoomIsBad) !=
@@ -380,7 +431,15 @@ void SemanticsManager::updateTraversalEvidence(
                     if (reachedRoomRoomVariant ==
                         semantic::Room::RoomVariant::UNDEFINED)
                     {
-                        p_activeMap->promoteCandidateMapRoom(p_reachedRoom);
+                        if (p_activeMap->promoteCandidateMapRoom(
+                                p_reachedRoom) != MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: promoteCandidateMapRoom returned "
+                                         "a failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                         if (p_reachedRoom->setRoomVariant(
                                 semantic::Room::RoomVariant::ROOM) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -431,9 +490,19 @@ void SemanticsManager::updateTraversalEvidence(
                         }
                         prospectiveRoomCycles.erase(reachedRoomId3);
 
-                        semantic::Floor *p_floor = nullptr;
+                        semantic::Floor               *p_floor = nullptr;
+                        std::vector<semantic::Floor *> activeMapAllFloors{};
+                        if (p_activeMap->getAllFloors(activeMapAllFloors) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getAllFloors returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
                         if (semantic::Floor::selectBestObservedFloor(
-                                p_activeMap->getAllFloors(),
+                                activeMapAllFloors,
                                 p_floor) !=
                             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                         {
@@ -472,11 +541,20 @@ void SemanticsManager::updateTraversalEvidence(
                                 "it cannot fail; continuing as before.",
                                 __func__);
                         }
+                        unsigned long activeMapId{};
+                        if (p_activeMap->getId(activeMapId) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getId returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
+                        }
                         std::cout
                             << "SG_PIPELINE {\"event\":\"room_promotion\","
                                "\"map_id\":"
-                            << p_activeMap->getId()
-                            << ",\"room_id\":" << reachedRoomId4
+                            << activeMapId << ",\"room_id\":" << reachedRoomId4
                             << ",\"passage_id\":" << passageId
                             << ",\"reason\":\"PASSAGE_TRAVERSAL\","
                                "\"semantic_cycle\":"

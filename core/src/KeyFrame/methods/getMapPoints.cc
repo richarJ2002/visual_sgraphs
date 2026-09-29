@@ -30,13 +30,14 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-set<MapPoint *> KeyFrame::getMapPoints()
+KeyFrameStatus KeyFrame::getMapPoints(std::set<MapPoint *> &mapPoints_out)
 {
     unique_lock<mutex> lock(featuresMutex);
 
@@ -58,13 +59,23 @@ set<MapPoint *> KeyFrame::getMapPoints()
         MapPoint *p_mapPoint = mapPoints[mapPointIndex];
 
         /* If point is determined to be bad, skip */
-        if (!p_mapPoint->isBad())
+        bool mapPointIsBad{};
+        if (p_mapPoint->isBad(mapPointIsBad) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!mapPointIsBad)
         {
             s.insert(p_mapPoint);
         }
     }
 
-    return s;
+    mapPoints_out = s;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

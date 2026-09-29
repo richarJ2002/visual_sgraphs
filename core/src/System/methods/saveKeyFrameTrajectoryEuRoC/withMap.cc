@@ -26,6 +26,7 @@
 #include "System.h"
 
 #include <iomanip>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -36,11 +37,26 @@ void System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
                                          Map          *p_map_in)
 {
 
+    unsigned long mapId{};
+    if (p_map_in->getId(mapId) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     cout << endl
-         << "Saving keyframe trajectory of map " << p_map_in->getId() << " to "
+         << "Saving keyframe trajectory of map " << mapId << " to "
          << filename_in << " ..." << endl;
 
-    vector<KeyFrame *> keyFrames = p_map_in->getAllKeyFrames();
+    std::vector<KeyFrame *> keyFrames{};
+    if (p_map_in->getAllKeyFrames(keyFrames) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
@@ -54,12 +70,29 @@ void System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
     {
         KeyFrame *p_keyFrame = keyFrames[keyFrameIndex];
 
-        if (!p_keyFrame || p_keyFrame->isBad())
+        bool keyFrameIsBad{};
+        if (!(!p_keyFrame) && p_keyFrame->isBad(keyFrameIsBad) !=
+                                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_keyFrame || keyFrameIsBad)
             continue;
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD)
         {
-            Sophus::SE3f       Twb = p_keyFrame->getImuPose();
+            Sophus::SE3f Twb{};
+            if (p_keyFrame->getImuPose(Twb) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getImuPose returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             Eigen::Quaternionf q   = Twb.unit_quaternion();
             Eigen::Vector3f    twb = Twb.translation();
             f << setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
@@ -69,9 +102,17 @@ void System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
         }
         else
         {
-            Sophus::SE3f       Twc = p_keyFrame->getPoseInverse();
-            Eigen::Quaternionf q   = Twc.unit_quaternion();
-            Eigen::Vector3f    t   = Twc.translation();
+            Sophus::SE3f Twc{};
+            if (p_keyFrame->getPoseInverse(Twc) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Eigen::Quaternionf q = Twc.unit_quaternion();
+            Eigen::Vector3f    t = Twc.translation();
             f << setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
               << setprecision(9) << t(0) << " " << t(1) << " " << t(2) << " "
               << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;

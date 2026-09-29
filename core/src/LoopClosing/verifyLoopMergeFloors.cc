@@ -40,20 +40,38 @@ bool verifyLoopMergeFloors(
     const g2o::Sim3 &transform_absorbedWorldToSurvivingWorld_in,
     std::string     &result_out)
 {
-    semantic::Floor *p_survivingFloor = nullptr;
-    if (semantic::Floor::selectBestObservedFloor(
-            p_survivingMap_in->getAllFloors(),
-            p_survivingFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    semantic::Floor               *p_survivingFloor = nullptr;
+    std::vector<semantic::Floor *> survivingMapAllFloors{};
+    if (p_survivingMap_in->getAllFloors(survivingMapAllFloors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (semantic::Floor::selectBestObservedFloor(survivingMapAllFloors,
+                                                 p_survivingFloor) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: selectBestObservedFloor returned a failure status "
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    semantic::Floor *p_absorbedFloor = nullptr;
-    if (semantic::Floor::selectBestObservedFloor(
-            p_absorbedMap_in->getAllFloors(),
-            p_absorbedFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+    semantic::Floor               *p_absorbedFloor = nullptr;
+    std::vector<semantic::Floor *> absorbedMapAllFloors{};
+    if (p_absorbedMap_in->getAllFloors(absorbedMapAllFloors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (semantic::Floor::selectBestObservedFloor(absorbedMapAllFloors,
+                                                 p_absorbedFloor) !=
+        semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: selectBestObservedFloor returned a failure status "
@@ -90,9 +108,26 @@ bool verifyLoopMergeFloors(
     if (!survivingIdentity.has_value() || !absorbedIdentity.has_value())
     {
         result_out = "DEFERRED";
-        std::cout << "[FloorVerify] Map#" << p_survivingMap_in->getId()
-                  << " and Map#" << p_absorbedMap_in->getId()
-                  << " floor verification deferred (current="
+        unsigned long survivingMapId{};
+        if (p_survivingMap_in->getId(survivingMapId) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        unsigned long absorbedMapId{};
+        if (p_absorbedMap_in->getId(absorbedMapId) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::cout << "[FloorVerify] Map#" << survivingMapId << " and Map#"
+                  << absorbedMapId << " floor verification deferred (current="
                   << (survivingIdentity.has_value() ? "valid" : "missing")
                   << ", merge="
                   << (absorbedIdentity.has_value() ? "valid" : "missing")
@@ -136,9 +171,26 @@ bool verifyLoopMergeFloors(
     if (!floorsMatch)
     {
         result_out = "REJECTED";
+        unsigned long survivingMapId2{};
+        if (p_survivingMap_in->getId(survivingMapId2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        unsigned long absorbedMapId2{};
+        if (p_absorbedMap_in->getId(absorbedMapId2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         std::cerr << "[FloorVerify] Rejecting loop merge: Map#"
-                  << p_survivingMap_in->getId() << " and Map#"
-                  << p_absorbedMap_in->getId()
+                  << survivingMapId2 << " and Map#" << absorbedMapId2
                   << " floor planes mismatch (angle=" << floorNormalAngle_deg
                   << " deg, offset=" << floorOffset_m << " m; limits="
                   << semantic::Floor::kMergeMaxPlaneNormalAngle_deg << " deg/"
@@ -147,8 +199,26 @@ bool verifyLoopMergeFloors(
         return false;
     }
 
-    std::cout << "[FloorVerify] Map#" << p_survivingMap_in->getId()
-              << " and Map#" << p_absorbedMap_in->getId()
+    unsigned long survivingMapId3{};
+    if (p_survivingMap_in->getId(survivingMapId3) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    unsigned long absorbedMapId3{};
+    if (p_absorbedMap_in->getId(absorbedMapId3) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    std::cout << "[FloorVerify] Map#" << survivingMapId3 << " and Map#"
+              << absorbedMapId3
               << " floor planes match (angle=" << floorNormalAngle_deg
               << " deg, offset=" << floorOffset_m
               << " m). result=ACCEPTED committed=0" << std::endl;

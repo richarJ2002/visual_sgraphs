@@ -23,6 +23,7 @@
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
+#include <rclcpp/logging.hpp>
 #include <stdint-gcc.h>
 
 namespace vs_graphs
@@ -37,14 +38,30 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF1,
     const vector<cv::KeyPoint> &undistortedKeyPoints1 =
         pKF1->keyPointsUndistorted;
     const DBoW2::FeatureVector &featureVector1 = pKF1->featureVector;
-    const vector<MapPoint *>    mapPoints1     = pKF1->getMapPointMatches();
-    const cv::Mat              &descriptors1   = pKF1->descriptors;
+    std::vector<MapPoint *>     mapPoints1{};
+    if (pKF1->getMapPointMatches(mapPoints1) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const cv::Mat &descriptors1 = pKF1->descriptors;
 
     const vector<cv::KeyPoint> &undistortedKeyPoints2 =
         pKF2->keyPointsUndistorted;
     const DBoW2::FeatureVector &featureVector2 = pKF2->featureVector;
-    const vector<MapPoint *>    mapPoints2     = pKF2->getMapPointMatches();
-    const cv::Mat              &descriptors2   = pKF2->descriptors;
+    std::vector<MapPoint *>     mapPoints2{};
+    if (pKF2->getMapPointMatches(mapPoints2) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const cv::Mat &descriptors2 = pKF2->descriptors;
 
     vpMatches12 =
         vector<MapPoint *>(mapPoints1.size(), static_cast<MapPoint *>(nullptr));
@@ -86,7 +103,16 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF1,
                 MapPoint *p_mapPoint1 = mapPoints1[index1];
                 if (!p_mapPoint1)
                     continue;
-                if (p_mapPoint1->isBad())
+                bool mapPoint1IsBad{};
+                if (p_mapPoint1->isBad(mapPoint1IsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (mapPoint1IsBad)
                     continue;
 
                 const cv::Mat &d1 = descriptors1.row(index1);
@@ -112,7 +138,17 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF1,
                     if (matched2Flags[index2] || !p_mapPoint2)
                         continue;
 
-                    if (p_mapPoint2->isBad())
+                    bool mapPoint2IsBad{};
+                    if (p_mapPoint2->isBad(mapPoint2IsBad) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (mapPoint2IsBad)
                         continue;
 
                     const cv::Mat &d2 = descriptors2.row(index2);

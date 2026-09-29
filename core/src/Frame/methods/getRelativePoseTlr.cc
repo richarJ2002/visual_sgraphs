@@ -43,9 +43,10 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f Frame::getRelativePoseTlr()
+FrameStatus Frame::getRelativePoseTlr(Sophus::SE3f &relativePoseTlr_out)
 {
-    return poseTlr;
+    relativePoseTlr_out = poseTlr;
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

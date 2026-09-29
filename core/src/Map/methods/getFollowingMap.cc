@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-Map *Map::getFollowingMap()
+MapStatus Map::getFollowingMap(Map *&p_followingMap_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return p_followingMap;
+    p_followingMap_out = p_followingMap;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseMapMarker(semantic::Marker *p_marker_in)
+MapStatus Map::eraseMapMarker(semantic::Marker *p_marker_in)
 {
     unique_lock<mutex> lock(mapMutex);
     markers.erase(p_marker_in);
@@ -46,6 +46,8 @@ void Map::eraseMapMarker(semantic::Marker *p_marker_in)
                              ? markerIndex.erase(markerIterator)
                              : std::next(markerIterator);
     }
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

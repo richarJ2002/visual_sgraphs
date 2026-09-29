@@ -37,12 +37,12 @@ namespace vs_graphs
 namespace core
 {
 
-void vs_graphs::core::Map::addMapPassage(
+MapStatus vs_graphs::core::Map::addMapPassage(
     vs_graphs::core::semantic::Passage *p_passage_inout)
 {
     if (p_passage_inout == nullptr)
     {
-        return;
+        return MapStatus::MAP_STATUS_SUCCESS;
     }
 
     unique_lock<mutex> lock(mapMutex);
@@ -82,7 +82,7 @@ void vs_graphs::core::Map::addMapPassage(
                   << passage_inoutId3
                   << "; caller must resolve it before destination insertion."
                   << std::endl;
-        return;
+        return MapStatus::MAP_STATUS_SUCCESS;
     }
 
     passages.insert(p_passage_inout);
@@ -96,6 +96,8 @@ void vs_graphs::core::Map::addMapPassage(
                      __func__);
     }
     passageIndex.insert_or_assign(passage_inoutId4, p_passage_inout);
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

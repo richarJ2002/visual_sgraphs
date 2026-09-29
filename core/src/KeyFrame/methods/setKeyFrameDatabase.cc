@@ -35,9 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::setKeyFrameDatabase(KeyFrameDatabase *p_keyFrameDatabase_in)
+KeyFrameStatus
+    KeyFrame::setKeyFrameDatabase(KeyFrameDatabase *p_keyFrameDatabase_in)
 {
     p_keyFrameDatabase = p_keyFrameDatabase_in;
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

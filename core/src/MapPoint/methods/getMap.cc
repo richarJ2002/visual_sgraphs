@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-Map *MapPoint::getMap()
+MapPointStatus MapPoint::getMap(Map *&p_map_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return p_map;
+    p_map_out = p_map;
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

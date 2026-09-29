@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f KeyFrame::getImuPosition()
+KeyFrameStatus KeyFrame::getImuPosition(Eigen::Vector3f &imuPosition_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return owb;
+    imuPosition_out = owb;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

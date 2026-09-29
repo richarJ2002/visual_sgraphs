@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f KeyFrame::getAccBias()
+KeyFrameStatus KeyFrame::getAccBias(Eigen::Vector3f &accBias_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return Eigen::Vector3f(imuBias.bax, imuBias.bay, imuBias.baz);
+    accBias_out = Eigen::Vector3f(imuBias.bax, imuBias.bay, imuBias.baz);
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -29,13 +29,15 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void KeyFrame::addConnection(KeyFrame *p_keyFrame_inout, const int &weight_in)
+KeyFrameStatus KeyFrame::addConnection(KeyFrame  *p_keyFrame_inout,
+                                       const int &weight_in)
 {
     {
         unique_lock<mutex> lock(connectionsMutex);
@@ -44,10 +46,18 @@ void KeyFrame::addConnection(KeyFrame *p_keyFrame_inout, const int &weight_in)
         else if (connectedKeyFrameWeights[p_keyFrame_inout] != weight_in)
             connectedKeyFrameWeights[p_keyFrame_inout] = weight_in;
         else
-            return;
+            return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
-    updateBestCovisibles();
+    if (updateBestCovisibles() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateBestCovisibles returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f KeyFrame::getGyroBias()
+KeyFrameStatus KeyFrame::getGyroBias(Eigen::Vector3f &gyroBias_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return Eigen::Vector3f(imuBias.bwx, imuBias.bwy, imuBias.bwz);
+    gyroBias_out = Eigen::Vector3f(imuBias.bwx, imuBias.bwy, imuBias.bwz);
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

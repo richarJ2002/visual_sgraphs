@@ -29,13 +29,14 @@
 #include "ORBmatcher.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void MapPoint::setBadFlag()
+MapPointStatus MapPoint::setBadFlag()
 {
     map<KeyFrame *, tuple<int, int>> observation;
     {
@@ -54,15 +55,37 @@ void MapPoint::setBadFlag()
         int leftIndex = get<0>(mit->second), rightIndex = get<1>(mit->second);
         if (leftIndex != -1)
         {
-            p_keyFrame->eraseMapPointMatch(leftIndex);
+            if (p_keyFrame->eraseMapPointMatch(leftIndex) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPointMatch returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         if (rightIndex != -1)
         {
-            p_keyFrame->eraseMapPointMatch(rightIndex);
+            if (p_keyFrame->eraseMapPointMatch(rightIndex) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPointMatch returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
-    p_map->eraseMapPoint(this);
+    if (p_map->eraseMapPoint(this) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: eraseMapPoint returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

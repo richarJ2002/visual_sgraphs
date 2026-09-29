@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,8 +33,22 @@ namespace core
 
 void Atlas::addKeyFrame(KeyFrame *p_keyFrame_in)
 {
-    Map *p_ownerMap = p_keyFrame_in->getMap();
-    p_ownerMap->addKeyFrame(p_keyFrame_in);
+    Map *p_ownerMap = nullptr;
+    if (p_keyFrame_in->getMap(p_ownerMap) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_ownerMap->addKeyFrame(p_keyFrame_in) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addKeyFrame returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

@@ -86,8 +86,16 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         return minimumDistance_m;
     };
 
-    for (vs_graphs::core::semantic::Room *p_duplicateRoom :
-         p_currentMap->getAllRooms())
+    std::vector<semantic::Room *> currentMapAllRooms{};
+    if (p_currentMap->getAllRooms(currentMapAllRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (vs_graphs::core::semantic::Room *p_duplicateRoom : currentMapAllRooms)
     {
         bool duplicateRoomIsBad{};
         if (!(p_duplicateRoom == nullptr ||
@@ -392,8 +400,17 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
 
         std::vector<
             std::pair<semantic::Room *, std::vector<geometric::Plane *>>>
-            wallSnapshots;
-        for (semantic::Room *p_snapshotRoom : p_currentMap->getAllRooms())
+                                      wallSnapshots;
+        std::vector<semantic::Room *> currentMapAllRooms2{};
+        if (p_currentMap->getAllRooms(currentMapAllRooms2) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllRooms returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (semantic::Room *p_snapshotRoom : currentMapAllRooms2)
         {
             bool snapshotRoomIsBad{};
             if ((p_snapshotRoom != nullptr) &&
@@ -617,7 +634,16 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             }
         }
 
-        for (semantic::Floor *p_floor : p_currentMap->getAllFloors())
+        std::vector<semantic::Floor *> currentMapAllFloors{};
+        if (p_currentMap->getAllFloors(currentMapAllFloors) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllFloors returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (semantic::Floor *p_floor : currentMapAllFloors)
         {
             if (p_floor != nullptr)
             {
@@ -636,8 +662,23 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             }
         }
 
-        p_currentMap->eraseDetectedMapRoom(p_duplicateRoom);
-        p_currentMap->eraseMarkerBasedMapRoom(p_duplicateRoom);
+        if (p_currentMap->eraseDetectedMapRoom(p_duplicateRoom) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseDetectedMapRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_currentMap->eraseMarkerBasedMapRoom(p_duplicateRoom) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: eraseMarkerBasedMapRoom returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (p_duplicateRoom->clearWalls() !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {

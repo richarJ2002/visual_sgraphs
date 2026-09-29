@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -43,12 +44,21 @@ namespace vs_graphs
 namespace core
 {
 
-bool Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
-                              float     viewingCosLimit_in,
-                              bool      isRightCamera_in)
+FrameStatus Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
+                                     float     viewingCosLimit_in,
+                                     bool     &isInFrustumChecks_out,
+                                     bool      isRightCamera_in)
 {
     // 3D in absolute coordinates
-    Eigen::Vector3f P = p_mapPoint_inout->getWorldPos();
+    Eigen::Vector3f P{};
+    if (p_mapPoint_inout->getWorldPos(P) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWorldPos returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     Eigen::Matrix3f mR;
     Eigen::Vector3f mt, twc;
@@ -74,7 +84,10 @@ bool Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
 
     // Check positive depth
     if (PcZ < 0.0f)
-        return false;
+    {
+        isInFrustumChecks_out = false;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
+    }
 
     // Project in image and check it is not outside
     Eigen::Vector2f uv;
@@ -84,30 +97,73 @@ bool Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
         uv = p_camera->project(Pc);
 
     if (uv(0) < gridMinX || uv(0) > gridMaxX)
-        return false;
+    {
+        isInFrustumChecks_out = false;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
+    }
     if (uv(1) < gridMinY || uv(1) > gridMaxY)
-        return false;
+    {
+        isInFrustumChecks_out = false;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
+    }
 
     // Check distance is in the scale invariance region of the MapPoint
-    const float maximumDistance = p_mapPoint_inout->getMaxDistanceInvariance();
-    const float minimumDistance = p_mapPoint_inout->getMinDistanceInvariance();
-    const Eigen::Vector3f PO    = P - twc;
+    float maximumDistance{};
+    if (p_mapPoint_inout->getMaxDistanceInvariance(maximumDistance) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMaxDistanceInvariance returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    float minimumDistance{};
+    if (p_mapPoint_inout->getMinDistanceInvariance(minimumDistance) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMinDistanceInvariance returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const Eigen::Vector3f PO       = P - twc;
     const float           distance = PO.norm();
 
     if (distance < minimumDistance || distance > maximumDistance)
-        return false;
+    {
+        isInFrustumChecks_out = false;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
+    }
 
     // Check viewing angle
-    Eigen::Vector3f Pn = p_mapPoint_inout->getNormal();
+    Eigen::Vector3f Pn{};
+    if (p_mapPoint_inout->getNormal(Pn) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getNormal returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     const float viewCos = PO.dot(Pn) / distance;
 
     if (viewCos < viewingCosLimit_in)
-        return false;
+    {
+        isInFrustumChecks_out = false;
+        return FrameStatus::FRAME_STATUS_SUCCESS;
+    }
 
     // Predict scale in the image
-    const int predictedLevelCount =
-        p_mapPoint_inout->predictScale(distance, this);
+    int predictedLevelCount{};
+    if (p_mapPoint_inout->predictScale(distance, this, predictedLevelCount) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: predictScale returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (isRightCamera_in)
     {
@@ -126,7 +182,8 @@ bool Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
         p_mapPoint_inout->trackDepth      = Pc_dist;
     }
 
-    return true;
+    isInFrustumChecks_out = true;
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

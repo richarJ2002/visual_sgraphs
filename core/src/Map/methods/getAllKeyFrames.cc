@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<KeyFrame *> Map::getAllKeyFrames()
+MapStatus Map::getAllKeyFrames(std::vector<KeyFrame *> &allKeyFrames_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
+    allKeyFrames_out =
+        std::vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

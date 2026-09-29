@@ -34,11 +34,13 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setSkeletonClusterPoints(
+MapStatus Map::setSkeletonClusterPoints(
     const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints_in)
 {
     unique_lock<mutex> lock(mapMutex);
     skeletonClusterPoints = newClusterPoints_in;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

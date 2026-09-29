@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<semantic::Marker *> Map::getAllMarkers()
+MapStatus Map::getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return vector<semantic::Marker *>(markers.begin(), markers.end());
+    allMarkers_out =
+        std::vector<semantic::Marker *>(markers.begin(), markers.end());
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

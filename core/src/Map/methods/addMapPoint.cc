@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addMapPoint(MapPoint *p_mapPoint_in)
+MapStatus Map::addMapPoint(MapPoint *p_mapPoint_in)
 {
     unique_lock<mutex> lock(mapMutex);
     mapPoints.insert(p_mapPoint_in);
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

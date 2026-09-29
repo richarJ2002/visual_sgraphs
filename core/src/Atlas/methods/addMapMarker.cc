@@ -42,7 +42,13 @@ void Atlas::addMapMarker(semantic::Marker *p_marker_in)
                      "fail; continuing as before.",
                      __func__);
     }
-    p_ownerMap->addMapMarker(p_marker_in);
+    if (p_ownerMap->addMapMarker(p_marker_in) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapMarker returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

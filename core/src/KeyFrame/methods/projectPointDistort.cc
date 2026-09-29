@@ -30,20 +30,30 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool KeyFrame::projectPointDistort(MapPoint    *p_mapPoint_in,
-                                   cv::Point2f &keyPoint_out,
-                                   float       &u_out,
-                                   float       &v_out)
+KeyFrameStatus KeyFrame::projectPointDistort(MapPoint    *p_mapPoint_in,
+                                             cv::Point2f &keyPoint_out,
+                                             float       &u_out,
+                                             float       &v_out,
+                                             bool        &isProjected_out)
 {
 
     // 3D in absolute coordinates
-    Eigen::Vector3f P = p_mapPoint_in->getWorldPos();
+    Eigen::Vector3f P{};
+    if (p_mapPoint_in->getWorldPos(P) !=
+        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWorldPos returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // 3D in camera coordinates
     Eigen::Vector3f Pc  = rotationRcw * P + poseTcw.translation();
@@ -55,7 +65,8 @@ bool KeyFrame::projectPointDistort(MapPoint    *p_mapPoint_in,
     if (PcZ < 0.0f)
     {
         cout << "Negative depth: " << PcZ << endl;
-        return false;
+        isProjected_out = false;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
     // Project in image and check it is not outside
@@ -66,9 +77,15 @@ bool KeyFrame::projectPointDistort(MapPoint    *p_mapPoint_in,
     // cout << "c";
 
     if (u_out < gridMinX || u_out > gridMaxX)
-        return false;
+    {
+        isProjected_out = false;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
     if (v_out < gridMinY || v_out > gridMaxY)
-        return false;
+    {
+        isProjected_out = false;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
 
     float x  = (u_out - cx) * invfx;
     float y  = (v_out - cy) * invfy;
@@ -99,7 +116,8 @@ bool KeyFrame::projectPointDistort(MapPoint    *p_mapPoint_in,
 
     keyPoint_out = cv::Point2f(u_out, v_out);
 
-    return true;
+    isProjected_out = true;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

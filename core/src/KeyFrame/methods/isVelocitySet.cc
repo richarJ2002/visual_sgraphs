@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool KeyFrame::isVelocitySet()
+KeyFrameStatus KeyFrame::isVelocitySet(bool &isVelocitySet_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return isVelocityAvailable;
+    isVelocitySet_out = isVelocityAvailable;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

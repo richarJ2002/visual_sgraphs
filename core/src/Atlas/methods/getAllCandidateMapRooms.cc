@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,8 +33,17 @@ namespace core
 
 std::vector<semantic::Room *> Atlas::getAllCandidateMapRooms()
 {
-    unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap->getAllCandidateMapRooms();
+    unique_lock<mutex>            lock(atlasMutex);
+    std::vector<semantic::Room *> activeMapAllCandidateMapRooms{};
+    if (p_activeMap->getAllCandidateMapRooms(activeMapAllCandidateMapRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllCandidateMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapAllCandidateMapRooms;
 }
 
 } // namespace core

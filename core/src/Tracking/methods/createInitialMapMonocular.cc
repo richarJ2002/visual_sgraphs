@@ -51,8 +51,22 @@ void Tracking::createInitialMapMonocular()
     if (sensor == System::IMU_MONOCULAR)
         p_keyFrameInitial->p_imuPreintegrated = (IMU::Preintegrated *)(nullptr);
 
-    p_keyFrameInitial->computeBagOfWords();
-    p_keyFrameCurrent->computeBagOfWords();
+    if (p_keyFrameInitial->computeBagOfWords() !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeBagOfWords returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_keyFrameCurrent->computeBagOfWords() !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeBagOfWords returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Insert KFs in the map
     p_atlas->addKeyFrame(p_keyFrameInitial);
@@ -75,16 +89,59 @@ void Tracking::createInitialMapMonocular()
                                             p_keyFrameCurrent,
                                             p_atlas->getCurrentMap());
 
-        p_keyFrameInitial->addMapPoint(p_mapPoint, initialMatchIndex);
-        p_keyFrameCurrent->addMapPoint(p_mapPoint,
-                                       iniMatches[initialMatchIndex]);
+        if (p_keyFrameInitial->addMapPoint(p_mapPoint, initialMatchIndex) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapPoint returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_keyFrameCurrent->addMapPoint(p_mapPoint,
+                                           iniMatches[initialMatchIndex]) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapPoint returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        p_mapPoint->addObservation(p_keyFrameInitial, initialMatchIndex);
-        p_mapPoint->addObservation(p_keyFrameCurrent,
-                                   iniMatches[initialMatchIndex]);
+        if (p_mapPoint->addObservation(p_keyFrameInitial, initialMatchIndex) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addObservation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_mapPoint->addObservation(p_keyFrameCurrent,
+                                       iniMatches[initialMatchIndex]) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addObservation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        p_mapPoint->computeDistinctiveDescriptors();
-        p_mapPoint->updateNormalAndDepth();
+        if (p_mapPoint->computeDistinctiveDescriptors() !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: computeDistinctiveDescriptors returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (p_mapPoint->updateNormalAndDepth() !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateNormalAndDepth returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Fill Current Frame structure
         currentFrame.mapPoints[iniMatches[initialMatchIndex]]    = p_mapPoint;
@@ -95,11 +152,34 @@ void Tracking::createInitialMapMonocular()
     }
 
     // Update Connections
-    p_keyFrameInitial->updateConnections();
-    p_keyFrameCurrent->updateConnections();
+    if (p_keyFrameInitial->updateConnections() !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateConnections returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_keyFrameCurrent->updateConnections() !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateConnections returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     std::set<MapPoint *> mapPoints;
-    mapPoints = p_keyFrameInitial->getMapPoints();
+    std::set<MapPoint *> keyFrameInitialMapPoints{};
+    if (p_keyFrameInitial->getMapPoints(keyFrameInitialMapPoints) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPoints returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    mapPoints = keyFrameInitialMapPoints;
 
     // Bundle Adjustment
     std::cout << "\n[Tracking]" << std::endl;
@@ -122,16 +202,35 @@ void Tracking::createInitialMapMonocular()
                                       true,
                                       p_params->markers.impact);
 
-    float medianDepth = p_keyFrameInitial->computeSceneMedianDepth(2);
+    float medianDepth{};
+    if (p_keyFrameInitial->computeSceneMedianDepth(2, medianDepth) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeSceneMedianDepth returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     float invMedianDepth;
     if (sensor == System::IMU_MONOCULAR)
         invMedianDepth = 4.0f / medianDepth;
     else
         invMedianDepth = 1.0f / medianDepth;
 
-    if (medianDepth < 0 || p_keyFrameCurrent->getTrackedMapPointCount(1) <
-                               50) // TODO Check, originally 100
-                                   // tracks
+    int keyFrameCurrentTrackedMapPointCount{};
+    if (!(medianDepth < 0) && p_keyFrameCurrent->getTrackedMapPointCount(
+                                  1,
+                                  keyFrameCurrentTrackedMapPointCount) !=
+                                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getTrackedMapPointCount returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (medianDepth < 0 ||
+        keyFrameCurrentTrackedMapPointCount < 50) // TODO Check, originally 100
+                                                  // tracks
     {
         Verbose::printMess("Wrong initialization, reseting...",
                            Verbose::VERBOSITY_QUIET);
@@ -141,20 +240,67 @@ void Tracking::createInitialMapMonocular()
     }
 
     // Scale initial baseline
-    Sophus::SE3f Tc2w = p_keyFrameCurrent->getPose();
+    Sophus::SE3f Tc2w{};
+    if (p_keyFrameCurrent->getPose(Tc2w) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     Tc2w.translation() *= invMedianDepth;
-    p_keyFrameCurrent->setPose(Tc2w);
+    if (p_keyFrameCurrent->setPose(Tc2w) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     // Scale points
-    vector<MapPoint *> allMapPoints = p_keyFrameInitial->getMapPointMatches();
+    std::vector<MapPoint *> allMapPoints{};
+    if (p_keyFrameInitial->getMapPointMatches(allMapPoints) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     for (size_t mapPointIndex = 0; mapPointIndex < allMapPoints.size();
          mapPointIndex++)
     {
         if (allMapPoints[mapPointIndex])
         {
-            MapPoint *p_mapPoint = allMapPoints[mapPointIndex];
-            p_mapPoint->setWorldPos(p_mapPoint->getWorldPos() * invMedianDepth);
-            p_mapPoint->updateNormalAndDepth();
+            MapPoint       *p_mapPoint = allMapPoints[mapPointIndex];
+            Eigen::Vector3f mapPointWorldPos{};
+            if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mapPoint->setWorldPos(mapPointWorldPos * invMedianDepth) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mapPoint->updateNormalAndDepth() !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: updateNormalAndDepth returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
     }
 
@@ -173,7 +319,23 @@ void Tracking::createInitialMapMonocular()
     p_localMapper->insertKeyFrame(p_keyFrameCurrent);
     p_localMapper->firstTimestamp = p_keyFrameCurrent->timeStamp;
 
-    currentFrame.setPose(p_keyFrameCurrent->getPose());
+    Sophus::SE3f keyFrameCurrentPose{};
+    if (p_keyFrameCurrent->getPose(keyFrameCurrentPose) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (currentFrame.setPose(keyFrameCurrentPose) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     lastKeyFrameId = currentFrame.id;
     p_lastKeyFrame = p_keyFrameCurrent;
     // mnLastRelocFrameId = mInitialFrame.id;
@@ -187,8 +349,25 @@ void Tracking::createInitialMapMonocular()
     // Compute here initial velocity
     vector<KeyFrame *> keyFrames = p_atlas->getAllKeyFrames();
 
-    Sophus::SE3f deltaT =
-        keyFrames.back()->getPose() * keyFrames.front()->getPoseInverse();
+    Sophus::SE3f pose{};
+    if (keyFrames.back()->getPose(pose) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Sophus::SE3f poseInverse{};
+    if (keyFrames.front()->getPoseInverse(poseInverse) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPoseInverse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    Sophus::SE3f deltaT = pose * poseInverse;
     isVelocityAvailable = false;
     Eigen::Vector3f phi = deltaT.so3().log();
 
@@ -200,7 +379,16 @@ void Tracking::createInitialMapMonocular()
 
     p_atlas->setReferenceMapPoints(localMapPoints);
 
-    p_mapDrawer->setCurrentCameraPose(p_keyFrameCurrent->getPose());
+    Sophus::SE3f keyFrameCurrentPose2{};
+    if (p_keyFrameCurrent->getPose(keyFrameCurrentPose2) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    p_mapDrawer->setCurrentCameraPose(keyFrameCurrentPose2);
 
     p_atlas->getCurrentMap()->keyFrameOrigins.push_back(p_keyFrameInitial);
 

@@ -86,13 +86,28 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
     }
 
     // Add the plane to the list of planes in the current KeyFrame
-    p_keyFrame_inout->addMapPlane(p_currentPlane);
+    if (p_keyFrame_inout->addMapPlane(p_currentPlane) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapPlane returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // transform the plane cloud to the global frame
-    pcl::transformPointCloud(
-        *p_planeCloud_in,
-        *p_planeCloud_in,
-        p_keyFrame_inout->getPoseInverse().matrix().cast<float>());
+    Sophus::SE3f keyFramePoseInverse{};
+    if (p_keyFrame_inout->getPoseInverse(keyFramePoseInverse) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPoseInverse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    pcl::transformPointCloud(*p_planeCloud_in,
+                             *p_planeCloud_in,
+                             keyFramePoseInverse.matrix().cast<float>());
 
     /* Update the point cloud of the mapped plane */
     if (!p_planeCloud_in->empty())
@@ -136,11 +151,29 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
     }
     if (p_params2->optimization.planeMapPoint.enabled)
     {
-        for (const auto &mapPoint : p_keyFrame_inout->getMapPoints())
+        std::set<MapPoint *> keyFrameMapPoints{};
+        if (p_keyFrame_inout->getMapPoints(keyFrameMapPoints) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
-            bool currentPlaneIsPointinPlaneCloud{};
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPoints returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (const auto &mapPoint : keyFrameMapPoints)
+        {
+            bool            currentPlaneIsPointinPlaneCloud{};
+            Eigen::Vector3f mapPointWorldPos{};
+            if (mapPoint->getWorldPos(mapPointWorldPos) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (p_currentPlane->isPointinPlaneCloud(
-                    mapPoint->getWorldPos().cast<double>(),
+                    mapPointWorldPos.cast<double>(),
                     currentPlaneIsPointinPlaneCloud) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {

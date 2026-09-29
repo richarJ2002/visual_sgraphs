@@ -29,13 +29,14 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void KeyFrame::changeParent(KeyFrame *p_keyFrame_inout)
+KeyFrameStatus KeyFrame::changeParent(KeyFrame *p_keyFrame_inout)
 {
     unique_lock<mutex> lockCon(connectionsMutex);
     if (p_keyFrame_inout == this)
@@ -46,7 +47,16 @@ void KeyFrame::changeParent(KeyFrame *p_keyFrame_inout)
     }
 
     p_parent = p_keyFrame_inout;
-    p_keyFrame_inout->addChild(this);
+    if (p_keyFrame_inout->addChild(this) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addChild returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-int Map::reserveFloorId(void)
+MapStatus Map::reserveFloorId(int &floorId_out)
 {
     unique_lock<mutex> lock(mapMutex);
 
@@ -43,7 +43,8 @@ int Map::reserveFloorId(void)
         ++nextAvailableFloorId;
     }
 
-    return nextAvailableFloorId++;
+    floorId_out = nextAvailableFloorId++;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

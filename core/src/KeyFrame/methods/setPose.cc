@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::setPose(const Sophus::SE3f &Tcw_in)
+KeyFrameStatus KeyFrame::setPose(const Sophus::SE3f &Tcw_in)
 {
     unique_lock<mutex> lock(poseMutex);
 
@@ -50,6 +50,8 @@ void KeyFrame::setPose(const Sophus::SE3f &Tcw_in)
         owb =
             rotationRwc * imuCalibration.mTcb.translation() + twc.translation();
     }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

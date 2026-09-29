@@ -50,9 +50,11 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
     std::optional<SemanticGraphSnapshot> capturedSnapshot;
     long unsigned int                    mapId = 0U;
     {
-        Atlas atlas(0);
-        Map  *p_map = atlas.getCurrentMap();
-        mapId       = p_map->getId();
+        Atlas         atlas(0);
+        Map          *p_map = atlas.getCurrentMap();
+        unsigned long mapId2{};
+        ASSERT_EQ((p_map->getId(mapId2)), MapStatus::MAP_STATUS_SUCCESS);
+        mapId = mapId2;
 
         geometric::Plane wall;
         test::makeWallPlane(wall,
@@ -64,11 +66,12 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
                             1.0,
                             1.0,
                             Eigen::Vector3d(0.0, 0.0, 1.0));
-        p_map->addMapPlane(&wall);
+        ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
         Room room;
         test::makeRoom(room, 1, p_map, &wall, Eigen::Vector3d(1.0, 0.0, 1.0));
-        p_map->addDetectedMapRoom(&room);
+        ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+                  MapStatus::MAP_STATUS_SUCCESS);
 
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
         SemanticGraphSnapshot        snapshot{};
@@ -110,9 +113,11 @@ TEST(SemanticGraphSnapshot,
     std::optional<SemanticGraphSnapshot> capturedSnapshot;
     long unsigned int                    mapId = 0U;
     {
-        Atlas atlas(0);
-        Map  *p_map = atlas.getCurrentMap();
-        mapId       = p_map->getId();
+        Atlas         atlas(0);
+        Map          *p_map = atlas.getCurrentMap();
+        unsigned long mapId2{};
+        ASSERT_EQ((p_map->getId(mapId2)), MapStatus::MAP_STATUS_SUCCESS);
+        mapId = mapId2;
 
         geometric::Plane wall;
         test::makeWallPlane(wall,
@@ -124,11 +129,12 @@ TEST(SemanticGraphSnapshot,
                             1.0,
                             1.0,
                             Eigen::Vector3d(0.0, 0.0, 1.0));
-        p_map->addMapPlane(&wall);
+        ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
         Room room;
         test::makeRoom(room, 2, p_map, &wall, Eigen::Vector3d(1.0, 0.0, 1.0));
-        p_map->addDetectedMapRoom(&room);
+        ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+                  MapStatus::MAP_STATUS_SUCCESS);
 
         Passage passage;
         ASSERT_EQ(
@@ -140,13 +146,14 @@ TEST(SemanticGraphSnapshot,
         ASSERT_EQ(
             (passage.setKnownSideRoom(&room)),
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-        p_map->addMapPassage(&passage);
+        ASSERT_EQ((p_map->addMapPassage(&passage)),
+                  MapStatus::MAP_STATUS_SUCCESS);
         ASSERT_EQ((room.setDoorways(&passage)),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
         Floor floor;
         test::makeFloor(floor, 4, p_map, {&room});
-        p_map->addMapFloor(&floor);
+        ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
         ASSERT_EQ((room.setFloor(&floor)),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -193,8 +200,12 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
     Atlas atlas(0);
     Map  *p_mapA = atlas.getCurrentMap();
     atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
-    ASSERT_NE(p_mapA->getId(), p_mapB->getId());
+    Map          *p_mapB = atlas.getCurrentMap();
+    unsigned long id{};
+    ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    unsigned long id2{};
+    ASSERT_EQ((p_mapB->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_NE(id, id2);
 
     geometric::Plane wallA;
     test::makeWallPlane(wallA,
@@ -206,10 +217,11 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_mapA->addMapPlane(&wallA);
+    ASSERT_EQ((p_mapA->addMapPlane(&wallA)), MapStatus::MAP_STATUS_SUCCESS);
     Room roomA;
     test::makeRoom(roomA, 1, p_mapA, &wallA);
-    p_mapA->addDetectedMapRoom(&roomA);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&roomA)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     geometric::Plane wallB;
     test::makeWallPlane(wallB,
@@ -221,36 +233,39 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
                         1.0,
                         1.0,
                         Eigen::Vector3d(5.0, 0.0, 1.0));
-    p_mapB->addMapPlane(&wallB);
+    ASSERT_EQ((p_mapB->addMapPlane(&wallB)), MapStatus::MAP_STATUS_SUCCESS);
     Room roomB;
     test::makeRoom(roomB, 1, p_mapB, &wallB);
-    p_mapB->addDetectedMapRoom(&roomB);
+    ASSERT_EQ((p_mapB->addDetectedMapRoom(&roomB)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passageA;
     ASSERT_EQ((passageA.setId(1)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((passageA.setMap(p_mapA)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_mapA->addMapPassage(&passageA);
+    ASSERT_EQ((p_mapA->addMapPassage(&passageA)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Passage passageB;
     ASSERT_EQ((passageB.setId(1)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((passageB.setMap(p_mapB)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_mapB->addMapPassage(&passageB);
+    ASSERT_EQ((p_mapB->addMapPassage(&passageB)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Floor floorA;
     ASSERT_EQ((floorA.setId(1)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     ASSERT_EQ((floorA.setMap(p_mapA)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
-    p_mapA->addMapFloor(&floorA);
+    ASSERT_EQ((p_mapA->addMapFloor(&floorA)), MapStatus::MAP_STATUS_SUCCESS);
     Floor floorB;
     ASSERT_EQ((floorB.setId(1)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     ASSERT_EQ((floorB.setMap(p_mapB)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
-    p_mapB->addMapFloor(&floorB);
+    ASSERT_EQ((p_mapB->addMapFloor(&floorB)), MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -259,8 +274,12 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
     ASSERT_EQ(snapshot.maps.size(), 2U);
-    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, p_mapA->getId());
-    const MapSnapshot *p_snapshotB = findMapSnapshot(snapshot, p_mapB->getId());
+    unsigned long mapAId{};
+    ASSERT_EQ((p_mapA->getId(mapAId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, mapAId);
+    unsigned long      mapBId{};
+    ASSERT_EQ((p_mapB->getId(mapBId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_snapshotB = findMapSnapshot(snapshot, mapBId);
     ASSERT_NE(p_snapshotA, nullptr);
     ASSERT_NE(p_snapshotB, nullptr);
 
@@ -306,13 +325,15 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((mismatchedRoom.setMap(p_mapB)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_mapA->addDetectedMapRoom(&mismatchedRoom);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&mismatchedRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Room: enumerated from mapA, declares no map at all. */
     Room noMapRoom;
     ASSERT_EQ((noMapRoom.setId(2)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_mapA->addDetectedMapRoom(&noMapRoom);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&noMapRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Wall: enumerated from mapA, but declares mapB. */
     geometric::Plane mismatchedWall;
@@ -325,7 +346,8 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_mapA->addMapPlane(&mismatchedWall);
+    ASSERT_EQ((p_mapA->addMapPlane(&mismatchedWall)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Wall: enumerated from mapA, declares no map at all. Map::AddMapPlane()
      * only requires a non-null pointer; the plane's own setMap() is
@@ -341,13 +363,14 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         1.0,
                         Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_mapA->addMapPlane(&noMapWall);
+    ASSERT_EQ((p_mapA->addMapPlane(&noMapWall)), MapStatus::MAP_STATUS_SUCCESS);
 
     /* Passage: enumerated from mapA, declares no map at all. */
     Passage noMapPassage;
     ASSERT_EQ((noMapPassage.setId(4)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_mapA->addMapPassage(&noMapPassage);
+    ASSERT_EQ((p_mapA->addMapPassage(&noMapPassage)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Passage: enumerated from mapA, but declares mapB. */
     Passage mismatchedPassage;
@@ -355,7 +378,8 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((mismatchedPassage.setMap(p_mapB)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_mapA->addMapPassage(&mismatchedPassage);
+    ASSERT_EQ((p_mapA->addMapPassage(&mismatchedPassage)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Floor: enumerated from mapA, but declares mapB. */
     Floor mismatchedFloor;
@@ -363,13 +387,15 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     ASSERT_EQ((mismatchedFloor.setMap(p_mapB)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
-    p_mapA->addMapFloor(&mismatchedFloor);
+    ASSERT_EQ((p_mapA->addMapFloor(&mismatchedFloor)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Floor: enumerated from mapA, declares no map at all. */
     Floor noMapFloor;
     ASSERT_EQ((noMapFloor.setId(8)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
-    p_mapA->addMapFloor(&noMapFloor);
+    ASSERT_EQ((p_mapA->addMapFloor(&noMapFloor)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -377,14 +403,20 @@ TEST(SemanticGraphSnapshot,
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
-    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, p_mapA->getId());
+    unsigned long mapAId{};
+    ASSERT_EQ((p_mapA->getId(mapAId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, mapAId);
     ASSERT_NE(p_snapshotA, nullptr);
 
     const RoomRecord *p_mismatchedRoom = findRoomRecord(*p_snapshotA, 1);
     ASSERT_NE(p_mismatchedRoom, nullptr);
-    EXPECT_EQ(p_mismatchedRoom->key.mapId, p_mapA->getId());
+    unsigned long id{};
+    ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_mismatchedRoom->key.mapId, id);
     ASSERT_TRUE(p_mismatchedRoom->declaredMapId.has_value());
-    EXPECT_EQ(*p_mismatchedRoom->declaredMapId, p_mapB->getId());
+    unsigned long id2{};
+    ASSERT_EQ((p_mapB->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(*p_mismatchedRoom->declaredMapId, id2);
 
     const RoomRecord *p_noMapRoom = findRoomRecord(*p_snapshotA, 2);
     ASSERT_NE(p_noMapRoom, nullptr);
@@ -392,9 +424,13 @@ TEST(SemanticGraphSnapshot,
 
     const WallRecord *p_mismatchedWallRecord = findWallRecord(*p_snapshotA, 3);
     ASSERT_NE(p_mismatchedWallRecord, nullptr);
-    EXPECT_EQ(p_mismatchedWallRecord->key.mapId, p_mapA->getId());
+    unsigned long id3{};
+    ASSERT_EQ((p_mapA->getId(id3)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_mismatchedWallRecord->key.mapId, id3);
     ASSERT_TRUE(p_mismatchedWallRecord->declaredMapId.has_value());
-    EXPECT_EQ(*p_mismatchedWallRecord->declaredMapId, p_mapB->getId());
+    unsigned long id4{};
+    ASSERT_EQ((p_mapB->getId(id4)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(*p_mismatchedWallRecord->declaredMapId, id4);
 
     const WallRecord *p_noMapWallRecord = findWallRecord(*p_snapshotA, 6);
     ASSERT_NE(p_noMapWallRecord, nullptr);
@@ -407,9 +443,13 @@ TEST(SemanticGraphSnapshot,
     const PassageRecord *p_mismatchedPassage =
         findPassageRecord(*p_snapshotA, 7);
     ASSERT_NE(p_mismatchedPassage, nullptr);
-    EXPECT_EQ(p_mismatchedPassage->key.mapId, p_mapA->getId());
+    unsigned long id5{};
+    ASSERT_EQ((p_mapA->getId(id5)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_mismatchedPassage->key.mapId, id5);
     ASSERT_TRUE(p_mismatchedPassage->declaredMapId.has_value());
-    EXPECT_EQ(*p_mismatchedPassage->declaredMapId, p_mapB->getId());
+    unsigned long id6{};
+    ASSERT_EQ((p_mapB->getId(id6)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(*p_mismatchedPassage->declaredMapId, id6);
 
     ASSERT_EQ(p_snapshotA->floors.size(), 2U);
     const FloorRecord *p_mismatchedFloor  = nullptr;
@@ -426,9 +466,13 @@ TEST(SemanticGraphSnapshot,
         }
     }
     ASSERT_NE(p_mismatchedFloor, nullptr);
-    EXPECT_EQ(p_mismatchedFloor->key.mapId, p_mapA->getId());
+    unsigned long id7{};
+    ASSERT_EQ((p_mapA->getId(id7)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_mismatchedFloor->key.mapId, id7);
     ASSERT_TRUE(p_mismatchedFloor->declaredMapId.has_value());
-    EXPECT_EQ(*p_mismatchedFloor->declaredMapId, p_mapB->getId());
+    unsigned long id8{};
+    ASSERT_EQ((p_mapB->getId(id8)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(*p_mismatchedFloor->declaredMapId, id8);
     ASSERT_NE(p_noMapFloorRecord, nullptr);
     EXPECT_FALSE(p_noMapFloorRecord->declaredMapId.has_value());
 }
@@ -446,22 +490,26 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((detectedOnly.setMap(p_map)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&detectedOnly);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&detectedOnly)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Room candidateOnly;
     ASSERT_EQ((candidateOnly.setId(2)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((candidateOnly.setMap(p_map)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addCandidateMapRoom(&candidateOnly);
+    ASSERT_EQ((p_map->addCandidateMapRoom(&candidateOnly)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Room bothCollections;
     ASSERT_EQ((bothCollections.setId(3)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((bothCollections.setMap(p_map)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&bothCollections);
-    p_map->addCandidateMapRoom(&bothCollections);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&bothCollections)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addCandidateMapRoom(&bothCollections)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -469,8 +517,9 @@ TEST(SemanticGraphSnapshot,
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
-    const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->getId());
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_mapSnapshot = findMapSnapshot(snapshot, mapId);
     ASSERT_NE(p_mapSnapshot, nullptr);
     ASSERT_EQ(p_mapSnapshot->rooms.size(), 3U);
 
@@ -504,7 +553,8 @@ TEST(SemanticGraphSnapshot,
     /* Room with no ground plane at all -- null RawPlaneRef. */
     Room noGroundRoom;
     test::makeRoom(noGroundRoom, 1, p_mapA, nullptr);
-    p_mapA->addDetectedMapRoom(&noGroundRoom);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&noGroundRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Room whose ground plane is a real, but never map-registered
      * ("unmapped"), WALL-typed ("wrong type") plane. */
@@ -525,7 +575,8 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((unusualGroundRoom.setGroundPlane(&unmappedWrongTypeGround)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_mapA->addDetectedMapRoom(&unusualGroundRoom);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&unusualGroundRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Room referenced as a "missing-from-enumeration" far-side target: it
      * has a real map but was never added to any Map room collection. */
@@ -542,13 +593,15 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((crossMapRoom.setMap(p_mapB)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_mapB->addDetectedMapRoom(&crossMapRoom);
+    ASSERT_EQ((p_mapB->addDetectedMapRoom(&crossMapRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Bad wall, referenced as another room's ground plane, to prove
      * liveness is captured truthfully even for a retired target. */
     geometric::Plane badGroundPlane;
     test::makeGroundPlane(badGroundPlane, 8, p_mapA);
-    p_mapA->addMapPlane(&badGroundPlane);
+    ASSERT_EQ((p_mapA->addMapPlane(&badGroundPlane)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((badGroundPlane.setBad()),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     Room badGroundOwnerRoom;
@@ -558,7 +611,8 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((badGroundOwnerRoom.setGroundPlane(&badGroundPlane)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_mapA->addDetectedMapRoom(&badGroundOwnerRoom);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&badGroundOwnerRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     ASSERT_EQ((passage.setId(10)),
@@ -569,7 +623,7 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((passage.setProspectiveRoom(&crossMapRoom)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_mapA->addMapPassage(&passage);
+    ASSERT_EQ((p_mapA->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -577,7 +631,9 @@ TEST(SemanticGraphSnapshot,
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
-    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, p_mapA->getId());
+    unsigned long mapAId{};
+    ASSERT_EQ((p_mapA->getId(mapAId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_snapshotA = findMapSnapshot(snapshot, mapAId);
     ASSERT_NE(p_snapshotA, nullptr);
 
     /* Null. */
@@ -604,7 +660,9 @@ TEST(SemanticGraphSnapshot,
     ASSERT_NE(p_passageRecord, nullptr);
     ASSERT_TRUE(p_passageRecord->knownSideRoomRef.key.has_value());
     EXPECT_EQ(p_passageRecord->knownSideRoomRef.key->entityId, 99);
-    EXPECT_EQ(p_passageRecord->knownSideRoomRef.key->mapId, p_mapA->getId());
+    unsigned long id{};
+    ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_passageRecord->knownSideRoomRef.key->mapId, id);
     EXPECT_EQ(findRoomRecord(*p_snapshotA, 99), nullptr);
     ASSERT_TRUE(p_passageRecord->knownSideRoomRef.isLive.has_value());
     EXPECT_TRUE(*p_passageRecord->knownSideRoomRef.isLive);
@@ -612,7 +670,9 @@ TEST(SemanticGraphSnapshot,
     /* Cross-map: the referenced room's key names mapB, distinct from the
      * passage record's own mapA key. */
     ASSERT_TRUE(p_passageRecord->prospectiveRoomRef.key.has_value());
-    EXPECT_EQ(p_passageRecord->prospectiveRoomRef.key->mapId, p_mapB->getId());
+    unsigned long id2{};
+    ASSERT_EQ((p_mapB->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_passageRecord->prospectiveRoomRef.key->mapId, id2);
     EXPECT_NE(p_passageRecord->prospectiveRoomRef.key->mapId,
               p_passageRecord->key.mapId);
 
@@ -661,7 +721,8 @@ TEST(SemanticGraphSnapshot,
     /* A live GROUND-typed plane, never a WallRecord in this snapshot. */
     geometric::Plane groundNotWall;
     ASSERT_TRUE(test::makeGroundPlane(groundNotWall, 1, p_map));
-    p_map->addMapPlane(&groundNotWall);
+    ASSERT_EQ((p_map->addMapPlane(&groundNotWall)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Case 1: a genuine wall whose twinFace_ is wrongly set to the
      * GROUND-typed plane (geometric::Plane::setTwinFace() has no type check, so
@@ -677,7 +738,7 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((wall.setTwinFace(&groundNotWall)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
@@ -691,7 +752,8 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setWalls(&groundNotWall)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Case 3: a Passage whose getAssociateWalls() names the same
      * GROUND-typed plane. */
@@ -702,7 +764,7 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((passage.addAssociateWall(&groundNotWall)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -710,8 +772,9 @@ TEST(SemanticGraphSnapshot,
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
-    const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->getId());
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_mapSnapshot = findMapSnapshot(snapshot, mapId);
     ASSERT_NE(p_mapSnapshot, nullptr);
 
     /* The GROUND-typed plane must never appear as a WallRecord. */
@@ -769,7 +832,7 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((passage.setProspectiveRoom(&unmappedBadRoom)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
     /* An unmapped, non-null Floor, referenced from a Room. */
     Floor unmappedFloor;
@@ -783,7 +846,8 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setFloor(&unmappedFloor)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -791,8 +855,9 @@ TEST(SemanticGraphSnapshot,
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
-    const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->getId());
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_mapSnapshot = findMapSnapshot(snapshot, mapId);
     ASSERT_NE(p_mapSnapshot, nullptr);
 
     const PassageRecord *p_passageRecord = findPassageRecord(*p_mapSnapshot, 1);
@@ -860,9 +925,13 @@ TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
 TEST(SemanticGraphSnapshot,
      CurrentMapMarkedBadBeforeChangeMapIsReportedAsNotActive)
 {
-    Atlas                   atlas(0);
-    Map                    *p_currentMap = atlas.getCurrentMap();
-    const long unsigned int currentMapId = p_currentMap->getId();
+    Atlas         atlas(0);
+    Map          *p_currentMap = atlas.getCurrentMap();
+    unsigned long currentMapIdValue{};
+    ASSERT_EQ((p_currentMap->getId(currentMapIdValue)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    const long unsigned int currentMapId =
+        static_cast<long unsigned int>(currentMapIdValue);
 
     atlas.setMapBad(p_currentMap);
     /* No ChangeMap() call yet: mpCurrentMap still points at the now-bad,
@@ -897,11 +966,14 @@ TEST(SemanticGraphSnapshot, CurrentMapStatusIsActiveForAnOrdinaryCurrentMap)
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
     ASSERT_TRUE(snapshot.currentMapId.has_value());
-    EXPECT_EQ(*snapshot.currentMapId, p_map->getId());
+    unsigned long id{};
+    ASSERT_EQ((p_map->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(*snapshot.currentMapId, id);
     EXPECT_EQ(snapshot.currentMapStatus,
               AtlasCurrentMapStatus::CURRENT_MAP_ACTIVE);
-    const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->getId());
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_mapSnapshot = findMapSnapshot(snapshot, mapId);
     ASSERT_NE(p_mapSnapshot, nullptr);
     EXPECT_TRUE(p_mapSnapshot->isCurrentMap);
 }
@@ -927,7 +999,7 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -942,8 +1014,9 @@ TEST(SemanticGraphSnapshot,
     EXPECT_EQ(snapshot.managerPrivateUnresolvedWallHypothesesReason,
               UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE);
 
-    const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->getId());
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_mapSnapshot = findMapSnapshot(snapshot, mapId);
     ASSERT_NE(p_mapSnapshot, nullptr);
     const WallRecord *p_wallRecord = findWallRecord(*p_mapSnapshot, 1);
     ASSERT_NE(p_wallRecord, nullptr);
@@ -1021,13 +1094,41 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
 
         if (constructLowerCentroidFirst_in)
         {
-            p_map->addDetectedMapRoom(p_lowerCentroidRoom.get());
-            p_map->addDetectedMapRoom(p_higherCentroidRoom.get());
+            if (p_map->addDetectedMapRoom(p_lowerCentroidRoom.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addDetectedMapRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_map->addDetectedMapRoom(p_higherCentroidRoom.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addDetectedMapRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
-            p_map->addDetectedMapRoom(p_higherCentroidRoom.get());
-            p_map->addDetectedMapRoom(p_lowerCentroidRoom.get());
+            if (p_map->addDetectedMapRoom(p_higherCentroidRoom.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addDetectedMapRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_map->addDetectedMapRoom(p_lowerCentroidRoom.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addDetectedMapRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
@@ -1226,11 +1327,12 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->addMapPlane(&sharedWall);
+    ASSERT_EQ((p_map->addMapPlane(&sharedWall)), MapStatus::MAP_STATUS_SUCCESS);
 
     Room liveOwner;
     test::makeRoom(liveOwner, 2, p_map, &sharedWall, Eigen::Vector3d(1, 0, 1));
-    p_map->addDetectedMapRoom(&liveOwner);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&liveOwner)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Room badOwnerSameId;
     test::makeRoom(badOwnerSameId,
@@ -1240,7 +1342,8 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
                    Eigen::Vector3d(-1, 0, 1));
     ASSERT_EQ((badOwnerSameId.setBad()),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&badOwnerSameId);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&badOwnerSameId)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -1248,8 +1351,9 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
-    const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->getId());
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_mapSnapshot = findMapSnapshot(snapshot, mapId);
     ASSERT_NE(p_mapSnapshot, nullptr);
     const WallRecord *p_wallRecord = findWallRecord(*p_mapSnapshot, 1);
     ASSERT_NE(p_wallRecord, nullptr);
@@ -1289,7 +1393,7 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_mapA->addMapPlane(&wall);
+    ASSERT_EQ((p_mapA->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     /* Enumerated from mapA (AddDetectedMapRoom), but declares mapB. */
     Room mismatchedOwner;
@@ -1299,7 +1403,8 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((mismatchedOwner.setWalls(&wall)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_mapA->addDetectedMapRoom(&mismatchedOwner);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&mismatchedOwner)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -1307,14 +1412,19 @@ TEST(SemanticGraphSnapshot,
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
-    const MapSnapshot *p_mapSnapshotA =
-        findMapSnapshot(snapshot, p_mapA->getId());
+    unsigned long mapAId{};
+    ASSERT_EQ((p_mapA->getId(mapAId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_mapSnapshotA = findMapSnapshot(snapshot, mapAId);
     ASSERT_NE(p_mapSnapshotA, nullptr);
     const RoomRecord *p_ownerRecord = findRoomRecord(*p_mapSnapshotA, 2);
     ASSERT_NE(p_ownerRecord, nullptr);
-    EXPECT_EQ(p_ownerRecord->key.mapId, p_mapA->getId());
+    unsigned long id{};
+    ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_ownerRecord->key.mapId, id);
     ASSERT_TRUE(p_ownerRecord->declaredMapId.has_value());
-    EXPECT_EQ(*p_ownerRecord->declaredMapId, p_mapB->getId());
+    unsigned long id2{};
+    ASSERT_EQ((p_mapB->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(*p_ownerRecord->declaredMapId, id2);
 
     const WallRecord *p_wallRecord = findWallRecord(*p_mapSnapshotA, 1);
     ASSERT_NE(p_wallRecord, nullptr);
@@ -1324,7 +1434,9 @@ TEST(SemanticGraphSnapshot,
      * (mapA-qualified), not a mapB-qualified key derived from the room's
      * own declared map. */
     EXPECT_EQ(*p_wallRecord->ownerRoomRefs[0].key, p_ownerRecord->key);
-    EXPECT_EQ(p_wallRecord->ownerRoomRefs[0].key->mapId, p_mapA->getId());
+    unsigned long id3{};
+    ASSERT_EQ((p_mapA->getId(id3)), MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_wallRecord->ownerRoomRefs[0].key->mapId, id3);
 }
 
 /* Minimum-proof item 7: bad room owners and duplicate/colliding relationship
@@ -1344,13 +1456,14 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->addMapPlane(&sharedWall);
+    ASSERT_EQ((p_map->addMapPlane(&sharedWall)), MapStatus::MAP_STATUS_SUCCESS);
 
     /* Two distinct, live rooms both claim the same wall -- a real AX-WALL-01
      * violation that capture must retain, not silently resolve. */
     Room firstOwner;
     test::makeRoom(firstOwner, 2, p_map, &sharedWall, Eigen::Vector3d(1, 0, 1));
-    p_map->addDetectedMapRoom(&firstOwner);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&firstOwner)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Room secondOwner;
     test::makeRoom(secondOwner,
@@ -1358,14 +1471,16 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
                    p_map,
                    &sharedWall,
                    Eigen::Vector3d(-1, 0, 1));
-    p_map->addDetectedMapRoom(&secondOwner);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&secondOwner)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* A retired (bad) room that still lists the wall. */
     Room badOwner;
     test::makeRoom(badOwner, 4, p_map, &sharedWall, Eigen::Vector3d(0, 1, 1));
     ASSERT_EQ((badOwner.setBad()),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&badOwner);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&badOwner)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* A room registered in BOTH Map::GetAllDetectedMapRooms() and
      * Map::GetAllMarkerBasedMapRooms(), owning its own wall. This is the
@@ -1383,15 +1498,18 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
                         1.0,
                         1.0,
                         Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->addMapPlane(&doublyRegisteredOwnerWall);
+    ASSERT_EQ((p_map->addMapPlane(&doublyRegisteredOwnerWall)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room doublyRegisteredOwner;
     test::makeRoom(doublyRegisteredOwner,
                    6,
                    p_map,
                    &doublyRegisteredOwnerWall,
                    Eigen::Vector3d(2, 0, 1));
-    p_map->addDetectedMapRoom(&doublyRegisteredOwner);
-    p_map->addCandidateMapRoom(&doublyRegisteredOwner);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&doublyRegisteredOwner)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addCandidateMapRoom(&doublyRegisteredOwner)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -1399,8 +1517,9 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
 
-    const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->getId());
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_mapSnapshot = findMapSnapshot(snapshot, mapId);
     ASSERT_NE(p_mapSnapshot, nullptr);
 
     const WallRecord *p_sharedWallRecord = findWallRecord(*p_mapSnapshot, 1);
@@ -1472,7 +1591,14 @@ TEST(
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_map->addDetectedMapRoom(p_room.get());
+            if (p_map->addDetectedMapRoom(p_room.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addDetectedMapRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             rooms.push_back(std::move(p_room));
         }
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
@@ -1520,7 +1646,8 @@ TEST(
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setCentroid(Eigen::Vector3d(3.0, 4.0, 5.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     {
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
         SemanticGraphSnapshot        snapshot{};
@@ -1536,7 +1663,10 @@ TEST(
     ASSERT_EQ((room.isBad(isBad2)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     EXPECT_FALSE(isBad2);
-    EXPECT_EQ(p_map->getAllDetectedMapRooms().size(), 1U);
+    std::vector<semantic::Room *> allDetectedMapRooms{};
+    ASSERT_EQ((p_map->getAllDetectedMapRooms(allDetectedMapRooms)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(allDetectedMapRooms.size(), 1U);
 }
 
 /* "ordering of maps and every record/relationship collection":
@@ -1580,7 +1710,14 @@ TEST(
                 1.0,
                 1.0,
                 Eigen::Vector3d(static_cast<double>(index), 0.0, 1.0));
-            p_mapA->addMapPlane(p_wall.get());
+            if (p_mapA->addMapPlane(p_wall.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             walls.push_back(std::move(p_wall));
 
             std::unique_ptr<Passage> p_passage = std::make_unique<Passage>();
@@ -1602,7 +1739,14 @@ TEST(
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_mapA->addMapPassage(p_passage.get());
+            if (p_mapA->addMapPassage(p_passage.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPassage returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             passages.push_back(std::move(p_passage));
 
             std::unique_ptr<Floor> p_floor = std::make_unique<Floor>();
@@ -1622,7 +1766,14 @@ TEST(
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_mapA->addMapFloor(p_floor.get());
+            if (p_mapA->addMapFloor(p_floor.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapFloor returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             floors.push_back(std::move(p_floor));
         }
 
@@ -1637,7 +1788,15 @@ TEST(
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        return std::make_pair(std::move(snapshot), p_mapA->getId());
+        unsigned long mapAId{};
+        if (p_mapA->getId(mapAId) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        return std::make_pair(std::move(snapshot), mapAId);
     };
 
     const auto [ascendingSnapshot, ascendingMapAId]   = buildAndCapture(true);
@@ -1715,7 +1874,14 @@ TEST(
                 1.0,
                 1.0,
                 Eigen::Vector3d(static_cast<double>(index), 0.0, 1.0));
-            p_map->addMapPlane(p_wall.get());
+            if (p_map->addMapPlane(p_wall.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             walls.push_back(std::move(p_wall));
         }
 
@@ -1741,7 +1907,14 @@ TEST(
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_map->addMapPassage(p_passage.get());
+            if (p_map->addMapPassage(p_passage.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPassage returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             passages.push_back(std::move(p_passage));
         }
 
@@ -1779,7 +1952,14 @@ TEST(
                             1.0,
                             1.0,
                             Eigen::Vector3d(4.0, 0.0, 1.0));
-        p_map->addMapPlane(p_sharedWall.get());
+        if (p_map->addMapPlane(p_sharedWall.get()) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapPlane returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         Room subjectRoom;
         if (subjectRoom.setId(10) !=
@@ -1883,13 +2063,40 @@ TEST(
                              __func__);
             }
         }
-        p_map->addDetectedMapRoom(&subjectRoom);
+        if (p_map->addDetectedMapRoom(&subjectRoom) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addDetectedMapRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (const std::unique_ptr<Room> &p_owningRoom : owningRooms)
         {
-            p_map->addDetectedMapRoom(p_owningRoom.get());
+            if (p_map->addDetectedMapRoom(p_owningRoom.get()) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addDetectedMapRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
-        p_map->addMapFloor(&subjectFloor);
-        p_map->addMapPassage(&subjectPassage);
+        if (p_map->addMapFloor(&subjectFloor) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapFloor returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_map->addMapPassage(&subjectPassage) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapPassage returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
         SemanticGraphSnapshot        snapshot{};
@@ -1973,7 +2180,8 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setMap(p_map)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -2004,7 +2212,7 @@ TEST(SemanticGraphSnapshot,
                         1.5,
                         0.75,
                         Eigen::Vector3d(0.0, 2.0, 0.0));
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     geometric::Plane::GeometrySnapshot fullSnapshot{};
     ASSERT_EQ((wall.getGeometrySnapshot(fullSnapshot)),
@@ -2032,8 +2240,9 @@ TEST(SemanticGraphSnapshot,
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
-    const MapSnapshot *p_mapSnapshot =
-        findMapSnapshot(snapshot, p_map->getId());
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    const MapSnapshot *p_mapSnapshot = findMapSnapshot(snapshot, mapId);
     ASSERT_NE(p_mapSnapshot, nullptr);
     const WallRecord *p_wallRecord = findWallRecord(*p_mapSnapshot, 1);
     ASSERT_NE(p_wallRecord, nullptr);

@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool KeyFrame::isBad()
+KeyFrameStatus KeyFrame::isBad(bool &isBad_out)
 {
     unique_lock<mutex> lock(connectionsMutex);
-    return isFlaggedBad;
+    isBad_out = isFlaggedBad;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

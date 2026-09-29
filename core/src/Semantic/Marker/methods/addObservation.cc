@@ -18,6 +18,7 @@
 
 #include "KeyFrame.h"
 #include "Semantic/Marker.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -30,7 +31,17 @@ MarkerStatus
     Marker::addObservation(core::KeyFrame     *p_keyFrame_in,
                            const Sophus::SE3f &markerPose_markerToCamera_in)
 {
-    if (p_keyFrame_in == nullptr || p_keyFrame_in->isBad())
+    bool keyFrameIsBad{};
+    if (!(p_keyFrame_in == nullptr) &&
+        p_keyFrame_in->isBad(keyFrameIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_keyFrame_in == nullptr || keyFrameIsBad)
     {
         return MarkerStatus::MARKER_STATUS_SUCCESS;
     }

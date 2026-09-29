@@ -31,13 +31,14 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void Map::postLoad(
+MapStatus Map::postLoad(
     KeyFrameDatabase *p_keyFrameDatabase_inout,
     ORBVocabulary *
         p_orbVocabulary_in /*, map<long unsigned int, KeyFrame*>& mpKeyFrameId*/
@@ -55,40 +56,118 @@ void Map::postLoad(
     map<long unsigned int, MapPoint *> mapPointId;
     for (MapPoint *p_mapPoint : mapPoints)
     {
-        if (!p_mapPoint || p_mapPoint->isBad())
+        bool mapPointIsBad{};
+        if (!(!p_mapPoint) && p_mapPoint->isBad(mapPointIsBad) !=
+                                  MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_mapPoint || mapPointIsBad)
             continue;
 
-        p_mapPoint->updateMap(this);
+        if (p_mapPoint->updateMap(this) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         mapPointId[p_mapPoint->id] = p_mapPoint;
     }
 
     map<long unsigned int, KeyFrame *> keyFrameId;
     for (KeyFrame *p_keyFrame : keyFrames)
     {
-        if (!p_keyFrame || p_keyFrame->isBad())
+        bool keyFrameIsBad{};
+        if (!(!p_keyFrame) && p_keyFrame->isBad(keyFrameIsBad) !=
+                                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_keyFrame || keyFrameIsBad)
             continue;
 
-        p_keyFrame->updateMap(this);
-        p_keyFrame->setORBVocabulary(p_orbVocabulary_in);
-        p_keyFrame->setKeyFrameDatabase(p_keyFrameDatabase_inout);
+        if (p_keyFrame->updateMap(this) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_keyFrame->setORBVocabulary(p_orbVocabulary_in) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setORBVocabulary returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_keyFrame->setKeyFrameDatabase(p_keyFrameDatabase_inout) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setKeyFrameDatabase returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         keyFrameId[p_keyFrame->id] = p_keyFrame;
     }
 
     // References reconstruction between different instances
     for (MapPoint *p_mapPoint : mapPoints)
     {
-        if (!p_mapPoint || p_mapPoint->isBad())
+        bool mapPointIsBad2{};
+        if (!(!p_mapPoint) && p_mapPoint->isBad(mapPointIsBad2) !=
+                                  MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_mapPoint || mapPointIsBad2)
             continue;
 
-        p_mapPoint->postLoad(keyFrameId, mapPointId);
+        if (p_mapPoint->postLoad(keyFrameId, mapPointId) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: postLoad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     for (KeyFrame *p_keyFrame : keyFrames)
     {
-        if (!p_keyFrame || p_keyFrame->isBad())
+        bool keyFrameIsBad2{};
+        if (!(!p_keyFrame) && p_keyFrame->isBad(keyFrameIsBad2) !=
+                                  KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!p_keyFrame || keyFrameIsBad2)
             continue;
 
-        p_keyFrame->postLoad(keyFrameId, mapPointId, cams_inout);
+        if (p_keyFrame->postLoad(keyFrameId, mapPointId, cams_inout) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: postLoad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         p_keyFrameDatabase_inout->add(p_keyFrame);
     }
 
@@ -113,6 +192,8 @@ void Map::postLoad(
     }
 
     backupMapPoints.clear();
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

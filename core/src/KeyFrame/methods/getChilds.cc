@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-set<KeyFrame *> KeyFrame::getChilds()
+KeyFrameStatus KeyFrame::getChilds(std::set<KeyFrame *> &childs_out)
 {
     unique_lock<mutex> lockCon(connectionsMutex);
-    return childrens;
+    childs_out = childrens;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -40,8 +40,17 @@ std::set<std::string> collectAnchorTags(Map *p_oldMap_in, Map *p_currentMap_in)
     {
         return anchorTags;
     }
-    std::set<std::string> currentTags;
-    for (semantic::Room *p_room : p_currentMap_in->getAllRooms())
+    std::set<std::string>         currentTags;
+    std::vector<semantic::Room *> currentMapAllRooms{};
+    if (p_currentMap_in->getAllRooms(currentMapAllRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Room *p_room : currentMapAllRooms)
     {
         bool roomIsBad{};
         if ((p_room != nullptr) &&
@@ -88,7 +97,16 @@ std::set<std::string> collectAnchorTags(Map *p_oldMap_in, Map *p_currentMap_in)
             currentTags.insert(roomTag2);
         }
     }
-    for (semantic::Room *p_room : p_oldMap_in->getAllRooms())
+    std::vector<semantic::Room *> oldMapAllRooms{};
+    if (p_oldMap_in->getAllRooms(oldMapAllRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Room *p_room : oldMapAllRooms)
     {
         bool roomIsBad2{};
         if ((p_room != nullptr) &&

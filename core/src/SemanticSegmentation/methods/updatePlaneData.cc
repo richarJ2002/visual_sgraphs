@@ -53,8 +53,17 @@ void SemanticSegmentation::updatePlaneData(
 
             /* Convert the given plane to global coordinates */
             g2o::Plane3D globalEquation{};
+            Sophus::SE3f keyFramePoseInverse{};
+            if (p_keyFrame_in->getPoseInverse(keyFramePoseInverse) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (utils::utils::Utils::applyPoseToPlane(
-                    p_keyFrame_in->getPoseInverse().matrix().cast<double>(),
+                    keyFramePoseInverse.matrix().cast<double>(),
                     detectedPlane,
                     globalEquation) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
@@ -114,10 +123,19 @@ void SemanticSegmentation::updatePlaneData(
             pcl::copyPointCloud(*p_planeCloud, *p_globalPlaneCloud);
 
             /* Transform globalPlaneCloud with the transform of the keyframe */
+            Sophus::SE3f keyFramePoseInverse2{};
+            if (p_keyFrame_in->getPoseInverse(keyFramePoseInverse2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             pcl::transformPointCloud(
                 *p_globalPlaneCloud,
                 *p_globalPlaneCloud,
-                p_keyFrame_in->getPoseInverse().matrix().cast<float>());
+                keyFramePoseInverse2.matrix().cast<float>());
 
             /* Get the semantic type of the observation */
             vs_graphs::core::geometric::Plane::PlaneVariant semanticType{};
@@ -140,7 +158,16 @@ void SemanticSegmentation::updatePlaneData(
              *              frame avoids inconsistencies between plane
              *              equations, centroids and point clouds.
              */
-            int matchedPlaneId{};
+            int             matchedPlaneId{};
+            Eigen::Vector3f keyFrameCameraCenter{};
+            if (p_keyFrame_in->getCameraCenter(keyFrameCameraCenter) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCameraCenter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (utils::utils::Utils::associatePlanes(
                     p_atlas->getAllPlanes(),
                     globalEquation,
@@ -150,7 +177,7 @@ void SemanticSegmentation::updatePlaneData(
                     p_sysParams->seg.planeAssociation.ominusThresh,
                     matchedPlaneId,
                     -1.0F,
-                    p_keyFrame_in->getCameraCenter().cast<double>()) !=
+                    keyFrameCameraCenter.cast<double>()) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -401,10 +428,20 @@ void SemanticSegmentation::updatePlaneData(
                      frame
                      * and append it to the matched mapped plane.
                      */
+                    Sophus::SE3f keyFramePoseInverse3{};
+                    if (p_keyFrame_in->getPoseInverse(keyFramePoseInverse3) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPoseInverse returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     pcl::transformPointCloud(
                         *p_planeCloud,
                         *p_planeCloud,
-                        p_keyFrame_in->getPoseInverse().matrix().cast<float>());
+                        keyFramePoseInverse3.matrix().cast<float>());
 
                     vs_graphs::core::geometric::Plane *p_matchedPlane =
                         p_atlas->getPlaneById(matchedPlaneId);

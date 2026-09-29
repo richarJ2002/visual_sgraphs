@@ -28,6 +28,7 @@
 
 #include <vector>
 
+#include "FrameStatus.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
@@ -161,123 +162,114 @@ class Frame
      * @param x0_in The x-coordinate of the top-left corner of the ROI
      * @param x1_in The x-coordinate of the bottom-right corner of the ROI
      */
-    void extractOrbFeatures(int            flag_in,
-                            const cv::Mat &imageGray_in,
-                            const int      x0_in,
-                            const int      x1_in);
+    [[nodiscard]] FrameStatus extractOrbFeatures(int            flag_in,
+                                                 const cv::Mat &imageGray_in,
+                                                 const int      x0_in,
+                                                 const int      x1_in);
 
     // Compute Bag of Words representation.
-    void computeBagOfWords();
+    [[nodiscard]] FrameStatus computeBagOfWords();
 
     // Set the camera pose. (Imu pose is not modified!)
-    void setPose(const Sophus::SE3<float> &Tcw_in);
+    [[nodiscard]] FrameStatus setPose(const Sophus::SE3<float> &Tcw_in);
 
     // Set IMU velocity
-    void setVelocity(Eigen::Vector3f Vw_in);
+    [[nodiscard]] FrameStatus setVelocity(Eigen::Vector3f Vw_in);
 
-    Eigen::Vector3f getVelocity() const;
+    [[nodiscard]] FrameStatus
+        getVelocity(Eigen::Vector3f &getVelocity_out) const;
 
     // Set IMU pose and velocity (implicitly changes camera pose)
-    void setImuPoseVelocity(const Eigen::Matrix3f &Rwb_in,
-                            const Eigen::Vector3f &twb_in,
-                            const Eigen::Vector3f &Vwb_in);
+    [[nodiscard]] FrameStatus setImuPoseVelocity(const Eigen::Matrix3f &Rwb_in,
+                                                 const Eigen::Vector3f &twb_in,
+                                                 const Eigen::Vector3f &Vwb_in);
 
-    Eigen::Matrix<float, 3, 1> getImuPosition() const;
-    Eigen::Matrix<float, 3, 3> getImuRotation();
-    Sophus::SE3<float>         getImuPose();
+    [[nodiscard]] FrameStatus
+        getImuPosition(Eigen::Matrix<float, 3, 1> &getImuPosition_out) const;
+    [[nodiscard]] FrameStatus
+        getImuRotation(Eigen::Matrix<float, 3, 3> &imuRotation_out);
+    [[nodiscard]] FrameStatus getImuPose(Sophus::SE3<float> &imuPose_out);
 
-    Sophus::SE3f    getRelativePoseTrl();
-    Sophus::SE3f    getRelativePoseTlr();
-    Eigen::Matrix3f getRelativePoseTlrRotation();
-    Eigen::Vector3f getRelativePoseTlrTranslation();
+    [[nodiscard]] FrameStatus
+        getRelativePoseTrl(Sophus::SE3f &relativePoseTrl_out);
+    [[nodiscard]] FrameStatus
+        getRelativePoseTlr(Sophus::SE3f &relativePoseTlr_out);
+    [[nodiscard]] FrameStatus getRelativePoseTlrRotation(
+        Eigen::Matrix3f &relativePoseTlrRotation_out);
+    [[nodiscard]] FrameStatus getRelativePoseTlrTranslation(
+        Eigen::Vector3f &relativePoseTlrTranslation_out);
 
-    void setNewBias(const IMU::Bias &b_in);
+    [[nodiscard]] FrameStatus setNewBias(const IMU::Bias &b_in);
 
     // Check if a MapPoint is in the frustum of the camera
     // and fill variables of the MapPoint to be used by the tracking
-    bool isInFrustum(MapPoint *p_mapPoint_inout, float viewingCosLimit_in);
+    [[nodiscard]] FrameStatus isInFrustum(MapPoint *p_mapPoint_inout,
+                                          float     viewingCosLimit_in,
+                                          bool     &isInFrustum_out);
 
-    bool projectPointDistort(MapPoint    *p_mapPoint_in,
-                             cv::Point2f &keyPoint_out,
-                             float       &u_out,
-                             float       &v_out);
+    [[nodiscard]] FrameStatus projectPointDistort(MapPoint    *p_mapPoint_in,
+                                                  cv::Point2f &keyPoint_out,
+                                                  float       &u_out,
+                                                  float       &v_out,
+                                                  bool        &isProjected_out);
 
-    Eigen::Vector3f inReferenceCoordinates(Eigen::Vector3f pCw_in);
+    [[nodiscard]] FrameStatus
+        inReferenceCoordinates(Eigen::Vector3f  pCw_in,
+                               Eigen::Vector3f &referencePoint_out);
 
     // Compute the cell of a keypoint (return false if outside the grid)
-    bool isPositionInGrid(const cv::KeyPoint &keyPoint_in,
-                          int                &positionX_out,
-                          int                &positionY_out);
+    [[nodiscard]] FrameStatus isPositionInGrid(const cv::KeyPoint &keyPoint_in,
+                                               int  &positionX_out,
+                                               int  &positionY_out,
+                                               bool &isPositionInGrid_out);
 
-    vector<size_t> getFeaturesInArea(const float &x_in,
-                                     const float &y_in,
-                                     const float &r_in,
-                                     const int    minimumLevel_in = -1,
-                                     const int    maximumLevel_in = -1,
-                                     const bool isRightCamera_in = false) const;
+    [[nodiscard]] FrameStatus
+        getFeaturesInArea(const float         &x_in,
+                          const float         &y_in,
+                          const float         &r_in,
+                          std::vector<size_t> &featuresInArea_out,
+                          const int            minimumLevel_in  = -1,
+                          const int            maximumLevel_in  = -1,
+                          const bool           isRightCamera_in = false) const;
 
     // Search a match for each keypoint in the left image to a keypoint in the
     // right image. If there is a match, depth is computed and the right
     // coordinate associated to the left keypoint is stored.
-    void computeStereoMatches();
+    [[nodiscard]] FrameStatus computeStereoMatches();
 
     // Associate a "right" coordinate to a keypoint if there is valid depth in
     // the depthmap.
-    void computeStereoFromRGBD(const cv::Mat &imageDepth_in);
+    [[nodiscard]] FrameStatus
+        computeStereoFromRGBD(const cv::Mat &imageDepth_in);
 
     // Backprojects a keypoint (if stereo/depth info available) into 3D world
     // coordinates.
-    bool unprojectStereo(const int &index_in, Eigen::Vector3f &x3D_out);
+    [[nodiscard]] FrameStatus unprojectStereo(const int       &index_in,
+                                              Eigen::Vector3f &x3D_out,
+                                              bool &isUnprojected_out);
 
     ConstraintPoseImu *p_poseImuConstraint;
 
-    bool isImuPreintegrated();
-    void setIntegrated();
+    [[nodiscard]] FrameStatus isImuPreintegrated(bool &isImuPreintegrated_out);
+    [[nodiscard]] FrameStatus setIntegrated();
 
-    bool isSet() const;
+    [[nodiscard]] FrameStatus isSet(bool &isSet_out) const;
 
     // Computes rotation, translation and camera center matrices from the camera
     // pose.
-    void updatePoseMatrices();
+    [[nodiscard]] FrameStatus updatePoseMatrices();
 
-    // Returns the camera center.
-    inline Eigen::Vector3f getCameraCenter()
-    {
-        return centerOw;
-    }
+    // Returns the camera center in the world frame.
+    [[nodiscard]] FrameStatus
+        getCameraCenter(Eigen::Vector3f &getCameraCenter_out) const;
 
-    // Returns inverse of rotation
-    inline Eigen::Matrix3f getRotationInverse()
-    {
-        return rotationRwc;
-    }
+    [[nodiscard]] FrameStatus getPose(Sophus::SE3<float> &getPose_out) const;
 
-    inline Sophus::SE3<float> getPose() const
-    {
-        // TODO: can the Frame pose be accsessed from several threads? should
-        // this be protected somehow?
-        return poseTcw;
-    }
+    // Returns the camera-to-world rotation.
+    [[nodiscard]] FrameStatus
+        getRotationRwc(Eigen::Matrix3f &getRotationRwc_out) const;
 
-    inline Eigen::Matrix3f getRotationRwc() const
-    {
-        return rotationRwc;
-    }
-
-    inline Eigen::Vector3f getCenterOw() const
-    {
-        return centerOw;
-    }
-
-    inline bool hasPose() const
-    {
-        return isPoseAvailable;
-    }
-
-    inline bool hasVelocity() const
-    {
-        return isVelocityAvailable;
-    }
+    [[nodiscard]] FrameStatus hasVelocity(bool &hasVelocity_out) const;
 
   private:
     // Sophus/Eigen migration
@@ -432,15 +424,15 @@ class Frame
     // Undistort keypoints given OpenCV distortion parameters.
     // Only for the RGB-D case. Stereo must be already rectified!
     // (called in the constructor).
-    void undistortKeyPoints();
+    [[nodiscard]] FrameStatus undistortKeyPoints();
 
     // Computes image bounds for the undistorted image (called in the
     // constructor).
-    void computeImageBounds(const cv::Mat &imageLeft_in);
+    [[nodiscard]] FrameStatus computeImageBounds(const cv::Mat &imageLeft_in);
 
     // Assign keypoints to the grid for speed up feature matching (called in the
     // constructor).
-    void assignFeaturesToGrid();
+    [[nodiscard]] FrameStatus assignFeaturesToGrid();
 
     bool isFrameSet;
 
@@ -477,37 +469,20 @@ class Frame
     std::vector<std::size_t> gridRight[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
     // Stereo fisheye
-    void computeStereoFishEyeMatches();
+    [[nodiscard]] FrameStatus computeStereoFishEyeMatches();
 
-    bool isInFrustumChecks(MapPoint *p_mapPoint_inout,
-                           float     viewingCosLimit_in,
-                           bool      isRightCamera_in = false);
+    [[nodiscard]] FrameStatus isInFrustumChecks(MapPoint *p_mapPoint_inout,
+                                                float     viewingCosLimit_in,
+                                                bool     &isInFrustumChecks_out,
+                                                bool isRightCamera_in = false);
 
-    Eigen::Vector3f unprojectStereoFishEye(const int &index_in);
+    [[nodiscard]] FrameStatus
+        unprojectStereoFishEye(const int       &index_in,
+                               Eigen::Vector3f &stereoFishEye_out);
 
     cv::Mat colorImg; // To get the color image for sending to the Semantic
                       // Segmentation
     cv::Mat imgLeft, imgRight;
-
-    void printPointDistribution()
-    {
-        int left = 0, right = 0;
-        int limCount =
-            (leftKeyPointCount != -1) ? leftKeyPointCount : keyPointCount;
-        for (int keyPointIndex = 0; keyPointIndex < keyPointCount;
-             keyPointIndex++)
-        {
-            if (mapPoints[keyPointIndex] && !outlierFlags[keyPointIndex])
-            {
-                if (keyPointIndex < limCount)
-                    left++;
-                else
-                    right++;
-            }
-        }
-        cout << "Point distribution in Frame: left-> " << left
-             << " --- right-> " << right << endl;
-    }
 
     Sophus::SE3<double> T_test;
 };

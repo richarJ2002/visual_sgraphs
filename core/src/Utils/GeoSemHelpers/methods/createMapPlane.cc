@@ -71,7 +71,16 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
                      "fail; continuing as before.",
                      __func__);
     }
-    if (p_newMapPlane->setId(p_currentMap->reservePlaneId()) !=
+    int currentMapPlaneId{};
+    if (p_currentMap->reservePlaneId(currentMapPlaneId) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: reservePlaneId returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_newMapPlane->setId(currentMapPlaneId) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -88,8 +97,17 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
      * history (see Plane::observationOrigin_World_m). */
     if (p_keyFrame_inout != nullptr)
     {
+        Eigen::Vector3f keyFrameCameraCenter{};
+        if (p_keyFrame_inout->getCameraCenter(keyFrameCameraCenter) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCameraCenter returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const Eigen::Vector3d observationOrigin_World_m =
-            p_keyFrame_inout->getCameraCenter().cast<double>();
+            keyFrameCameraCenter.cast<double>();
 
         if (observationOrigin_World_m.allFinite())
         {
@@ -187,8 +205,17 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
 
     /* Get the global equation of the plane */
     g2o::Plane3D globalEquation_World{};
+    Sophus::SE3f keyFramePoseInverse{};
+    if (p_keyFrame_inout->getPoseInverse(keyFramePoseInverse) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPoseInverse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (utils::utils::Utils::applyPoseToPlane(
-            p_keyFrame_inout->getPoseInverse().matrix().cast<double>(),
+            keyFramePoseInverse.matrix().cast<double>(),
             estimatedPlane_in,
             globalEquation_World) !=
         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
@@ -210,10 +237,18 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     }
 
     /* Transform the plane cloud to the global frame */
-    pcl::transformPointCloud(
-        *p_planeCloud_in,
-        *p_planeCloud_in,
-        p_keyFrame_inout->getPoseInverse().matrix().cast<float>());
+    Sophus::SE3f keyFramePoseInverse2{};
+    if (p_keyFrame_inout->getPoseInverse(keyFramePoseInverse2) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPoseInverse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    pcl::transformPointCloud(*p_planeCloud_in,
+                             *p_planeCloud_in,
+                             keyFramePoseInverse2.matrix().cast<float>());
 
     /* Fill the plane with the pointcloud */
     if (!p_planeCloud_in->points.empty())
@@ -260,12 +295,30 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     if (p_params2->optimization.planeMapPoint.enabled)
     {
         /* Iterate through the orb points (expressed in global frame) */
-        for (const auto &mapPoint : p_keyFrame_inout->getMapPoints())
+        std::set<MapPoint *> keyFrameMapPoints{};
+        if (p_keyFrame_inout->getMapPoints(keyFrameMapPoints) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPoints returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (const auto &mapPoint : keyFrameMapPoints)
         {
             /* If the orb feature is within the plane, set as map point */
-            bool newMapPlaneIsPointinPlaneCloud{};
+            bool            newMapPlaneIsPointinPlaneCloud{};
+            Eigen::Vector3f mapPointWorldPos{};
+            if (mapPoint->getWorldPos(mapPointWorldPos) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWorldPos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (p_newMapPlane->isPointinPlaneCloud(
-                    mapPoint->getWorldPos().cast<double>(),
+                    mapPointWorldPos.cast<double>(),
                     newMapPlaneIsPointinPlaneCloud) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
@@ -291,7 +344,14 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     }
 
     /* Add the plane to the keyframe */
-    p_keyFrame_inout->addMapPlane(p_newMapPlane);
+    if (p_keyFrame_inout->addMapPlane(p_newMapPlane) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapPlane returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Add the palne to the current map */
     p_atlas_inout->addMapPlane(p_newMapPlane);

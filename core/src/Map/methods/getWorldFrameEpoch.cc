@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-std::uint64_t Map::getWorldFrameEpoch()
+MapStatus Map::getWorldFrameEpoch(std::uint64_t &worldFrameEpoch_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return worldFrameEpoch;
+    worldFrameEpoch_out = worldFrameEpoch;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

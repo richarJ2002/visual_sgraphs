@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f KeyFrame::getTranslation()
+KeyFrameStatus KeyFrame::getTranslation(Eigen::Vector3f &translation_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return poseTcw.translation();
+    translation_out = poseTcw.translation();
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

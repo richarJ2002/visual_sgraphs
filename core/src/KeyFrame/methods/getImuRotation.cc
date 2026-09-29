@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3f KeyFrame::getImuRotation()
+KeyFrameStatus KeyFrame::getImuRotation(Eigen::Matrix3f &imuRotation_out)
 {
     unique_lock<mutex> lock(poseMutex);
-    return (twc * imuCalibration.mTcb).rotationMatrix();
+    imuRotation_out = (twc * imuCalibration.mTcb).rotationMatrix();
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

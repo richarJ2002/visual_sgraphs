@@ -468,7 +468,8 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
                                          100U,
                                          5U) ==
          vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
-    survivingMap.addMapFloor(&survivingFloor);
+    ASSERT_EQ((survivingMap.addMapFloor(&survivingFloor)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Floor matchingAbsorbedFloor;
     ASSERT_EQ((matchingAbsorbedFloor.setId(2)),
@@ -478,7 +479,8 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
                      100U,
                      5U) ==
                  vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
-    absorbedMap.addMapFloor(&matchingAbsorbedFloor);
+    ASSERT_EQ((absorbedMap.addMapFloor(&matchingAbsorbedFloor)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     const Eigen::Isometry3d        identity = Eigen::Isometry3d::Identity();
     semantic::SemanticVerifyResult acceptedResult;
@@ -504,7 +506,8 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
                                           100U,
                                           5U) ==
          vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
-    mismatchedMap.addMapFloor(&mismatchedFloor);
+    ASSERT_EQ((mismatchedMap.addMapFloor(&mismatchedFloor)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::SemanticVerifyResult rejectedResult;
     bool                           hasPassed2{};
@@ -629,8 +632,10 @@ TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((roomTwo.setCentroid(Eigen::Vector3d::Zero())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    map.addDetectedMapRoom(&roomZero);
-    map.addDetectedMapRoom(&roomTwo);
+    ASSERT_EQ((map.addDetectedMapRoom(&roomZero)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((map.addDetectedMapRoom(&roomTwo)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     ASSERT_EQ(
         (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map, {&roomTwo})),
@@ -644,7 +649,10 @@ TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
     ASSERT_EQ((roomTwo.isBad(isBad3)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     EXPECT_FALSE(isBad3);
-    EXPECT_EQ(map.getAllDetectedMapRooms().size(), 2U);
+    std::vector<semantic::Room *> allDetectedMapRooms{};
+    ASSERT_EQ((map.getAllDetectedMapRooms(allDetectedMapRooms)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(allDetectedMapRooms.size(), 2U);
 }
 
 TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
@@ -668,8 +676,10 @@ TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((importedRoom.setCentroid(Eigen::Vector3d::Zero())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    map.addDetectedMapRoom(&retainedRoom);
-    map.addDetectedMapRoom(&importedRoom);
+    ASSERT_EQ((map.addDetectedMapRoom(&retainedRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((map.addDetectedMapRoom(&importedRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     ASSERT_EQ(
         (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map,
@@ -684,8 +694,14 @@ TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
     ASSERT_EQ((importedRoom.isBad(isBad3)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     EXPECT_TRUE(isBad3);
-    EXPECT_EQ(map.getAllDetectedMapRooms().size(), 1U);
-    EXPECT_EQ(map.getAllDetectedMapRooms().front(), &retainedRoom);
+    std::vector<semantic::Room *> allDetectedMapRooms{};
+    ASSERT_EQ((map.getAllDetectedMapRooms(allDetectedMapRooms)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(allDetectedMapRooms.size(), 1U);
+    std::vector<semantic::Room *> allDetectedMapRooms2{};
+    ASSERT_EQ((map.getAllDetectedMapRooms(allDetectedMapRooms2)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(allDetectedMapRooms2.front(), &retainedRoom);
 }
 
 TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
@@ -714,8 +730,10 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((importedRoom.setPreviouslyVisited(true)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    map.addDetectedMapRoom(&retainedRoom);
-    map.addDetectedMapRoom(&importedRoom);
+    ASSERT_EQ((map.addDetectedMapRoom(&retainedRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((map.addDetectedMapRoom(&importedRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     ASSERT_EQ(
         (utils::utils::Utils::fuseDuplicateRoomsAfterMerge(&map,
@@ -751,8 +769,10 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((importedUnvisited.setCentroid(Eigen::Vector3d::Zero())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    map.addDetectedMapRoom(&retainedUnvisited);
-    map.addDetectedMapRoom(&importedUnvisited);
+    ASSERT_EQ((map.addDetectedMapRoom(&retainedUnvisited)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((map.addDetectedMapRoom(&importedUnvisited)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     ASSERT_EQ((utils::utils::Utils::fuseDuplicateRoomsAfterMerge(
                   &map,
@@ -840,7 +860,8 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
                                          100U,
                                          5U) ==
          vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
-    survivingMap.addMapFloor(&survivingFloor);
+    ASSERT_EQ((survivingMap.addMapFloor(&survivingFloor)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::Floor matchingAbsorbedFloor;
     ASSERT_EQ((matchingAbsorbedFloor.setId(2)),
@@ -850,7 +871,8 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
                      100U,
                      5U) ==
                  vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
-    absorbedMap.addMapFloor(&matchingAbsorbedFloor);
+    ASSERT_EQ((absorbedMap.addMapFloor(&matchingAbsorbedFloor)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     bool hasPassed2{};
     ASSERT_EQ((semantic::SemanticVerify::runFloorGate(result,
@@ -885,7 +907,8 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
                                           100U,
                                           5U) ==
          vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
-    mismatchedMap.addMapFloor(&mismatchedFloor);
+    ASSERT_EQ((mismatchedMap.addMapFloor(&mismatchedFloor)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     semantic::SemanticVerifyResult mismatchedResult = result;
     bool                           hasPassed3{};

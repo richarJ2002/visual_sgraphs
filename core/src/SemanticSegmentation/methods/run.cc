@@ -18,6 +18,7 @@
 
 #include "SemanticSegmentation.h"
 
+#include <rclcpp/logging.hpp>
 #include <unordered_set>
 
 namespace vs_graphs
@@ -67,7 +68,17 @@ void SemanticSegmentation::run()
             p_atlas->getKeyFrameById(workItem.keyFrameId);
 
         /* If keyframe is bad continue */
-        if (p_thisKeyFrame == nullptr || p_thisKeyFrame->isBad())
+        bool thisKeyFrameIsBad{};
+        if (!(p_thisKeyFrame == nullptr) &&
+            p_thisKeyFrame->isBad(thisKeyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_thisKeyFrame == nullptr || thisKeyFrameIsBad)
         {
             recordTerminalOutcome(workItem.keyFrameId,
                                   TerminalOutcome::MISSING_KEYFRAME);
@@ -81,10 +92,28 @@ void SemanticSegmentation::run()
             continue;
         }
 
-        Map *p_activeMap = p_atlas->getCurrentMap();
-        if (p_activeMap == nullptr ||
-            p_activeMap->getId() != workItem.sourceMapId ||
-            p_thisKeyFrame->getMap() != p_activeMap)
+        Map          *p_activeMap = p_atlas->getCurrentMap();
+        unsigned long activeMapId{};
+        if (!(p_activeMap == nullptr) &&
+            p_activeMap->getId(activeMapId) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Map *p_thisKeyFrameMap = nullptr;
+        if (!(p_activeMap == nullptr || activeMapId != workItem.sourceMapId) &&
+            p_thisKeyFrame->getMap(p_thisKeyFrameMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_activeMap == nullptr || activeMapId != workItem.sourceMapId ||
+            p_thisKeyFrameMap != p_activeMap)
         {
             recordTerminalOutcome(workItem.keyFrameId,
                                   TerminalOutcome::STALE_MAP);
@@ -92,8 +121,17 @@ void SemanticSegmentation::run()
         }
 
         /* Extract point cloud from keyframe */
-        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_thisKeyFramePointCloud =
-            p_thisKeyFrame->getCurrentFramePointCloud();
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_thisKeyFramePointCloud{};
+        if (p_thisKeyFrame->getCurrentFramePointCloud(
+                p_thisKeyFramePointCloud) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getCurrentFramePointCloud returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* If no point cloud in keyframe, skip to next frame */
         if (p_thisKeyFramePointCloud == nullptr)
@@ -144,8 +182,15 @@ void SemanticSegmentation::run()
             p_clsCloudPtrs[WALL_CLASS_INDEX]->size() <
                 WALL_SILENT_DROP_LOG_THRESHOLD)
         {
-            const Eigen::Vector3f cameraCenter_World =
-                p_thisKeyFrame->getCameraCenter();
+            Eigen::Vector3f cameraCenter_World{};
+            if (p_thisKeyFrame->getCameraCenter(cameraCenter_World) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCameraCenter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "[SemSeg] KF#" << p_thisKeyFrame->id
                       << " wall-class points after confidence gating: "
                       << p_clsCloudPtrs[WALL_CLASS_INDEX]->size()
@@ -158,7 +203,14 @@ void SemanticSegmentation::run()
          * clear pointclouds as they are no longer needed and consume
          * significant memory. also
          */
-        p_thisKeyFrame->clearPointCloud();
+        if (p_thisKeyFrame->clearPointCloud() !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: clearPointCloud returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /*!
          * Clear point-cloud data from older keyframes that were skipped by this
@@ -208,11 +260,40 @@ void SemanticSegmentation::run()
                 }
 
                 KeyFrame *p_keyFrame = p_atlas->getKeyFrameById(keyFrameId);
-                if (p_keyFrame != nullptr &&
-                    p_keyFrame->getCurrentFramePointCloud() != nullptr)
+                pcl::PointCloud<pcl::PointXYZRGB>::Ptr
+                    keyFrameGetCurrentFramePointCloud{};
+                if ((p_keyFrame != nullptr) &&
+                    p_keyFrame->getCurrentFramePointCloud(
+                        keyFrameGetCurrentFramePointCloud) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                 {
-                    p_keyFrame->clearPointCloud();
-                    p_keyFrame->clearClsClouds();
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCurrentFramePointCloud returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_keyFrame != nullptr &&
+                    keyFrameGetCurrentFramePointCloud != nullptr)
+                {
+                    if (p_keyFrame->clearPointCloud() !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: clearPointCloud returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (p_keyFrame->clearClsClouds() !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: clearClsClouds returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                 }
             }
             lastProcessedKeyFrameId = p_thisKeyFrame->id - 5;
@@ -233,7 +314,14 @@ void SemanticSegmentation::run()
             p_clsPlanes = getPlanesFromClassClouds(p_clsCloudPtrs);
 
         /* Set the class specific point clouds to the keyframe */
-        p_thisKeyFrame->setCurrentClsCloudPtrs(p_clsCloudPtrs);
+        if (p_thisKeyFrame->setCurrentClsCloudPtrs(p_clsCloudPtrs) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCurrentClsCloudPtrs returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         {
             /*!
@@ -254,8 +342,28 @@ void SemanticSegmentation::run()
              */
             Map *p_currentMap = p_atlas->getCurrentMap();
 
-            if (p_thisKeyFrame == nullptr || p_thisKeyFrame->isBad() ||
-                p_thisKeyFrame->getMap() != p_currentMap)
+            bool thisKeyFrameIsBad2{};
+            if (!(p_thisKeyFrame == nullptr) &&
+                p_thisKeyFrame->isBad(thisKeyFrameIsBad2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            Map *p_thisKeyFrameMap2 = nullptr;
+            if (!(p_thisKeyFrame == nullptr || thisKeyFrameIsBad2) &&
+                p_thisKeyFrame->getMap(p_thisKeyFrameMap2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_thisKeyFrame == nullptr || thisKeyFrameIsBad2 ||
+                p_thisKeyFrameMap2 != p_currentMap)
             {
                 std::cerr
                     << "[SemSeg] Discarding stale segmentation output for "

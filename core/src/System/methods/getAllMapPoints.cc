@@ -24,6 +24,7 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,8 +33,17 @@ namespace core
 
 vector<MapPoint *> System::getAllMapPoints()
 {
-    Map *p_activeMap = p_atlas->getCurrentMap();
-    return p_activeMap->getAllMapPoints();
+    Map                    *p_activeMap = p_atlas->getCurrentMap();
+    std::vector<MapPoint *> activeMapAllMapPoints{};
+    if (p_activeMap->getAllMapPoints(activeMapAllMapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapAllMapPoints;
 }
 
 } // namespace core

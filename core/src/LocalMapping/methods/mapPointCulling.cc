@@ -24,6 +24,7 @@
  */
 
 #include "LocalMapping.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -49,27 +50,85 @@ void LocalMapping::mapPointCulling()
     {
         MapPoint *p_mapPoint = *recentMapPointIt;
 
-        if (p_mapPoint->isBad())
-            recentMapPointIt = recentAddedMapPoints.erase(recentMapPointIt);
-        else if (p_mapPoint->getFoundRatio() < 0.25f)
+        bool mapPointIsBad{};
+        if (p_mapPoint->isBad(mapPointIsBad) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
         {
-            p_mapPoint->setBadFlag();
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad)
+        {
             recentMapPointIt = recentAddedMapPoints.erase(recentMapPointIt);
         }
-        else if (((int)currentKeyFrameId - (int)p_mapPoint->firstKeyFrameId) >=
-                     2 &&
-                 p_mapPoint->getObservationCount() <= observationThreshold)
-        {
-            p_mapPoint->setBadFlag();
-            recentMapPointIt = recentAddedMapPoints.erase(recentMapPointIt);
-        }
-        else if (((int)currentKeyFrameId - (int)p_mapPoint->firstKeyFrameId) >=
-                 3)
-            recentMapPointIt = recentAddedMapPoints.erase(recentMapPointIt);
         else
         {
-            recentMapPointIt++;
-            remainingCandidateCount--;
+            float mapPointFoundRatio{};
+            if (p_mapPoint->getFoundRatio(mapPointFoundRatio) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getFoundRatio returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mapPointFoundRatio < 0.25f)
+            {
+                if (p_mapPoint->setBadFlag() !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setBadFlag returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                recentMapPointIt = recentAddedMapPoints.erase(recentMapPointIt);
+            }
+            else
+            {
+                int mapPointObservationCount{};
+                if ((((int)currentKeyFrameId -
+                      (int)p_mapPoint->firstKeyFrameId) >= 2) &&
+                    p_mapPoint->getObservationCount(mapPointObservationCount) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getObservationCount returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (((int)currentKeyFrameId -
+                     (int)p_mapPoint->firstKeyFrameId) >= 2 &&
+                    mapPointObservationCount <= observationThreshold)
+                {
+                    if (p_mapPoint->setBadFlag() !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setBadFlag returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    recentMapPointIt =
+                        recentAddedMapPoints.erase(recentMapPointIt);
+                }
+                else if (((int)currentKeyFrameId -
+                          (int)p_mapPoint->firstKeyFrameId) >= 3)
+                {
+                    recentMapPointIt =
+                        recentAddedMapPoints.erase(recentMapPointIt);
+                }
+                else
+                {
+                    recentMapPointIt++;
+                    remainingCandidateCount--;
+                }
+            }
         }
     }
 }

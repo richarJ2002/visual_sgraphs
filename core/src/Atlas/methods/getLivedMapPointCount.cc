@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -36,7 +37,16 @@ long unsigned int Atlas::getLivedMapPointCount()
     long unsigned int  count = 0;
     for (Map *p_atlasMap : maps)
     {
-        count += p_atlasMap->getAllMapPoints().size();
+        std::vector<MapPoint *> atlasMapAllMapPoints{};
+        if (p_atlasMap->getAllMapPoints(atlasMapAllMapPoints) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        count += atlasMapAllMapPoints.size();
     }
 
     return count;

@@ -44,7 +44,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::computeStereoMatches()
+FrameStatus Frame::computeStereoMatches()
 {
     uRight = vector<float>(keyPointCount, -1.0f);
     depths = vector<float>(keyPointCount, -1.0f);
@@ -221,6 +221,8 @@ void Frame::computeStereoMatches()
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

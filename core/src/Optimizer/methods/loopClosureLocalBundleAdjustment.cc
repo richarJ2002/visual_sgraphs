@@ -66,15 +66,41 @@ void Optimizer::loopClosureLocalBundleAdjustment(
         optimizer.setForceStopFlag(p_pbStopFlag_in);
 
     // Get the current map
-    Map *p_currentMap = p_mainKeyFrame_in->getMap();
+    Map *p_currentMap = nullptr;
+    if (p_mainKeyFrame_in->getMap(p_currentMap) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     // Set fixed KeyFrame vertices
     int insertedPointCount = 0;
     for (KeyFrame *p_adjustKeyFrame : fixedKeyFrames_in)
     {
         // Skip the KeyFrame if it is bad or is not in the current map
-        if (p_adjustKeyFrame->isBad() ||
-            p_adjustKeyFrame->getMap() != p_currentMap)
+        bool adjustKeyFrameIsBad{};
+        if (p_adjustKeyFrame->isBad(adjustKeyFrameIsBad) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Map *p_adjustKeyFrameMap = nullptr;
+        if (!(adjustKeyFrameIsBad) &&
+            p_adjustKeyFrame->getMap(p_adjustKeyFrameMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (adjustKeyFrameIsBad || p_adjustKeyFrameMap != p_currentMap)
         {
             Verbose::printMess("[Error in LoopClosureLocalBundleAdjustment] "
                                "KeyFrame is bad or is not in the current map!",
@@ -87,7 +113,15 @@ void Optimizer::loopClosureLocalBundleAdjustment(
 
         // Create a new vertex for the KeyFrame
         g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>    Tcw         = p_adjustKeyFrame->getPose();
+        Sophus::SE3<float>    Tcw{};
+        if (p_adjustKeyFrame->getPose(Tcw) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         p_se3Vertex->setEstimate(
             g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
                          Tcw.translation().cast<double>()));
@@ -98,11 +132,41 @@ void Optimizer::loopClosureLocalBundleAdjustment(
             maximumKeyFrameId = p_adjustKeyFrame->id;
 
         // Get the map points observed by the KeyFrame
-        set<MapPoint *> viewMapPoints = p_adjustKeyFrame->getMapPoints();
+        std::set<MapPoint *> viewMapPoints{};
+        if (p_adjustKeyFrame->getMapPoints(viewMapPoints) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPoints returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (MapPoint *p_viewMapPoint : viewMapPoints)
+        {
             if (p_viewMapPoint)
-                if (!p_viewMapPoint->isBad() &&
-                    p_viewMapPoint->getMap() == p_currentMap)
+            {
+                bool viewMapPointIsBad{};
+                if (p_viewMapPoint->isBad(viewMapPointIsBad) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                Map *p_viewMapPointMap = nullptr;
+                if ((!viewMapPointIsBad) &&
+                    p_viewMapPoint->getMap(p_viewMapPointMap) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (!viewMapPointIsBad && p_viewMapPointMap == p_currentMap)
+                {
                     if (p_viewMapPoint->baLocalMergeId != p_mainKeyFrame_in->id)
                     {
                         // Add the map point to the list of optimizable map
@@ -111,6 +175,9 @@ void Optimizer::loopClosureLocalBundleAdjustment(
                         p_viewMapPoint->baLocalMergeId = p_mainKeyFrame_in->id;
                         insertedPointCount++;
                     }
+                }
+            }
+        }
 
         keyFrameBas.insert(p_adjustKeyFrame);
     }
@@ -121,14 +188,40 @@ void Optimizer::loopClosureLocalBundleAdjustment(
     insertedPointCount = 0;
     for (KeyFrame *p_adjustKeyFrame : adjustKeyFrames_in)
     {
-        if (p_adjustKeyFrame->isBad() ||
-            p_adjustKeyFrame->getMap() != p_currentMap)
+        bool adjustKeyFrameIsBad2{};
+        if (p_adjustKeyFrame->isBad(adjustKeyFrameIsBad2) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Map *p_adjustKeyFrameMap2 = nullptr;
+        if (!(adjustKeyFrameIsBad2) &&
+            p_adjustKeyFrame->getMap(p_adjustKeyFrameMap2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (adjustKeyFrameIsBad2 || p_adjustKeyFrameMap2 != p_currentMap)
             continue;
 
         p_adjustKeyFrame->baLocalMergeId = p_mainKeyFrame_in->id;
 
         g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>    Tcw         = p_adjustKeyFrame->getPose();
+        Sophus::SE3<float>    Tcw{};
+        if (p_adjustKeyFrame->getPose(Tcw) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         p_se3Vertex->setEstimate(
             g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
                          Tcw.translation().cast<double>()));
@@ -137,17 +230,50 @@ void Optimizer::loopClosureLocalBundleAdjustment(
         if (p_adjustKeyFrame->id > maximumKeyFrameId)
             maximumKeyFrameId = p_adjustKeyFrame->id;
 
-        set<MapPoint *> viewMapPoints = p_adjustKeyFrame->getMapPoints();
+        std::set<MapPoint *> viewMapPoints{};
+        if (p_adjustKeyFrame->getMapPoints(viewMapPoints) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPoints returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (MapPoint *p_viewMapPoint : viewMapPoints)
+        {
             if (p_viewMapPoint)
-                if (!p_viewMapPoint->isBad() &&
-                    p_viewMapPoint->getMap() == p_currentMap)
+            {
+                bool viewMapPointIsBad2{};
+                if (p_viewMapPoint->isBad(viewMapPointIsBad2) !=
+                    MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                Map *p_viewMapPointMap2 = nullptr;
+                if ((!viewMapPointIsBad2) &&
+                    p_viewMapPoint->getMap(p_viewMapPointMap2) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (!viewMapPointIsBad2 && p_viewMapPointMap2 == p_currentMap)
+                {
                     if (p_viewMapPoint->baLocalMergeId != p_mainKeyFrame_in->id)
                     {
                         mapPoints.push_back(p_viewMapPoint);
                         p_viewMapPoint->baLocalMergeId = p_mainKeyFrame_in->id;
                         insertedPointCount++;
                     }
+                }
+            }
+        }
 
         keyFrameBas.insert(p_adjustKeyFrame);
     }
@@ -185,19 +311,43 @@ void Optimizer::loopClosureLocalBundleAdjustment(
          ++mapPointIndex)
     {
         MapPoint *p_viewMapPoint = mapPoints[mapPointIndex];
-        if (p_viewMapPoint->isBad())
+        bool      viewMapPointIsBad3{};
+        if (p_viewMapPoint->isBad(viewMapPointIsBad3) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (viewMapPointIsBad3)
             continue;
 
         g2o::VertexSBAPointXYZ *p_pointVertex = new g2o::VertexSBAPointXYZ();
-        p_pointVertex->setEstimate(
-            p_viewMapPoint->getWorldPos().cast<double>());
+        Eigen::Vector3f         viewMapPointWorldPos{};
+        if (p_viewMapPoint->getWorldPos(viewMapPointWorldPos) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_pointVertex->setEstimate(viewMapPointWorldPos.cast<double>());
         const int id = p_viewMapPoint->id + maximumKeyFrameId + 1;
         p_pointVertex->setId(id);
         p_pointVertex->setMarginalized(true);
         optimizer.addVertex(p_pointVertex);
 
-        const map<KeyFrame *, tuple<int, int>> observations =
-            p_viewMapPoint->getObservations();
+        std::map<KeyFrame *, std::tuple<int, int>> observations{};
+        if (p_viewMapPoint->getObservations(observations) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         int edgeCount = 0;
         // SET EDGES
         for (map<KeyFrame *, tuple<int, int>>::const_iterator mit =
@@ -206,9 +356,30 @@ void Optimizer::loopClosureLocalBundleAdjustment(
              mit++)
         {
             KeyFrame *p_keyFrame = mit->first;
-            if (p_keyFrame->isBad() || p_keyFrame->id > maximumKeyFrameId ||
+            bool      keyFrameIsBad{};
+            if (p_keyFrame->isBad(keyFrameIsBad) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            MapPoint *p_keyFrameMapPoint = nullptr;
+            if (!(keyFrameIsBad || p_keyFrame->id > maximumKeyFrameId ||
+                  p_keyFrame->baLocalMergeId != p_mainKeyFrame_in->id) &&
+                p_keyFrame->getMapPoint(get<0>(mit->second),
+                                        p_keyFrameMapPoint) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMapPoint returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (keyFrameIsBad || p_keyFrame->id > maximumKeyFrameId ||
                 p_keyFrame->baLocalMergeId != p_mainKeyFrame_in->id ||
-                !p_keyFrame->getMapPoint(get<0>(mit->second)))
+                !p_keyFrameMapPoint)
                 continue;
 
             edgeCount++;
@@ -321,7 +492,16 @@ void Optimizer::loopClosureLocalBundleAdjustment(
             vs_graphs::core::EdgeSE3ProjectXYZ *e = edgesMonos[mapPointIndex];
             MapPoint *p_mapPoint = mapPointEdgeMonos[mapPointIndex];
 
-            if (p_mapPoint->isBad())
+            bool mapPointIsBad{};
+            if (p_mapPoint->isBad(mapPointIsBad) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mapPointIsBad)
                 continue;
 
             if (e->chi2() > 5.991 || !e->isDepthPositive())
@@ -339,7 +519,16 @@ void Optimizer::loopClosureLocalBundleAdjustment(
             g2o::EdgeStereoSE3ProjectXYZ *e = edgesStereos[mapPointIndex];
             MapPoint *p_mapPoint = mapPointEdgeStereos[mapPointIndex];
 
-            if (p_mapPoint->isBad())
+            bool mapPointIsBad2{};
+            if (p_mapPoint->isBad(mapPointIsBad2) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mapPointIsBad2)
                 continue;
 
             if (e->chi2() > 7.815 || !e->isDepthPositive())
@@ -374,7 +563,16 @@ void Optimizer::loopClosureLocalBundleAdjustment(
         vs_graphs::core::EdgeSE3ProjectXYZ *e = edgesMonos[mapPointIndex];
         MapPoint *p_mapPoint = mapPointEdgeMonos[mapPointIndex];
 
-        if (p_mapPoint->isBad())
+        bool mapPointIsBad3{};
+        if (p_mapPoint->isBad(mapPointIsBad3) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad3)
             continue;
 
         if (e->chi2() > 5.991 || !e->isDepthPositive())
@@ -396,7 +594,16 @@ void Optimizer::loopClosureLocalBundleAdjustment(
         g2o::EdgeStereoSE3ProjectXYZ *e = edgesStereos[mapPointIndex];
         MapPoint *p_mapPoint            = mapPointEdgeStereos[mapPointIndex];
 
-        if (p_mapPoint->isBad())
+        bool mapPointIsBad4{};
+        if (p_mapPoint->isBad(mapPointIsBad4) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad4)
             continue;
 
         if (e->chi2() > 7.815 || !e->isDepthPositive())
@@ -417,7 +624,16 @@ void Optimizer::loopClosureLocalBundleAdjustment(
                        Verbose::VERBOSITY_DEBUG);
 
     // Get Map Mutex
-    unique_lock<mutex> lock(p_mainKeyFrame_in->getMap()->mapUpdateMutex);
+    Map *p_mainKeyFrameMap = nullptr;
+    if (p_mainKeyFrame_in->getMap(p_mainKeyFrameMap) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    unique_lock<mutex> lock(p_mainKeyFrameMap->mapUpdateMutex);
 
     if (!vToErase.empty())
     {
@@ -426,28 +642,79 @@ void Optimizer::loopClosureLocalBundleAdjustment(
         {
             KeyFrame *p_adjustKeyFrame = vToErase[mapPointIndex].first;
             MapPoint *p_viewMapPoint   = vToErase[mapPointIndex].second;
-            p_adjustKeyFrame->eraseMapPointMatch(p_viewMapPoint);
-            p_viewMapPoint->eraseObservation(p_adjustKeyFrame);
+            if (p_adjustKeyFrame->eraseMapPointMatch(p_viewMapPoint) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseMapPointMatch returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_viewMapPoint->eraseObservation(p_adjustKeyFrame) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseObservation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
     for (unsigned int mapPointIndex = 0; mapPointIndex < mapPoints.size();
          ++mapPointIndex)
     {
         MapPoint *p_viewMapPoint = mapPoints[mapPointIndex];
-        if (p_viewMapPoint->isBad())
+        bool      viewMapPointIsBad4{};
+        if (p_viewMapPoint->isBad(viewMapPointIsBad4) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (viewMapPointIsBad4)
             continue;
 
-        const map<KeyFrame *, tuple<int, int>> observations =
-            p_viewMapPoint->getObservations();
+        std::map<KeyFrame *, std::tuple<int, int>> observations{};
+        if (p_viewMapPoint->getObservations(observations) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (map<KeyFrame *, tuple<int, int>>::const_iterator mit =
                  observations.begin();
              mit != observations.end();
              mit++)
         {
             KeyFrame *p_keyFrame = mit->first;
-            if (p_keyFrame->isBad() || p_keyFrame->id > maximumKeyFrameId ||
+            bool      keyFrameIsBad2{};
+            if (p_keyFrame->isBad(keyFrameIsBad2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            MapPoint *p_keyFrameMapPoint2 = nullptr;
+            if (!(keyFrameIsBad2 || p_keyFrame->id > maximumKeyFrameId ||
+                  p_keyFrame->baLocalKeyFrameId != p_mainKeyFrame_in->id) &&
+                p_keyFrame->getMapPoint(get<0>(mit->second),
+                                        p_keyFrameMapPoint2) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMapPoint returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (keyFrameIsBad2 || p_keyFrame->id > maximumKeyFrameId ||
                 p_keyFrame->baLocalKeyFrameId != p_mainKeyFrame_in->id ||
-                !p_keyFrame->getMapPoint(get<0>(mit->second)))
+                !p_keyFrameMapPoint2)
                 continue;
 
             if (p_keyFrame->uRight[get<0>(mit->second)] < 0) // Monocular
@@ -465,7 +732,16 @@ void Optimizer::loopClosureLocalBundleAdjustment(
     // Keyframes
     for (KeyFrame *p_adjustKeyFrame : adjustKeyFrames_in)
     {
-        if (p_adjustKeyFrame->isBad())
+        bool adjustKeyFrameIsBad3{};
+        if (p_adjustKeyFrame->isBad(adjustKeyFrameIsBad3) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (adjustKeyFrameIsBad3)
             continue;
 
         g2o::VertexSE3Expmap *p_se3Vertex = static_cast<g2o::VertexSE3Expmap *>(
@@ -502,7 +778,16 @@ void Optimizer::loopClosureLocalBundleAdjustment(
                 continue;
             }
 
-            if (p_mapPoint->isBad())
+            bool mapPointIsBad5{};
+            if (p_mapPoint->isBad(mapPointIsBad5) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mapPointIsBad5)
                 continue;
 
             if (e->chi2() > 5.991 || !e->isDepthPositive())
@@ -540,7 +825,16 @@ void Optimizer::loopClosureLocalBundleAdjustment(
                 continue;
             }
 
-            if (p_mapPoint->isBad())
+            bool mapPointIsBad6{};
+            if (p_mapPoint->isBad(mapPointIsBad6) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mapPointIsBad6)
                 continue;
 
             if (e->chi2() > 7.815 || !e->isDepthPositive())
@@ -555,20 +849,51 @@ void Optimizer::loopClosureLocalBundleAdjustment(
             }
         }
 
-        p_adjustKeyFrame->setPose(Tiw);
+        if (p_adjustKeyFrame->setPose(Tiw) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     // Points
     for (MapPoint *p_viewMapPoint : mapPoints)
     {
-        if (p_viewMapPoint->isBad())
+        bool viewMapPointIsBad5{};
+        if (p_viewMapPoint->isBad(viewMapPointIsBad5) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (viewMapPointIsBad5)
             continue;
 
         g2o::VertexSBAPointXYZ *p_pointVertex =
             static_cast<g2o::VertexSBAPointXYZ *>(
                 optimizer.vertex(p_viewMapPoint->id + maximumKeyFrameId + 1));
-        p_viewMapPoint->setWorldPos(p_pointVertex->estimate().cast<float>());
-        p_viewMapPoint->updateNormalAndDepth();
+        if (p_viewMapPoint->setWorldPos(
+                p_pointVertex->estimate().cast<float>()) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_viewMapPoint->updateNormalAndDepth() !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateNormalAndDepth returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 }
 

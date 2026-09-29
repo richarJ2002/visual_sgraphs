@@ -35,10 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::setNotErase()
+KeyFrameStatus KeyFrame::setNotErase()
 {
     unique_lock<mutex> lock(connectionsMutex);
     isEraseProtected = true;
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

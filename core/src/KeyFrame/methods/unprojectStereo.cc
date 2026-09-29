@@ -35,7 +35,9 @@ namespace vs_graphs
 namespace core
 {
 
-bool KeyFrame::unprojectStereo(int index_in, Eigen::Vector3f &x3D_out)
+KeyFrameStatus KeyFrame::unprojectStereo(int              index_in,
+                                         Eigen::Vector3f &x3D_out,
+                                         bool            &isUnprojected_out)
 {
     const float z = depths[index_in];
     if (z > 0)
@@ -47,11 +49,15 @@ bool KeyFrame::unprojectStereo(int index_in, Eigen::Vector3f &x3D_out)
         Eigen::Vector3f x3Dc(x, y, z);
 
         unique_lock<mutex> lock(poseMutex);
-        x3D_out = rotationRwc * x3Dc + twc.translation();
-        return true;
+        x3D_out           = rotationRwc * x3Dc + twc.translation();
+        isUnprojected_out = true;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
     else
-        return false;
+    {
+        isUnprojected_out = false;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

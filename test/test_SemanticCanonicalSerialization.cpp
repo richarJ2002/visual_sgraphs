@@ -91,7 +91,7 @@ TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -141,14 +141,16 @@ TEST(SemanticCanonicalSerialization,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall1);
-    p_map->addMapPlane(&wall2);
+    ASSERT_EQ((p_map->addMapPlane(&wall1)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addMapPlane(&wall2)), MapStatus::MAP_STATUS_SUCCESS);
     Room room1;
     test::makeRoom(room1, 1, p_map, &wall1);
     Room room2;
     test::makeRoom(room2, 2, p_map, &wall2);
-    p_map->addDetectedMapRoom(&room1);
-    p_map->addDetectedMapRoom(&room2);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room1)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room2)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot original{};
     ASSERT_EQ(
@@ -177,7 +179,8 @@ TEST(SemanticCanonicalSerialization,
                    p_map,
                    nullptr,
                    Eigen::Vector3d(1.0, 0.0, 0.0));
-    p_map->addDetectedMapRoom(&roomFirst);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&roomFirst)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room roomSecondSameId;
     test::makeRoom(roomSecondSameId,
                    1,
@@ -188,7 +191,8 @@ TEST(SemanticCanonicalSerialization,
      * AddCandidateMapRoom() (a bare std::set<Room *>::insert() with no id
      * bookkeeping), confirmed by direct source read during P1.1's residual
      * repair. */
-    p_map->addCandidateMapRoom(&roomSecondSameId);
+    ASSERT_EQ((p_map->addCandidateMapRoom(&roomSecondSameId)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -216,13 +220,15 @@ TEST(SemanticCanonicalSerialization,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room1;
     test::makeRoom(room1, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room1);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room1)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room room2;
     test::makeRoom(room2, 2, p_map, &wall);
-    p_map->addDetectedMapRoom(&room2);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room2)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -271,8 +277,10 @@ TEST(SemanticCanonicalSerialization,
     Map  *p_map = atlas.getCurrentMap();
     Room  bothCollections;
     test::makeRoom(bothCollections, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&bothCollections);
-    p_map->addCandidateMapRoom(&bothCollections);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&bothCollections)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addCandidateMapRoom(&bothCollections)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -304,13 +312,15 @@ TEST(SemanticCanonicalSerialization,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room roomB;
     test::makeRoom(roomB, 2, p_map, &wall);
-    p_map->addDetectedMapRoom(&roomB);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&roomB)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room roomA;
     test::makeRoom(roomA, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&roomA);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&roomA)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -713,11 +723,12 @@ TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
                         1.0,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     Room room;
     test::makeRoom(room, 1, p_map, &wall, Eigen::Vector3d(1.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(

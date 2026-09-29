@@ -35,10 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<geometric::Plane *> KeyFrame::getMapPlanes()
+KeyFrameStatus
+    KeyFrame::getMapPlanes(std::vector<geometric::Plane *> &mapPlanes_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return mapPlanes;
+    mapPlanes_out = mapPlanes;
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

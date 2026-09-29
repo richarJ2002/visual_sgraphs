@@ -43,13 +43,15 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::updatePoseMatrices()
+FrameStatus Frame::updatePoseMatrices()
 {
     Sophus::SE3<float> Twc = poseTcw.inverse();
     rotationRwc            = Twc.rotationMatrix();
     centerOw               = Twc.translation();
     rotationRcw            = poseTcw.rotationMatrix();
     translationTcw         = poseTcw.translation();
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

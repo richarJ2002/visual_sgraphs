@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,8 +33,17 @@ namespace core
 
 std::vector<MapPoint *> Atlas::getReferenceMapPoints()
 {
-    unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap->getReferenceMapPoints();
+    unique_lock<mutex>      lock(atlasMutex);
+    std::vector<MapPoint *> activeMapReferenceMapPoints{};
+    if (p_activeMap->getReferenceMapPoints(activeMapReferenceMapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getReferenceMapPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapReferenceMapPoints;
 }
 
 } // namespace core

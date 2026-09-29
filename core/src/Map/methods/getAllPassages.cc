@@ -34,11 +34,14 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<vs_graphs::core::semantic::Passage *> Map::getAllPassages()
+MapStatus Map::getAllPassages(
+    std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return std::vector<vs_graphs::core::semantic::Passage *>(passages.begin(),
-                                                             passages.end());
+    allPassages_out =
+        std::vector<vs_graphs::core::semantic::Passage *>(passages.begin(),
+                                                          passages.end());
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -208,7 +208,14 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        p_map->addMapPlane(wallA);
+        if (p_map->addMapPlane(wallA) !=
+            vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapPlane returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (room->setWalls(wallA) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
@@ -264,7 +271,14 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        p_map->addMapPlane(wallB);
+        if (p_map->addMapPlane(wallB) !=
+            vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapPlane returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (room->setWalls(wallB) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
@@ -320,7 +334,14 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        p_map->addMapPlane(wallC);
+        if (p_map->addMapPlane(wallC) !=
+            vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapPlane returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (room->setWalls(wallC) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
@@ -429,7 +450,14 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            p_map->addMapPassage(passage);
+            if (p_map->addMapPassage(passage) !=
+                vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPassage returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (room->setDoorways(passage) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
@@ -440,7 +468,14 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
             }
         }
 
-        p_map->addDetectedMapRoom(room);
+        if (p_map->addDetectedMapRoom(room) !=
+            vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addDetectedMapRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         return room;
     }
 
@@ -467,7 +502,14 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         EXPECT_TRUE(
             (p_floor->setPlaneIdentity(equation_in, 100U, 10U) ==
              vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS));
-        p_map->addMapFloor(p_floor);
+        if (p_map->addMapFloor(p_floor) !=
+            vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapFloor returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         return p_floor;
     }
 
@@ -476,8 +518,10 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                       Room *p_final_room0,
                       Room *p_start_room1)
     {
-        p_oldMap->setFinalRoom(p_final_room0);
-        p_newMap->setStartingRoom(p_start_room1);
+        ASSERT_EQ((p_oldMap->setFinalRoom(p_final_room0)),
+                  vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
+        ASSERT_EQ((p_newMap->setStartingRoom(p_start_room1)),
+                  vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     }
 
     SemanticMergeGateResult runConsecutiveGate(Map *p_survivingMap,
@@ -627,7 +671,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC2_aliasing)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((r0_1->setRoomTag("room_12")),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map0->addDetectedMapRoom(r0_1);
+    ASSERT_EQ((p_map0->addDetectedMapRoom(r0_1)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     Room *r1_1 = new Room();
     ASSERT_EQ((r1_1->setId(6)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -639,7 +684,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC2_aliasing)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((r1_1->setRoomTag("room_6")),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map1->addDetectedMapRoom(r1_1);
+    ASSERT_EQ((p_map1->addDetectedMapRoom(r1_1)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     EXPECT_NE(addFloor(p_map0, 0, FLOOR_EQ), nullptr);
     EXPECT_NE(addFloor(p_map1, 0, FLOOR_EQ), nullptr);
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
@@ -693,7 +739,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC3_singleAnchor)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((r0_2->setCentroid(ROOM2_CENTROID)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map0->addDetectedMapRoom(r0_2);
+    ASSERT_EQ((p_map0->addDetectedMapRoom(r0_2)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     Room *r1_1 = addRoomWithWallsAndPassage(p_map1,
                                             1,
                                             "room_1",
@@ -706,9 +753,15 @@ TEST_F(ConsecutiveMapMatcherTest, TC3_singleAnchor)
     EXPECT_NE(addFloor(p_map1, 0, FLOOR_EQ), nullptr);
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
     atlas.attemptConsecutiveMergeIfGated();
-    EXPECT_FALSE(p_map0->isBad())
+    bool isBad2{};
+    ASSERT_EQ((p_map0->isBad(isBad2)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_FALSE(isBad2)
         << "TC3: single anchor must not merge (old map stays live)";
-    EXPECT_FALSE(p_map1->isBad())
+    bool isBad3{};
+    ASSERT_EQ((p_map1->isBad(isBad3)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_FALSE(isBad3)
         << "TC3: single anchor must not merge (current map stays live)";
 }
 
@@ -724,7 +777,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC4_emptyNewMap)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((bootstrap->setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map0->addDetectedMapRoom(bootstrap);
+    ASSERT_EQ((p_map0->addDetectedMapRoom(bootstrap)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     Room *bootstrap1 = new Room();
     ASSERT_EQ((bootstrap1->setId(1)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -734,7 +788,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC4_emptyNewMap)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((bootstrap1->setCentroid(Eigen::Vector3d(0.0, 0.0, 0.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map1->addDetectedMapRoom(bootstrap1);
+    ASSERT_EQ((p_map1->addDetectedMapRoom(bootstrap1)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     setSeedRooms(p_map0, p_map1, bootstrap, bootstrap1);
     g2o::Sim3                      identity_sim3(Eigen::Matrix3d::Identity(),
                             Eigen::Vector3d::Zero(),
@@ -957,7 +1012,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC7_passageEndpointContradiction)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((r0_3->setRoomTag("room_3")),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map0->addDetectedMapRoom(r0_3);
+    ASSERT_EQ((p_map0->addDetectedMapRoom(r0_3)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     std::vector<vs_graphs::core::semantic::Passage *> r0_1Passages{};
     ASSERT_EQ((r0_1->getPassages(r0_1Passages)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -1108,7 +1164,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((r0_2->setCentroid(ROOM2_CENTROID)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map0->addDetectedMapRoom(r0_2);
+    ASSERT_EQ((p_map0->addDetectedMapRoom(r0_2)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     Room *r1_1 = addRoomWithWallsAndPassage(p_map1,
                                             1,
                                             "room_1",
@@ -1138,8 +1195,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
         count1++;
         pos1++;
     }
-    Room          *r1_1_current = nullptr;
-    vector<Room *> rooms1       = p_map1->getAllRooms();
+    Room               *r1_1_current = nullptr;
+    std::vector<Room *> rooms1{};
+    ASSERT_EQ((p_map1->getAllRooms(rooms1)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     for (Room *r : rooms1)
     {
         std::string roomTag{};
@@ -1173,7 +1232,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
         ASSERT_EQ(
             (wall4->setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0))),
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-        p_map1->addMapPlane(wall4);
+        ASSERT_EQ((p_map1->addMapPlane(wall4)),
+                  vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
         ASSERT_EQ((r1_1_current->setWalls(wall4)),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     }
@@ -1542,7 +1602,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC13_proxyReunionOnMerge)
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((proxy11->setKnownSideRoom(r1_1)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_map1->addMapPassage(proxy11);
+    ASSERT_EQ((p_map1->addMapPassage(proxy11)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((r1_1->setDoorways(proxy11)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     Passage *proxy12 = new Passage();
@@ -1556,13 +1617,17 @@ TEST_F(ConsecutiveMapMatcherTest, TC13_proxyReunionOnMerge)
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((proxy12->setKnownSideRoom(r1_1)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    p_map1->addMapPassage(proxy12);
+    ASSERT_EQ((p_map1->addMapPassage(proxy12)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((r1_1->setDoorways(proxy12)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     EXPECT_NE(addFloor(p_map1, 0, FLOOR_EQ), nullptr);
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
     atlas.attemptConsecutiveMergeIfGated();
-    EXPECT_TRUE(p_map0->isBad()) << "TC13: old map must retire on merge commit";
+    bool isBad2{};
+    ASSERT_EQ((p_map0->isBad(isBad2)),
+              vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_TRUE(isBad2) << "TC13: old map must retire on merge commit";
     bool isRecoveryProxy2{};
     ASSERT_EQ((proxy11->isRecoveryProxy(isRecoveryProxy2)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);

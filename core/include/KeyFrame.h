@@ -27,6 +27,7 @@
 #define KEYFRAME_H
 
 #include "ImuTypes.h"
+#include "KeyFrameStatus.h"
 #include "ORBVocabulary.h"
 #include "ORBextractor.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
@@ -81,74 +82,98 @@ class KeyFrame
              KeyFrameDatabase *p_keyFrameDatabase_in);
 
     // Pose functions
-    void setPose(const Sophus::SE3f &Tcw_in);
-    void setVelocity(const Eigen::Vector3f &Vw_in);
+    [[nodiscard]] KeyFrameStatus setPose(const Sophus::SE3f &Tcw_in);
+    [[nodiscard]] KeyFrameStatus setVelocity(const Eigen::Vector3f &Vw_in);
 
-    Sophus::SE3f getPose();
+    [[nodiscard]] KeyFrameStatus getPose(Sophus::SE3f &pose_out);
 
-    Sophus::SE3f    getPoseInverse();
-    Eigen::Vector3f getCameraCenter();
+    [[nodiscard]] KeyFrameStatus getPoseInverse(Sophus::SE3f &poseInverse_out);
+    [[nodiscard]] KeyFrameStatus
+        getCameraCenter(Eigen::Vector3f &cameraCenter_out);
 
-    Eigen::Vector3f getImuPosition();
-    Eigen::Matrix3f getImuRotation();
-    Sophus::SE3f    getImuPose();
-    Eigen::Matrix3f getRotation();
-    Eigen::Vector3f getTranslation();
-    Eigen::Vector3f getVelocity();
-    bool            isVelocitySet();
+    [[nodiscard]] KeyFrameStatus
+        getImuPosition(Eigen::Vector3f &imuPosition_out);
+    [[nodiscard]] KeyFrameStatus
+        getImuRotation(Eigen::Matrix3f &imuRotation_out);
+    [[nodiscard]] KeyFrameStatus getImuPose(Sophus::SE3f &imuPose_out);
+    [[nodiscard]] KeyFrameStatus getRotation(Eigen::Matrix3f &rotation_out);
+    [[nodiscard]] KeyFrameStatus
+        getTranslation(Eigen::Vector3f &translation_out);
+    [[nodiscard]] KeyFrameStatus getVelocity(Eigen::Vector3f &velocity_out);
+    [[nodiscard]] KeyFrameStatus isVelocitySet(bool &isVelocitySet_out);
 
     // Bag of Words Representation
-    void computeBagOfWords();
+    [[nodiscard]] KeyFrameStatus computeBagOfWords();
 
     // Covisibility graph functions
-    void addConnection(KeyFrame *p_keyFrame_inout, const int &weight_in);
-    void eraseConnection(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] KeyFrameStatus addConnection(KeyFrame  *p_keyFrame_inout,
+                                               const int &weight_in);
+    [[nodiscard]] KeyFrameStatus eraseConnection(KeyFrame *p_keyFrame_in);
 
-    void                    updateConnections(bool upParent_in = true);
-    void                    updateBestCovisibles();
-    std::set<KeyFrame *>    getConnectedKeyFrames();
-    std::vector<KeyFrame *> getVectorCovisibleKeyFrames();
-    std::vector<KeyFrame *> getBestCovisibilityKeyFrames(const int &N_in);
-    std::vector<KeyFrame *> getCovisiblesByWeight(const int &w_in);
-    int                     getWeight(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] KeyFrameStatus updateConnections(bool upParent_in = true);
+    [[nodiscard]] KeyFrameStatus updateBestCovisibles();
+    [[nodiscard]] KeyFrameStatus
+        getConnectedKeyFrames(std::set<KeyFrame *> &connectedKeyFrames_out);
+    [[nodiscard]] KeyFrameStatus getVectorCovisibleKeyFrames(
+        std::vector<KeyFrame *> &vectorCovisibleKeyFrames_out);
+    [[nodiscard]] KeyFrameStatus getBestCovisibilityKeyFrames(
+        const int               &N_in,
+        std::vector<KeyFrame *> &bestCovisibilityKeyFrames_out);
+    [[nodiscard]] KeyFrameStatus
+                                 getCovisiblesByWeight(const int               &w_in,
+                                                       std::vector<KeyFrame *> &covisiblesByWeight_out);
+    [[nodiscard]] KeyFrameStatus getWeight(KeyFrame *p_keyFrame_in,
+                                           int      &weight_out);
 
     // Spanning tree functions
-    void                 addChild(KeyFrame *p_keyFrame_in);
-    void                 eraseChild(KeyFrame *p_keyFrame_in);
-    void                 changeParent(KeyFrame *p_keyFrame_inout);
-    std::set<KeyFrame *> getChilds();
-    KeyFrame            *getParent();
-    bool                 hasChild(KeyFrame *p_keyFrame_in);
-    void                 setFirstConnection(bool isFirst_in);
+    [[nodiscard]] KeyFrameStatus addChild(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] KeyFrameStatus eraseChild(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] KeyFrameStatus changeParent(KeyFrame *p_keyFrame_inout);
+    [[nodiscard]] KeyFrameStatus getChilds(std::set<KeyFrame *> &childs_out);
+    [[nodiscard]] KeyFrameStatus getParent(KeyFrame *&p_parent_out);
+    [[nodiscard]] KeyFrameStatus hasChild(KeyFrame *p_keyFrame_in,
+                                          bool     &hasChild_out);
+    [[nodiscard]] KeyFrameStatus setFirstConnection(bool isFirst_in);
 
     // Loop Edges
-    void                 addLoopEdge(KeyFrame *p_keyFrame_in);
-    std::set<KeyFrame *> getLoopEdges();
+    [[nodiscard]] KeyFrameStatus addLoopEdge(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] KeyFrameStatus
+        getLoopEdges(std::set<KeyFrame *> &loopEdges_out);
 
     // Merge Edges
-    void            addMergeEdge(KeyFrame *p_keyFrame_in);
-    set<KeyFrame *> getMergeEdges();
+    [[nodiscard]] KeyFrameStatus addMergeEdge(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] KeyFrameStatus
+        getMergeEdges(std::set<KeyFrame *> &mergeEdges_out);
 
     // MapPoint observation functions
-    int  getMapPointCount();
-    void addMapPoint(MapPoint *p_mapPoint_in, const size_t &index_in);
-    void eraseMapPointMatch(const int &index_in);
-    void eraseMapPointMatch(MapPoint *p_mapPoint_in);
-    void replaceMapPointMatch(const int &index_in, MapPoint *p_mapPoint_in);
-    std::set<MapPoint *>    getMapPoints();
-    std::vector<MapPoint *> getMapPointMatches();
-    int       getTrackedMapPointCount(const int &minimumObservation_in);
-    MapPoint *getMapPoint(const size_t &index_in);
+    [[nodiscard]] KeyFrameStatus getMapPointCount(int &mapPointCount_out);
+    [[nodiscard]] KeyFrameStatus addMapPoint(MapPoint     *p_mapPoint_in,
+                                             const size_t &index_in);
+    [[nodiscard]] KeyFrameStatus eraseMapPointMatch(const int &index_in);
+    [[nodiscard]] KeyFrameStatus eraseMapPointMatch(MapPoint *p_mapPoint_in);
+    [[nodiscard]] KeyFrameStatus replaceMapPointMatch(const int &index_in,
+                                                      MapPoint  *p_mapPoint_in);
+    [[nodiscard]] KeyFrameStatus
+        getMapPoints(std::set<MapPoint *> &mapPoints_out);
+    [[nodiscard]] KeyFrameStatus
+        getMapPointMatches(std::vector<MapPoint *> &mapPointMatches_out);
+    [[nodiscard]] KeyFrameStatus
+        getTrackedMapPointCount(const int &minimumObservation_in,
+                                int       &trackedMapPointCount_out);
+    [[nodiscard]] KeyFrameStatus getMapPoint(const size_t &index_in,
+                                             MapPoint    *&p_mapPoint_out);
 
     // MapMarker observation functions
-    void                            addMapMarker(semantic::Marker *p_marker_in);
-    std::vector<semantic::Marker *> getMapMarkers();
+    [[nodiscard]] KeyFrameStatus addMapMarker(semantic::Marker *p_marker_in);
+    [[nodiscard]] KeyFrameStatus
+        getMapMarkers(std::vector<semantic::Marker *> &mapMarkers_out);
 
     // MapPlane observation functions
-    void addMapPlane(geometric::Plane *p_plane_in);
-    std::vector<geometric::Plane *>
-         getMapPlanes(); // After getting planes, need to check for NULLs
-    void removeMapPlane(geometric::Plane *p_plane_in);
+    [[nodiscard]] KeyFrameStatus addMapPlane(geometric::Plane *p_plane_in);
+    [[nodiscard]] KeyFrameStatus getMapPlanes(
+        std::vector<geometric::Plane *>
+            &mapPlanes_out); // After getting planes, need to check for NULLs
+    [[nodiscard]] KeyFrameStatus removeMapPlane(geometric::Plane *p_plane_in);
 
     /*!
      * @brief       Replaces a retired mapped plane in this keyframe.
@@ -162,17 +187,22 @@ class KeyFrame
      * @param[in]   p_retainedPlane_in
      *              Plane hypothesis which owns the fused observations.
      *
-     * @return      True when the retired plane was present.
+     * @param[out] wasReplaced_out True when the retired plane was present.
+     * @return KEY_FRAME_STATUS_SUCCESS, or KEY_FRAME_STATUS_INVALID_ARGUMENT
+     * when an input is rejected.
      */
-    bool replaceMapPlane(geometric::Plane *p_retiredPlane_in,
-                         geometric::Plane *p_retainedPlane_in);
+    [[nodiscard]] KeyFrameStatus
+        replaceMapPlane(geometric::Plane *p_retiredPlane_in,
+                        geometric::Plane *p_retainedPlane_in,
+                        bool             &wasReplaced_out);
 
     /*!
      * @brief       Adds a mapped passage association.
      *
      * @param[in]   p_passage_in Passage observed by this keyframe.
      */
-    void addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in);
+    [[nodiscard]] KeyFrameStatus
+        addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in);
 
     /*!
      * @brief       Replaces a retired passage association after fusion.
@@ -180,35 +210,45 @@ class KeyFrame
      * @param[in]   p_retiredPassage_in Duplicate passage being retired.
      * @param[in]   p_retainedPassage_in Passage retaining the associations.
      *
-     * @return      True when the retired passage was present.
+     * @param[out] wasReplaced_out True when the retired passage was present.
+     * @return KEY_FRAME_STATUS_SUCCESS, or KEY_FRAME_STATUS_INVALID_ARGUMENT
+     * when an input is rejected.
      */
-    bool replaceMapPassage(
+    [[nodiscard]] KeyFrameStatus replaceMapPassage(
         vs_graphs::core::semantic::Passage *p_retiredPassage_in,
-        vs_graphs::core::semantic::Passage *p_retainedPassage_in);
+        vs_graphs::core::semantic::Passage *p_retainedPassage_in,
+        bool                               &wasReplaced_out);
 
-    std::vector<vs_graphs::core::semantic::Passage *> getMapPassages();
+    [[nodiscard]] KeyFrameStatus getMapPassages(
+        std::vector<vs_graphs::core::semantic::Passage *> &mapPassages_out);
 
     // KeyPoint functions
-    std::vector<size_t>
-         getFeaturesInArea(const float &x_in,
-                           const float &y_in,
-                           const float &r_in,
-                           const bool   isRightCamera_in = false) const;
-    bool unprojectStereo(int index_in, Eigen::Vector3f &x3D_out);
+    [[nodiscard]] KeyFrameStatus
+                                 getFeaturesInArea(const float         &x_in,
+                                                   const float         &y_in,
+                                                   const float         &r_in,
+                                                   std::vector<size_t> &featuresInArea_out,
+                                                   const bool           isRightCamera_in = false) const;
+    [[nodiscard]] KeyFrameStatus unprojectStereo(int              index_in,
+                                                 Eigen::Vector3f &x3D_out,
+                                                 bool &isUnprojected_out);
 
     // Image
-    bool isInImage(const float &x_in, const float &y_in) const;
+    [[nodiscard]] KeyFrameStatus isInImage(const float &x_in,
+                                           const float &y_in,
+                                           bool        &isInImage_out) const;
 
     // Enable/Disable bad flag changes
-    void setNotErase();
-    void setErase();
+    [[nodiscard]] KeyFrameStatus setNotErase();
+    [[nodiscard]] KeyFrameStatus setErase();
 
     // Set/check bad flag
-    void setBadFlag();
-    bool isBad();
+    [[nodiscard]] KeyFrameStatus setBadFlag();
+    [[nodiscard]] KeyFrameStatus isBad(bool &isBad_out);
 
     // Compute Scene Depth (q=2 median). Used in monocular.
-    float computeSceneMedianDepth(const int q_in);
+    [[nodiscard]] KeyFrameStatus
+        computeSceneMedianDepth(const int q_in, float &sceneMedianDepth_out);
 
     static bool weightComp(int a_in, int b_in)
     {
@@ -220,37 +260,42 @@ class KeyFrame
         return p_keyFrame1_inout->id < p_keyFrame2_inout->id;
     }
 
-    Map *getMap();
-    void updateMap(Map *p_map_in);
+    [[nodiscard]] KeyFrameStatus getMap(Map *&p_map_out);
+    [[nodiscard]] KeyFrameStatus updateMap(Map *p_map_in);
 
-    void            setNewBias(const IMU::Bias &b_in);
-    Eigen::Vector3f getGyroBias();
+    [[nodiscard]] KeyFrameStatus setNewBias(const IMU::Bias &b_in);
+    [[nodiscard]] KeyFrameStatus getGyroBias(Eigen::Vector3f &gyroBias_out);
 
-    Eigen::Vector3f getAccBias();
+    [[nodiscard]] KeyFrameStatus getAccBias(Eigen::Vector3f &accBias_out);
 
-    IMU::Bias getImuBias();
+    [[nodiscard]] KeyFrameStatus getImuBias(IMU::Bias &imuBias_out);
 
-    bool projectPointDistort(MapPoint    *p_mapPoint_in,
-                             cv::Point2f &keyPoint_out,
-                             float       &u_out,
-                             float       &v_out);
-    bool projectPointUnDistort(MapPoint    *p_mapPoint_in,
-                               cv::Point2f &keyPoint_out,
-                               float       &u_out,
-                               float       &v_out);
+    [[nodiscard]] KeyFrameStatus projectPointDistort(MapPoint    *p_mapPoint_in,
+                                                     cv::Point2f &keyPoint_out,
+                                                     float       &u_out,
+                                                     float       &v_out,
+                                                     bool &isProjected_out);
+    [[nodiscard]] KeyFrameStatus
+        projectPointUnDistort(MapPoint    *p_mapPoint_in,
+                              cv::Point2f &keyPoint_out,
+                              float       &u_out,
+                              float       &v_out,
+                              bool        &isProjected_out);
 
-    void preSave(
+    [[nodiscard]] KeyFrameStatus preSave(
         set<KeyFrame *>                                        &keyFrames_in,
         set<MapPoint *>                                        &mapPoints_in,
         set<camera_models::geometriccamera::GeometricCamera *> &cameras_in);
-    void postLoad(
+    [[nodiscard]] KeyFrameStatus postLoad(
         map<long unsigned int, KeyFrame *> &keyFrameId_in,
         map<long unsigned int, MapPoint *> &mapPointId_in,
         map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
             &cameraId_in);
 
-    void setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
-    void setKeyFrameDatabase(KeyFrameDatabase *p_keyFrameDatabase_in);
+    [[nodiscard]] KeyFrameStatus
+        setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
+    [[nodiscard]] KeyFrameStatus
+        setKeyFrameDatabase(KeyFrameDatabase *p_keyFrameDatabase_in);
 
     bool isImu;
 
@@ -481,8 +526,10 @@ class KeyFrame
     // Indexes of stereo observations correspondences
     std::vector<int> leftToRightMatches, rightToLeftMatches;
 
-    Sophus::SE3f getRelativePoseTrl();
-    Sophus::SE3f getRelativePoseTlr();
+    [[nodiscard]] KeyFrameStatus
+        getRelativePoseTrl(Sophus::SE3f &relativePoseTrl_out);
+    [[nodiscard]] KeyFrameStatus
+        getRelativePoseTlr(Sophus::SE3f &relativePoseTlr_out);
 
     // KeyPoints in the right image (for stereo fisheye, coordinates are needed)
     const std::vector<cv::KeyPoint> keyPointsRight;
@@ -491,45 +538,35 @@ class KeyFrame
 
     std::vector<std::vector<std::vector<size_t>>> gridRight;
 
-    Sophus::SE3<float> getRightPose();
-    Sophus::SE3<float> getRightPoseInverse();
+    [[nodiscard]] KeyFrameStatus
+        getRightPose(Sophus::SE3<float> &rightPose_out);
+    [[nodiscard]] KeyFrameStatus
+        getRightPoseInverse(Sophus::SE3<float> &rightPoseInverse_out);
 
-    Eigen::Vector3f            getRightCameraCenter();
-    Eigen::Matrix<float, 3, 3> getRightRotation();
-    Eigen::Vector3f            getRightTranslation();
+    [[nodiscard]] KeyFrameStatus
+        getRightCameraCenter(Eigen::Vector3f &rightCameraCenter_out);
+    [[nodiscard]] KeyFrameStatus
+        getRightRotation(Eigen::Matrix<float, 3, 3> &rightRotation_out);
+    [[nodiscard]] KeyFrameStatus
+        getRightTranslation(Eigen::Vector3f &rightTranslation_out);
 
-    std::vector<semantic::Marker *> getCurrentFrameMarkers() const;
-    std::vector<MapPoint *>         getCurrentFrameMapPoints() const;
+    [[nodiscard]] KeyFrameStatus getCurrentFrameMarkers(
+        std::vector<semantic::Marker *> &getCurrentFrameMarkers_out) const;
+    [[nodiscard]] KeyFrameStatus getCurrentFrameMapPoints(
+        std::vector<MapPoint *> &getCurrentFrameMapPoints_out) const;
 
     // getters and setter for point clouds
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCurrentFramePointCloud() const;
-    void                                   clearPointCloud();
-    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
-         getClsCloudPtrs() const;
-    void setCurrentClsCloudPtrs(
+    [[nodiscard]] KeyFrameStatus getCurrentFramePointCloud(
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr &getCurrentFramePointCloud_out)
+        const;
+    [[nodiscard]] KeyFrameStatus clearPointCloud();
+    [[nodiscard]] KeyFrameStatus
+        getClsCloudPtrs(std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
+                            &getClsCloudPtrs_out) const;
+    [[nodiscard]] KeyFrameStatus setCurrentClsCloudPtrs(
         std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
             &p_clsCloudPtrs_in);
-    void clearClsClouds();
-
-    void printPointDistribution()
-    {
-        int left = 0, right = 0;
-        int limCount =
-            (leftKeyPointCount != -1) ? leftKeyPointCount : keyPointCount;
-        for (int keyPointIndex = 0; keyPointIndex < keyPointCount;
-             keyPointIndex++)
-        {
-            if (mapPoints[keyPointIndex])
-            {
-                if (keyPointIndex < limCount)
-                    left++;
-                else
-                    right++;
-            }
-        }
-        cout << "Point distribution in KeyFrame: left-> " << left
-             << " --- right-> " << right << endl;
-    }
+    [[nodiscard]] KeyFrameStatus clearClsClouds();
 };
 
 } // namespace core

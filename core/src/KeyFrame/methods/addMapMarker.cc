@@ -35,10 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::addMapMarker(semantic::Marker *p_marker_in)
+KeyFrameStatus KeyFrame::addMapMarker(semantic::Marker *p_marker_in)
 {
     unique_lock<mutex> lock(featuresMutex);
     mapMarkers.push_back(p_marker_in);
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

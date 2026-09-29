@@ -29,13 +29,14 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void Map::clear()
+MapStatus Map::clear()
 {
     for (set<KeyFrame *>::iterator sit  = keyFrames.begin(),
                                    send = keyFrames.end();
@@ -43,7 +44,14 @@ void Map::clear()
          sit++)
     {
         KeyFrame *p_keyFrame = *sit;
-        p_keyFrame->updateMap(static_cast<Map *>(nullptr));
+        if (p_keyFrame->updateMap(static_cast<Map *>(nullptr)) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     planes.clear();
@@ -73,6 +81,8 @@ void Map::clear()
     keyFrameOrigins.clear();
     hasInertialBA1 = false;
     hasInertialBA2 = false;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -23,6 +23,7 @@
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
+#include <rclcpp/logging.hpp>
 #include <stdint-gcc.h>
 
 namespace vs_graphs
@@ -57,12 +58,19 @@ int ORBmatcher::searchForInitialization(
         if (level1 > 0)
             continue;
 
-        vector<size_t> indices2 =
-            F2.getFeaturesInArea(previousMatched_inout[i1].x,
+        std::vector<size_t> indices2{};
+        if (F2.getFeaturesInArea(previousMatched_inout[i1].x,
                                  previousMatched_inout[i1].y,
                                  windowSize,
+                                 indices2,
                                  level1,
-                                 level1);
+                                 level1) != FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getFeaturesInArea returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (indices2.empty())
             continue;

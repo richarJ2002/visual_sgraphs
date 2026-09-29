@@ -29,6 +29,7 @@
 #include "Tracking.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -92,9 +93,25 @@ void LocalMapping::scaleRefinement()
     {
         Sophus::SE3f Tgw(mRwg.cast<float>().transpose(),
                          Eigen::Vector3f::Zero());
-        p_activeMap->applyScaledRotation(Tgw, scale, true);
+        if (p_activeMap->applyScaledRotation(Tgw, scale, true) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyScaledRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        IMU::Bias currentKeyFrameImuBias{};
+        if (p_currentKeyFrame->getImuBias(currentKeyFrameImuBias) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuBias returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         p_tracker->updateFrameIMU(scale,
-                                  p_currentKeyFrame->getImuBias(),
+                                  currentKeyFrameImuBias,
                                   p_currentKeyFrame);
     }
 
@@ -103,13 +120,36 @@ void LocalMapping::scaleRefinement()
          newKeyFrameIt != newKeyFrameEnd;
          newKeyFrameIt++)
     {
-        (*newKeyFrameIt)->setBadFlag();
+        if ((*newKeyFrameIt)->setBadFlag() !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBadFlag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         delete *newKeyFrameIt;
     }
     newKeyFrames.clear();
 
     // To perform pose-inertial opt w.r.t. last keyframe
-    p_currentKeyFrame->getMap()->increaseChangeIndex();
+    Map *p_currentKeyFrameMap = nullptr;
+    if (p_currentKeyFrame->getMap(p_currentKeyFrameMap) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_currentKeyFrameMap->increaseChangeIndex() !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: increaseChangeIndex returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     return;
 }

@@ -28,13 +28,14 @@
 #include "ORBmatcher.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void MapPoint::updateNormalAndDepth()
+MapPointStatus MapPoint::updateNormalAndDepth()
 {
     map<KeyFrame *, tuple<int, int>> observedKeyFrames;
     KeyFrame                        *p_localReferenceKeyFrame;
@@ -43,14 +44,14 @@ void MapPoint::updateNormalAndDepth()
         unique_lock<mutex> lock1(featuresMutex);
         unique_lock<mutex> lock2(positionMutex);
         if (isFlaggedBad)
-            return;
+            return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
         observedKeyFrames        = observations;
         p_localReferenceKeyFrame = p_referenceKeyFrame;
         Pos                      = worldPos;
     }
 
     if (observedKeyFrames.empty())
-        return;
+        return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 
     Eigen::Vector3f normal;
     normal.setZero();
@@ -68,21 +69,48 @@ void MapPoint::updateNormalAndDepth()
 
         if (leftIndex != -1)
         {
-            Eigen::Vector3f Owi     = p_keyFrame->getCameraCenter();
+            Eigen::Vector3f Owi{};
+            if (p_keyFrame->getCameraCenter(Owi) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCameraCenter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             Eigen::Vector3f normali = Pos - Owi;
             normal                  = normal + normali / normali.norm();
             n++;
         }
         if (rightIndex != -1)
         {
-            Eigen::Vector3f Owi     = p_keyFrame->getRightCameraCenter();
+            Eigen::Vector3f Owi{};
+            if (p_keyFrame->getRightCameraCenter(Owi) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getRightCameraCenter returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             Eigen::Vector3f normali = Pos - Owi;
             normal                  = normal + normali / normali.norm();
             n++;
         }
     }
 
-    Eigen::Vector3f PC = Pos - p_localReferenceKeyFrame->getCameraCenter();
+    Eigen::Vector3f localReferenceKeyFrameCameraCenter{};
+    if (p_localReferenceKeyFrame->getCameraCenter(
+            localReferenceKeyFrameCameraCenter) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCameraCenter returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Vector3f PC       = Pos - localReferenceKeyFrameCameraCenter;
     const float     distance = PC.norm();
 
     tuple<int, int> indexes   = observedKeyFrames[p_localReferenceKeyFrame];
@@ -118,6 +146,8 @@ void MapPoint::updateNormalAndDepth()
                       p_localReferenceKeyFrame->scaleFactors[levelCount - 1];
         normalVector = normal / n;
     }
+
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

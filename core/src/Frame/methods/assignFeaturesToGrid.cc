@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -43,7 +44,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::assignFeaturesToGrid()
+FrameStatus Frame::assignFeaturesToGrid()
 {
     // Fill matrix with points
     const int cellCount = FRAME_GRID_COLS * FRAME_GRID_ROWS;
@@ -69,8 +70,20 @@ void Frame::assignFeaturesToGrid()
                 ? keyPoints[columnIndex]
                 : keyPointsRight[columnIndex - leftKeyPointCount];
 
-        int gridPositionXCount, gridPositionYCount;
-        if (isPositionInGrid(keyPoint, gridPositionXCount, gridPositionYCount))
+        int  gridPositionXCount, gridPositionYCount;
+        bool isPositionInGrid2{};
+        if (isPositionInGrid(keyPoint,
+                             gridPositionXCount,
+                             gridPositionYCount,
+                             isPositionInGrid2) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPositionInGrid returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isPositionInGrid2)
         {
             if (leftKeyPointCount == -1 || columnIndex < leftKeyPointCount)
                 grid[gridPositionXCount][gridPositionYCount].push_back(
@@ -80,6 +93,8 @@ void Frame::assignFeaturesToGrid()
                     columnIndex - leftKeyPointCount);
         }
     }
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

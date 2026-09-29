@@ -24,6 +24,7 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,8 +33,17 @@ namespace core
 
 vector<semantic::Marker *> System::getAllMarkers()
 {
-    Map *p_activeMap = p_atlas->getCurrentMap();
-    return p_activeMap->getAllMarkers();
+    Map                            *p_activeMap = p_atlas->getCurrentMap();
+    std::vector<semantic::Marker *> activeMapAllMarkers{};
+    if (p_activeMap->getAllMarkers(activeMapAllMarkers) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkers returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapAllMarkers;
 }
 
 } // namespace core

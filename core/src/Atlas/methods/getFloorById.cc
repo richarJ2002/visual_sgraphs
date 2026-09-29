@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,8 +34,17 @@ namespace core
 semantic::Floor *Atlas::getFloorById(int floorId_in)
 {
     unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap != nullptr ? p_activeMap->getFloorById(floorId_in)
-                                  : nullptr;
+    semantic::Floor   *p_activeMapFloorById = nullptr;
+    if ((p_activeMap != nullptr) &&
+        p_activeMap->getFloorById(floorId_in, p_activeMapFloorById) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFloorById returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return p_activeMap != nullptr ? p_activeMapFloorById : nullptr;
 }
 
 } // namespace core

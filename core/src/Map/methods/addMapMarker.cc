@@ -37,7 +37,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addMapMarker(semantic::Marker *p_marker_in)
+MapStatus Map::addMapMarker(semantic::Marker *p_marker_in)
 {
     unique_lock<mutex> lock(mapMutex);
     markers.insert(p_marker_in);
@@ -52,6 +52,8 @@ void Map::addMapMarker(semantic::Marker *p_marker_in)
                      __func__);
     }
     markerIndex[marker_inId] = p_marker_in;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

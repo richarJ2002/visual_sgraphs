@@ -179,7 +179,14 @@ GeoSemHelpersStatus
                      __func__);
     }
 
-    p_keyFrame_inout->addMapMarker(p_newMapMarker);
+    if (p_keyFrame_inout->addMapMarker(p_newMapMarker) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapMarker returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     p_atlas_inout->addMapMarker(p_newMapMarker);
 
     p_mapMarker_out = p_newMapMarker;

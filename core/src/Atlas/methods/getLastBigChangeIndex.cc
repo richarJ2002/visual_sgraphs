@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,7 +34,16 @@ namespace core
 int Atlas::getLastBigChangeIndex()
 {
     unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap->getLastBigChangeIndex();
+    int                activeMapLastBigChangeIndex{};
+    if (p_activeMap->getLastBigChangeIndex(activeMapLastBigChangeIndex) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getLastBigChangeIndex returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapLastBigChangeIndex;
 }
 
 } // namespace core

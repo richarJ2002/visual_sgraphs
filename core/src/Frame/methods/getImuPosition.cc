@@ -43,9 +43,12 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix<float, 3, 1> Frame::getImuPosition() const
+FrameStatus
+    Frame::getImuPosition(Eigen::Matrix<float, 3, 1> &getImuPosition_out) const
 {
-    return rotationRwc * imuCalibration.mTcb.translation() + centerOw;
+    getImuPosition_out =
+        rotationRwc * imuCalibration.mTcb.translation() + centerOw;
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

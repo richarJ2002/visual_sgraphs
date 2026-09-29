@@ -28,6 +28,7 @@
 #include "GeometricTools.h"
 #include "ORBmatcher.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,8 +42,16 @@ void LocalMapping::createNewMapPoints()
     // For stereo inertial case
     if (isMonocular)
         neighborKeyFrameCount = 30;
-    vector<KeyFrame *> neighborKeyFrames =
-        p_currentKeyFrame->getBestCovisibilityKeyFrames(neighborKeyFrameCount);
+    std::vector<KeyFrame *> neighborKeyFrames{};
+    if (p_currentKeyFrame->getBestCovisibilityKeyFrames(neighborKeyFrameCount,
+                                                        neighborKeyFrames) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBestCovisibilityKeyFrames returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (isInertial)
     {
@@ -69,12 +78,28 @@ void LocalMapping::createNewMapPoints()
 
     ORBmatcher matcher(matchNnRatio, false);
 
-    Sophus::SE3<float>         sophTcw1 = p_currentKeyFrame->getPose();
-    Eigen::Matrix<float, 3, 4> eigTcw1  = sophTcw1.matrix3x4();
-    Eigen::Matrix<float, 3, 3> Rcw1     = eigTcw1.block<3, 3>(0, 0);
-    Eigen::Matrix<float, 3, 3> Rwc1     = Rcw1.transpose();
-    Eigen::Vector3f            tcw1     = sophTcw1.translation();
-    Eigen::Vector3f            Ow1      = p_currentKeyFrame->getCameraCenter();
+    Sophus::SE3<float> sophTcw1{};
+    if (p_currentKeyFrame->getPose(sophTcw1) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Matrix<float, 3, 4> eigTcw1 = sophTcw1.matrix3x4();
+    Eigen::Matrix<float, 3, 3> Rcw1    = eigTcw1.block<3, 3>(0, 0);
+    Eigen::Matrix<float, 3, 3> Rwc1    = Rcw1.transpose();
+    Eigen::Vector3f            tcw1    = sophTcw1.translation();
+    Eigen::Vector3f            Ow1{};
+    if (p_currentKeyFrame->getCameraCenter(Ow1) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCameraCenter returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     const float &focalLengthX1    = p_currentKeyFrame->fx;
     const float &focalLengthY1    = p_currentKeyFrame->fy;
@@ -101,7 +126,15 @@ void LocalMapping::createNewMapPoints()
             *p_camera2 = p_neighborKeyFrame->p_camera;
 
         // Check first that baseline is not too short
-        Eigen::Vector3f Ow2            = p_neighborKeyFrame->getCameraCenter();
+        Eigen::Vector3f Ow2{};
+        if (p_neighborKeyFrame->getCameraCenter(Ow2) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCameraCenter returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         Eigen::Vector3f baselineVector = Ow2 - Ow1;
         const float     baseline       = baselineVector.norm();
 
@@ -112,8 +145,18 @@ void LocalMapping::createNewMapPoints()
         }
         else
         {
-            const float medianDepthKeyFrame2 =
-                p_neighborKeyFrame->computeSceneMedianDepth(2);
+            float medianDepthKeyFrame2{};
+            if (p_neighborKeyFrame->computeSceneMedianDepth(
+                    2,
+                    medianDepthKeyFrame2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computeSceneMedianDepth returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             const float ratioBaselineDepth = baseline / medianDepthKeyFrame2;
 
             if (ratioBaselineDepth < 0.01)
@@ -122,9 +165,29 @@ void LocalMapping::createNewMapPoints()
 
         // Search matches that fullfil epipolar constraint
         vector<pair<size_t, size_t>> matchedKeyPointIndices;
-        bool                         isCoarseSearch = isInertial &&
+        Map                         *p_currentKeyFrameMap = nullptr;
+        if ((isInertial && p_tracker->state == Tracking::RECENTLY_LOST) &&
+            p_currentKeyFrame->getMap(p_currentKeyFrameMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        bool inertialBA2{};
+        if ((isInertial && p_tracker->state == Tracking::RECENTLY_LOST) &&
+            p_currentKeyFrameMap->getInertialBA2(inertialBA2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getInertialBA2 returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        bool isCoarseSearch = isInertial &&
                               p_tracker->state == Tracking::RECENTLY_LOST &&
-                              p_currentKeyFrame->getMap()->getInertialBA2();
+                              inertialBA2;
 
         matcher.searchForTriangulation(p_currentKeyFrame,
                                        p_neighborKeyFrame,
@@ -132,11 +195,19 @@ void LocalMapping::createNewMapPoints()
                                        false,
                                        isCoarseSearch);
 
-        Sophus::SE3<float>         sophTcw2 = p_neighborKeyFrame->getPose();
-        Eigen::Matrix<float, 3, 4> eigTcw2  = sophTcw2.matrix3x4();
-        Eigen::Matrix<float, 3, 3> Rcw2     = eigTcw2.block<3, 3>(0, 0);
-        Eigen::Matrix<float, 3, 3> Rwc2     = Rcw2.transpose();
-        Eigen::Vector3f            tcw2     = sophTcw2.translation();
+        Sophus::SE3<float> sophTcw2{};
+        if (p_neighborKeyFrame->getPose(sophTcw2) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Matrix<float, 3, 4> eigTcw2 = sophTcw2.matrix3x4();
+        Eigen::Matrix<float, 3, 3> Rcw2    = eigTcw2.block<3, 3>(0, 0);
+        Eigen::Matrix<float, 3, 3> Rwc2    = Rcw2.transpose();
+        Eigen::Vector3f            tcw2    = sophTcw2.translation();
 
         const float &focalLengthX2    = p_neighborKeyFrame->fx;
         const float &focalLengthY2    = p_neighborKeyFrame->fy;
@@ -193,11 +264,55 @@ void LocalMapping::createNewMapPoints()
             {
                 if (isKeyPoint1FromRightCamera && isKeyPoint2FromRightCamera)
                 {
-                    sophTcw1 = p_currentKeyFrame->getRightPose();
-                    Ow1      = p_currentKeyFrame->getRightCameraCenter();
+                    Sophus::SE3<float> currentKeyFrameRightPose{};
+                    if (p_currentKeyFrame->getRightPose(
+                            currentKeyFrameRightPose) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getRightPose returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    sophTcw1 = currentKeyFrameRightPose;
+                    Eigen::Vector3f currentKeyFrameRightCameraCenter{};
+                    if (p_currentKeyFrame->getRightCameraCenter(
+                            currentKeyFrameRightCameraCenter) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: getRightCameraCenter returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
+                    Ow1 = currentKeyFrameRightCameraCenter;
 
-                    sophTcw2 = p_neighborKeyFrame->getRightPose();
-                    Ow2      = p_neighborKeyFrame->getRightCameraCenter();
+                    Sophus::SE3<float> neighborKeyFrameRightPose{};
+                    if (p_neighborKeyFrame->getRightPose(
+                            neighborKeyFrameRightPose) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getRightPose returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    sophTcw2 = neighborKeyFrameRightPose;
+                    Eigen::Vector3f neighborKeyFrameRightCameraCenter{};
+                    if (p_neighborKeyFrame->getRightCameraCenter(
+                            neighborKeyFrameRightCameraCenter) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: getRightCameraCenter returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
+                    Ow2 = neighborKeyFrameRightCameraCenter;
 
                     p_camera1 = p_currentKeyFrame->p_camera2;
                     p_camera2 = p_neighborKeyFrame->p_camera2;
@@ -205,11 +320,54 @@ void LocalMapping::createNewMapPoints()
                 else if (isKeyPoint1FromRightCamera &&
                          !isKeyPoint2FromRightCamera)
                 {
-                    sophTcw1 = p_currentKeyFrame->getRightPose();
-                    Ow1      = p_currentKeyFrame->getRightCameraCenter();
+                    Sophus::SE3<float> currentKeyFrameRightPose2{};
+                    if (p_currentKeyFrame->getRightPose(
+                            currentKeyFrameRightPose2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getRightPose returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    sophTcw1 = currentKeyFrameRightPose2;
+                    Eigen::Vector3f currentKeyFrameRightCameraCenter2{};
+                    if (p_currentKeyFrame->getRightCameraCenter(
+                            currentKeyFrameRightCameraCenter2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: getRightCameraCenter returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
+                    Ow1 = currentKeyFrameRightCameraCenter2;
 
-                    sophTcw2 = p_neighborKeyFrame->getPose();
-                    Ow2      = p_neighborKeyFrame->getCameraCenter();
+                    Sophus::SE3f neighborKeyFramePose{};
+                    if (p_neighborKeyFrame->getPose(neighborKeyFramePose) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPose returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    sophTcw2 = neighborKeyFramePose;
+                    Eigen::Vector3f neighborKeyFrameCameraCenter{};
+                    if (p_neighborKeyFrame->getCameraCenter(
+                            neighborKeyFrameCameraCenter) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCameraCenter returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    Ow2 = neighborKeyFrameCameraCenter;
 
                     p_camera1 = p_currentKeyFrame->p_camera2;
                     p_camera2 = p_neighborKeyFrame->p_camera;
@@ -217,22 +375,107 @@ void LocalMapping::createNewMapPoints()
                 else if (!isKeyPoint1FromRightCamera &&
                          isKeyPoint2FromRightCamera)
                 {
-                    sophTcw1 = p_currentKeyFrame->getPose();
-                    Ow1      = p_currentKeyFrame->getCameraCenter();
+                    Sophus::SE3f currentKeyFramePose{};
+                    if (p_currentKeyFrame->getPose(currentKeyFramePose) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPose returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    sophTcw1 = currentKeyFramePose;
+                    Eigen::Vector3f currentKeyFrameCameraCenter{};
+                    if (p_currentKeyFrame->getCameraCenter(
+                            currentKeyFrameCameraCenter) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCameraCenter returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    Ow1 = currentKeyFrameCameraCenter;
 
-                    sophTcw2 = p_neighborKeyFrame->getRightPose();
-                    Ow2      = p_neighborKeyFrame->getRightCameraCenter();
+                    Sophus::SE3<float> neighborKeyFrameRightPose2{};
+                    if (p_neighborKeyFrame->getRightPose(
+                            neighborKeyFrameRightPose2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getRightPose returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    sophTcw2 = neighborKeyFrameRightPose2;
+                    Eigen::Vector3f neighborKeyFrameRightCameraCenter2{};
+                    if (p_neighborKeyFrame->getRightCameraCenter(
+                            neighborKeyFrameRightCameraCenter2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: getRightCameraCenter returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
+                    Ow2 = neighborKeyFrameRightCameraCenter2;
 
                     p_camera1 = p_currentKeyFrame->p_camera;
                     p_camera2 = p_neighborKeyFrame->p_camera2;
                 }
                 else
                 {
-                    sophTcw1 = p_currentKeyFrame->getPose();
-                    Ow1      = p_currentKeyFrame->getCameraCenter();
+                    Sophus::SE3f currentKeyFramePose2{};
+                    if (p_currentKeyFrame->getPose(currentKeyFramePose2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPose returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    sophTcw1 = currentKeyFramePose2;
+                    Eigen::Vector3f currentKeyFrameCameraCenter2{};
+                    if (p_currentKeyFrame->getCameraCenter(
+                            currentKeyFrameCameraCenter2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCameraCenter returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    Ow1 = currentKeyFrameCameraCenter2;
 
-                    sophTcw2 = p_neighborKeyFrame->getPose();
-                    Ow2      = p_neighborKeyFrame->getCameraCenter();
+                    Sophus::SE3f neighborKeyFramePose2{};
+                    if (p_neighborKeyFrame->getPose(neighborKeyFramePose2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPose returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    sophTcw2 = neighborKeyFramePose2;
+                    Eigen::Vector3f neighborKeyFrameCameraCenter2{};
+                    if (p_neighborKeyFrame->getCameraCenter(
+                            neighborKeyFrameCameraCenter2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCameraCenter returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    Ow2 = neighborKeyFrameCameraCenter2;
 
                     p_camera1 = p_currentKeyFrame->p_camera;
                     p_camera2 = p_neighborKeyFrame->p_camera;
@@ -301,17 +544,39 @@ void LocalMapping::createNewMapPoints()
             {
                 stereoAttemptCount++;
                 isStereoTriangulatedPoint = true;
-                wasTriangulationSuccessful =
-                    p_currentKeyFrame->unprojectStereo(keyPointIndex1,
-                                                       triangulatedPoint);
+                bool currentKeyFrameIsUnprojected{};
+                if (p_currentKeyFrame->unprojectStereo(
+                        keyPointIndex1,
+                        triangulatedPoint,
+                        currentKeyFrameIsUnprojected) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: unprojectStereo returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                wasTriangulationSuccessful = currentKeyFrameIsUnprojected;
             }
             else if (hasStereoMatch2 && cosParallaxStereo2 < cosParallaxStereo1)
             {
                 stereoAttemptCount++;
                 isStereoTriangulatedPoint = true;
-                wasTriangulationSuccessful =
-                    p_neighborKeyFrame->unprojectStereo(keyPointIndex2,
-                                                        triangulatedPoint);
+                bool neighborKeyFrameIsUnprojected{};
+                if (p_neighborKeyFrame->unprojectStereo(
+                        keyPointIndex2,
+                        triangulatedPoint,
+                        neighborKeyFrameIsUnprojected) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: unprojectStereo returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                wasTriangulationSuccessful = neighborKeyFrameIsUnprojected;
             }
             else
             {
@@ -440,15 +705,60 @@ void LocalMapping::createNewMapPoints()
             if (isStereoTriangulatedPoint)
                 stereoPointCount++;
 
-            p_mapPoint->addObservation(p_currentKeyFrame, keyPointIndex1);
-            p_mapPoint->addObservation(p_neighborKeyFrame, keyPointIndex2);
+            if (p_mapPoint->addObservation(p_currentKeyFrame, keyPointIndex1) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addObservation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_mapPoint->addObservation(p_neighborKeyFrame,
+                                           keyPointIndex2) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addObservation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
-            p_currentKeyFrame->addMapPoint(p_mapPoint, keyPointIndex1);
-            p_neighborKeyFrame->addMapPoint(p_mapPoint, keyPointIndex2);
+            if (p_currentKeyFrame->addMapPoint(p_mapPoint, keyPointIndex1) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPoint returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_neighborKeyFrame->addMapPoint(p_mapPoint, keyPointIndex2) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPoint returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
-            p_mapPoint->computeDistinctiveDescriptors();
+            if (p_mapPoint->computeDistinctiveDescriptors() !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computeDistinctiveDescriptors returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
-            p_mapPoint->updateNormalAndDepth();
+            if (p_mapPoint->updateNormalAndDepth() !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: updateNormalAndDepth returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             p_atlas->addMapPoint(p_mapPoint);
             recentAddedMapPoints.push_back(p_mapPoint);

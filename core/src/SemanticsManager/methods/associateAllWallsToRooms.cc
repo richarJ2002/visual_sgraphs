@@ -297,10 +297,20 @@ void SemanticsManager::associateAllWallsToRooms(void)
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
+                unsigned long activeMapId{};
+                if ((p_activeMap != nullptr) &&
+                    p_activeMap->getId(activeMapId) !=
+                        MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
                 std::cout << "SG_PIPELINE {\"event\":\"wall_rejection\","
                              "\"map_id\":"
                           << (p_activeMap != nullptr
-                                  ? static_cast<long long>(p_activeMap->getId())
+                                  ? static_cast<long long>(activeMapId)
                                   : -1)
                           << ",\"semantic_cycle\":" << pipelineSemanticCycle
                           << ",\"wall_id\":" << wallGetId3 << ",\"class\":\""
@@ -438,9 +448,18 @@ void SemanticsManager::associateAllWallsToRooms(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
+            unsigned long activeMapId2{};
+            if (p_activeMap->getId(activeMapId2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "SG_PIPELINE {\"event\":\"wall_admission\","
                          "\"map_id\":"
-                      << p_activeMap->getId()
+                      << activeMapId2
                       << ",\"semantic_cycle\":" << pipelineSemanticCycle
                       << ",\"wall_id\":" << wallGetId8
                       << ",\"class\":\"WALL\","
@@ -497,10 +516,19 @@ void SemanticsManager::associateAllWallsToRooms(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
+            unsigned long activeMapId3{};
+            if ((p_activeMap != nullptr) && p_activeMap->getId(activeMapId3) !=
+                                                MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                          "\"map_id\":"
                       << (p_activeMap != nullptr
-                              ? static_cast<long long>(p_activeMap->getId())
+                              ? static_cast<long long>(activeMapId3)
                               : -1)
                       << ",\"semantic_cycle\":" << pipelineSemanticCycle
                       << ",\"wall_id\":" << wallGetId11

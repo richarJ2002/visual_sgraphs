@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-std::map<KeyFrame *, std::tuple<int, int>> MapPoint::getObservations()
+MapPointStatus MapPoint::getObservations(
+    std::map<KeyFrame *, std::tuple<int, int>> &observations_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return observations;
+    observations_out = observations;
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -240,10 +240,12 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_map = atlas.getCurrentMap();
     Room  roomA;
     test::makeRoom(roomA, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&roomA);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&roomA)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room roomB;
     test::makeRoom(roomB, 2, p_map, nullptr, Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&roomB);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&roomB)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -287,7 +289,8 @@ TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wallUnknown);
+    ASSERT_EQ((p_map->addMapPlane(&wallUnknown)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     geometric::Plane wallMultiOwner;
     test::makeWallPlane(wallMultiOwner,
@@ -298,7 +301,8 @@ TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wallMultiOwner);
+    ASSERT_EQ((p_map->addMapPlane(&wallMultiOwner)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     geometric::Plane wallValid;
     test::makeWallPlane(wallValid,
@@ -309,17 +313,19 @@ TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
                         Eigen::Vector3d::UnitY(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wallValid);
+    ASSERT_EQ((p_map->addMapPlane(&wallValid)), MapStatus::MAP_STATUS_SUCCESS);
 
     Room ownerA;
     test::makeRoom(ownerA, 1, p_map, &wallMultiOwner);
     ASSERT_EQ((ownerA.setWalls(&wallValid)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&ownerA);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&ownerA)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Room ownerB;
     test::makeRoom(ownerB, 2, p_map, &wallMultiOwner);
-    p_map->addDetectedMapRoom(&ownerB);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&ownerB)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
     SemanticGraphSnapshot        snapshot{};
@@ -437,10 +443,11 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&passWall);
+    ASSERT_EQ((p_map->addMapPlane(&passWall)), MapStatus::MAP_STATUS_SUCCESS);
     Room passRoom;
     test::makeRoom(passRoom, 1, p_map, &passWall);
-    p_map->addDetectedMapRoom(&passRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&passRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* UNKNOWN: a wall with zero owners -- commitment unverifiable. */
     geometric::Plane unknownWall;
@@ -453,7 +460,8 @@ TEST(SemanticAxiomEvaluator,
                         1.0,
                         1.0,
                         Eigen::Vector3d(5.0, 0.0, 0.0));
-    p_map->addMapPlane(&unknownWall);
+    ASSERT_EQ((p_map->addMapPlane(&unknownWall)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* FAIL: a wall with two owners. */
     geometric::Plane failWall;
@@ -466,21 +474,23 @@ TEST(SemanticAxiomEvaluator,
                         1.0,
                         1.0,
                         Eigen::Vector3d(10.0, 0.0, 0.0));
-    p_map->addMapPlane(&failWall);
+    ASSERT_EQ((p_map->addMapPlane(&failWall)), MapStatus::MAP_STATUS_SUCCESS);
     Room failOwnerA;
     test::makeRoom(failOwnerA,
                    2,
                    p_map,
                    &failWall,
                    Eigen::Vector3d(10.0, -1.0, 0.0));
-    p_map->addDetectedMapRoom(&failOwnerA);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&failOwnerA)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room failOwnerB;
     test::makeRoom(failOwnerB,
                    3,
                    p_map,
                    &failWall,
                    Eigen::Vector3d(10.0, 1.0, 0.0));
-    p_map->addDetectedMapRoom(&failOwnerB);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&failOwnerB)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -535,13 +545,15 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room1;
     test::makeRoom(room1, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room1);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room1)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room room2;
     test::makeRoom(room2, 2, p_map, &wall);
-    p_map->addDetectedMapRoom(&room2);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room2)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot original{};
     ASSERT_EQ(
@@ -587,10 +599,11 @@ TEST(SemanticAxiomEvaluator, FindingsAreSortedById)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -619,10 +632,11 @@ TEST(SemanticAxiomEvaluator, EvaluateStateIsIdempotentAndDoesNotMutateInput)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -674,7 +688,7 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_mapAfter->addMapPlane(&wall);
+    ASSERT_EQ((p_mapAfter->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot before{};
     ASSERT_EQ(
@@ -737,7 +751,7 @@ TEST(SemanticAxiomEvaluator, OwnerlessWallIsUnknown)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -768,10 +782,11 @@ TEST(SemanticAxiomEvaluator, SingleValidSameMapOwnerIsPass)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -802,13 +817,15 @@ TEST(SemanticAxiomEvaluator, MultipleOwnersIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room roomA;
     test::makeRoom(roomA, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&roomA);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&roomA)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room roomB;
     test::makeRoom(roomB, 2, p_map, &wall);
-    p_map->addDetectedMapRoom(&roomB);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&roomB)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -841,10 +858,11 @@ TEST(SemanticAxiomEvaluator, BadOwnerIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((room.setBad()),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -869,8 +887,12 @@ TEST(SemanticAxiomEvaluator, CrossMapOwnerIsFail)
     Atlas atlas(0);
     Map  *p_mapA = atlas.getCurrentMap();
     atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
-    ASSERT_NE(p_mapA->getId(), p_mapB->getId());
+    Map          *p_mapB = atlas.getCurrentMap();
+    unsigned long id{};
+    ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    unsigned long id2{};
+    ASSERT_EQ((p_mapB->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_NE(id, id2);
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -881,14 +903,15 @@ TEST(SemanticAxiomEvaluator, CrossMapOwnerIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_mapA->addMapPlane(&wall);
+    ASSERT_EQ((p_mapA->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     /* Deliberately register a mapB room that owns mapA's wall: an upstream
      * contract violation this evaluator must still observe, not assume
      * away. */
     Room room;
     test::makeRoom(room, 1, p_mapB, &wall);
-    p_mapB->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_mapB->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -922,7 +945,7 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongVariantIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room,
                    1,
@@ -930,7 +953,8 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongVariantIsFail)
                    &wall,
                    Eigen::Vector3d::Zero(),
                    Room::RoomVariant::UNDEFINED);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -956,8 +980,12 @@ TEST(SemanticAxiomEvaluator, WallOwnerDeclaredMapMismatchIsFail)
     Atlas atlas(0);
     Map  *p_mapA = atlas.getCurrentMap();
     atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
-    ASSERT_NE(p_mapA->getId(), p_mapB->getId());
+    Map          *p_mapB = atlas.getCurrentMap();
+    unsigned long id{};
+    ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    unsigned long id2{};
+    ASSERT_EQ((p_mapB->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_NE(id, id2);
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -968,14 +996,15 @@ TEST(SemanticAxiomEvaluator, WallOwnerDeclaredMapMismatchIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_mapA->addMapPlane(&wall);
+    ASSERT_EQ((p_mapA->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     /* room's own declared map is mapB (makeRoom's p_map_in), but it is
      * enumerated (registered) under mapA's collection, so its containing-map
      * key matches the wall's map while its declaredMapId does not. */
     Room room;
     test::makeRoom(room, 1, p_mapB, &wall);
-    p_mapA->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1008,16 +1037,18 @@ TEST(SemanticAxiomEvaluator, WallOwnerDuplicateIdentityIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     /* A second, distinct Room object deliberately reuses local id 1 -- an
      * upstream collision this evaluator must observe, not assume away. */
     Room duplicateIdRoom;
     test::makeRoom(duplicateIdRoom, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&duplicateIdRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&duplicateIdRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1056,10 +1087,11 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordUnavailableIsUnknown)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1105,10 +1137,11 @@ TEST(SemanticAxiomEvaluator, WallOwnerNotReciprocalIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1156,10 +1189,11 @@ TEST(SemanticAxiomEvaluator, WallDuplicateIdentityIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1198,10 +1232,11 @@ TEST(SemanticAxiomEvaluator, WallDeclaredMapMismatchIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1241,10 +1276,11 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordNotLiveIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1283,10 +1319,11 @@ TEST(SemanticAxiomEvaluator, WallWrongKeyKindIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1322,10 +1359,11 @@ TEST(SemanticAxiomEvaluator, WallWrongPlaneTypeIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1363,10 +1401,11 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongKeyKindIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1406,10 +1445,11 @@ TEST(SemanticAxiomEvaluator, WallDeclaredMapUnavailableCapsAggregateAtUnknown)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1457,10 +1497,11 @@ TEST(SemanticAxiomEvaluator, WallReciprocalMalformedOnlyIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1501,10 +1542,11 @@ TEST(SemanticAxiomEvaluator, WallReciprocalDuplicateIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1543,10 +1585,11 @@ TEST(SemanticAxiomEvaluator, WallReciprocalValidPlusMalformedIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1588,7 +1631,7 @@ TEST(SemanticAxiomEvaluator, NullTwinIsPass)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1621,7 +1664,7 @@ TEST(SemanticAxiomEvaluator, SelfTwinIsFail)
                         1.0);
     ASSERT_EQ((wall.setTwinFace(&wall)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1664,8 +1707,8 @@ TEST(SemanticAxiomEvaluator, AsymmetricTwinIsFail)
     /* Only wallA points to wallB; wallB's own twin stays absent. */
     ASSERT_EQ((wallA.setTwinFace(&wallB)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    p_map->addMapPlane(&wallA);
-    p_map->addMapPlane(&wallB);
+    ASSERT_EQ((p_map->addMapPlane(&wallA)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addMapPlane(&wallB)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1710,8 +1753,8 @@ TEST(SemanticAxiomEvaluator, BadTwinIsFail)
     ASSERT_EQ((wallB.setTwinFace(&wallA)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ((wallB.setBad()), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    p_map->addMapPlane(&wallA);
-    p_map->addMapPlane(&wallB);
+    ASSERT_EQ((p_map->addMapPlane(&wallA)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addMapPlane(&wallB)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1757,8 +1800,8 @@ TEST(SemanticAxiomEvaluator, CrossMapTwinIsFail)
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ((wallB.setTwinFace(&wallA)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    p_mapA->addMapPlane(&wallA);
-    p_mapB->addMapPlane(&wallB);
+    ASSERT_EQ((p_mapA->addMapPlane(&wallA)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_mapB->addMapPlane(&wallB)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1793,8 +1836,9 @@ TEST(SemanticAxiomEvaluator, WrongTypeTwinIsFail)
     ASSERT_TRUE(test::makeGroundPlane(groundNotWall, 2, p_map));
     ASSERT_EQ((wall.setTwinFace(&groundNotWall)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    p_map->addMapPlane(&wall);
-    p_map->addMapPlane(&groundNotWall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addMapPlane(&groundNotWall)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1838,14 +1882,15 @@ TEST(SemanticAxiomEvaluator, SharedOwnerTwinIsFail)
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ((wallB.setTwinFace(&wallA)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    p_map->addMapPlane(&wallA);
-    p_map->addMapPlane(&wallB);
+    ASSERT_EQ((p_map->addMapPlane(&wallA)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addMapPlane(&wallB)), MapStatus::MAP_STATUS_SUCCESS);
 
     Room sharedOwner;
     test::makeRoom(sharedOwner, 1, p_map, &wallA);
     ASSERT_EQ((sharedOwner.setWalls(&wallB)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&sharedOwner);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&sharedOwner)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1889,15 +1934,17 @@ TEST(SemanticAxiomEvaluator, StructurallyValidTwinIsUnknown)
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ((wallB.setTwinFace(&wallA)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    p_map->addMapPlane(&wallA);
-    p_map->addMapPlane(&wallB);
+    ASSERT_EQ((p_map->addMapPlane(&wallA)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addMapPlane(&wallB)), MapStatus::MAP_STATUS_SUCCESS);
 
     Room ownerA;
     test::makeRoom(ownerA, 1, p_map, &wallA);
-    p_map->addDetectedMapRoom(&ownerA);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&ownerA)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room ownerB;
     test::makeRoom(ownerB, 2, p_map, &wallB);
-    p_map->addDetectedMapRoom(&ownerB);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&ownerB)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1929,7 +1976,8 @@ TEST(SemanticAxiomEvaluator, NonPassableLivePassageIsFail)
                    p_map,
                    nullptr,
                    Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&knownSide);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&knownSide)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -1941,7 +1989,7 @@ TEST(SemanticAxiomEvaluator, NonPassableLivePassageIsFail)
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       nullptr,
                       /*passable_in=*/false);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -1969,7 +2017,8 @@ TEST(SemanticAxiomEvaluator, PassableLivePassageIsUnknownForFullProvenance)
                    p_map,
                    nullptr,
                    Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&knownSide);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&knownSide)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -1979,7 +2028,7 @@ TEST(SemanticAxiomEvaluator, PassableLivePassageIsUnknownForFullProvenance)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &knownSide,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -2009,7 +2058,7 @@ TEST(SemanticAxiomEvaluator, ZeroConfirmedEndpointsIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       nullptr,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -2038,10 +2087,11 @@ TEST(SemanticAxiomEvaluator, TwoConfirmedReciprocalEndpointsIsUnknown)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room far;
     test::makeRoom(far, 2, p_map, nullptr, Eigen::Vector3d(0.0, 1.0, 1.0));
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2052,7 +2102,7 @@ TEST(SemanticAxiomEvaluator, TwoConfirmedReciprocalEndpointsIsUnknown)
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((far.setDoorways(&passage)),
@@ -2108,7 +2158,8 @@ TEST(SemanticAxiomEvaluator, OneConfirmedEndpointOtherEmptyIsUnknown)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2118,7 +2169,7 @@ TEST(SemanticAxiomEvaluator, OneConfirmedEndpointOtherEmptyIsUnknown)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -2146,17 +2197,19 @@ TEST(SemanticAxiomEvaluator, ThirdReverseOnlyConfirmedEndpointIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room far;
     test::makeRoom(far, 2, p_map, nullptr, Eigen::Vector3d(0.0, 1.0, 1.0));
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
     Room thirdRoom;
     test::makeRoom(thirdRoom,
                    3,
                    p_map,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&thirdRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&thirdRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2167,7 +2220,7 @@ TEST(SemanticAxiomEvaluator, ThirdReverseOnlyConfirmedEndpointIsFail)
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((far.setDoorways(&passage)),
@@ -2205,14 +2258,16 @@ TEST(SemanticAxiomEvaluator, RetiredReverseOnlyRoomDoesNotPoisonLivePassage)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room retiredRoom;
     test::makeRoom(retiredRoom,
                    2,
                    p_map,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&retiredRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&retiredRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2222,7 +2277,7 @@ TEST(SemanticAxiomEvaluator, RetiredReverseOnlyRoomDoesNotPoisonLivePassage)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((retiredRoom.setDoorways(&passage)),
@@ -2270,14 +2325,16 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceOwnLivenessBadIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room reverseOnly;
     test::makeRoom(reverseOnly,
                    2,
                    p_map,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&reverseOnly);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&reverseOnly)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2287,7 +2344,7 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceOwnLivenessBadIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((reverseOnly.setDoorways(&passage)),
@@ -2330,12 +2387,17 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveReverseOnlyRoomAnomalyIsExamined)
     Atlas atlas(0);
     Map  *p_mapA = atlas.getCurrentMap();
     atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
-    ASSERT_NE(p_mapA->getId(), p_mapB->getId());
+    Map          *p_mapB = atlas.getCurrentMap();
+    unsigned long id{};
+    ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    unsigned long id2{};
+    ASSERT_EQ((p_mapB->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_NE(id, id2);
 
     Room known;
     test::makeRoom(known, 1, p_mapA, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_mapA->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room prospectiveReverseOnly;
     test::makeRoom(prospectiveReverseOnly,
                    2,
@@ -2343,7 +2405,8 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveReverseOnlyRoomAnomalyIsExamined)
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0),
                    Room::RoomVariant::UNDEFINED);
-    p_mapB->addDetectedMapRoom(&prospectiveReverseOnly);
+    ASSERT_EQ((p_mapB->addDetectedMapRoom(&prospectiveReverseOnly)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2353,7 +2416,7 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveReverseOnlyRoomAnomalyIsExamined)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_mapA->addMapPassage(&passage);
+    ASSERT_EQ((p_mapA->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((prospectiveReverseOnly.setDoorways(&passage)),
@@ -2384,14 +2447,16 @@ TEST(SemanticAxiomEvaluator, ReverseOnlyRoomFillingEmptySlotIsNotThirdEndpoint)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room farReverseOnly;
     test::makeRoom(farReverseOnly,
                    2,
                    p_map,
                    nullptr,
                    Eigen::Vector3d(0.0, 1.0, 1.0));
-    p_map->addDetectedMapRoom(&farReverseOnly);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&farReverseOnly)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     /* Deliberately no prospective/far room on the forward side. */
@@ -2402,7 +2467,7 @@ TEST(SemanticAxiomEvaluator, ReverseOnlyRoomFillingEmptySlotIsNotThirdEndpoint)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     /* farReverseOnly independently lists the passage back even though the
@@ -2444,14 +2509,16 @@ TEST(SemanticAxiomEvaluator, ReverseWrongKindKeyIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room otherRoom;
     test::makeRoom(otherRoom,
                    2,
                    p_map,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&otherRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&otherRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2461,7 +2528,7 @@ TEST(SemanticAxiomEvaluator, ReverseWrongKindKeyIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -2479,8 +2546,10 @@ TEST(SemanticAxiomEvaluator, ReverseWrongKindKeyIsFail)
         }
     }
     ASSERT_NE(p_otherRoomRecord, nullptr);
-    EntityRef wrongKindRef;
-    wrongKindRef.key    = EntityKey{EntityKind::ROOM, p_map->getId(), 1};
+    EntityRef     wrongKindRef;
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    wrongKindRef.key    = EntityKey{EntityKind::ROOM, mapId, 1};
     wrongKindRef.reason = UnavailableReason::NONE;
     wrongKindRef.isLive = true;
     wrongKindRef.livenessUnavailableReason = UnavailableReason::NONE;
@@ -2509,7 +2578,8 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceDuplicatedIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2519,7 +2589,7 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceDuplicatedIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -2561,7 +2631,8 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDuplicateIdentityIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     /* A second, distinct Room object deliberately reuses local id 1. */
     Room duplicateIdRoom;
     test::makeRoom(duplicateIdRoom,
@@ -2569,7 +2640,8 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDuplicateIdentityIsFail)
                    p_map,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&duplicateIdRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&duplicateIdRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2579,7 +2651,7 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDuplicateIdentityIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     /* Deliberately never call setDoorways() on either room sharing local id
      * 1, so the reverse scan's own duplicate-identity check (already
      * covered by PassageCardinalityDuplicateRoomIdentityIsFail) does not
@@ -2613,7 +2685,8 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointWrongKindIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2623,7 +2696,7 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointWrongKindIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -2677,7 +2750,8 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDeclaredMapMismatchIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2687,7 +2761,7 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDeclaredMapMismatchIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -2696,7 +2770,9 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDeclaredMapMismatchIsFail)
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
-    snapshot.maps.front().rooms.front().declaredMapId = p_map->getId() + 999U;
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    snapshot.maps.front().rooms.front().declaredMapId = mapId + 999U;
 
     AxiomEvaluationReport report{};
     ASSERT_EQ(
@@ -2727,7 +2803,8 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointLivenessUnavailableIsUnknown)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2737,7 +2814,7 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointLivenessUnavailableIsUnknown)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -2787,14 +2864,16 @@ TEST(SemanticAxiomEvaluator, ReverseEndpointLivenessUnavailableIsUnknown)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room otherRoom;
     test::makeRoom(otherRoom,
                    2,
                    p_map,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&otherRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&otherRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2804,7 +2883,7 @@ TEST(SemanticAxiomEvaluator, ReverseEndpointLivenessUnavailableIsUnknown)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((otherRoom.setDoorways(&passage)),
@@ -2857,7 +2936,8 @@ TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room prospectiveRoom;
     test::makeRoom(prospectiveRoom,
                    2,
@@ -2865,7 +2945,8 @@ TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0),
                    Room::RoomVariant::UNDEFINED);
-    p_map->addDetectedMapRoom(&prospectiveRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&prospectiveRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2875,7 +2956,7 @@ TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((prospectiveRoom.setDoorways(&passage)),
@@ -2887,9 +2968,11 @@ TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().passages.size(), 1U);
     ReversePassageEndpointScan scan{};
+    unsigned long              id{};
+    ASSERT_EQ((p_map->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ(
         (scanReversePassageEndpoints(snapshot.maps.front().passages.front(),
-                                     p_map->getId(),
+                                     id,
                                      snapshot,
                                      scan)),
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
@@ -2901,11 +2984,15 @@ TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
      * included; the caller reconciles that (see
      * evaluateOnePassageCardinality.cc's union computation). */
     ASSERT_EQ(scan.prospectiveReverseRoomKeys.size(), 1U);
+    unsigned long id2{};
+    ASSERT_EQ((p_map->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
     EXPECT_EQ(scan.prospectiveReverseRoomKeys.front(),
-              (EntityKey{EntityKind::ROOM, p_map->getId(), 2}));
+              (EntityKey{EntityKind::ROOM, id2, 2}));
     ASSERT_EQ(scan.confirmedReverseRoomKeys.size(), 1U);
+    unsigned long id3{};
+    ASSERT_EQ((p_map->getId(id3)), MapStatus::MAP_STATUS_SUCCESS);
     EXPECT_EQ(scan.confirmedReverseRoomKeys.front(),
-              (EntityKey{EntityKind::ROOM, p_map->getId(), 1}));
+              (EntityKey{EntityKind::ROOM, id3, 1}));
 
     AxiomEvaluationReport report{};
     ASSERT_EQ(
@@ -2926,19 +3013,25 @@ TEST(SemanticAxiomEvaluator, CrossMapReverseOnlyEndpointIsFail)
     Atlas atlas(0);
     Map  *p_map = atlas.getCurrentMap();
     atlas.createNewMap();
-    Map *p_otherMap = atlas.getCurrentMap();
-    ASSERT_NE(p_map->getId(), p_otherMap->getId());
+    Map          *p_otherMap = atlas.getCurrentMap();
+    unsigned long id{};
+    ASSERT_EQ((p_map->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    unsigned long id2{};
+    ASSERT_EQ((p_otherMap->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_NE(id, id2);
 
     Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room crossMapRoom;
     test::makeRoom(crossMapRoom,
                    2,
                    p_otherMap,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_otherMap->addDetectedMapRoom(&crossMapRoom);
+    ASSERT_EQ((p_otherMap->addDetectedMapRoom(&crossMapRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -2948,7 +3041,7 @@ TEST(SemanticAxiomEvaluator, CrossMapReverseOnlyEndpointIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((crossMapRoom.setDoorways(&passage)),
@@ -2995,14 +3088,16 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room roomWithDanglingRef;
     test::makeRoom(roomWithDanglingRef,
                    2,
                    p_map,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&roomWithDanglingRef);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&roomWithDanglingRef)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -3012,7 +3107,7 @@ TEST(SemanticAxiomEvaluator,
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -3040,8 +3135,10 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_NE(p_malformedFinding, nullptr);
     EXPECT_EQ(p_malformedFinding->result, AxiomResult::FAIL);
     ASSERT_EQ(p_malformedFinding->involvedKeys.size(), 1U);
+    unsigned long id2{};
+    ASSERT_EQ((p_map->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
     EXPECT_EQ(p_malformedFinding->involvedKeys.front(),
-              (EntityKey{EntityKind::ROOM, p_map->getId(), 2}));
+              (EntityKey{EntityKind::ROOM, id2, 2}));
 
     const Finding *p_cardinalityFinding = findFindingWithReason(
         report,
@@ -3050,9 +3147,11 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_NE(p_cardinalityFinding, nullptr);
     EXPECT_EQ(p_cardinalityFinding->result, AxiomResult::UNKNOWN);
     /* The real passage's own finding must not name roomWithDanglingRef. */
+    unsigned long id3{};
+    ASSERT_EQ((p_map->getId(id3)), MapStatus::MAP_STATUS_SUCCESS);
     EXPECT_EQ(std::find(p_cardinalityFinding->involvedKeys.begin(),
                         p_cardinalityFinding->involvedKeys.end(),
-                        EntityKey{EntityKind::ROOM, p_map->getId(), 2}),
+                        EntityKey{EntityKind::ROOM, id3, 2}),
               p_cardinalityFinding->involvedKeys.end());
 }
 
@@ -3064,7 +3163,8 @@ TEST(SemanticAxiomEvaluator, PassageCardinalityDuplicateRoomIdentityIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     /* A second, distinct Room object deliberately reuses local id 1. */
     Room duplicateIdRoom;
     test::makeRoom(duplicateIdRoom,
@@ -3072,7 +3172,8 @@ TEST(SemanticAxiomEvaluator, PassageCardinalityDuplicateRoomIdentityIsFail)
                    p_map,
                    nullptr,
                    Eigen::Vector3d(2.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&duplicateIdRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&duplicateIdRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -3082,7 +3183,7 @@ TEST(SemanticAxiomEvaluator, PassageCardinalityDuplicateRoomIdentityIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((duplicateIdRoom.setDoorways(&passage)),
@@ -3110,7 +3211,8 @@ TEST(SemanticAxiomEvaluator, DuplicateEndpointIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  onlyRoom;
     test::makeRoom(onlyRoom, 1, p_map, nullptr, Eigen::Vector3d(0.0, 0.0, 1.0));
-    p_map->addDetectedMapRoom(&onlyRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&onlyRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -3121,7 +3223,7 @@ TEST(SemanticAxiomEvaluator, DuplicateEndpointIsFail)
                       &onlyRoom,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &onlyRoom);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((onlyRoom.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -3147,7 +3249,8 @@ TEST(SemanticAxiomEvaluator, NonReciprocalEndpointIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -3157,7 +3260,7 @@ TEST(SemanticAxiomEvaluator, NonReciprocalEndpointIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     /* Deliberately never call known.setDoorways(&passage): the passage
      * names the room, but the room does not name the passage back. */
 
@@ -3191,7 +3294,8 @@ TEST(SemanticAxiomEvaluator, BadUnenumeratedOtherSideEndpointIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Declares the same map and is bad, but is deliberately never added to
      * any of p_map's room collections, so this snapshot cannot enumerate
@@ -3214,7 +3318,7 @@ TEST(SemanticAxiomEvaluator, BadUnenumeratedOtherSideEndpointIsFail)
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &badUnenumerated);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -3245,7 +3349,8 @@ TEST(SemanticAxiomEvaluator, KnownSideNotConfirmedIsFail)
                    nullptr,
                    Eigen::Vector3d(0.0, -1.0, 1.0),
                    Room::RoomVariant::UNDEFINED);
-    p_map->addDetectedMapRoom(&unpromoted);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&unpromoted)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -3255,7 +3360,7 @@ TEST(SemanticAxiomEvaluator, KnownSideNotConfirmedIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &unpromoted,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((unpromoted.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -3291,7 +3396,8 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -3301,7 +3407,7 @@ TEST(SemanticAxiomEvaluator,
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -3363,7 +3469,8 @@ TEST(SemanticAxiomEvaluator, CrossMapPassageEndpointIsFail)
                    p_mapB,
                    nullptr,
                    Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_mapB->addDetectedMapRoom(&roomInMapB);
+    ASSERT_EQ((p_mapB->addDetectedMapRoom(&roomInMapB)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -3373,7 +3480,7 @@ TEST(SemanticAxiomEvaluator, CrossMapPassageEndpointIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &roomInMapB,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_mapA->addMapPassage(&passage);
+    ASSERT_EQ((p_mapA->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -3421,17 +3528,18 @@ TEST(SemanticAxiomEvaluator, CrossFloorPassageIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room far;
     test::makeRoom(far, 2, p_map, nullptr, Eigen::Vector3d(0.0, 1.0, 1.0));
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
 
     Floor floorA;
     test::makeFloor(floorA, 1, p_map, {&known}, 0.0);
-    p_map->addMapFloor(&floorA);
+    ASSERT_EQ((p_map->addMapFloor(&floorA)), MapStatus::MAP_STATUS_SUCCESS);
     Floor floorB;
     test::makeFloor(floorB, 2, p_map, {&far}, 3.0);
-    p_map->addMapFloor(&floorB);
+    ASSERT_EQ((p_map->addMapFloor(&floorB)), MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -3442,7 +3550,7 @@ TEST(SemanticAxiomEvaluator, CrossFloorPassageIsFail)
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((far.setDoorways(&passage)),
@@ -3483,14 +3591,15 @@ TEST(SemanticAxiomEvaluator, SameFloorPassageAgreesButAggregateIsUnknown)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room far;
     test::makeRoom(far, 2, p_map, nullptr, Eigen::Vector3d(0.0, 1.0, 1.0));
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
 
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&known, &far}, 0.0);
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -3501,7 +3610,7 @@ TEST(SemanticAxiomEvaluator, SameFloorPassageAgreesButAggregateIsUnknown)
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((far.setDoorways(&passage)),
@@ -3555,10 +3664,11 @@ TEST(SemanticAxiomEvaluator, MissingFloorEvidenceOnPassageIsUnknown)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room far;
     test::makeRoom(far, 2, p_map, nullptr, Eigen::Vector3d(0.0, 1.0, 1.0));
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
     /* Neither room is linked to any Floor. */
 
     Passage passage;
@@ -3570,7 +3680,7 @@ TEST(SemanticAxiomEvaluator, MissingFloorEvidenceOnPassageIsUnknown)
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((far.setDoorways(&passage)),
@@ -3608,7 +3718,8 @@ TEST(SemanticAxiomEvaluator, UnobservedBoundaryIsUnknown)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     vs_graphs::core::semantic::Room::BoundaryStatus boundaryStatus{};
     ASSERT_EQ((room.getBoundaryStatus(boundaryStatus)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -3638,7 +3749,8 @@ TEST(SemanticAxiomEvaluator, ConflictingBoundaryIsFail)
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::CONFLICTING)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -3669,7 +3781,7 @@ TEST(SemanticAxiomEvaluator, CompleteWithTooFewCornersIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -3678,7 +3790,8 @@ TEST(SemanticAxiomEvaluator, CompleteWithTooFewCornersIsFail)
         (room.setBoundaryCorners_World_m(
             {Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 0.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -3710,7 +3823,8 @@ TEST(SemanticAxiomEvaluator, CompleteWithNoWallEvidenceIsFail)
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -3741,7 +3855,7 @@ TEST(SemanticAxiomEvaluator, CompleteSelfIntersectingIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -3753,7 +3867,8 @@ TEST(SemanticAxiomEvaluator, CompleteSelfIntersectingIsFail)
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -3784,7 +3899,7 @@ TEST(SemanticAxiomEvaluator, CompleteWithObservationGapsIsUnknown)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -3797,7 +3912,8 @@ TEST(SemanticAxiomEvaluator, CompleteWithObservationGapsIsUnknown)
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setObservationGaps({Room::ObservationGap{0.0, 0.2}})),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -3835,7 +3951,7 @@ TEST(SemanticAxiomEvaluator, CompleteWithVerifiedWallEvidenceIsUnknown)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -3846,7 +3962,8 @@ TEST(SemanticAxiomEvaluator, CompleteWithVerifiedWallEvidenceIsUnknown)
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -3879,7 +3996,7 @@ TEST(SemanticAxiomEvaluator, NonFiniteCornerIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -3892,7 +4009,8 @@ TEST(SemanticAxiomEvaluator, NonFiniteCornerIsFail)
                                    0.0),
                    Eigen::Vector3d(0.0, 1.0, 0.0)})),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -3924,7 +4042,7 @@ TEST(SemanticAxiomEvaluator, InfiniteCornerIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -3936,7 +4054,8 @@ TEST(SemanticAxiomEvaluator, InfiniteCornerIsFail)
              Eigen::Vector3d(1.0, std::numeric_limits<double>::infinity(), 0.0),
              Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -3972,7 +4091,7 @@ TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -3983,7 +4102,8 @@ TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((wall.setBad()), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
@@ -4043,7 +4163,7 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -4054,7 +4174,8 @@ TEST(SemanticAxiomEvaluator,
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4106,7 +4227,7 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -4117,7 +4238,8 @@ TEST(SemanticAxiomEvaluator,
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4177,7 +4299,7 @@ TEST(SemanticAxiomEvaluator, NonemptyAllUnavailableWallEvidenceIsUnknownNotFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -4188,7 +4310,8 @@ TEST(SemanticAxiomEvaluator, NonemptyAllUnavailableWallEvidenceIsUnknownNotFail)
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4235,7 +4358,8 @@ TEST(SemanticAxiomEvaluator, RoomWithNoFloorIsUnknown)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4259,10 +4383,11 @@ TEST(SemanticAxiomEvaluator, RoomFloorReciprocalIsPass)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&room});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4286,10 +4411,11 @@ TEST(SemanticAxiomEvaluator, RoomFloorNonReciprocalIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
     /* Room believes it has a floor; the floor does not list it back. */
     ASSERT_EQ((room.setFloor(&floor)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -4319,11 +4445,13 @@ TEST(SemanticAxiomEvaluator, RoomFloorCrossMapIsFail)
 
     Room room;
     test::makeRoom(room, 1, p_mapA, nullptr);
-    p_mapA->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Floor floorInMapB;
     test::makeFloor(floorInMapB, 1, p_mapB, {});
-    p_mapB->addMapFloor(&floorInMapB);
+    ASSERT_EQ((p_mapB->addMapFloor(&floorInMapB)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((room.setFloor(&floorInMapB)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -4354,10 +4482,11 @@ TEST(SemanticAxiomEvaluator, RoomFloorReverseClaimWithoutForwardLinkIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4397,10 +4526,11 @@ TEST(SemanticAxiomEvaluator, RoomFloorWrongKindIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&room});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4431,10 +4561,11 @@ TEST(SemanticAxiomEvaluator, RoomFloorDeclaredMapMismatchIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&room});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4466,17 +4597,20 @@ TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapMismatchIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&room});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
-    snapshot.maps.front().rooms.front().declaredMapId = p_map->getId() + 999U;
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    snapshot.maps.front().rooms.front().declaredMapId = mapId + 999U;
 
     AxiomEvaluationReport report{};
     ASSERT_EQ(
@@ -4500,10 +4634,11 @@ TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapUnavailableCapsAtUnknown)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&room});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4539,10 +4674,11 @@ TEST(SemanticAxiomEvaluator, RoomFloorFloorDeclaredMapUnavailableCapsAtUnknown)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&room});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4579,13 +4715,14 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room far;
     test::makeRoom(far, 2, p_map, nullptr, Eigen::Vector3d(0.0, 1.0, 1.0));
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&known, &far}, 0.0);
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -4596,7 +4733,7 @@ TEST(SemanticAxiomEvaluator,
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((far.setDoorways(&passage)),
@@ -4647,13 +4784,14 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room far;
     test::makeRoom(far, 2, p_map, nullptr, Eigen::Vector3d(0.0, 1.0, 1.0));
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&known, &far}, 0.0);
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -4664,7 +4802,7 @@ TEST(SemanticAxiomEvaluator,
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((far.setDoorways(&passage)),
@@ -4712,11 +4850,12 @@ TEST(SemanticAxiomEvaluator, RoomFloorDuplicateIdentityIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&room});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4752,11 +4891,12 @@ TEST(SemanticAxiomEvaluator, RoomFloorDuplicateReverseMembershipIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&room});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4791,14 +4931,16 @@ TEST(SemanticAxiomEvaluator, RoomClaimedByMultipleFloorsIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Floor firstFloor;
     test::makeFloor(firstFloor, 1, p_map, {&room});
-    p_map->addMapFloor(&firstFloor);
+    ASSERT_EQ((p_map->addMapFloor(&firstFloor)), MapStatus::MAP_STATUS_SUCCESS);
     Floor secondFloor;
     test::makeFloor(secondFloor, 2, p_map, {});
-    p_map->addMapFloor(&secondFloor);
+    ASSERT_EQ((p_map->addMapFloor(&secondFloor)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4887,7 +5029,8 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveRoomMakesMapIncomplete)
                    nullptr,
                    Eigen::Vector3d::Zero(),
                    Room::RoomVariant::UNDEFINED);
-    p_map->addDetectedMapRoom(&prospective);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&prospective)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4911,7 +5054,8 @@ TEST(SemanticAxiomEvaluator, CompletenessDuplicateIdentityIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     /* A second, distinct Room object deliberately reuses local id 1:
      * Map::AddDetectedMapRoom(), unlike AddMapPlane()/AddMapFloor()/
      * AddMapPassage(), has no id-collision handling, so this is reachable
@@ -4919,7 +5063,8 @@ TEST(SemanticAxiomEvaluator, CompletenessDuplicateIdentityIsFail)
      * mutation. */
     Room duplicateIdRoom;
     test::makeRoom(duplicateIdRoom, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&duplicateIdRoom);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&duplicateIdRoom)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot2{};
     ASSERT_EQ(
@@ -4955,7 +5100,7 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomCreationProvenanceUnavailable)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -4966,7 +5111,8 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomCreationProvenanceUnavailable)
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -4999,7 +5145,8 @@ TEST(SemanticAxiomEvaluator, CompletenessPassageSlotStateFailureIsFail)
                    nullptr,
                    Eigen::Vector3d(0.0, -1.0, 1.0),
                    Room::RoomVariant::UNDEFINED);
-    p_map->addDetectedMapRoom(&unpromoted);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&unpromoted)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -5009,7 +5156,7 @@ TEST(SemanticAxiomEvaluator, CompletenessPassageSlotStateFailureIsFail)
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &unpromoted,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((unpromoted.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -5037,17 +5184,18 @@ TEST(SemanticAxiomEvaluator, CompletenessCrossFloorPassageIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room far;
     test::makeRoom(far, 2, p_map, nullptr, Eigen::Vector3d(0.0, 1.0, 1.0));
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
 
     Floor floorA;
     test::makeFloor(floorA, 1, p_map, {&known}, 0.0);
-    p_map->addMapFloor(&floorA);
+    ASSERT_EQ((p_map->addMapFloor(&floorA)), MapStatus::MAP_STATUS_SUCCESS);
     Floor floorB;
     test::makeFloor(floorB, 2, p_map, {&far}, 3.0);
-    p_map->addMapFloor(&floorB);
+    ASSERT_EQ((p_map->addMapFloor(&floorB)), MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -5058,7 +5206,7 @@ TEST(SemanticAxiomEvaluator, CompletenessCrossFloorPassageIsFail)
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((far.setDoorways(&passage)),
@@ -5099,7 +5247,8 @@ TEST(SemanticAxiomEvaluator,
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot baseSnapshot{};
     ASSERT_EQ(
@@ -5152,7 +5301,8 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomHasMalformedPassageReferenceIsFail)
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* Never registered via AddMapPassage, so its own getMap() is nullptr. */
     Passage unregisteredPassage;
@@ -5204,7 +5354,7 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wallA);
+    ASSERT_EQ((p_map->addMapPlane(&wallA)), MapStatus::MAP_STATUS_SUCCESS);
     geometric::Plane wallB;
     test::makeWallPlane(wallB,
                         2,
@@ -5214,7 +5364,7 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wallB);
+    ASSERT_EQ((p_map->addMapPlane(&wallB)), MapStatus::MAP_STATUS_SUCCESS);
 
     Room known;
     test::makeRoom(known, 1, p_map, &wallA, Eigen::Vector3d(0.0, -1.0, 1.0));
@@ -5226,7 +5376,8 @@ TEST(SemanticAxiomEvaluator,
                                            Eigen::Vector3d(1.0, 1.0, 0.0),
                                            Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Room far;
     test::makeRoom(far, 2, p_map, &wallB, Eigen::Vector3d(0.0, 1.0, 1.0));
@@ -5238,11 +5389,11 @@ TEST(SemanticAxiomEvaluator,
                                          Eigen::Vector3d(1.0, 6.0, 0.0),
                                          Eigen::Vector3d(0.0, 6.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
 
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&known, &far});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -5253,7 +5404,7 @@ TEST(SemanticAxiomEvaluator,
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((far.setDoorways(&passage)),
@@ -5298,8 +5449,10 @@ TEST(SemanticAxiomEvaluator, LegacyReproducesDoubleRegisteredRoomMultiplicity)
                    Eigen::Vector3d(1.0, 1.0, 0.0),
                    Eigen::Vector3d(0.0, 1.0, 0.0)})),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&bothCollections);
-    p_map->addCandidateMapRoom(&bothCollections);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&bothCollections)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((p_map->addCandidateMapRoom(&bothCollections)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -5335,7 +5488,8 @@ TEST(SemanticAxiomEvaluator,
                                            Eigen::Vector3d(1.0, 1.0, 0.0),
                                            Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room far;
     test::makeRoom(far, 2, p_map, nullptr, Eigen::Vector3d(0.0, 1.0, 1.0));
     ASSERT_EQ((far.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -5346,10 +5500,10 @@ TEST(SemanticAxiomEvaluator,
                                          Eigen::Vector3d(1.0, 6.0, 0.0),
                                          Eigen::Vector3d(0.0, 6.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&known, &far});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -5360,7 +5514,7 @@ TEST(SemanticAxiomEvaluator,
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     /* Legacy's own completeness check never inspects Room::getPassages()
      * reciprocity -- only the live known/far room pointers -- so leaving
      * both setDoorways() calls out reproduces a fixture that is legacy-
@@ -5396,7 +5550,7 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wallA);
+    ASSERT_EQ((p_map->addMapPlane(&wallA)), MapStatus::MAP_STATUS_SUCCESS);
     geometric::Plane wallB;
     test::makeWallPlane(wallB,
                         2,
@@ -5406,7 +5560,7 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wallB);
+    ASSERT_EQ((p_map->addMapPlane(&wallB)), MapStatus::MAP_STATUS_SUCCESS);
 
     Room known;
     test::makeRoom(known, 1, p_map, &wallA, Eigen::Vector3d(0.0, -1.0, 1.0));
@@ -5418,7 +5572,8 @@ TEST(SemanticAxiomEvaluator,
                                            Eigen::Vector3d(1.0, 1.0, 0.0),
                                            Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room far;
     test::makeRoom(far, 2, p_map, &wallB, Eigen::Vector3d(0.0, 1.0, 1.0));
     ASSERT_EQ((far.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -5429,7 +5584,7 @@ TEST(SemanticAxiomEvaluator,
                                          Eigen::Vector3d(1.0, 6.0, 0.0),
                                          Eigen::Vector3d(0.0, 6.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&far);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&far)), MapStatus::MAP_STATUS_SUCCESS);
     /* Deliberately no Floor at all: legacy does not check floor linkage. */
 
     Passage passage;
@@ -5441,7 +5596,7 @@ TEST(SemanticAxiomEvaluator,
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0),
                       &far);
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((far.setDoorways(&passage)),
@@ -5471,8 +5626,12 @@ TEST(SemanticAxiomEvaluator, HardFailureInOneMapDoesNotContaminateAnotherMap)
     Atlas atlas(0);
     Map  *p_mapA = atlas.getCurrentMap();
     atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
-    ASSERT_NE(p_mapA->getId(), p_mapB->getId());
+    Map          *p_mapB = atlas.getCurrentMap();
+    unsigned long id{};
+    ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
+    unsigned long id2{};
+    ASSERT_EQ((p_mapB->getId(id2)), MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_NE(id, id2);
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -5483,13 +5642,15 @@ TEST(SemanticAxiomEvaluator, HardFailureInOneMapDoesNotContaminateAnotherMap)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_mapA->addMapPlane(&wall);
+    ASSERT_EQ((p_mapA->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room ownerOne;
     test::makeRoom(ownerOne, 1, p_mapA, &wall);
-    p_mapA->addDetectedMapRoom(&ownerOne);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&ownerOne)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Room ownerTwo;
     test::makeRoom(ownerTwo, 2, p_mapA, &wall);
-    p_mapA->addDetectedMapRoom(&ownerTwo);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&ownerTwo)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     /* mapB has no rooms at all: independently incomplete (zero confirmed
      * rooms), never FAIL for mapA's wall-ownership reason. */
@@ -5508,13 +5669,20 @@ TEST(SemanticAxiomEvaluator, HardFailureInOneMapDoesNotContaminateAnotherMap)
     const MapCompletenessResult *p_mapBResult = nullptr;
     for (const MapCompletenessResult &result : results)
     {
-        if (result.mapId == p_mapA->getId())
+        unsigned long mapAId{};
+        ASSERT_EQ((p_mapA->getId(mapAId)), MapStatus::MAP_STATUS_SUCCESS);
+        if (result.mapId == mapAId)
         {
             p_mapAResult = &result;
         }
-        else if (result.mapId == p_mapB->getId())
+        else
         {
-            p_mapBResult = &result;
+            unsigned long mapBId{};
+            ASSERT_EQ((p_mapB->getId(mapBId)), MapStatus::MAP_STATUS_SUCCESS);
+            if (result.mapId == mapBId)
+            {
+                p_mapBResult = &result;
+            }
         }
     }
     ASSERT_NE(p_mapAResult, nullptr);
@@ -5547,13 +5715,14 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_mapA = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_mapA, nullptr);
-    p_mapA->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     atlas.createNewMap();
     Map  *p_mapB = atlas.getCurrentMap();
     Floor floor;
     test::makeFloor(floor, 1, p_mapB, {});
-    p_mapB->addMapFloor(&floor);
+    ASSERT_EQ((p_mapB->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -5613,7 +5782,8 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -5623,7 +5793,7 @@ TEST(SemanticAxiomEvaluator,
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -5665,7 +5835,8 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -5675,7 +5846,7 @@ TEST(SemanticAxiomEvaluator,
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     /* Deliberately never call known.setDoorways(): the adversarial
      * passageRefs entry below is hand-mutated instead. */
 
@@ -5685,8 +5856,10 @@ TEST(SemanticAxiomEvaluator,
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     ASSERT_EQ(snapshot.maps.front().rooms.size(), 1U);
     ASSERT_TRUE(snapshot.maps.front().rooms.front().passageRefs.empty());
-    EntityRef malformedRef;
-    malformedRef.key    = EntityKey{EntityKind::PASSAGE, p_map->getId(), 1};
+    EntityRef     malformedRef;
+    unsigned long mapId{};
+    ASSERT_EQ((p_map->getId(mapId)), MapStatus::MAP_STATUS_SUCCESS);
+    malformedRef.key    = EntityKey{EntityKind::PASSAGE, mapId, 1};
     malformedRef.reason = UnavailableReason::ENTITY_HAS_NO_MAP;
     malformedRef.isLive = true;
     malformedRef.livenessUnavailableReason = UnavailableReason::NONE;
@@ -5728,7 +5901,8 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_map = atlas.getCurrentMap();
     Room  known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
-    p_map->addDetectedMapRoom(&known);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     Passage passage;
     test::makePassage(passage,
@@ -5738,7 +5912,7 @@ TEST(SemanticAxiomEvaluator,
                       Eigen::Vector3d(0.0, 0.0, 1.0),
                       &known,
                       Eigen::Vector3d(0.0, -1.0, 0.0));
-    p_map->addMapPassage(&passage);
+    ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((known.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -5794,10 +5968,11 @@ TEST(SemanticAxiomEvaluator, OwnerLivenessUnavailableDoesNotMaskCrossMapOwner)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_mapA->addMapPlane(&wall);
+    ASSERT_EQ((p_mapA->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_mapB, &wall);
-    p_mapB->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_mapB->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -5846,10 +6021,11 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -5885,10 +6061,11 @@ TEST(SemanticAxiomEvaluator, ContradictoryReciprocalWithNonNoneReasonIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -5928,10 +6105,11 @@ TEST(SemanticAxiomEvaluator, OwnerDeclaredMapUnavailableCapsAtUnknownNotFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -5981,7 +6159,8 @@ TEST(SemanticAxiomEvaluator,
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -5990,8 +6169,10 @@ TEST(SemanticAxiomEvaluator,
     RoomRecord &roomRecord = snapshot.maps.front().rooms.front();
     ASSERT_TRUE(roomRecord.wallRefs.empty());
     RawPlaneRef contradictory;
-    contradictory.reason    = UnavailableReason::NULL_REFERENCE;
-    contradictory.mapId     = p_map->getId();
+    contradictory.reason = UnavailableReason::NULL_REFERENCE;
+    unsigned long mapId2{};
+    ASSERT_EQ((p_map->getId(mapId2)), MapStatus::MAP_STATUS_SUCCESS);
+    contradictory.mapId     = mapId2;
     contradictory.planeId   = 5;
     contradictory.isLive    = false;
     contradictory.planeType = geometric::Plane::PlaneVariant::GROUND;
@@ -6026,7 +6207,7 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -6037,7 +6218,8 @@ TEST(SemanticAxiomEvaluator,
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -6073,7 +6255,7 @@ TEST(SemanticAxiomEvaluator, WallTwinReasonInconsistentIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -6107,10 +6289,11 @@ TEST(SemanticAxiomEvaluator, FloorReverseMemberReasonInconsistentAndDeadIsFail)
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&room});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -6155,13 +6338,14 @@ TEST(SemanticAxiomEvaluator, WallOwnerSplitAcrossDuplicateContainingMapIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_mapA->addMapPlane(&wall);
+    ASSERT_EQ((p_mapA->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
     atlas.createNewMap();
     Map *p_mapB = atlas.getCurrentMap();
     Room room;
     test::makeRoom(room, 1, p_mapB, nullptr);
-    p_mapB->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_mapB->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -6235,10 +6419,11 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((room.setBad()),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
@@ -6286,10 +6471,11 @@ TEST(SemanticAxiomEvaluator, ReciprocalWallKeyRawIdentityMismatchIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -6329,10 +6515,11 @@ TEST(SemanticAxiomEvaluator,
     Map  *p_map = atlas.getCurrentMap();
     Room  room;
     test::makeRoom(room, 1, p_map, nullptr);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_map, {&room});
-    p_map->addMapFloor(&floor);
+    ASSERT_EQ((p_map->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -6384,10 +6571,11 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_mapA->addMapPlane(&wall);
+    ASSERT_EQ((p_mapA->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_mapA, &wall);
-    p_mapA->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_mapA->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -6412,7 +6600,9 @@ TEST(SemanticAxiomEvaluator,
 
     /* The owner record itself provably declares a different map than the
      * one it was actually enumerated from/owns the wall in. */
-    p_roomRecord->declaredMapId = p_mapB->getId();
+    unsigned long mapBId{};
+    ASSERT_EQ((p_mapB->getId(mapBId)), MapStatus::MAP_STATUS_SUCCESS);
+    p_roomRecord->declaredMapId = mapBId;
     ASSERT_EQ(p_wallRecord->ownerRoomRefs.size(), 1U);
     p_wallRecord->ownerRoomRefs.front().isLive = std::nullopt;
     p_wallRecord->ownerRoomRefs.front().livenessUnavailableReason =
@@ -6453,10 +6643,11 @@ TEST(SemanticAxiomEvaluator,
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    p_map->addMapPlane(&wall);
+    ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_map, &wall);
-    p_map->addDetectedMapRoom(&room);
+    ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
+              MapStatus::MAP_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(

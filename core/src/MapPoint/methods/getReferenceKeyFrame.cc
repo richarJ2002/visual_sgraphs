@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-KeyFrame *MapPoint::getReferenceKeyFrame()
+MapPointStatus
+    MapPoint::getReferenceKeyFrame(KeyFrame *&p_referenceKeyFrame_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return p_referenceKeyFrame;
+    p_referenceKeyFrame_out = p_referenceKeyFrame;
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

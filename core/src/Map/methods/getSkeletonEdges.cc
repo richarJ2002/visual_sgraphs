@@ -34,14 +34,15 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-    Map::getSkeletonEdges(void)
+MapStatus Map::getSkeletonEdges(
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &skeletonEdges_out)
 {
     /* Lock access to the map data */
     unique_lock<mutex> lock(mapMutex);
 
     /* Return a copy of the latest connected skeleton edges */
-    return skeletonEdges;
+    skeletonEdges_out = skeletonEdges;
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

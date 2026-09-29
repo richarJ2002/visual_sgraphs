@@ -26,6 +26,7 @@
 #include "LoopClosing.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,8 +52,17 @@ void LoopClosing::resetIfRequested()
                  loopKeyFrameQueue.begin();
              loopKeyFrameIt != loopKeyFrameQueue.end();)
         {
-            KeyFrame *p_keyFrame = *loopKeyFrameIt;
-            if (p_keyFrame->getMap() == p_mapToReset)
+            KeyFrame *p_keyFrame    = *loopKeyFrameIt;
+            Map      *p_keyFrameMap = nullptr;
+            if (p_keyFrame->getMap(p_keyFrameMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_keyFrameMap == p_mapToReset)
             {
                 loopKeyFrameIt = loopKeyFrameQueue.erase(loopKeyFrameIt);
             }

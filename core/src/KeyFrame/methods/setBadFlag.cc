@@ -43,18 +43,27 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrame::setBadFlag()
+KeyFrameStatus KeyFrame::setBadFlag()
 {
     {
         unique_lock<mutex> lock(connectionsMutex);
-        if (id == p_map->getInitKeyFrameId())
+        unsigned long      mapInitKeyFrameId{};
+        if (p_map->getInitKeyFrameId(mapInitKeyFrameId) !=
+            MapStatus::MAP_STATUS_SUCCESS)
         {
-            return;
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getInitKeyFrameId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (id == mapInitKeyFrameId)
+        {
+            return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
         }
         else if (isEraseProtected)
         {
             isPendingErase = true;
-            return;
+            return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
         }
     }
 
@@ -63,7 +72,14 @@ void KeyFrame::setBadFlag()
          mit != mend;
          mit++)
     {
-        mit->first->eraseConnection(this);
+        if (mit->first->eraseConnection(this) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseConnection returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     /*
@@ -71,7 +87,15 @@ void KeyFrame::setBadFlag()
      * keyframe before LocalMapping is allowed to delete it; otherwise a later
      * merge, GBA, or observation insertion can dereference freed memory.
      */
-    const std::vector<geometric::Plane *> observedPlanes = getMapPlanes();
+    std::vector<geometric::Plane *> observedPlanes{};
+    if (getMapPlanes(observedPlanes) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     for (geometric::Plane *p_plane : observedPlanes)
     {
         if (p_plane != nullptr)
@@ -87,7 +111,15 @@ void KeyFrame::setBadFlag()
         }
     }
 
-    const std::vector<semantic::Marker *> observedMarkers = getMapMarkers();
+    std::vector<semantic::Marker *> observedMarkers{};
+    if (getMapMarkers(observedMarkers) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapMarkers returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     for (semantic::Marker *p_marker : observedMarkers)
     {
         if (p_marker != nullptr)
@@ -108,7 +140,14 @@ void KeyFrame::setBadFlag()
     {
         if (mapPoints[mapPointIndex])
         {
-            mapPoints[mapPointIndex]->eraseObservation(this);
+            if (mapPoints[mapPointIndex]->eraseObservation(this) !=
+                MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseObservation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
@@ -143,12 +182,29 @@ void KeyFrame::setBadFlag()
                  sit++)
             {
                 KeyFrame *p_keyFrame = *sit;
-                if (p_keyFrame->isBad())
+                bool      keyFrameIsBad{};
+                if (p_keyFrame->isBad(keyFrameIsBad) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (keyFrameIsBad)
                     continue;
 
                 // Check if a parent candidate is connected to the keyframe
-                vector<KeyFrame *> connecteds =
-                    p_keyFrame->getVectorCovisibleKeyFrames();
+                std::vector<KeyFrame *> connecteds{};
+                if (p_keyFrame->getVectorCovisibleKeyFrames(connecteds) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getVectorCovisibleKeyFrames returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 for (size_t mapPointIndex = 0, iend = connecteds.size();
                      mapPointIndex < iend;
                      mapPointIndex++)
@@ -161,8 +217,17 @@ void KeyFrame::setBadFlag()
                     {
                         if (connecteds[mapPointIndex]->id == (*spcit)->id)
                         {
-                            int w = p_keyFrame->getWeight(
-                                connecteds[mapPointIndex]);
+                            int w{};
+                            if (p_keyFrame->getWeight(connecteds[mapPointIndex],
+                                                      w) !=
+                                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: getWeight returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
+                            }
                             if (w > maximum)
                             {
                                 pC             = p_keyFrame;
@@ -177,7 +242,15 @@ void KeyFrame::setBadFlag()
 
             if (shouldContinue)
             {
-                pC->changeParent(pP);
+                if (pC->changeParent(pP) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: changeParent returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
                 parentCandidates.insert(pC);
                 childrens.erase(pC);
             }
@@ -193,20 +266,52 @@ void KeyFrame::setBadFlag()
                  sit != childrens.end();
                  sit++)
             {
-                (*sit)->changeParent(p_parent);
+                if ((*sit)->changeParent(p_parent) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: changeParent returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
 
         if (p_parent)
         {
-            p_parent->eraseChild(this);
-            tcp = poseTcw * p_parent->getPoseInverse();
+            if (p_parent->eraseChild(this) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseChild returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Sophus::SE3f parentPoseInverse{};
+            if (p_parent->getPoseInverse(parentPoseInverse) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPoseInverse returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            tcp = poseTcw * parentPoseInverse;
         }
         isFlaggedBad = true;
     }
 
-    p_map->eraseKeyFrame(this);
+    if (p_map->eraseKeyFrame(this) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: eraseKeyFrame returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     p_keyFrameDatabase->erase(this);
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

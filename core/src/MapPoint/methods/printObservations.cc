@@ -29,13 +29,14 @@
 #include "ORBmatcher.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void MapPoint::printObservations()
+MapPointStatus MapPoint::printObservations()
 {
     unique_lock<mutex> lock(featuresMutex);
     cout << "MP_OBS: MP " << id << endl;
@@ -46,10 +47,28 @@ void MapPoint::printObservations()
     {
         KeyFrame       *p_keyFrame = mit->first;
         tuple<int, int> indexes    = mit->second;
-        int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
-        cout << "--OBS in KF " << p_keyFrame->id << " in map "
-             << p_keyFrame->getMap()->getId() << endl;
+        int  leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+        Map *p_keyFrameMap = nullptr;
+        if (p_keyFrame->getMap(p_keyFrameMap) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        unsigned long id2{};
+        if (p_keyFrameMap->getId(id2) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        cout << "--OBS in KF " << p_keyFrame->id << " in map " << id2 << endl;
     }
+
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

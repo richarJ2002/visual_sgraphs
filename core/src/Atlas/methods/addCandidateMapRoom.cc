@@ -56,7 +56,14 @@ void Atlas::addCandidateMapRoom(semantic::Room *p_room_in)
                      "fail; continuing as before.",
                      __func__);
     }
-    p_ownerMap->addCandidateMapRoom(p_room_in);
+    if (p_ownerMap->addCandidateMapRoom(p_room_in) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addCandidateMapRoom returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

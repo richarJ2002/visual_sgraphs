@@ -19,6 +19,7 @@
 #include "GeometricTools.h"
 
 #include "KeyFrame.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -29,11 +30,25 @@ GeometricToolsStatus GeometricTools::computeF12(KeyFrame       *&keyFrame1_in,
                                                 KeyFrame       *&keyFrame2_in,
                                                 Eigen::Matrix3f &f12_out)
 {
-    Sophus::SE3<float>                    Tc1w = keyFrame1_in->getPose();
+    Sophus::SE3<float> Tc1w{};
+    if (keyFrame1_in->getPose(Tc1w) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     Sophus::Matrix3<float>                Rc1w = Tc1w.rotationMatrix();
     Sophus::SE3<float>::TranslationMember tc1w = Tc1w.translation();
 
-    Sophus::SE3<float>                    Tc2w = keyFrame2_in->getPose();
+    Sophus::SE3<float> Tc2w{};
+    if (keyFrame2_in->getPose(Tc2w) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     Sophus::Matrix3<float>                Rc2w = Tc2w.rotationMatrix();
     Sophus::SE3<float>::TranslationMember tc2w = Tc2w.translation();
 

@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,10 +33,19 @@ namespace core
 
 vs_graphs::core::geometric::Plane *Atlas::getRoomWallPlaneById(int planeId_in)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap != nullptr
-               ? p_activeMap->getRoomWallPlaneById(planeId_in)
-               : nullptr;
+    unique_lock<mutex>                 lock(atlasMutex);
+    vs_graphs::core::geometric::Plane *p_activeMapRoomWallPlaneById = nullptr;
+    if ((p_activeMap != nullptr) &&
+        p_activeMap->getRoomWallPlaneById(planeId_in,
+                                          p_activeMapRoomWallPlaneById) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomWallPlaneById returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return p_activeMap != nullptr ? p_activeMapRoomWallPlaneById : nullptr;
 }
 
 } // namespace core

@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,7 +34,16 @@ namespace core
 long unsigned int Atlas::getMapPointCount()
 {
     unique_lock<mutex> lock(atlasMutex);
-    return p_activeMap->getMapPointCount();
+    unsigned long      activeMapMapPointCount{};
+    if (p_activeMap->getMapPointCount(activeMapMapPointCount) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointCount returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapMapPointCount;
 }
 
 } // namespace core

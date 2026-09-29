@@ -63,10 +63,24 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
 
     /* Match BOTH detected rooms AND candidate/prospective rooms.
      * Candidate rooms need identity tags for cross-restart continuity. */
-    std::vector<semantic::Room *> newRooms =
-        p_newMap_in->getAllDetectedMapRooms();
-    std::vector<semantic::Room *> candidateRooms =
-        p_newMap_in->getAllCandidateMapRooms();
+    std::vector<semantic::Room *> newRooms{};
+    if (p_newMap_in->getAllDetectedMapRooms(newRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> candidateRooms{};
+    if (p_newMap_in->getAllCandidateMapRooms(candidateRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllCandidateMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     newRooms.insert(newRooms.end(),
                     candidateRooms.begin(),
                     candidateRooms.end());
@@ -259,9 +273,28 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
             semantic::Room *p_priorRoom = nullptr;
             for (Map *p_map : allMaps)
             {
-                if (!p_map || p_map->isBad() || p_map == p_newMap_in)
+                bool mapIsBad{};
+                if (!(!p_map) &&
+                    p_map->isBad(mapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (!p_map || mapIsBad || p_map == p_newMap_in)
                     continue;
-                for (semantic::Room *r : p_map->getAllDetectedMapRooms())
+                std::vector<semantic::Room *> mapAllDetectedMapRooms{};
+                if (p_map->getAllDetectedMapRooms(mapAllDetectedMapRooms) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getAllDetectedMapRooms returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                for (semantic::Room *r : mapAllDetectedMapRooms)
                 {
                     bool rIsBad{};
                     if ((r) && r->isBad(rIsBad) !=

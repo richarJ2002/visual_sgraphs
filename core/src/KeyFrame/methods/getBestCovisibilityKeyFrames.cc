@@ -35,14 +35,23 @@ namespace vs_graphs
 namespace core
 {
 
-vector<KeyFrame *> KeyFrame::getBestCovisibilityKeyFrames(const int &N_in)
+KeyFrameStatus KeyFrame::getBestCovisibilityKeyFrames(
+    const int               &N_in,
+    std::vector<KeyFrame *> &bestCovisibilityKeyFrames_out)
 {
     unique_lock<mutex> lock(connectionsMutex);
     if ((int)orderedConnectedKeyFrames.size() < N_in)
-        return orderedConnectedKeyFrames;
+    {
+        bestCovisibilityKeyFrames_out = orderedConnectedKeyFrames;
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
     else
-        return vector<KeyFrame *>(orderedConnectedKeyFrames.begin(),
-                                  orderedConnectedKeyFrames.begin() + N_in);
+    {
+        bestCovisibilityKeyFrames_out =
+            std::vector<KeyFrame *>(orderedConnectedKeyFrames.begin(),
+                                    orderedConnectedKeyFrames.begin() + N_in);
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

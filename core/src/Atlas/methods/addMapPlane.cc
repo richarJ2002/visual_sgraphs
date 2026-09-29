@@ -42,7 +42,13 @@ void Atlas::addMapPlane(vs_graphs::core::geometric::Plane *p_plane_in)
                      "fail; continuing as before.",
                      __func__);
     }
-    p_ownerMap->addMapPlane(p_plane_in);
+    if (p_ownerMap->addMapPlane(p_plane_in) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapPlane returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

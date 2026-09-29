@@ -31,6 +31,7 @@
 #include "Tracking.h"
 
 #include <chrono>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -122,10 +123,36 @@ void LoopClosing::run(void)
                         semantic::SemanticMergeDecision::REJECT;
 
                     /* If required, confirm IMU is working */
+                    Map *p_currentKFMap = nullptr;
+                    if (((p_tracker->sensor == System::IMU_MONOCULAR ||
+                          p_tracker->sensor == System::IMU_STEREO ||
+                          p_tracker->sensor == System::IMU_RGBD)) &&
+                        p_currentKF->getMap(p_currentKFMap) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getMap returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    bool isImuInitialized2{};
+                    if (((p_tracker->sensor == System::IMU_MONOCULAR ||
+                          p_tracker->sensor == System::IMU_STEREO ||
+                          p_tracker->sensor == System::IMU_RGBD)) &&
+                        p_currentKFMap->isImuInitialized(isImuInitialized2) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isImuInitialized returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     if ((p_tracker->sensor == System::IMU_MONOCULAR ||
                          p_tracker->sensor == System::IMU_STEREO ||
                          p_tracker->sensor == System::IMU_RGBD) &&
-                        (!p_currentKF->getMap()->isImuInitialized()))
+                        (!isImuInitialized2))
                     {
                         cout << "IMU is not initilized, merge is aborted"
                              << endl;
@@ -136,8 +163,17 @@ void LoopClosing::run(void)
                          * Get pose of the matched keyframe in the matched
                          * keyframes world frame.
                          */
-                        Sophus::SE3d mTmw =
-                            p_mergeMatchedKF->getPose().cast<double>();
+                        Sophus::SE3f mergeMatchedKFPose{};
+                        if (p_mergeMatchedKF->getPose(mergeMatchedKFPose) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getPose returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        Sophus::SE3d mTmw = mergeMatchedKFPose.cast<double>();
 
                         /* Convert above keyframe pose into Sim3 datatype */
                         g2o::Sim3 gSmw2(mTmw.unit_quaternion(),
@@ -148,8 +184,17 @@ void LoopClosing::run(void)
                          * Get pose of the current keyframe in the current
                          * keyframes world frame.
                          */
-                        Sophus::SE3d mTcw =
-                            p_currentKF->getPose().cast<double>();
+                        Sophus::SE3f currentKFPose{};
+                        if (p_currentKF->getPose(currentKFPose) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getPose returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        Sophus::SE3d mTcw = currentKFPose.cast<double>();
 
                         /* Convert above keyframe pose into Sim3 datatype */
                         g2o::Sim3 gScw1(mTcw.unit_quaternion(),
@@ -179,8 +224,49 @@ void LoopClosing::run(void)
                          * If in both frames an IMU is used, use IMU readings
                          * for inertial odometry map constraints.
                          */
-                        if (p_currentKF->getMap()->isInertial() &&
-                            p_mergeMatchedKF->getMap()->isInertial())
+                        Map *p_currentKFMap2 = nullptr;
+                        if (p_currentKF->getMap(p_currentKFMap2) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getMap returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
+                        }
+                        bool isInertial2{};
+                        if (p_currentKFMap2->isInertial(isInertial2) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: isInertial returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        Map *p_mergeMatchedKFMap = nullptr;
+                        if ((isInertial2) &&
+                            p_mergeMatchedKF->getMap(p_mergeMatchedKFMap) !=
+                                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getMap returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
+                        }
+                        bool isInertial3{};
+                        if ((isInertial2) &&
+                            p_mergeMatchedKFMap->isInertial(isInertial3) !=
+                                MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: isInertial returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        if (isInertial2 && isInertial3)
                         {
                             cout << "Merge check transformation with IMU"
                                  << endl;
@@ -189,8 +275,26 @@ void LoopClosing::run(void)
                             if (oldCorrectedPose.scale() < 0.90 ||
                                 oldCorrectedPose.scale() > 1.1)
                             {
-                                p_mergeLastCurrentKF->setErase();
-                                p_mergeMatchedKF->setErase();
+                                if (p_mergeLastCurrentKF->setErase() !=
+                                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: setErase returned a failure "
+                                        "status although it cannot fail; "
+                                        "continuing as before.",
+                                        __func__);
+                                }
+                                if (p_mergeMatchedKF->setErase() !=
+                                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: setErase returned a failure "
+                                        "status although it cannot fail; "
+                                        "continuing as before.",
+                                        __func__);
+                                }
                                 mergeNumCoincidences = 0;
                                 mergeMatchedMPs.clear();
                                 mergeMPs.clear();
@@ -202,10 +306,37 @@ void LoopClosing::run(void)
                                 continue;
                             }
                             // If inertial, force only yaw
+                            Map *p_currentKFMap3 = nullptr;
+                            if (((p_tracker->sensor == System::IMU_MONOCULAR ||
+                                  p_tracker->sensor == System::IMU_STEREO ||
+                                  p_tracker->sensor == System::IMU_RGBD)) &&
+                                p_currentKF->getMap(p_currentKFMap3) !=
+                                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: getMap returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
+                            }
+                            bool inertialBA1{};
+                            if (((p_tracker->sensor == System::IMU_MONOCULAR ||
+                                  p_tracker->sensor == System::IMU_STEREO ||
+                                  p_tracker->sensor == System::IMU_RGBD)) &&
+                                p_currentKFMap3->getInertialBA1(inertialBA1) !=
+                                    MapStatus::MAP_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: getInertialBA1 returned a failure "
+                                    "status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
                             if ((p_tracker->sensor == System::IMU_MONOCULAR ||
                                  p_tracker->sensor == System::IMU_STEREO ||
                                  p_tracker->sensor == System::IMU_RGBD) &&
-                                p_currentKF->getMap()->getInertialBA1())
+                                inertialBA1)
                             {
                                 Eigen::Vector3d phi =
                                     logSO3(oldCorrectedPose.rotation()
@@ -304,8 +435,24 @@ void LoopClosing::run(void)
                             p_mergeMatchedKF->timeStamp);
                         placeRecognitionTypes.push_back(1);
 
-                        p_mergeLastCurrentKF->setErase();
-                        p_mergeMatchedKF->setErase();
+                        if (p_mergeLastCurrentKF->setErase() !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: setErase returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        if (p_mergeMatchedKF->setErase() !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: setErase returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
                         mergeNumCoincidences = 0;
                         mergeMatchedMPs.clear();
                         mergeMPs.clear();
@@ -319,8 +466,24 @@ void LoopClosing::run(void)
                             recordLoopCorrectionEvent(
                                 false,
                                 "superseded_by_map_merge");
-                            p_loopLastCurrentKF->setErase();
-                            p_loopMatchedKF->setErase();
+                            if (p_loopLastCurrentKF->setErase() !=
+                                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: setErase returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
+                            }
+                            if (p_loopMatchedKF->setErase() !=
+                                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: setErase returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
+                            }
                             loopNumCoincidences = 0;
                             loopMatchedMPs.clear();
                             loopMPs.clear();
@@ -343,8 +506,24 @@ void LoopClosing::run(void)
                         std::cout << "[LoopClosing] Map merge rejected; "
                                      "candidate discarded."
                                   << std::endl;
-                        p_mergeLastCurrentKF->setErase();
-                        p_mergeMatchedKF->setErase();
+                        if (p_mergeLastCurrentKF->setErase() !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: setErase returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
+                        if (p_mergeMatchedKF->setErase() !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: setErase returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
                         mergeNumCoincidences = 0;
                         mergeMatchedMPs.clear();
                         mergeMPs.clear();
@@ -407,10 +586,39 @@ void LoopClosing::run(void)
                      * indicate that the detected loop is likely a false
                      * positive.
                      */
-                    if (p_currentKF->getMap()->isInertial())
+                    Map *p_currentKFMap4 = nullptr;
+                    if (p_currentKF->getMap(p_currentKFMap4) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                     {
-                        Sophus::SE3d Twc =
-                            p_currentKF->getPoseInverse().cast<double>();
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getMap returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    bool isInertial4{};
+                    if (p_currentKFMap4->isInertial(isInertial4) !=
+                        MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isInertial returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (isInertial4)
+                    {
+                        Sophus::SE3f currentKFPoseInverse{};
+                        if (p_currentKF->getPoseInverse(currentKFPoseInverse) !=
+                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getPoseInverse returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        Sophus::SE3d Twc = currentKFPoseInverse.cast<double>();
 
                         /*!
                          * Convert the current camera pose from SE3 into a Sim3
@@ -449,10 +657,37 @@ void LoopClosing::run(void)
                              * component of the loop correction is allowed to
                              * modify the map orientation.
                              */
+                            Map *p_currentKFMap5 = nullptr;
+                            if (((p_tracker->sensor == System::IMU_MONOCULAR ||
+                                  p_tracker->sensor == System::IMU_STEREO ||
+                                  p_tracker->sensor == System::IMU_RGBD)) &&
+                                p_currentKF->getMap(p_currentKFMap5) !=
+                                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: getMap returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
+                            }
+                            bool inertialBA2{};
+                            if (((p_tracker->sensor == System::IMU_MONOCULAR ||
+                                  p_tracker->sensor == System::IMU_STEREO ||
+                                  p_tracker->sensor == System::IMU_RGBD)) &&
+                                p_currentKFMap5->getInertialBA2(inertialBA2) !=
+                                    MapStatus::MAP_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: getInertialBA2 returned a failure "
+                                    "status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
                             if ((p_tracker->sensor == System::IMU_MONOCULAR ||
                                  p_tracker->sensor == System::IMU_STEREO ||
                                  p_tracker->sensor == System::IMU_RGBD) &&
-                                p_currentKF->getMap()->getInertialBA2())
+                                inertialBA2)
                             {
                                 phi(0)     = 0;
                                 phi(1)     = 0;
@@ -552,8 +787,24 @@ void LoopClosing::run(void)
                      * Resetting these variables allows future loop closure
                      * attempts to start from a clean state.
                      */
-                    p_loopLastCurrentKF->setErase();
-                    p_loopMatchedKF->setErase();
+                    if (p_loopLastCurrentKF->setErase() !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setErase returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (p_loopMatchedKF->setErase() !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setErase returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     loopNumCoincidences = 0;
                     loopMatchedMPs.clear();
                     loopMPs.clear();

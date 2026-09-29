@@ -2923,7 +2923,16 @@ void SemanticsManager::associatePassagesToRooms(void)
                     }
                     if (p_roomMap != nullptr)
                     {
-                        p_roomMap->eraseMarkerBasedMapRoom(p_prospectiveRoom);
+                        if (p_roomMap->eraseMarkerBasedMapRoom(
+                                p_prospectiveRoom) !=
+                            MapStatus::MAP_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: eraseMarkerBasedMapRoom returned "
+                                         "a failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                     }
 
                     if (p_prospectiveRoom->clearPassages() !=

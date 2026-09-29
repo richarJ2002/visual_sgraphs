@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::setInertialBA2()
+MapStatus Map::setInertialBA2()
 {
     unique_lock<mutex> lock(mapMutex);
     hasInertialBA2 = true;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

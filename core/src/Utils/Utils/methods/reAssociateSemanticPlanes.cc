@@ -477,7 +477,17 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             }
             for (MapPoint *p_mapPoint : retiredPlaneMapPoints)
             {
-                if (p_mapPoint != nullptr && !p_mapPoint->isBad())
+                bool mapPointIsBad{};
+                if ((p_mapPoint != nullptr) &&
+                    p_mapPoint->isBad(mapPointIsBad) !=
+                        MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_mapPoint != nullptr && !mapPointIsBad)
                 {
                     if (p_retainedPlane->setMapPoints(p_mapPoint) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -504,7 +514,17 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 
             for (const auto &[p_keyFrame, observation] : retiredObservations)
             {
-                if (p_keyFrame == nullptr || p_keyFrame->isBad())
+                bool keyFrameIsBad{};
+                if (!(p_keyFrame == nullptr) &&
+                    p_keyFrame->isBad(keyFrameIsBad) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_keyFrame == nullptr || keyFrameIsBad)
                 {
                     continue;
                 }
@@ -608,10 +628,30 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 
             for (KeyFrame *p_keyFrame : p_atlas_in->getAllKeyFrames())
             {
-                if (p_keyFrame != nullptr && !p_keyFrame->isBad())
+                bool keyFrameIsBad2{};
+                if ((p_keyFrame != nullptr) &&
+                    p_keyFrame->isBad(keyFrameIsBad2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                 {
-                    p_keyFrame->replaceMapPlane(p_retiredPlane,
-                                                p_retainedPlane);
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_keyFrame != nullptr && !keyFrameIsBad2)
+                {
+                    bool keyFrameWasReplaced{};
+                    if (p_keyFrame->replaceMapPlane(p_retiredPlane,
+                                                    p_retainedPlane,
+                                                    keyFrameWasReplaced) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                    {
+                        keyFrameWasReplaced = false;
+                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                    "%s: replaceMapPlane rejected its input; "
+                                    "continuing as before.",
+                                    __func__);
+                    }
                 }
             }
 
@@ -619,11 +659,27 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 
             if (p_currentMap != nullptr)
             {
-                p_currentMap->eraseRoomWallPlane(p_retiredPlane);
+                if (p_currentMap->eraseRoomWallPlane(p_retiredPlane) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseRoomWallPlane returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 if (retainedPlaneType == geometric::Plane::PlaneVariant::WALL)
                 {
-                    p_currentMap->addRoomWallPlane(p_retainedPlane);
+                    if (p_currentMap->addRoomWallPlane(p_retainedPlane) !=
+                        MapStatus::MAP_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addRoomWallPlane returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                 }
             }
 
@@ -643,7 +699,15 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 
             if (p_currentMap != nullptr)
             {
-                p_currentMap->eraseMapPlane(p_retiredPlane);
+                if (p_currentMap->eraseMapPlane(p_retiredPlane) !=
+                    MapStatus::MAP_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseMapPlane returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
 
             if (p_retiredPlane->setMap(nullptr) !=

@@ -37,11 +37,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::addMapPlane(geometric::Plane *p_plane_inout)
+MapStatus Map::addMapPlane(geometric::Plane *p_plane_inout)
 {
     if (p_plane_inout == nullptr)
     {
-        return;
+        return MapStatus::MAP_STATUS_SUCCESS;
     }
 
     unique_lock<mutex> lock(mapMutex);
@@ -142,6 +142,8 @@ void Map::addMapPlane(geometric::Plane *p_plane_inout)
                      __func__);
     }
     planeIndex.insert_or_assign(planeGetId6, p_plane_inout);
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -28,6 +28,7 @@
 #include "Optimizer.h"
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -60,16 +61,43 @@ bool LoopClosing::detectAndReffineSim3FromLastKF(
         // Verbose::PrintMess("Sim3 reffine: There are " +
         // to_string(nNumProjMatches) + " initial matches ",
         // Verbose::VERBOSITY_DEBUG);
-        Sophus::SE3d mTwm =
-            p_matchedKeyFrame_in->getPoseInverse().cast<double>();
-        g2o::Sim3 gSwm(mTwm.unit_quaternion(), mTwm.translation(), 1.0);
-        g2o::Sim3 gScm = gScw_inout * gSwm;
+        Sophus::SE3f matchedKeyFramePoseInverse{};
+        if (p_matchedKeyFrame_in->getPoseInverse(matchedKeyFramePoseInverse) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPoseInverse returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Sophus::SE3d mTwm = matchedKeyFramePoseInverse.cast<double>();
+        g2o::Sim3    gSwm(mTwm.unit_quaternion(), mTwm.translation(), 1.0);
+        g2o::Sim3    gScm = gScw_inout * gSwm;
         Eigen::Matrix<double, 7, 7> hessian7x7;
 
         bool isFixedScale =
             isScaleFixed; // TODO CHECK; Solo para el monocular inertial
-        if (p_tracker->sensor == System::IMU_MONOCULAR &&
-            !p_currentKeyFrame_in->getMap()->getInertialBA2())
+        Map *p_currentKeyFrameMap = nullptr;
+        if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
+            p_currentKeyFrame_in->getMap(p_currentKeyFrameMap) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        bool inertialBA2{};
+        if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
+            p_currentKeyFrameMap->getInertialBA2(inertialBA2) !=
+                MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getInertialBA2 returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_tracker->sensor == System::IMU_MONOCULAR && !inertialBA2)
             isFixedScale = false;
         int optMatchCount = Optimizer::optimizeSim3(p_currentKF,
                                                     p_matchedKeyFrame_in,
@@ -90,8 +118,17 @@ bool LoopClosing::detectAndReffineSim3FromLastKF(
                                       gScw_inout.translation(),
                                       1.0);
 
-            vector<MapPoint *> matchedMapPoints;
-            matchedMapPoints.resize(p_currentKF->getMapPointMatches().size(),
+            vector<MapPoint *>      matchedMapPoints;
+            std::vector<MapPoint *> currentKFMapPointMatches{};
+            if (p_currentKF->getMapPointMatches(currentKFMapPointMatches) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMapPointMatches returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            matchedMapPoints.resize(currentKFMapPointMatches.size(),
                                     static_cast<MapPoint *>(nullptr));
 
             countProjectionMatchCount_out =

@@ -80,7 +80,16 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         configuration_in.wall_coplanar_angle_deg;
 
     std::vector<SemanticMergeRoomEvidence> survivingRooms;
-    for (Room *p_room : p_survivingMap_in->getAllRooms())
+    std::vector<semantic::Room *>          survivingMapAllRooms{};
+    if (p_survivingMap_in->getAllRooms(survivingMapAllRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (Room *p_room : survivingMapAllRooms)
     {
         bool roomIsBad{};
         if ((p_room != nullptr) &&
@@ -118,7 +127,16 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         }
     }
     std::vector<SemanticMergeRoomEvidence> absorbedRooms;
-    for (Room *p_room : p_absorbedMap_in->getAllRooms())
+    std::vector<semantic::Room *>          absorbedMapAllRooms{};
+    if (p_absorbedMap_in->getAllRooms(absorbedMapAllRooms) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (Room *p_room : absorbedMapAllRooms)
     {
         bool roomIsBad2{};
         if ((p_room != nullptr) &&
@@ -176,10 +194,26 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
 
     /* Room-prior seed: the old final room and the new starting room must
      * be the same tag-matched anchor. */
-    Room *p_oldFinalRoom = p_absorbedMap_in->getFinalRoom();
-    Room *p_newStartRoom = p_survivingMap_in->getStartingRoom();
-    bool  seedAnchored   = false;
-    bool  oldFinalRoomHasRoomTag{};
+    Room *p_oldFinalRoom = nullptr;
+    if (p_absorbedMap_in->getFinalRoom(p_oldFinalRoom) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFinalRoom returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    Room *p_newStartRoom = nullptr;
+    if (p_survivingMap_in->getStartingRoom(p_newStartRoom) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getStartingRoom returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool seedAnchored = false;
+    bool oldFinalRoomHasRoomTag{};
     if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr) &&
         p_oldFinalRoom->hasRoomTag(oldFinalRoomHasRoomTag) !=
             RoomStatus::ROOM_STATUS_SUCCESS)

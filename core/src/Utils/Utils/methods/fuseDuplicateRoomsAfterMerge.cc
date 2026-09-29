@@ -87,7 +87,16 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         [p_map_inout](const Eigen::Vector3d &firstCentroid_World_m_in,
                       const Eigen::Vector3d &secondCentroid_World_m_in)
     {
-        for (geometric::Plane *p_wall : p_map_inout->getAllPlanes())
+        std::vector<geometric::Plane *> mapAllPlanes{};
+        if (p_map_inout->getAllPlanes(mapAllPlanes) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPlanes returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (geometric::Plane *p_wall : mapAllPlanes)
         {
             bool wallIsBad{};
             if (!(p_wall == nullptr) &&
@@ -307,7 +316,16 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         semantic::Room *p_bestRetainedRoom = nullptr;
         double bestCentroidDistance_m = std::numeric_limits<double>::infinity();
 
-        for (semantic::Room *p_candidateRoom : p_map_inout->getAllRooms())
+        std::vector<semantic::Room *> mapAllRooms{};
+        if (p_map_inout->getAllRooms(mapAllRooms) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllRooms returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (semantic::Room *p_candidateRoom : mapAllRooms)
         {
             bool candidateRoomIsBad{};
             if (!(p_candidateRoom == nullptr ||
@@ -611,7 +629,16 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
          * near room, so the far-side consultation happens here. */
         geometric::Plane *p_mergeGroundPlane = nullptr;
 
-        for (geometric::Plane *p_plane : p_map_inout->getAllPlanes())
+        std::vector<geometric::Plane *> mapAllPlanes{};
+        if (p_map_inout->getAllPlanes(mapAllPlanes) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPlanes returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (geometric::Plane *p_plane : mapAllPlanes)
         {
             bool planeIsBad{};
             if ((p_plane != nullptr) &&
@@ -686,8 +713,15 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          __func__);
         }
 
-        const std::vector<semantic::Passage *> mergePassages =
-            p_map_inout->getAllPassages();
+        std::vector<semantic::Passage *> mergePassages{};
+        if (p_map_inout->getAllPassages(mergePassages) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const bool roomsAreSeparatedByPassage = std::any_of(
             mergePassages.begin(),
             mergePassages.end(),
@@ -750,7 +784,14 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
 
         std::vector<WallTransfer> wallTransfers;
         wallTransfers.reserve(importedWalls.size());
-        std::vector<semantic::Room *> mapRooms = p_map_inout->getAllRooms();
+        std::vector<semantic::Room *> mapRooms{};
+        if (p_map_inout->getAllRooms(mapRooms) != MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllRooms returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         std::sort(mapRooms.begin(),
                   mapRooms.end(),
                   semantic::isEntityIdLess<semantic::Room>);
@@ -1006,7 +1047,16 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
         }
 
-        for (semantic::Passage *p_passage : p_map_inout->getAllPassages())
+        std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
+        if (p_map_inout->getAllPassages(mapAllPassages) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (semantic::Passage *p_passage : mapAllPassages)
         {
             if (p_passage != nullptr)
             {
@@ -1193,7 +1243,16 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
         }
 
-        for (semantic::Floor *p_floor : p_map_inout->getAllFloors())
+        std::vector<semantic::Floor *> mapAllFloors{};
+        if (p_map_inout->getAllFloors(mapAllFloors) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllFloors returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (semantic::Floor *p_floor : mapAllFloors)
         {
             if (p_floor != nullptr)
             {
@@ -1212,8 +1271,23 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
         }
 
-        p_map_inout->eraseDetectedMapRoom(p_importedRoom);
-        p_map_inout->eraseMarkerBasedMapRoom(p_importedRoom);
+        if (p_map_inout->eraseDetectedMapRoom(p_importedRoom) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eraseDetectedMapRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_map_inout->eraseMarkerBasedMapRoom(p_importedRoom) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: eraseMarkerBasedMapRoom returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (p_importedRoom->clearWalls() !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {

@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-bool MapPoint::isInKeyFrame(KeyFrame *p_keyFrame_in)
+MapPointStatus MapPoint::isInKeyFrame(KeyFrame *p_keyFrame_in,
+                                      bool     &isInKeyFrame_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return (observations.count(p_keyFrame_in));
+    isInKeyFrame_out = (observations.count(p_keyFrame_in));
+    return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
 } // namespace core

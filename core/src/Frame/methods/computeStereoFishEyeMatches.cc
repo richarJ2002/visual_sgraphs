@@ -44,7 +44,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Frame::computeStereoFishEyeMatches()
+FrameStatus Frame::computeStereoFishEyeMatches()
 {
     // Speed it up by matching keypoints in the lapping area
     vector<cv::KeyPoint> stereoLeft(keyPoints.begin() + monoLeft,
@@ -122,6 +122,8 @@ void Frame::computeStereoFishEyeMatches()
             }
         }
     }
+
+    return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
 } // namespace core

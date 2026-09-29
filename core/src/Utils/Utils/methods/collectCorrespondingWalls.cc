@@ -53,8 +53,22 @@ UtilsStatus Utils::collectCorrespondingWalls(
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    std::vector<semantic::Room *> roomsA = p_mapA_in->getAllRooms();
-    std::vector<semantic::Room *> roomsB = p_mapB_in->getAllRooms();
+    std::vector<semantic::Room *> roomsA{};
+    if (p_mapA_in->getAllRooms(roomsA) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<semantic::Room *> roomsB{};
+    if (p_mapB_in->getAllRooms(roomsB) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     std::sort(roomsA.begin(),
               roomsA.end(),

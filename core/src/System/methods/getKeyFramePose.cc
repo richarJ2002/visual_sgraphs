@@ -24,6 +24,7 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,7 +33,16 @@ namespace core
 
 Sophus::SE3f System::getKeyFramePose(KeyFrame *p_keyFrame_in)
 {
-    if (p_keyFrame_in->isBad())
+    bool keyFrameIsBad{};
+    if (p_keyFrame_in->isBad(keyFrameIsBad) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (keyFrameIsBad)
         return Sophus::SE3f();
 
     // Twb can be world frame to cam0 frame (without IMU) or body in world frame
@@ -40,9 +50,31 @@ Sophus::SE3f System::getKeyFramePose(KeyFrame *p_keyFrame_in)
     Sophus::SE3f Twb;
     if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
         sensor == IMU_RGBD) // with IMU
-        Twb = p_keyFrame_in->getImuPose();
+    {
+        Sophus::SE3f keyFrameImuPose{};
+        if (p_keyFrame_in->getImuPose(keyFrameImuPose) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Twb = keyFrameImuPose;
+    }
     else // without IMU
-        Twb = p_keyFrame_in->getPoseInverse();
+    {
+        Sophus::SE3f keyFramePoseInverse{};
+        if (p_keyFrame_in->getPoseInverse(keyFramePoseInverse) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPoseInverse returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Twb = keyFramePoseInverse;
+    }
 
     return Twb;
 }

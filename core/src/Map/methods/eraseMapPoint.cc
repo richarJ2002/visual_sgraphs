@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::eraseMapPoint(MapPoint *p_mapPoint_in)
+MapStatus Map::eraseMapPoint(MapPoint *p_mapPoint_in)
 {
     unique_lock<mutex> lock(mapMutex);
     mapPoints.erase(p_mapPoint_in);
@@ -45,6 +45,8 @@ void Map::eraseMapPoint(MapPoint *p_mapPoint_in)
 
     // TODO: This only erase the pointer.
     // Delete the MapPoint
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

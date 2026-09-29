@@ -24,6 +24,7 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,7 +34,16 @@ namespace core
 std::vector<vs_graphs::core::Door *> System::getAllDoors()
 {
     vs_graphs::core::Map *p_activeMap = p_atlas->getCurrentMap();
-    return p_activeMap->getAllDoors();
+    std::vector<Door *>   activeMapAllDoors{};
+    if (p_activeMap->getAllDoors(activeMapAllDoors) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDoors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return activeMapAllDoors;
 }
 
 } // namespace core

@@ -48,9 +48,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Map::applyScaledRotation(const Sophus::SE3f &T_in,
-                              const float         s_in,
-                              const bool          isScaledVelocity_in)
+MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
+                                   const float         s_in,
+                                   const bool          isScaledVelocity_in)
 {
     unique_lock<mutex> lock(mapMutex);
 
@@ -68,25 +68,89 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
          sit++)
     {
         KeyFrame    *p_keyFrame = *sit;
-        Sophus::SE3f Twc        = p_keyFrame->getPoseInverse();
+        Sophus::SE3f Twc{};
+        if (p_keyFrame->getPoseInverse(Twc) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPoseInverse returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         Twc.translation() *= s_in;
         Sophus::SE3f Tyc = Tyw * Twc;
         Sophus::SE3f Tcy = Tyc.inverse();
-        p_keyFrame->setPose(Tcy);
-        Eigen::Vector3f Vw = p_keyFrame->getVelocity();
+        if (p_keyFrame->setPose(Tcy) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f Vw{};
+        if (p_keyFrame->getVelocity(Vw) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (!isScaledVelocity_in)
-            p_keyFrame->setVelocity(Ryw * Vw);
+        {
+            if (p_keyFrame->setVelocity(Ryw * Vw) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+        }
         else
-            p_keyFrame->setVelocity(Ryw * Vw * s_in);
+        {
+            if (p_keyFrame->setVelocity(Ryw * Vw * s_in) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setVelocity returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+        }
     }
 
     for (set<MapPoint *>::iterator sit = mapPoints.begin();
          sit != mapPoints.end();
          sit++)
     {
-        MapPoint *p_mapPoint = *sit;
-        p_mapPoint->setWorldPos(s_in * Ryw * p_mapPoint->getWorldPos() + tyw);
-        p_mapPoint->updateNormalAndDepth();
+        MapPoint       *p_mapPoint = *sit;
+        Eigen::Vector3f mapPointWorldPos{};
+        if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_mapPoint->setWorldPos(s_in * Ryw * mapPointWorldPos + tyw) !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setWorldPos returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_mapPoint->updateNormalAndDepth() !=
+            MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateNormalAndDepth returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     for (geometric::Plane *p_plane : planes)
@@ -227,6 +291,8 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
 
     mapChange++;
     worldFrameEpoch++;
+
+    return MapStatus::MAP_STATUS_SUCCESS;
 }
 
 } // namespace core

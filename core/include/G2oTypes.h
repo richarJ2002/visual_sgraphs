@@ -43,6 +43,7 @@
 
 #include "Utils/Converter/objects/Converter.h"
 #include <math.h>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -104,8 +105,26 @@ class ImuCamPose
         its(0)
     {
         // Load IMU pose
-        twb = p_keyFrame_inout->getImuPosition().cast<double>();
-        Rwb = p_keyFrame_inout->getImuRotation().cast<double>();
+        Eigen::Vector3f keyFrameImuPosition{};
+        if (p_keyFrame_inout->getImuPosition(keyFrameImuPosition) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuPosition returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        twb = keyFrameImuPosition.cast<double>();
+        Eigen::Matrix3f keyFrameImuRotation{};
+        if (p_keyFrame_inout->getImuRotation(keyFrameImuRotation) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Rwb = keyFrameImuRotation.cast<double>();
 
         // Load camera poses
         int camCount;
@@ -123,8 +142,26 @@ class ImuCamPose
         pCamera.resize(camCount);
 
         // Left camera
-        tcw[0] = p_keyFrame_inout->getTranslation().cast<double>();
-        Rcw[0] = p_keyFrame_inout->getRotation().cast<double>();
+        Eigen::Vector3f keyFrameTranslation{};
+        if (p_keyFrame_inout->getTranslation(keyFrameTranslation) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTranslation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        tcw[0] = keyFrameTranslation.cast<double>();
+        Eigen::Matrix3f keyFrameRotation{};
+        if (p_keyFrame_inout->getRotation(keyFrameRotation) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRotation returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Rcw[0] = keyFrameRotation.cast<double>();
         tcb[0] =
             p_keyFrame_inout->imuCalibration.mTcb.translation().cast<double>();
         Rcb[0] = p_keyFrame_inout->imuCalibration.mTcb.rotationMatrix()
@@ -137,8 +174,17 @@ class ImuCamPose
 
         if (camCount > 1)
         {
+            Sophus::SE3f keyFrameRelativePoseTrl{};
+            if (p_keyFrame_inout->getRelativePoseTrl(keyFrameRelativePoseTrl) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRelativePoseTrl returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             Eigen::Matrix4d Trl =
-                p_keyFrame_inout->getRelativePoseTrl().matrix().cast<double>();
+                keyFrameRelativePoseTrl.matrix().cast<double>();
             Rcw[1]     = Trl.block<3, 3>(0, 0) * Rcw[0];
             tcw[1]     = Trl.block<3, 3>(0, 0) * tcw[0] + Trl.block<3, 1>(0, 3);
             tcb[1]     = Trl.block<3, 3>(0, 0) * tcb[0] + Trl.block<3, 1>(0, 3);
@@ -156,8 +202,26 @@ class ImuCamPose
         its(0)
     {
         // Load IMU pose
-        twb = p_pF_inout->getImuPosition().cast<double>();
-        Rwb = p_pF_inout->getImuRotation().cast<double>();
+        Eigen::Matrix<float, 3, 1> pFGetImuPosition{};
+        if (p_pF_inout->getImuPosition(pFGetImuPosition) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuPosition returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        twb = pFGetImuPosition.cast<double>();
+        Eigen::Matrix<float, 3, 3> pFImuRotation{};
+        if (p_pF_inout->getImuRotation(pFImuRotation) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getImuRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Rwb = pFImuRotation.cast<double>();
 
         // Load camera poses
         int camCount;
@@ -175,8 +239,25 @@ class ImuCamPose
         pCamera.resize(camCount);
 
         // Left camera
-        tcw[0] = p_pF_inout->getPose().translation().cast<double>();
-        Rcw[0] = p_pF_inout->getPose().rotationMatrix().cast<double>();
+        Sophus::SE3<float> pFGetPose{};
+        if (p_pF_inout->getPose(pFGetPose) != FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        tcw[0] = pFGetPose.translation().cast<double>();
+        Sophus::SE3<float> pFGetPose2{};
+        if (p_pF_inout->getPose(pFGetPose2) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Rcw[0] = pFGetPose2.rotationMatrix().cast<double>();
         tcb[0] = p_pF_inout->imuCalibration.mTcb.translation().cast<double>();
         Rcb[0] =
             p_pF_inout->imuCalibration.mTcb.rotationMatrix().cast<double>();
@@ -187,9 +268,17 @@ class ImuCamPose
 
         if (camCount > 1)
         {
-            Eigen::Matrix4d Trl =
-                p_pF_inout->getRelativePoseTrl().matrix().cast<double>();
-            Rcw[1]     = Trl.block<3, 3>(0, 0) * Rcw[0];
+            Sophus::SE3f pFRelativePoseTrl{};
+            if (p_pF_inout->getRelativePoseTrl(pFRelativePoseTrl) !=
+                FrameStatus::FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRelativePoseTrl returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            Eigen::Matrix4d Trl = pFRelativePoseTrl.matrix().cast<double>();
+            Rcw[1]              = Trl.block<3, 3>(0, 0) * Rcw[0];
             tcw[1]     = Trl.block<3, 3>(0, 0) * tcw[0] + Trl.block<3, 1>(0, 3);
             tcb[1]     = Trl.block<3, 3>(0, 0) * tcb[0] + Trl.block<3, 1>(0, 3);
             Rcb[1]     = Trl.block<3, 3>(0, 0) * Rcb[0];
@@ -381,11 +470,29 @@ class VertexVelocity : public g2o::BaseVertex<3, Eigen::Vector3d>
     VertexVelocity() {}
     VertexVelocity(KeyFrame *p_keyFrame_inout)
     {
-        setEstimate(p_keyFrame_inout->getVelocity().cast<double>());
+        Eigen::Vector3f keyFrameVelocity{};
+        if (p_keyFrame_inout->getVelocity(keyFrameVelocity) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        setEstimate(keyFrameVelocity.cast<double>());
     }
     VertexVelocity(Frame *p_pF_inout)
     {
-        setEstimate(p_pF_inout->getVelocity().cast<double>());
+        Eigen::Vector3f pFGetVelocity{};
+        if (p_pF_inout->getVelocity(pFGetVelocity) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        setEstimate(pFGetVelocity.cast<double>());
     }
 
     virtual bool read([[maybe_unused]] std::istream &is_inout)
@@ -414,7 +521,16 @@ class VertexGyroBias : public g2o::BaseVertex<3, Eigen::Vector3d>
     VertexGyroBias() {}
     VertexGyroBias(KeyFrame *p_keyFrame_inout)
     {
-        setEstimate(p_keyFrame_inout->getGyroBias().cast<double>());
+        Eigen::Vector3f keyFrameGyroBias{};
+        if (p_keyFrame_inout->getGyroBias(keyFrameGyroBias) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGyroBias returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        setEstimate(keyFrameGyroBias.cast<double>());
     }
     VertexGyroBias(Frame *p_pF_inout)
     {
@@ -450,7 +566,16 @@ class VertexAccBias : public g2o::BaseVertex<3, Eigen::Vector3d>
     VertexAccBias() {}
     VertexAccBias(KeyFrame *p_keyFrame_inout)
     {
-        setEstimate(p_keyFrame_inout->getAccBias().cast<double>());
+        Eigen::Vector3f keyFrameAccBias{};
+        if (p_keyFrame_inout->getAccBias(keyFrameAccBias) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAccBias returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        setEstimate(keyFrameAccBias.cast<double>());
     }
     VertexAccBias(Frame *p_pF_inout)
     {

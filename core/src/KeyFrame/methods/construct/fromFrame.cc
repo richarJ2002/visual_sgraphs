@@ -31,6 +31,7 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -42,7 +43,6 @@ namespace core
 KeyFrame::KeyFrame(Frame            &F_inout,
                    Map              *p_map_in,
                    KeyFrameDatabase *p_keyFrameDatabase_in) :
-    isImu(p_map_in->isImuInitialized()),
     frameId(F_inout.id),
     timeStamp(F_inout.timeStamp),
     gridCols(FRAME_GRID_COLS),
@@ -102,8 +102,6 @@ KeyFrame::KeyFrame(Frame            &F_inout,
     colorImg(F_inout.colorImg),
     isPublished(false),
     isVelocityAvailable(false),
-    poseTlr(F_inout.getRelativePoseTlr()),
-    poseTrl(F_inout.getRelativePoseTrl()),
     mapPoints(F_inout.mapPoints),
     p_keyFrameDatabase(p_keyFrameDatabase_in),
     p_orbVocabulary(F_inout.p_orbVocabulary),
@@ -126,6 +124,39 @@ KeyFrame::KeyFrame(Frame            &F_inout,
     leftKeyPointCount(F_inout.leftKeyPointCount),
     rightKeyPointCount(F_inout.rightKeyPointCount)
 {
+    /* Assigned here, not in the initialiser list, so the status of each
+     * getter can be checked. */
+    bool mapIsImuInitialized{};
+    if (p_map_in->isImuInitialized(mapIsImuInitialized) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    isImu = mapIsImuInitialized;
+    Sophus::SE3f FRelativePoseTlr{};
+    if (F_inout.getRelativePoseTlr(FRelativePoseTlr) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRelativePoseTlr returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    poseTlr = FRelativePoseTlr;
+    Sophus::SE3f FRelativePoseTrl{};
+    if (F_inout.getRelativePoseTrl(FRelativePoseTrl) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRelativePoseTrl returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    poseTrl = FRelativePoseTrl;
+
     id = nextId++;
 
     grid.resize(gridCols);
@@ -147,21 +178,60 @@ KeyFrame::KeyFrame(Frame            &F_inout,
         }
     }
 
-    if (!F_inout.hasVelocity())
+    bool FHasVelocity{};
+    if (F_inout.hasVelocity(FHasVelocity) != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasVelocity returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!FHasVelocity)
     {
         velocityVw.setZero();
         isVelocityAvailable = false;
     }
     else
     {
-        velocityVw          = F_inout.getVelocity();
+        Eigen::Vector3f FGetVelocity{};
+        if (F_inout.getVelocity(FGetVelocity) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getVelocity returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        velocityVw          = FGetVelocity;
         isVelocityAvailable = true;
     }
 
     imuBias = F_inout.imuBias;
-    setPose(F_inout.getPose());
+    Sophus::SE3<float> FGetPose{};
+    if (F_inout.getPose(FGetPose) != FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (setPose(FGetPose) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
-    originMapId = p_map_in->getId();
+    unsigned long mapId{};
+    if (p_map_in->getId(mapId) != MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    originMapId = mapId;
 }
 
 } // namespace core
