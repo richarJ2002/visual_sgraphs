@@ -27,16 +27,12 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
+#include <boost/serialization/access.hpp>
 #include <mutex>
 #include <opencv2/core/core.hpp>
 #include <sophus/se3.hpp>
 #include <utility>
 #include <vector>
-
-#include "SerializationUtils.h"
-
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/vector.hpp>
 
 namespace vs_graphs
 {
@@ -148,16 +144,7 @@ class Bias
      *               Archive version; currently unused.
      */
     template <class Archive>
-    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
-    {
-        ar & bax;
-        ar & bay;
-        ar & baz;
-
-        ar & bwx;
-        ar & bwy;
-        ar & bwz;
-    }
+    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version);
 
   public:
     /*!
@@ -249,18 +236,7 @@ class Calib
      *               Archive version; currently unused.
      */
     template <class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-        serializeSophusSE3(ar, mTcb, version);
-        serializeSophusSE3(ar, mTbc, version);
-
-        ar &boost::serialization::make_array(Cov.diagonal().data(),
-                                             Cov.diagonal().size());
-        ar &boost::serialization::make_array(CovWalk.diagonal().data(),
-                                             CovWalk.diagonal().size());
-
-        ar & isCalibrationSet;
-    }
+    void serialize(Archive &ar, const unsigned int version);
 
   public:
     /*!
@@ -469,31 +445,7 @@ class Preintegrated
      *               Archive version; currently unused.
      */
     template <class Archive>
-    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
-    {
-        ar & dT;
-        ar &boost::serialization::make_array(C.data(), C.size());
-        ar &boost::serialization::make_array(Info.data(), Info.size());
-        ar &boost::serialization::make_array(Nga.diagonal().data(),
-                                             Nga.diagonal().size());
-        ar &boost::serialization::make_array(NgaWalk.diagonal().data(),
-                                             NgaWalk.diagonal().size());
-        ar & b;
-        ar &boost::serialization::make_array(dR.data(), dR.size());
-        ar &boost::serialization::make_array(dV.data(), dV.size());
-        ar &boost::serialization::make_array(dP.data(), dP.size());
-        ar &boost::serialization::make_array(JRg.data(), JRg.size());
-        ar &boost::serialization::make_array(JVg.data(), JVg.size());
-        ar &boost::serialization::make_array(JVa.data(), JVa.size());
-        ar &boost::serialization::make_array(JPg.data(), JPg.size());
-        ar &boost::serialization::make_array(JPa.data(), JPa.size());
-        ar &boost::serialization::make_array(avgA.data(), avgA.size());
-        ar &boost::serialization::make_array(avgW.data(), avgW.size());
-
-        ar & bu;
-        ar &boost::serialization::make_array(db.data(), db.size());
-        ar & measurements;
-    }
+    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version);
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -829,12 +781,8 @@ class Preintegrated
          *               Archive version; currently unused.
          */
         template <class Archive>
-        void serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
-        {
-            ar &boost::serialization::make_array(a.data(), a.size());
-            ar &boost::serialization::make_array(w.data(), w.size());
-            ar & t;
-        }
+        void serialize(Archive                            &ar,
+                       [[maybe_unused]] const unsigned int version);
 
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         /*!

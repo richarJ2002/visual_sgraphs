@@ -19,6 +19,7 @@
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>
+#include <mutex>
 
 namespace vs_graphs
 {
@@ -30,7 +31,7 @@ namespace semantic
 RoomStatus
     Room::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     centroid = transform_oldWorldToNewWorld_in.map(centroid);
 

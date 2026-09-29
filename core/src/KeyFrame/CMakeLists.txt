@@ -69,6 +69,7 @@ set(VS_GRAPHS_KEYFRAME_SOURCES
   core/src/KeyFrame/methods/replaceMapPassage.cc
   core/src/KeyFrame/methods/replaceMapPlane.cc
   core/src/KeyFrame/methods/replaceMapPointMatch.cc
+  core/src/KeyFrame/methods/serialize.cc
   core/src/KeyFrame/methods/setBadFlag.cc
   core/src/KeyFrame/methods/setCurrentClsCloudPtrs.cc
   core/src/KeyFrame/methods/setErase.cc

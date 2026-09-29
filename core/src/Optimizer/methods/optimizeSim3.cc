@@ -26,6 +26,7 @@
 #include "Optimizer.h"
 
 #include "OptimizableTypes.h"
+#include "System.h"
 
 namespace vs_graphs
 {

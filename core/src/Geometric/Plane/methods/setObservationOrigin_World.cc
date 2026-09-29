@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -35,7 +36,7 @@ namespace geometric
 PlaneStatus
     Plane::setObservationOrigin_World(const Eigen::Vector3d &origin_World_m_in)
 {
-    unique_lock<mutex> lock(positionMutex);
+    std::unique_lock<std::mutex> lock(positionMutex);
     observationOrigin_World_m = origin_World_m_in;
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;

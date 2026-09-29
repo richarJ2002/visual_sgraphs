@@ -23,6 +23,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "SemanticsManager.h"
 #include "System.h"
 
 namespace vs_graphs

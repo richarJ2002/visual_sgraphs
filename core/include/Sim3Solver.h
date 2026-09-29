@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "KeyFrame.h"
+#include "MapPoint.h"
 
 namespace vs_graphs
 {

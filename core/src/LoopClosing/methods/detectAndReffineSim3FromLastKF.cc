@@ -26,6 +26,8 @@
 #include "LoopClosing.h"
 
 #include "Optimizer.h"
+#include "System.h"
+#include "Tracking.h"
 
 namespace vs_graphs
 {

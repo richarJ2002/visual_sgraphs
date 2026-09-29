@@ -27,14 +27,18 @@
 #define LOCALMAPPING_H
 
 #include "Atlas.h"
-#include "KeyFrame.h"
-#include "KeyFrameDatabase.h"
-#include "LoopClosing.h"
-#include "Tracking.h"
 #include "Types/objects/SystemParams.h"
 #include "Utils/Settings/objects/Settings.h"
 
 #include <mutex>
+
+namespace vs_graphs
+{
+namespace core
+{
+class KeyFrame;
+} // namespace core
+} // namespace vs_graphs
 
 namespace vs_graphs
 {

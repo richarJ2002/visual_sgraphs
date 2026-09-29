@@ -88,6 +88,7 @@ set(VS_GRAPHS_ATLAS_SOURCES
   core/src/Atlas/methods/reserveFloorIdentity.cc
   core/src/Atlas/methods/reservePassageIdentity.cc
   core/src/Atlas/methods/reserveRoomIdentity.cc
+  core/src/Atlas/methods/serialize.cc
   core/src/Atlas/methods/setCurrentSemanticRoomIdentity.cc
   core/src/Atlas/methods/setImuInitialized.cc
   core/src/Atlas/methods/setInertialSensor.cc

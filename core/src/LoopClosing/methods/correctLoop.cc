@@ -25,7 +25,10 @@
 
 #include "LoopClosing.h"
 
+#include "LocalMapping.h"
 #include "Optimizer.h"
+#include "System.h"
+#include "Tracking.h"
 
 #include <chrono>
 #include <mutex>

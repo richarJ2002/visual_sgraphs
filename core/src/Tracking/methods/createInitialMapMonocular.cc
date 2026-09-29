@@ -25,8 +25,10 @@
 
 #include "Tracking.h"
 
+#include "LocalMapping.h"
 #include "Optimizer.h"
 #include "ResetCause.h"
+#include "System.h"
 
 #include <iostream>
 

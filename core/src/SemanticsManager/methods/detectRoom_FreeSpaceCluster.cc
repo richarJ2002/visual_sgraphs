@@ -19,6 +19,8 @@
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"
+#include "Utils/Utils/objects/Utils.h"
+#include "Utils/Utils/objects/UtilsStatus.h"
 
 #include <algorithm>
 #include <cmath>

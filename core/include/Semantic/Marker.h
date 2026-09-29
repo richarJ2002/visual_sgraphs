@@ -20,10 +20,12 @@
 #define MARKER_H
 
 #include <cstdint>
+#include <map>
+#include <mutex>
 
-#include "KeyFrame.h"
-#include "Map.h"
 #include "Semantic/MarkerStatus.h"
+#include "Thirdparty/Sophus/sophus/se3.hpp"
+#include "Thirdparty/g2o/g2o/types/sim3.h"
 
 namespace vs_graphs
 {

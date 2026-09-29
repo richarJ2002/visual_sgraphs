@@ -5,6 +5,8 @@ set(VS_GRAPHS_IMUTYPES_PREINTEGRATED_SOURCES
   core/src/ImuTypes/Preintegrated/methods/reintegrate.cc
   core/src/ImuTypes/Preintegrated/methods/integrateNewMeasurement.cc
   core/src/ImuTypes/Preintegrated/methods/mergePrevious.cc
+  core/src/ImuTypes/Preintegrated/methods/serialize.cc
+  core/src/ImuTypes/Preintegrated/methods/serializeIntegrable.cc
   core/src/ImuTypes/Preintegrated/methods/setNewBias.cc
   core/src/ImuTypes/Preintegrated/methods/getDeltaBias/withBias.cc
   core/src/ImuTypes/Preintegrated/methods/getDeltaBias/stored.cc

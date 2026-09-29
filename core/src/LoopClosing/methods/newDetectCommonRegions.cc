@@ -23,7 +23,10 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "KeyFrameDatabase.h"
 #include "LoopClosing.h"
+#include "System.h"
+#include "Tracking.h"
 
 #include <chrono>
 #include <mutex>

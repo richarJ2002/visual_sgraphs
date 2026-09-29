@@ -27,6 +27,8 @@
 
 #include "G2oTypes.h"
 #include "Semantic/SemanticVerify.h"
+#include "System.h"
+#include "Tracking.h"
 
 #include <chrono>
 

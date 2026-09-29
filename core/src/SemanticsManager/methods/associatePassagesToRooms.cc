@@ -19,6 +19,8 @@
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"
+#include "GeoSemHelpers.h"
+#include "GeoSemHelpersStatus.h"
 
 #include <algorithm>
 #include <cmath>

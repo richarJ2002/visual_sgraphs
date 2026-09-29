@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -34,7 +35,7 @@ namespace geometric
 
 PlaneStatus Plane::setMapPoints(core::MapPoint *p_mapPoint_in)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     mapPoints.insert(p_mapPoint_in);
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;

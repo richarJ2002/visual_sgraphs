@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -35,7 +36,7 @@ namespace geometric
 PlaneStatus Plane::castWeightedVote(Plane::PlaneVariant semanticType_in,
                                     double              voteWeight_in)
 {
-    unique_lock<mutex> lock(typeMutex);
+    std::unique_lock<std::mutex> lock(typeMutex);
 
     if (semanticType_in == PlaneVariant::UNDEFINED)
         return PlaneStatus::PLANE_STATUS_SUCCESS;

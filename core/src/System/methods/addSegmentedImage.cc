@@ -23,6 +23,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "SemanticSegmentation.h"
 #include "System.h"
 
 namespace vs_graphs

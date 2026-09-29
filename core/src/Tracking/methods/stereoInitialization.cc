@@ -25,8 +25,11 @@
 
 #include "Tracking.h"
 
+#include "LocalMapping.h"
 #include "ResetCause.h"
+#include "System.h"
 
+#include <iomanip>
 #include <iostream>
 
 namespace vs_graphs

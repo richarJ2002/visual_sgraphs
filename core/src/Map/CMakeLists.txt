@@ -74,6 +74,7 @@ set(VS_GRAPHS_MAP_SOURCES
   core/src/Map/methods/promoteCandidateMapRoom.cc
   core/src/Map/methods/reserveFloorId.cc
   core/src/Map/methods/reservePlaneId.cc
+  core/src/Map/methods/serialize.cc
   core/src/Map/methods/setBad.cc
   core/src/Map/methods/setCurrentMap.cc
   core/src/Map/methods/setFinalRoom.cc

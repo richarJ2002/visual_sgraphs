@@ -19,6 +19,10 @@
 #include "SemanticSegmentation.h"
 
 #include "../private_functions.h"
+#include "GeoSemHelpers.h"
+#include "GeoSemHelpersStatus.h"
+#include "Utils/Utils/objects/Utils.h"
+#include "Utils/Utils/objects/UtilsStatus.h"
 
 #include <algorithm>
 #include <cmath>

@@ -11,6 +11,7 @@
  */
 
 #include "FrameDrawer.h"
+#include "Tracking.h"
 
 namespace vs_graphs
 {

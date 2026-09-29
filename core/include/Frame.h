@@ -49,8 +49,6 @@
 #include "Eigen/Core"
 #include "sophus/se3.hpp"
 
-#include "Semantic/Marker.h"
-
 namespace vs_graphs
 {
 namespace core

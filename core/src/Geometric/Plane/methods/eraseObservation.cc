@@ -17,6 +17,7 @@
  */
 
 #include "Geometric/Plane.h"
+#include "KeyFrame.h"
 #include <algorithm>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>

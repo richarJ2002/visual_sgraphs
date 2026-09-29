@@ -25,7 +25,9 @@
 
 #include "KeyFrame.h"
 
+#include "Frame.h"
 #include "ImuTypes.h"
+#include "Map.h"
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>

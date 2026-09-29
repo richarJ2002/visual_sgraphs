@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -32,10 +33,10 @@ namespace core
 namespace geometric
 {
 
-PlaneStatus Plane::getObservations(std::map<core::KeyFrame *, Plane::Observation> &getObservations_out)
-    const
+PlaneStatus Plane::getObservations(
+    std::map<core::KeyFrame *, Plane::Observation> &getObservations_out) const
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     getObservations_out = observations;
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }

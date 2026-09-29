@@ -16,6 +16,8 @@
  * details: https://www.gnu.org/licenses/
  */
 
+#include "Semantic/Passage.h"
+#include "Semantic/PassageStatus.h"
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

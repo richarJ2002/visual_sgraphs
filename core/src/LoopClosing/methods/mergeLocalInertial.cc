@@ -29,6 +29,11 @@
 #include "Semantic/SemanticVerify.h"
 
 #include "../private_functions.h"
+#include "LocalMapping.h"
+#include "System.h"
+#include "Tracking.h"
+#include "Utils/Utils/objects/Utils.h"
+#include "Utils/Utils/objects/UtilsStatus.h"
 
 #include <chrono>
 #include <mutex>

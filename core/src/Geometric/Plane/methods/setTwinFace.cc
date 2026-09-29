@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -34,7 +35,7 @@ namespace geometric
 
 PlaneStatus Plane::setTwinFace(Plane *p_twinFace_in)
 {
-    unique_lock<mutex> lock(positionMutex);
+    std::unique_lock<std::mutex> lock(positionMutex);
     p_twinFace = p_twinFace_in;
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;

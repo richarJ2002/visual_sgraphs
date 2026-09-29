@@ -20,12 +20,10 @@
 #define SEMANTICSMANAGER_H
 
 #include "Atlas.h"
-#include "GeoSemHelpers.h"
 #include "Semantic/RoomTracker.h"
 #include "Semantic/SemanticCandidates.h"
 #include "Semantic/SemanticDiagnostics.h"
 #include "Semantic/SemanticReportCache.h"
-#include "Utils/Utils/objects/Utils.h"
 
 #include <cstdint>
 #include <functional>

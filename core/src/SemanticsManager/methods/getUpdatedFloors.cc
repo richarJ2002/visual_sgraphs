@@ -16,7 +16,11 @@
  * details: https://www.gnu.org/licenses/
  */
 
+#include "GeoSemHelpers.h"
+#include "GeoSemHelpersStatus.h"
 #include "SemanticsManager.h"
+#include "Utils/Utils/objects/Utils.h"
+#include "Utils/Utils/objects/UtilsStatus.h"
 
 #include <algorithm>
 #include <cmath>

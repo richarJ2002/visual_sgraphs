@@ -16,6 +16,7 @@
  * details: https://www.gnu.org/licenses/
  */
 
+#include "KeyFrame.h"
 #include "Semantic/Marker.h"
 
 namespace vs_graphs

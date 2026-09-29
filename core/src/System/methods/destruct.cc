@@ -23,7 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "LocalMapping.h"
+#include "LoopClosing.h"
+#include "SemanticSegmentation.h"
+#include "SemanticsManager.h"
 #include "System.h"
+#include "Viewer.h"
 
 namespace vs_graphs
 {

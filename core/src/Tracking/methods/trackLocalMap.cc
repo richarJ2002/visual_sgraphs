@@ -25,7 +25,9 @@
 
 #include "Tracking.h"
 
+#include "LocalMapping.h"
 #include "Optimizer.h"
+#include "System.h"
 
 namespace vs_graphs
 {

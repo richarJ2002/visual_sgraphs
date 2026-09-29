@@ -23,6 +23,8 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "FrameDrawer.h"
+#include "System.h"
 #include "Tracking.h"
 
 #include <cmath>

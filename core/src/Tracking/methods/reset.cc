@@ -23,7 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "KeyFrameDatabase.h"
+#include "LocalMapping.h"
+#include "LoopClosing.h"
+#include "System.h"
 #include "Tracking.h"
+#include "Viewer.h"
 
 namespace vs_graphs
 {

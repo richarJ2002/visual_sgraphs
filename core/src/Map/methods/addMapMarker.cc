@@ -24,6 +24,8 @@
  */
 
 #include "Map.h"
+#include "Semantic/Marker.h"
+#include "Semantic/MarkerStatus.h"
 
 #include <algorithm>
 #include <iterator>

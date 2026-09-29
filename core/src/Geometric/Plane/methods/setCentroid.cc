@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -34,7 +35,7 @@ namespace geometric
 
 PlaneStatus Plane::setCentroid(const Eigen::Vector3d &centroid_in)
 {
-    unique_lock<mutex> lock(positionMutex);
+    std::unique_lock<std::mutex> lock(positionMutex);
     centroid = centroid_in;
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;

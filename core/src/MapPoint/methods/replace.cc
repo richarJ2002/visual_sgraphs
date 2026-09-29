@@ -25,6 +25,7 @@
 
 #include "MapPoint.h"
 
+#include "Map.h"
 #include "ORBmatcher.h"
 
 #include <mutex>

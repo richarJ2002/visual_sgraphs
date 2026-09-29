@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -35,7 +36,7 @@ namespace geometric
 PlaneStatus
     Plane::getObservationCount(std::size_t &getObservationCount_out) const
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     getObservationCount_out = observationCount;
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }

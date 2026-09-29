@@ -25,7 +25,12 @@
 
 #include "KeyFrame.h"
 
+#include "Geometric/Plane.h"
+#include "Geometric/PlaneStatus.h"
 #include "ImuTypes.h"
+#include "Map.h"
+#include "MapPoint.h"
+#include "Types/objects/SystemParams.h"
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>

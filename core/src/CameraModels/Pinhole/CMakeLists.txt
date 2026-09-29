@@ -10,6 +10,7 @@ set(VS_GRAPHS_CAMERAMODELS_PINHOLE_SOURCES
   core/src/CameraModels/Pinhole/methods/project/fromEigenVector3f.cc
   core/src/CameraModels/Pinhole/methods/projectMat.cc
   core/src/CameraModels/Pinhole/methods/reconstructWithTwoViews.cc
+  core/src/CameraModels/Pinhole/methods/serialize.cc
   core/src/CameraModels/Pinhole/methods/toK.cc
   core/src/CameraModels/Pinhole/methods/toK_.cc
   core/src/CameraModels/Pinhole/methods/uncertainty2.cc

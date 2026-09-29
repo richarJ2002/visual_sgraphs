@@ -23,7 +23,10 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "LocalMapping.h"
+#include "SemanticsManager.h"
 #include "System.h"
+#include "Tracking.h"
 
 #include <opencv2/imgproc.hpp>
 

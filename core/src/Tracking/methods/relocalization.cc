@@ -25,9 +25,11 @@
 
 #include "Tracking.h"
 
+#include "KeyFrameDatabase.h"
 #include "MLPnPsolver.h"
 #include "ORBmatcher.h"
 #include "Optimizer.h"
+#include "System.h"
 
 #include <iostream>
 

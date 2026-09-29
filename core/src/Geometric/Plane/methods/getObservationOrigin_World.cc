@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -32,9 +33,10 @@ namespace core
 namespace geometric
 {
 
-PlaneStatus Plane::getObservationOrigin_World(std::optional<Eigen::Vector3d> &getObservationOrigin_World_out) const
+PlaneStatus Plane::getObservationOrigin_World(
+    std::optional<Eigen::Vector3d> &getObservationOrigin_World_out) const
 {
-    unique_lock<mutex> lock(positionMutex);
+    std::unique_lock<std::mutex> lock(positionMutex);
     getObservationOrigin_World_out = observationOrigin_World_m;
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }

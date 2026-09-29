@@ -26,6 +26,7 @@
 #include "Tracking.h"
 
 #include "ORBmatcher.h"
+#include "System.h"
 
 namespace vs_graphs
 {

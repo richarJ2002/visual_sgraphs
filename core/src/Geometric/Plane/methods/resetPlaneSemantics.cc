@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -34,7 +35,7 @@ namespace geometric
 
 PlaneStatus Plane::resetPlaneSemantics(void)
 {
-    unique_lock<mutex> lock(typeMutex);
+    std::unique_lock<std::mutex> lock(typeMutex);
 
     semanticVotes.clear();
     planeType = PlaneVariant::UNDEFINED;

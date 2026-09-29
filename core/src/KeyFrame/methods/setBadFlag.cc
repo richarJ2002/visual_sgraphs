@@ -25,7 +25,14 @@
 
 #include "KeyFrame.h"
 
+#include "Geometric/Plane.h"
+#include "Geometric/PlaneStatus.h"
 #include "ImuTypes.h"
+#include "KeyFrameDatabase.h"
+#include "Map.h"
+#include "MapPoint.h"
+#include "Semantic/Marker.h"
+#include "Semantic/MarkerStatus.h"
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>

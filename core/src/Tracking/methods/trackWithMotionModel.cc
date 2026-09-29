@@ -27,6 +27,7 @@
 
 #include "ORBmatcher.h"
 #include "Optimizer.h"
+#include "System.h"
 
 namespace vs_graphs
 {

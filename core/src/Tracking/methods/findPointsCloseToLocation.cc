@@ -24,6 +24,8 @@
  */
 
 #include "Tracking.h"
+#include "Utils/Utils/objects/Utils.h"
+#include "Utils/Utils/objects/UtilsStatus.h"
 
 namespace vs_graphs
 {

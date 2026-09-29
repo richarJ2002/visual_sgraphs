@@ -24,6 +24,8 @@
  */
 
 #include "Map.h"
+#include "Semantic/Passage.h"
+#include "Semantic/PassageStatus.h"
 
 #include <algorithm>
 #include <iterator>

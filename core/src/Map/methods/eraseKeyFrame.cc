@@ -23,6 +23,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "KeyFrame.h"
 #include "Map.h"
 
 #include <algorithm>

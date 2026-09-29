@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <mutex>
 
 namespace vs_graphs
 {
@@ -30,7 +31,7 @@ namespace semantic
 
 PassageStatus Passage::setPassageType(Passage::PassageVariant newType_in)
 {
-    unique_lock<mutex> lock(typeMutex);
+    std::unique_lock<std::mutex> lock(typeMutex);
     passageType = newType_in;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

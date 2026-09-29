@@ -17,11 +17,13 @@
  */
 
 #include "Geometric/Plane.h"
+#include "KeyFrame.h"
 #include <algorithm>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 

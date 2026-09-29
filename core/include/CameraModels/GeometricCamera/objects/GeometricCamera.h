@@ -24,18 +24,12 @@
 #ifndef CAMERAMODELS_GEOMETRICCAMERA_H
 #define CAMERAMODELS_GEOMETRICCAMERA_H
 
+#include <boost/serialization/access.hpp>
 #include <vector>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/assume_abstract.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/export.hpp>
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/vector.hpp>
 
 #include <sophus/se3.hpp>
 
@@ -71,12 +65,7 @@ class GeometricCamera
      *               Archive version; currently unused.
      */
     template <class Archive>
-    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
-    {
-        ar & id;
-        ar & type;
-        ar & parameters;
-    }
+    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version);
 
   public:
     /*!

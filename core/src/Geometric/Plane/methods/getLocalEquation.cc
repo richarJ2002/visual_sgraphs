@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -32,10 +33,9 @@ namespace core
 namespace geometric
 {
 
-PlaneStatus
-    Plane::getLocalEquation(g2o::Plane3D &getLocalEquation_out) const
+PlaneStatus Plane::getLocalEquation(g2o::Plane3D &getLocalEquation_out) const
 {
-    unique_lock<mutex> lock(positionMutex);
+    std::unique_lock<std::mutex> lock(positionMutex);
     getLocalEquation_out = localEquation;
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }

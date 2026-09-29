@@ -17,6 +17,9 @@
  */
 
 #include "SemanticSegmentation.h"
+#include "Utils/Utils/objects/Utils.h"
+#include "Utils/Utils/objects/UtilsStatus.h"
+#include <pcl/point_cloud.h>
 
 namespace vs_graphs
 {

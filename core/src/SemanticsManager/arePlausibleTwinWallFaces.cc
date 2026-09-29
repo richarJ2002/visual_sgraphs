@@ -18,6 +18,8 @@
 
 #include "SemanticsManager.h"
 
+#include "Utils/Utils/objects/Utils.h"
+#include "Utils/Utils/objects/UtilsStatus.h"
 #include "private_functions.h"
 
 #include <algorithm>

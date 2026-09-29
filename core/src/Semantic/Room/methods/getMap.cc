@@ -19,6 +19,7 @@
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>
+#include <mutex>
 
 namespace vs_graphs
 {
@@ -29,7 +30,7 @@ namespace semantic
 
 RoomStatus Room::getMap(core::Map *&p_map_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_map_out = p_map;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

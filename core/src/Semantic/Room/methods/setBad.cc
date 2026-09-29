@@ -19,6 +19,7 @@
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>
+#include <mutex>
 
 namespace vs_graphs
 {
@@ -29,7 +30,7 @@ namespace semantic
 
 RoomStatus Room::setBad()
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     isBadFlag = true;
 
     return RoomStatus::ROOM_STATUS_SUCCESS;

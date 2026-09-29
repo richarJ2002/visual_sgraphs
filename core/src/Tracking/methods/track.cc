@@ -25,7 +25,10 @@
 
 #include "Tracking.h"
 
+#include "FrameDrawer.h"
+#include "LocalMapping.h"
 #include "ResetCause.h"
+#include "System.h"
 
 #include <chrono>
 #include <iostream>

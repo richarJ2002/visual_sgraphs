@@ -26,6 +26,7 @@
 #include "LocalMapping.h"
 
 #include "Optimizer.h"
+#include "Tracking.h"
 
 #include <mutex>
 

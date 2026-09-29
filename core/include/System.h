@@ -42,25 +42,45 @@
 
 #include "Atlas.h"
 #include "DatabaseParser.h"
-#include "FrameDrawer.h"
-#include "Geometric/Plane.h"
 #include "ImuTypes.h"
-#include "KeyFrameDatabase.h"
-#include "LocalMapping.h"
-#include "LoopClosing.h"
 #include "MapDrawer.h"
 #include "ORBVocabulary.h"
 #include "ResetCause.h"
-#include "Semantic/Marker.h"
-#include "Semantic/Passage.h"
-#include "Semantic/Room.h"
 #include "Semantic/SemanticReportCache/objects/SemanticReportCacheEntry.h"
-#include "SemanticSegmentation.h"
-#include "SemanticsManager.h"
-#include "Tracking.h"
 #include "Types/objects/SystemParams.h"
 #include "Utils/Settings/objects/Settings.h"
-#include "Viewer.h"
+
+namespace vs_graphs
+{
+namespace core
+{
+class KeyFrameDatabase;
+} // namespace core
+} // namespace vs_graphs
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace geometric
+{
+class Plane;
+} // namespace geometric
+} // namespace core
+} // namespace vs_graphs
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
+{
+class Marker;
+class Passage;
+class Room;
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 namespace vs_graphs
 {

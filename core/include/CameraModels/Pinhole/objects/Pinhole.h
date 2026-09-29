@@ -28,6 +28,7 @@
 #include "CameraModels/Pinhole/objects/PinholeStatus.h"
 #include "TwoViewReconstruction.h"
 #include <assert.h>
+#include <boost/serialization/access.hpp>
 
 namespace vs_graphs
 {
@@ -54,11 +55,7 @@ class Pinhole : public geometriccamera::GeometricCamera
      *               Archive version; currently unused.
      */
     template <class Archive>
-    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
-    {
-        ar &boost::serialization::base_object<geometriccamera::GeometricCamera>(
-            *this);
-    }
+    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version);
 
   public:
     /*!

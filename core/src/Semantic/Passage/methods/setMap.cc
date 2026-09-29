@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <mutex>
 
 namespace vs_graphs
 {
@@ -30,7 +31,7 @@ namespace semantic
 
 PassageStatus Passage::setMap(vs_graphs::core::Map *p_map_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_map = p_map_in;
 
     return PassageStatus::PASSAGE_STATUS_SUCCESS;

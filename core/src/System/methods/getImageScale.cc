@@ -24,6 +24,7 @@
  */
 
 #include "System.h"
+#include "Tracking.h"
 
 namespace vs_graphs
 {

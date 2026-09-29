@@ -19,12 +19,23 @@
 #ifndef FLOOR_H
 #define FLOOR_H
 
-#include "Map.h"
-#include "Room.h"
 #include "Semantic/FloorStatus.h"
+#include "Thirdparty/g2o/g2o/types/sim3.h"
 
+#include <Eigen/Core>
 #include <cstddef>
+#include <mutex>
 #include <optional>
+#include <string>
+#include <vector>
+
+namespace vs_graphs
+{
+namespace core
+{
+class Map;
+} // namespace core
+} // namespace vs_graphs
 
 namespace vs_graphs
 {

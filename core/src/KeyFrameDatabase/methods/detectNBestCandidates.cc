@@ -23,6 +23,7 @@
 #include <mutex>
 
 #include "../private_functions.h"
+#include "Map.h"
 
 using namespace std;
 

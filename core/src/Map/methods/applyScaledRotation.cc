@@ -23,7 +23,20 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "Geometric/Plane.h"
+#include "Geometric/PlaneStatus.h"
+#include "KeyFrame.h"
 #include "Map.h"
+#include "MapPoint.h"
+#include "Semantic/Floor.h"
+#include "Semantic/FloorStatus.h"
+#include "Semantic/Marker.h"
+#include "Semantic/MarkerStatus.h"
+#include "Semantic/Passage.h"
+#include "Semantic/PassageStatus.h"
+#include "Semantic/Room.h"
+#include "Semantic/RoomStatus.h"
+#include "Thirdparty/g2o/g2o/types/sim3.h"
 
 #include <algorithm>
 #include <iterator>

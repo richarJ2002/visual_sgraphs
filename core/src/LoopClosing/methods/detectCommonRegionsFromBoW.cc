@@ -28,6 +28,8 @@
 #include "ORBmatcher.h"
 #include "Optimizer.h"
 #include "Sim3Solver.h"
+#include "System.h"
+#include "Tracking.h"
 #include "Utils/Converter/objects/Converter.h"
 
 namespace vs_graphs

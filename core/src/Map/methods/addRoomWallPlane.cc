@@ -23,6 +23,8 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "Geometric/Plane.h"
+#include "Geometric/PlaneStatus.h"
 #include "Map.h"
 
 #include <algorithm>

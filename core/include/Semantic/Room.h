@@ -25,13 +25,54 @@
 #ifndef ROOM_H
 #define ROOM_H
 
-#include "Geometric/Plane.h"
-#include "Passage.h"
 #include "Semantic/RoomStatus.h"
+#include "Thirdparty/g2o/g2o/types/sim3.h"
 #include "Thirdparty/g2o/g2o/types/vertex_plane.h"
 
 #include <cstdint>
+#include <mutex>
 #include <optional>
+
+namespace vs_graphs
+{
+namespace core
+{
+class Map;
+} // namespace core
+} // namespace vs_graphs
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
+{
+class Marker;
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace geometric
+{
+class Plane;
+} // namespace geometric
+} // namespace core
+} // namespace vs_graphs
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
+{
+class Passage;
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 namespace vs_graphs
 {

@@ -30,6 +30,7 @@
 #include "Utils/Utils/objects/Utils.h"
 
 #include "../private_functions.h"
+#include "System.h"
 
 namespace vs_graphs
 {

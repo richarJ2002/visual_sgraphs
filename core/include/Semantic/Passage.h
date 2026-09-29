@@ -21,12 +21,13 @@
 
 #include <cstdint>
 #include <deque>
+#include <mutex>
 #include <optional>
 
-#include "Map.h"
 #include "Semantic/KnownSideProvenanceStatus.h"
 #include "Semantic/PassageStatus.h"
 #include "Thirdparty/g2o/g2o/types/plane3d.h"
+#include "Thirdparty/g2o/g2o/types/sim3.h"
 
 namespace vs_graphs
 {

@@ -17,6 +17,8 @@
  */
 
 #include "SemanticsManager.h"
+#include "Utils/Utils/objects/Utils.h"
+#include "Utils/Utils/objects/UtilsStatus.h"
 
 #include <cmath>
 

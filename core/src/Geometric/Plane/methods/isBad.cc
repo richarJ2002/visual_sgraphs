@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -34,7 +35,7 @@ namespace geometric
 
 PlaneStatus Plane::isBad(bool &isBad_out)
 {
-    unique_lock<mutex> lock(typeMutex);
+    std::unique_lock<std::mutex> lock(typeMutex);
     isBad_out = isFlaggedBad;
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }

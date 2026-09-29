@@ -23,7 +23,10 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "FrameDrawer.h"
 #include "ResetCause.h"
+#include "System.h"
+#include "Tracking.h"
 #include "Viewer.h"
 #include <pangolin/pangolin.h>
 

@@ -27,6 +27,7 @@
 
 #include "OptimizableTypes.h"
 #include "OptimizerEdgeLookup.h"
+#include "System.h"
 
 #include <mutex>
 
@@ -482,10 +483,11 @@ void Optimizer::loopClosureLocalBundleAdjustment(
              mapPointIndex++)
         {
             vs_graphs::core::EdgeSE3ProjectXYZ *e = edgesMonos[mapPointIndex];
-            MapPoint *p_mapPoint = mapPointEdgeMonos[mapPointIndex];
+            MapPoint *p_mapPoint     = mapPointEdgeMonos[mapPointIndex];
             KeyFrame *p_keyFrameEdge = nullptr;
-            if (edgeSourceKeyFrame(
-                    edgeKeyFrameMonos, mapPointIndex, p_keyFrameEdge) !=
+            if (edgeSourceKeyFrame(edgeKeyFrameMonos,
+                                   mapPointIndex,
+                                   p_keyFrameEdge) !=
                 OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS)
             {
                 // edgeSourceKeyFrame cannot fail; continue as before.
@@ -516,10 +518,11 @@ void Optimizer::loopClosureLocalBundleAdjustment(
              mapPointIndex++)
         {
             g2o::EdgeStereoSE3ProjectXYZ *e = edgesStereos[mapPointIndex];
-            MapPoint *p_mapPoint = mapPointEdgeStereos[mapPointIndex];
+            MapPoint *p_mapPoint     = mapPointEdgeStereos[mapPointIndex];
             KeyFrame *p_keyFrameEdge = nullptr;
-            if (edgeSourceKeyFrame(
-                    edgeKeyFrameStereos, mapPointIndex, p_keyFrameEdge) !=
+            if (edgeSourceKeyFrame(edgeKeyFrameStereos,
+                                   mapPointIndex,
+                                   p_keyFrameEdge) !=
                 OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS)
             {
                 // edgeSourceKeyFrame cannot fail; continue as before.

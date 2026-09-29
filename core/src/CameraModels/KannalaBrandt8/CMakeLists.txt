@@ -11,6 +11,7 @@ set(VS_GRAPHS_CAMERAMODELS_KANNALABRANDT8_SOURCES
   core/src/CameraModels/KannalaBrandt8/methods/project/fromEigenVector3f.cc
   core/src/CameraModels/KannalaBrandt8/methods/projectMat.cc
   core/src/CameraModels/KannalaBrandt8/methods/reconstructWithTwoViews.cc
+  core/src/CameraModels/KannalaBrandt8/methods/serialize.cc
   core/src/CameraModels/KannalaBrandt8/methods/toK.cc
   core/src/CameraModels/KannalaBrandt8/methods/toK_.cc
   core/src/CameraModels/KannalaBrandt8/methods/triangulate.cc

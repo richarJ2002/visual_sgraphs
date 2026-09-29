@@ -17,6 +17,7 @@
  */
 
 #include "Semantic/Marker.h"
+#include <mutex>
 
 namespace vs_graphs
 {
@@ -27,7 +28,7 @@ namespace semantic
 
 MarkerStatus Marker::getMap(core::Map *&p_map_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_map_out = p_map;
     return MarkerStatus::MARKER_STATUS_SUCCESS;
 }

@@ -23,6 +23,7 @@ set(VS_GRAPHS_MAPPOINT_SOURCES
   core/src/MapPoint/methods/preSave.cc
   core/src/MapPoint/methods/printObservations.cc
   core/src/MapPoint/methods/replace.cc
+  core/src/MapPoint/methods/serialize.cc
   core/src/MapPoint/methods/setBadFlag.cc
   core/src/MapPoint/methods/setNormalVector.cc
   core/src/MapPoint/methods/setWorldPos.cc

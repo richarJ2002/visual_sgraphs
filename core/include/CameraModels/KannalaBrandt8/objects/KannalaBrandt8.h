@@ -25,6 +25,7 @@
 #define CAMERAMODELS_KANNALABRANDT8_H
 
 #include <assert.h>
+#include <boost/serialization/access.hpp>
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 #include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8Status.h"
@@ -52,12 +53,7 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
      *               Archive version; currently unused.
      */
     template <class Archive>
-    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
-    {
-        ar &boost::serialization::base_object<geometriccamera::GeometricCamera>(
-            *this);
-        ar &const_cast<float &>(precision);
-    }
+    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version);
 
   public:
     /*!

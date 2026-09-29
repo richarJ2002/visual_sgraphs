@@ -27,14 +27,21 @@
 #define FRAMEDRAWER_H
 
 #include "Atlas.h"
-#include "MapPoint.h"
-#include "Tracking.h"
+#include "Frame.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
 #include <mutex>
 #include <unordered_set>
+
+namespace vs_graphs
+{
+namespace core
+{
+class MapPoint;
+} // namespace core
+} // namespace vs_graphs
 
 namespace vs_graphs
 {

@@ -26,6 +26,7 @@
 #include "Optimizer.h"
 
 #include "G2oTypes.h"
+#include "System.h"
 
 #include <mutex>
 

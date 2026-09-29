@@ -17,6 +17,8 @@
  */
 
 #include "Semantic/Passage.h"
+#include "Semantic/Room.h"
+#include "Semantic/RoomStatus.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>

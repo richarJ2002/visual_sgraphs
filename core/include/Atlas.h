@@ -42,8 +42,7 @@
 
 #include <Eigen/Core>
 #include <atomic>
-#include <boost/serialization/export.hpp>
-#include <boost/serialization/vector.hpp>
+#include <boost/serialization/access.hpp>
 #include <chrono>
 #include <cstdint>
 #include <limits>
@@ -128,26 +127,7 @@ class Atlas
     friend class boost::serialization::access;
 
     template <class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-        ar.template register_type<camera_models::pinhole::Pinhole>();
-        ar.template register_type<
-            camera_models::kannalabrandt8::KannalaBrandt8>();
-
-        // Save/load a set structure, the set structure is broken in
-        // libboost 1.58 for ubuntu 16.04, a vector is serializated ar &
-        // mspMaps;
-        ar & backupMaps;
-        ar & cameras;
-        // Need to save/load the static Id from Frame, KeyFrame, MapPoint and
-        // Map
-        ar &Map::nextId;
-        ar &Frame::nextId;
-        ar &KeyFrame::nextId;
-        ar &MapPoint::nextId;
-        ar &camera_models::geometriccamera::GeometricCamera::nextId;
-        ar & lastInitKeyFrameId;
-    }
+    void serialize(Archive &ar, const unsigned int version);
 
   public:
     enum class SnapshotCopyStatus

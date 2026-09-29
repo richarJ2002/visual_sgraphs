@@ -27,6 +27,8 @@
 
 #include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"
 #include "CameraModels/Pinhole/objects/Pinhole.h"
+#include "FrameDrawer.h"
+#include "System.h"
 #include "Utils/Converter/objects/Converter.h"
 
 #include <iostream>

@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -35,7 +36,7 @@ namespace geometric
 PlaneStatus
     Plane::getExpectedPlaneType(Plane::PlaneVariant &expectedPlaneType_out)
 {
-    unique_lock<mutex> lock(typeMutex);
+    std::unique_lock<std::mutex> lock(typeMutex);
 
     // get the maximum vote
     double       maximumVotes = 0;

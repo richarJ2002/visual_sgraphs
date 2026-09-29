@@ -24,6 +24,8 @@
  */
 
 #include "Map.h"
+#include "Semantic/Floor.h"
+#include "Semantic/FloorStatus.h"
 
 #include <algorithm>
 #include <iterator>

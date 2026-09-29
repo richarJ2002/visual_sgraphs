@@ -26,6 +26,7 @@
 #include "Optimizer.h"
 
 #include "G2oTypes.h"
+#include "System.h"
 
 namespace vs_graphs
 {

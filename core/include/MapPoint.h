@@ -26,19 +26,13 @@
 #ifndef MAPPOINT_H
 #define MAPPOINT_H
 
-#include "Frame.h"
-#include "KeyFrame.h"
-#include "Map.h"
 #include "Utils/Converter/objects/Converter.h"
 
-#include "SerializationUtils.h"
-
+#include <boost/serialization/access.hpp>
+#include <map>
 #include <mutex>
 #include <opencv2/core/core.hpp>
-
-#include <boost/serialization/array.hpp>
-#include <boost/serialization/map.hpp>
-#include <boost/serialization/serialization.hpp>
+#include <set>
 
 namespace vs_graphs
 {
@@ -54,61 +48,7 @@ class MapPoint
 
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-        ar & id;
-        ar & firstKeyFrameId;
-        ar & firstFrameId;
-        ar & observationCount;
-        // Variables used by the tracking
-        // ar & mTrackProjX;
-        // ar & mTrackProjY;
-        // ar & mTrackDepth;
-        // ar & mTrackDepthR;
-        // ar & mTrackProjXR;
-        // ar & mTrackProjYR;
-        // ar & mbTrackInView;
-        // ar & mbTrackInViewR;
-        // ar & mnTrackScaleLevel;
-        // ar & mnTrackScaleLevelR;
-        // ar & mTrackViewCos;
-        // ar & mTrackViewCosR;
-        // ar & trackReferenceFrameId;
-        // ar & lastSeenFrameId;
-
-        // Variables used by local mapping
-        // ar & baLocalKeyFrameId;
-        // ar & fuseCandidateKeyFrameId;
-
-        // Variables used by loop closing and merging
-        // ar & loopPointKeyFrameId;
-        // ar & correctedByKeyFrameId;
-        // ar & correctedReferenceKeyFrameId;
-        // serializeMatrix(ar,mPosGBA,version);
-        // ar & baGlobalKeyFrameId;
-        // ar & baLocalMergeId;
-        // serializeMatrix(ar,mPosMerge,version);
-        // serializeMatrix(ar,mNormalVectorMerge,version);
-
-        // Protected variables
-        ar &boost::serialization::make_array(worldPos.data(), worldPos.size());
-        ar &boost::serialization::make_array(normalVector.data(),
-                                             normalVector.size());
-        // ar & BOOST_SERIALIZATION_NVP(mBackupObservationsId);
-        // ar & mObservations;
-        ar & backupObservationIds1;
-        ar & backupObservationIds2;
-        serializeMatrix(ar, descriptor, version);
-        ar & backupRefKeyFrameId;
-        // ar & mnVisible;
-        // ar & mnFound;
-
-        ar & isFlaggedBad;
-        ar & backupReplacedId;
-
-        ar & minDistance;
-        ar & maxDistance;
-    }
+    void serialize(Archive &ar, const unsigned int version);
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -174,9 +114,10 @@ class MapPoint
 
     void printObservations();
 
-    void preSave(set<KeyFrame *> &keyFrames_in, set<MapPoint *> &mapPoints_in);
-    void postLoad(map<long unsigned int, KeyFrame *> &keyFrameId_in,
-                  map<long unsigned int, MapPoint *> &mapPointId_in);
+    void preSave(std::set<KeyFrame *> &keyFrames_in,
+                 std::set<MapPoint *> &mapPoints_in);
+    void postLoad(std::map<long unsigned int, KeyFrame *> &keyFrameId_in,
+                  std::map<long unsigned int, MapPoint *> &mapPointId_in);
 
   public:
     long unsigned int        id;

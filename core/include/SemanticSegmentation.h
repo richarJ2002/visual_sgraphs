@@ -20,8 +20,6 @@
 #define SEMANTICSEG_H
 
 #include "Atlas.h"
-#include "GeoSemHelpers.h"
-#include "Utils/Utils/objects/Utils.h"
 
 #include <atomic>
 #include <deque>

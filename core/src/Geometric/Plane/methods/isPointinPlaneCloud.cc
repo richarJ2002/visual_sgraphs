@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <pcl/octree/octree_search.h>
 #include <vector>
 
@@ -51,8 +52,8 @@ PlaneStatus Plane::isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in,
         return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
-    unique_lock<mutex> lock(featuresMutex);
-    pcl::PointXYZRGBA  queryPointPcl;
+    std::unique_lock<std::mutex> lock(featuresMutex);
+    pcl::PointXYZRGBA            queryPointPcl;
     queryPointPcl.x = queryPoint_in(0);
     queryPointPcl.y = queryPoint_in(1);
     queryPointPcl.z = queryPoint_in(2);

@@ -26,26 +26,18 @@
 #ifndef KEYFRAME_H
 #define KEYFRAME_H
 
-#include "Frame.h"
-#include "Geometric/Plane.h"
 #include "ImuTypes.h"
-#include "KeyFrameDatabase.h"
-#include "MapPoint.h"
 #include "ORBVocabulary.h"
 #include "ORBextractor.h"
-#include "Semantic/Marker.h"
-#include "Semantic/Passage.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
-#include "SerializationUtils.h"
 
+#include <boost/serialization/access.hpp>
 #include <mutex>
-
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/map.hpp>
-#include <boost/serialization/vector.hpp>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
 namespace vs_graphs
 {
@@ -79,145 +71,7 @@ class KeyFrame
     friend class boost::serialization::access;
 
     template <class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-        ar & id;
-        ar &const_cast<long unsigned int &>(frameId);
-        ar &const_cast<double &>(timeStamp);
-        // Grid
-        ar &const_cast<int &>(gridCols);
-        ar &const_cast<int &>(gridRows);
-        ar &const_cast<float &>(gridElementWidthInverse);
-        ar &const_cast<float &>(gridElementHeightInverse);
-
-        // Variables of tracking
-        // ar & trackReferenceFrameId;
-        // ar & fuseTargetKeyFrameId;
-        // Variables of local mapping
-        // ar & baLocalKeyFrameId;
-        // ar & baFixedKeyFrameId;
-        // ar & optimizationCount;
-        // Variables used by KeyFrameDatabase
-        // ar & mnLoopQuery;
-        // ar & mnLoopWords;
-        // ar & mLoopScore;
-        // ar & mnRelocQuery;
-        // ar & mnRelocWords;
-        // ar & mRelocScore;
-        // ar & mnMergeQuery;
-        // ar & mnMergeWords;
-        // ar & mMergeScore;
-        // ar & mnPlaceRecognitionQuery;
-        // ar & mnPlaceRecognitionWords;
-        // ar & mPlaceRecognitionScore;
-        // ar & mbCurrentPlaceRecognition;
-        // Variables of loop closing
-        // serializeMatrix(ar,mTcwGBA,version);
-        // serializeMatrix(ar,mTcwBefGBA,version);
-        // serializeMatrix(ar,mVwbGBA,version);
-        // serializeMatrix(ar,mVwbBefGBA,version);
-        // ar & mBiasGBA;
-        // ar & baGlobalKeyFrameId;
-        // Variables of Merging
-        // serializeMatrix(ar,mTcwMerge,version);
-        // serializeMatrix(ar,mTcwBefMerge,version);
-        // serializeMatrix(ar,mTwcBefMerge,version);
-        // serializeMatrix(ar,mVwbMerge,version);
-        // serializeMatrix(ar,mVwbBefMerge,version);
-        // ar & mBiasMerge;
-        // ar & mergeCorrectedKeyFrameId;
-        // ar & mergeKeyFrameId;
-        // ar & mfScaleMerge;
-        // ar & baLocalMergeId;
-
-        // Scale
-        ar & correctedScale;
-        // Calibration parameters
-        ar &const_cast<float &>(fx);
-        ar &const_cast<float &>(fy);
-        ar &const_cast<float &>(invfx);
-        ar &const_cast<float &>(invfy);
-        ar &const_cast<float &>(cx);
-        ar &const_cast<float &>(cy);
-        ar &const_cast<float &>(mbf);
-        ar &const_cast<float &>(mb);
-        ar &const_cast<float &>(depthThreshold);
-        serializeMatrix(ar, distortionCoefficients, version);
-        // Number of Keypoints
-        ar &const_cast<int &>(keyPointCount);
-        // KeyPoints
-        serializeVectorKeyPoints<Archive>(ar, keyPoints, version);
-        serializeVectorKeyPoints<Archive>(ar, keyPointsUndistorted, version);
-        ar &const_cast<vector<float> &>(uRight);
-        ar &const_cast<vector<float> &>(depths);
-        serializeMatrix<Archive>(ar, descriptors, version);
-        // BOW
-        ar & bowVector;
-        ar & featureVector;
-        // Pose relative to parent
-        serializeSophusSE3<Archive>(ar, tcp, version);
-        // Scale
-        ar &const_cast<int &>(scaleLevelCount);
-        ar &const_cast<float &>(scaleFactor);
-        ar &const_cast<float &>(logScaleFactor);
-        ar &const_cast<vector<float> &>(scaleFactors);
-        ar &const_cast<vector<float> &>(levelSigmaSquared);
-        ar &const_cast<vector<float> &>(invLevelSigmaSquared);
-        // Image bounds and calibration
-        ar &const_cast<int &>(gridMinX);
-        ar &const_cast<int &>(gridMinY);
-        ar &const_cast<int &>(gridMaxX);
-        ar &const_cast<int &>(gridMaxY);
-        ar &boost::serialization::make_array(calibrationMatrixEigen.data(),
-                                             calibrationMatrixEigen.size());
-        // Pose
-        serializeSophusSE3<Archive>(ar, poseTcw, version);
-        // MapPointsId associated to keypoints
-        ar & backupMapPointsId;
-        // Grid
-        ar & grid;
-        // Connected KeyFrameWeight
-        ar & backupConnectedKeyFrameIdWeights;
-        // Spanning Tree and Loop Edges
-        ar & isFirstConnection;
-        ar & backupParentId;
-        ar & backupChildrensId;
-        ar & backupLoopEdgesId;
-        ar & backupMergeEdgesId;
-        // Bad flags
-        ar & isEraseProtected;
-        ar & isPendingErase;
-        ar & isFlaggedBad;
-
-        ar & halfBaseline;
-
-        ar & originMapId;
-
-        // Camera variables
-        ar & backupCameraId;
-        ar & backupCamera2Id;
-
-        // Fisheye variables
-        ar & leftToRightMatches;
-        ar & rightToLeftMatches;
-        ar &const_cast<int &>(leftKeyPointCount);
-        ar &const_cast<int &>(rightKeyPointCount);
-        serializeSophusSE3<Archive>(ar, poseTlr, version);
-        serializeVectorKeyPoints<Archive>(ar, keyPointsRight, version);
-        ar & gridRight;
-
-        // Inertial variables
-        ar & imuBias;
-        ar & backupImuPreintegrated;
-        ar & imuCalibration;
-        ar & backupPrevKFId;
-        ar & backupNextKFId;
-        ar & isImu;
-        ar &boost::serialization::make_array(velocityVw.data(),
-                                             velocityVw.size());
-        ar &boost::serialization::make_array(owb.data(), owb.size());
-        ar & isVelocityAvailable;
-    }
+    void serialize(Archive &ar, const unsigned int version);
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

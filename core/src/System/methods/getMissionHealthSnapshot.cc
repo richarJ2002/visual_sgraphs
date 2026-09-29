@@ -23,7 +23,11 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "LoopClosing.h"
+#include "SemanticSegmentation.h"
+#include "SemanticsManager.h"
 #include "System.h"
+#include "Tracking.h"
 
 namespace vs_graphs
 {

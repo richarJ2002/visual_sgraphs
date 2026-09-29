@@ -32,22 +32,11 @@
 #include "Atlas.h"
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 #include "Frame.h"
-#include "FrameDrawer.h"
-#include "Geometric/Plane.h"
 #include "ImuTypes.h"
-#include "KeyFrameDatabase.h"
-#include "LocalMapping.h"
-#include "LoopClosing.h"
 #include "MapDrawer.h"
 #include "ORBVocabulary.h"
 #include "ORBextractor.h"
-#include "Semantic/Marker.h"
-#include "Semantic/Passage.h"
-#include "Semantic/Room.h"
-#include "System.h"
 #include "Utils/Settings/objects/Settings.h"
-#include "Utils/Utils/objects/Utils.h"
-#include "Viewer.h"
 
 #include <pcl/filters/extract_indices.h>
 #include <pcl/point_cloud.h>
@@ -56,6 +45,26 @@
 
 #include <mutex>
 #include <unordered_set>
+
+namespace vs_graphs
+{
+namespace core
+{
+class KeyFrameDatabase;
+} // namespace core
+} // namespace vs_graphs
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
+{
+class Marker;
+class Room;
+} // namespace semantic
+} // namespace core
+} // namespace vs_graphs
 
 namespace vs_graphs
 {

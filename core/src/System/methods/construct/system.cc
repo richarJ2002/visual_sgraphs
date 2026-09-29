@@ -24,6 +24,14 @@
  */
 
 #include "System.h"
+#include "FrameDrawer.h"
+#include "KeyFrameDatabase.h"
+#include "LocalMapping.h"
+#include "LoopClosing.h"
+#include "SemanticSegmentation.h"
+#include "SemanticsManager.h"
+#include "Tracking.h"
+#include "Viewer.h"
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>

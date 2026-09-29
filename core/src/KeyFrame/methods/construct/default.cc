@@ -25,6 +25,7 @@
 
 #include "KeyFrame.h"
 
+#include "Frame.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"
 

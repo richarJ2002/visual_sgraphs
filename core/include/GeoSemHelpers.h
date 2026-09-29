@@ -21,7 +21,6 @@
 
 #include "GeoSemHelpersStatus.h"
 #include "Atlas.h"
-#include "Utils/Utils/objects/Utils.h"
 
 #include <Eigen/Core>
 #include <iomanip>

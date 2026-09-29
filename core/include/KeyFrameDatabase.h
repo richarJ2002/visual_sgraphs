@@ -26,19 +26,14 @@
 #ifndef KEYFRAMEDATABASE_H
 #define KEYFRAMEDATABASE_H
 
+#include <boost/serialization/access.hpp>
 #include <list>
 #include <set>
 #include <vector>
 
-#include "Frame.h"
-#include "KeyFrame.h"
-#include "Map.h"
 #include "ORBVocabulary.h"
 
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/list.hpp>
-#include <boost/serialization/vector.hpp>
-
+#include <Eigen/Core>
 #include <mutex>
 
 namespace vs_graphs
@@ -55,10 +50,7 @@ class KeyFrameDatabase
     friend class boost::serialization::access;
 
     template <class Archive>
-    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
-    {
-        ar & backupInvertedFileIds;
-    }
+    void serialize(Archive &ar, [[maybe_unused]] const unsigned int version);
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

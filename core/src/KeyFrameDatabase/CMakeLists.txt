@@ -11,6 +11,7 @@ set(VS_GRAPHS_KEYFRAMEDATABASE_SOURCES
   core/src/KeyFrameDatabase/methods/detectBestCandidates.cc
   core/src/KeyFrameDatabase/methods/detectNBestCandidates.cc
   core/src/KeyFrameDatabase/methods/detectRelocalizationCandidates.cc
+  core/src/KeyFrameDatabase/methods/serialize.cc
   core/src/KeyFrameDatabase/methods/setORBVocabulary.cc
   core/src/KeyFrameDatabase/compFirst.cc
 )

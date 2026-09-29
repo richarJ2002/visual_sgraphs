@@ -16,6 +16,8 @@
  * details: https://www.gnu.org/licenses/
  */
 
+#include "Geometric/Plane.h"
+#include "Geometric/PlaneStatus.h"
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

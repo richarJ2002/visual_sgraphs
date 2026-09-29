@@ -5,6 +5,7 @@
  */
 
 #include "FrameDrawer.h"
+#include "Tracking.h"
 
 #include <sstream>
 

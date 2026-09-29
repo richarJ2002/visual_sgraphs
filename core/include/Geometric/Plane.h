@@ -21,10 +21,8 @@
 
 #include "Geometric/PlaneGeometryMetadataSnapshot.h"
 #include "Geometric/PlaneStatus.h"
-#include "Map.h"
-#include "MapPoint.h"
-#include "Semantic/Marker.h"
 #include "Thirdparty/g2o/g2o/types/plane3d.h"
+#include "Thirdparty/g2o/g2o/types/sim3.h"
 #include "Types/objects/SystemParams.h"
 
 #include <boost/make_shared.hpp>
@@ -32,11 +30,20 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <mutex>
 #include <optional>
 #include <pcl/common/centroid.h>
 #include <pcl/common/io.h>
 #include <pcl/octree/octree_search.h>
 #include <set>
+
+namespace vs_graphs
+{
+namespace core
+{
+class KeyFrame;
+} // namespace core
+} // namespace vs_graphs
 
 namespace vs_graphs
 {
@@ -492,8 +499,7 @@ class Plane
     /*!
      * @brief       Returns the accepted semantic classification.
      */
-    [[nodiscard]] PlaneStatus
-        getPlaneType(Plane::PlaneVariant &planeType_out);
+    [[nodiscard]] PlaneStatus getPlaneType(Plane::PlaneVariant &planeType_out);
 
     /*!
      * @brief       Returns the leading classification from weighted votes.
@@ -547,8 +553,8 @@ class Plane
      * @brief       Returns the world-frame camera position this face was first
      *              observed from, when one was stamped.
      */
-    [[nodiscard]] PlaneStatus getObservationOrigin_World(std::optional<Eigen::Vector3d> &getObservationOrigin_World_out)
-        const;
+    [[nodiscard]] PlaneStatus getObservationOrigin_World(
+        std::optional<Eigen::Vector3d> &getObservationOrigin_World_out) const;
 
     /*!
      * @brief       Returns the linked opposite-facing Plane hypothesis for
@@ -615,7 +621,8 @@ class Plane
      * frame.
      * @return PLANE_STATUS_SUCCESS.
      */
-    [[nodiscard]] PlaneStatus getObservations(std::map<core::KeyFrame *, Plane::Observation> &getObservations_out)
+    [[nodiscard]] PlaneStatus getObservations(
+        std::map<core::KeyFrame *, Plane::Observation> &getObservations_out)
         const;
 
     /*!
@@ -635,10 +642,12 @@ class Plane
      *              The copy is produced under the plane position and feature
      *              locks so callers cannot race with concurrent writers.
      */
-    [[nodiscard]] PlaneStatus getMapClouds(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &mapClouds_out);
+    [[nodiscard]] PlaneStatus
+        getMapClouds(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &mapClouds_out);
 
     /*! Returns a deep immutable copy of the current finite geometry. */
-    [[nodiscard]] PlaneStatus getGeometrySnapshot(Plane::GeometrySnapshot &getGeometrySnapshot_out) const;
+    [[nodiscard]] PlaneStatus getGeometrySnapshot(
+        Plane::GeometrySnapshot &getGeometrySnapshot_out) const;
 
     /*!
      * @brief       Returns the cheap scalar plane-geometry metadata
@@ -654,8 +663,8 @@ class Plane
      * @note        Thread-safe; self-locking, so callers must not already
      *              hold positionMutex or featuresMutex on this thread.
      */
-    [[nodiscard]] PlaneStatus getGeometryMetadataSnapshot(PlaneGeometryMetadataSnapshot &getGeometryMetadataSnapshot_out)
-        const;
+    [[nodiscard]] PlaneStatus getGeometryMetadataSnapshot(
+        PlaneGeometryMetadataSnapshot &getGeometryMetadataSnapshot_out) const;
 
     /*! Applies the association path's 75% observation-side consensus rule. */
     [[nodiscard]] PlaneStatus getObservationSideSnapshot(
@@ -677,7 +686,8 @@ class Plane
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_replacementCloud_in);
 
     /*! Claims and returns an immutable snapshot of a new cloud generation. */
-    [[nodiscard]] PlaneStatus beginMapCloudRefit(std::optional<Plane::GeometrySnapshot> &geometrySnapshot_out);
+    [[nodiscard]] PlaneStatus beginMapCloudRefit(
+        std::optional<Plane::GeometrySnapshot> &geometrySnapshot_out);
 
     /*!
      * @brief Publishes geometry from a successful whole-cloud fit.

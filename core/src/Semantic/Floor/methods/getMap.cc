@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <mutex>
 
 namespace vs_graphs
 {
@@ -30,7 +31,7 @@ namespace semantic
 
 FloorStatus Floor::getMap(vs_graphs::core::Map *&p_map_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_map_out = p_map;
     return FloorStatus::FLOOR_STATUS_SUCCESS;
 }

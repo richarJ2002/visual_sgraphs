@@ -26,18 +26,31 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include "KeyFrame.h"
-#include "MapPoint.h"
-#include "Semantic/Floor.h"
-#include "Semantic/Marker.h"
-#include "Semantic/Room.h"
-
+#include "ORBVocabulary.h"
+#include "Thirdparty/Sophus/sophus/se3.hpp"
+#include <Eigen/Core>
 #include <atomic>
-#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/access.hpp>
+#include <map>
 #include <mutex>
 #include <set>
 #include <unordered_map>
 #include <utility>
+#include <vector>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace camera_models
+{
+namespace geometriccamera
+{
+class GeometricCamera;
+} // namespace geometriccamera
+} // namespace camera_models
+} // namespace core
+} // namespace vs_graphs
 
 namespace vs_graphs
 {
@@ -74,29 +87,7 @@ class Map
     friend class boost::serialization::access;
 
     template <class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-        ar & id;
-        ar & initKeyFrameId;
-        ar & maxKeyFrameId;
-        ar & bigChangeIndex;
-
-        // Save/load a set structure, the set structure is broken in
-        // libboost 1.58 for ubuntu 16.04, a vector is serializated ar &
-        // mspKeyFrames; ar & mspMapPoints;
-        ar & backupKeyFrames;
-        ar & backupMapPoints;
-
-        ar & backupKeyFrameOriginIds;
-
-        ar & backupInitialKeyFrameId;
-        ar & backupLowerKeyFrameId;
-
-        ar & hasImuInitialization;
-        ar & isInertialMode;
-        ar & hasInertialBA1;
-        ar & hasInertialBA2;
-    }
+    void serialize(Archive &ar, const unsigned int version);
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -275,16 +266,16 @@ class Map
 
     void preSave(std::set<camera_models::geometriccamera::GeometricCamera *>
                      &cams_inout);
-    void postLoad(
-        KeyFrameDatabase *p_keyFrameDatabase_inout,
-        ORBVocabulary    *p_orbVocabulary_in,
-        map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
-            &cams_inout);
+    void postLoad(KeyFrameDatabase *p_keyFrameDatabase_inout,
+                  ORBVocabulary    *p_orbVocabulary_in,
+                  std::map<unsigned int,
+                           camera_models::geometriccamera::GeometricCamera *>
+                      &cams_inout);
 
-    KeyFrame                 *p_firstRegionKeyFrame;
-    std::mutex                mapUpdateMutex;
-    vector<KeyFrame *>        keyFrameOrigins;
-    vector<unsigned long int> backupKeyFrameOriginIds;
+    KeyFrame                      *p_firstRegionKeyFrame;
+    std::mutex                     mapUpdateMutex;
+    std::vector<KeyFrame *>        keyFrameOrigins;
+    std::vector<unsigned long int> backupKeyFrameOriginIds;
 
     // This avoid that two points are created simultaneously in separate threads
     // (id conflict)
