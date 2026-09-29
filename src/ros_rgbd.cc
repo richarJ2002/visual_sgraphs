@@ -249,14 +249,26 @@ int main(int argc, char **argv)
      * VSGRAPH SLAM SYSTEM INIT
      * ---------------------------------------------------------------------- */
 
-    p_slamSystem = new vs_graphs::core::System(vocFile,
-                                               settingsFile,
-                                               sysParamsFile,
-                                               sensorType,
-                                               enablePangolin,
-                                               /*initFr*/ 0,
-                                               /*strSequence*/ std::string(),
-                                               verboseLevel);
+    p_slamSystem = new vs_graphs::core::System();
+    const vs_graphs::core::SystemStatus systemStatus =
+        p_slamSystem->initialize(vocFile,
+                                 settingsFile,
+                                 sysParamsFile,
+                                 sensorType,
+                                 enablePangolin,
+                                 /*initFr*/ 0,
+                                 /*strSequence*/ std::string(),
+                                 verboseLevel);
+    if (systemStatus != vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        /* A settings, vocabulary or map file could not be read: stop with
+         * the same exit code the system used before (exit(-1)). */
+        RCLCPP_FATAL(node->get_logger(),
+                     "vS-Graphs could not start: a settings, vocabulary or "
+                     "map file could not be read (status %d).",
+                     static_cast<int>(systemStatus));
+        return -1;
+    }
 
     /* ---------------------------------------------------------------------- *
      * SETUP CALLBACKS

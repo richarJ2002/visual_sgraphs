@@ -38,6 +38,16 @@ namespace core
 
 System::~System()
 {
+    /* A system whose initialize() did not succeed started no threads: free
+     * only what initialize() had loaded before it stopped. */
+    if (!isInitialized)
+    {
+        delete p_keyFrameDatabase;
+        delete p_vocabulary;
+        delete p_settings;
+        return;
+    }
+
     {
         unique_lock<mutex> lock(resetMutex);
         isShutdownRequested = true;

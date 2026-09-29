@@ -10,6 +10,7 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   core/src/System/methods/destruct.cc
   core/src/System/methods/getAllDoors.cc
   core/src/System/methods/haveWorkersFinished.cc
+  core/src/System/methods/initialize.cc
   core/src/System/methods/getAllFloors.cc
   core/src/System/methods/getAllKeyframePoses.cc
   core/src/System/methods/getAllKeyFrames.cc
