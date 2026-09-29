@@ -22,6 +22,7 @@
 
 #include "Thirdparty/DBoW2/DUtils/Random.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 using namespace std;
@@ -30,15 +31,16 @@ namespace vs_graphs
 namespace core
 {
 
-bool TwoViewReconstruction::reconstructF(
-    vector<bool>        &matchesInliersFlags_inout,
-    Eigen::Matrix3f     &F21_in,
-    Eigen::Matrix3f     &K_in,
-    Sophus::SE3f        &T21_out,
-    vector<cv::Point3f> &vP3D_out,
-    vector<bool>        &triangulatedFlags_out,
-    float                minimumParallax_in,
-    int                  minimumTriangulated_in)
+TwoViewReconstructionStatus
+    TwoViewReconstruction::reconstructF(vector<bool> &matchesInliersFlags_inout,
+                                        Eigen::Matrix3f     &F21_in,
+                                        Eigen::Matrix3f     &K_in,
+                                        Sophus::SE3f        &T21_out,
+                                        vector<cv::Point3f> &vP3D_out,
+                                        vector<bool> &triangulatedFlags_out,
+                                        float         minimumParallax_in,
+                                        int           minimumTriangulated_in,
+                                        bool         &isReconstructed_out)
 {
     int N = 0;
     for (size_t matchIndex = 0, iend = matchesInliersFlags_inout.size();
@@ -54,7 +56,14 @@ bool TwoViewReconstruction::reconstructF(
     Eigen::Vector3f t;
 
     // Recover the 4 motion hypotheses
-    decomposeE(E21, R1, R2, t);
+    if (decomposeE(E21, R1, R2, t) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: decomposeE returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     Eigen::Vector3f t1 = t;
     Eigen::Vector3f t2 = -t;
@@ -65,50 +74,86 @@ bool TwoViewReconstruction::reconstructF(
         triangulated4Flags;
     float parallax1, parallax2, parallax3, parallax4;
 
-    int good1Count = checkRT(R1,
-                             t1,
-                             keys1,
-                             keys2,
-                             matches12,
-                             matchesInliersFlags_inout,
-                             K_in,
-                             vP3D1,
-                             4.0 * sigmaSquared,
-                             triangulated1Flags,
-                             parallax1);
-    int good2Count = checkRT(R2,
-                             t1,
-                             keys1,
-                             keys2,
-                             matches12,
-                             matchesInliersFlags_inout,
-                             K_in,
-                             vP3D2,
-                             4.0 * sigmaSquared,
-                             triangulated2Flags,
-                             parallax2);
-    int good3Count = checkRT(R1,
-                             t2,
-                             keys1,
-                             keys2,
-                             matches12,
-                             matchesInliersFlags_inout,
-                             K_in,
-                             vP3D3,
-                             4.0 * sigmaSquared,
-                             triangulated3Flags,
-                             parallax3);
-    int good4Count = checkRT(R2,
-                             t2,
-                             keys1,
-                             keys2,
-                             matches12,
-                             matchesInliersFlags_inout,
-                             K_in,
-                             vP3D4,
-                             4.0 * sigmaSquared,
-                             triangulated4Flags,
-                             parallax4);
+    int good1Count{};
+    if (checkRT(R1,
+                t1,
+                keys1,
+                keys2,
+                matches12,
+                matchesInliersFlags_inout,
+                K_in,
+                vP3D1,
+                4.0 * sigmaSquared,
+                triangulated1Flags,
+                parallax1,
+                good1Count) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: checkRT returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    int good2Count{};
+    if (checkRT(R2,
+                t1,
+                keys1,
+                keys2,
+                matches12,
+                matchesInliersFlags_inout,
+                K_in,
+                vP3D2,
+                4.0 * sigmaSquared,
+                triangulated2Flags,
+                parallax2,
+                good2Count) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: checkRT returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    int good3Count{};
+    if (checkRT(R1,
+                t2,
+                keys1,
+                keys2,
+                matches12,
+                matchesInliersFlags_inout,
+                K_in,
+                vP3D3,
+                4.0 * sigmaSquared,
+                triangulated3Flags,
+                parallax3,
+                good3Count) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: checkRT returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    int good4Count{};
+    if (checkRT(R2,
+                t2,
+                keys1,
+                keys2,
+                matches12,
+                matchesInliersFlags_inout,
+                K_in,
+                vP3D4,
+                4.0 * sigmaSquared,
+                triangulated4Flags,
+                parallax4,
+                good4Count) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: checkRT returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     int maximumGood =
         max(good1Count, max(good2Count, max(good3Count, good4Count)));
@@ -130,7 +175,9 @@ bool TwoViewReconstruction::reconstructF(
     // initialization
     if (maximumGood < minimumGoodCount || nsimilar > 1)
     {
-        return false;
+        isReconstructed_out = false;
+        return TwoViewReconstructionStatus::
+            TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
     }
 
     // If best reconstruction has enough parallax initialize
@@ -141,8 +188,10 @@ bool TwoViewReconstruction::reconstructF(
             vP3D_out              = vP3D1;
             triangulatedFlags_out = triangulated1Flags;
 
-            T21_out = Sophus::SE3f(R1, t1);
-            return true;
+            T21_out             = Sophus::SE3f(R1, t1);
+            isReconstructed_out = true;
+            return TwoViewReconstructionStatus::
+                TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
         }
     }
     else if (maximumGood == good2Count)
@@ -152,8 +201,10 @@ bool TwoViewReconstruction::reconstructF(
             vP3D_out              = vP3D2;
             triangulatedFlags_out = triangulated2Flags;
 
-            T21_out = Sophus::SE3f(R2, t1);
-            return true;
+            T21_out             = Sophus::SE3f(R2, t1);
+            isReconstructed_out = true;
+            return TwoViewReconstructionStatus::
+                TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
         }
     }
     else if (maximumGood == good3Count)
@@ -163,8 +214,10 @@ bool TwoViewReconstruction::reconstructF(
             vP3D_out              = vP3D3;
             triangulatedFlags_out = triangulated3Flags;
 
-            T21_out = Sophus::SE3f(R1, t2);
-            return true;
+            T21_out             = Sophus::SE3f(R1, t2);
+            isReconstructed_out = true;
+            return TwoViewReconstructionStatus::
+                TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
         }
     }
     else if (maximumGood == good4Count)
@@ -174,12 +227,15 @@ bool TwoViewReconstruction::reconstructF(
             vP3D_out              = vP3D4;
             triangulatedFlags_out = triangulated4Flags;
 
-            T21_out = Sophus::SE3f(R2, t2);
-            return true;
+            T21_out             = Sophus::SE3f(R2, t2);
+            isReconstructed_out = true;
+            return TwoViewReconstructionStatus::
+                TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
         }
     }
 
-    return false;
+    isReconstructed_out = false;
+    return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
 } // namespace core

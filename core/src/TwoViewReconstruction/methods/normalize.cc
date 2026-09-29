@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-void TwoViewReconstruction::normalize(
+TwoViewReconstructionStatus TwoViewReconstruction::normalize(
     const vector<cv::KeyPoint> &keys_in,
     vector<cv::Point2f>        &normalizedPoints_inout,
     Eigen::Matrix3f            &T_out)
@@ -84,6 +84,8 @@ void TwoViewReconstruction::normalize(
     T_out(0, 2) = -meanX * sX;
     T_out(1, 2) = -meanY * sY;
     T_out(2, 2) = 1.f;
+
+    return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
 } // namespace core

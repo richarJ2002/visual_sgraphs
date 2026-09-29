@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::Atlas *System::getAtlas()
+SystemStatus System::getAtlas(vs_graphs::core::Atlas *&p_atlas_out)
 {
-    return p_atlas;
+    p_atlas_out = p_atlas;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

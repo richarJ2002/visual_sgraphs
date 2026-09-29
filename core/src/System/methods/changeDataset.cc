@@ -32,10 +32,19 @@ namespace vs_graphs
 namespace core
 {
 
-void System::changeDataset()
+SystemStatus System::changeDataset()
 {
     unsigned long keyFrameCount{};
-    if (p_atlas->getCurrentMap()->getKeyFrameCount(keyFrameCount) !=
+    Map          *p_atlasCurrentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_atlasCurrentMap->getKeyFrameCount(keyFrameCount) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -54,7 +63,14 @@ void System::changeDataset()
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        p_tracker->resetActiveMap();
+        if (p_tracker->resetActiveMap() !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: resetActiveMap returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         resetCount.fetch_add(1U, std::memory_order_relaxed);
     }
     else
@@ -68,10 +84,25 @@ void System::changeDataset()
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        p_tracker->createMapInAtlas();
+        if (p_tracker->createMapInAtlas() !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: createMapInAtlas returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
-    p_tracker->newDataset();
+    if (p_tracker->newDataset() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: newDataset returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

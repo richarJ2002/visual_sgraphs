@@ -17,16 +17,27 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void SemanticsManager::evaluateTopCandidateVerificationForTest(
-    const std::vector<semantic::SemanticCandidate> &candidates_in)
+SemanticsManagerStatus
+    SemanticsManager::evaluateTopCandidateVerificationForTest(
+        const std::vector<semantic::SemanticCandidate> &candidates_in)
 {
-    evaluateTopCandidateVerification(candidates_in);
+    if (evaluateTopCandidateVerification(candidates_in) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: evaluateTopCandidateVerification returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<semantic::Room *> Atlas::getAllMarkerBasedMapRooms()
+AtlasStatus Atlas::getAllMarkerBasedMapRooms(
+    std::vector<semantic::Room *> &allMarkerBasedMapRooms_out)
 {
     unique_lock<mutex>            lock(atlasMutex);
     std::vector<semantic::Room *> activeMapAllMarkerBasedMapRooms{};
@@ -43,7 +44,8 @@ std::vector<semantic::Room *> Atlas::getAllMarkerBasedMapRooms()
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllMarkerBasedMapRooms;
+    allMarkerBasedMapRooms_out = activeMapAllMarkerBasedMapRooms;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

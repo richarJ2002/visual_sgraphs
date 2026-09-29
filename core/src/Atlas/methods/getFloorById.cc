@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Floor *Atlas::getFloorById(int floorId_in)
+AtlasStatus Atlas::getFloorById(int               floorId_in,
+                                semantic::Floor *&p_floorById_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     semantic::Floor   *p_activeMapFloorById = nullptr;
@@ -44,7 +45,8 @@ semantic::Floor *Atlas::getFloorById(int floorId_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return p_activeMap != nullptr ? p_activeMapFloorById : nullptr;
+    p_floorById_out = p_activeMap != nullptr ? p_activeMapFloorById : nullptr;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

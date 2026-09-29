@@ -27,13 +27,14 @@
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool System::loadAtlas(int type_in)
+SystemStatus System::loadAtlas(int type_in, bool &isLoaded_out)
 {
     string fileVocabulary, vocabularyChecksum;
     bool   isRead = false;
@@ -50,7 +51,8 @@ bool System::loadAtlas(int type_in)
         if (!ifs.good())
         {
             cout << "Load file not found" << endl;
-            return false;
+            isLoaded_out = false;
+            return SystemStatus::SYSTEM_STATUS_SUCCESS;
         }
         boost::archive::text_iarchive ia(ifs);
         ia >> fileVocabulary;
@@ -67,7 +69,8 @@ bool System::loadAtlas(int type_in)
         if (!ifs.good())
         {
             cout << "Load file not found" << endl;
-            return false;
+            isLoaded_out = false;
+            return SystemStatus::SYSTEM_STATUS_SUCCESS;
         }
         boost::archive::binary_iarchive ia(ifs);
         ia >> fileVocabulary;
@@ -80,8 +83,17 @@ bool System::loadAtlas(int type_in)
     if (isRead)
     {
         // Check if the vocabulary is the same
-        string inputVocabularyChecksum =
-            calculateCheckSum(vocabularyFilePath, TEXT_FILE);
+        string inputVocabularyChecksum{};
+        if (calculateCheckSum(vocabularyFilePath,
+                              TEXT_FILE,
+                              inputVocabularyChecksum) !=
+            SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: calculateCheckSum returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (inputVocabularyChecksum.compare(vocabularyChecksum) != 0)
         {
@@ -89,16 +101,39 @@ bool System::loadAtlas(int type_in)
                     "was created "
                  << endl;
             cout << "-Vocabulary name: " << fileVocabulary << endl;
-            return false; // Both are differents
+            isLoaded_out = false;
+            return SystemStatus::SYSTEM_STATUS_SUCCESS; // Both are differents
         }
 
-        p_atlas->setKeyFrameDatabase(p_keyFrameDatabase);
-        p_atlas->setORBVocabulary(p_vocabulary);
-        p_atlas->postLoad();
+        if (p_atlas->setKeyFrameDatabase(p_keyFrameDatabase) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setKeyFrameDatabase returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_atlas->setORBVocabulary(p_vocabulary) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setORBVocabulary returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_atlas->postLoad() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: postLoad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        return true;
+        isLoaded_out = true;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
-    return false;
+    isLoaded_out = false;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

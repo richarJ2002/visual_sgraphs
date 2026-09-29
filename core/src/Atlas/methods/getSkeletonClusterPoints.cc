@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<std::vector<Eigen::Vector3d>> Atlas::getSkeletonClusterPoints()
+AtlasStatus Atlas::getSkeletonClusterPoints(
+    std::vector<std::vector<Eigen::Vector3d>> &skeletonClusterPoints_out)
 {
     unique_lock<mutex>                        lock(atlasMutex);
     std::vector<std::vector<Eigen::Vector3d>> activeMapSkeletonClusterPoints{};
@@ -43,7 +44,8 @@ std::vector<std::vector<Eigen::Vector3d>> Atlas::getSkeletonClusterPoints()
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapSkeletonClusterPoints;
+    skeletonClusterPoints_out = activeMapSkeletonClusterPoints;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

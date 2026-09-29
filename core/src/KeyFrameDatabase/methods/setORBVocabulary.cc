@@ -29,7 +29,8 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::setORBVocabulary(ORBVocabulary *p_orbVocabulary_in)
+KeyFrameDatabaseStatus
+    KeyFrameDatabase::setORBVocabulary(ORBVocabulary *p_orbVocabulary_in)
 {
     ORBVocabulary **p_vocabularySlot;
     p_vocabularySlot  = (ORBVocabulary **)(&p_vocabulary);
@@ -37,6 +38,8 @@ void KeyFrameDatabase::setORBVocabulary(ORBVocabulary *p_orbVocabulary_in)
 
     invertedFile.clear();
     invertedFile.resize(p_vocabulary->size());
+
+    return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
 } // namespace core

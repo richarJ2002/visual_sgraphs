@@ -32,10 +32,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool LocalMapping::checkNewKeyFrames()
+LocalMappingStatus LocalMapping::checkNewKeyFrames(bool &hasNewKeyFrames_out)
 {
     unique_lock<mutex> newKeyFramesLock(newKeyFramesMutex);
-    return (!newKeyFrames.empty());
+    hasNewKeyFrames_out = (!newKeyFrames.empty());
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

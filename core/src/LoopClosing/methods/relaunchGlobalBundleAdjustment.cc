@@ -33,11 +33,12 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::relaunchGlobalBundleAdjustment(Map *p_activeMap_inout)
+LoopClosingStatus
+    LoopClosing::relaunchGlobalBundleAdjustment(Map *p_activeMap_inout)
 {
     if (p_activeMap_inout == nullptr || p_currentKF == nullptr)
     {
-        return;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     std::unique_lock<std::mutex> globalBundleAdjustmentLock(gbaMutex);
@@ -50,6 +51,8 @@ void LoopClosing::relaunchGlobalBundleAdjustment(Map *p_activeMap_inout)
                                   p_activeMap_inout,
                                   p_currentKF->id,
                                   fullBundleAdjustmentIndex);
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

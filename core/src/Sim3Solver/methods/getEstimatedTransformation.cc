@@ -31,9 +31,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix4f Sim3Solver::getEstimatedTransformation()
+Sim3SolverStatus Sim3Solver::getEstimatedTransformation(
+    Eigen::Matrix4f &estimatedTransformation_out)
 {
-    return mBestT12;
+    estimatedTransformation_out = mBestT12;
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

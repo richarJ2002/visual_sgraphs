@@ -12,13 +12,15 @@
 #include <opencv2/imgproc.hpp>
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-cv::Mat FrameDrawer::drawFrame(float imageScale_in)
+FrameDrawerStatus FrameDrawer::drawFrame(cv::Mat &frameImage_out,
+                                         float    imageScale_in)
 {
     cv::Mat displayImage;
     vector<cv::KeyPoint>
@@ -217,9 +219,17 @@ cv::Mat FrameDrawer::drawFrame(float imageScale_in)
     }
 
     cv::Mat imageWithInformation;
-    drawTextInfo(displayImage, drawState, imageWithInformation);
+    if (drawTextInfo(displayImage, drawState, imageWithInformation) !=
+        FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: drawTextInfo returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    return imageWithInformation;
+    frameImage_out = imageWithInformation;
+    return FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -24,8 +24,9 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix4f SemanticsManager::computePlaneToHorizontal(
-    const geometric::Plane *p_plane_in)
+SemanticsManagerStatus SemanticsManager::computePlaneToHorizontal(
+    const geometric::Plane *p_plane_in,
+    Eigen::Matrix4f        &plane_out)
 {
     // initialize the transformation with translation set to a zero vector
     Eigen::Isometry3d planePose;
@@ -54,7 +55,8 @@ Eigen::Matrix4f SemanticsManager::computePlaneToHorizontal(
     Eigen::Matrix4f planePoseMatrix = planePose.matrix().cast<float>();
     planePoseMatrix(3, 3)           = 1.0;
 
-    return planePoseMatrix;
+    plane_out = planePoseMatrix;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

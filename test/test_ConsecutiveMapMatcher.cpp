@@ -95,19 +95,33 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
 
     void SetUp() override
     {
-        EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
-        p_map0 = atlas.getCurrentMap();
+        bool wasEventPending{};
+        ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending)),
+                  vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
+        EXPECT_TRUE(wasEventPending);
+        vs_graphs::core::Map *p_atlasCurrentMap = nullptr;
+        ASSERT_EQ((atlas.getCurrentMap(p_atlasCurrentMap)),
+                  vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
+        p_map0 = p_atlasCurrentMap;
         EXPECT_NE(p_map0, nullptr);
-        atlas.createNewMap();
-        EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
-        p_map1 = atlas.getCurrentMap();
+        ASSERT_EQ((atlas.createNewMap()),
+                  vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
+        bool wasEventPending2{};
+        ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending2)),
+                  vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
+        EXPECT_TRUE(wasEventPending2);
+        vs_graphs::core::Map *p_atlasCurrentMap2 = nullptr;
+        ASSERT_EQ((atlas.getCurrentMap(p_atlasCurrentMap2)),
+                  vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
+        p_map1 = p_atlasCurrentMap2;
         EXPECT_NE(p_map1, nullptr);
         EXPECT_NE(p_map0, p_map1);
     }
 
     void TearDown() override
     {
-        atlas.clearAtlas();
+        ASSERT_EQ((atlas.clearAtlas()),
+                  vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
     }
 
     Room *addRoomWithWallsAndPassage(Map                   *p_map,
@@ -752,7 +766,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC3_singleAnchor)
     EXPECT_NE(addFloor(p_map0, 0, FLOOR_EQ), nullptr);
     EXPECT_NE(addFloor(p_map1, 0, FLOOR_EQ), nullptr);
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
-    atlas.attemptConsecutiveMergeIfGated();
+    ASSERT_EQ((atlas.attemptConsecutiveMergeIfGated()),
+              vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
     bool isBad2{};
     ASSERT_EQ((p_map0->isBad(isBad2)),
               vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);
@@ -1118,7 +1133,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC8_cooldown)
     EXPECT_NE(addFloor(p_map1, 0, FLOOR_EQ), nullptr);
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
     testing::internal::CaptureStdout();
-    atlas.attemptConsecutiveMergeIfGated();
+    ASSERT_EQ((atlas.attemptConsecutiveMergeIfGated()),
+              vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
     string output1 = testing::internal::GetCapturedStdout();
     size_t count1  = 0;
     size_t pos1    = 0;
@@ -1129,7 +1145,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC8_cooldown)
         pos1++;
     }
     testing::internal::CaptureStdout();
-    atlas.attemptConsecutiveMergeIfGated();
+    ASSERT_EQ((atlas.attemptConsecutiveMergeIfGated()),
+              vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
     string output2 = testing::internal::GetCapturedStdout();
     size_t count2  = 0;
     size_t pos2    = 0;
@@ -1185,7 +1202,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
                   SYSTEM_PARAMS_STATUS_SUCCESS);
     p_params->mapMerge.mergeCooldown_s = 0U;
     testing::internal::CaptureStdout();
-    atlas.attemptConsecutiveMergeIfGated();
+    ASSERT_EQ((atlas.attemptConsecutiveMergeIfGated()),
+              vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
     string output1 = testing::internal::GetCapturedStdout();
     size_t count1  = 0;
     size_t pos1    = 0;
@@ -1238,7 +1256,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     }
     testing::internal::CaptureStdout();
-    atlas.attemptConsecutiveMergeIfGated();
+    ASSERT_EQ((atlas.attemptConsecutiveMergeIfGated()),
+              vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
     string output2 = testing::internal::GetCapturedStdout();
     size_t count2  = 0;
     size_t pos2    = 0;
@@ -1623,7 +1642,8 @@ TEST_F(ConsecutiveMapMatcherTest, TC13_proxyReunionOnMerge)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     EXPECT_NE(addFloor(p_map1, 0, FLOOR_EQ), nullptr);
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
-    atlas.attemptConsecutiveMergeIfGated();
+    ASSERT_EQ((atlas.attemptConsecutiveMergeIfGated()),
+              vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
     bool isBad2{};
     ASSERT_EQ((p_map0->isBad(isBad2)),
               vs_graphs::core::MapStatus::MAP_STATUS_SUCCESS);

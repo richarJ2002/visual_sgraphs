@@ -16,6 +16,7 @@
  */
 
 #include "ImuTypes.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -24,14 +25,22 @@ namespace core
 namespace IMU
 {
 
-void Preintegrated::copyFrom(Preintegrated *p_sourcePreintegrated_in)
+PreintegratedStatus
+    Preintegrated::copyFrom(Preintegrated *p_sourcePreintegrated_in)
 {
     dT      = p_sourcePreintegrated_in->dT;
     C       = p_sourcePreintegrated_in->C;
     Info    = p_sourcePreintegrated_in->Info;
     Nga     = p_sourcePreintegrated_in->Nga;
     NgaWalk = p_sourcePreintegrated_in->NgaWalk;
-    b.copyFrom(p_sourcePreintegrated_in->b);
+    if (b.copyFrom(p_sourcePreintegrated_in->b) !=
+        BiasStatus::BIAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: copyFrom returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     dR   = p_sourcePreintegrated_in->dR;
     dV   = p_sourcePreintegrated_in->dV;
     dP   = p_sourcePreintegrated_in->dP;
@@ -42,9 +51,18 @@ void Preintegrated::copyFrom(Preintegrated *p_sourcePreintegrated_in)
     JPa  = p_sourcePreintegrated_in->JPa;
     avgA = p_sourcePreintegrated_in->avgA;
     avgW = p_sourcePreintegrated_in->avgW;
-    bu.copyFrom(p_sourcePreintegrated_in->bu);
+    if (bu.copyFrom(p_sourcePreintegrated_in->bu) !=
+        BiasStatus::BIAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: copyFrom returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     db           = p_sourcePreintegrated_in->db;
     measurements = p_sourcePreintegrated_in->measurements;
+
+    return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
 } // namespace IMU

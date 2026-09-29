@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-int Atlas::getLastBigChangeIndex()
+AtlasStatus Atlas::getLastBigChangeIndex(int &lastBigChangeIndex_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     int                activeMapLastBigChangeIndex{};
@@ -43,7 +43,8 @@ int Atlas::getLastBigChangeIndex()
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapLastBigChangeIndex;
+    lastBigChangeIndex_out = activeMapLastBigChangeIndex;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -35,22 +35,32 @@ namespace vs_graphs
 namespace core
 {
 
-bool LoopClosing::detectAndReffineSim3FromLastKF(
+LoopClosingStatus LoopClosing::detectAndReffineSim3FromLastKF(
     KeyFrame                *p_currentKeyFrame_in,
     KeyFrame                *p_matchedKeyFrame_in,
     g2o::Sim3               &gScw_inout,
     int                     &countProjectionMatchCount_out,
     std::vector<MapPoint *> &mapPoints_inout,
-    std::vector<MapPoint *> &matchedMapPoints_inout)
+    std::vector<MapPoint *> &matchedMapPoints_inout,
+    bool                    &isDetected_out)
 {
     set<MapPoint *> alreadyMatchedMapPoints;
-    countProjectionMatchCount_out =
-        findMatchesByProjection(p_currentKeyFrame_in,
+    int             matches2{};
+    if (findMatchesByProjection(p_currentKeyFrame_in,
                                 p_matchedKeyFrame_in,
                                 gScw_inout,
                                 alreadyMatchedMapPoints,
                                 mapPoints_inout,
-                                matchedMapPoints_inout);
+                                matchedMapPoints_inout,
+                                matches2) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: findMatchesByProjection returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    countProjectionMatchCount_out = matches2;
 
     int projectionMatchCount      = 30;
     int projectionOptMatchCount   = 50;
@@ -99,14 +109,23 @@ bool LoopClosing::detectAndReffineSim3FromLastKF(
         }
         if (p_tracker->sensor == System::IMU_MONOCULAR && !inertialBA2)
             isFixedScale = false;
-        int optMatchCount = Optimizer::optimizeSim3(p_currentKF,
-                                                    p_matchedKeyFrame_in,
-                                                    matchedMapPoints_inout,
-                                                    gScm,
-                                                    10,
-                                                    isFixedScale,
-                                                    hessian7x7,
-                                                    true);
+        int optMatchCount{};
+        if (Optimizer::optimizeSim3(p_currentKF,
+                                    p_matchedKeyFrame_in,
+                                    matchedMapPoints_inout,
+                                    gScm,
+                                    10,
+                                    isFixedScale,
+                                    hessian7x7,
+                                    optMatchCount,
+                                    true) !=
+            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: optimizeSim3 returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Verbose::PrintMess("Sim3 reffine: There are " +
         // to_string(numOptMatches) + " matches after of the optimization ",
@@ -131,21 +150,33 @@ bool LoopClosing::detectAndReffineSim3FromLastKF(
             matchedMapPoints.resize(currentKFMapPointMatches.size(),
                                     static_cast<MapPoint *>(nullptr));
 
-            countProjectionMatchCount_out =
-                findMatchesByProjection(p_currentKeyFrame_in,
+            int matches3{};
+            if (findMatchesByProjection(p_currentKeyFrame_in,
                                         p_matchedKeyFrame_in,
                                         gScw_estimation,
                                         alreadyMatchedMapPoints,
                                         mapPoints_inout,
-                                        matchedMapPoints_inout);
+                                        matchedMapPoints_inout,
+                                        matches3) !=
+                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: findMatchesByProjection returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            countProjectionMatchCount_out = matches3;
             if (countProjectionMatchCount_out >= projectionMatchesRepCount)
             {
-                gScw_inout = gScw_estimation;
-                return true;
+                gScw_inout     = gScw_estimation;
+                isDetected_out = true;
+                return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
             }
         }
     }
-    return false;
+    isDetected_out = false;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

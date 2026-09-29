@@ -24,22 +24,41 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool System::saveMap(const string &filename_in)
+SystemStatus System::saveMap(const string &filename_in, bool &isSaved_out)
 {
     saveAtlasFile = filename_in;
     if (!saveAtlasFile.empty())
     {
-        Verbose::printMess("Atlas saving to file " + saveAtlasFile,
-                           Verbose::VERBOSITY_NORMAL);
-        return saveAtlas(FileType::BINARY_FILE);
+        if (Verbose::printMess("Atlas saving to file " + saveAtlasFile,
+                               Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        bool isSaved{};
+        if (saveAtlas(FileType::BINARY_FILE, isSaved) !=
+            SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: saveAtlas returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        isSaved_out = isSaved;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
-    return false;
+    isSaved_out = false;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

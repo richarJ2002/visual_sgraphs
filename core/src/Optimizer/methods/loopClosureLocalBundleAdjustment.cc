@@ -37,7 +37,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::loopClosureLocalBundleAdjustment(
+OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
     KeyFrame          *p_mainKeyFrame_in,
     vector<KeyFrame *> adjustKeyFrames_in,
     vector<KeyFrame *> fixedKeyFrames_in,
@@ -102,9 +102,17 @@ void Optimizer::loopClosureLocalBundleAdjustment(
         }
         if (adjustKeyFrameIsBad || p_adjustKeyFrameMap != p_currentMap)
         {
-            Verbose::printMess("[Error in LoopClosureLocalBundleAdjustment] "
-                               "KeyFrame is bad or is not in the current map!",
-                               Verbose::VERBOSITY_NORMAL);
+            if (Verbose::printMess(
+                    "[Error in LoopClosureLocalBundleAdjustment] "
+                    "KeyFrame is bad or is not in the current map!",
+                    Verbose::VERBOSITY_NORMAL) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             continue;
         }
 
@@ -469,7 +477,7 @@ void Optimizer::loopClosureLocalBundleAdjustment(
 
     if (p_pbStopFlag_in)
         if (*p_pbStopFlag_in)
-            return;
+            return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 
     optimizer.initializeOptimization();
     optimizer.optimize(5);
@@ -539,11 +547,18 @@ void Optimizer::loopClosureLocalBundleAdjustment(
 
             e->setRobustKernel(0);
         }
-        Verbose::printMess("[BA]: First optimization(Huber), there are " +
-                               to_string(badMonoMapPoint) + " monocular and " +
-                               to_string(badStereoMapPoint) +
-                               " stereo bad edges",
-                           Verbose::VERBOSITY_DEBUG);
+        if (Verbose::printMess(
+                "[BA]: First optimization(Huber), there are " +
+                    to_string(badMonoMapPoint) + " monocular and " +
+                    to_string(badStereoMapPoint) + " stereo bad edges",
+                Verbose::VERBOSITY_DEBUG) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         optimizer.initializeOptimization(0);
         optimizer.optimize(10);
@@ -618,10 +633,17 @@ void Optimizer::loopClosureLocalBundleAdjustment(
         }
     }
 
-    Verbose::printMess("[BA]: Second optimization, there are " +
-                           to_string(badMonoMapPoint) + " monocular and " +
-                           to_string(badStereoMapPoint) + " sterero bad edges",
-                       Verbose::VERBOSITY_DEBUG);
+    if (Verbose::printMess(
+            "[BA]: Second optimization, there are " +
+                to_string(badMonoMapPoint) + " monocular and " +
+                to_string(badStereoMapPoint) + " sterero bad edges",
+            Verbose::VERBOSITY_DEBUG) != VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Get Map Mutex
     Map *p_mainKeyFrameMap = nullptr;
@@ -895,6 +917,8 @@ void Optimizer::loopClosureLocalBundleAdjustment(
                          __func__);
         }
     }
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -24,7 +24,7 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::logSemanticDiagnostics(
+SemanticsManagerStatus SemanticsManager::logSemanticDiagnostics(
     const semantic::SemanticReportCacheEntry &entry_in)
 {
     /* Pure diff/JSON construction lives in SemanticDiagnostics; this
@@ -45,7 +45,7 @@ void SemanticsManager::logSemanticDiagnostics(
     }
     if (!update.shouldEmit)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::cout << "SG_AXIOM " << update.summary.dump() << std::endl;
@@ -53,6 +53,8 @@ void SemanticsManager::logSemanticDiagnostics(
     {
         std::cout << "SG_VIOLATION " << detail.dump() << std::endl;
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

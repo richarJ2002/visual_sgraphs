@@ -23,8 +23,9 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f SemanticsManager::transformPlaneEqToGroundReference(
-    const Eigen::Vector4d &planeEq_in)
+SemanticsManagerStatus SemanticsManager::transformPlaneEqToGroundReference(
+    const Eigen::Vector4d &planeEq_in,
+    Eigen::Vector3f       &groundReference_out)
 {
     /* extract the rotation matrix from the transformation matrix */
     Eigen::Matrix3f rotationMatrix = planePoseMat.block<3, 3>(0, 0);
@@ -40,7 +41,8 @@ Eigen::Vector3f SemanticsManager::transformPlaneEqToGroundReference(
     /* Find the normalized coefficients */
     transformedPlaneCoefficients.normalize();
 
-    return transformedPlaneCoefficients;
+    groundReference_out = transformedPlaneCoefficients;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void MapDrawer::setCurrentCameraPose(const Sophus::SE3f &Tcw_in)
+MapDrawerStatus MapDrawer::setCurrentCameraPose(const Sophus::SE3f &Tcw_in)
 {
     unique_lock<mutex> lock(cameraMutex);
     cameraPose = Tcw_in.inverse();
+
+    return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 }
 
 } // namespace core

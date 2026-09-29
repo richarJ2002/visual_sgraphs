@@ -32,12 +32,12 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::release()
+LocalMappingStatus LocalMapping::release()
 {
     unique_lock<mutex> stopLock(stopMutex);
     unique_lock<mutex> finishLock(finishMutex);
     if (hasFinished)
-        return;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     hasStopped      = false;
     isStopRequested = false;
     for (list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
@@ -46,6 +46,8 @@ void LocalMapping::release()
          newKeyFrameIt++)
         delete *newKeyFrameIt;
     newKeyFrames.clear();
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

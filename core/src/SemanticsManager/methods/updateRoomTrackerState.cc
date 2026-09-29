@@ -26,7 +26,7 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::updateRoomTrackerState(double now_s_in)
+SemanticsManagerStatus SemanticsManager::updateRoomTrackerState(double now_s_in)
 {
     /* Consume the per-cycle signals. isTrackingLostPending is set on another
      * thread (System::TrackRGBD's real per-frame tracking state, and also
@@ -64,8 +64,17 @@ void SemanticsManager::updateRoomTrackerState(double now_s_in)
 
     semantic::TrackingStatusInput tracking;
     tracking.isLost = trackingLostPending;
-    isNewMapCreatedPending =
-        isNewMapCreatedPending || p_atlas->consumeNewMapCreatedEvent();
+    bool atlasWasEventPending{};
+    if (!(isNewMapCreatedPending) &&
+        p_atlas->consumeNewMapCreatedEvent(atlasWasEventPending) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: consumeNewMapCreatedEvent returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    isNewMapCreatedPending   = isNewMapCreatedPending || atlasWasEventPending;
     tracking.isNewMapCreated = isNewMapCreatedPending;
     if (tracking.isLost && tracking.isNewMapCreated)
     {
@@ -110,6 +119,8 @@ void SemanticsManager::updateRoomTrackerState(double now_s_in)
     {
         isNewMapCreatedPending = false;
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

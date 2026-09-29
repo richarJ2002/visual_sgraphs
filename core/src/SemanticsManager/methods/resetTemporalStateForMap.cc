@@ -24,7 +24,8 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::resetTemporalStateForMap(Map *p_activeMap_in)
+SemanticsManagerStatus
+    SemanticsManager::resetTemporalStateForMap(Map *p_activeMap_in)
 {
     std::uint64_t activeMapWorldFrameEpoch{};
     if ((p_activeMap_in != nullptr) &&
@@ -44,7 +45,7 @@ void SemanticsManager::resetTemporalStateForMap(Map *p_activeMap_in)
 
     if (!mapChanged && !frameChanged)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     openPassageEvidence.clear();
@@ -130,6 +131,8 @@ void SemanticsManager::resetTemporalStateForMap(Map *p_activeMap_in)
 
     p_temporalStateMap           = p_activeMap_in;
     temporalStateWorldFrameEpoch = worldFrameEpoch;
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

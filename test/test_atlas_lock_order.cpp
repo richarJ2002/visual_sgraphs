@@ -17,6 +17,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -83,12 +84,20 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((priorRoom.setCentroid(Eigen::Vector3d::Zero())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    ASSERT_EQ((atlas.getCurrentMap()->addDetectedMapRoom(&priorRoom)),
+    Map *p_currentMap = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_currentMap)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((p_currentMap->addDetectedMapRoom(&priorRoom)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    atlas.createNewMap();
-    Map       *pNewMap = atlas.getCurrentMap();
-    const auto history = atlas.copyRoomContextHistory();
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *pNewMap = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(pNewMap)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        history{};
+    ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_EQ(history.count(0U), 1U);
     ASSERT_EQ(history.at(0U).size(), 1U);
     EXPECT_EQ(history.at(0U).front().wallNormals.size(), 0U);
@@ -102,7 +111,8 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
     ASSERT_EQ((pNewMap->addDetectedMapRoom(&newRoom)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    atlas.matchRoomsToContext(pNewMap);
+    ASSERT_EQ((atlas.matchRoomsToContext(pNewMap)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     EXPECT_TRUE(atlas.tryLockRoomContext());
     std::string roomTag{};
     ASSERT_EQ((newRoom.getRoomTag(roomTag)),
@@ -113,35 +123,78 @@ TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
 TEST(AtlasLockOrder, NewMapEventIsConsumedExactlyOnce)
 {
     Atlas atlas(0);
-    EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
-    EXPECT_FALSE(atlas.consumeNewMapCreatedEvent());
-    atlas.createNewMap();
-    EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
-    EXPECT_FALSE(atlas.consumeNewMapCreatedEvent());
+    bool  wasEventPending{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_TRUE(wasEventPending);
+    bool wasEventPending2{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending2)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_FALSE(wasEventPending2);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    bool wasEventPending3{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending3)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_TRUE(wasEventPending3);
+    bool wasEventPending4{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending4)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_FALSE(wasEventPending4);
 }
 
 TEST(AtlasLockOrder, EventAndHistoryCopiesAreSafeWithoutBorrowedEntities)
 {
-    Atlas             atlas(0);
-    Map              *pStableMap = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *pStableMap = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(pStableMap)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     std::atomic<bool> complete{false};
     std::thread       reader(
         [&atlas, &complete, pStableMap]()
         {
             for (unsigned int iteration = 0U; iteration < 100U; ++iteration)
             {
-                const auto history = atlas.copyRoomContextHistory();
+                std::map<unsigned long,
+                               std::vector<semantic::RoomContextSnapshot>>
+                    history{};
+                if (atlas.copyRoomContextHistory(history) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: copyRoomContextHistory returned a failure status "
+                              "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 (void)history;
-                const auto liveSnapshot =
-                    atlas.copyRoomContextForMap(pStableMap);
+                std::vector<semantic::RoomContextSnapshot> liveSnapshot{};
+                if (atlas.copyRoomContextForMap(pStableMap, liveSnapshot) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: copyRoomContextForMap returned a failure status "
+                              "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 (void)liveSnapshot;
-                (void)atlas.consumeNewMapCreatedEvent();
+                bool atlasWasEventPending{};
+                if (atlas.consumeNewMapCreatedEvent(atlasWasEventPending) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: consumeNewMapCreatedEvent returned a failure "
+                              "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                (void)atlasWasEventPending;
             }
             complete.store(true, std::memory_order_release);
         });
     for (unsigned int iteration = 0U; iteration < 100U; ++iteration)
     {
-        atlas.createNewMap();
+        ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
     }
     reader.join();
     EXPECT_TRUE(complete.load(std::memory_order_acquire));

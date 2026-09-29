@@ -33,7 +33,9 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-double calcDeviation(vector<int> values_in, double average_in)
+TrackingStatus calcDeviation(std::vector<int> values_in,
+                             double           average_in,
+                             double          &deviation_out)
 {
     double accum = 0;
     int    total = 0;
@@ -44,7 +46,8 @@ double calcDeviation(vector<int> values_in, double average_in)
         accum += pow(value - average_in, 2);
         total++;
     }
-    return sqrt(accum / total);
+    deviation_out = sqrt(accum / total);
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 #endif
 

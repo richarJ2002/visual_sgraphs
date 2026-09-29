@@ -39,7 +39,8 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
+TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
+                                           bool            &isParsed_out)
 {
     distortionCoefficients = cv::Mat::zeros(4, 1, CV_32F);
     cout << endl << "Camera Parameters: " << endl;
@@ -175,7 +176,8 @@ bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
 
         if (isParameterMissing)
         {
-            return false;
+            isParsed_out = false;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
 
         if (imageScale != 1.f)
@@ -191,7 +193,17 @@ bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
 
         p_camera = new camera_models::pinhole::Pinhole(cameraCalibrations);
 
-        p_camera = p_atlas->addCamera(p_camera);
+        camera_models::geometriccamera::GeometricCamera *p_atlasCamera =
+            nullptr;
+        if (p_atlas->addCamera(p_camera, p_atlasCamera) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addCamera returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_camera = p_atlasCamera;
 
         std::cout << "- Camera: camera_models::Pinhole" << std::endl;
         std::cout << "- Image scale: " << imageScale << std::endl;
@@ -361,7 +373,17 @@ bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
             vector<float> cameraCalibrations{fx, fy, cx, cy, k1, k2, k3, k4};
             p_camera = new camera_models::kannalabrandt8::KannalaBrandt8(
                 cameraCalibrations);
-            p_camera = p_atlas->addCamera(p_camera);
+            camera_models::geometriccamera::GeometricCamera *p_atlasCamera2 =
+                nullptr;
+            if (p_atlas->addCamera(p_camera, p_atlasCamera2) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addCamera returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            p_camera = p_atlasCamera2;
             std::cout << "- Camera: Fisheye" << std::endl;
             std::cout << "- Image scale: " << imageScale << std::endl;
             std::cout << "- fx: " << fx << std::endl;
@@ -591,7 +613,18 @@ bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
                     cameraCalibration2{fx, fy, cx, cy, k1, k2, k3, k4};
                 p_camera2 = new camera_models::kannalabrandt8::KannalaBrandt8(
                     cameraCalibration2);
-                p_camera2 = p_atlas->addCamera(p_camera2);
+                camera_models::geometriccamera::GeometricCamera
+                    *p_atlasCamera3 = nullptr;
+                if (p_atlas->addCamera(p_camera2, p_atlasCamera3) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: addCamera returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                p_camera2 = p_atlasCamera3;
 
                 Sophus::SE3<float> sophus{};
                 if (utils::converter::Converter::toSophus(cvTlr, sophus) !=
@@ -636,7 +669,8 @@ bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
 
         if (isParameterMissing)
         {
-            return false;
+            isParsed_out = false;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
     }
     else
@@ -739,10 +773,12 @@ bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
 
     if (isParameterMissing)
     {
-        return false;
+        isParsed_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    return true;
+    isParsed_out = true;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

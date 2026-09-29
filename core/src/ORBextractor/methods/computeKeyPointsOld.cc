@@ -57,6 +57,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "../private_functions.h"
@@ -69,7 +70,7 @@ namespace vs_graphs
 namespace core
 {
 
-void ORBextractor::computeKeyPointsOld(
+ORBextractorStatus ORBextractor::computeKeyPointsOld(
     std::vector<std::vector<KeyPoint>> &keypointsPerLevel_inout)
 {
     keypointsPerLevel_inout.resize(levelCount);
@@ -267,10 +268,19 @@ void ORBextractor::computeKeyPointsOld(
     // and compute orientations
     for (int level = 0; level < levelCount; ++level)
     {
-        computeOrientation(imagePyramid[level],
-                           keypointsPerLevel_inout[level],
-                           orientationMaxOffset);
+        if (computeOrientation(imagePyramid[level],
+                               keypointsPerLevel_inout[level],
+                               orientationMaxOffset) !=
+            ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeOrientation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
+
+    return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
 } // namespace core

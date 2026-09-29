@@ -30,10 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void TwoViewReconstruction::decomposeE(const Eigen::Matrix3f &E_in,
-                                       Eigen::Matrix3f       &R1_out,
-                                       Eigen::Matrix3f       &R2_out,
-                                       Eigen::Vector3f       &t_out)
+TwoViewReconstructionStatus
+    TwoViewReconstruction::decomposeE(const Eigen::Matrix3f &E_in,
+                                      Eigen::Matrix3f       &R1_out,
+                                      Eigen::Matrix3f       &R2_out,
+                                      Eigen::Vector3f       &t_out)
 {
 
     Eigen::JacobiSVD<Eigen::Matrix3f> svd(E_in,
@@ -59,6 +60,8 @@ void TwoViewReconstruction::decomposeE(const Eigen::Matrix3f &E_in,
     R2_out = U * W.transpose() * Vt;
     if (R2_out.determinant() < 0)
         R2_out = -R2_out;
+
+    return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -32,9 +32,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3d inverseRightJacobianSO3(const double angleAxisX_in,
-                                        const double angleAxisY_in,
-                                        const double angleAxisZ_in)
+G2oTypesStatus
+    inverseRightJacobianSO3(const double     angleAxisX_in,
+                            const double     angleAxisY_in,
+                            const double     angleAxisZ_in,
+                            Eigen::Matrix3d &inverseRightJacobian_out)
 {
     const double angleSquared = angleAxisX_in * angleAxisX_in +
                                 angleAxisY_in * angleAxisY_in +
@@ -45,12 +47,19 @@ Eigen::Matrix3d inverseRightJacobianSO3(const double angleAxisX_in,
     skewMatrix << 0.0, -angleAxisZ_in, angleAxisY_in, angleAxisZ_in, 0.0,
         -angleAxisX_in, -angleAxisY_in, angleAxisX_in, 0.0;
     if (angle < 1e-5)
-        return Eigen::Matrix3d::Identity();
+    {
+        inverseRightJacobian_out = Eigen::Matrix3d::Identity();
+        return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
+    }
     else
-        return Eigen::Matrix3d::Identity() + skewMatrix / 2 +
-               skewMatrix * skewMatrix *
-                   (1.0 / angleSquared -
-                    (1.0 + cos(angle)) / (2.0 * angle * sin(angle)));
+    {
+        inverseRightJacobian_out =
+            Eigen::Matrix3d::Identity() + skewMatrix / 2 +
+            skewMatrix * skewMatrix *
+                (1.0 / angleSquared -
+                 (1.0 + cos(angle)) / (2.0 * angle * sin(angle)));
+        return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

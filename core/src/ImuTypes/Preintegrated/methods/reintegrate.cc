@@ -18,6 +18,7 @@
 #include "ImuTypes.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -26,19 +27,35 @@ namespace core
 namespace IMU
 {
 
-void Preintegrated::reintegrate()
+PreintegratedStatus Preintegrated::reintegrate()
 {
     std::unique_lock<std::mutex>  lock(preintegrationMutex);
     const std::vector<Integrable> storedMeasurements = measurements;
-    initialize(bu);
+    if (initialize(bu) != PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: initialize returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     for (size_t measurementIndex = 0;
          measurementIndex < storedMeasurements.size();
          measurementIndex++)
     {
-        integrateNewMeasurement(storedMeasurements[measurementIndex].a,
-                                storedMeasurements[measurementIndex].w,
-                                storedMeasurements[measurementIndex].t);
+        if (integrateNewMeasurement(storedMeasurements[measurementIndex].a,
+                                    storedMeasurements[measurementIndex].w,
+                                    storedMeasurements[measurementIndex].t) !=
+            PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: integrateNewMeasurement returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
+
+    return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
 } // namespace IMU

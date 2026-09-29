@@ -33,21 +33,43 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::detectRoom_FreeSpaceCluster(void)
+SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
 {
     /* Extract latest skeleton cluster */
-    const std::vector<std::vector<Eigen::Vector3d>> clusters =
-        partitionFreeSpaceAtPassages(getLatestSkeletonCluster());
+    std::vector<std::vector<Eigen::Vector3d>> latestSkeletonCluster{};
+    if (getLatestSkeletonCluster(latestSkeletonCluster) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getLatestSkeletonCluster returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<std::vector<Eigen::Vector3d>> clusters{};
+    if (partitionFreeSpaceAtPassages(latestSkeletonCluster, clusters) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: partitionFreeSpaceAtPassages returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* If cluster is empty then return */
     if (clusters.empty())
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* Extract all planes from the map */
-    const std::vector<vs_graphs::core::geometric::Plane *> allPlanes =
-        p_atlas->getAllPlanes();
+    std::vector<vs_graphs::core::geometric::Plane *> allPlanes{};
+    if (p_atlas->getAllPlanes(allPlanes) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Create a list of all the walls there are in the SGraph */
     std::vector<vs_graphs::core::geometric::Plane *> allWalls;
@@ -56,8 +78,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
     /* Ground-aligned axes for evaluateWallAdmissionEvidence's height/width
      * gate (see the comment at its definition for why this must be
      * ground-anchored rather than an arbitrary in-plane axis). */
-    geometric::Plane *p_groundPlaneForEvidence =
-        p_atlas->getBiggestGroundPlane();
+    geometric::Plane *p_groundPlaneForEvidence = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlaneForEvidence) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
     bool            groundPlaneForEvidenceIsBad{};
     if ((p_groundPlaneForEvidence != nullptr) &&
@@ -110,10 +139,20 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         }
 
         /* Append valid wall planes to list */
+        WallAdmissionEvidence admissionEvidence{};
         if (evaluateWallAdmissionEvidence(p_plane,
                                           p_sysParams,
-                                          groundNormalForEvidence_World)
-                .isAdmissible)
+                                          groundNormalForEvidence_World,
+                                          admissionEvidence) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateWallAdmissionEvidence returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (admissionEvidence.isAdmissible)
         {
             allWalls.push_back(p_plane);
         }
@@ -122,7 +161,7 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
     /* If there are no walls, then return */
     if (allWalls.empty())
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* Track room IDs matched in this cycle to avoid double-matching */
@@ -505,8 +544,16 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         double bestProspectiveDistance_m =
             std::numeric_limits<double>::infinity();
 
-        for (vs_graphs::core::semantic::Passage *p_passage :
-             p_atlas->getAllPassages())
+        std::vector<vs_graphs::core::semantic::Passage *> atlasAllPassages{};
+        if (p_atlas->getAllPassages(atlasAllPassages) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (vs_graphs::core::semantic::Passage *p_passage : atlasAllPassages)
         {
             if (p_passage == nullptr)
             {
@@ -658,12 +705,22 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         }
 
         /* Prefer the passage's stable handle; otherwise use normal matching. */
+        vs_graphs::core::semantic::Room *p_room2 = nullptr;
+        if (!(p_clusterProspective != nullptr) &&
+            associateRooms(clusterCentroid,
+                           closestWalls,
+                           cluster,
+                           matchedRoomIds,
+                           p_room2) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: associateRooms returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         vs_graphs::core::semantic::Room *p_room =
-            p_clusterProspective != nullptr ? p_clusterProspective
-                                            : associateRooms(clusterCentroid,
-                                                             closestWalls,
-                                                             cluster,
-                                                             matchedRoomIds);
+            p_clusterProspective != nullptr ? p_clusterProspective : p_room2;
 
         /* Track matched room to prevent double-matching in this cycle */
         if (p_room != nullptr)
@@ -698,8 +755,16 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         {
             vs_graphs::core::semantic::Room *p_wallOwnerRoom = nullptr;
 
-            const std::vector<vs_graphs::core::semantic::Room *>
-                existingRooms_World = p_atlas->getAllRooms();
+            std::vector<vs_graphs::core::semantic::Room *>
+                existingRooms_World{};
+            if (p_atlas->getAllRooms(existingRooms_World) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllRooms returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             for (vs_graphs::core::geometric::Plane *p_candidateWall :
                  closestWalls)
@@ -812,7 +877,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
              * the CURRENT map only is required -- otherwise a confirmed room
              * surviving in an old, now-inactive map would permanently block
              * every future map from ever bootstrapping its own first room. */
-            Map *p_currentMapForBootstrapCheck = p_atlas->getCurrentMap();
+            Map *p_currentMapForBootstrapCheck = nullptr;
+            if (p_atlas->getCurrentMap(p_currentMapForBootstrapCheck) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCurrentMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             std::vector<semantic::Room *> currentMapForBootstrapCheckAllRooms{};
             if ((p_currentMapForBootstrapCheck != nullptr) &&
                 p_currentMapForBootstrapCheck->getAllRooms(
@@ -878,12 +951,33 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
              * but a last-known hierarchy exists. Bootstrap owns first-room
              * creation with the stable ID; free-space must not conjure a
              * fresh SE# from stale cross-map walls/clusters in this cycle. */
+            int atlasGetCurrentSemanticRoomIdentity{};
+            if ((p_atlas != nullptr) &&
+                p_atlas->getCurrentSemanticRoomIdentity(
+                    atlasGetCurrentSemanticRoomIdentity) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getCurrentSemanticRoomIdentity returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
             const int pendingRecoveryRoomId =
-                p_atlas != nullptr ? p_atlas->getCurrentSemanticRoomIdentity()
-                                   : -1;
-            if (pendingRecoveryRoomId >= 0 &&
-                p_atlas->copyLatestRoomContext(pendingRecoveryRoomId)
-                    .has_value())
+                p_atlas != nullptr ? atlasGetCurrentSemanticRoomIdentity : -1;
+            std::optional<semantic::RoomContextSnapshot> atlasRoomContext{};
+            if ((pendingRecoveryRoomId >= 0) &&
+                p_atlas->copyLatestRoomContext(pendingRecoveryRoomId,
+                                               atlasRoomContext) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: copyLatestRoomContext returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (pendingRecoveryRoomId >= 0 && atlasRoomContext.has_value())
             {
                 std::cout << "[SemMgr] Cluster " << clusterId
                           << " deferred: recovery semantic::Room#"
@@ -914,8 +1008,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
          * passage onto its far side) and couples maintenance to Voxblox
          * liveness. Free-space evidence places a room once, at creation. */
 
-        const std::vector<vs_graphs::core::semantic::Passage *> activePassages =
-            p_atlas->getAllPassages();
+        std::vector<vs_graphs::core::semantic::Passage *> activePassages{};
+        if (p_atlas->getAllPassages(activePassages) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const bool roomIsPassageBoundProspective = std::any_of(
             activePassages.begin(),
             activePassages.end(),
@@ -955,7 +1056,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
          * generic consolidation must not classify or replace it early. */
         if (!roomIsPassageBoundProspective)
         {
-            consolidateRoomsInFreeSpaceCluster(p_room, cluster, allWalls);
+            if (consolidateRoomsInFreeSpaceCluster(p_room, cluster, allWalls) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: consolidateRoomsInFreeSpaceCluster returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
 
         /* Find the walls of the room */
@@ -1001,8 +1110,16 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
              * The ground normal is needed to project the aperture crossing. */
             bool farSideBound = false;
             {
-                geometric::Plane *p_groundPlane =
-                    p_atlas->getBiggestGroundPlane();
+                geometric::Plane *p_groundPlane = nullptr;
+                if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getBiggestGroundPlane returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
                 bool            groundPlaneIsBad{};
                 if ((p_groundPlane != nullptr) &&
@@ -1036,7 +1153,18 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     }
                 }
 
-                for (semantic::Passage *p_passage : p_atlas->getAllPassages())
+                std::vector<vs_graphs::core::semantic::Passage *>
+                    atlasAllPassages2{};
+                if (p_atlas->getAllPassages(atlasAllPassages2) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getAllPassages returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                for (semantic::Passage *p_passage : atlasAllPassages2)
                 {
                     if (p_passage == nullptr)
                     {
@@ -1066,7 +1194,8 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    if (!segmentCrossesPassageOpening(
+                    bool crossesPassageOpening{};
+                    if (segmentCrossesPassageOpening(
                             roomCentroid,
                             wallGetCentroid.cast<double>(),
                             p_passage,
@@ -1077,7 +1206,17 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             static_cast<double>(
                                 p_sysParams->roomSeg.passagePartition
                                     .minimumSideDistance_m),
-                            false))
+                            crossesPassageOpening,
+                            false) != SemanticsManagerStatus::
+                                          SEMANTICS_MANAGER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: segmentCrossesPassageOpening "
+                                     "returned a failure status although it "
+                                     "cannot fail; continuing as before.",
+                                     __func__);
+                    }
+                    if (!crossesPassageOpening)
                     {
                         continue;
                     }
@@ -1090,9 +1229,19 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                      * divert a wall that is still unowned or owned by the near
                      * room, so a wall already bound to a distinct confirmed
                      * room is never stolen. */
-                    bool ownedByConfirmedRoom = false;
+                    bool                          ownedByConfirmedRoom = false;
+                    std::vector<semantic::Room *> atlasAllRooms{};
+                    if (p_atlas->getAllRooms(atlasAllRooms) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getAllRooms returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     for (vs_graphs::core::semantic::Room *p_other :
-                         p_atlas->getAllRooms())
+                         atlasAllRooms)
                     {
                         bool otherIsBad{};
                         if (!(p_other == nullptr) &&
@@ -1197,9 +1346,31 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                 "it cannot fail; continuing as before.",
                                 __func__);
                         }
-                        if (p_atlas->getRoomWallPlaneById(wallGetId) == nullptr)
+                        vs_graphs::core::geometric::Plane
+                            *p_atlasRoomWallPlaneById = nullptr;
+                        if (p_atlas->getRoomWallPlaneById(
+                                wallGetId,
+                                p_atlasRoomWallPlaneById) !=
+                            AtlasStatus::ATLAS_STATUS_SUCCESS)
                         {
-                            p_atlas->addRoomWallPlane(wall);
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getRoomWallPlaneById returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (p_atlasRoomWallPlaneById == nullptr)
+                        {
+                            if (p_atlas->addRoomWallPlane(wall) !=
+                                AtlasStatus::ATLAS_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: addRoomWallPlane returned a failure "
+                                    "status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
                         }
                         int passageId{};
                         if (p_passage->getId(passageId) !=
@@ -1251,11 +1422,42 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    if (p_atlas->getRoomWallPlaneById(wallGetId3) == nullptr)
+                    vs_graphs::core::geometric::Plane
+                        *p_atlasRoomWallPlaneById2 = nullptr;
+                    if (p_atlas->getRoomWallPlaneById(
+                            wallGetId3,
+                            p_atlasRoomWallPlaneById2) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
                     {
-                        p_atlas->addRoomWallPlane(wall);
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: getRoomWallPlaneById returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
                     }
-                    admitWallToRoom(p_prospectiveRoom, wall);
+                    if (p_atlasRoomWallPlaneById2 == nullptr)
+                    {
+                        if (p_atlas->addRoomWallPlane(wall) !=
+                            AtlasStatus::ATLAS_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: addRoomWallPlane returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                    }
+                    bool wasAdmitted{};
+                    if (admitWallToRoom(p_prospectiveRoom, wall, wasAdmitted) !=
+                        SemanticsManagerStatus::
+                            SEMANTICS_MANAGER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: admitWallToRoom returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     farSideBound = true;
                     break;
                 }
@@ -1301,7 +1503,8 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                          "continuing as before.",
                                          __func__);
                         }
-                        if (!segmentCrossesOpenPassageEvidence(
+                        bool crossesOpenPassageEvidence{};
+                        if (segmentCrossesOpenPassageEvidence(
                                 roomCentroid2,
                                 wallGetCentroid2.cast<double>(),
                                 evidence.p_supportingWall,
@@ -1314,7 +1517,19 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                         .openingMargin_m),
                                 static_cast<double>(
                                     p_sysParams->roomSeg.passagePartition
-                                        .minimumSideDistance_m)))
+                                        .minimumSideDistance_m),
+                                crossesOpenPassageEvidence) !=
+                            SemanticsManagerStatus::
+                                SEMANTICS_MANAGER_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: segmentCrossesOpenPassageEvidence "
+                                "returned a failure status although it cannot "
+                                "fail; continuing as before.",
+                                __func__);
+                        }
+                        if (!crossesOpenPassageEvidence)
                         {
                             continue;
                         }
@@ -1339,10 +1554,31 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                 "it cannot fail; continuing as before.",
                                 __func__);
                         }
-                        if (p_atlas->getRoomWallPlaneById(wallGetId4) ==
-                            nullptr)
+                        vs_graphs::core::geometric::Plane
+                            *p_atlasRoomWallPlaneById3 = nullptr;
+                        if (p_atlas->getRoomWallPlaneById(
+                                wallGetId4,
+                                p_atlasRoomWallPlaneById3) !=
+                            AtlasStatus::ATLAS_STATUS_SUCCESS)
                         {
-                            p_atlas->addRoomWallPlane(wall);
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getRoomWallPlaneById returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (p_atlasRoomWallPlaneById3 == nullptr)
+                        {
+                            if (p_atlas->addRoomWallPlane(wall) !=
+                                AtlasStatus::ATLAS_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: addRoomWallPlane returned a failure "
+                                    "status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
                         }
                         int wallGetId5{};
                         if (wall->getId(wallGetId5) !=
@@ -1427,8 +1663,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
              * the opposite side must be bounded by its independently observed
              * wall surface rather than sharing this plane object.
              */
-            const std::vector<vs_graphs::core::semantic::Room *> mappedRooms =
-                p_atlas->getAllRooms();
+            std::vector<vs_graphs::core::semantic::Room *> mappedRooms{};
+            if (p_atlas->getAllRooms(mappedRooms) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllRooms returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             const auto existingOwnerIterator = std::find_if(
                 mappedRooms.begin(),
@@ -1551,8 +1794,16 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                  * the confirmed opening separates both room centres and the
                  * wall's observing cameras lie on the candidate-room side.
                  */
-                geometric::Plane *p_groundPlane =
-                    p_atlas->getBiggestGroundPlane();
+                geometric::Plane *p_groundPlane = nullptr;
+                if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getBiggestGroundPlane returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 Eigen::Vector3d meanObservationPosition_World_m =
                     Eigen::Vector3d::Zero();
                 std::size_t validObservationCount = 0U;
@@ -1649,8 +1900,18 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         const Eigen::Vector3d groundNormal_World =
                             groundEquation_World.head<3>() / groundNormalNorm;
 
-                        for (semantic::Passage *p_passage :
-                             p_atlas->getAllPassages())
+                        std::vector<vs_graphs::core::semantic::Passage *>
+                            atlasAllPassages3{};
+                        if (p_atlas->getAllPassages(atlasAllPassages3) !=
+                            AtlasStatus::ATLAS_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getAllPassages returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        for (semantic::Passage *p_passage : atlasAllPassages3)
                         {
                             Eigen::Vector3d existingWallOwnerCentroid2{};
                             if (p_existingWallOwner->getCentroid(
@@ -1664,7 +1925,8 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                     "before.",
                                     __func__);
                             }
-                            if (!segmentCrossesPassageOpening(
+                            bool crossesPassageOpening2{};
+                            if (segmentCrossesPassageOpening(
                                     existingWallOwnerCentroid2,
                                     clusterCentroid,
                                     p_passage,
@@ -1672,7 +1934,19 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                     p_sysParams->roomSeg.passagePartition
                                         .openingMargin_m,
                                     p_sysParams->roomSeg.passagePartition
-                                        .minimumSideDistance_m))
+                                        .minimumSideDistance_m,
+                                    crossesPassageOpening2) !=
+                                SemanticsManagerStatus::
+                                    SEMANTICS_MANAGER_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: segmentCrossesPassageOpening returned "
+                                    "a failure status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
+                            if (!crossesPassageOpening2)
                             {
                                 continue;
                             }
@@ -1734,7 +2008,16 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
             }
 
             /* Reject wall hypotheses which would corrupt this boundary. */
-            if (!admitWallToRoom(p_room, wall))
+            bool wasAdmitted2{};
+            if (admitWallToRoom(p_room, wall, wasAdmitted2) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: admitWallToRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!wasAdmitted2)
             {
                 continue;
             }
@@ -1757,7 +2040,16 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
             {
                 if (existingOwnerIsTransferableProvisional)
                 {
-                    Map *p_currentMap = p_atlas->getCurrentMap();
+                    Map *p_currentMap = nullptr;
+                    if (p_atlas->getCurrentMap(p_currentMap) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCurrentMap returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     if (p_currentMap != nullptr)
                     {
@@ -1900,9 +2192,29 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            if (p_atlas->getRoomWallPlaneById(wallGetId8) == nullptr)
+            vs_graphs::core::geometric::Plane *p_atlasRoomWallPlaneById4 =
+                nullptr;
+            if (p_atlas->getRoomWallPlaneById(wallGetId8,
+                                              p_atlasRoomWallPlaneById4) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
             {
-                p_atlas->addRoomWallPlane(wall);
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getRoomWallPlaneById returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (p_atlasRoomWallPlaneById4 == nullptr)
+            {
+                if (p_atlas->addRoomWallPlane(wall) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: addRoomWallPlane returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
 
@@ -2315,6 +2627,8 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
             }
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

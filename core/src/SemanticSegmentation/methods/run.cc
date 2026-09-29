@@ -35,7 +35,16 @@ void SemanticSegmentation::run()
     while (true)
     {
         /* Graceful shutdown on System::Shutdown() */
-        if (checkFinish())
+        bool isFinishRequested{};
+        if (checkFinish(isFinishRequested) !=
+            SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkFinish returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isFinishRequested)
         {
             break;
         }
@@ -64,8 +73,15 @@ void SemanticSegmentation::run()
          * Get the point cloud from the respective keyframe via the atlas -
          * ignore it if KF doesn't exist.
          */
-        KeyFrame *p_thisKeyFrame =
-            p_atlas->getKeyFrameById(workItem.keyFrameId);
+        KeyFrame *p_thisKeyFrame = nullptr;
+        if (p_atlas->getKeyFrameById(workItem.keyFrameId, p_thisKeyFrame) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getKeyFrameById returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* If keyframe is bad continue */
         bool thisKeyFrameIsBad{};
@@ -80,19 +96,45 @@ void SemanticSegmentation::run()
         }
         if (p_thisKeyFrame == nullptr || thisKeyFrameIsBad)
         {
-            recordTerminalOutcome(workItem.keyFrameId,
-                                  TerminalOutcome::MISSING_KEYFRAME);
+            if (recordTerminalOutcome(workItem.keyFrameId,
+                                      TerminalOutcome::MISSING_KEYFRAME) !=
+                SemanticSegmentationStatus::
+                    SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: recordTerminalOutcome returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             continue;
         }
 
         if (workItem.segmentationCloud == nullptr)
         {
-            recordTerminalOutcome(workItem.keyFrameId,
-                                  TerminalOutcome::MISSING_CLOUD);
+            if (recordTerminalOutcome(workItem.keyFrameId,
+                                      TerminalOutcome::MISSING_CLOUD) !=
+                SemanticSegmentationStatus::
+                    SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: recordTerminalOutcome returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             continue;
         }
 
-        Map          *p_activeMap = p_atlas->getCurrentMap();
+        Map *p_activeMap = nullptr;
+        if (p_atlas->getCurrentMap(p_activeMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         unsigned long activeMapId{};
         if (!(p_activeMap == nullptr) &&
             p_activeMap->getId(activeMapId) != MapStatus::MAP_STATUS_SUCCESS)
@@ -115,8 +157,17 @@ void SemanticSegmentation::run()
         if (p_activeMap == nullptr || activeMapId != workItem.sourceMapId ||
             p_thisKeyFrameMap != p_activeMap)
         {
-            recordTerminalOutcome(workItem.keyFrameId,
-                                  TerminalOutcome::STALE_MAP);
+            if (recordTerminalOutcome(workItem.keyFrameId,
+                                      TerminalOutcome::STALE_MAP) !=
+                SemanticSegmentationStatus::
+                    SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: recordTerminalOutcome returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             continue;
         }
 
@@ -138,8 +189,17 @@ void SemanticSegmentation::run()
         {
             std::cerr << "[SemSeg] Skipping keyframe " << p_thisKeyFrame->id
                       << ": the RGB-D point cloud is unavailable." << std::endl;
-            recordTerminalOutcome(workItem.keyFrameId,
-                                  TerminalOutcome::MISSING_CLOUD);
+            if (recordTerminalOutcome(workItem.keyFrameId,
+                                      TerminalOutcome::MISSING_CLOUD) !=
+                SemanticSegmentationStatus::
+                    SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: recordTerminalOutcome returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             continue;
         }
 
@@ -159,10 +219,18 @@ void SemanticSegmentation::run()
          * seperated into a list of point clouds with the index of the list
          * representing the semantic type of each point.
          */
-        threshSeparatePointCloud(pclPc2SegPrb,
-                                 segImageUncertainity,
-                                 p_clsCloudPtrs,
-                                 p_thisKeyFramePointCloud);
+        if (threshSeparatePointCloud(pclPc2SegPrb,
+                                     segImageUncertainity,
+                                     p_clsCloudPtrs,
+                                     p_thisKeyFramePointCloud) !=
+            SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: threshSeparatePointCloud returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /*!
          * Diagnostic visibility for a previously-silent failure mode: if the
@@ -259,7 +327,16 @@ void SemanticSegmentation::run()
                     continue;
                 }
 
-                KeyFrame *p_keyFrame = p_atlas->getKeyFrameById(keyFrameId);
+                KeyFrame *p_keyFrame = nullptr;
+                if (p_atlas->getKeyFrameById(keyFrameId, p_keyFrame) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getKeyFrameById returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 pcl::PointCloud<pcl::PointXYZRGB>::Ptr
                     keyFrameGetCurrentFramePointCloud{};
                 if ((p_keyFrame != nullptr) &&
@@ -311,7 +388,16 @@ void SemanticSegmentation::run()
         std::vector<
             std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                                   Eigen::Vector4d>>>
-            p_clsPlanes = getPlanesFromClassClouds(p_clsCloudPtrs);
+            p_clsPlanes{};
+        if (getPlanesFromClassClouds(p_clsCloudPtrs, p_clsPlanes) !=
+            SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getPlanesFromClassClouds returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* Set the class specific point clouds to the keyframe */
         if (p_thisKeyFrame->setCurrentClsCloudPtrs(p_clsCloudPtrs) !=
@@ -330,8 +416,16 @@ void SemanticSegmentation::run()
              * semantic transfer; point-cloud inference remains outside the
              * transaction so it cannot unnecessarily delay a map merge.
              */
-            std::unique_lock<std::mutex> semanticUpdateLock =
-                p_atlas->acquireSemanticUpdateLock();
+            std::unique_lock<std::mutex> semanticUpdateLock{};
+            if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: acquireSemanticUpdateLock returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             /*!
              * Plane extraction runs outside the semantic transaction. A map
@@ -340,7 +434,15 @@ void SemanticSegmentation::run()
              * Revalidate the source only after acquiring the transaction lock
              * so stale output cannot recreate observations in the merged map.
              */
-            Map *p_currentMap = p_atlas->getCurrentMap();
+            Map *p_currentMap = nullptr;
+            if (p_atlas->getCurrentMap(p_currentMap) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCurrentMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             bool thisKeyFrameIsBad2{};
             if (!(p_thisKeyFrame == nullptr) &&
@@ -370,15 +472,40 @@ void SemanticSegmentation::run()
                        "keyframe "
                     << workItem.keyFrameId << " after a map change."
                     << std::endl;
-                recordTerminalOutcome(workItem.keyFrameId,
-                                      TerminalOutcome::STALE_MAP);
+                if (recordTerminalOutcome(workItem.keyFrameId,
+                                          TerminalOutcome::STALE_MAP) !=
+                    SemanticSegmentationStatus::
+                        SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: recordTerminalOutcome returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 continue;
             }
 
             /* Add the planes to Atlas. */
-            updatePlaneData(p_thisKeyFrame, p_clsPlanes);
+            if (updatePlaneData(p_thisKeyFrame, p_clsPlanes) !=
+                SemanticSegmentationStatus::
+                    SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updatePlaneData returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
-        recordTerminalOutcome(workItem.keyFrameId, TerminalOutcome::ACCEPTED);
+        if (recordTerminalOutcome(workItem.keyFrameId,
+                                  TerminalOutcome::ACCEPTED) !=
+            SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: recordTerminalOutcome returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 }
 

@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::changeCalibration(const string &settingPath_in)
+TrackingStatus Tracking::changeCalibration(const string &settingPath_in)
 {
     cv::FileStorage settings(settingPath_in, cv::FileStorage::READ);
     float           fx = settings["Camera.fx"];
@@ -67,6 +67,8 @@ void Tracking::changeCalibration(const string &settingPath_in)
     mbf = settings["Camera.bf"];
 
     Frame::areInitialComputationsDone = true;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

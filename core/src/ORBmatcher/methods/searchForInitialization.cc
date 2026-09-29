@@ -31,11 +31,12 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchForInitialization(
+ORBmatcherStatus ORBmatcher::searchForInitialization(
     Frame               &F1,
     Frame               &F2,
     vector<cv::Point2f> &previousMatched_inout,
     vector<int>         &vnMatches12,
+    int                 &forInitialization_out,
     int                  windowSize)
 {
     int nmatches = 0;
@@ -89,7 +90,16 @@ int ORBmatcher::searchForInitialization(
 
             cv::Mat d2 = F2.descriptors.row(i2);
 
-            int distance = computeDescriptorDistance(d1, d2);
+            int distance{};
+            if (computeDescriptorDistance(d1, d2, distance) !=
+                ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computeDescriptorDistance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             if (matchedDistances[i2] <= distance)
                 continue;
@@ -142,7 +152,14 @@ int ORBmatcher::searchForInitialization(
         int ind2 = -1;
         int ind3 = -1;
 
-        computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3);
+        if (computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeThreeMaxima returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
              histogramBinIndex++)
@@ -171,7 +188,8 @@ int ORBmatcher::searchForInitialization(
             previousMatched_inout[i1] =
                 F2.keyPointsUndistorted[vnMatches12[i1]].pt;
 
-    return nmatches;
+    forInitialization_out = nmatches;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

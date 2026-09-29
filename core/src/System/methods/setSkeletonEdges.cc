@@ -24,22 +24,39 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void System::setSkeletonEdges(
+SystemStatus System::setSkeletonEdges(
     const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
         &skeletonEdges_World_m_in)
 {
     /* Keep asynchronous skeleton replacement atomic with map remerging. */
-    std::unique_lock<std::mutex> semanticUpdateLock =
-        p_atlas->acquireSemanticUpdateLock();
+    std::unique_lock<std::mutex> semanticUpdateLock{};
+    if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: acquireSemanticUpdateLock returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Store the connected skeleton edges in the current semantic map. */
-    p_atlas->setSkeletonEdges(skeletonEdges_World_m_in);
+    if (p_atlas->setSkeletonEdges(skeletonEdges_World_m_in) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setSkeletonEdges returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

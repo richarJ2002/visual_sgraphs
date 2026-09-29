@@ -23,10 +23,12 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticSegmentation::setFinish()
+SemanticSegmentationStatus SemanticSegmentation::setFinish()
 {
     std::unique_lock<std::mutex> lock(finishMutex);
     hasFinished = true;
+
+    return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
 } // namespace core

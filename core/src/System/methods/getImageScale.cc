@@ -25,15 +25,26 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-float System::getImageScale()
+SystemStatus System::getImageScale(float &imageScale_out)
 {
-    return p_tracker->getImageScale();
+    float trackerImageScale{};
+    if (p_tracker->getImageScale(trackerImageScale) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getImageScale returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    imageScale_out = trackerImageScale;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

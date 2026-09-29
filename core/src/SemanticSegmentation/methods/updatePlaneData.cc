@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticSegmentation::updatePlaneData(
+SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
     KeyFrame                                             *p_keyFrame_in,
     std::vector<std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                                       Eigen::Vector4d>>> &p_clsPlanes_in)
@@ -168,8 +168,17 @@ void SemanticSegmentation::updatePlaneData(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
+            std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
+            if (p_atlas->getAllPlanes(atlasAllPlanes) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllPlanes returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (utils::utils::Utils::associatePlanes(
-                    p_atlas->getAllPlanes(),
+                    atlasAllPlanes,
                     globalEquation,
                     p_globalPlaneCloud,
                     Eigen::Matrix4d::Identity(),
@@ -225,10 +234,23 @@ void SemanticSegmentation::updatePlaneData(
 
                         if (wallCreationParams.connectivity.enabled)
                         {
-                            connectedSupport = findLargestWallComponent(
-                                p_globalPlaneCloud,
-                                wallCreationParams.connectivity
-                                    .clusterTolerance_m);
+                            WallComponentSupport largestWallComponent{};
+                            if (findLargestWallComponent(
+                                    p_globalPlaneCloud,
+                                    wallCreationParams.connectivity
+                                        .clusterTolerance_m,
+                                    largestWallComponent) !=
+                                SemanticSegmentationStatus::
+                                    SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: findLargestWallComponent returned a "
+                                    "failure status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
+                            connectedSupport = largestWallComponent;
                         }
                         else if (p_globalPlaneCloud != nullptr)
                         {
@@ -395,7 +417,18 @@ void SemanticSegmentation::updatePlaneData(
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    updatePlaneSemantics(newMapPlaneGetId, clsId, confidence);
+                    if (updatePlaneSemantics(newMapPlaneGetId,
+                                             clsId,
+                                             confidence) !=
+                        SemanticSegmentationStatus::
+                            SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: updatePlaneSemantics returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
                 }
             }
             else
@@ -443,8 +476,16 @@ void SemanticSegmentation::updatePlaneData(
                         *p_planeCloud,
                         keyFramePoseInverse3.matrix().cast<float>());
 
-                    vs_graphs::core::geometric::Plane *p_matchedPlane =
-                        p_atlas->getPlaneById(matchedPlaneId);
+                    vs_graphs::core::geometric::Plane *p_matchedPlane = nullptr;
+                    if (p_atlas->getPlaneById(matchedPlaneId, p_matchedPlane) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPlaneById returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     bool matchedPlaneIsBad{};
                     if ((p_matchedPlane != nullptr) &&
@@ -486,12 +527,30 @@ void SemanticSegmentation::updatePlaneData(
                  * Cast the current semantic observation vote for the matched
                  * plane.
                  */
-                updatePlaneSemantics(matchedPlaneId, clsId, confidence);
+                if (updatePlaneSemantics(matchedPlaneId, clsId, confidence) !=
+                    SemanticSegmentationStatus::
+                        SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: updatePlaneSemantics returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
     }
 
-    setFinish();
+    if (setFinish() !=
+        SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
 } // namespace core

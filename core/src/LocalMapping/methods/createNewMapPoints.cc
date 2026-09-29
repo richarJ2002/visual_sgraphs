@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::createNewMapPoints()
+LocalMappingStatus LocalMapping::createNewMapPoints()
 {
     // Retrieve neighbor keyframes in covisibility graph
     int neighborKeyFrameCount = 10;
@@ -116,8 +116,18 @@ void LocalMapping::createNewMapPoints()
          neighborKeyFrameIndex < neighborKeyFrames.size();
          neighborKeyFrameIndex++)
     {
-        if (neighborKeyFrameIndex > 0 && checkNewKeyFrames())
-            return;
+        bool hasNewKeyFrames{};
+        if ((neighborKeyFrameIndex > 0) &&
+            checkNewKeyFrames(hasNewKeyFrames) !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkNewKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (neighborKeyFrameIndex > 0 && hasNewKeyFrames)
+            return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
         KeyFrame *p_neighborKeyFrame = neighborKeyFrames[neighborKeyFrameIndex];
 
@@ -189,11 +199,20 @@ void LocalMapping::createNewMapPoints()
                               p_tracker->state == Tracking::RECENTLY_LOST &&
                               inertialBA2;
 
-        matcher.searchForTriangulation(p_currentKeyFrame,
-                                       p_neighborKeyFrame,
-                                       matchedKeyPointIndices,
-                                       false,
-                                       isCoarseSearch);
+        int matcherForTriangulation{};
+        if (matcher.searchForTriangulation(p_currentKeyFrame,
+                                           p_neighborKeyFrame,
+                                           matchedKeyPointIndices,
+                                           false,
+                                           matcherForTriangulation,
+                                           isCoarseSearch) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: searchForTriangulation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         Sophus::SE3<float> sophTcw2{};
         if (p_neighborKeyFrame->getPose(sophTcw2) !=
@@ -699,9 +718,18 @@ void LocalMapping::createNewMapPoints()
                 continue;
 
             // Triangulation is succesfull
+            Map *p_atlasCurrentMap = nullptr;
+            if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCurrentMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             MapPoint *p_mapPoint = new MapPoint(triangulatedPoint,
                                                 p_currentKeyFrame,
-                                                p_atlas->getCurrentMap());
+                                                p_atlasCurrentMap);
             if (isStereoTriangulatedPoint)
                 stereoPointCount++;
 
@@ -760,10 +788,19 @@ void LocalMapping::createNewMapPoints()
                     __func__);
             }
 
-            p_atlas->addMapPoint(p_mapPoint);
+            if (p_atlas->addMapPoint(p_mapPoint) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addMapPoint returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             recentAddedMapPoints.push_back(p_mapPoint);
         }
     }
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -32,12 +32,14 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::requestStop()
+LocalMappingStatus LocalMapping::requestStop()
 {
     unique_lock<mutex> stopLock(stopMutex);
     isStopRequested = true;
     unique_lock<mutex> newKeyFramesLock(newKeyFramesMutex);
     shouldAbortBa = true;
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

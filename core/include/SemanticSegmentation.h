@@ -20,6 +20,7 @@
 #define SEMANTICSEG_H
 
 #include "Atlas.h"
+#include "SemanticSegmentationStatus.h"
 
 #include <atomic>
 #include <deque>
@@ -101,8 +102,9 @@ class SemanticSegmentation
     std::atomic<std::uint64_t> lastTerminalKeyFrameId{0U};
     std::atomic<std::uint32_t> queueHighWatermark{0U};
 
-    void recordTerminalOutcome(std::uint64_t   keyFrameId_in,
-                               TerminalOutcome outcome_in);
+    [[nodiscard]] SemanticSegmentationStatus
+        recordTerminalOutcome(std::uint64_t   keyFrameId_in,
+                              TerminalOutcome outcome_in);
 
     // System parameters
     types::SystemParams *p_sysParams;
@@ -111,8 +113,9 @@ class SemanticSegmentation
     std::mutex finishMutex;
     bool       isFinishRequested = false;
     bool       hasFinished       = false;
-    bool       checkFinish();
-    void       setFinish();
+    [[nodiscard]] SemanticSegmentationStatus
+        checkFinish(bool &isFinishRequested_out);
+    [[nodiscard]] SemanticSegmentationStatus setFinish();
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -120,14 +123,15 @@ class SemanticSegmentation
     SemanticSegmentation(Atlas *p_atlas_in);
 
     // Semantic segmentation frame buffer processing
-    void addSegmentedFrameToBuffer(
+    [[nodiscard]] SemanticSegmentationStatus addSegmentedFrameToBuffer(
         std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in);
 
     /*!
      * @brief       Returns processing counters used by mission health and
      *              simulation lockstep. Safe to call from any thread.
      */
-    ProcessingStats getProcessingStats();
+    [[nodiscard]] SemanticSegmentationStatus getProcessingStats(
+        SemanticSegmentation::ProcessingStats &processingStats_out);
 
     /*!
      * @brief       Segments the point cloud into class specific point clouds
@@ -153,7 +157,7 @@ class SemanticSegmentation
      * @param       p_thisKeyFramePointCloud_in
      *              the current keyframe point cloud
      */
-    void threshSeparatePointCloud(
+    [[nodiscard]] SemanticSegmentationStatus threshSeparatePointCloud(
         pcl::PCLPointCloud2::Ptr p_pclPc2SegPrb_in,
         cv::Mat                 &segImageUncertainity_in,
         std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
@@ -173,13 +177,15 @@ class SemanticSegmentation
      * @param[in]   minCloudSize
      *              the minimum size of the point cloud to be segmented
      *
-     * @return      A vector of extracted planes
+     * @param[out] planesFromClassClouds_out A vector of extracted planes
+     * @return SEMANTIC_SEGMENTATION_STATUS_SUCCESS.
      */
-    std::vector<std::vector<
-        std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
-        getPlanesFromClassClouds(
-            std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>
-                &p_clsCloudPtrs_in);
+    [[nodiscard]] SemanticSegmentationStatus getPlanesFromClassClouds(
+        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_clsCloudPtrs_in,
+        std::vector<
+            std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
+                                  Eigen::Vector4d>>>
+            &planesFromClassClouds_out);
 
     /*!
      * @brief       Adds the planes to the Atlas
@@ -190,7 +196,7 @@ class SemanticSegmentation
      * @param       clsConfs
      *              the confidence of the class predictions
      */
-    void updatePlaneData(
+    [[nodiscard]] SemanticSegmentationStatus updatePlaneData(
         KeyFrame *p_keyFrame_in,
         std::vector<
             std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
@@ -208,13 +214,14 @@ class SemanticSegmentation
      * @param       confidence_in
      *              the confidence of the class predictions
      */
-    void updatePlaneSemantics(int    planeId_in,
-                              int    clsId_in,
-                              double confidence_in);
+    [[nodiscard]] SemanticSegmentationStatus
+        updatePlaneSemantics(int    planeId_in,
+                             int    clsId_in,
+                             double confidence_in);
 
     // Shutdown control
-    void requestFinish();
-    bool isFinished();
+    [[nodiscard]] SemanticSegmentationStatus requestFinish();
+    [[nodiscard]] SemanticSegmentationStatus isFinished(bool &isFinished_out);
 
     // Running the thread
     void run();

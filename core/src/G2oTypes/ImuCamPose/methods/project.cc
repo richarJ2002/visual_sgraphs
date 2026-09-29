@@ -32,12 +32,14 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector2d ImuCamPose::project(const Eigen::Vector3d &Xw_in,
-                                    int                    cameraIndex_in) const
+ImuCamPoseStatus ImuCamPose::project(const Eigen::Vector3d &Xw_in,
+                                     Eigen::Vector2d       &projection_out,
+                                     int cameraIndex_in) const
 {
     Eigen::Vector3d Xc = Rcw[cameraIndex_in] * Xw_in + tcw[cameraIndex_in];
 
-    return pCamera[cameraIndex_in]->project(Xc);
+    projection_out = pCamera[cameraIndex_in]->project(Xc);
+    return ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS;
 }
 
 } // namespace core

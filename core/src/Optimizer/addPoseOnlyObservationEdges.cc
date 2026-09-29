@@ -39,7 +39,7 @@ namespace vs_graphs
 namespace core
 {
 
-void addPoseOnlyObservationEdges(
+OptimizerStatus addPoseOnlyObservationEdges(
     Frame                             *p_frame_inout,
     VertexPose                        *p_poseVertex_in,
     g2o::SparseOptimizer              &optimizer_inout,
@@ -223,6 +223,8 @@ void addPoseOnlyObservationEdges(
             }
         }
     }
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

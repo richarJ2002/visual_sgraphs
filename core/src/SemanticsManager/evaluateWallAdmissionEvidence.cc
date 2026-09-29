@@ -44,10 +44,11 @@ namespace core
  *
  * @return          TODO
  */
-WallAdmissionEvidence
+SemanticsManagerStatus
     evaluateWallAdmissionEvidence(geometric::Plane          *p_wall_in,
                                   const types::SystemParams *p_systemParams_in,
-                                  const Eigen::Vector3d &groundNormal_World_in)
+                                  const Eigen::Vector3d &groundNormal_World_in,
+                                  WallAdmissionEvidence &admissionEvidence_out)
 {
     WallAdmissionEvidence evidence;
 
@@ -63,7 +64,8 @@ WallAdmissionEvidence
     }
     if (p_wall_in == nullptr || wallIsBad || p_systemParams_in == nullptr)
     {
-        return evidence;
+        admissionEvidence_out = evidence;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::size_t wallGetObservationCount{};
@@ -92,7 +94,8 @@ WallAdmissionEvidence
     if (!equation_World.allFinite() || !std::isfinite(normalNorm) ||
         normalNorm < 1e-8)
     {
-        return evidence;
+        admissionEvidence_out = evidence;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     equation_World /= normalNorm;
@@ -101,7 +104,8 @@ WallAdmissionEvidence
     if (!equation_World.allFinite() ||
         std::abs(normal_World.norm() - 1.0) > 1e-6)
     {
-        return evidence;
+        admissionEvidence_out = evidence;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_supportCloud =
@@ -109,7 +113,8 @@ WallAdmissionEvidence
 
     if (p_supportCloud == nullptr)
     {
-        return evidence;
+        admissionEvidence_out = evidence;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /*!
@@ -240,7 +245,8 @@ WallAdmissionEvidence
     evidence.isAdmissible =
         wallDominatesSemantics && evidence.hasAdequateFiniteFit &&
         (repeatedObservationEvidence || strongFirstObservationEvidence);
-    return evidence;
+    admissionEvidence_out = evidence;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

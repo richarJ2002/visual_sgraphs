@@ -24,12 +24,17 @@
 #ifndef IMUTYPES_H
 #define IMUTYPES_H
 
+#include "BiasStatus.h"
+#include "CalibStatus.h"
+#include "ImuTypesStatus.h"
+#include "PreintegratedStatus.h"
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <boost/serialization/access.hpp>
 #include <mutex>
 #include <opencv2/core/core.hpp>
+#include <rclcpp/logging.hpp>
 #include <sophus/se3.hpp>
 #include <utility>
 #include <vector>
@@ -193,7 +198,7 @@ class Bias
      * @param[in]    b_in
      *               Source bias; shall be non-null.
      */
-    void                 copyFrom(Bias &b_in);
+    [[nodiscard]] BiasStatus copyFrom(Bias &b_in);
     /*!
      * @brief        Appends the six bias components to the
      *               stream.
@@ -259,11 +264,18 @@ class Calib
           const float              &gyroscopeRandomWalkDensity_in,
           const float              &accelerometerRandomWalkDensity_in)
     {
-        setCalibration(Tbc_in,
-                       gyroscopeNoiseDensity_in,
-                       accelerometerNoiseDensity_in,
-                       gyroscopeRandomWalkDensity_in,
-                       accelerometerRandomWalkDensity_in);
+        if (setCalibration(Tbc_in,
+                           gyroscopeNoiseDensity_in,
+                           accelerometerNoiseDensity_in,
+                           gyroscopeRandomWalkDensity_in,
+                           accelerometerRandomWalkDensity_in) !=
+            CalibStatus::CALIB_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCalibration returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     /*!
@@ -322,11 +334,12 @@ class Calib
      * @param[in]    naw_in
      *               Accelerometer random-walk density.
      */
-    void setCalibration(const Sophus::SE3<float> &sophTbc_in,
-                        const float              &ng_in,
-                        const float              &na_in,
-                        const float              &ngw_in,
-                        const float              &naw_in);
+    [[nodiscard]] CalibStatus
+        setCalibration(const Sophus::SE3<float> &sophTbc_in,
+                       const float              &ng_in,
+                       const float              &na_in,
+                       const float              &ngw_in,
+                       const float              &naw_in);
 
   public:
     // Sophus/Eigen implementation
@@ -462,7 +475,14 @@ class Preintegrated
     {
         Nga     = calib_in.Cov;
         NgaWalk = calib_in.CovWalk;
-        initialize(bias_in);
+        if (initialize(bias_in) !=
+            PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: initialize returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
     /*!
      * @brief        Copies another preintegration.
@@ -507,14 +527,15 @@ class Preintegrated
      * @param[in]    p_sourcePreintegrated_in
      *               Non-owning source; shall be non-null.
      */
-    void      copyFrom(Preintegrated *p_sourcePreintegrated_in);
+    [[nodiscard]] PreintegratedStatus
+        copyFrom(Preintegrated *p_sourcePreintegrated_in);
     /*!
      * @brief        Resets the deltas for a new bias.
      *
      * @param[in]    referenceBias_in
      *               Bias integrated against.
      */
-    void      initialize(const Bias &referenceBias_in);
+    [[nodiscard]] PreintegratedStatus initialize(const Bias &referenceBias_in);
     /*!
      * @brief        Folds one measurement into the deltas.
      *
@@ -527,16 +548,17 @@ class Preintegrated
      *               Interval since the previous sample, in
      *               seconds.
      */
-    void      integrateNewMeasurement(const Eigen::Vector3f &acceleration_in,
-                                      const Eigen::Vector3f &angularVelocity_in,
-                                      const float           &deltaTime_in);
+    [[nodiscard]] PreintegratedStatus
+        integrateNewMeasurement(const Eigen::Vector3f &acceleration_in,
+                                const Eigen::Vector3f &angularVelocity_in,
+                                const float           &deltaTime_in);
     /*!
      * @brief        Rebuilds the deltas from the stored
      *               measurements under the updated bias.
      *
      *              Takes the preintegration lock.
      */
-    void      reintegrate();
+    [[nodiscard]] PreintegratedStatus reintegrate();
     /*!
      * @brief        Prepends the state of a previous
      *               preintegration.
@@ -548,7 +570,8 @@ class Preintegrated
      *               Non-owning previous preintegration; shall
      *               be non-null.
      */
-    void      mergePrevious(Preintegrated *p_previousPreintegrated_in);
+    [[nodiscard]] PreintegratedStatus
+        mergePrevious(Preintegrated *p_previousPreintegrated_in);
     /*!
      * @brief        Stores the updated bias and refreshes the
      *               bias difference.
@@ -558,7 +581,7 @@ class Preintegrated
      * @param[in]    updatedBias_in
      *               Updated bias estimate.
      */
-    void      setNewBias(const Bias &updatedBias_in);
+    [[nodiscard]] PreintegratedStatus setNewBias(const Bias &updatedBias_in);
     /*!
      * @brief        Returns the bias change relative to the
      *               original bias.
@@ -568,10 +591,12 @@ class Preintegrated
      * @param[in]    referenceBias_in
      *               Bias to compare against.
      *
-     * @return       Difference between the given bias and the
-     *               original bias.
+     * @param[out] deltaBias_out Difference between the given bias and the
+     * original bias.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    IMU::Bias getDeltaBias(const Bias &referenceBias_in);
+    [[nodiscard]] PreintegratedStatus getDeltaBias(const Bias &referenceBias_in,
+                                                   IMU::Bias  &deltaBias_out);
 
     /*!
      * @brief        Returns the delta rotation corrected for
@@ -582,9 +607,12 @@ class Preintegrated
      * @param[in]    referenceBias_in
      *               Bias to correct for.
      *
-     * @return       Bias-corrected delta rotation.
+     * @param[out] deltaRotation_out Bias-corrected delta rotation.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Eigen::Matrix3f getDeltaRotation(const Bias &referenceBias_in);
+    [[nodiscard]] PreintegratedStatus
+        getDeltaRotation(const Bias      &referenceBias_in,
+                         Eigen::Matrix3f &deltaRotation_out);
     /*!
      * @brief        Returns the delta velocity corrected for
      *               the given bias.
@@ -594,10 +622,13 @@ class Preintegrated
      * @param[in]    referenceBias_in
      *               Bias to correct for.
      *
-     * @return       Bias-corrected delta velocity in metres
-     *               per second.
+     * @param[out] deltaVelocity_out Bias-corrected delta velocity in metres per
+     * second.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Eigen::Vector3f getDeltaVelocity(const Bias &referenceBias_in);
+    [[nodiscard]] PreintegratedStatus
+        getDeltaVelocity(const Bias      &referenceBias_in,
+                         Eigen::Vector3f &deltaVelocity_out);
     /*!
      * @brief        Returns the delta position corrected for
      *               the given bias.
@@ -607,9 +638,12 @@ class Preintegrated
      * @param[in]    referenceBias_in
      *               Bias to correct for.
      *
-     * @return       Bias-corrected delta position in metres.
+     * @param[out] deltaPosition_out Bias-corrected delta position in metres.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Eigen::Vector3f getDeltaPosition(const Bias &referenceBias_in);
+    [[nodiscard]] PreintegratedStatus
+        getDeltaPosition(const Bias      &referenceBias_in,
+                         Eigen::Vector3f &deltaPosition_out);
 
     /*!
      * @brief        Returns the delta rotation under the
@@ -617,28 +651,34 @@ class Preintegrated
      *
      *              Takes the preintegration lock.
      *
-     * @return       Updated delta rotation.
+     * @param[out] updatedDeltaRotation_out Updated delta rotation.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Eigen::Matrix3f getUpdatedDeltaRotation();
+    [[nodiscard]] PreintegratedStatus
+        getUpdatedDeltaRotation(Eigen::Matrix3f &updatedDeltaRotation_out);
     /*!
      * @brief        Returns the delta velocity under the
      *               updated bias.
      *
      *              Takes the preintegration lock.
      *
-     * @return       Updated delta velocity in metres per
-     *               second.
+     * @param[out] updatedDeltaVelocity_out Updated delta velocity in metres per
+     * second.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Eigen::Vector3f getUpdatedDeltaVelocity();
+    [[nodiscard]] PreintegratedStatus
+        getUpdatedDeltaVelocity(Eigen::Vector3f &updatedDeltaVelocity_out);
     /*!
      * @brief        Returns the delta position under the
      *               updated bias.
      *
      *              Takes the preintegration lock.
      *
-     * @return       Updated delta position in metres.
+     * @param[out] updatedDeltaPosition_out Updated delta position in metres.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Eigen::Vector3f getUpdatedDeltaPosition();
+    [[nodiscard]] PreintegratedStatus
+        getUpdatedDeltaPosition(Eigen::Vector3f &updatedDeltaPosition_out);
 
     /*!
      * @brief        Returns the delta rotation under the
@@ -646,61 +686,71 @@ class Preintegrated
      *
      *              Takes the preintegration lock.
      *
-     * @return       Original delta rotation.
+     * @param[out] originalDeltaRotation_out Original delta rotation.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Eigen::Matrix3f getOriginalDeltaRotation();
+    [[nodiscard]] PreintegratedStatus
+        getOriginalDeltaRotation(Eigen::Matrix3f &originalDeltaRotation_out);
     /*!
      * @brief        Returns the delta velocity under the
      *               original bias.
      *
      *              Takes the preintegration lock.
      *
-     * @return       Original delta velocity in metres per
-     *               second.
+     * @param[out] originalDeltaVelocity_out Original delta velocity in metres
+     * per second.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Eigen::Vector3f getOriginalDeltaVelocity();
+    [[nodiscard]] PreintegratedStatus
+        getOriginalDeltaVelocity(Eigen::Vector3f &originalDeltaVelocity_out);
     /*!
      * @brief        Returns the delta position under the
      *               original bias.
      *
      *              Takes the preintegration lock.
      *
-     * @return       Original delta position in metres.
+     * @param[out] originalDeltaPosition_out Original delta position in metres.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Eigen::Vector3f getOriginalDeltaPosition();
+    [[nodiscard]] PreintegratedStatus
+        getOriginalDeltaPosition(Eigen::Vector3f &originalDeltaPosition_out);
 
     /*!
      * @brief        Returns the stored bias difference.
      *
      *              Takes the preintegration lock.
      *
-     * @return       Six-element difference between the
-     *               updated and original biases.
+     * @param[out] deltaBias_out Six-element difference between the updated and
+     * original biases.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Eigen::Matrix<float, 6, 1> getDeltaBias();
+    [[nodiscard]] PreintegratedStatus
+        getDeltaBias(Eigen::Matrix<float, 6, 1> &deltaBias_out);
 
     /*!
      * @brief        Returns the original integration bias.
      *
      *              Takes the preintegration lock.
      *
-     * @return       Bias integrated against.
+     * @param[out] originalBias_out Bias integrated against.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Bias getOriginalBias();
+    [[nodiscard]] PreintegratedStatus getOriginalBias(Bias &originalBias_out);
     /*!
      * @brief        Returns the latest updated bias.
      *
      *              Takes the preintegration lock.
      *
-     * @return       Updated bias estimate.
+     * @param[out] updatedBias_out Updated bias estimate.
+     * @return PREINTEGRATED_STATUS_SUCCESS.
      */
-    Bias getUpdatedBias();
+    [[nodiscard]] PreintegratedStatus getUpdatedBias(Bias &updatedBias_out);
 
     /*!
      * @brief        Prints the stored measurement timestamps
      *               to standard output.
      */
-    void printMeasurements() const
+    [[nodiscard]] PreintegratedStatus printMeasurements() const
     {
         std::cout << "\nIMU measures: \n";
         for (long unsigned int measurementIndex = 0;
@@ -709,6 +759,8 @@ class Preintegrated
             std::cout << "- Measurement " << measurements[measurementIndex].t
                       << std::endl;
         std::cout << "Finished printing IMU measures ...\n";
+
+        return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
     }
 
   public:
@@ -844,11 +896,14 @@ class Preintegrated
  * @param[in]    rotationVectorZ_in
  *               Rotation z in radians.
  *
- * @return       Three-by-three right Jacobian.
+ * @param[out] rightJacobian_out Three-by-three right Jacobian.
+ * @return IMU_TYPES_STATUS_SUCCESS.
  */
-Eigen::Matrix3f rightJacobianSO3(const float &rotationVectorX_in,
-                                 const float &rotationVectorY_in,
-                                 const float &rotationVectorZ_in);
+[[nodiscard]] ImuTypesStatus
+    rightJacobianSO3(const float     &rotationVectorX_in,
+                     const float     &rotationVectorY_in,
+                     const float     &rotationVectorZ_in,
+                     Eigen::Matrix3f &rightJacobian_out);
 /*!
  * @brief        Returns the right Jacobian of SO3 at the
  *               given rotation vector.
@@ -856,9 +911,12 @@ Eigen::Matrix3f rightJacobianSO3(const float &rotationVectorX_in,
  * @param[in]    rotationVector_in
  *               Rotation vector in radians.
  *
- * @return       Three-by-three right Jacobian.
+ * @param[out] rightJacobian_out Three-by-three right Jacobian.
+ * @return IMU_TYPES_STATUS_SUCCESS.
  */
-Eigen::Matrix3f rightJacobianSO3(const Eigen::Vector3f &rotationVector_in);
+[[nodiscard]] ImuTypesStatus
+    rightJacobianSO3(const Eigen::Vector3f &rotationVector_in,
+                     Eigen::Matrix3f       &rightJacobian_out);
 
 /*!
  * @brief        Returns the inverse right Jacobian of SO3 at
@@ -871,11 +929,14 @@ Eigen::Matrix3f rightJacobianSO3(const Eigen::Vector3f &rotationVector_in);
  * @param[in]    angleAxisZ_in
  *               Rotation z in radians.
  *
- * @return       Three-by-three inverse right Jacobian.
+ * @param[out] inverseRightJacobian_out Three-by-three inverse right Jacobian.
+ * @return IMU_TYPES_STATUS_SUCCESS.
  */
-Eigen::Matrix3f inverseRightJacobianSO3(const float &angleAxisX_in,
-                                        const float &angleAxisY_in,
-                                        const float &angleAxisZ_in);
+[[nodiscard]] ImuTypesStatus
+    inverseRightJacobianSO3(const float     &angleAxisX_in,
+                            const float     &angleAxisY_in,
+                            const float     &angleAxisZ_in,
+                            Eigen::Matrix3f &inverseRightJacobian_out);
 /*!
  * @brief        Returns the inverse right Jacobian of SO3 at
  *               the given rotation vector.
@@ -883,10 +944,12 @@ Eigen::Matrix3f inverseRightJacobianSO3(const float &angleAxisX_in,
  * @param[in]    angleAxisVector_in
  *               Rotation vector in radians.
  *
- * @return       Three-by-three inverse right Jacobian.
+ * @param[out] inverseRightJacobian_out Three-by-three inverse right Jacobian.
+ * @return IMU_TYPES_STATUS_SUCCESS.
  */
-Eigen::Matrix3f
-    inverseRightJacobianSO3(const Eigen::Vector3f &angleAxisVector_in);
+[[nodiscard]] ImuTypesStatus
+    inverseRightJacobianSO3(const Eigen::Vector3f &angleAxisVector_in,
+                            Eigen::Matrix3f       &inverseRightJacobian_out);
 
 /*!
  * @brief        Re-orthonormalizes a rotation estimate.
@@ -894,9 +957,12 @@ Eigen::Matrix3f
  * @param[in]    rotationMatrix_in
  *               Rotation to normalize.
  *
- * @return       Closest rotation in the Frobenius sense.
+ * @param[out] rotation_out Closest rotation in the Frobenius sense.
+ * @return IMU_TYPES_STATUS_SUCCESS.
  */
-Eigen::Matrix3f normalizeRotation(const Eigen::Matrix3f &rotationMatrix_in);
+[[nodiscard]] ImuTypesStatus
+    normalizeRotation(const Eigen::Matrix3f &rotationMatrix_in,
+                      Eigen::Matrix3f       &rotation_out);
 
 } // namespace IMU
 

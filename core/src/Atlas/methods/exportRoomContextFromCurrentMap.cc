@@ -31,10 +31,10 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::exportRoomContextFromCurrentMap()
+AtlasStatus Atlas::exportRoomContextFromCurrentMap()
 {
     if (!p_activeMap)
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
     /* Export BOTH confirmed detected rooms AND candidate/marker-based rooms.
      * Candidate rooms (prospective/provisional) may not have full wall loops
@@ -61,7 +61,7 @@ void Atlas::exportRoomContextFromCurrentMap()
     rooms.insert(rooms.end(), candidateRooms.begin(), candidateRooms.end());
 
     if (rooms.empty())
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
     std::vector<semantic::RoomContextSnapshot> snapshots;
     snapshots.reserve(rooms.size());
@@ -485,7 +485,15 @@ void Atlas::exportRoomContextFromCurrentMap()
 
     /* Record the departure room for mission-chain tracing: the room the UAV
      * was following when this map was stranded. */
-    const int departureRoomId = getCurrentSemanticRoomIdentity();
+    int departureRoomId{};
+    if (getCurrentSemanticRoomIdentity(departureRoomId) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentSemanticRoomIdentity returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (departureRoomId >= 0)
     {
         for (semantic::Room *p_room : rooms)
@@ -528,6 +536,8 @@ void Atlas::exportRoomContextFromCurrentMap()
 
     std::cout << "[Atlas] Exported room context: " << exportedRoomCount
               << " rooms (mapId: " << mapId << ")" << std::endl;
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

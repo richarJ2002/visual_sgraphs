@@ -56,13 +56,15 @@ namespace core
  *
  * @return          True when the wall provides a valid finite segment.
  */
-bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
-                              const Eigen::Vector3d &groundNormal_World_in,
-                              const Eigen::Vector3d &groundAxisU_World_in,
-                              const Eigen::Vector3d &groundAxisV_World_in,
-                              const double           endpointTrimRatio_in,
-                              const double           minimumWallLength_m_in,
-                              FiniteWallSegment2d   &segment_inout)
+SemanticsManagerStatus
+    buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
+                             const Eigen::Vector3d &groundNormal_World_in,
+                             const Eigen::Vector3d &groundAxisU_World_in,
+                             const Eigen::Vector3d &groundAxisV_World_in,
+                             const double           endpointTrimRatio_in,
+                             const double           minimumWallLength_m_in,
+                             FiniteWallSegment2d   &segment_inout,
+                             bool                  &isBuilt_out)
 {
     bool wallIsBad{};
     if (!(p_wall_in == nullptr) &&
@@ -76,7 +78,8 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
     }
     if (p_wall_in == nullptr || wallIsBad)
     {
-        return false;
+        isBuilt_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     geometric::Plane::GeometrySnapshot wallGeometry{};
@@ -93,7 +96,8 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
 
     if (!wallEquation_World.allFinite() || wallNormalNorm < 1e-8)
     {
-        return false;
+        isBuilt_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     wallEquation_World /= wallNormalNorm;
@@ -108,7 +112,8 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
     if (!std::isfinite(horizontalWallNormalNorm) ||
         horizontalWallNormalNorm < 1e-8)
     {
-        return false;
+        isBuilt_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     horizontalWallNormal_World /= horizontalWallNormalNorm;
@@ -121,7 +126,8 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
 
     if (p_wallSupportCloud == nullptr || p_wallSupportCloud->empty())
     {
-        return false;
+        isBuilt_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::vector<double> wallPointCoordinates_m;
@@ -145,7 +151,8 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
 
     if (wallPointCoordinates_m.size() < 2U)
     {
-        return false;
+        isBuilt_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::sort(wallPointCoordinates_m.begin(), wallPointCoordinates_m.end());
@@ -175,7 +182,8 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
 
     if (!wallCentroid_World_m.allFinite())
     {
-        return false;
+        isBuilt_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const double centroidCoordinate_m =
@@ -210,10 +218,11 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
             1U)) *
         std::sqrt(std::max(segment_inout.length_m, 0.0));
 
-    return segment_inout.start_World_m.allFinite() &&
-           segment_inout.end_World_m.allFinite() &&
-           std::isfinite(segment_inout.length_m) &&
-           segment_inout.length_m >= minimumWallLength_m_in;
+    isBuilt_out = segment_inout.start_World_m.allFinite() &&
+                  segment_inout.end_World_m.allFinite() &&
+                  std::isfinite(segment_inout.length_m) &&
+                  segment_inout.length_m >= minimumWallLength_m_in;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -35,20 +35,44 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::trackWithMotionModel()
+TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
 {
     ORBmatcher matcher(0.9, true);
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
-    updateLastFrame();
+    if (updateLastFrame() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateLastFrame returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    if (p_atlas->isImuInitialized() &&
+    bool atlasIsImuInitialized{};
+    if (p_atlas->isImuInitialized(atlasIsImuInitialized) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (atlasIsImuInitialized &&
         (currentFrame.id > lastRelocFrameId + framesToResetIMU))
     {
         // Predict state with IMU if it is initialized and it doesnt need reset
-        predictStateIMU();
-        return true;
+        bool isPredicted{};
+        if (predictStateIMU(isPredicted) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: predictStateIMU returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        isTracked_out = true;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
     else
     {
@@ -83,11 +107,19 @@ bool Tracking::trackWithMotionModel()
     else
         threshold = 15;
 
-    int nmatches = matcher.searchByProjection(
-        currentFrame,
-        lastFrame,
-        threshold,
-        sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR);
+    int nmatches{};
+    if (matcher.searchByProjection(
+            currentFrame,
+            lastFrame,
+            threshold,
+            sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR,
+            nmatches) != ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: searchByProjection returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // If few matches, use progressively wider window searches.
     int searchStep   = 1;
@@ -104,36 +136,84 @@ bool Tracking::trackWithMotionModel()
             break;
         }
 
-        Verbose::printMess("Not enough matches, wider window search (radius " +
-                               std::to_string(expandedThreshold) + ")!!",
-                           Verbose::VERBOSITY_NORMAL);
+        if (Verbose::printMess(
+                "Not enough matches, wider window search (radius " +
+                    std::to_string(expandedThreshold) + ")!!",
+                Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         fill(currentFrame.mapPoints.begin(),
              currentFrame.mapPoints.end(),
              static_cast<MapPoint *>(nullptr));
 
-        nmatches = matcher.searchByProjection(
-            currentFrame,
-            lastFrame,
-            expandedThreshold,
-            sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR);
-        Verbose::printMess("Matches with wider search: " + to_string(nmatches),
-                           Verbose::VERBOSITY_NORMAL);
+        int matcherByProjection{};
+        if (matcher.searchByProjection(currentFrame,
+                                       lastFrame,
+                                       expandedThreshold,
+                                       sensor == System::MONOCULAR ||
+                                           sensor == System::IMU_MONOCULAR,
+                                       matcherByProjection) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: searchByProjection returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        nmatches = matcherByProjection;
+        if (Verbose::printMess("Matches with wider search: " +
+                                   to_string(nmatches),
+                               Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         searchRadius = expandedThreshold;
         searchStep++;
     }
 
     if (nmatches < 20)
     {
-        Verbose::printMess("Not enough matches!!", Verbose::VERBOSITY_NORMAL);
+        if (Verbose::printMess("Not enough matches!!",
+                               Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         if (sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
             sensor == System::IMU_RGBD)
-            return true;
+        {
+            isTracked_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
         else
-            return false;
+        {
+            isTracked_out = false;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
     }
 
     // Optimize frame pose with all matches
-    Optimizer::poseOptimization(&currentFrame);
+    int inlierCount{};
+    if (Optimizer::poseOptimization(&currentFrame, inlierCount) !=
+        OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: poseOptimization returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Discard outliers
     int nmatchesMap = 0;
@@ -184,14 +264,21 @@ bool Tracking::trackWithMotionModel()
     if (isTrackingOnlyMode)
     {
         isVisualOdometry = nmatchesMap < 10;
-        return nmatches > 20;
+        isTracked_out    = nmatches > 20;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     if (sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
         sensor == System::IMU_RGBD)
-        return true;
+    {
+        isTracked_out = true;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
     else
-        return nmatchesMap >= 10;
+    {
+        isTracked_out = nmatchesMap >= 10;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

@@ -55,11 +55,12 @@ namespace vs_graphs
 namespace core
 {
 
-bool MLPnPsolver::iterate(int              iterationCount_in,
-                          bool            &areIterationsExhausted_out,
-                          vector<bool>    &inliersFlags_out,
-                          int             &inlierCount_out,
-                          Eigen::Matrix4f &Tout_out)
+MLPnPsolverStatus MLPnPsolver::iterate(int           iterationCount_in,
+                                       bool         &areIterationsExhausted_out,
+                                       vector<bool> &inliersFlags_out,
+                                       int          &inlierCount_out,
+                                       Eigen::Matrix4f &Tout_out,
+                                       bool            &isSolved_out)
 {
     Tout_out.setIdentity();
     areIterationsExhausted_out = false;
@@ -69,7 +70,8 @@ bool MLPnPsolver::iterate(int              iterationCount_in,
     if (correspondenceCount < ransacMinInliers)
     {
         areIterationsExhausted_out = true;
-        return false;
+        isSolved_out               = false;
+        return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
     }
 
     vector<size_t> availableIndices;
@@ -111,7 +113,14 @@ bool MLPnPsolver::iterate(int              iterationCount_in,
         TransformationMatrix result;
 
         // Compute camera pose
-        computePose(bearingVecs, p3DS, covs, indexes, result);
+        if (computePose(bearingVecs, p3DS, covs, indexes, result) !=
+            MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computePose returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Save result
         mRi[0][0] = result(0, 0);
@@ -131,7 +140,13 @@ bool MLPnPsolver::iterate(int              iterationCount_in,
         mti[2] = result(2, 3);
 
         // Check inliers
-        checkInliers();
+        if (checkInliers() != MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkInliers returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (inlierCount >= ransacMinInliers)
         {
@@ -173,7 +188,16 @@ bool MLPnPsolver::iterate(int              iterationCount_in,
                 Eigen::Vector3d                              eigtcw(mti);
             }
 
-            if (refine())
+            bool isRefined{};
+            if (refine(isRefined) !=
+                MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: refine returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (isRefined)
             {
                 inlierCount_out  = refinedInlierCount;
                 inliersFlags_out = vector<bool>(mapPointMatches.size(), false);
@@ -183,8 +207,9 @@ bool MLPnPsolver::iterate(int              iterationCount_in,
                     if (refinedInlierFlags[pointIndex])
                         inliersFlags_out[keypointIndices[pointIndex]] = true;
                 }
-                Tout_out = mRefinedTcw;
-                return true;
+                Tout_out     = mRefinedTcw;
+                isSolved_out = true;
+                return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
             }
         }
     }
@@ -202,12 +227,14 @@ bool MLPnPsolver::iterate(int              iterationCount_in,
                 if (bestInlierFlags[pointIndex])
                     inliersFlags_out[keypointIndices[pointIndex]] = true;
             }
-            Tout_out = mBestTcw;
-            return true;
+            Tout_out     = mBestTcw;
+            isSolved_out = true;
+            return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
         }
     }
 
-    return false;
+    isSolved_out = false;
+    return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

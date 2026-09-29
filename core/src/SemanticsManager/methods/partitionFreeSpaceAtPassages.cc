@@ -28,21 +28,29 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<std::vector<Eigen::Vector3d>>
-    SemanticsManager::partitionFreeSpaceAtPassages(
-        const std::vector<std::vector<Eigen::Vector3d>>
-            &freeSpaceClusters_World_m_in) const
+SemanticsManagerStatus SemanticsManager::partitionFreeSpaceAtPassages(
+    const std::vector<std::vector<Eigen::Vector3d>>
+                                              &freeSpaceClusters_World_m_in,
+    std::vector<std::vector<Eigen::Vector3d>> &partitions_out) const
 {
     const types::SystemParams::RoomSeg::PassagePartition &partitionParameters =
         p_sysParams->roomSeg.passagePartition;
 
     if (!partitionParameters.enabled || freeSpaceClusters_World_m_in.empty())
     {
-        return freeSpaceClusters_World_m_in;
+        partitions_out = freeSpaceClusters_World_m_in;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    const std::vector<semantic::Passage *> allPassages =
-        p_atlas->getAllPassages();
+    std::vector<semantic::Passage *> allPassages{};
+    if (p_atlas->getAllPassages(allPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     std::vector<semantic::Passage *> confirmedOpenPassages;
 
     for (semantic::Passage *p_passage : allPassages)
@@ -73,7 +81,15 @@ std::vector<std::vector<Eigen::Vector3d>>
         }
     }
 
-    geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
+    geometric::Plane *p_groundPlane = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     bool groundPlaneIsBad{};
     if (!(confirmedOpenPassages.empty() || p_groundPlane == nullptr) &&
@@ -88,7 +104,8 @@ std::vector<std::vector<Eigen::Vector3d>>
     if (confirmedOpenPassages.empty() || p_groundPlane == nullptr ||
         groundPlaneIsBad)
     {
-        return freeSpaceClusters_World_m_in;
+        partitions_out = freeSpaceClusters_World_m_in;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     g2o::Plane3D groundPlaneGetGlobalEquation{};
@@ -106,17 +123,27 @@ std::vector<std::vector<Eigen::Vector3d>>
 
     if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)
     {
-        return freeSpaceClusters_World_m_in;
+        partitions_out = freeSpaceClusters_World_m_in;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d groundNormal_World =
         groundEquation_World.head<3>() / groundNormalNorm;
-    const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-        skeletonEdges_World_m = p_atlas->getSkeletonEdges();
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+        skeletonEdges_World_m{};
+    if (p_atlas->getSkeletonEdges(skeletonEdges_World_m) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSkeletonEdges returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (skeletonEdges_World_m.empty())
     {
-        return freeSpaceClusters_World_m_in;
+        partitions_out = freeSpaceClusters_World_m_in;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const double associationDistance_m = static_cast<double>(
@@ -196,13 +223,25 @@ std::vector<std::vector<Eigen::Vector3d>>
                  openingMargin_m,
                  minimumSideDistance_m](semantic::Passage *p_passage)
                 {
-                    return segmentCrossesPassageOpening(
-                        skeletonEdge_World_m.first,
-                        skeletonEdge_World_m.second,
-                        p_passage,
-                        groundNormal_World,
-                        openingMargin_m,
-                        minimumSideDistance_m);
+                    bool crossesPassageOpening{};
+                    if (segmentCrossesPassageOpening(
+                            skeletonEdge_World_m.first,
+                            skeletonEdge_World_m.second,
+                            p_passage,
+                            groundNormal_World,
+                            openingMargin_m,
+                            minimumSideDistance_m,
+                            crossesPassageOpening) !=
+                        SemanticsManagerStatus::
+                            SEMANTICS_MANAGER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: segmentCrossesPassageOpening "
+                                     "returned a failure status although it "
+                                     "cannot fail; continuing as before.",
+                                     __func__);
+                    }
+                    return crossesPassageOpening;
                 });
 
             if (crossesConfirmedPassage)
@@ -288,7 +327,8 @@ std::vector<std::vector<Eigen::Vector3d>>
         }
     }
 
-    return partitionedClusters_World_m;
+    partitions_out = partitionedClusters_World_m;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

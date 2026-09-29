@@ -29,8 +29,9 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<semantic::UnresolvedWallHypothesisRecord>
-    SemanticsManager::captureUnresolvedWallHypotheses(void) const
+SemanticsManagerStatus SemanticsManager::captureUnresolvedWallHypotheses(
+    std::vector<semantic::UnresolvedWallHypothesisRecord>
+        &captureUnresolvedWallHypotheses_out) const
 {
     std::vector<semantic::UnresolvedWallHypothesisRecord> records;
     records.reserve(undefendedWalls.size());
@@ -65,7 +66,8 @@ std::vector<semantic::UnresolvedWallHypothesisRecord>
                 return false;
             return lhs_in.unresolvedCycles < rhs_in.unresolvedCycles;
         });
-    return records;
+    captureUnresolvedWallHypotheses_out = records;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::setStepByStep(bool isEnabled_in)
+TrackingStatus Tracking::setStepByStep(bool isEnabled_in)
 {
     isStepByStepMode = isEnabled_in;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

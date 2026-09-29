@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::clearMap(Map *p_map_in)
+KeyFrameDatabaseStatus KeyFrameDatabase::clearMap(Map *p_map_in)
 {
     unique_lock<mutex> lock(databaseMutex);
 
@@ -70,6 +70,8 @@ void KeyFrameDatabase::clearMap(Map *p_map_in)
             }
         }
     }
+
+    return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
 } // namespace core

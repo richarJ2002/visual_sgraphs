@@ -33,12 +33,20 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveKeyFrameTrajectoryTUM(const string &filename_in)
+SystemStatus System::saveKeyFrameTrajectoryTUM(const string &filename_in)
 {
     cout << endl
          << "Saving keyframe trajectory to " << filename_in << " ..." << endl;
 
-    vector<KeyFrame *> keyFrames = p_atlas->getAllKeyFrames();
+    std::vector<KeyFrame *> keyFrames{};
+    if (p_atlas->getAllKeyFrames(keyFrames) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
@@ -81,6 +89,8 @@ void System::saveKeyFrameTrajectoryTUM(const string &filename_in)
     }
 
     f.close();
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

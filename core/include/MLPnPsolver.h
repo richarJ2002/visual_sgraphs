@@ -49,6 +49,7 @@
 #define VS_GRAPHS_CORE_MLPNPSOLVER_H
 
 #include "Frame.h"
+#include "MLPnPsolverStatus.h"
 #include "MapPoint.h"
 
 #include <Eigen/Dense>
@@ -142,25 +143,34 @@ class MLPnPsolver
             }
         }
 
-        setRansacParameters();
+        if (setRansacParameters() !=
+            MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setRansacParameters returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     ~MLPnPsolver();
 
-    void setRansacParameters(double probability_in       = 0.99,
-                             int    minimumInliers_in    = 8,
-                             int    maximumIterations_in = 300,
-                             int    minimumSet_in        = 6,
-                             float  epsilon_in           = 0.4,
-                             float  threshold2_in        = 5.991);
+    [[nodiscard]] MLPnPsolverStatus
+        setRansacParameters(double probability_in       = 0.99,
+                            int    minimumInliers_in    = 8,
+                            int    maximumIterations_in = 300,
+                            int    minimumSet_in        = 6,
+                            float  epsilon_in           = 0.4,
+                            float  threshold2_in        = 5.991);
 
     // Find metod is necessary?
 
-    bool iterate(int              iterationCount_in,
-                 bool            &areIterationsExhausted_out,
-                 vector<bool>    &inliersFlags_out,
-                 int             &inlierCount_out,
-                 Eigen::Matrix4f &Tout_out);
+    [[nodiscard]] MLPnPsolverStatus iterate(int   iterationCount_in,
+                                            bool &areIterationsExhausted_out,
+                                            vector<bool>    &inliersFlags_out,
+                                            int             &inlierCount_out,
+                                            Eigen::Matrix4f &Tout_out,
+                                            bool            &isSolved_out);
 
     // Type definitions needed by the original code
 
@@ -216,8 +226,8 @@ class MLPnPsolver
     typedef Eigen::Vector3d TranslationVector;
 
   private:
-    void checkInliers();
-    bool refine();
+    [[nodiscard]] MLPnPsolverStatus checkInliers();
+    [[nodiscard]] MLPnPsolverStatus refine(bool &isRefined_out);
 
     // Functions from de original MLPnP code
 
@@ -226,19 +236,21 @@ class MLPnPsolver
      * reference system), the camera rays and (optionally) the covariance matrix
      * of those camera rays. Result is stored in solution
      */
-    void computePose(const BearingVectors      &f_in,
-                     const Points3             &p_in,
-                     const Covariance3Matrices &covMats_in,
-                     const std::vector<int>    &indices_in,
-                     TransformationMatrix      &result_inout);
+    [[nodiscard]] MLPnPsolverStatus
+        computePose(const BearingVectors      &f_in,
+                    const Points3             &p_in,
+                    const Covariance3Matrices &covMats_in,
+                    const std::vector<int>    &indices_in,
+                    TransformationMatrix      &result_inout);
 
-    void mlpnp_gn(Eigen::VectorXd                    &x_inout,
-                  const Points3                      &points_in,
-                  const std::vector<Eigen::MatrixXd> &nullspaces_in,
-                  const Eigen::SparseMatrix<double>   Kll_in,
-                  bool                                shouldUseCovariance_in);
+    [[nodiscard]] MLPnPsolverStatus
+        mlpnp_gn(Eigen::VectorXd                    &x_inout,
+                 const Points3                      &points_in,
+                 const std::vector<Eigen::MatrixXd> &nullspaces_in,
+                 const Eigen::SparseMatrix<double>   Kll_in,
+                 bool                                shouldUseCovariance_in);
 
-    void mlpnp_residuals_and_jacs(
+    [[nodiscard]] MLPnPsolverStatus mlpnp_residuals_and_jacs(
         const Eigen::VectorXd              &x_in,
         const Points3                      &points_in,
         const std::vector<Eigen::MatrixXd> &nullspaces_in,
@@ -246,12 +258,13 @@ class MLPnPsolver
         Eigen::MatrixXd                    &fjac_in,
         bool                                getJacs_in);
 
-    void mlpnpJacs(const Point3            &point_in,
-                   const Eigen::Vector3d   &nullspace_r,
-                   const Eigen::Vector3d   &nullspace_s_in,
-                   const RodriguesVector   &w_in,
-                   const TranslationVector &t_in,
-                   Eigen::MatrixXd         &jacs_in);
+    [[nodiscard]] MLPnPsolverStatus
+        mlpnpJacs(const Point3            &point_in,
+                  const Eigen::Vector3d   &nullspace_r,
+                  const Eigen::Vector3d   &nullspace_s_in,
+                  const RodriguesVector   &w_in,
+                  const TranslationVector &t_in,
+                  Eigen::MatrixXd         &jacs_in);
 
     // Auxiliar methods
 
@@ -261,7 +274,9 @@ class MLPnPsolver
      * \param[in] omega The Rodrigues-parameters of a rotation.
      * \return The 3x3 rotation matrix.
      */
-    Eigen::Matrix3d rodrigues2rot(const Eigen::Vector3d &omega_in);
+    [[nodiscard]] MLPnPsolverStatus
+        rodrigues2rot(const Eigen::Vector3d &omega_in,
+                      Eigen::Matrix3d       &rotation_out);
 
     /*!
      * \brief Compute the Rodrigues-parameters of a rotation matrix.
@@ -269,7 +284,9 @@ class MLPnPsolver
      * \param[in] R The 3x3 rotation matrix.
      * \return The Rodrigues-parameters.
      */
-    Eigen::Vector3d rot2rodrigues(const Eigen::Matrix3d &R_in);
+    [[nodiscard]] MLPnPsolverStatus
+        rot2rodrigues(const Eigen::Matrix3d &R_in,
+                      Eigen::Vector3d       &rodrigues_out);
 
     //----------------------------------------------------
     // Fields of the solver

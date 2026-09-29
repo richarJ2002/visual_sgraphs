@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -37,16 +38,18 @@ namespace core
  *        full set doesn't close (see validateRoomBoundaries()'s single-
  *        outlier-exclusion retry).
  */
-WallLoopClosure tryCloseWallLoop(
+SemanticsManagerStatus tryCloseWallLoop(
     std::vector<FiniteWallSegment2d> wallSegments_in,
     const Eigen::Vector2d           &roomCentroidGround_m_in,
-    const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters_in)
+    const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters_in,
+    WallLoopClosure                                      &closure_out)
 {
     WallLoopClosure result;
 
     if (wallSegments_in.empty())
     {
-        return result;
+        closure_out = result;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::sort(
@@ -79,16 +82,47 @@ WallLoopClosure tryCloseWallLoop(
         double          currentParameter = 0.0;
         double          nextParameter    = 0.0;
 
+        bool hasIntersection{};
         if (intersectSupportingLines(currentWall,
                                      nextWall,
                                      corner_World_m,
                                      currentParameter,
-                                     nextParameter))
+                                     nextParameter,
+                                     hasIntersection) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
-            const double currentCornerGap_m =
-                pointToSegmentDistance_m(corner_World_m, currentWall);
-            const double nextCornerGap_m =
-                pointToSegmentDistance_m(corner_World_m, nextWall);
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: intersectSupportingLines returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (hasIntersection)
+        {
+            double currentCornerGap_m{};
+            if (pointToSegmentDistance_m(corner_World_m,
+                                         currentWall,
+                                         currentCornerGap_m) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: pointToSegmentDistance_m returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            double nextCornerGap_m{};
+            if (pointToSegmentDistance_m(corner_World_m,
+                                         nextWall,
+                                         nextCornerGap_m) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: pointToSegmentDistance_m returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             if (currentCornerGap_m <=
                     topologyParameters_in.maximumCornerGap_m &&
@@ -125,7 +159,8 @@ WallLoopClosure tryCloseWallLoop(
         }
 
         result.corners_World_m.clear();
-        return result;
+        closure_out = result;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     if (result.corners_World_m.size() == wallSegments_in.size())
@@ -137,7 +172,8 @@ WallLoopClosure tryCloseWallLoop(
         result.corners_World_m.clear();
     }
 
-    return result;
+    closure_out = result;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

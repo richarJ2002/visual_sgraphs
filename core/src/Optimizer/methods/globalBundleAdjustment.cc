@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::globalBundleAdjustment(
+OptimizerStatus Optimizer::globalBundleAdjustment(
     Map                    *p_map_in,
     int                     iterationCount_in,
     bool                   *p_stopFlag_inout,
@@ -99,19 +99,28 @@ void Optimizer::globalBundleAdjustment(
                      __func__);
     }
 
-    bundleAdjustment(allKeyFrames,
-                     allMapPoints,
-                     allMarkers,
-                     allPlanes,
-                     allPassages,
-                     allRooms,
-                     allFloors,
-                     iterationCount_in,
-                     p_stopFlag_inout,
-                     loopKeyFrameId_in,
-                     useRobustKernel_in,
-                     markerImpact_in,
-                     p_stopRequested_in);
+    if (bundleAdjustment(allKeyFrames,
+                         allMapPoints,
+                         allMarkers,
+                         allPlanes,
+                         allPassages,
+                         allRooms,
+                         allFloors,
+                         iterationCount_in,
+                         p_stopFlag_inout,
+                         loopKeyFrameId_in,
+                         useRobustKernel_in,
+                         markerImpact_in,
+                         p_stopRequested_in) !=
+        OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: bundleAdjustment returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

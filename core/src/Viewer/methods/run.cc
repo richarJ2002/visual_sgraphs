@@ -33,6 +33,7 @@
 #include <mutex>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -125,14 +126,30 @@ void Viewer::run()
         menuShowGraph = true;
     }
 
-    float trackedImageScale = p_tracker->getImageScale();
+    float trackedImageScale{};
+    if (p_tracker->getImageScale(trackedImageScale) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getImageScale returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     cout << "Starting the Viewer" << endl;
     while (1)
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        p_mapDrawer->getCurrentOpenGLCameraMatrix(Twc, Ow);
+        if (p_mapDrawer->getCurrentOpenGLCameraMatrix(Twc, Ow) !=
+            MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getCurrentOpenGLCameraMatrix returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         if (isTrackingStopRequested)
         {
@@ -223,7 +240,17 @@ void Viewer::run()
             camera.Follow(Twc);
         }
 
-        if (menuTopView && p_mapDrawer->p_atlas->isImuInitialized())
+        bool isImuInitialized2{};
+        if ((menuTopView) &&
+            p_mapDrawer->p_atlas->isImuInitialized(isImuInitialized2) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isImuInitialized returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (menuTopView && isImuInitialized2)
         {
             menuTopView  = false;
             isCameraView = false;
@@ -242,24 +269,54 @@ void Viewer::run()
 
         if (menuLocalizationMode && !isLocalizationMode)
         {
-            p_system->activateLocalizationMode();
+            if (p_system->activateLocalizationMode() !=
+                SystemStatus::SYSTEM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: activateLocalizationMode returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             isLocalizationMode = true;
         }
         else if (!menuLocalizationMode && isLocalizationMode)
         {
-            p_system->deactivateLocalizationMode();
+            if (p_system->deactivateLocalizationMode() !=
+                SystemStatus::SYSTEM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: deactivateLocalizationMode returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             isLocalizationMode = false;
         }
 
         if (menuStepByStep && !stepByStep)
         {
             // cout << "Viewer: step by step" << endl;
-            p_tracker->setStepByStep(true);
+            if (p_tracker->setStepByStep(true) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setStepByStep returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             stepByStep = true;
         }
         else if (!menuStepByStep && stepByStep)
         {
-            p_tracker->setStepByStep(false);
+            if (p_tracker->setStepByStep(false) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setStepByStep returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             stepByStep = false;
         }
 
@@ -271,18 +328,39 @@ void Viewer::run()
 
         cameraView.Activate(camera);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        p_mapDrawer->drawCurrentCamera(Twc);
+        if (p_mapDrawer->drawCurrentCamera(Twc) !=
+            MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: drawCurrentCamera returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (menuShowKeyFrames || menuShowGraph || menuShowInertialGraph ||
             menuShowOptLba)
         {
-            p_mapDrawer->drawKeyFrames(menuShowKeyFrames,
-                                       menuShowGraph,
-                                       menuShowInertialGraph,
-                                       menuShowOptLba);
+            if (p_mapDrawer->drawKeyFrames(menuShowKeyFrames,
+                                           menuShowGraph,
+                                           menuShowInertialGraph,
+                                           menuShowOptLba) !=
+                MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: drawKeyFrames returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         if (menuShowPoints)
         {
-            p_mapDrawer->drawMapPoints();
+            if (p_mapDrawer->drawMapPoints() !=
+                MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: drawMapPoints returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         // Draw world frame
@@ -291,12 +369,27 @@ void Viewer::run()
         pangolin::FinishFrame();
 
         cv::Mat toShow;
-        cv::Mat image = p_frameDrawer->drawFrame(trackedImageScale);
+        cv::Mat image{};
+        if (p_frameDrawer->drawFrame(image, trackedImageScale) !=
+            FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: drawFrame returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (shouldDrawBothImages)
         {
-            cv::Mat imageRight =
-                p_frameDrawer->drawRightFrame(trackedImageScale);
+            cv::Mat imageRight{};
+            if (p_frameDrawer->drawRightFrame(imageRight, trackedImageScale) !=
+                FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: drawRightFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             cv::hconcat(image, imageRight, toShow);
         }
         else
@@ -323,13 +416,29 @@ void Viewer::run()
             menuLocalizationMode  = false;
             if (isLocalizationMode)
             {
-                p_system->deactivateLocalizationMode();
+                if (p_system->deactivateLocalizationMode() !=
+                    SystemStatus::SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: deactivateLocalizationMode returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
             isLocalizationMode = false;
             isFollowing        = true;
             menuFollowCamera   = true;
-            p_system->requestResetActiveMapWithCause(
-                ResetCause::VIEWER_REQUEST);
+            if (p_system->requestResetActiveMapWithCause(
+                    ResetCause::VIEWER_REQUEST) !=
+                SystemStatus::SYSTEM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: requestResetActiveMapWithCause returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
             menuReset = false;
         }
 
@@ -337,23 +446,72 @@ void Viewer::run()
         {
             if (isLocalizationMode)
             {
-                p_system->deactivateLocalizationMode();
+                if (p_system->deactivateLocalizationMode() !=
+                    SystemStatus::SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: deactivateLocalizationMode returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
 
             // Stop all threads
-            p_system->shutdown();
+            if (p_system->shutdown() != SystemStatus::SYSTEM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: shutdown returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             // Save camera trajectory
-            p_system->saveTrajectoryEuRoC("CameraTrajectory.txt");
-            p_system->saveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
+            if (p_system->saveTrajectoryEuRoC("CameraTrajectory.txt") !=
+                SystemStatus::SYSTEM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: saveTrajectoryEuRoC returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (p_system->saveKeyFrameTrajectoryEuRoC(
+                    "KeyFrameTrajectory.txt") !=
+                SystemStatus::SYSTEM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: saveKeyFrameTrajectoryEuRoC returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             menuStop = false;
         }
 
-        if (stop())
+        bool isStopped2{};
+        if (stop(isStopped2) != ViewerStatus::VIEWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: stop returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isStopped2)
         {
             for (;;)
             {
-                if (!isStopped())
+                bool isStopped3{};
+                if (isStopped(isStopped3) !=
+                    ViewerStatus::VIEWER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isStopped returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (!isStopped3)
                 {
                     break;
                 }
@@ -361,11 +519,26 @@ void Viewer::run()
             }
         }
 
-        if (checkFinish())
+        bool isFinishRequested{};
+        if (checkFinish(isFinishRequested) !=
+            ViewerStatus::VIEWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkFinish returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isFinishRequested)
             break;
     }
 
-    setFinish();
+    if (setFinish() != ViewerStatus::VIEWER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

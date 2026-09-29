@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 namespace vs_graphs
@@ -39,10 +40,19 @@ SemanticVerifyStatus SemanticVerify::runFloorGate(
                               transform_absorbedToSurviving_in.translation(),
                               1.0);
     std::string     resultText;
-    const bool      passed          = verifyLoopMergeFloors(p_survivingMap_in,
-                                              p_absorbedMap_in,
-                                              transform,
-                                              resultText);
+    bool            passed{};
+    if (verifyLoopMergeFloors(p_survivingMap_in,
+                              p_absorbedMap_in,
+                              transform,
+                              resultText,
+                              passed) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: verifyLoopMergeFloors returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     result_inout.hasFloorGateRun    = true;
     result_inout.hasFloorGatePassed = passed;
     result_inout.floorGateResult    = resultText;

@@ -24,7 +24,8 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
+SemanticsManagerStatus
+    SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
 {
     /*!
      * Discard gound planes that have a height above a threshold from the
@@ -35,13 +36,20 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
      */
 
     /* Get the median height of the plane to compute the threshold */
-    std::optional<float> groundPlaneHeight =
-        computeGroundPlaneHeight(p_groundPlane_in);
+    std::optional<float> groundPlaneHeight{};
+    if (computeGroundPlaneHeight(p_groundPlane_in, groundPlaneHeight) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeGroundPlaneHeight returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (!groundPlaneHeight.has_value())
     {
         /* Nothing to filter against yet -- the main ground plane's support
            cloud is momentarily empty (e.g. right after creation/reset). */
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
     float thresholdY =
         *groundPlaneHeight - p_sysParams->semSeg.maxStepElevation;
@@ -58,7 +66,16 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
     }
 
     /* Go through all ground planes to check validity */
-    for (const auto &plane : p_atlas->getAllPlanes())
+    std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
+    if (p_atlas->getAllPlanes(atlasAllPlanes) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (const auto &plane : atlasAllPlanes)
     {
         /* Skip planes not classed as ground, or are the main ground plane */
         geometric::Plane::PlaneVariant planeExpectedPlaneType{};
@@ -91,7 +108,16 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
         /* If planes above inverted y threshold, then reset plane semantics.
            Skip (don't filter) a plane whose support cloud is momentarily
            empty -- there's nothing to judge its height against yet. */
-        std::optional<float> planeHeight = computeGroundPlaneHeight(plane);
+        std::optional<float> planeHeight{};
+        if (computeGroundPlaneHeight(plane, planeHeight) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: computeGroundPlaneHeight returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (!planeHeight.has_value())
         {
             continue;
@@ -120,8 +146,17 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector3f transformedPlaneCoefficients =
-            transformPlaneEqToGroundReference(planeGetGlobalEquation.coeffs());
+        Eigen::Vector3f transformedPlaneCoefficients{};
+        if (transformPlaneEqToGroundReference(planeGetGlobalEquation.coeffs(),
+                                              transformedPlaneCoefficients) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: transformPlaneEqToGroundReference returned a failure "
+                "status although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /*!
          * If the transformed plane is horizontal based on absolute value, then
@@ -144,6 +179,8 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
             }
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

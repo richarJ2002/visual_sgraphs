@@ -26,14 +26,15 @@ namespace vs_graphs
 namespace core
 {
 
-bool segmentCrossesPassageOpening(
-    const Eigen::Vector3d &segmentStart_World_m_in,
-    const Eigen::Vector3d &segmentEnd_World_m_in,
-    semantic::Passage     *p_passage_in,
-    const Eigen::Vector3d &groundNormal_World_in,
-    const double           openingMargin_m_in,
-    const double           minimumSideDistance_m_in,
-    const bool             requirePassable_in)
+SemanticsManagerStatus
+    segmentCrossesPassageOpening(const Eigen::Vector3d &segmentStart_World_m_in,
+                                 const Eigen::Vector3d &segmentEnd_World_m_in,
+                                 semantic::Passage     *p_passage_in,
+                                 const Eigen::Vector3d &groundNormal_World_in,
+                                 const double           openingMargin_m_in,
+                                 const double minimumSideDistance_m_in,
+                                 bool        &crossesPassageOpening_out,
+                                 const bool   requirePassable_in)
 {
     bool passage_inIsPassable{};
     if (!(p_passage_in == nullptr) && (requirePassable_in) &&
@@ -48,7 +49,8 @@ bool segmentCrossesPassageOpening(
     if (p_passage_in == nullptr ||
         (requirePassable_in && !passage_inIsPassable))
     {
-        return false;
+        crossesPassageOpening_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     g2o::Plane3D passage_inGlobalEquation{};
@@ -87,15 +89,26 @@ bool segmentCrossesPassageOpening(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return segmentCrossesAperture(segmentStart_World_m_in,
-                                  segmentEnd_World_m_in,
-                                  passage_inGlobalEquation.coeffs(),
-                                  passage_inCentroid,
-                                  passage_inWidth,
-                                  passage_inHeight,
-                                  groundNormal_World_in,
-                                  openingMargin_m_in,
-                                  minimumSideDistance_m_in);
+    bool crossesAperture{};
+    if (segmentCrossesAperture(segmentStart_World_m_in,
+                               segmentEnd_World_m_in,
+                               passage_inGlobalEquation.coeffs(),
+                               passage_inCentroid,
+                               passage_inWidth,
+                               passage_inHeight,
+                               groundNormal_World_in,
+                               openingMargin_m_in,
+                               minimumSideDistance_m_in,
+                               crossesAperture) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: segmentCrossesAperture returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    crossesPassageOpening_out = crossesAperture;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

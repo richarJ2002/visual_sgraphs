@@ -30,11 +30,13 @@ namespace vs_graphs
 namespace core
 {
 
-void System::setGNNRoomCandidates(
+SystemStatus System::setGNNRoomCandidates(
     [[maybe_unused]] const std::vector<vs_graphs::core::semantic::Room *>
         &gnnRoomCandidates_in)
 {
     // [TODO] Add the GNN room candidates to the SemanticsManager
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

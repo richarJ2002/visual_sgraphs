@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f Tracking::getImuVwb()
+TrackingStatus Tracking::getImuVwb(Eigen::Vector3f &imuVwb_out)
 {
     Eigen::Vector3f currentFrameGetVelocity{};
     if (currentFrame.getVelocity(currentFrameGetVelocity) !=
@@ -42,7 +42,8 @@ Eigen::Vector3f Tracking::getImuVwb()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return currentFrameGetVelocity;
+    imuVwb_out = currentFrameGetVelocity;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

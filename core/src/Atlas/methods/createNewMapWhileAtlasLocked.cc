@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::createNewMapWhileAtlasLocked()
+AtlasStatus Atlas::createNewMapWhileAtlasLocked()
 {
     std::cout << "\n[Atlas]" << std::endl;
     std::cout << "- Creating a new map (MapId: " << Map::nextId
@@ -66,7 +66,15 @@ void Atlas::createNewMapWhileAtlasLocked()
 
         /* Snapshot room geometry before the map is stranded so that
          * rooms in the new map can inherit identity tags.            */
-        exportRoomContextFromCurrentMap();
+        if (exportRoomContextFromCurrentMap() !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: exportRoomContextFromCurrentMap returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         if (p_activeMap->setStoredMap() != MapStatus::MAP_STATUS_SUCCESS)
         {
@@ -115,6 +123,8 @@ void Atlas::createNewMapWhileAtlasLocked()
         std::lock_guard<std::mutex> contextLock(roomContextMutex);
         isNewMapCreatedPending = true;
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

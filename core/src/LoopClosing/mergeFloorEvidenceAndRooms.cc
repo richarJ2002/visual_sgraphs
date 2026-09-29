@@ -31,13 +31,14 @@ namespace vs_graphs
 namespace core
 {
 
-void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
-                                semantic::Floor *p_duplicateFloor_in)
+LoopClosingStatus
+    mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
+                               semantic::Floor *p_duplicateFloor_in)
 {
     if (p_retainedFloor_inout == nullptr || p_duplicateFloor_in == nullptr ||
         p_retainedFloor_inout == p_duplicateFloor_in)
     {
-        return;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     semantic::Floor *p_bestFloor = nullptr;
@@ -130,6 +131,8 @@ void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
             }
         }
     }
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

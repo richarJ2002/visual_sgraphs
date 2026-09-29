@@ -26,10 +26,18 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::mergeOverlappingPassages(void)
+SemanticsManagerStatus SemanticsManager::mergeOverlappingPassages(void)
 {
-    geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
-    bool              groundPlaneIsBad{};
+    geometric::Plane *p_groundPlane = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool groundPlaneIsBad{};
     if (!(p_groundPlane == nullptr) &&
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -41,7 +49,7 @@ void SemanticsManager::mergeOverlappingPassages(void)
     }
     if (p_groundPlane == nullptr || groundPlaneIsBad)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
     g2o::Plane3D groundPlaneGetGlobalEquation{};
     if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
@@ -56,12 +64,19 @@ void SemanticsManager::mergeOverlappingPassages(void)
     const double          groundNorm = groundEq.head<3>().norm();
     if (!groundEq.allFinite() || groundNorm < 1e-8)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
     const Eigen::Vector3d groundNormal_World = groundEq.head<3>() / groundNorm;
 
-    const std::vector<semantic::Passage *> allPassages =
-        p_atlas->getAllPassages();
+    std::vector<semantic::Passage *> allPassages{};
+    if (p_atlas->getAllPassages(allPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (std::size_t allPassageIndex = 0U; allPassageIndex < allPassages.size();
          ++allPassageIndex)
@@ -499,6 +514,8 @@ void SemanticsManager::mergeOverlappingPassages(void)
             }
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

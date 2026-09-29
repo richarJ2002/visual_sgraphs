@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addMapPlane(vs_graphs::core::geometric::Plane *p_plane_in)
+AtlasStatus Atlas::addMapPlane(vs_graphs::core::geometric::Plane *p_plane_in)
 {
     vs_graphs::core::Map *p_ownerMap = nullptr;
     if (p_plane_in->getMap(p_ownerMap) !=
@@ -49,6 +49,8 @@ void Atlas::addMapPlane(vs_graphs::core::geometric::Plane *p_plane_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

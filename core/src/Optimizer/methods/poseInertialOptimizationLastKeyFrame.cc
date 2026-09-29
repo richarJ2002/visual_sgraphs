@@ -37,8 +37,9 @@ namespace vs_graphs
 namespace core
 {
 
-int Optimizer::poseInertialOptimizationLastKeyFrame(
+OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
     Frame *p_frame_inout,
+    int   &inlierCount_out,
     bool   isRecentlyInitialized_in)
 {
     g2o::SparseOptimizer                 optimizer;
@@ -81,15 +82,22 @@ int Optimizer::poseInertialOptimizationLastKeyFrame(
     vector<EdgeStereoOnlyPose *> edgesStereos;
     vector<size_t>               monoEdgeIndices;
     vector<size_t>               stereoEdgeIndices;
-    addPoseOnlyObservationEdges(p_frame_inout,
-                                p_poseVertex,
-                                optimizer,
-                                edgesMonos,
-                                edgesStereos,
-                                monoEdgeIndices,
-                                stereoEdgeIndices,
-                                initialMonoCorrespondenceCount,
-                                initialStereoCorrespondenceCount);
+    if (addPoseOnlyObservationEdges(p_frame_inout,
+                                    p_poseVertex,
+                                    optimizer,
+                                    edgesMonos,
+                                    edgesStereos,
+                                    monoEdgeIndices,
+                                    stereoEdgeIndices,
+                                    initialMonoCorrespondenceCount,
+                                    initialStereoCorrespondenceCount) !=
+        OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addPoseOnlyObservationEdges returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     initialCorrespondenceCount =
         initialMonoCorrespondenceCount + initialStereoCorrespondenceCount;
@@ -303,9 +311,36 @@ int Optimizer::poseInertialOptimizationLastKeyFrame(
     Eigen::Matrix<double, 15, 15> H;
     H.setZero();
 
-    H.block<9, 9>(0, 0) += ei->getHessian2();
-    H.block<3, 3>(9, 9) += p_egr->getHessian2();
-    H.block<3, 3>(12, 12) += p_ear->getHessian2();
+    Eigen::Matrix<double, 9, 9> eiHessian2{};
+    if (ei->getHessian2(eiHessian2) !=
+        EdgeInertialStatus::EDGE_INERTIAL_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getHessian2 returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    H.block<9, 9>(0, 0) += eiHessian2;
+    Eigen::Matrix3d egrHessian2{};
+    if (p_egr->getHessian2(egrHessian2) !=
+        EdgeGyroRWStatus::EDGE_GYRO_RWSTATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getHessian2 returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    H.block<3, 3>(9, 9) += egrHessian2;
+    Eigen::Matrix3d earHessian2{};
+    if (p_ear->getHessian2(earHessian2) !=
+        EdgeAccRWStatus::EDGE_ACC_RWSTATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getHessian2 returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    H.block<3, 3>(12, 12) += earHessian2;
 
     int tot_in = 0, tot_out = 0;
     for (size_t keyPointIndex = 0, iend = edgesMonos.size();
@@ -318,7 +353,16 @@ int Optimizer::poseInertialOptimizationLastKeyFrame(
 
         if (!p_frame_inout->outlierFlags[featureIndex])
         {
-            H.block<6, 6>(0, 0) += e->getHessian();
+            Eigen::Matrix<double, 6, 6> eHessian{};
+            if (e->getHessian(eHessian) !=
+                EdgeMonoOnlyPoseStatus::EDGE_MONO_ONLY_POSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHessian returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            H.block<6, 6>(0, 0) += eHessian;
             tot_in++;
         }
         else
@@ -335,7 +379,16 @@ int Optimizer::poseInertialOptimizationLastKeyFrame(
 
         if (!p_frame_inout->outlierFlags[featureIndex])
         {
-            H.block<6, 6>(0, 0) += e->getHessian();
+            Eigen::Matrix<double, 6, 6> eHessian2{};
+            if (e->getHessian(eHessian2) !=
+                EdgeStereoOnlyPoseStatus::EDGE_STEREO_ONLY_POSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHessian returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            H.block<6, 6>(0, 0) += eHessian2;
             tot_in++;
         }
         else
@@ -350,7 +403,8 @@ int Optimizer::poseInertialOptimizationLastKeyFrame(
                               p_accelerometerBiasVertex->estimate(),
                               H);
 
-    return initialCorrespondenceCount - badCount;
+    inlierCount_out = initialCorrespondenceCount - badCount;
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

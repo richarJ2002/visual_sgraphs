@@ -32,22 +32,44 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::enforceUniqueWallOwnership(void)
+SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
 {
-    std::vector<vs_graphs::core::semantic::Room *> allRooms =
-        p_atlas->getAllRooms();
+    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
+    if (p_atlas->getAllRooms(allRooms) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     std::sort(allRooms.begin(),
               allRooms.end(),
               semantic::isEntityIdLess<semantic::Room>);
 
-    std::vector<semantic::Passage *> allPassages = p_atlas->getAllPassages();
+    std::vector<semantic::Passage *> allPassages{};
+    if (p_atlas->getAllPassages(allPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     std::sort(allPassages.begin(),
               allPassages.end(),
               semantic::isEntityIdLess<semantic::Passage>);
 
     Eigen::Vector3d   groundNormal_World = Eigen::Vector3d::Zero();
-    geometric::Plane *p_groundPlane      = p_atlas->getBiggestGroundPlane();
-    bool              groundPlaneIsBad{};
+    geometric::Plane *p_groundPlane      = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool groundPlaneIsBad{};
     if ((p_groundPlane != nullptr) &&
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -191,8 +213,9 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                if (p_passage == nullptr || !passageIsPassable ||
-                    !segmentCrossesPassageOpening(
+                bool crossesPassageOpening{};
+                if (!(p_passage == nullptr || !passageIsPassable) &&
+                    segmentCrossesPassageOpening(
                         nearOwnerCentroid,
                         wallGetCentroid.cast<double>(),
                         p_passage,
@@ -200,7 +223,18 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                         p_sysParams->roomSeg.passagePartition.openingMargin_m,
                         p_sysParams->roomSeg.passagePartition
                             .minimumSideDistance_m,
-                        false))
+                        crossesPassageOpening,
+                        false) != SemanticsManagerStatus::
+                                      SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: segmentCrossesPassageOpening returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_passage == nullptr || !passageIsPassable ||
+                    !crossesPassageOpening)
                 {
                     continue;
                 }
@@ -237,9 +271,21 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                         "cannot fail; continuing as before.",
                         __func__);
                 }
+                Map *p_atlasCurrentMap = nullptr;
+                if (!(p_farSideOwner == nullptr || farSideOwnerIsBad ||
+                      p_farSideOwner == p_nearOwner) &&
+                    p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCurrentMap returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
                 if (p_farSideOwner == nullptr || farSideOwnerIsBad ||
                     p_farSideOwner == p_nearOwner ||
-                    p_farSideOwnerMap != p_atlas->getCurrentMap())
+                    p_farSideOwnerMap != p_atlasCurrentMap)
                 {
                     passageRejectedOwners.insert(p_nearOwner);
                     continue;
@@ -565,6 +611,8 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
             }
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

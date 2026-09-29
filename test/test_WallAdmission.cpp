@@ -123,8 +123,9 @@ void makeWallWithGridCloud(geometric::Plane      &wall_inout,
 
 TEST(WallAdmission, RejectsNarrowDoorFramePostWhenGroundAligned)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* Wall normal along world X; ground normal along world Z (Z-up). The
@@ -141,17 +142,20 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostWhenGroundAligned)
                           0.04,
                           1.1);
 
-    const bool admissible =
-        manager.evaluateWallAdmissionEvidenceAdmissibleForTest(
-            &wall,
-            Eigen::Vector3d(0.0, 0.0, 1.0));
+    bool admissible{};
+    ASSERT_EQ((manager.evaluateWallAdmissionEvidenceAdmissibleForTest(
+                  &wall,
+                  Eigen::Vector3d(0.0, 0.0, 1.0),
+                  admissible)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_FALSE(admissible);
 }
 
 TEST(WallAdmission, AdmitsPhysicallyAdequateWallWhenGroundAligned)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* Same orientation as above, but an ordinary wall-sized panel: 2 m wide,
@@ -167,10 +171,12 @@ TEST(WallAdmission, AdmitsPhysicallyAdequateWallWhenGroundAligned)
                           1.0,
                           1.1);
 
-    const bool admissible =
-        manager.evaluateWallAdmissionEvidenceAdmissibleForTest(
-            &wall,
-            Eigen::Vector3d(0.0, 0.0, 1.0));
+    bool admissible{};
+    ASSERT_EQ((manager.evaluateWallAdmissionEvidenceAdmissibleForTest(
+                  &wall,
+                  Eigen::Vector3d(0.0, 0.0, 1.0),
+                  admissible)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_TRUE(admissible);
 }
 
@@ -183,8 +189,9 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostOnObliqueWall)
      * along this wall's own ground-derived horizontal tangent and world Z,
      * exactly as a real, always-vertical door-frame post would be,
      * regardless of which way the wall faces. */
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     const Eigen::Vector3d normal_World(0.8, 0.6, 0.0);
@@ -206,10 +213,12 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostOnObliqueWall)
                           0.04,
                           1.1);
 
-    const bool admissible =
-        manager.evaluateWallAdmissionEvidenceAdmissibleForTest(
-            &wall,
-            groundNormal_World);
+    bool admissible{};
+    ASSERT_EQ((manager.evaluateWallAdmissionEvidenceAdmissibleForTest(
+                  &wall,
+                  groundNormal_World,
+                  admissible)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_FALSE(admissible);
 }
 
@@ -222,8 +231,9 @@ TEST(WallAdmission,
      * (2 m x 2 m) cloud clears the width/height thresholds under any
      * in-plane axis choice, so this is a fallback-safety check, not a
      * reproduction of the axis-dependent bug the two tests above target. */
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     geometric::Plane wall;
@@ -236,10 +246,12 @@ TEST(WallAdmission,
                           1.0,
                           1.0);
 
-    const bool admissible =
-        manager.evaluateWallAdmissionEvidenceAdmissibleForTest(
-            &wall,
-            Eigen::Vector3d::Zero());
+    bool admissible{};
+    ASSERT_EQ((manager.evaluateWallAdmissionEvidenceAdmissibleForTest(
+                  &wall,
+                  Eigen::Vector3d::Zero(),
+                  admissible)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_TRUE(admissible);
 }
 
@@ -305,8 +317,9 @@ std::unique_ptr<geometric::Plane> makeAdmissibleWallAtOrigin(int  id_in,
 
 TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> wall =
@@ -340,7 +353,9 @@ TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
     ASSERT_EQ((room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const bool admitted = manager.admitWallToRoomForTest(&room, wall.get());
+    bool admitted{};
+    ASSERT_EQ((manager.admitWallToRoomForTest(&room, wall.get(), admitted)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_FALSE(admitted);
     std::vector<vs_graphs::core::geometric::Plane *> walls{};
     ASSERT_EQ((room.getWalls(walls)),
@@ -350,8 +365,9 @@ TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
 
 TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> wall =
@@ -379,7 +395,9 @@ TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
     ASSERT_EQ((room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const bool admitted = manager.admitWallToRoomForTest(&room, wall.get());
+    bool admitted{};
+    ASSERT_EQ((manager.admitWallToRoomForTest(&room, wall.get(), admitted)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_TRUE(admitted);
     std::vector<vs_graphs::core::geometric::Plane *> walls{};
     ASSERT_EQ((room.getWalls(walls)),
@@ -392,8 +410,9 @@ TEST(WallAdmission, AdmitsWallWithNoObservationEvidenceRatherThanRejectingBlind)
     /* Fail-open: with no keyframe evidence at all, getObservationSideSnapshot
      * reports Face::UNKNOWN, not NEGATIVE -- the gate must not reject a wall
      * it simply lacks side evidence for. */
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> wall =
@@ -407,7 +426,9 @@ TEST(WallAdmission, AdmitsWallWithNoObservationEvidenceRatherThanRejectingBlind)
     ASSERT_EQ((room.setCentroid(Eigen::Vector3d(-1.0, 0.0, 0.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const bool admitted = manager.admitWallToRoomForTest(&room, wall.get());
+    bool admitted{};
+    ASSERT_EQ((manager.admitWallToRoomForTest(&room, wall.get(), admitted)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_TRUE(admitted);
 }
 
@@ -419,8 +440,9 @@ TEST(WallAdmission, AdmitsWallWithNoObservationEvidenceRatherThanRejectingBlind)
 
 TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* semantic::Passage at x=0, generous aperture, with a stable prospective
@@ -459,7 +481,8 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
     ASSERT_EQ((passage.setProspectiveRoom(&prospective)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
-    atlas.addMapPassage(&passage);
+    ASSERT_EQ((atlas.addMapPassage(&passage)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* Candidate wall unambiguously on the far side of the passage. */
     geometric::Plane wall;
@@ -482,7 +505,9 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
     ASSERT_EQ((room.setCentroid(Eigen::Vector3d(0.0005, 0.0, 0.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const bool admitted = manager.admitWallToRoomForTest(&room, &wall);
+    bool admitted{};
+    ASSERT_EQ((manager.admitWallToRoomForTest(&room, &wall, admitted)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_TRUE(admitted);
     std::vector<vs_graphs::core::geometric::Plane *> walls{};
     ASSERT_EQ((room.getWalls(walls)),
@@ -505,8 +530,9 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
      * near-side direction from the ambiguous centroid's own residual sign
      * (that sign is noise and can point either way), so this stays exactly
      * as conservative as before the fix. */
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     semantic::Passage passage;
@@ -536,7 +562,8 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
     ASSERT_EQ((passage.setProspectiveRoom(&prospective)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
-    atlas.addMapPassage(&passage);
+    ASSERT_EQ((atlas.addMapPassage(&passage)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     ASSERT_EQ((wall.setId(3)), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
@@ -553,7 +580,9 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
     ASSERT_EQ((room.setCentroid(Eigen::Vector3d(0.0005, 0.0, 0.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const bool admitted = manager.admitWallToRoomForTest(&room, &wall);
+    bool admitted{};
+    ASSERT_EQ((manager.admitWallToRoomForTest(&room, &wall, admitted)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_FALSE(admitted);
     std::vector<vs_graphs::core::geometric::Plane *> walls{};
     ASSERT_EQ((room.getWalls(walls)),
@@ -744,13 +773,15 @@ std::unique_ptr<geometric::Plane>
 
 TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> ground =
         makeRefitGroundPlaneAtOrigin(1, p_map);
-    atlas.addMapPlane(ground.get());
+    ASSERT_EQ((atlas.addMapPlane(ground.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* Wall X: normal +Y, runs along world X through the origin -- owned by
      * semantic::Room A. */
@@ -766,7 +797,8 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((roomA.setWalls(wallX.get())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    atlas.addDetectedMapRoom(&roomA);
+    ASSERT_EQ((atlas.addDetectedMapRoom(&roomA)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* Wall Y: normal +X, runs along world Y through the origin -- crosses
      * Wall X decisively at the origin, well inside both walls' interiors. */
@@ -782,7 +814,9 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
     ASSERT_EQ((roomB.setMap(p_map)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    const bool admitted = manager.admitWallToRoomForTest(&roomB, wallY.get());
+    bool admitted{};
+    ASSERT_EQ((manager.admitWallToRoomForTest(&roomB, wallY.get(), admitted)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     EXPECT_FALSE(admitted);
     std::vector<vs_graphs::core::geometric::Plane *> walls2{};
@@ -811,8 +845,9 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
 
 TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* semantic::Passage at x=0, generous aperture, known near side -X. */
@@ -850,8 +885,10 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
     ASSERT_EQ((passage.setProspectiveRoom(&prospective)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
-    atlas.addMapPassage(&passage);
-    atlas.addDetectedMapRoom(&prospective);
+    ASSERT_EQ((atlas.addMapPassage(&passage)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.addDetectedMapRoom(&prospective)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* Far-side wall at x=1.5, first observed from the near side. */
     geometric::Plane wall;
@@ -871,7 +908,8 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
     ASSERT_EQ((prospective.setWalls(&wall)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    manager.enforcePassageSideInvariantForTest();
+    ASSERT_EQ((manager.enforcePassageSideInvariantForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     std::vector<vs_graphs::core::geometric::Plane *> walls{};
     ASSERT_EQ((prospective.getWalls(walls)),
@@ -888,8 +926,9 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     /* Same geometry as above, but the passage has no established
      * near-side direction: the exemption must not guess, so the face
      * check evicts exactly as before the fix. */
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     semantic::Passage passage;
@@ -922,8 +961,10 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     ASSERT_EQ((passage.setProspectiveRoom(&prospective)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
 
-    atlas.addMapPassage(&passage);
-    atlas.addDetectedMapRoom(&prospective);
+    ASSERT_EQ((atlas.addMapPassage(&passage)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.addDetectedMapRoom(&prospective)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     ASSERT_EQ((wall.setId(3)), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
@@ -941,7 +982,8 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     ASSERT_EQ((prospective.setWalls(&wall)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    manager.enforcePassageSideInvariantForTest();
+    ASSERT_EQ((manager.enforcePassageSideInvariantForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     std::vector<vs_graphs::core::geometric::Plane *> walls{};
     ASSERT_EQ((prospective.getWalls(walls)),
@@ -952,7 +994,8 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
 TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* 3.0 m x 2.0 m grid wall on the x=0 plane: 400 support points. */
     geometric::Plane wall;

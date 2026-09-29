@@ -30,13 +30,14 @@
 #include "System.h"
 #include "Tracking.h"
 #include "Viewer.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void System::shutdown()
+SystemStatus System::shutdown()
 {
     {
         unique_lock<mutex> lock(resetMutex);
@@ -45,13 +46,47 @@ void System::shutdown()
 
     cout << "Shutdown" << endl;
 
-    p_localMapper->requestFinish();
-    p_loopCloser->requestFinish();
-    p_semanticSegmentation->requestFinish();
-    p_semanticsManager->requestFinish();
+    if (p_localMapper->requestFinish() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_loopCloser->requestFinish() !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_semanticSegmentation->requestFinish() !=
+        SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_semanticsManager->requestFinish() !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_viewer != static_cast<Viewer *>(nullptr))
     {
-        p_viewer->requestFinish();
+        if (p_viewer->requestFinish() != ViewerStatus::VIEWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: requestFinish returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     /*
@@ -59,25 +94,75 @@ void System::shutdown()
      * here prevents Atlas serialization from racing final worker updates.
      */
     std::size_t shutdownPollCount = 0U;
-    while (
-        !p_localMapper->isFinished() || !p_loopCloser->isFinished() ||
-        !p_semanticSegmentation->isFinished() ||
-        !p_semanticsManager->isFinished() ||
-        (p_viewer != static_cast<Viewer *>(nullptr) && !p_viewer->isFinished()))
+    for (;;)
     {
+        bool haveFinished{};
+        if (haveWorkersFinished(haveFinished) !=
+            SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: haveWorkersFinished returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (haveFinished)
+        {
+            break;
+        }
         usleep(1000);
         ++shutdownPollCount;
         if (shutdownPollCount % 1000U == 0U)
         {
-            const bool localMappingFinished = p_localMapper->isFinished();
-            const bool loopClosingFinished  = p_loopCloser->isFinished();
-            const bool semanticSegmentationFinished =
-                p_semanticSegmentation->isFinished();
-            const bool semanticsManagerFinished =
-                p_semanticsManager->isFinished();
+            bool localMappingFinished{};
+            if (p_localMapper->isFinished(localMappingFinished) !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isFinished returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            bool loopClosingFinished{};
+            if (p_loopCloser->isFinished(loopClosingFinished) !=
+                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isFinished returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            bool semanticSegmentationFinished{};
+            if (p_semanticSegmentation->isFinished(
+                    semanticSegmentationFinished) !=
+                SemanticSegmentationStatus::
+                    SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isFinished returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            bool semanticsManagerFinished{};
+            if (p_semanticsManager->isFinished(semanticsManagerFinished) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isFinished returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            bool viewerIsFinished{};
+            if (!(p_viewer == static_cast<Viewer *>(nullptr)) &&
+                p_viewer->isFinished(viewerIsFinished) !=
+                    ViewerStatus::VIEWER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isFinished returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             const bool viewerFinished =
-                p_viewer == static_cast<Viewer *>(nullptr) ||
-                p_viewer->isFinished();
+                p_viewer == static_cast<Viewer *>(nullptr) || viewerIsFinished;
             std::cout << "[System::Shutdown] local_mapping="
                       << localMappingFinished
                       << " loop_closing=" << loopClosingFinished
@@ -93,17 +178,48 @@ void System::shutdown()
 
     if (!saveAtlasFile.empty())
     {
-        Verbose::printMess("Atlas saving to file " + saveAtlasFile,
-                           Verbose::VERBOSITY_NORMAL);
+        if (Verbose::printMess("Atlas saving to file " + saveAtlasFile,
+                               Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        std::unique_lock<std::mutex> semanticUpdateLock =
-            p_atlas->acquireSemanticUpdateLock();
-        saveAtlas(FileType::BINARY_FILE);
+        std::unique_lock<std::mutex> semanticUpdateLock{};
+        if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: acquireSemanticUpdateLock returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        bool isSaved{};
+        if (saveAtlas(FileType::BINARY_FILE, isSaved) !=
+            SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: saveAtlas returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
 #ifdef REGISTER_TIMES
-    p_tracker->printTimeStats();
+    if (p_tracker->printTimeStats() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printTimeStats returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 #endif
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

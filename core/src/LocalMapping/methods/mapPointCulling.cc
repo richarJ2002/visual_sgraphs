@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::mapPointCulling()
+LocalMappingStatus LocalMapping::mapPointCulling()
 {
     // Check Recent Added MapPoints
     list<MapPoint *>::iterator recentMapPointIt  = recentAddedMapPoints.begin();
@@ -131,6 +131,8 @@ void LocalMapping::mapPointCulling()
             }
         }
     }
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

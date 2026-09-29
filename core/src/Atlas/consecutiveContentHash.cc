@@ -26,23 +26,98 @@
 #include "Atlas.h"
 
 #include "private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-std::size_t consecutiveContentHash(Map *p_oldMap_in, Map *p_currentMap_in)
+AtlasStatus consecutiveContentHash(Map         *p_oldMap_in,
+                                   Map         *p_currentMap_in,
+                                   std::size_t &contentHash_out)
 {
-    std::size_t contentHash = countLiveRooms(p_oldMap_in);
-    contentHash = contentHash * 31U + countLiveWallPlanes(p_oldMap_in);
-    contentHash = contentHash * 31U + countLivePassages(p_oldMap_in);
-    contentHash = contentHash * 31U + countLiveFloors(p_oldMap_in);
-    contentHash = contentHash * 31U + countLiveRooms(p_currentMap_in);
-    contentHash = contentHash * 31U + countLiveWallPlanes(p_currentMap_in);
-    contentHash = contentHash * 31U + countLivePassages(p_currentMap_in);
-    contentHash = contentHash * 31U + countLiveFloors(p_currentMap_in);
-    return contentHash;
+    std::size_t contentHash{};
+    if (countLiveRooms(p_oldMap_in, contentHash) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countLiveRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::size_t liveWallPlanes{};
+    if (countLiveWallPlanes(p_oldMap_in, liveWallPlanes) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countLiveWallPlanes returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    contentHash = contentHash * 31U + liveWallPlanes;
+    std::size_t livePassages{};
+    if (countLivePassages(p_oldMap_in, livePassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countLivePassages returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    contentHash = contentHash * 31U + livePassages;
+    std::size_t liveFloors{};
+    if (countLiveFloors(p_oldMap_in, liveFloors) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countLiveFloors returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    contentHash = contentHash * 31U + liveFloors;
+    std::size_t liveRooms{};
+    if (countLiveRooms(p_currentMap_in, liveRooms) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countLiveRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    contentHash = contentHash * 31U + liveRooms;
+    std::size_t liveWallPlanes2{};
+    if (countLiveWallPlanes(p_currentMap_in, liveWallPlanes2) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countLiveWallPlanes returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    contentHash = contentHash * 31U + liveWallPlanes2;
+    std::size_t livePassages2{};
+    if (countLivePassages(p_currentMap_in, livePassages2) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countLivePassages returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    contentHash = contentHash * 31U + livePassages2;
+    std::size_t liveFloors2{};
+    if (countLiveFloors(p_currentMap_in, liveFloors2) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countLiveFloors returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    contentHash     = contentHash * 31U + liveFloors2;
+    contentHash_out = contentHash;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

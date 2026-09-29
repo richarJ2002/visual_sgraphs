@@ -26,8 +26,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
-                                               geometric::Plane *p_wall_in)
+SemanticsManagerStatus
+    SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
+                                              geometric::Plane *p_wall_in,
+                                              bool &isWallFaceForeignToRoom_out)
 {
     bool room_inIsBad{};
     if (!(p_room_in == nullptr) &&
@@ -52,7 +54,8 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
     if (p_room_in == nullptr || room_inIsBad || p_wall_in == nullptr ||
         wallIsBad)
     {
-        return false;
+        isWallFaceForeignToRoom_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* The face's identity: the camera position it was first observed from.
@@ -74,7 +77,8 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
     {
         /* Planes created before the stamp existed carry no face identity;
          * make no claim rather than a wrong one. */
-        return false;
+        isWallFaceForeignToRoom_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     g2o::Plane3D wallGetGlobalEquation{};
@@ -91,7 +95,8 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
 
     if (!equation_World.allFinite() || normalNorm <= 1e-8)
     {
-        return false;
+        isWallFaceForeignToRoom_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     equation_World /= normalNorm;
@@ -114,7 +119,8 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
 
     if (!std::isfinite(observedSide_m) || !std::isfinite(roomSide_m))
     {
-        return false;
+        isWallFaceForeignToRoom_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* Matches the resolvable-side floor already used by the association path
@@ -126,14 +132,16 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
     if (std::abs(observedSide_m) < minimumResolvableSide_m ||
         std::abs(roomSide_m) < minimumResolvableSide_m)
     {
-        return false;
+        isWallFaceForeignToRoom_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* Opposite sides: the camera that produced this face was on the far side
      * of it from this room, so this is the neighbouring room's face. The
      * room's own face of the same physical wall is a separate plane, which
      * it has evidently not observed yet. */
-    return observedSide_m * roomSide_m < 0.0;
+    isWallFaceForeignToRoom_out = observedSide_m * roomSide_m < 0.0;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

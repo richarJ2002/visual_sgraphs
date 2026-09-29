@@ -38,15 +38,31 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::createInitialMapMonocular()
+TrackingStatus Tracking::createInitialMapMonocular()
 {
     // Create KeyFrames
-    KeyFrame *p_keyFrameInitial = new KeyFrame(initialFrame,
-                                               p_atlas->getCurrentMap(),
-                                               p_keyFrameDatabase);
-    KeyFrame *p_keyFrameCurrent = new KeyFrame(currentFrame,
-                                               p_atlas->getCurrentMap(),
-                                               p_keyFrameDatabase);
+    Map *p_atlasCurrentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    KeyFrame *p_keyFrameInitial =
+        new KeyFrame(initialFrame, p_atlasCurrentMap, p_keyFrameDatabase);
+    Map *p_atlasCurrentMap2 = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap2) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    KeyFrame *p_keyFrameCurrent =
+        new KeyFrame(currentFrame, p_atlasCurrentMap2, p_keyFrameDatabase);
 
     if (sensor == System::IMU_MONOCULAR)
         p_keyFrameInitial->p_imuPreintegrated = (IMU::Preintegrated *)(nullptr);
@@ -69,8 +85,22 @@ void Tracking::createInitialMapMonocular()
     }
 
     // Insert KFs in the map
-    p_atlas->addKeyFrame(p_keyFrameInitial);
-    p_atlas->addKeyFrame(p_keyFrameCurrent);
+    if (p_atlas->addKeyFrame(p_keyFrameInitial) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addKeyFrame returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_atlas->addKeyFrame(p_keyFrameCurrent) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addKeyFrame returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (size_t initialMatchIndex = 0; initialMatchIndex < iniMatches.size();
          initialMatchIndex++)
@@ -83,11 +113,19 @@ void Tracking::createInitialMapMonocular()
         worldPosition << iniP3D[initialMatchIndex].x,
             iniP3D[initialMatchIndex].y, iniP3D[initialMatchIndex].z;
         Sophus::SE3f Tc0mp(Eigen::Matrix3f::Identity(), worldPosition);
-        Sophus::SE3f Twmp    = poseTc0w.inverse() * Tc0mp;
-        worldPosition        = Twmp.translation();
-        MapPoint *p_mapPoint = new MapPoint(worldPosition,
-                                            p_keyFrameCurrent,
-                                            p_atlas->getCurrentMap());
+        Sophus::SE3f Twmp       = poseTc0w.inverse() * Tc0mp;
+        worldPosition           = Twmp.translation();
+        Map *p_atlasCurrentMap3 = nullptr;
+        if (p_atlas->getCurrentMap(p_atlasCurrentMap3) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        MapPoint *p_mapPoint =
+            new MapPoint(worldPosition, p_keyFrameCurrent, p_atlasCurrentMap3);
 
         if (p_keyFrameInitial->addMapPoint(p_mapPoint, initialMatchIndex) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -148,7 +186,14 @@ void Tracking::createInitialMapMonocular()
         currentFrame.outlierFlags[iniMatches[initialMatchIndex]] = false;
 
         // Add to Map
-        p_atlas->addMapPoint(p_mapPoint);
+        if (p_atlas->addMapPoint(p_mapPoint) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addMapPoint returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     // Update Connections
@@ -183,9 +228,17 @@ void Tracking::createInitialMapMonocular()
 
     // Bundle Adjustment
     std::cout << "\n[Tracking]" << std::endl;
-    std::cout << "- New map created with #"
-              << to_string(p_atlas->getMapPointCount()) << " points!"
-              << std::endl;
+    unsigned long atlasMapPointCount{};
+    if (p_atlas->getMapPointCount(atlasMapPointCount) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMapPointCount returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::cout << "- New map created with #" << to_string(atlasMapPointCount)
+              << " points!" << std::endl;
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -195,12 +248,28 @@ void Tracking::createInitialMapMonocular()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    Optimizer::globalBundleAdjustment(p_atlas->getCurrentMap(),
-                                      20,
-                                      nullptr,
-                                      0,
-                                      true,
-                                      p_params->markers.impact);
+    Map *p_atlasCurrentMap4 = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap4) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (Optimizer::globalBundleAdjustment(p_atlasCurrentMap4,
+                                          20,
+                                          nullptr,
+                                          0,
+                                          true,
+                                          p_params->markers.impact) !=
+        OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: globalBundleAdjustment returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     float medianDepth{};
     if (p_keyFrameInitial->computeSceneMedianDepth(2, medianDepth) !=
@@ -232,11 +301,26 @@ void Tracking::createInitialMapMonocular()
         keyFrameCurrentTrackedMapPointCount < 50) // TODO Check, originally 100
                                                   // tracks
     {
-        Verbose::printMess("Wrong initialization, reseting...",
-                           Verbose::VERBOSITY_QUIET);
-        p_system->requestResetActiveMapWithCause(
-            ResetCause::INITIALIZATION_INVALID_MONOCULAR_MAP);
-        return;
+        if (Verbose::printMess("Wrong initialization, reseting...",
+                               Verbose::VERBOSITY_QUIET) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_system->requestResetActiveMapWithCause(
+                ResetCause::INITIALIZATION_INVALID_MONOCULAR_MAP) !=
+            SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: requestResetActiveMapWithCause returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     // Scale initial baseline
@@ -310,13 +394,37 @@ void Tracking::createInitialMapMonocular()
         p_keyFrameInitial->p_nextKF           = p_keyFrameCurrent;
         p_keyFrameCurrent->p_imuPreintegrated = p_imuPreintegratedFromLastKF;
 
-        p_imuPreintegratedFromLastKF = new IMU::Preintegrated(
-            p_keyFrameCurrent->p_imuPreintegrated->getUpdatedBias(),
-            p_keyFrameCurrent->imuCalibration);
+        IMU::Bias updatedBias{};
+        if (p_keyFrameCurrent->p_imuPreintegrated->getUpdatedBias(
+                updatedBias) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getUpdatedBias returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_imuPreintegratedFromLastKF =
+            new IMU::Preintegrated(updatedBias,
+                                   p_keyFrameCurrent->imuCalibration);
     }
 
-    p_localMapper->insertKeyFrame(p_keyFrameInitial);
-    p_localMapper->insertKeyFrame(p_keyFrameCurrent);
+    if (p_localMapper->insertKeyFrame(p_keyFrameInitial) !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: insertKeyFrame returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_localMapper->insertKeyFrame(p_keyFrameCurrent) !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: insertKeyFrame returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     p_localMapper->firstTimestamp = p_keyFrameCurrent->timeStamp;
 
     Sophus::SE3f keyFrameCurrentPose{};
@@ -342,12 +450,29 @@ void Tracking::createInitialMapMonocular()
 
     localKeyFrames.push_back(p_keyFrameCurrent);
     localKeyFrames.push_back(p_keyFrameInitial);
-    localMapPoints                   = p_atlas->getAllMapPoints();
+    std::vector<MapPoint *> atlasAllMapPoints{};
+    if (p_atlas->getAllMapPoints(atlasAllMapPoints) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    localMapPoints                   = atlasAllMapPoints;
     p_referenceKF                    = p_keyFrameCurrent;
     currentFrame.p_referenceKeyFrame = p_keyFrameCurrent;
 
     // Compute here initial velocity
-    vector<KeyFrame *> keyFrames = p_atlas->getAllKeyFrames();
+    std::vector<KeyFrame *> keyFrames{};
+    if (p_atlas->getAllKeyFrames(keyFrames) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     Sophus::SE3f pose{};
     if (keyFrames.back()->getPose(pose) !=
@@ -377,7 +502,14 @@ void Tracking::createInitialMapMonocular()
 
     lastFrame = Frame(currentFrame);
 
-    p_atlas->setReferenceMapPoints(localMapPoints);
+    if (p_atlas->setReferenceMapPoints(localMapPoints) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setReferenceMapPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     Sophus::SE3f keyFrameCurrentPose2{};
     if (p_keyFrameCurrent->getPose(keyFrameCurrentPose2) !=
@@ -388,13 +520,31 @@ void Tracking::createInitialMapMonocular()
                      "fail; continuing as before.",
                      __func__);
     }
-    p_mapDrawer->setCurrentCameraPose(keyFrameCurrentPose2);
+    if (p_mapDrawer->setCurrentCameraPose(keyFrameCurrentPose2) !=
+        MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCurrentCameraPose returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    p_atlas->getCurrentMap()->keyFrameOrigins.push_back(p_keyFrameInitial);
+    Map *p_atlasCurrentMap5 = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap5) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    p_atlasCurrentMap5->keyFrameOrigins.push_back(p_keyFrameInitial);
 
     state = OK;
 
     initId = p_keyFrameCurrent->id;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

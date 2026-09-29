@@ -12,6 +12,7 @@
 
 #ifndef VS_GRAPHS_CORE_LOOPCLOSING_PRIVATE_FUNCTIONS_H
 #define VS_GRAPHS_CORE_LOOPCLOSING_PRIVATE_FUNCTIONS_H
+#include "LoopClosingStatus.h"
 
 namespace vs_graphs
 {
@@ -28,13 +29,14 @@ class Floor;
 /*!
  * @brief        Merges duplicate floor evidence and rooms.
  */
-void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
-                                semantic::Floor *p_duplicateFloor_in);
+[[nodiscard]] LoopClosingStatus
+    mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
+                               semantic::Floor *p_duplicateFloor_in);
 
 /*!
  * @brief        Collapses duplicate floors in the surviving map.
  */
-void collapseMergedFloors(Map *p_survivingMap_inout);
+[[nodiscard]] LoopClosingStatus collapseMergedFloors(Map *p_survivingMap_inout);
 
 } // namespace core
 } // namespace vs_graphs

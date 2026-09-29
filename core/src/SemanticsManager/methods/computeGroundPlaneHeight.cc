@@ -24,8 +24,9 @@ namespace vs_graphs
 namespace core
 {
 
-std::optional<float> SemanticsManager::computeGroundPlaneHeight(
-    geometric::Plane *p_groundPlane_in)
+SemanticsManagerStatus SemanticsManager::computeGroundPlaneHeight(
+    geometric::Plane     *p_groundPlane_in,
+    std::optional<float> &groundPlaneHeight_out)
 {
     /* Transform the planeCloud according to the planePose */
     geometric::Plane::GeometrySnapshot groundPlaneGetGeometrySnapshot{};
@@ -60,7 +61,8 @@ std::optional<float> SemanticsManager::computeGroundPlaneHeight(
        corrupt filterGroundPlanes' threshold. */
     if (lowerHalfPointCount == 0)
     {
-        return std::nullopt;
+        groundPlaneHeight_out = std::nullopt;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::partial_sort(yValues.begin(),
@@ -68,7 +70,8 @@ std::optional<float> SemanticsManager::computeGroundPlaneHeight(
                       yValues.end(),
                       std::greater<float>());
 
-    return yValues[lowerHalfPointCount - 1];
+    groundPlaneHeight_out = yValues[lowerHalfPointCount - 1];
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

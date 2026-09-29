@@ -25,15 +25,26 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-Sophus::SE3f System::getCamTwc()
+SystemStatus System::getCamTwc(Sophus::SE3f &camTwc_out)
 {
-    return p_tracker->getCamTwc();
+    Sophus::SE3f trackerCamTwc{};
+    if (p_tracker->getCamTwc(trackerCamTwc) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCamTwc returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    camTwc_out = trackerCamTwc;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

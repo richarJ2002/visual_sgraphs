@@ -237,8 +237,9 @@ TEST(SemanticAxiomEvaluator,
      RoomCreationProvenanceIsPerRoomAndVacuousWithNoRooms)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  roomA;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room roomA;
     test::makeRoom(roomA, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&roomA)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -276,7 +277,8 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* Wall 1: zero owners -> UNKNOWN. Wall 2: two owners -> FAIL. Wall 3:
      * one valid owner -> PASS. AX-WALL-01's aggregate must be FAIL. */
@@ -327,8 +329,10 @@ TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
     ASSERT_EQ((p_map->addDetectedMapRoom(&ownerB)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -431,7 +435,8 @@ TEST(SemanticAxiomEvaluator,
      AxWall01PrecedenceThroughEvaluateStateOverRealEntities)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* PASS: a genuinely valid, single-owner wall. */
     geometric::Plane passWall;
@@ -534,8 +539,9 @@ TEST(SemanticAxiomEvaluator,
      * manually re-ordered in-memory copy of its own record vectors, so
      * every id, including mapId, is identical between the two evaluated
      * inputs and only container/vector order differs. */
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -588,8 +594,9 @@ TEST(SemanticAxiomEvaluator,
 
 TEST(SemanticAxiomEvaluator, FindingsAreSortedById)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -621,8 +628,9 @@ TEST(SemanticAxiomEvaluator, FindingsAreSortedById)
 
 TEST(SemanticAxiomEvaluator, EvaluateStateIsIdempotentAndDoesNotMutateInput)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -676,9 +684,11 @@ TEST(SemanticAxiomEvaluator, EvaluateStateIsIdempotentAndDoesNotMutateInput)
 TEST(SemanticAxiomEvaluator,
      EvaluateTransitionReplacesFrameAndTxnPlaceholdersButKeepsRestFromAfter)
 {
-    Atlas            atlasBefore(0);
-    Atlas            atlasAfter(0);
-    Map             *p_mapAfter = atlasAfter.getCurrentMap();
+    Atlas atlasBefore(0);
+    Atlas atlasAfter(0);
+    Map  *p_mapAfter = nullptr;
+    ASSERT_EQ((atlasAfter.getCurrentMap(p_mapAfter)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -740,8 +750,9 @@ TEST(SemanticAxiomEvaluator,
 
 TEST(SemanticAxiomEvaluator, OwnerlessWallIsUnknown)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -771,8 +782,9 @@ TEST(SemanticAxiomEvaluator, OwnerlessWallIsUnknown)
 
 TEST(SemanticAxiomEvaluator, SingleValidSameMapOwnerIsPass)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -806,8 +818,9 @@ TEST(SemanticAxiomEvaluator, SingleValidSameMapOwnerIsPass)
 
 TEST(SemanticAxiomEvaluator, MultipleOwnersIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -847,8 +860,9 @@ TEST(SemanticAxiomEvaluator, MultipleOwnersIsFail)
 
 TEST(SemanticAxiomEvaluator, BadOwnerIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -885,9 +899,11 @@ TEST(SemanticAxiomEvaluator, BadOwnerIsFail)
 TEST(SemanticAxiomEvaluator, CrossMapOwnerIsFail)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map          *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     unsigned long id{};
     ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
     unsigned long id2{};
@@ -934,8 +950,9 @@ TEST(SemanticAxiomEvaluator, CrossMapOwnerIsFail)
  * confirmed room): a committed wall cannot be owned by a prospective. */
 TEST(SemanticAxiomEvaluator, WallOwnerWrongVariantIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -978,9 +995,11 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongVariantIsFail)
 TEST(SemanticAxiomEvaluator, WallOwnerDeclaredMapMismatchIsFail)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map          *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     unsigned long id{};
     ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
     unsigned long id2{};
@@ -1026,8 +1045,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerDeclaredMapMismatchIsFail)
  * names: which room actually owns the wall is ambiguous. */
 TEST(SemanticAxiomEvaluator, WallOwnerDuplicateIdentityIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1076,8 +1096,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerDuplicateIdentityIsFail)
  * corrupt/collision case no setter can represent. */
 TEST(SemanticAxiomEvaluator, WallOwnerRecordUnavailableIsUnknown)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1126,8 +1147,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordUnavailableIsUnknown)
  * WallOwnerRecordUnavailableIsUnknown. */
 TEST(SemanticAxiomEvaluator, WallOwnerNotReciprocalIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1178,8 +1200,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerNotReciprocalIsFail)
  * live WallRecord. */
 TEST(SemanticAxiomEvaluator, WallDuplicateIdentityIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1221,8 +1244,9 @@ TEST(SemanticAxiomEvaluator, WallDuplicateIdentityIsFail)
  * enumerate and key it. Manufactured via direct snapshot mutation. */
 TEST(SemanticAxiomEvaluator, WallDeclaredMapMismatchIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1265,8 +1289,9 @@ TEST(SemanticAxiomEvaluator, WallDeclaredMapMismatchIsFail)
  * Manufactured via direct snapshot mutation. */
 TEST(SemanticAxiomEvaluator, WallOwnerRecordNotLiveIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1308,8 +1333,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordNotLiveIsFail)
  * through the production capture path; validated as data anyway. */
 TEST(SemanticAxiomEvaluator, WallWrongKeyKindIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1348,8 +1374,9 @@ TEST(SemanticAxiomEvaluator, WallWrongKeyKindIsFail)
  * exclusion as WallWrongKeyKindIsFail applies to WallRecord::planeType. */
 TEST(SemanticAxiomEvaluator, WallWrongPlaneTypeIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1390,8 +1417,9 @@ TEST(SemanticAxiomEvaluator, WallWrongPlaneTypeIsFail)
  * any other kind is unreachable through the public API. */
 TEST(SemanticAxiomEvaluator, WallOwnerWrongKeyKindIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1434,8 +1462,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongKeyKindIsFail)
  * names is genuinely satisfied), but the aggregate is UNKNOWN. */
 TEST(SemanticAxiomEvaluator, WallDeclaredMapUnavailableCapsAggregateAtUnknown)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1486,8 +1515,9 @@ TEST(SemanticAxiomEvaluator, WallDeclaredMapUnavailableCapsAggregateAtUnknown)
  * not-reciprocal absence. Manufactured via direct snapshot mutation. */
 TEST(SemanticAxiomEvaluator, WallReciprocalMalformedOnlyIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1531,8 +1561,9 @@ TEST(SemanticAxiomEvaluator, WallReciprocalMalformedOnlyIsFail)
  * only ever admits one geometric::Plane pointer per call. */
 TEST(SemanticAxiomEvaluator, WallReciprocalDuplicateIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1574,8 +1605,9 @@ TEST(SemanticAxiomEvaluator, WallReciprocalDuplicateIsFail)
  * than being hidden behind the otherwise-valid entry. */
 TEST(SemanticAxiomEvaluator, WallReciprocalValidPlusMalformedIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1620,8 +1652,9 @@ TEST(SemanticAxiomEvaluator, WallReciprocalValidPlusMalformedIsFail)
 
 TEST(SemanticAxiomEvaluator, NullTwinIsPass)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1651,8 +1684,9 @@ TEST(SemanticAxiomEvaluator, NullTwinIsPass)
 
 TEST(SemanticAxiomEvaluator, SelfTwinIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1684,8 +1718,9 @@ TEST(SemanticAxiomEvaluator, SelfTwinIsFail)
 
 TEST(SemanticAxiomEvaluator, AsymmetricTwinIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
@@ -1728,8 +1763,9 @@ TEST(SemanticAxiomEvaluator, AsymmetricTwinIsFail)
 
 TEST(SemanticAxiomEvaluator, BadTwinIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
@@ -1774,9 +1810,11 @@ TEST(SemanticAxiomEvaluator, BadTwinIsFail)
 TEST(SemanticAxiomEvaluator, CrossMapTwinIsFail)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wallA;
     test::makeWallPlane(wallA,
@@ -1821,8 +1859,9 @@ TEST(SemanticAxiomEvaluator, CrossMapTwinIsFail)
 
 TEST(SemanticAxiomEvaluator, WrongTypeTwinIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -1858,8 +1897,9 @@ TEST(SemanticAxiomEvaluator, WrongTypeTwinIsFail)
 
 TEST(SemanticAxiomEvaluator, SharedOwnerTwinIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
@@ -1910,8 +1950,9 @@ TEST(SemanticAxiomEvaluator, SharedOwnerTwinIsFail)
 
 TEST(SemanticAxiomEvaluator, StructurallyValidTwinIsUnknown)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wallA;
     test::makeWallPlane(wallA,
                         1,
@@ -1969,8 +2010,9 @@ TEST(SemanticAxiomEvaluator, StructurallyValidTwinIsUnknown)
 TEST(SemanticAxiomEvaluator, NonPassableLivePassageIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  knownSide;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room knownSide;
     test::makeRoom(knownSide,
                    1,
                    p_map,
@@ -2010,8 +2052,9 @@ TEST(SemanticAxiomEvaluator, NonPassableLivePassageIsFail)
 TEST(SemanticAxiomEvaluator, PassableLivePassageIsUnknownForFullProvenance)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  knownSide;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room knownSide;
     test::makeRoom(knownSide,
                    1,
                    p_map,
@@ -2048,8 +2091,9 @@ TEST(SemanticAxiomEvaluator, PassableLivePassageIsUnknownForFullProvenance)
 
 TEST(SemanticAxiomEvaluator, ZeroConfirmedEndpointsIsFail)
 {
-    Atlas   atlas(0);
-    Map    *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     Passage passage;
     test::makePassage(passage,
                       1,
@@ -2084,8 +2128,9 @@ TEST(SemanticAxiomEvaluator, ZeroConfirmedEndpointsIsFail)
 TEST(SemanticAxiomEvaluator, TwoConfirmedReciprocalEndpointsIsUnknown)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2155,8 +2200,9 @@ TEST(SemanticAxiomEvaluator, TwoConfirmedReciprocalEndpointsIsUnknown)
 TEST(SemanticAxiomEvaluator, OneConfirmedEndpointOtherEmptyIsUnknown)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2194,8 +2240,9 @@ TEST(SemanticAxiomEvaluator, OneConfirmedEndpointOtherEmptyIsUnknown)
 TEST(SemanticAxiomEvaluator, ThirdReverseOnlyConfirmedEndpointIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2255,8 +2302,9 @@ TEST(SemanticAxiomEvaluator, ThirdReverseOnlyConfirmedEndpointIsFail)
 TEST(SemanticAxiomEvaluator, RetiredReverseOnlyRoomDoesNotPoisonLivePassage)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2322,8 +2370,9 @@ TEST(SemanticAxiomEvaluator, RetiredReverseOnlyRoomDoesNotPoisonLivePassage)
 TEST(SemanticAxiomEvaluator, ReverseReferenceOwnLivenessBadIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2385,9 +2434,11 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceOwnLivenessBadIsFail)
 TEST(SemanticAxiomEvaluator, LiveProspectiveReverseOnlyRoomAnomalyIsExamined)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map          *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     unsigned long id{};
     ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
     unsigned long id2{};
@@ -2444,8 +2495,9 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveReverseOnlyRoomAnomalyIsExamined)
 TEST(SemanticAxiomEvaluator, ReverseOnlyRoomFillingEmptySlotIsNotThirdEndpoint)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2506,8 +2558,9 @@ TEST(SemanticAxiomEvaluator, ReverseOnlyRoomFillingEmptySlotIsNotThirdEndpoint)
 TEST(SemanticAxiomEvaluator, ReverseWrongKindKeyIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2575,8 +2628,9 @@ TEST(SemanticAxiomEvaluator, ReverseWrongKindKeyIsFail)
 TEST(SemanticAxiomEvaluator, ReverseReferenceDuplicatedIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2628,8 +2682,9 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceDuplicatedIsFail)
 TEST(SemanticAxiomEvaluator, ForwardEndpointDuplicateIdentityIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2682,8 +2737,9 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDuplicateIdentityIsFail)
 TEST(SemanticAxiomEvaluator, ForwardEndpointWrongKindIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2747,8 +2803,9 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointWrongKindIsFail)
 TEST(SemanticAxiomEvaluator, ForwardEndpointDeclaredMapMismatchIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2800,8 +2857,9 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDeclaredMapMismatchIsFail)
 TEST(SemanticAxiomEvaluator, ForwardEndpointLivenessUnavailableIsUnknown)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2861,8 +2919,9 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointLivenessUnavailableIsUnknown)
 TEST(SemanticAxiomEvaluator, ReverseEndpointLivenessUnavailableIsUnknown)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -2933,8 +2992,9 @@ TEST(SemanticAxiomEvaluator, ReverseEndpointLivenessUnavailableIsUnknown)
 TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3011,9 +3071,12 @@ TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
 TEST(SemanticAxiomEvaluator, CrossMapReverseOnlyEndpointIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map          *p_otherMap = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_otherMap = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_otherMap)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     unsigned long id{};
     ASSERT_EQ((p_map->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
     unsigned long id2{};
@@ -3085,8 +3148,9 @@ TEST(SemanticAxiomEvaluator,
      UnkeyedReverseReferenceIsRoomScopedNotPassageAttributed)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3160,8 +3224,9 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator, PassageCardinalityDuplicateRoomIdentityIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3208,8 +3273,9 @@ TEST(SemanticAxiomEvaluator, PassageCardinalityDuplicateRoomIdentityIsFail)
 TEST(SemanticAxiomEvaluator, DuplicateEndpointIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  onlyRoom;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room onlyRoom;
     test::makeRoom(onlyRoom, 1, p_map, nullptr, Eigen::Vector3d(0.0, 0.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&onlyRoom)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3246,8 +3312,9 @@ TEST(SemanticAxiomEvaluator, DuplicateEndpointIsFail)
 TEST(SemanticAxiomEvaluator, NonReciprocalEndpointIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3291,8 +3358,9 @@ TEST(SemanticAxiomEvaluator, NonReciprocalEndpointIsFail)
 TEST(SemanticAxiomEvaluator, BadUnenumeratedOtherSideEndpointIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3341,8 +3409,9 @@ TEST(SemanticAxiomEvaluator, BadUnenumeratedOtherSideEndpointIsFail)
 TEST(SemanticAxiomEvaluator, KnownSideNotConfirmedIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  unpromoted;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room unpromoted;
     test::makeRoom(unpromoted,
                    1,
                    p_map,
@@ -3393,8 +3462,9 @@ TEST(SemanticAxiomEvaluator,
      ReasonInconsistentForwardReferenceFailsEveryPassageAxiom)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3459,9 +3529,11 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator, CrossMapPassageEndpointIsFail)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     Room roomInMapB;
     test::makeRoom(roomInMapB,
@@ -3525,8 +3597,9 @@ TEST(SemanticAxiomEvaluator, CrossMapPassageEndpointIsFail)
 TEST(SemanticAxiomEvaluator, CrossFloorPassageIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3588,8 +3661,9 @@ TEST(SemanticAxiomEvaluator, CrossFloorPassageIsFail)
 TEST(SemanticAxiomEvaluator, SameFloorPassageAgreesButAggregateIsUnknown)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3661,8 +3735,9 @@ TEST(SemanticAxiomEvaluator, SameFloorPassageAgreesButAggregateIsUnknown)
 TEST(SemanticAxiomEvaluator, MissingFloorEvidenceOnPassageIsUnknown)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3715,8 +3790,9 @@ TEST(SemanticAxiomEvaluator, MissingFloorEvidenceOnPassageIsUnknown)
 TEST(SemanticAxiomEvaluator, UnobservedBoundaryIsUnknown)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -3744,8 +3820,9 @@ TEST(SemanticAxiomEvaluator, UnobservedBoundaryIsUnknown)
 TEST(SemanticAxiomEvaluator, ConflictingBoundaryIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::CONFLICTING)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -3770,8 +3847,9 @@ TEST(SemanticAxiomEvaluator, ConflictingBoundaryIsFail)
 
 TEST(SemanticAxiomEvaluator, CompleteWithTooFewCornersIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -3812,8 +3890,9 @@ TEST(SemanticAxiomEvaluator, CompleteWithTooFewCornersIsFail)
 TEST(SemanticAxiomEvaluator, CompleteWithNoWallEvidenceIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -3844,8 +3923,9 @@ TEST(SemanticAxiomEvaluator, CompleteWithNoWallEvidenceIsFail)
 
 TEST(SemanticAxiomEvaluator, CompleteSelfIntersectingIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -3888,8 +3968,9 @@ TEST(SemanticAxiomEvaluator, CompleteSelfIntersectingIsFail)
 
 TEST(SemanticAxiomEvaluator, CompleteWithObservationGapsIsUnknown)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -3940,8 +4021,9 @@ TEST(SemanticAxiomEvaluator, CompleteWithObservationGapsIsUnknown)
  * correspondence. */
 TEST(SemanticAxiomEvaluator, CompleteWithVerifiedWallEvidenceIsUnknown)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -3985,8 +4067,9 @@ TEST(SemanticAxiomEvaluator, CompleteWithVerifiedWallEvidenceIsUnknown)
  * geometry logic to VALID. */
 TEST(SemanticAxiomEvaluator, NonFiniteCornerIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -4031,8 +4114,9 @@ TEST(SemanticAxiomEvaluator, NonFiniteCornerIsFail)
 /* Infinity, not only NaN, must also be rejected. */
 TEST(SemanticAxiomEvaluator, InfiniteCornerIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -4080,8 +4164,9 @@ TEST(SemanticAxiomEvaluator, InfiniteCornerIsFail)
  * check. */
 TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -4152,8 +4237,9 @@ TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
 TEST(SemanticAxiomEvaluator,
      BoundaryOneValidPlusOneWrongTypeWallReferenceIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -4216,8 +4302,9 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator,
      BoundaryUnmappedWallReferenceContributesOnlyUnknown)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -4288,8 +4375,9 @@ TEST(SemanticAxiomEvaluator,
  * a genuinely empty collection. Manufactured via direct snapshot mutation. */
 TEST(SemanticAxiomEvaluator, NonemptyAllUnavailableWallEvidenceIsUnknownNotFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -4355,8 +4443,9 @@ TEST(SemanticAxiomEvaluator, NonemptyAllUnavailableWallEvidenceIsUnknownNotFail)
 TEST(SemanticAxiomEvaluator, RoomWithNoFloorIsUnknown)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4380,8 +4469,9 @@ TEST(SemanticAxiomEvaluator, RoomWithNoFloorIsUnknown)
 TEST(SemanticAxiomEvaluator, RoomFloorReciprocalIsPass)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4408,8 +4498,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorReciprocalIsPass)
 TEST(SemanticAxiomEvaluator, RoomFloorNonReciprocalIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4439,9 +4530,11 @@ TEST(SemanticAxiomEvaluator, RoomFloorNonReciprocalIsFail)
 TEST(SemanticAxiomEvaluator, RoomFloorCrossMapIsFail)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     Room room;
     test::makeRoom(room, 1, p_mapA, nullptr);
@@ -4479,8 +4572,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorCrossMapIsFail)
 TEST(SemanticAxiomEvaluator, RoomFloorReverseClaimWithoutForwardLinkIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4523,8 +4617,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorReverseClaimWithoutForwardLinkIsFail)
 TEST(SemanticAxiomEvaluator, RoomFloorWrongKindIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4558,8 +4653,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorWrongKindIsFail)
 TEST(SemanticAxiomEvaluator, RoomFloorDeclaredMapMismatchIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4594,8 +4690,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorDeclaredMapMismatchIsFail)
 TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapMismatchIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4631,8 +4728,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapMismatchIsFail)
 TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapUnavailableCapsAtUnknown)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4671,8 +4769,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapUnavailableCapsAtUnknown)
 TEST(SemanticAxiomEvaluator, RoomFloorFloorDeclaredMapUnavailableCapsAtUnknown)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4712,8 +4811,9 @@ TEST(SemanticAxiomEvaluator,
      PassageFloorDuplicateFloorRecordFailsViaCanonicalRoomFloorProof)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4781,8 +4881,9 @@ TEST(SemanticAxiomEvaluator,
      PassageFloorNonReciprocalMembershipFailsViaCanonicalRoomFloorProof)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4847,8 +4948,9 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator, RoomFloorDuplicateIdentityIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4888,8 +4990,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorDuplicateIdentityIsFail)
 TEST(SemanticAxiomEvaluator, RoomFloorDuplicateReverseMembershipIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -4928,8 +5031,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorDuplicateReverseMembershipIsFail)
 TEST(SemanticAxiomEvaluator, RoomClaimedByMultipleFloorsIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -5021,8 +5125,9 @@ TEST(SemanticAxiomEvaluator, ZeroConfirmedRoomsMakesMapIncomplete)
 TEST(SemanticAxiomEvaluator, LiveProspectiveRoomMakesMapIncomplete)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  prospective;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room prospective;
     test::makeRoom(prospective,
                    1,
                    p_map,
@@ -5051,8 +5156,9 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveRoomMakesMapIncomplete)
 TEST(SemanticAxiomEvaluator, CompletenessDuplicateIdentityIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -5089,7 +5195,8 @@ TEST(SemanticAxiomEvaluator, CompletenessDuplicateIdentityIsFail)
 TEST(SemanticAxiomEvaluator, CompletenessRoomCreationProvenanceUnavailable)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -5137,8 +5244,9 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomCreationProvenanceUnavailable)
 TEST(SemanticAxiomEvaluator, CompletenessPassageSlotStateFailureIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  unpromoted;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room unpromoted;
     test::makeRoom(unpromoted,
                    1,
                    p_map,
@@ -5181,8 +5289,9 @@ TEST(SemanticAxiomEvaluator, CompletenessPassageSlotStateFailureIsFail)
 TEST(SemanticAxiomEvaluator, CompletenessCrossFloorPassageIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -5242,8 +5351,9 @@ TEST(SemanticAxiomEvaluator,
      DuplicateMapIdentityIsFailRegardlessOfInsertionOrder)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -5296,8 +5406,9 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator, CompletenessRoomHasMalformedPassageReferenceIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -5343,7 +5454,8 @@ TEST(SemanticAxiomEvaluator,
      LegacyCompleteButConservativeUnknownSchemaLimitedDiverges)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wallA;
     test::makeWallPlane(wallA,
@@ -5437,8 +5549,9 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator, LegacyReproducesDoubleRegisteredRoomMultiplicity)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  bothCollections;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room bothCollections;
     test::makeRoom(bothCollections, 1, p_map, nullptr);
     ASSERT_EQ(
         (bothCollections.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
@@ -5476,7 +5589,8 @@ TEST(SemanticAxiomEvaluator,
      LegacyCompleteButConservativeFailsOnNonReciprocalPassageDiverges)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
@@ -5539,7 +5653,8 @@ TEST(SemanticAxiomEvaluator,
      LegacyCompleteButConservativeUnknownDueToMissingFloorEvidenceDiverges)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wallA;
     test::makeWallPlane(wallA,
@@ -5624,9 +5739,11 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator, HardFailureInOneMapDoesNotContaminateAnotherMap)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map          *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     unsigned long id{};
     ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
     unsigned long id2{};
@@ -5712,14 +5829,16 @@ TEST(SemanticAxiomEvaluator,
      DuplicateContainingMapRoomFloorSplitDoesNotCrashAndIsNotPass)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_mapA, nullptr);
     ASSERT_EQ((p_mapA->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    atlas.createNewMap();
-    Map  *p_mapB = atlas.getCurrentMap();
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     Floor floor;
     test::makeFloor(floor, 1, p_mapB, {});
     ASSERT_EQ((p_mapB->addMapFloor(&floor)), MapStatus::MAP_STATUS_SUCCESS);
@@ -5779,8 +5898,9 @@ TEST(SemanticAxiomEvaluator,
      ForwardEndpointLivenessUnavailableStaysUnknownDespiteLiveEnumeratedRecord)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -5832,8 +5952,9 @@ TEST(SemanticAxiomEvaluator,
      ReasonInconsistentReciprocalPassageRefIsNotReciprocityProof)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -5898,8 +6019,9 @@ TEST(SemanticAxiomEvaluator,
      ReciprocityAgainstDuplicatePassageIdentityIsNotProof)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  known;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room known;
     test::makeRoom(known, 1, p_map, nullptr, Eigen::Vector3d(0.0, -1.0, 1.0));
     ASSERT_EQ((p_map->addDetectedMapRoom(&known)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -5955,9 +6077,11 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator, OwnerLivenessUnavailableDoesNotMaskCrossMapOwner)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -6010,8 +6134,9 @@ TEST(SemanticAxiomEvaluator, OwnerLivenessUnavailableDoesNotMaskCrossMapOwner)
 TEST(SemanticAxiomEvaluator,
      OwnerReasonInconsistentIsFailDespiteValidReciprocal)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -6050,8 +6175,9 @@ TEST(SemanticAxiomEvaluator,
 
 TEST(SemanticAxiomEvaluator, ContradictoryReciprocalWithNonNoneReasonIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -6094,8 +6220,9 @@ TEST(SemanticAxiomEvaluator, ContradictoryReciprocalWithNonNoneReasonIsFail)
  * proven mismatch -- must cap at UNKNOWN, not fabricate a MISMATCH FAIL. */
 TEST(SemanticAxiomEvaluator, OwnerDeclaredMapUnavailableCapsAtUnknownNotFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -6148,8 +6275,9 @@ TEST(SemanticAxiomEvaluator,
      BoundaryRawRefReasonInconsistentIsInvalidNotUnavailable)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -6196,8 +6324,9 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator,
      BoundaryEvidenceFromPassPlusUnknownOwnerIsUnavailable)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -6244,8 +6373,9 @@ TEST(SemanticAxiomEvaluator,
  * WALL_TWIN_ABSENT. */
 TEST(SemanticAxiomEvaluator, WallTwinReasonInconsistentIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -6286,8 +6416,9 @@ TEST(SemanticAxiomEvaluator, WallTwinReasonInconsistentIsFail)
 TEST(SemanticAxiomEvaluator, FloorReverseMemberReasonInconsistentAndDeadIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -6327,8 +6458,9 @@ TEST(SemanticAxiomEvaluator, FloorReverseMemberReasonInconsistentAndDeadIsFail)
  * duplicate happens to enumerate first. */
 TEST(SemanticAxiomEvaluator, WallOwnerSplitAcrossDuplicateContainingMapIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_mapA = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -6340,8 +6472,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerSplitAcrossDuplicateContainingMapIsFail)
                         1.0);
     ASSERT_EQ((p_mapA->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     Room room;
     test::makeRoom(room, 1, p_mapB, nullptr);
     ASSERT_EQ((p_mapB->addDetectedMapRoom(&room)),
@@ -6408,8 +6541,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerSplitAcrossDuplicateContainingMapIsFail)
 TEST(SemanticAxiomEvaluator,
      OwnerRecordNotLiveDominatesReferenceLivenessUnavailable)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -6460,8 +6594,9 @@ TEST(SemanticAxiomEvaluator,
  * treat as an unrelated reference. */
 TEST(SemanticAxiomEvaluator, ReciprocalWallKeyRawIdentityMismatchIsFail)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -6512,8 +6647,9 @@ TEST(SemanticAxiomEvaluator,
      FloorReverseDuplicateWithOneLivenessUnavailableIsFail)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     test::makeRoom(room, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -6558,9 +6694,11 @@ TEST(SemanticAxiomEvaluator,
      OwnerDeclaredMapMismatchDominatesReferenceLivenessUnavailable)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -6632,8 +6770,9 @@ TEST(SemanticAxiomEvaluator,
 TEST(SemanticAxiomEvaluator,
      OwnerNotReciprocalDominatesReferenceLivenessUnavailable)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,

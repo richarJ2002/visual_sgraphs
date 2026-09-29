@@ -32,10 +32,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool LocalMapping::stopRequested()
+LocalMappingStatus LocalMapping::stopRequested(bool &isStopRequested_out)
 {
     unique_lock<mutex> stopLock(stopMutex);
-    return isStopRequested;
+    isStopRequested_out = isStopRequested;
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

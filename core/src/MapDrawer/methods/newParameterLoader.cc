@@ -15,7 +15,8 @@ namespace vs_graphs
 namespace core
 {
 
-void MapDrawer::newParameterLoader(utils::settings::Settings *p_settings_inout)
+MapDrawerStatus
+    MapDrawer::newParameterLoader(utils::settings::Settings *p_settings_inout)
 {
     double settingsKeyFrameSize{};
     if (p_settings_inout->keyFrameSize(settingsKeyFrameSize) !=
@@ -77,6 +78,8 @@ void MapDrawer::newParameterLoader(utils::settings::Settings *p_settings_inout)
                      __func__);
     }
     cameraLineWidth = settingsCameraLineWidth;
+
+    return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -57,6 +57,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "../private_functions.h"
@@ -69,14 +70,15 @@ namespace vs_graphs
 namespace core
 {
 
-vector<cv::KeyPoint> ORBextractor::distributeOctTree(
+ORBextractorStatus ORBextractor::distributeOctTree(
     const vector<cv::KeyPoint> &keysToDistribute_in,
     const int                  &minimumX_in,
     const int                  &maximumX_in,
     const int                  &minimumY_in,
     const int                  &maximumY_in,
     const int                  &featureCount_in,
-    [[maybe_unused]] const int &level_in)
+    [[maybe_unused]] const int &level_in,
+    std::vector<cv::KeyPoint>  &keyPoints_out)
 {
     // Compute how many initial nodes
     const int initialNodeCount =
@@ -160,10 +162,18 @@ vector<cv::KeyPoint> ORBextractor::distributeOctTree(
             {
                 // If more than one point, subdivide
                 ExtractorNode node1_out, node2_out, node3_out, node4_out;
-                nodeIterator->divideNode(node1_out,
-                                         node2_out,
-                                         node3_out,
-                                         node4_out);
+                if (nodeIterator->divideNode(node1_out,
+                                             node2_out,
+                                             node3_out,
+                                             node4_out) !=
+                    ExtractorNodeStatus::EXTRACTOR_NODE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: divideNode returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 // Add childs if they contain points
                 if (node1_out.keys.size() > 0)
@@ -243,11 +253,19 @@ vector<cv::KeyPoint> ORBextractor::distributeOctTree(
                      nodeIndex--)
                 {
                     ExtractorNode node1_out, node2_out, node3_out, node4_out;
-                    vPrevSizeAndPointerToNode[nodeIndex].second->divideNode(
-                        node1_out,
-                        node2_out,
-                        node3_out,
-                        node4_out);
+                    if (vPrevSizeAndPointerToNode[nodeIndex].second->divideNode(
+                            node1_out,
+                            node2_out,
+                            node3_out,
+                            node4_out) !=
+                        ExtractorNodeStatus::EXTRACTOR_NODE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: divideNode returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     // Add childs if they contain points
                     if (node1_out.keys.size() > 0)
@@ -333,7 +351,8 @@ vector<cv::KeyPoint> ORBextractor::distributeOctTree(
         resultKeys.push_back(*p_keyPoint);
     }
 
-    return resultKeys;
+    keyPoints_out = resultKeys;
+    return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -23,7 +23,8 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticSegmentation::ProcessingStats SemanticSegmentation::getProcessingStats()
+SemanticSegmentationStatus SemanticSegmentation::getProcessingStats(
+    SemanticSegmentation::ProcessingStats &processingStats_out)
 {
     ProcessingStats stats;
     stats.enqueuedCount = enqueuedCount.load(std::memory_order_relaxed);
@@ -44,7 +45,8 @@ SemanticSegmentation::ProcessingStats SemanticSegmentation::getProcessingStats()
         stats.queueDepth =
             static_cast<std::uint32_t>(segmentedImageBuffer.size());
     }
-    return stats;
+    processingStats_out = stats;
+    return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
 } // namespace core

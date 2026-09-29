@@ -36,14 +36,14 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::scaleRefinement()
+LocalMappingStatus LocalMapping::scaleRefinement()
 {
     // Minimum number of keyframes to compute a solution
     // Minimum time (seconds) between first and last keyframe to compute a
     // solution. Make the difference between monocular and stereo
     // unique_lock<mutex> lock0(imuInitMutex);
     if (isResetRequested)
-        return;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
     // Retrieve all keyframes in temporal order
     list<KeyFrame *> temporalKeyFrames;
@@ -59,11 +59,27 @@ void LocalMapping::scaleRefinement()
 
     for (;;)
     {
-        if (!checkNewKeyFrames())
+        bool hasNewKeyFrames{};
+        if (checkNewKeyFrames(hasNewKeyFrames) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkNewKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!hasNewKeyFrames)
         {
             break;
         }
-        processNewKeyFrame();
+        if (processNewKeyFrame() !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: processNewKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         orderedKeyFrames.push_back(p_currentKeyFrame);
         temporalKeyFrames.push_back(p_currentKeyFrame);
     }
@@ -71,25 +87,56 @@ void LocalMapping::scaleRefinement()
     mRwg  = Eigen::Matrix3d::Identity();
     scale = 1.0;
 
-    Optimizer::inertialOptimization(p_atlas->getCurrentMap(), mRwg, scale);
+    Map *p_atlasCurrentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (Optimizer::inertialOptimization(p_atlasCurrentMap, mRwg, scale) !=
+        OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: inertialOptimization returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (scale < 1e-1) // 1e-1
     {
         cout << "scale too small" << endl;
         isInitializationInProgress = false;
-        return;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
 
     Sophus::SO3d                 so3wg(mRwg);
     // Before this line we are not changing the map
-    std::unique_lock<std::mutex> semanticUpdateLock =
-        p_atlas->acquireSemanticUpdateLock();
-    Map *p_activeMap = p_atlas->getCurrentMap();
+    std::unique_lock<std::mutex> semanticUpdateLock{};
+    if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: acquireSemanticUpdateLock returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (p_activeMap == nullptr)
     {
         isInitializationInProgress = false;
-        return;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
 
     unique_lock<mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
@@ -114,9 +161,16 @@ void LocalMapping::scaleRefinement()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_tracker->updateFrameIMU(scale,
-                                  currentKeyFrameImuBias,
-                                  p_currentKeyFrame);
+        if (p_tracker->updateFrameIMU(scale,
+                                      currentKeyFrameImuBias,
+                                      p_currentKeyFrame) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateFrameIMU returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     for (list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
@@ -155,7 +209,7 @@ void LocalMapping::scaleRefinement()
                      __func__);
     }
 
-    return;
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

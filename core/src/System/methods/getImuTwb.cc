@@ -25,15 +25,26 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-Sophus::SE3f System::getImuTwb()
+SystemStatus System::getImuTwb(Sophus::SE3f &imuTwb_out)
 {
-    return p_tracker->getImuTwb();
+    Sophus::SE3f trackerImuTwb{};
+    if (p_tracker->getImuTwb(trackerImuTwb) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getImuTwb returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    imuTwb_out = trackerImuTwb;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

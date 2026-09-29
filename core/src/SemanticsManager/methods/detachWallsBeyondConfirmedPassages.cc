@@ -29,7 +29,8 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
+SemanticsManagerStatus
+    SemanticsManager::detachWallsBeyondConfirmedPassages(void)
 {
     const types::SystemParams::RoomSeg::PassagePartition &partitionParameters =
         p_sysParams->roomSeg.passagePartition;
@@ -37,10 +38,18 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
     if (!partitionParameters.enabled ||
         !partitionParameters.shouldDetachWallsBeyondPassages)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
+    geometric::Plane *p_groundPlane = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     bool groundPlaneIsBad{};
     if (!(p_groundPlane == nullptr) &&
@@ -54,7 +63,7 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
     }
     if (p_groundPlane == nullptr || groundPlaneIsBad)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     g2o::Plane3D groundPlaneGetGlobalEquation{};
@@ -72,7 +81,7 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
 
     if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d groundNormal_World =
@@ -84,7 +93,16 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
 
     std::vector<semantic::Passage *> confirmedOpenPassages;
 
-    for (semantic::Passage *p_passage : p_atlas->getAllPassages())
+    std::vector<vs_graphs::core::semantic::Passage *> atlasAllPassages{};
+    if (p_atlas->getAllPassages(atlasAllPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Passage *p_passage : atlasAllPassages)
     {
         bool passageIsPassable{};
         if ((p_passage != nullptr) &&
@@ -108,10 +126,17 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
 
     if (confirmedOpenPassages.empty())
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    const std::vector<semantic::Room *> allRooms = p_atlas->getAllRooms();
+    std::vector<semantic::Room *> allRooms{};
+    if (p_atlas->getAllRooms(allRooms) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (semantic::Room *p_room : allRooms)
     {
@@ -198,12 +223,23 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
                  * preserves the wall-passage relationship while rejecting a
                  * different wall reached only through that opening.
                  */
+                bool crossesPassageOpening{};
                 if (segmentCrossesPassageOpening(roomCentroid_World_m,
                                                  wallCentroid_World_m,
                                                  p_passage,
                                                  groundNormal_World,
                                                  openingMargin_m,
-                                                 minimumSideDistance_m))
+                                                 minimumSideDistance_m,
+                                                 crossesPassageOpening) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: segmentCrossesPassageOpening returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (crossesPassageOpening)
                 {
                     p_separatingPassage = p_passage;
                     break;
@@ -364,9 +400,29 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                if (p_atlas->getRoomWallPlaneById(wallGetId2) == nullptr)
+                vs_graphs::core::geometric::Plane *p_atlasRoomWallPlaneById =
+                    nullptr;
+                if (p_atlas->getRoomWallPlaneById(wallGetId2,
+                                                  p_atlasRoomWallPlaneById) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
                 {
-                    p_atlas->addRoomWallPlane(p_wall);
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomWallPlaneById returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_atlasRoomWallPlaneById == nullptr)
+                {
+                    if (p_atlas->addRoomWallPlane(p_wall) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addRoomWallPlane returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                 }
                 int roomId2{};
                 if (p_room->getId(roomId2) !=
@@ -447,6 +503,8 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
                       << std::endl;
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

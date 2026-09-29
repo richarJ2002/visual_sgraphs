@@ -31,10 +31,11 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
-                     const vector<MapPoint *> &vpMapPoints,
-                     const float               th,
-                     const bool                bRight)
+ORBmatcherStatus ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
+                                  const vector<MapPoint *> &vpMapPoints,
+                                  int                      &fusedCount_out,
+                                  const float               th,
+                                  const bool                bRight)
 {
     camera_models::geometriccamera::GeometricCamera *p_camera;
     Sophus::SE3f                                     Tcw;
@@ -326,8 +327,18 @@ int ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
             const cv::Mat &keyFrameDescriptor =
                 p_keyframe_inout->descriptors.row(featureIndex);
 
-            const int distance = computeDescriptorDistance(mapPointDescriptor,
-                                                           keyFrameDescriptor);
+            int distance{};
+            if (computeDescriptorDistance(mapPointDescriptor,
+                                          keyFrameDescriptor,
+                                          distance) !=
+                ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computeDescriptorDistance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             if (distance < bestDistance)
             {
@@ -437,7 +448,8 @@ int ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
             thcheckCount++;
     }
 
-    return fusedCount;
+    fusedCount_out = fusedCount;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

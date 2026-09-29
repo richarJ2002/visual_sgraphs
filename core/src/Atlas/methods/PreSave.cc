@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::preSave()
+AtlasStatus Atlas::preSave()
 {
     if (p_activeMap)
     {
@@ -119,7 +119,13 @@ void Atlas::preSave()
         if (mapAllKeyFrames.size() == 0)
         {
             // Empty map, erase before of save it.
-            setMapBad(p_map);
+            if (setMapBad(p_map) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMapBad returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             continue;
         }
         if (p_map->preSave(cameraSet) != MapStatus::MAP_STATUS_SUCCESS)
@@ -130,7 +136,15 @@ void Atlas::preSave()
                          __func__);
         }
     }
-    removeBadMaps();
+    if (removeBadMaps() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: removeBadMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

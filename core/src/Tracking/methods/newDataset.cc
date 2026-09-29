@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::newDataset()
+TrackingStatus Tracking::newDataset()
 {
     numDataset++;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

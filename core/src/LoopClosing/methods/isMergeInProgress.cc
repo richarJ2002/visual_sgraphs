@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool LoopClosing::isMergeInProgress(void)
+LoopClosingStatus LoopClosing::isMergeInProgress(bool &isMergeInProgress_out)
 {
-    return hasMergeInProgress.load();
+    isMergeInProgress_out = hasMergeInProgress.load();
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

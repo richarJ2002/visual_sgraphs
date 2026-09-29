@@ -24,7 +24,8 @@ namespace vs_graphs
 namespace core
 {
 
-bool SemanticsManager::isSemanticReportCacheAvailable(void) const
+SemanticsManagerStatus SemanticsManager::isSemanticReportCacheAvailable(
+    bool &isSemanticReportCacheAvailable_out) const
 {
     bool semanticReportCacheIsAvailable{};
     if (semanticReportCache.isAvailable(semanticReportCacheIsAvailable) !=
@@ -36,7 +37,8 @@ bool SemanticsManager::isSemanticReportCacheAvailable(void) const
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return semanticReportCacheIsAvailable;
+    isSemanticReportCacheAvailable_out = semanticReportCacheIsAvailable;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

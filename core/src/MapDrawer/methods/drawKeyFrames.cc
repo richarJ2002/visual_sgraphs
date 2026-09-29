@@ -35,22 +35,30 @@ namespace vs_graphs
 namespace core
 {
 
-void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
-                              const bool shouldDrawGraph_in,
-                              const bool shouldDrawInertialGraph_in,
-                              const bool shouldDrawOptimizedLba_in)
+MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
+                                         const bool shouldDrawGraph_in,
+                                         const bool shouldDrawInertialGraph_in,
+                                         const bool shouldDrawOptimizedLba_in)
 {
     const float &w = keyFrameSize;
     const float  h = w * 0.75;
     const float  z = w * 0.6;
 
-    Map                        *p_activeMap = p_atlas->getCurrentMap();
+    Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     // DEBUG LBA
     std::set<long unsigned int> optKeyFrames   = p_activeMap->optKeyFrameIds;
     std::set<long unsigned int> fixedKeyFrames = p_activeMap->fixedKeyFrameIds;
 
     if (!p_activeMap)
-        return;
+        return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 
     std::vector<KeyFrame *> keyFrames{};
     if (p_activeMap->getAllKeyFrames(keyFrames) !=
@@ -323,7 +331,14 @@ void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
         glEnd();
     }
 
-    vector<Map *> maps = p_atlas->getAllMaps();
+    std::vector<Map *> maps{};
+    if (p_atlas->getAllMaps(maps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (shouldDrawKeyFrames_in)
     {
@@ -414,6 +429,8 @@ void MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
             }
         }
     }
+
+    return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 }
 
 } // namespace core

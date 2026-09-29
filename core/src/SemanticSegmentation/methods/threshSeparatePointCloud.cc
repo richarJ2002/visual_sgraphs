@@ -23,7 +23,7 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticSegmentation::threshSeparatePointCloud(
+SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
     pcl::PCLPointCloud2::Ptr p_pclPc2SegPrb_in,
     cv::Mat                 &segImageUncertainity_in,
     std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_clsCloudPtrs_out,
@@ -175,6 +175,8 @@ void SemanticSegmentation::threshSeparatePointCloud(
             p_clsCloudPtrs_out[classIndex]->size();
         p_clsCloudPtrs_out[classIndex]->header = p_pclPc2SegPrb_in->header;
     }
+
+    return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
 } // namespace core

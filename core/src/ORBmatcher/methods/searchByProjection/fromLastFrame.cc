@@ -31,10 +31,11 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
-                                   const Frame &LastFrame,
-                                   const float  th,
-                                   const bool   bMono)
+ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
+                                                const Frame &LastFrame,
+                                                const float  th,
+                                                const bool   bMono,
+                                                int         &byProjection_out)
 {
     int nmatches = 0;
 
@@ -231,8 +232,18 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
 
                     const cv::Mat &d = CurrentFrame.descriptors.row(i2);
 
-                    const int distance =
-                        computeDescriptorDistance(mapPointDescriptor, d);
+                    int distance{};
+                    if (computeDescriptorDistance(mapPointDescriptor,
+                                                  d,
+                                                  distance) !=
+                        ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: computeDescriptorDistance returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
 
                     if (distance < bestDistance)
                     {
@@ -414,8 +425,19 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                         const cv::Mat &d = CurrentFrame.descriptors.row(
                             i2 + CurrentFrame.leftKeyPointCount);
 
-                        const int distance =
-                            computeDescriptorDistance(mapPointDescriptor, d);
+                        int distance{};
+                        if (computeDescriptorDistance(mapPointDescriptor,
+                                                      d,
+                                                      distance) !=
+                            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: computeDescriptorDistance returned a "
+                                "failure status although it cannot fail; "
+                                "continuing as before.",
+                                __func__);
+                        }
 
                         if (distance < bestDistance)
                         {
@@ -469,7 +491,14 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
         int ind2 = -1;
         int ind3 = -1;
 
-        computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3);
+        if (computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeThreeMaxima returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
              histogramBinIndex++)
@@ -491,7 +520,8 @@ int ORBmatcher::searchByProjection(Frame       &CurrentFrame,
         }
     }
 
-    return nmatches;
+    byProjection_out = nmatches;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -36,15 +36,28 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::associatePassagesToRooms(void)
+SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
 {
     /* Extract all rooms from the current map */
-    std::vector<vs_graphs::core::semantic::Room *> allRooms =
-        p_atlas->getAllRooms();
+    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
+    if (p_atlas->getAllRooms(allRooms) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Extract all passages from the current map */
-    const std::vector<vs_graphs::core::semantic::Passage *> allPassages =
-        p_atlas->getAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
+    if (p_atlas->getAllPassages(allPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     constexpr double sideEpsilon_m = 0.20;
 
@@ -1832,8 +1845,17 @@ void SemanticsManager::associatePassagesToRooms(void)
                      * aperture test (segmentCrossesPassageOpening) plus the
                      * intervening-wall test (segmentCrossesForeignWall).
                      */
-                    geometric::Plane *p_anteChurnGroundPlane =
-                        p_atlas->getBiggestGroundPlane();
+                    geometric::Plane *p_anteChurnGroundPlane = nullptr;
+                    if (p_atlas->getBiggestGroundPlane(
+                            p_anteChurnGroundPlane) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: getBiggestGroundPlane returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
 
                     bool anteChurnGroundPlaneIsBad{};
                     if ((p_knownRoom != nullptr &&
@@ -1950,13 +1972,26 @@ void SemanticsManager::associatePassagesToRooms(void)
                                     // getCentroid cannot fail; continue as
                                     // before.
                                 }
-                                if (!segmentCrossesPassageOpening(
+                                bool crossesPassageOpening{};
+                                if (segmentCrossesPassageOpening(
                                         knownRoomCentroid,
                                         otherRoomCentroid,
                                         p_passage,
                                         anteChurnGroundNormal_World,
                                         anteChurnOpeningMargin_m,
-                                        anteChurnMinimumSideDistance_m))
+                                        anteChurnMinimumSideDistance_m,
+                                        crossesPassageOpening) !=
+                                    SemanticsManagerStatus::
+                                        SEMANTICS_MANAGER_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: segmentCrossesPassageOpening "
+                                        "returned a failure status although it "
+                                        "cannot fail; continuing as before.",
+                                        __func__);
+                                }
+                                if (!crossesPassageOpening)
                                 {
                                     continue;
                                 }
@@ -1969,6 +2004,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                                     // getCentroid cannot fail; continue as
                                     // before.
                                 }
+                                bool crossesForeignWall{};
                                 if (segmentCrossesForeignWall(
                                         knownRoomCentroid,
                                         otherRoomCentroid2,
@@ -1980,7 +2016,19 @@ void SemanticsManager::associatePassagesToRooms(void)
                                         anteChurnTopologyParameters
                                             .endpointTrimRatio,
                                         anteChurnTopologyParameters
-                                            .minimumWallLength_m))
+                                            .minimumWallLength_m,
+                                        crossesForeignWall) !=
+                                    SemanticsManagerStatus::
+                                        SEMANTICS_MANAGER_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: segmentCrossesForeignWall "
+                                        "returned a failure status although it "
+                                        "cannot fail; continuing as before.",
+                                        __func__);
+                                }
+                                if (crossesForeignWall)
                                 {
                                     continue;
                                 }
@@ -2062,8 +2110,17 @@ void SemanticsManager::associatePassagesToRooms(void)
                          * candidate/prospective room already exists near this
                          * location (within 2.0m) across ALL passages. */
                         bool prospectiveExists = false;
-                        const std::vector<vs_graphs::core::semantic::Room *>
-                            candidateRooms = p_atlas->getAllCandidateMapRooms();
+                        std::vector<vs_graphs::core::semantic::Room *>
+                            candidateRooms{};
+                        if (p_atlas->getAllCandidateMapRooms(candidateRooms) !=
+                            AtlasStatus::ATLAS_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getAllCandidateMapRooms returned "
+                                         "a failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
 
                         /* Count current prospective rooms (UNDEFINED variant
                          * candidates) */
@@ -2405,8 +2462,18 @@ void SemanticsManager::associatePassagesToRooms(void)
 
                                     /* Add to atlas as a candidate (not yet a
                                      * confirmed room) */
-                                    p_atlas->addCandidateMapRoom(
-                                        p_prospectiveRoom);
+                                    if (p_atlas->addCandidateMapRoom(
+                                            p_prospectiveRoom) !=
+                                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                                    {
+                                        RCLCPP_ERROR(
+                                            rclcpp::get_logger("vs_graphs"),
+                                            "%s: addCandidateMapRoom returned "
+                                            "a failure status although it "
+                                            "cannot fail; continuing as "
+                                            "before.",
+                                            __func__);
+                                    }
 
                                     /* Link passage <-> prospective room */
                                     if (p_passage->setProspectiveRoom(
@@ -2691,8 +2758,16 @@ void SemanticsManager::associatePassagesToRooms(void)
                 vs_graphs::core::semantic::Room *p_knownSideRoom =
                     passageKnownSideProvenance3.p_room;
 
-                geometric::Plane *p_groundPlane =
-                    p_atlas->getBiggestGroundPlane();
+                geometric::Plane *p_groundPlane = nullptr;
+                if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getBiggestGroundPlane returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 bool groundPlaneIsBad{};
                 if ((p_groundPlane != nullptr) &&
@@ -2804,13 +2879,26 @@ void SemanticsManager::associatePassagesToRooms(void)
                                     "before.",
                                     __func__);
                             }
-                            if (!segmentCrossesPassageOpening(
+                            bool crossesPassageOpening2{};
+                            if (segmentCrossesPassageOpening(
                                     prospectiveCentroid,
                                     otherRoomCentroid3,
                                     p_passage,
                                     groundNormal_World,
                                     openingMargin_m,
-                                    minimumSideDistance_m))
+                                    minimumSideDistance_m,
+                                    crossesPassageOpening2) !=
+                                SemanticsManagerStatus::
+                                    SEMANTICS_MANAGER_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: segmentCrossesPassageOpening returned "
+                                    "a failure status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
+                            if (!crossesPassageOpening2)
                             {
                                 continue;
                             }
@@ -2837,6 +2925,7 @@ void SemanticsManager::associatePassagesToRooms(void)
                                     "before.",
                                     __func__);
                             }
+                            bool crossesForeignWall2{};
                             if (segmentCrossesForeignWall(
                                     prospectiveCentroid,
                                     otherRoomCentroid4,
@@ -2846,7 +2935,19 @@ void SemanticsManager::associatePassagesToRooms(void)
                                     groundAxisV_World,
                                     groundNormal_World,
                                     topologyParameters.endpointTrimRatio,
-                                    topologyParameters.minimumWallLength_m))
+                                    topologyParameters.minimumWallLength_m,
+                                    crossesForeignWall2) !=
+                                SemanticsManagerStatus::
+                                    SEMANTICS_MANAGER_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: segmentCrossesForeignWall returned a "
+                                    "failure status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
+                            if (crossesForeignWall2)
                             {
                                 continue;
                             }
@@ -2884,7 +2985,19 @@ void SemanticsManager::associatePassagesToRooms(void)
                     for (vs_graphs::core::geometric::Plane *p_wall :
                          prospectiveRoomWalls2)
                     {
-                        admitWallToRoom(p_farSideConfirmedRoom, p_wall);
+                        bool wasAdmitted{};
+                        if (admitWallToRoom(p_farSideConfirmedRoom,
+                                            p_wall,
+                                            wasAdmitted) !=
+                            SemanticsManagerStatus::
+                                SEMANTICS_MANAGER_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: admitWallToRoom returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                         bool prospectiveRoomWasWallRemoved{};
                         if (p_prospectiveRoom->removeWall(
                                 p_wall,
@@ -3088,6 +3201,8 @@ void SemanticsManager::associatePassagesToRooms(void)
     }
 
     disconnectedRoomIds = std::move(computedDisconnectedRoomIds);
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -45,22 +45,24 @@ namespace core
  *        including 0 or 1 -- the boundary-loop algorithm's own machinery
  *        only starts producing useful output once minimumWallCount is met.
  */
-std::vector<semantic::Room::ObservationGap> computeRoomObservationGaps(
-    const std::vector<FiniteWallSegment2d> &wallSegments_in,
-    const Eigen::Vector2d                  &roomCentroidGround_m_in,
+SemanticsManagerStatus computeRoomObservationGaps(
+    const std::vector<FiniteWallSegment2d>      &wallSegments_in,
+    const Eigen::Vector2d                       &roomCentroidGround_m_in,
     /* An axis-aligned (or any) rectangle's four wall midpoints sit exactly
      * on its principal axes as seen from the centroid -- always exactly 90
      * deg apart by construction, regardless of aspect ratio. The threshold
      * must clear that deterministic case with margin, or every well-formed
      * rectangular room reports four phantom gaps. */
-    double                                  gapThreshold_rad_in)
+    std::vector<semantic::Room::ObservationGap> &roomObservationGaps_out,
+    double                                       gapThreshold_rad_in)
 {
     std::vector<semantic::Room::ObservationGap> gaps;
 
     if (wallSegments_in.empty())
     {
         gaps.push_back({0.0, 2.0 * M_PI});
-        return gaps;
+        roomObservationGaps_out = gaps;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::vector<double> midpointAngles_rad;
@@ -82,7 +84,8 @@ std::vector<semantic::Room::ObservationGap> computeRoomObservationGaps(
     if (midpointAngles_rad.empty())
     {
         gaps.push_back({0.0, 2.0 * M_PI});
-        return gaps;
+        roomObservationGaps_out = gaps;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::sort(midpointAngles_rad.begin(), midpointAngles_rad.end());
@@ -103,7 +106,8 @@ std::vector<semantic::Room::ObservationGap> computeRoomObservationGaps(
         }
     }
 
-    return gaps;
+    roomObservationGaps_out = gaps;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

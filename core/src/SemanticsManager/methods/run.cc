@@ -47,7 +47,16 @@ void SemanticsManager::run(void)
     while (true)
     {
         /* Graceful shutdown on System::Shutdown() */
-        if (checkFinish())
+        bool isFinishRequested{};
+        if (checkFinish(isFinishRequested) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkFinish returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isFinishRequested)
         {
             break;
         }
@@ -61,27 +70,93 @@ void SemanticsManager::run(void)
          * merging takes the same atlas-owned lock before changing frames or
          * ownership, so this cycle can never traverse a half-merged graph.
          */
-        std::unique_lock<std::mutex> semanticUpdateLock =
-            p_atlas->acquireSemanticUpdateLock();
+        std::unique_lock<std::mutex> semanticUpdateLock{};
+        if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: acquireSemanticUpdateLock returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
-        pipelineSemanticCycle = ++summaryCycle;
-        resetTemporalStateForMap(p_atlas->getCurrentMap());
-        ensureActiveMapBootstrapHierarchy();
+        pipelineSemanticCycle  = ++summaryCycle;
+        Map *p_atlasCurrentMap = nullptr;
+        if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (resetTemporalStateForMap(p_atlasCurrentMap) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: resetTemporalStateForMap returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        SemanticsManager::ActiveMapBootstrapResult bootstrapResult{};
+        if (ensureActiveMapBootstrapHierarchy(bootstrapResult) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: ensureActiveMapBootstrapHierarchy returned a failure "
+                "status although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* Validate the low-level semantic planes */
-        geometric::Plane *p_mainGroundPlane = p_atlas->getBiggestGroundPlane();
+        geometric::Plane *p_mainGroundPlane = nullptr;
+        if (p_atlas->getBiggestGroundPlane(p_mainGroundPlane) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getBiggestGroundPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* If there is a ground plane, find its transform and filter planes */
         if (p_mainGroundPlane != nullptr)
         {
             /* Find the transform from ground plane to horizontal */
-            planePoseMat = computePlaneToHorizontal(p_mainGroundPlane);
+            Eigen::Matrix4f plane2{};
+            if (computePlaneToHorizontal(p_mainGroundPlane, plane2) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computePlaneToHorizontal returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            planePoseMat = plane2;
 
             /* Filter ground planes */
-            filterGroundPlanes(p_mainGroundPlane);
+            if (filterGroundPlanes(p_mainGroundPlane) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: filterGroundPlanes returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             /* Filter the wall planes */
-            filterWallPlanes();
+            if (filterWallPlanes() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: filterWallPlanes returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         /*!
@@ -122,9 +197,32 @@ void SemanticsManager::run(void)
          * work from. */
         if (p_sysParams->semSeg.enablePassageDetection)
         {
-            detectDoorsAndDoorways(p_atlas);
-            updatePassages(p_atlas);
-            mergeOverlappingPassages();
+            if (detectDoorsAndDoorways(p_atlas) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: detectDoorsAndDoorways returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (updatePassages(p_atlas) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updatePassages returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mergeOverlappingPassages() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: mergeOverlappingPassages returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
 
         /*!
@@ -135,7 +233,15 @@ void SemanticsManager::run(void)
         if (p_sysParams->roomSeg.method ==
             types::SystemParams::RoomSeg::Method::FREE_SPACE)
         {
-            detectRoom_FreeSpaceCluster();
+            if (detectRoom_FreeSpaceCluster() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: detectRoom_FreeSpaceCluster returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
 
         /*!
@@ -145,7 +251,15 @@ void SemanticsManager::run(void)
          *              detector receives either an existing room or a new
          *              provisional structural element.
          */
-        associateAllWallsToRooms();
+        if (associateAllWallsToRooms() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: associateAllWallsToRooms returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* Consolidate only redundant single-wall provisional structures. */
         if (utils::utils::Utils::reAssociateRooms(p_atlas) !=
@@ -161,7 +275,15 @@ void SemanticsManager::run(void)
          * above, ahead of this cycle's wall admission. */
         if (p_sysParams->semSeg.enablePassageDetection)
         {
-            updateTraversalEvidence(p_atlas);
+            if (updateTraversalEvidence(p_atlas) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: updateTraversalEvidence returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             if (utils::utils::Utils::reAssociatePassages(p_atlas) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
@@ -171,22 +293,61 @@ void SemanticsManager::run(void)
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            associatePassagesToRooms();
-            detachWallsBeyondConfirmedPassages();
+            if (associatePassagesToRooms() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: associatePassagesToRooms returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (detachWallsBeyondConfirmedPassages() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: detachWallsBeyondConfirmedPassages returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             /* Continuous rule-invariant sweep (not just at admission time):
              * see enforcePassageSideInvariant()'s own comment. Room<->passage
              * association is current as of the two calls just above. */
-            enforcePassageSideInvariant();
+            if (enforcePassageSideInvariant() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: enforcePassageSideInvariant returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             /* PROSPECTIVE ROOM CLEANUP
              * A passage reference is the stable far-side handle. Zero-wall
              * prospectives remain alive while that reference and its geometry
              * are valid; only orphaned or invalid handles are retired. */
-            const std::vector<vs_graphs::core::semantic::Room *>
-                candidateRooms = p_atlas->getAllCandidateMapRooms();
-            const std::vector<vs_graphs::core::semantic::Passage *>
-                allPassages = p_atlas->getAllPassages();
+            std::vector<vs_graphs::core::semantic::Room *> candidateRooms{};
+            if (p_atlas->getAllCandidateMapRooms(candidateRooms) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getAllCandidateMapRooms returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
+            if (p_atlas->getAllPassages(allPassages) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllPassages returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             for (vs_graphs::core::semantic::Room *p_candidate : candidateRooms)
             {
                 if (p_candidate == nullptr)
@@ -290,10 +451,21 @@ void SemanticsManager::run(void)
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                bool hasValidGeometry = !candidateIsBad &&
-                                        candidateCentroid.allFinite() &&
-                                        p_candidateMap2 != nullptr &&
-                                        p_atlas->isActiveMap(p_candidateMap3);
+                bool atlasIsActiveMap{};
+                if ((!candidateIsBad && candidateCentroid.allFinite() &&
+                     p_candidateMap2 != nullptr) &&
+                    p_atlas->isActiveMap(p_candidateMap3, atlasIsActiveMap) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isActiveMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                bool hasValidGeometry =
+                    !candidateIsBad && candidateCentroid.allFinite() &&
+                    p_candidateMap2 != nullptr && atlasIsActiveMap;
 
                 for (vs_graphs::core::semantic::Passage *p_passage :
                      referencingPassages)
@@ -425,30 +597,76 @@ void SemanticsManager::run(void)
         if (p_sysParams->roomSeg.method ==
             types::SystemParams::RoomSeg::Method::FREE_SPACE)
         {
-            detectRoom_FreeSpaceCluster(); // Second pass - updates existing
-                                           // rooms
+            if (detectRoom_FreeSpaceCluster() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: detectRoom_FreeSpaceCluster returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            } // Second pass - updates existing
+              // rooms
         }
 
         /* Re-associate walls to rooms after second-pass cluster splitting.
          * Walls assigned in the first pass may belong to wrong (merged)
          * rooms. */
-        associateAllWallsToRooms();
+        if (associateAllWallsToRooms() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: associateAllWallsToRooms returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* A wall surface is owned by exactly one room in every configuration.
          * Run AFTER the second pass so split clusters get correct wall
          * ownership. */
-        enforceUniqueWallOwnership();
+        if (enforceUniqueWallOwnership() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: enforceUniqueWallOwnership returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* Link each wall's opposite-facing twin, now that ownership has
          * settled for this cycle. Must run before validateRoomBoundaries()
          * so boundary/corner logic can rely on current twin identity. */
-        reconcileWallFacePairs();
+        if (reconcileWallFacePairs() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: reconcileWallFacePairs returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Validate room geometry without delaying independent passage data. */
-        validateRoomBoundaries();
+        if (validateRoomBoundaries() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: validateRoomBoundaries returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Retire only stale, weak wall hypotheses left unused by the graph. */
-        suppressUndefendedWalls();
+        if (suppressUndefendedWalls() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: suppressUndefendedWalls returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* Recompute room centroids as mean of associated wall centroids.
          * In FREE_SPACE mode the skeleton-cluster centroid set during room
@@ -459,15 +677,38 @@ void SemanticsManager::run(void)
         if (p_sysParams->roomSeg.method !=
             types::SystemParams::RoomSeg::Method::FREE_SPACE)
         {
-            recomputeRoomCentroidsFromWalls();
+            if (recomputeRoomCentroidsFromWalls() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: recomputeRoomCentroidsFromWalls returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
 
         /* Associate every valid room/SE with the floor */
-        getUpdatedFloors();
+        if (getUpdatedFloors() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getUpdatedFloors returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Re-point any room whose own ground plane disagrees with the
          * just-refreshed canonical Floor identity. */
-        reconcileRoomGroundPlanes();
+        if (reconcileRoomGroundPlanes() !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: reconcileRoomGroundPlanes returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* Room candidate generation is pre-verification only. The legacy
          * tag-and-wall-transfer entry point remains disabled. */
@@ -477,17 +718,50 @@ void SemanticsManager::run(void)
          * transitions. It is read-only with respect to the room id members. */
         const std::chrono::duration<double> roomTrackerElapsed =
             std::chrono::steady_clock::now().time_since_epoch();
-        updateRoomTrackerState(roomTrackerElapsed.count());
+        if (updateRoomTrackerState(roomTrackerElapsed.count()) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateRoomTrackerState returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Verification-gated merge is not enabled here. In particular, a tag
          * match must never activate MergeMapPair(). */
         std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
-             copiedContext  = p_atlas->copyRoomContextHistory();
-        Map *p_candidateMap = p_atlas->getCurrentMap();
+            copiedContext{};
+        if (p_atlas->copyRoomContextHistory(copiedContext) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: copyRoomContextHistory returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Map *p_candidateMap = nullptr;
+        if (p_atlas->getCurrentMap(p_candidateMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (p_candidateMap != nullptr)
         {
-            const Atlas::SnapshotCopyResult currentSnapshot =
-                p_atlas->copyRoomContextForMapChecked(p_candidateMap, true);
+            Atlas::SnapshotCopyResult currentSnapshot{};
+            if (p_atlas->copyRoomContextForMapChecked(p_candidateMap,
+                                                      true,
+                                                      currentSnapshot) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: copyRoomContextForMapChecked returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
             if (currentSnapshot.status == Atlas::SnapshotCopyStatus::COMPLETE)
             {
                 unsigned long candidateMapId{};
@@ -536,7 +810,15 @@ void SemanticsManager::run(void)
             p_sysParams->candidateGen.topoRefinementIters;
         /* The "last-confirmed room" anchor for adjacency-
          * prioritised candidate search. -1 (unset) maps to no anchor. */
-        const int                lastKnownRoomIdSnapshot = getLastKnownRoomId();
+        int lastKnownRoomIdSnapshot{};
+        if (getLastKnownRoomId(lastKnownRoomIdSnapshot) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getLastKnownRoomId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const std::optional<int> anchorRoomId =
             lastKnownRoomIdSnapshot >= 0
                 ? std::optional<int>(lastKnownRoomIdSnapshot)
@@ -562,11 +844,27 @@ void SemanticsManager::run(void)
          * submitVerificationVerdict(). This still only makes the *verdict*
          * real -- it must not call Atlas::MergeMapPair() or otherwise mutate
          * the Atlas; that trigger is a separate, deliberately gated step. */
-        evaluateTopCandidateVerification(candidates);
+        if (evaluateTopCandidateVerification(candidates) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateTopCandidateVerification returned a failure "
+                "status although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* Compact Phase-1 heartbeat: all values come from this completed
          * semantic transaction and are therefore mutually consistent. */
-        Map *p_pipelineMap = p_atlas->getCurrentMap();
+        Map *p_pipelineMap = nullptr;
+        if (p_atlas->getCurrentMap(p_pipelineMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         std::vector<geometric::Plane *> pipelineMapAllPlanes{};
         if ((p_pipelineMap != nullptr) &&
             p_pipelineMap->getAllPlanes(pipelineMapAllPlanes) !=
@@ -714,10 +1012,20 @@ void SemanticsManager::run(void)
                 continue;
             }
             wallClassCount++;
+            WallAdmissionEvidence admissionEvidence{};
             if (evaluateWallAdmissionEvidence(p_plane,
                                               p_sysParams,
-                                              pipelineGroundNormal_World)
-                    .isAdmissible)
+                                              pipelineGroundNormal_World,
+                                              admissionEvidence) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: evaluateWallAdmissionEvidence returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (admissionEvidence.isAdmissible)
             {
                 admissibleWallCount++;
             }
@@ -843,12 +1151,21 @@ void SemanticsManager::run(void)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
+        int getCurrentRoomId2{};
+        if (getCurrentRoomId(getCurrentRoomId2) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentRoomId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         std::cout << "SG_PIPELINE {\"event\":\"heartbeat\",\"map_id\":"
                   << (p_pipelineMap != nullptr
                           ? static_cast<long long>(pipelineMapId)
                           : -1)
                   << ",\"semantic_cycle\":" << pipelineSemanticCycle
-                  << ",\"current_room_id\":" << getCurrentRoomId()
+                  << ",\"current_room_id\":" << getCurrentRoomId2
                   << ",\"raw_planes\":" << pipelinePlanes.size()
                   << ",\"wall_class_planes\":" << wallClassCount
                   << ",\"admissible_walls\":" << admissibleWallCount
@@ -886,19 +1203,49 @@ void SemanticsManager::run(void)
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
+        std::vector<semantic::OpenPassageHypothesisRecord>
+            captureOpenPassageHypotheses2{};
+        if (captureOpenPassageHypotheses(captureOpenPassageHypotheses2) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: captureOpenPassageHypotheses returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         snapshot.managerPrivateOpenPassageHypotheses =
-            captureOpenPassageHypotheses();
+            captureOpenPassageHypotheses2;
         snapshot.managerPrivateOpenPassageHypothesesReason =
             semantic::UnavailableReason::NONE;
+        std::vector<semantic::UnresolvedWallHypothesisRecord>
+            captureUnresolvedWallHypotheses2{};
+        if (captureUnresolvedWallHypotheses(captureUnresolvedWallHypotheses2) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: captureUnresolvedWallHypotheses returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         snapshot.managerPrivateUnresolvedWallHypotheses =
-            captureUnresolvedWallHypotheses();
+            captureUnresolvedWallHypotheses2;
         snapshot.managerPrivateUnresolvedWallHypothesesReason =
             semantic::UnavailableReason::NONE;
 
         std::optional<int> currentMapRevision;
         if (snapshot.currentMapId.has_value())
         {
-            Map          *p_currentMap = p_atlas->getCurrentMap();
+            Map *p_currentMap = nullptr;
+            if (p_atlas->getCurrentMap(p_currentMap) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCurrentMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             unsigned long currentMapId2{};
             if ((p_currentMap != nullptr) &&
                 p_currentMap->getId(currentMapId2) !=
@@ -932,7 +1279,15 @@ void SemanticsManager::run(void)
         /* Continuous consecutive-map matching, old into current, inside
          * this transaction: at most one merge per cycle; attempts and
          * commits log via SG_PIPELINE. */
-        p_atlas->attemptConsecutiveMergeIfGated();
+        if (p_atlas->attemptConsecutiveMergeIfGated() !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: attemptConsecutiveMergeIfGated returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         semanticUpdateLock.unlock();
 
         const std::chrono::steady_clock::time_point evaluationStart =
@@ -1012,7 +1367,14 @@ void SemanticsManager::run(void)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        logSemanticDiagnostics(semanticReportCacheGetLatest);
+        if (logSemanticDiagnostics(semanticReportCacheGetLatest) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: logSemanticDiagnostics returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Find the time after it took to run the loop */
         const std::chrono::steady_clock::time_point end =
@@ -1038,7 +1400,13 @@ void SemanticsManager::run(void)
     }
 
     /* Signal shutdown completion to ~System. */
-    setFinish();
+    if (setFinish() != SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

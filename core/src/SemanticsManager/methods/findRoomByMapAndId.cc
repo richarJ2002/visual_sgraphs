@@ -24,10 +24,20 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Room *SemanticsManager::findRoomByMapAndId(long unsigned int mapId_in,
-                                                     int roomId_in) const
+SemanticsManagerStatus
+    SemanticsManager::findRoomByMapAndId(long unsigned int mapId_in,
+                                         int               roomId_in,
+                                         semantic::Room  *&p_room_out) const
 {
-    for (Map *p_map : p_atlas->getAllMaps())
+    std::vector<Map *> atlasAllMaps{};
+    if (p_atlas->getAllMaps(atlasAllMaps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (Map *p_map : atlasAllMaps)
     {
         unsigned long mapId{};
         if (!(p_map == nullptr) &&
@@ -87,12 +97,14 @@ semantic::Room *SemanticsManager::findRoomByMapAndId(long unsigned int mapId_in,
                 roomVariant == semantic::Room::RoomVariant::ROOM &&
                 roomId == roomId_in)
             {
-                return p_room;
+                p_room_out = p_room;
+                return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
             }
         }
         break;
     }
-    return nullptr;
+    p_room_out = nullptr;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

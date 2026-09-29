@@ -33,7 +33,7 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::requestReset()
+LoopClosingStatus LoopClosing::requestReset()
 {
     {
         unique_lock<mutex> lock(resetMutex);
@@ -49,6 +49,8 @@ void LoopClosing::requestReset()
         }
         usleep(5000);
     }
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

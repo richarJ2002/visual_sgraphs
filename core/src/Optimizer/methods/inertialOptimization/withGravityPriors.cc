@@ -33,11 +33,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::inertialOptimization(Map             *p_map_in,
-                                     Eigen::Vector3d &gyroBias_out,
-                                     Eigen::Vector3d &accelBias_out,
-                                     float            gyroBiasPriorWeight_in,
-                                     float            accelBiasPriorWeight_in)
+OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
+                                                Eigen::Vector3d &gyroBias_out,
+                                                Eigen::Vector3d &accelBias_out,
+                                                float gyroBiasPriorWeight_in,
+                                                float accelBiasPriorWeight_in)
 {
     int           iterationCount = 200; // Check number of iterations
     unsigned long maxKeyFrameIdValue{};
@@ -173,7 +173,14 @@ void Optimizer::inertialOptimization(Map             *p_map_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            p_keyFrame->p_imuPreintegrated->setNewBias(imuBias2);
+            if (p_keyFrame->p_imuPreintegrated->setNewBias(imuBias2) !=
+                IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setNewBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             g2o::HyperGraph::Vertex *p_previousPoseVertex =
                 optimizer.vertex(p_keyFrame->p_prevKF->id);
             g2o::HyperGraph::Vertex *p_previousVelocityVertex =
@@ -311,7 +318,15 @@ void Optimizer::inertialOptimization(Map             *p_map_in,
             }
             if (p_keyFrame->p_imuPreintegrated)
             {
-                p_keyFrame->p_imuPreintegrated->reintegrate();
+                if (p_keyFrame->p_imuPreintegrated->reintegrate() !=
+                    IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: reintegrate returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
         else
@@ -326,6 +341,8 @@ void Optimizer::inertialOptimization(Map             *p_map_in,
             }
         }
     }
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

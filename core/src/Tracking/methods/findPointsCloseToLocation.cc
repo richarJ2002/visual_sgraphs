@@ -33,10 +33,11 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<MapPoint *> Tracking::findPointsCloseToLocation(
+TrackingStatus Tracking::findPointsCloseToLocation(
     const std::vector<MapPoint *> &points_in,
     const Eigen::Vector3f         &location_in,
-    double                         distanceThreshold_in)
+    double                         distanceThreshold_in,
+    std::vector<MapPoint *>       &pointsClose_out)
 {
     std::vector<MapPoint *> closePoints;
     for (MapPoint *p_point : points_in)
@@ -68,7 +69,8 @@ std::vector<MapPoint *> Tracking::findPointsCloseToLocation(
         }
     }
 
-    return closePoints;
+    pointsClose_out = closePoints;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

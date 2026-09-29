@@ -46,7 +46,8 @@ TEST(SemanticFixtures, GridCloudIsDeterministicAndOnPlane)
 TEST(SemanticFixtures, MakeWallPlaneProducesAdmissibleGeometry)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     makeWallPlane(wall,
@@ -89,7 +90,8 @@ TEST(SemanticFixtures, MakeWallPlaneProducesAdmissibleGeometry)
 TEST(SemanticFixtures, MakeGroundPlaneRefitsSuccessfully)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane ground;
     const bool       refitOk = makeGroundPlane(ground, 1, p_map);
@@ -104,7 +106,8 @@ TEST(SemanticFixtures, MakeGroundPlaneRefitsSuccessfully)
 TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     makeWallPlane(wall,
@@ -141,7 +144,8 @@ TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)
 TEST(SemanticFixtures, MakePassageWiresKnownAndFarSide)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     semantic::Room knownRoom;
     makeRoom(knownRoom, 1, p_map, nullptr, Eigen::Vector3d(-1.0, 0.0, 0.0));
@@ -187,7 +191,8 @@ TEST(SemanticFixtures, MakePassageWiresKnownAndFarSide)
 TEST(SemanticFixtures, MakeFloorOwnsGivenRooms)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     semantic::Room roomA;
     makeRoom(roomA, 1, p_map, nullptr);
@@ -208,7 +213,8 @@ TEST(SemanticFixtures, MakeFloorOwnsGivenRooms)
 TEST(SemanticFixtures, MakeKeyFrameAtRegistersWithMapAndCameraCenter)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     KeyFrame keyFrame;
     makeKeyFrameAt(keyFrame, 42U, p_map, Eigen::Vector3f(1.0F, 2.0F, 3.0F));

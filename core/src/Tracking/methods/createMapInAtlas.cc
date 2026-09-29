@@ -25,20 +25,33 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void Tracking::createMapInAtlas()
+TrackingStatus Tracking::createMapInAtlas()
 {
     lastInitFrameId = currentFrame.id;
-    p_atlas->createNewMap();
+    if (p_atlas->createNewMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: createNewMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (sensor == System::IMU_STEREO || sensor == System::IMU_MONOCULAR ||
         sensor == System::IMU_RGBD)
     {
-        p_atlas->setInertialSensor();
+        if (p_atlas->setInertialSensor() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setInertialSensor returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
     isInitSet = false;
 
@@ -49,9 +62,15 @@ void Tracking::createMapInAtlas()
     isVelocityAvailable = false;
     // mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is
     // the current id, because it is the new starting point for new map
-    Verbose::printMess("First frame id in map: " +
-                           to_string(lastInitFrameId + 1),
-                       Verbose::VERBOSITY_NORMAL);
+    if (Verbose::printMess(
+            "First frame id in map: " + to_string(lastInitFrameId + 1),
+            Verbose::VERBOSITY_NORMAL) != VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     isVisualOdometry = false; // Init value for know if there are enough
                               // MapPoints in the last KF
     if (sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR)
@@ -79,6 +98,8 @@ void Tracking::createMapInAtlas()
     iniMatches.clear();
 
     hasCreatedMap = true;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -35,8 +35,9 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::searchAndFuse(const vector<KeyFrame *> &conectedKeyFrames_in,
-                                vector<MapPoint *>       &mapPoints_in)
+LoopClosingStatus LoopClosing::searchAndFuse(
+    const std::vector<KeyFrame *> &conectedKeyFrames_in,
+    vector<MapPoint *>            &mapPoints_in)
 {
     ORBmatcher matcher(0.8);
 
@@ -78,7 +79,20 @@ void LoopClosing::searchAndFuse(const vector<KeyFrame *> &conectedKeyFrames_in,
             Scw.scale() - 1.f << std::endl;*/
         vector<MapPoint *> replacePoints(mapPoints_in.size(),
                                          static_cast<MapPoint *>(nullptr));
-        matcher.fuse(p_keyFrame, Scw, mapPoints_in, 4, replacePoints);
+        int                matcherFusedCount{};
+        if (matcher.fuse(p_keyFrame,
+                         Scw,
+                         mapPoints_in,
+                         4,
+                         replacePoints,
+                         matcherFusedCount) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: fuse returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Get Map Mutex
         unique_lock<mutex> lock(p_map->mapUpdateMutex);
@@ -104,6 +118,8 @@ void LoopClosing::searchAndFuse(const vector<KeyFrame *> &conectedKeyFrames_in,
         MPs fused" << endl; total_replaces += num_replaces;*/
     }
     // cout << "FUSE-POSE: " << total_replaces << " MPs had been fused" << endl;
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -279,9 +279,11 @@ TEST(VerificationWiringIntegration,
      MatchingRoomsAcrossMapsDriveRoomTrackerToConfirmed)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_NE(p_mapA, p_mapB);
 
     const std::vector<RawWall> wallsA = makeReferenceWalls();
@@ -317,23 +319,36 @@ TEST(VerificationWiringIntegration,
     const std::vector<semantic::SemanticCandidate> candidates = {
         makeCandidate(p_mapA, &roomA->room, p_mapB, &roomB->room)};
 
-    SemanticsManager manager(&atlas);
-    ASSERT_EQ(manager.getRoomTrackerStateForTest(),
+    SemanticsManager            manager(&atlas);
+    semantic::RoomTrackingState getRoomTrackerStateForTest2{};
+    ASSERT_EQ((manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ(getRoomTrackerStateForTest2,
               semantic::RoomTrackingState::UNKNOWN);
 
-    manager.evaluateTopCandidateVerificationForTest(candidates);
+    ASSERT_EQ((manager.evaluateTopCandidateVerificationForTest(candidates)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     /* submitVerificationVerdict() only queues the result; semantic::RoomTracker
      * consumes it on the next drained cycle -- confirm the queue, not an
      * instantaneous transition. */
-    EXPECT_EQ(manager.getRoomTrackerStateForTest(),
+    semantic::RoomTrackingState getRoomTrackerStateForTest3{};
+    ASSERT_EQ((manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest3)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerStateForTest3,
               semantic::RoomTrackingState::UNKNOWN);
 
-    manager.processRoomTrackerPendingForTest(1.0);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(1.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
-    EXPECT_EQ(manager.getRoomTrackerStateForTest(),
+    semantic::RoomTrackingState getRoomTrackerStateForTest4{};
+    ASSERT_EQ((manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest4)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerStateForTest4,
               semantic::RoomTrackingState::CONFIRMED_ROOM);
-    const std::vector<semantic::TransitionEvent> &history =
-        manager.getRoomTrackerEventHistoryForTest();
+    const std::vector<semantic::TransitionEvent> *p_historyRef = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(p_historyRef)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    const std::vector<semantic::TransitionEvent> &history = *p_historyRef;
     ASSERT_FALSE(history.empty());
     EXPECT_EQ(history.back().event,
               semantic::RoomTrackingEvent::FIRST_ROOM_CONFIRMED);
@@ -345,9 +360,11 @@ TEST(VerificationWiringIntegration,
      TooFewWallsOnOneSideYieldsRejectedVerdictNoTransition)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     const std::vector<RawWall> wallsA = makeReferenceWalls();
     /* semantic::SemanticVerify::verify() rejects outright below 3 walls per
@@ -374,23 +391,43 @@ TEST(VerificationWiringIntegration,
         makeCandidate(p_mapA, &roomA->room, p_mapB, &roomB->room)};
 
     SemanticsManager manager(&atlas);
-    manager.evaluateTopCandidateVerificationForTest(candidates);
-    manager.processRoomTrackerPendingForTest(1.0);
+    ASSERT_EQ((manager.evaluateTopCandidateVerificationForTest(candidates)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(1.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
-    EXPECT_EQ(manager.getRoomTrackerStateForTest(),
+    semantic::RoomTrackingState getRoomTrackerStateForTest2{};
+    ASSERT_EQ((manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerStateForTest2,
               semantic::RoomTrackingState::UNKNOWN);
-    EXPECT_TRUE(manager.getRoomTrackerEventHistoryForTest().empty());
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_TRUE((*p_getRoomTrackerEventHistoryForTest).empty());
 }
 
 TEST(VerificationWiringIntegration, EmptyCandidateListIsANoOp)
 {
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    manager.evaluateTopCandidateVerificationForTest({});
-    manager.processRoomTrackerPendingForTest(1.0);
-    EXPECT_EQ(manager.getRoomTrackerStateForTest(),
+    ASSERT_EQ((manager.evaluateTopCandidateVerificationForTest({})),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(1.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    semantic::RoomTrackingState getRoomTrackerStateForTest2{};
+    ASSERT_EQ((manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerStateForTest2,
               semantic::RoomTrackingState::UNKNOWN);
-    EXPECT_TRUE(manager.getRoomTrackerEventHistoryForTest().empty());
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_TRUE((*p_getRoomTrackerEventHistoryForTest).empty());
 }
 
 TEST(VerificationWiringIntegration, GenuineTiedLeaderIsSkipped)
@@ -416,11 +453,22 @@ TEST(VerificationWiringIntegration, GenuineTiedLeaderIsSkipped)
 
     Atlas            atlas(0);
     SemanticsManager manager(&atlas);
-    manager.evaluateTopCandidateVerificationForTest({first, second});
-    manager.processRoomTrackerPendingForTest(1.0);
-    EXPECT_EQ(manager.getRoomTrackerStateForTest(),
+    ASSERT_EQ(
+        (manager.evaluateTopCandidateVerificationForTest({first, second})),
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(1.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    semantic::RoomTrackingState getRoomTrackerStateForTest2{};
+    ASSERT_EQ((manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerStateForTest2,
               semantic::RoomTrackingState::UNKNOWN);
-    EXPECT_TRUE(manager.getRoomTrackerEventHistoryForTest().empty());
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_TRUE((*p_getRoomTrackerEventHistoryForTest).empty());
 }
 
 } // namespace core

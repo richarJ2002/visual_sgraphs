@@ -30,16 +30,22 @@ namespace vs_graphs
 namespace core
 {
 
-const std::vector<semantic::RoomContextSnapshot> &
-    Atlas::getRoomContextForMap(long unsigned int mapId_in) const
+AtlasStatus
+    Atlas::getRoomContextForMap(long unsigned int mapId_in,
+                                const std::vector<semantic::RoomContextSnapshot>
+                                    *&p_roomContextForMap_out) const
 {
     /* Compatibility API: callers requiring synchronization must use the copy
      * API. The historical reference lifetime cannot be made lock-safe. */
     static const std::vector<semantic::RoomContextSnapshot> empty;
     auto roomContextIt = roomContextHistory.find(mapId_in);
     if (roomContextIt == roomContextHistory.end())
-        return empty;
-    return roomContextIt->second;
+    {
+        p_roomContextForMap_out = &(empty);
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
+    }
+    p_roomContextForMap_out = &(roomContextIt->second);
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

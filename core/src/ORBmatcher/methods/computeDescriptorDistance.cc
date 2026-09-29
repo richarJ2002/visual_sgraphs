@@ -30,7 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::computeDescriptorDistance(const cv::Mat &a, const cv::Mat &b)
+ORBmatcherStatus
+    ORBmatcher::computeDescriptorDistance(const cv::Mat &a,
+                                          const cv::Mat &b,
+                                          int           &descriptorDistance_out)
 {
     const int *pa = a.ptr<int32_t>();
     const int *pb = b.ptr<int32_t>();
@@ -45,7 +48,8 @@ int ORBmatcher::computeDescriptorDistance(const cv::Mat &a, const cv::Mat &b)
         distance += (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
     }
 
-    return distance;
+    descriptorDistance_out = distance;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

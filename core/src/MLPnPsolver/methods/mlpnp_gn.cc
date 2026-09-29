@@ -48,17 +48,19 @@
 #include "MLPnPsolver.h"
 
 #include <Eigen/Sparse>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void MLPnPsolver::mlpnp_gn(Eigen::VectorXd                    &x_inout,
-                           const Points3                      &points_in,
-                           const std::vector<Eigen::MatrixXd> &nullspaces_in,
-                           const Eigen::SparseMatrix<double>   Kll_in,
-                           bool shouldUseCovariance_in)
+MLPnPsolverStatus
+    MLPnPsolver::mlpnp_gn(Eigen::VectorXd                    &x_inout,
+                          const Points3                      &points_in,
+                          const std::vector<Eigen::MatrixXd> &nullspaces_in,
+                          const Eigen::SparseMatrix<double>   Kll_in,
+                          bool shouldUseCovariance_in)
 {
     const int observationCount = points_in.size();
     const int unknownCount     = 6;
@@ -90,12 +92,20 @@ void MLPnPsolver::mlpnp_gn(Eigen::VectorXd                    &x_inout,
     // solve simple gradient descent
     while (it_cnt < maximumIt && !stop)
     {
-        mlpnp_residuals_and_jacs(x_inout,
-                                 points_in,
-                                 nullspaces_in,
-                                 r,
-                                 Jac,
-                                 true);
+        if (mlpnp_residuals_and_jacs(x_inout,
+                                     points_in,
+                                     nullspaces_in,
+                                     r,
+                                     Jac,
+                                     true) !=
+            MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: mlpnp_residuals_and_jacs returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         if (shouldUseCovariance_in)
             jacTsKll = Jac.transpose() * Kll_in;
@@ -129,6 +139,8 @@ void MLPnPsolver::mlpnp_gn(Eigen::VectorXd                    &x_inout,
         ++it_cnt;
     } // while
     // result
+
+    return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

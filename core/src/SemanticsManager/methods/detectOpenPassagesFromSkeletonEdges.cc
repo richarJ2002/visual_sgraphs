@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
+SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
     const std::vector<vs_graphs::core::geometric::Plane *> &wallPlanes_in)
 {
     const types::SystemParams::SemSeg::PassageDetection &passageParameters =
@@ -87,14 +87,21 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
     constexpr double minimumMeasuredHeightSpan = 0.50;
 
     /* Extract the latest raw Voxblox sparse-graph edges */
-    const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-        skeletonEdges = p_atlas->getSkeletonEdges();
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> skeletonEdges{};
+    if (p_atlas->getSkeletonEdges(skeletonEdges) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSkeletonEdges returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (skeletonEdges.empty())
     {
         openPassageEvidence.clear();
         hasSkeletonFingerprint = false;
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /*
@@ -127,7 +134,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
     if (hasSkeletonFingerprint &&
         skeletonFingerprint == lastSkeletonFingerprint)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     lastSkeletonFingerprint = skeletonFingerprint;
@@ -137,8 +144,15 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
      * PREPARE THE GROUND PLANE
      * ---------------------------------------------------------------------- */
 
-    vs_graphs::core::geometric::Plane *p_groundPlane =
-        p_atlas->getBiggestGroundPlane();
+    vs_graphs::core::geometric::Plane *p_groundPlane = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     Eigen::Vector4d groundEquation = Eigen::Vector4d::Zero();
 
@@ -191,7 +205,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
     {
         openPassageEvidence.clear();
         hasSkeletonFingerprint = false;
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* ---------------------------------------------------------------------- *
@@ -937,7 +951,7 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
     if (passageCandidates.empty())
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /*
@@ -1011,8 +1025,15 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
         candidateWallEquation /= candidateWallNormalNorm;
 
-        const std::vector<vs_graphs::core::semantic::Passage *>
-            existingPassages = p_atlas->getAllPassages();
+        std::vector<vs_graphs::core::semantic::Passage *> existingPassages{};
+        if (p_atlas->getAllPassages(existingPassages) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (vs_graphs::core::semantic::Passage *p_existingPassage :
              existingPassages)
@@ -1266,7 +1287,16 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
          * candidate's crossing point exactly) to size it. Open passages
          * previously carried no size estimate at all -- see the matching
          * branch above for the same estimate's derivation. */
-        for (semantic::Passage *p_created : p_atlas->getAllPassages())
+        std::vector<vs_graphs::core::semantic::Passage *> atlasAllPassages{};
+        if (p_atlas->getAllPassages(atlasAllPassages) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (semantic::Passage *p_created : atlasAllPassages)
         {
             Eigen::Vector3d createdCentroid{};
             if (!(p_created == nullptr) &&
@@ -1304,6 +1334,8 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             break;
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

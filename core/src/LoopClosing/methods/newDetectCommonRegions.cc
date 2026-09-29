@@ -37,13 +37,14 @@ namespace vs_graphs
 namespace core
 {
 
-bool LoopClosing::newDetectCommonRegions()
+LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
 {
     // To deactivate placerecognition. No loopclosing nor merging will be
     // performed
     if (!isLoopClosingActive)
     {
-        return false;
+        isDetected_out = false;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     {
@@ -94,7 +95,14 @@ bool LoopClosing::newDetectCommonRegions()
     }
     if (lastMapIsInertial && !lastMapInertialBA2)
     {
-        p_keyFrameDatabase->add(p_currentKF);
+        if (p_keyFrameDatabase->add(p_currentKF) !=
+            KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: add returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
+        }
         if (p_currentKF->setErase() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -102,7 +110,8 @@ bool LoopClosing::newDetectCommonRegions()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        return false;
+        isDetected_out = false;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     std::vector<KeyFrame *> lastMapAllKeyFrames{};
@@ -118,7 +127,14 @@ bool LoopClosing::newDetectCommonRegions()
     if (p_tracker->sensor == System::STEREO &&
         lastMapAllKeyFrames.size() < 5) // 12
     {
-        p_keyFrameDatabase->add(p_currentKF);
+        if (p_keyFrameDatabase->add(p_currentKF) !=
+            KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: add returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
+        }
         if (p_currentKF->setErase() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -126,7 +142,8 @@ bool LoopClosing::newDetectCommonRegions()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        return false;
+        isDetected_out = false;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     std::vector<KeyFrame *> lastMapAllKeyFrames2{};
@@ -140,7 +157,14 @@ bool LoopClosing::newDetectCommonRegions()
     }
     if (lastMapAllKeyFrames2.size() < 12)
     {
-        p_keyFrameDatabase->add(p_currentKF);
+        if (p_keyFrameDatabase->add(p_currentKF) !=
+            KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: add returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
+        }
         if (p_currentKF->setErase() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -148,7 +172,8 @@ bool LoopClosing::newDetectCommonRegions()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        return false;
+        isDetected_out = false;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     // Check the last candidates with geometric validation
@@ -188,13 +213,22 @@ bool LoopClosing::newDetectCommonRegions()
         g2o::Sim3 gScw                 = gScl * mg2oLoopSlw;
         int       projectionMatchCount = 0;
         vector<MapPoint *> matchedMapPoints;
-        bool               isCommonRegionFound =
-            detectAndReffineSim3FromLastKF(p_currentKF,
+        bool               isCommonRegionFound{};
+        if (detectAndReffineSim3FromLastKF(p_currentKF,
                                            p_loopMatchedKF,
                                            gScw,
                                            projectionMatchCount,
                                            loopMPs,
-                                           matchedMapPoints);
+                                           matchedMapPoints,
+                                           isCommonRegionFound) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: detectAndReffineSim3FromLastKF returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (isCommonRegionFound)
         {
 
@@ -223,7 +257,15 @@ bool LoopClosing::newDetectCommonRegions()
             loopNumNotFound++;
             if (loopNumNotFound >= 2)
             {
-                recordLoopCorrectionEvent(false, "geometric_validation");
+                if (recordLoopCorrectionEvent(false, "geometric_validation") !=
+                    LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: recordLoopCorrectionEvent returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 if (p_loopLastCurrentKF->setErase() !=
                     KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                 {
@@ -281,13 +323,22 @@ bool LoopClosing::newDetectCommonRegions()
         g2o::Sim3 gScw                 = gScl * mg2oMergeSlw;
         int       projectionMatchCount = 0;
         vector<MapPoint *> matchedMapPoints;
-        bool               isCommonRegionFound =
-            detectAndReffineSim3FromLastKF(p_currentKF,
+        bool               isCommonRegionFound{};
+        if (detectAndReffineSim3FromLastKF(p_currentKF,
                                            p_mergeMatchedKF,
                                            gScw,
                                            projectionMatchCount,
                                            mergeMPs,
-                                           matchedMapPoints);
+                                           matchedMapPoints,
+                                           isCommonRegionFound) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: detectAndReffineSim3FromLastKF returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (isCommonRegionFound)
         {
             isMergeDetectedInKeyFrame = true;
@@ -355,8 +406,16 @@ bool LoopClosing::newDetectCommonRegions()
 #ifdef REGISTER_TIMES
         sim3EstimationTimes_ms.push_back(timeEstSim3);
 #endif
-        p_keyFrameDatabase->add(p_currentKF);
-        return true;
+        if (p_keyFrameDatabase->add(p_currentKF) !=
+            KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: add returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
+        }
+        isDetected_out = true;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     // TODO: This is only necessary if we use a minimun score for pick the best
@@ -380,10 +439,17 @@ bool LoopClosing::newDetectCommonRegions()
         std::chrono::steady_clock::time_point timeStartQuery =
             std::chrono::steady_clock::now();
 #endif
-        p_keyFrameDatabase->detectNBestCandidates(p_currentKF,
-                                                  loopBowCandidates,
-                                                  mergeBowCandidates,
-                                                  3);
+        if (p_keyFrameDatabase->detectNBestCandidates(p_currentKF,
+                                                      loopBowCandidates,
+                                                      mergeBowCandidates,
+                                                      3) !=
+            KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: detectNBestCandidates returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 #ifdef REGISTER_TIMES
         std::chrono::steady_clock::time_point timeEndQuery =
             std::chrono::steady_clock::now();
@@ -404,24 +470,46 @@ bool LoopClosing::newDetectCommonRegions()
     // Loop candidates
     if (!isLoopDetectedInKeyFrame && !loopBowCandidates.empty())
     {
-        isLoopDetected = detectCommonRegionsFromBoW(loopBowCandidates,
-                                                    p_loopMatchedKF,
-                                                    p_loopLastCurrentKF,
-                                                    mg2oLoopSlw,
-                                                    loopNumCoincidences,
-                                                    loopMPs,
-                                                    loopMatchedMPs);
+        bool isDetected{};
+        if (detectCommonRegionsFromBoW(loopBowCandidates,
+                                       p_loopMatchedKF,
+                                       p_loopLastCurrentKF,
+                                       mg2oLoopSlw,
+                                       loopNumCoincidences,
+                                       loopMPs,
+                                       loopMatchedMPs,
+                                       isDetected) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: detectCommonRegionsFromBoW returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        isLoopDetected = isDetected;
     }
     // Merge candidates
     if (!isMergeDetectedInKeyFrame && !mergeBowCandidates.empty())
     {
-        isMergeDetected = detectCommonRegionsFromBoW(mergeBowCandidates,
-                                                     p_mergeMatchedKF,
-                                                     p_mergeLastCurrentKF,
-                                                     mg2oMergeSlw,
-                                                     mergeNumCoincidences,
-                                                     mergeMPs,
-                                                     mergeMatchedMPs);
+        bool isDetected2{};
+        if (detectCommonRegionsFromBoW(mergeBowCandidates,
+                                       p_mergeMatchedKF,
+                                       p_mergeLastCurrentKF,
+                                       mg2oMergeSlw,
+                                       mergeNumCoincidences,
+                                       mergeMPs,
+                                       mergeMatchedMPs,
+                                       isDetected2) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: detectCommonRegionsFromBoW returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        isMergeDetected = isDetected2;
     }
 
 #ifdef REGISTER_TIMES
@@ -435,11 +523,19 @@ bool LoopClosing::newDetectCommonRegions()
     sim3EstimationTimes_ms.push_back(timeEstSim3);
 #endif
 
-    p_keyFrameDatabase->add(p_currentKF);
+    if (p_keyFrameDatabase->add(p_currentKF) !=
+        KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: add returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     if (isMergeDetected || isLoopDetected)
     {
-        return true;
+        isDetected_out = true;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     if (p_currentKF->setErase() != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -451,7 +547,8 @@ bool LoopClosing::newDetectCommonRegions()
     }
     p_currentKF->isInCurrentPlaceRecognition = false;
 
-    return false;
+    isDetected_out = false;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -26,10 +26,11 @@ namespace core
 namespace IMU
 {
 
-Bias Preintegrated::getOriginalBias()
+PreintegratedStatus Preintegrated::getOriginalBias(Bias &originalBias_out)
 {
     std::unique_lock<std::mutex> lock(preintegrationMutex);
-    return b;
+    originalBias_out = b;
+    return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
 } // namespace IMU

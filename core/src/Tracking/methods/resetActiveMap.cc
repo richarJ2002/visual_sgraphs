@@ -38,13 +38,23 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
+TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
 {
     if (p_loopClosing)
     {
         for (;;)
         {
-            if (!p_loopClosing->isMergeInProgress())
+            bool loopClosingIsMergeInProgress{};
+            if (p_loopClosing->isMergeInProgress(
+                    loopClosingIsMergeInProgress) !=
+                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isMergeInProgress returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!loopClosingIsMergeInProgress)
             {
                 break;
             }
@@ -52,13 +62,35 @@ void Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
         }
     }
 
-    Verbose::printMess("Active map Reseting", Verbose::VERBOSITY_NORMAL);
+    if (Verbose::printMess("Active map Reseting", Verbose::VERBOSITY_NORMAL) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_viewer)
     {
-        p_viewer->requestStop();
+        if (p_viewer->requestStop() != ViewerStatus::VIEWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: requestStop returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         for (;;)
         {
-            if (p_viewer->isStopped())
+            bool viewerIsStopped{};
+            if (p_viewer->isStopped(viewerIsStopped) !=
+                ViewerStatus::VIEWER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isStopped returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (viewerIsStopped)
             {
                 break;
             }
@@ -66,41 +98,125 @@ void Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
         }
     }
 
-    Map *p_map = p_atlas->getCurrentMap();
+    Map *p_map = nullptr;
+    if (p_atlas->getCurrentMap(p_map) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (!isRequestedByLocalMapping_in)
     {
-        Verbose::printMess("[Tracking] Reseting 'LocalMapping' ...",
-                           Verbose::VERBOSITY_VERY_VERBOSE);
-        p_localMapper->requestResetActiveMap(p_map);
-        Verbose::printMess("[Tracking] Finished resetting 'LocalMapping'!",
-                           Verbose::VERBOSITY_VERY_VERBOSE);
+        if (Verbose::printMess("[Tracking] Reseting 'LocalMapping' ...",
+                               Verbose::VERBOSITY_VERY_VERBOSE) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_localMapper->requestResetActiveMap(p_map) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: requestResetActiveMap returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (Verbose::printMess("[Tracking] Finished resetting 'LocalMapping'!",
+                               Verbose::VERBOSITY_VERY_VERBOSE) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     // Reset Loop Closing
-    Verbose::printMess("[Tracking] Reseting 'LoopClosing' ...",
-                       Verbose::VERBOSITY_NORMAL);
-    p_loopClosing->requestResetActiveMap(p_map);
-    Verbose::printMess("[Tracking] Finished resetting 'LocalMapping'!",
-                       Verbose::VERBOSITY_NORMAL);
+    if (Verbose::printMess("[Tracking] Reseting 'LoopClosing' ...",
+                           Verbose::VERBOSITY_NORMAL) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_loopClosing->requestResetActiveMap(p_map) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestResetActiveMap returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (Verbose::printMess("[Tracking] Finished resetting 'LocalMapping'!",
+                           Verbose::VERBOSITY_NORMAL) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Clear BoW Database
-    Verbose::printMess("[Tracking] Reseting 'Database' ...",
-                       Verbose::VERBOSITY_NORMAL);
-    p_keyFrameDatabase->clearMap(p_map);
-    Verbose::printMess("[Tracking] Finished resetting 'Database'!",
-                       Verbose::VERBOSITY_NORMAL);
+    if (Verbose::printMess("[Tracking] Reseting 'Database' ...",
+                           Verbose::VERBOSITY_NORMAL) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_keyFrameDatabase->clearMap(p_map) !=
+        KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: clearMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (Verbose::printMess("[Tracking] Finished resetting 'Database'!",
+                           Verbose::VERBOSITY_NORMAL) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Clear Map (this erase MapPoints and KeyFrames)
-    p_atlas->clearMap();
+    if (p_atlas->clearMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: clearMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     lastInitFrameId = Frame::nextId;
     state           = NO_IMAGES_YET;
 
     isReadyToInitialize = false;
 
-    unsigned int index = firstFrameId;
-    for (Map *p_map : p_atlas->getAllMaps())
+    unsigned int       index = firstFrameId;
+    std::vector<Map *> atlasAllMaps{};
+    if (p_atlas->getAllMaps(atlasAllMaps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (Map *p_map : atlasAllMaps)
     {
         std::vector<KeyFrame *> mapAllKeyFrames{};
         if (p_map->getAllKeyFrames(mapAllKeyFrames) !=
@@ -172,8 +288,16 @@ void Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
 
     if (p_viewer)
     {
-        p_viewer->release();
+        if (p_viewer->release() != ViewerStatus::VIEWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: release returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

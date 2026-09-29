@@ -33,7 +33,7 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-double calcAverage(vector<int> values_in)
+TrackingStatus calcAverage(std::vector<int> values_in, double &average_out)
 {
     double accum = 0;
     int    total = 0;
@@ -45,7 +45,8 @@ double calcAverage(vector<int> values_in)
         total++;
     }
 
-    return accum / total;
+    average_out = accum / total;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 #endif
 

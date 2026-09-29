@@ -35,7 +35,8 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
+TrackingStatus
+    Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
 {
     camera_models::geometriccamera::GeometricCamera *p_settingsCamera1 =
         nullptr;
@@ -48,7 +49,16 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
                      __func__);
     }
     p_camera = p_settingsCamera1;
-    p_camera = p_atlas->addCamera(p_camera);
+    camera_models::geometriccamera::GeometricCamera *p_atlasCamera = nullptr;
+    if (p_atlas->addCamera(p_camera, p_atlasCamera) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addCamera returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    p_camera = p_atlasCamera;
 
     bool settingsNeedToUndistort{};
     if (p_settings_inout->needToUndistort(settingsNeedToUndistort) !=
@@ -200,7 +210,17 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
                          __func__);
         }
         p_camera2 = p_settingsCamera2;
-        p_camera2 = p_atlas->addCamera(p_camera2);
+        camera_models::geometriccamera::GeometricCamera *p_atlasCamera2 =
+            nullptr;
+        if (p_atlas->addCamera(p_camera2, p_atlasCamera2) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addCamera returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_camera2 = p_atlasCamera2;
 
         Sophus::SE3f settingsLeftToRightTransform{};
         if (p_settings_inout->getLeftToRightTransform(
@@ -469,6 +489,8 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         p_imuPreintegratedFromLastKF =
             new IMU::Preintegrated(IMU::Bias(), *p_imuCalibration);
     }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

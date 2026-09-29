@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setInertialSensor()
+AtlasStatus Atlas::setInertialSensor()
 {
     unique_lock<mutex> lock(atlasMutex);
     if (p_activeMap->setInertialSensor() != MapStatus::MAP_STATUS_SUCCESS)
@@ -41,6 +41,8 @@ void Atlas::setInertialSensor()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

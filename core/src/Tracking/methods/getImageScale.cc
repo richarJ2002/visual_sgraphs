@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-float Tracking::getImageScale()
+TrackingStatus Tracking::getImageScale(float &imageScale_out)
 {
-    return imageScale;
+    imageScale_out = imageScale;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -33,7 +33,7 @@ namespace vs_graphs
 namespace core
 {
 
-bool LoopClosing::stopGlobalBundleAdjustment()
+LoopClosingStatus LoopClosing::stopGlobalBundleAdjustment(bool &wasRunning_out)
 {
     std::thread *p_globalBundleAdjustmentThread = nullptr;
     bool         optimizationWasRunning         = false;
@@ -76,7 +76,8 @@ bool LoopClosing::stopGlobalBundleAdjustment()
         hasGbaFinished = true;
     }
 
-    return optimizationWasRunning;
+    wasRunning_out = optimizationWasRunning;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

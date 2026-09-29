@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-long unsigned Atlas::getKeyFrameCount()
+AtlasStatus Atlas::getKeyFrameCount(unsigned long &keyFrameCount_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     unsigned long      activeMapKeyFrameCount{};
@@ -43,7 +43,8 @@ long unsigned Atlas::getKeyFrameCount()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapKeyFrameCount;
+    keyFrameCount_out = activeMapKeyFrameCount;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

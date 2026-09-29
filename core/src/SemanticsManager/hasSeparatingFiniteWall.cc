@@ -49,11 +49,12 @@ namespace core
  *
  * @return      True when the segment crosses an observed finite wall patch.
  */
-bool hasSeparatingFiniteWall(
+SemanticsManagerStatus hasSeparatingFiniteWall(
     const std::vector<geometric::Plane *> &wallList_World_in,
     const Eigen::Vector3d                 &firstPoint_World_m_in,
     const Eigen::Vector3d                 &secondPoint_World_m_in,
-    const double                           finiteBoundsMargin_m_in)
+    const double                           finiteBoundsMargin_m_in,
+    bool                                  &hasSeparatingFiniteWall_out)
 {
     constexpr double minimumSideDistance_m = 0.10;
 
@@ -184,11 +185,13 @@ bool hasSeparatingFiniteWall(
             intersectionV_m >= minimumWallV_m - finiteBoundsMargin_m_in &&
             intersectionV_m <= maximumWallV_m + finiteBoundsMargin_m_in)
         {
-            return true;
+            hasSeparatingFiniteWall_out = true;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
     }
 
-    return false;
+    hasSeparatingFiniteWall_out = false;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-geometric::Plane *Atlas::getBiggestGroundPlane()
+AtlasStatus
+    Atlas::getBiggestGroundPlane(geometric::Plane *&p_biggestGroundPlane_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     geometric::Plane  *p_activeMapBiggestGroundPlane = nullptr;
@@ -44,7 +45,9 @@ geometric::Plane *Atlas::getBiggestGroundPlane()
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    return p_activeMap != nullptr ? p_activeMapBiggestGroundPlane : nullptr;
+    p_biggestGroundPlane_out =
+        p_activeMap != nullptr ? p_activeMapBiggestGroundPlane : nullptr;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

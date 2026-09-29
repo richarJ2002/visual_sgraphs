@@ -48,7 +48,15 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    Map *p_activeMap = p_atlas_in->getCurrentMap();
+    Map *p_activeMap = nullptr;
+    if (p_atlas_in->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (p_activeMap == nullptr)
     {

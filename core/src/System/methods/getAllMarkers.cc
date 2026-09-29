@@ -31,9 +31,18 @@ namespace vs_graphs
 namespace core
 {
 
-vector<semantic::Marker *> System::getAllMarkers()
+SystemStatus
+    System::getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out)
 {
-    Map                            *p_activeMap = p_atlas->getCurrentMap();
+    Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     std::vector<semantic::Marker *> activeMapAllMarkers{};
     if (p_activeMap->getAllMarkers(activeMapAllMarkers) !=
         MapStatus::MAP_STATUS_SUCCESS)
@@ -43,7 +52,8 @@ vector<semantic::Marker *> System::getAllMarkers()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllMarkers;
+    allMarkers_out = activeMapAllMarkers;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

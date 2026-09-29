@@ -38,17 +38,20 @@ namespace core
  *         a degenerate equation); the caller must treat that as "cannot
  *         claim overlap" rather than as a zero-size interval.
  */
-bool projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
-                                         const Eigen::Vector3d &axisU_World_in,
-                                         const Eigen::Vector3d &axisV_World_in,
-                                         double                &minimumU_m_out,
-                                         double                &maximumU_m_out,
-                                         double                &minimumV_m_out,
-                                         double                &maximumV_m_out)
+SemanticsManagerStatus
+    projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
+                                        const Eigen::Vector3d &axisU_World_in,
+                                        const Eigen::Vector3d &axisV_World_in,
+                                        double                &minimumU_m_out,
+                                        double                &maximumU_m_out,
+                                        double                &minimumV_m_out,
+                                        double                &maximumV_m_out,
+                                        bool                  &isProjected_out)
 {
     if (p_plane_in == nullptr)
     {
-        return false;
+        isProjected_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     geometric::Plane::GeometrySnapshot geometry{};
@@ -62,7 +65,8 @@ bool projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
     }
     if (geometry.supportCloud == nullptr || geometry.supportCloud->empty())
     {
-        return false;
+        isProjected_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     minimumU_m_out = std::numeric_limits<double>::infinity();
@@ -85,8 +89,10 @@ bool projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
         maximumV_m_out                 = std::max(maximumV_m_out, pointV_m);
     }
 
-    return std::isfinite(minimumU_m_out) && std::isfinite(maximumU_m_out) &&
-           std::isfinite(minimumV_m_out) && std::isfinite(maximumV_m_out);
+    isProjected_out =
+        std::isfinite(minimumU_m_out) && std::isfinite(maximumU_m_out) &&
+        std::isfinite(minimumV_m_out) && std::isfinite(maximumV_m_out);
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

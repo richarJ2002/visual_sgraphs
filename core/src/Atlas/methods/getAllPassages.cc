@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<vs_graphs::core::semantic::Passage *> Atlas::getAllPassages()
+AtlasStatus Atlas::getAllPassages(
+    std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out)
 {
     unique_lock<mutex>                                lock(atlasMutex);
     std::vector<vs_graphs::core::semantic::Passage *> activeMapAllPassages{};
@@ -43,7 +44,8 @@ std::vector<vs_graphs::core::semantic::Passage *> Atlas::getAllPassages()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllPassages;
+    allPassages_out = activeMapAllPassages;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

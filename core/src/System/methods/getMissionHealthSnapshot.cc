@@ -35,8 +35,9 @@ namespace vs_graphs
 namespace core
 {
 
-System::MissionHealthSnapshot
-    System::getMissionHealthSnapshot(bool includeSemantics_in)
+SystemStatus System::getMissionHealthSnapshot(
+    System::MissionHealthSnapshot &missionHealthSnapshot_out,
+    bool                           includeSemantics_in)
 {
     MissionHealthSnapshot snapshot;
     snapshot.isInertial =
@@ -54,13 +55,46 @@ System::MissionHealthSnapshot
     std::unique_lock<std::mutex> semanticUpdateLock;
     if (includeSemantics_in)
     {
-        semanticUpdateLock = p_atlas->acquireSemanticUpdateLock();
+        if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: acquireSemanticUpdateLock returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
-    Map *p_activeMap = p_atlas->getCurrentMap();
-    snapshot.mapCount =
-        static_cast<std::uint32_t>(std::max(0, p_atlas->countMaps()));
+    Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    int atlasMaps{};
+    if (p_atlas->countMaps(atlasMaps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    snapshot.mapCount = static_cast<std::uint32_t>(std::max(0, atlasMaps));
+    bool atlasIsImuInitialized{};
+    if ((snapshot.isInertial) &&
+        p_atlas->isImuInitialized(atlasIsImuInitialized) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     snapshot.isInertialInitialized =
-        snapshot.isInertial && p_atlas->isImuInitialized();
+        snapshot.isInertial && atlasIsImuInitialized;
     snapshot.resetCount = resetCount.load(std::memory_order_relaxed);
     snapshot.rgbdFrontendAcceptedCount =
         rgbdFrontendAcceptedCount.load(std::memory_order_relaxed);
@@ -97,8 +131,15 @@ System::MissionHealthSnapshot
     }
     else if (p_semanticSegmentation != nullptr)
     {
-        const SemanticSegmentation::ProcessingStats processingStats =
-            p_semanticSegmentation->getProcessingStats();
+        SemanticSegmentation::ProcessingStats processingStats{};
+        if (p_semanticSegmentation->getProcessingStats(processingStats) !=
+            SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getProcessingStats returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         snapshot.segmentationEnqueuedCount = processingStats.enqueuedCount;
         snapshot.segmentationDequeuedCount = processingStats.dequeuedCount;
         snapshot.segmentationTerminalCount = processingStats.terminalCount;
@@ -118,16 +159,51 @@ System::MissionHealthSnapshot
 
     if (p_semanticsManager != nullptr)
     {
-        snapshot.currentRoomId = p_semanticsManager->getCurrentRoomId();
+        int semanticsManagerGetCurrentRoomId{};
+        if (p_semanticsManager->getCurrentRoomId(
+                semanticsManagerGetCurrentRoomId) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentRoomId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        snapshot.currentRoomId = semanticsManagerGetCurrentRoomId;
         if (snapshot.trackingState == Tracking::LOST)
         {
-            p_semanticsManager->onTrackingLost();
+            if (p_semanticsManager->onTrackingLost() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: onTrackingLost returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
-            p_semanticsManager->onTrackingRecovered();
+            if (p_semanticsManager->onTrackingRecovered() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: onTrackingRecovered returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
-        snapshot.lastKnownRoomId = p_semanticsManager->getLastKnownRoomId();
+        int semanticsManagerGetLastKnownRoomId{};
+        if (p_semanticsManager->getLastKnownRoomId(
+                semanticsManagerGetLastKnownRoomId) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getLastKnownRoomId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        snapshot.lastKnownRoomId = semanticsManagerGetLastKnownRoomId;
     }
 
     if (p_activeMap != nullptr)
@@ -556,8 +632,16 @@ System::MissionHealthSnapshot
     }
     if (p_loopCloser != nullptr)
     {
-        const LoopClosing::LoopCorrectionStatus loop =
-            p_loopCloser->getLoopCorrectionStatus();
+        LoopClosing::LoopCorrectionStatus loop{};
+        if (p_loopCloser->getLoopCorrectionStatus(loop) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getLoopCorrectionStatus returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         snapshot.loopSequence              = loop.sequence;
         snapshot.acceptedLoopCount         = loop.acceptedCount;
         snapshot.rejectedLoopCount         = loop.rejectedCount;
@@ -570,7 +654,8 @@ System::MissionHealthSnapshot
         snapshot.lastLoopMatchedTimestamp  = loop.lastMatchedTimestamp;
         snapshot.lastLoopReason            = loop.lastReason;
     }
-    return snapshot;
+    missionHealthSnapshot_out = snapshot;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

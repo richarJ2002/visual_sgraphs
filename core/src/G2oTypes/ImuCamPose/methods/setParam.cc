@@ -32,11 +32,12 @@ namespace vs_graphs
 namespace core
 {
 
-void ImuCamPose::setParam(const std::vector<Eigen::Matrix3d> &Rcw_in,
-                          const std::vector<Eigen::Vector3d> &tcw_in,
-                          const std::vector<Eigen::Matrix3d> &Rbc_in,
-                          const std::vector<Eigen::Vector3d> &tbc_in,
-                          const double &baselineFocalProduct_in)
+ImuCamPoseStatus
+    ImuCamPose::setParam(const std::vector<Eigen::Matrix3d> &Rcw_in,
+                         const std::vector<Eigen::Vector3d> &tcw_in,
+                         const std::vector<Eigen::Matrix3d> &Rbc_in,
+                         const std::vector<Eigen::Vector3d> &tbc_in,
+                         const double &baselineFocalProduct_in)
 {
     Rbc                   = Rbc_in;
     tbc                   = tbc_in;
@@ -55,6 +56,8 @@ void ImuCamPose::setParam(const std::vector<Eigen::Matrix3d> &Rcw_in,
     twb = Rcw[0].transpose() * (tcb[0] - tcw[0]);
 
     bf = baselineFocalProduct_in;
+
+    return ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS;
 }
 
 } // namespace core

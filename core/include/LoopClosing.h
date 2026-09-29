@@ -33,6 +33,7 @@
 #include <thread>
 
 #include "Atlas.h"
+#include "LoopClosingStatus.h"
 #include "ORBVocabulary.h"
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 
@@ -87,15 +88,16 @@ enum class SemanticMergeDecision;
  * @param[out]   result_out
  *               One of "ACCEPTED", "REJECTED", or "DEFERRED".
  *
- * @return       True only when both floors are observed and their
- *               plane identities match within Floor's merge
- *               thresholds.
+ * @param[out] isVerified_out True only when both floors are observed and their
+ * plane identities match within Floor's merge thresholds.
+ * @return LOOP_CLOSING_STATUS_SUCCESS.
  */
-bool verifyLoopMergeFloors(
+[[nodiscard]] LoopClosingStatus verifyLoopMergeFloors(
     Map             *p_survivingMap_in,
     Map             *p_absorbedMap_in,
     const g2o::Sim3 &transform_absorbedWorldToSurvivingWorld_in,
-    std::string     &result_out);
+    std::string     &result_out,
+    bool            &isVerified_out);
 
 class LoopClosing
 {
@@ -174,7 +176,7 @@ class LoopClosing
      * @param[in]   p_tracker_in
      *              TODO
      */
-    void setTracker(Tracking *p_tracker_in);
+    [[nodiscard]] LoopClosingStatus setTracker(Tracking *p_tracker_in);
 
     /*!
      * @brief       TODO
@@ -182,7 +184,8 @@ class LoopClosing
      * @param[in]   p_localMapper_in
      *              TODO
      */
-    void setLocalMapper(LocalMapping *p_localMapper_in);
+    [[nodiscard]] LoopClosingStatus
+        setLocalMapper(LocalMapping *p_localMapper_in);
 
     /*!
      * @brief       TODO
@@ -190,7 +193,7 @@ class LoopClosing
      * @param[in]   mergeStatus_in
      *              TODO
      */
-    void setMergeStatus(bool mergeStatus_in);
+    [[nodiscard]] LoopClosingStatus setMergeStatus(bool mergeStatus_in);
 
     /*!
      * @brief       TODO
@@ -203,12 +206,12 @@ class LoopClosing
      * @param[in]   p_keyFrame_in
      *              TODO
      */
-    void insertKeyFrame(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] LoopClosingStatus insertKeyFrame(KeyFrame *p_keyFrame_in);
 
     /*!
      * @brief       TODO
      */
-    void requestReset();
+    [[nodiscard]] LoopClosingStatus requestReset();
 
     /*!
      * @brief       TODO
@@ -216,7 +219,7 @@ class LoopClosing
      * @param[in]   p_map_in
      *              TODO
      */
-    void requestResetActiveMap(Map *p_map_in);
+    [[nodiscard]] LoopClosingStatus requestResetActiveMap(Map *p_map_in);
 
     /*!
      * @brief       TODO
@@ -232,53 +235,58 @@ class LoopClosing
      * @param[in]   generation_in
      *              TODO
      */
-    void runGlobalBundleAdjustment(Map          *p_activeMap_inout,
-                                   unsigned long loopKeyFrameCount_in,
-                                   unsigned int  generation_in);
+    [[nodiscard]] LoopClosingStatus
+        runGlobalBundleAdjustment(Map          *p_activeMap_inout,
+                                  unsigned long loopKeyFrameCount_in,
+                                  unsigned int  generation_in);
 
     /*!
      * @brief       TODO
      */
-    bool isRunningGBA(void)
+    [[nodiscard]] LoopClosingStatus isRunningGBA(bool &isRunningGBA_out)
     {
         /* Lock mutext */
         unique_lock<std::mutex> lock(gbaMutex);
 
         /* Return flag to indicate if global bundal adjustemnt is running */
-        return isGbaRunning;
+        isRunningGBA_out = isGbaRunning;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     /*!
      * @brief       TODO
      */
-    bool isFinishedGBA(void)
+    [[nodiscard]] LoopClosingStatus isFinishedGBA(bool &isFinishedGBA_out)
     {
         /* Lock mutext */
         unique_lock<std::mutex> lock(gbaMutex);
 
         /* Return flag to indicate if global bundal adjustemnt is finished */
-        return hasGbaFinished;
+        isFinishedGBA_out = hasGbaFinished;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     /*!
      * @brief       TODO
      */
-    void requestFinish(void);
+    [[nodiscard]] LoopClosingStatus requestFinish(void);
 
     /*!
      * @brief       TODO
      */
-    bool isFinished(void);
+    [[nodiscard]] LoopClosingStatus isFinished(bool &isFinished_out);
 
     /*!
      * @brief       TODO
      */
-    bool isMergeInProgress(void);
+    [[nodiscard]] LoopClosingStatus
+        isMergeInProgress(bool &isMergeInProgress_out);
 
     /*!
      * @brief       TODO
      */
-    LoopCorrectionStatus getLoopCorrectionStatus() const;
+    [[nodiscard]] LoopClosingStatus getLoopCorrectionStatus(
+        LoopClosing::LoopCorrectionStatus &getLoopCorrectionStatus_out) const;
 
     Viewer *p_viewer;
 
@@ -667,12 +675,14 @@ class LoopClosing
     /*!
      * @brief       TODO
      */
-    bool checkNewKeyFrames(void);
+    [[nodiscard]] LoopClosingStatus
+        checkNewKeyFrames(bool &hasNewKeyFrames_out);
 
     /*!
      * @brief       TODO
      */
-    bool newDetectCommonRegions(void);
+    [[nodiscard]] LoopClosingStatus
+        newDetectCommonRegions(bool &isDetected_out);
 
     /*!
      * @brief       TODO
@@ -695,13 +705,14 @@ class LoopClosing
      * @param[in,out] matchedMapPoints_inout
      *              TODO
      */
-    bool detectAndReffineSim3FromLastKF(
+    [[nodiscard]] LoopClosingStatus detectAndReffineSim3FromLastKF(
         KeyFrame                *p_currentKeyFrame_in,
         KeyFrame                *p_matchedKeyFrame_in,
         g2o::Sim3               &gScw_inout,
         int                     &countProjectionMatchCount_out,
         std::vector<MapPoint *> &mapPoints_inout,
-        std::vector<MapPoint *> &matchedMapPoints_inout);
+        std::vector<MapPoint *> &matchedMapPoints_inout,
+        bool                    &isDetected_out);
 
     /*!
      * @brief       TODO
@@ -730,14 +741,15 @@ class LoopClosing
      * @param[out]  matchedMapPoints_out
      *              TODO
      */
-    bool detectCommonRegionsFromBoW(
+    [[nodiscard]] LoopClosingStatus detectCommonRegionsFromBoW(
         std::vector<KeyFrame *> &bowCandidates_in,
         KeyFrame               *&matchedKeyFrame_out,
         KeyFrame               *&lastCurrentKeyFrame_out,
         g2o::Sim3               &g2oScw_out,
         int                     &countCoincidenceCount_out,
         std::vector<MapPoint *> &mapPoints_out,
-        std::vector<MapPoint *> &matchedMapPoints_out);
+        std::vector<MapPoint *> &matchedMapPoints_out,
+        bool                    &isDetected_out);
 
     /*!
      * @brief       TODO
@@ -760,13 +772,14 @@ class LoopClosing
      * @param[in,out] matchedMapPoints_inout
      *              TODO
      */
-    bool detectCommonRegionsFromLastKF(
+    [[nodiscard]] LoopClosingStatus detectCommonRegionsFromLastKF(
         KeyFrame                *p_currentKeyFrame_in,
         KeyFrame                *p_matchedKeyFrame_in,
         g2o::Sim3               &gScw_inout,
         int                     &countProjectionMatchCount_out,
         std::vector<MapPoint *> &mapPoints_inout,
-        std::vector<MapPoint *> &matchedMapPoints_inout);
+        std::vector<MapPoint *> &matchedMapPoints_inout,
+        bool                    &isDetected_out);
 
     /*!
      * @brief       TODO
@@ -789,12 +802,14 @@ class LoopClosing
      * @param[out]  matchedMapPoints_out
      *              TODO
      */
-    int findMatchesByProjection(KeyFrame           *p_currentKeyFrame_in,
-                                KeyFrame           *p_matchedKFw_in,
-                                g2o::Sim3          &g2oScw_in,
-                                set<MapPoint *>    &matchedMPinOrigins_in,
-                                vector<MapPoint *> &mapPoints_out,
-                                vector<MapPoint *> &matchedMapPoints_out);
+    [[nodiscard]] LoopClosingStatus
+        findMatchesByProjection(KeyFrame                *p_currentKeyFrame_in,
+                                KeyFrame                *p_matchedKFw_in,
+                                g2o::Sim3               &g2oScw_in,
+                                set<MapPoint *>         &matchedMPinOrigins_in,
+                                vector<MapPoint *>      &mapPoints_out,
+                                std::vector<MapPoint *> &matchedMapPoints_out,
+                                int                     &matches_out);
 
     /*!
      * @brief       TODO
@@ -805,8 +820,9 @@ class LoopClosing
      * @param[in]   mapPoints_in
      *              TODO
      */
-    void searchAndFuse(const KeyFrameAndPose &correctedPosesMap_in,
-                       vector<MapPoint *>    &mapPoints_in);
+    [[nodiscard]] LoopClosingStatus
+        searchAndFuse(const KeyFrameAndPose &correctedPosesMap_in,
+                      vector<MapPoint *>    &mapPoints_in);
 
     /*!
      * @brief       TODO
@@ -817,21 +833,25 @@ class LoopClosing
      * @param[in]   mapPoints_in
      *              TODO
      */
-    void searchAndFuse(const vector<KeyFrame *> &conectedKeyFrames_in,
-                       vector<MapPoint *>       &mapPoints_in);
+    [[nodiscard]] LoopClosingStatus
+        searchAndFuse(const std::vector<KeyFrame *> &conectedKeyFrames_in,
+                      vector<MapPoint *>            &mapPoints_in);
 
     /*!
      * @brief       TODO
      */
-    void correctLoop(void);
+    [[nodiscard]] LoopClosingStatus correctLoop(void);
 
     /*!
      * @brief       Stops and joins the owned global bundle-adjustment worker.
      *
-     * @return      True when an active optimization was interrupted; false when
-     *              the method only reclaimed an already-completed worker.
+     * @param[out] wasRunning_out True when an active optimization was
+     * interrupted; false when the method only reclaimed an already-completed
+     * worker.
+     * @return LOOP_CLOSING_STATUS_SUCCESS.
      */
-    bool stopGlobalBundleAdjustment(void);
+    [[nodiscard]] LoopClosingStatus
+        stopGlobalBundleAdjustment(bool &wasRunning_out);
 
     /*!
      * @brief       TODO
@@ -842,8 +862,9 @@ class LoopClosing
      * @param[in]   reason_in
      *              TODO
      */
-    void recordLoopCorrectionEvent(bool               accepted_in,
-                                   const std::string &reason_in);
+    [[nodiscard]] LoopClosingStatus
+        recordLoopCorrectionEvent(bool               accepted_in,
+                                  const std::string &reason_in);
     /*!
      * @brief       Starts a replacement GBA worker after an interrupted merge
      *              attempt.
@@ -854,7 +875,8 @@ class LoopClosing
      * @param[in]   reason_in
      *              TODO
      */
-    void relaunchGlobalBundleAdjustment(Map *p_activeMap_inout);
+    [[nodiscard]] LoopClosingStatus
+        relaunchGlobalBundleAdjustment(Map *p_activeMap_inout);
 
     /*!
      * @brief       TODO
@@ -862,11 +884,13 @@ class LoopClosing
     /*!
      * @brief       Attempts a visual map merge after all preconditions pass.
      *
-     * @return      ACCEPT only after the merge is committed, DEFER when
-     *              semantic evidence is incomplete and the candidate remains
-     *              retryable, or REJECT when the attempt is invalid.
+     * @param[out] local_out ACCEPT only after the merge is committed, DEFER
+     * when semantic evidence is incomplete and the candidate remains retryable,
+     * or REJECT when the attempt is invalid.
+     * @return LOOP_CLOSING_STATUS_SUCCESS.
      */
-    semantic::SemanticMergeDecision mergeLocal(void);
+    [[nodiscard]] LoopClosingStatus
+        mergeLocal(semantic::SemanticMergeDecision &local_out);
 
     /*!
      * @brief       TODO
@@ -874,11 +898,13 @@ class LoopClosing
     /*!
      * @brief       Attempts an inertial map merge after all preconditions pass.
      *
-     * @return      ACCEPT only after the merge is committed, DEFER when
-     *              semantic evidence is incomplete and the candidate remains
-     *              retryable, or REJECT when the attempt is invalid.
+     * @param[out] localInertial_out ACCEPT only after the merge is committed,
+     * DEFER when semantic evidence is incomplete and the candidate remains
+     * retryable, or REJECT when the attempt is invalid.
+     * @return LOOP_CLOSING_STATUS_SUCCESS.
      */
-    semantic::SemanticMergeDecision mergeLocalInertial(void);
+    [[nodiscard]] LoopClosingStatus
+        mergeLocalInertial(semantic::SemanticMergeDecision &localInertial_out);
 
     /*!
      * @brief       TODO
@@ -889,23 +915,24 @@ class LoopClosing
      * @param[in]   keyFramesMap2_in
      *              TODO
      */
-    void checkObservations(set<KeyFrame *> &keyFramesMap1_in,
-                           set<KeyFrame *> &keyFramesMap2_in);
+    [[nodiscard]] LoopClosingStatus
+        checkObservations(std::set<KeyFrame *> &keyFramesMap1_in,
+                          set<KeyFrame *>      &keyFramesMap2_in);
 
     /*!
      * @brief       TODO
      */
-    void resetIfRequested(void);
+    [[nodiscard]] LoopClosingStatus resetIfRequested(void);
 
     /*!
      * @brief      TODO
      */
-    bool checkFinish(void);
+    [[nodiscard]] LoopClosingStatus checkFinish(bool &isFinishRequested_out);
 
     /*!
      * @brief      TODO
      */
-    void setFinish(void);
+    [[nodiscard]] LoopClosingStatus setFinish(void);
 #ifdef REGISTER_LOOP
     string mstrFolderLoop;
 #endif

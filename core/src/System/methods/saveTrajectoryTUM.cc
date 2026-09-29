@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveTrajectoryTUM(const string &filename_in)
+SystemStatus System::saveTrajectoryTUM(const string &filename_in)
 {
     cout << endl
          << "Saving camera trajectory to " << filename_in << " ..." << endl;
@@ -42,10 +42,18 @@ void System::saveTrajectoryTUM(const string &filename_in)
     {
         cerr << "ERROR: SaveTrajectoryTUM cannot be used for monocular."
              << endl;
-        return;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 
-    vector<KeyFrame *> keyFrames = p_atlas->getAllKeyFrames();
+    std::vector<KeyFrame *> keyFrames{};
+    if (p_atlas->getAllKeyFrames(keyFrames) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
@@ -140,6 +148,8 @@ void System::saveTrajectoryTUM(const string &filename_in)
           << q.z() << " " << q.w() << endl;
     }
     f.close();
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

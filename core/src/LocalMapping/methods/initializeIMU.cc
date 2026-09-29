@@ -37,12 +37,12 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::initializeIMU(float gyroPriorWeight_in,
-                                 float accelPriorWeight_in,
-                                 bool  shouldRunFullInertialBa_in)
+LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
+                                               float accelPriorWeight_in,
+                                               bool  shouldRunFullInertialBa_in)
 {
     if (isResetRequested)
-        return;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
     float       minInitializationTime;
     std::size_t minKeyFrameCount;
@@ -57,8 +57,17 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
         minKeyFrameCount      = 10;
     }
 
-    if (p_atlas->getKeyFrameCount() < minKeyFrameCount)
-        return;
+    unsigned long atlasKeyFrameCount{};
+    if (p_atlas->getKeyFrameCount(atlasKeyFrameCount) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getKeyFrameCount returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (atlasKeyFrameCount < minKeyFrameCount)
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
     // Retrieve all keyframe in temporal order
     list<KeyFrame *> temporalKeyFrames;
@@ -73,11 +82,11 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
                                         temporalKeyFrames.end());
 
     if (orderedKeyFrames.size() < minKeyFrameCount)
-        return;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
     firstTimestamp = orderedKeyFrames.front()->timeStamp;
     if (p_currentKeyFrame->timeStamp - firstTimestamp < minInitializationTime)
-        return;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
     double accumulatedTranslation_m = 0.0;
     for (std::size_t keyFrameIndex = 1; keyFrameIndex < orderedKeyFrames.size();
@@ -106,17 +115,33 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
 
     constexpr double minimumInitializationTranslation_m = 0.05;
     if (accumulatedTranslation_m < minimumInitializationTranslation_m)
-        return;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
     isInitializationInProgress = true;
 
     for (;;)
     {
-        if (!checkNewKeyFrames())
+        bool hasNewKeyFrames{};
+        if (checkNewKeyFrames(hasNewKeyFrames) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkNewKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!hasNewKeyFrames)
         {
             break;
         }
-        processNewKeyFrame();
+        if (processNewKeyFrame() !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: processNewKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         orderedKeyFrames.push_back(p_currentKeyFrame);
         temporalKeyFrames.push_back(p_currentKeyFrame);
     }
@@ -167,10 +192,19 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            gravityDirection -=
-                imuRotation *
-                (*orderedKeyFrameIt)
-                    ->p_imuPreintegrated->getUpdatedDeltaVelocity();
+            Eigen::Vector3f updatedDeltaVelocity{};
+            if ((*orderedKeyFrameIt)
+                    ->p_imuPreintegrated->getUpdatedDeltaVelocity(
+                        updatedDeltaVelocity) !=
+                IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getUpdatedDeltaVelocity returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            gravityDirection -= imuRotation * updatedDeltaVelocity;
             Eigen::Vector3f imuPosition{};
             if ((*orderedKeyFrameIt)->getImuPosition(imuPosition) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -256,38 +290,78 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
     initTime =
         p_tracker->lastFrame.timeStamp - orderedKeyFrames.front()->timeStamp;
 
-    Optimizer::inertialOptimization(p_atlas->getCurrentMap(),
-                                    mRwg,
-                                    scale,
-                                    mbg,
-                                    mba,
-                                    isMonocular,
-                                    infoInertial,
-                                    false,
-                                    false,
-                                    gyroPriorWeight_in,
-                                    accelPriorWeight_in);
+    Map *p_atlasCurrentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (Optimizer::inertialOptimization(p_atlasCurrentMap,
+                                        mRwg,
+                                        scale,
+                                        mbg,
+                                        mba,
+                                        isMonocular,
+                                        infoInertial,
+                                        false,
+                                        false,
+                                        gyroPriorWeight_in,
+                                        accelPriorWeight_in) !=
+        OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: inertialOptimization returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (scale < 1e-1)
     {
         cout << "scale too small" << endl;
         isInitializationInProgress = false;
-        return;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
 
     // Before this line we are not changing the map
     {
-        std::unique_lock<std::mutex> semanticUpdateLock =
-            p_atlas->acquireSemanticUpdateLock();
-        Map *p_activeMap = p_atlas->getCurrentMap();
+        std::unique_lock<std::mutex> semanticUpdateLock{};
+        if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: acquireSemanticUpdateLock returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        Map *p_activeMap = nullptr;
+        if (p_atlas->getCurrentMap(p_activeMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (p_activeMap == nullptr)
         {
             isInitializationInProgress = false;
-            return;
+            return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
         }
 
-        const bool         imuWasInitialized = p_atlas->isImuInitialized();
+        bool imuWasInitialized{};
+        if (p_atlas->isImuInitialized(imuWasInitialized) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isImuInitialized returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         unique_lock<mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
         if ((fabs(scale - 1.f) > 0.00001) || !isMonocular)
         {
@@ -311,7 +385,14 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            p_tracker->updateFrameIMU(scale, imuBias, p_currentKeyFrame);
+            if (p_tracker->updateFrameIMU(scale, imuBias, p_currentKeyFrame) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: updateFrameIMU returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         // Check if initialization OK
@@ -333,10 +414,32 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    p_tracker->updateFrameIMU(1.0, imuBias2, p_currentKeyFrame);
-    if (!p_atlas->isImuInitialized())
+    if (p_tracker->updateFrameIMU(1.0, imuBias2, p_currentKeyFrame) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
-        p_atlas->setImuInitialized();
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateFrameIMU returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool atlasIsImuInitialized{};
+    if (p_atlas->isImuInitialized(atlasIsImuInitialized) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!atlasIsImuInitialized)
+    {
+        if (p_atlas->setImuInitialized() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setImuInitialized returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         p_tracker->t0IMU         = p_tracker->currentFrame.timeStamp;
         p_currentKeyFrame->isImu = true;
     }
@@ -345,54 +448,143 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
     {
         if (accelPriorWeight_in != 0.f)
         {
-            Optimizer::fullInertialBA(p_atlas->getCurrentMap(),
-                                      100,
-                                      false,
-                                      p_currentKeyFrame->id,
-                                      nullptr,
-                                      true,
-                                      gyroPriorWeight_in,
-                                      accelPriorWeight_in);
+            Map *p_atlasCurrentMap2 = nullptr;
+            if (p_atlas->getCurrentMap(p_atlasCurrentMap2) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCurrentMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (Optimizer::fullInertialBA(p_atlasCurrentMap2,
+                                          100,
+                                          false,
+                                          p_currentKeyFrame->id,
+                                          nullptr,
+                                          true,
+                                          gyroPriorWeight_in,
+                                          accelPriorWeight_in) !=
+                OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: fullInertialBA returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
-            Optimizer::fullInertialBA(p_atlas->getCurrentMap(),
-                                      100,
-                                      false,
-                                      p_currentKeyFrame->id,
-                                      nullptr,
-                                      false);
+            Map *p_atlasCurrentMap3 = nullptr;
+            if (p_atlas->getCurrentMap(p_atlasCurrentMap3) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCurrentMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (Optimizer::fullInertialBA(p_atlasCurrentMap3,
+                                          100,
+                                          false,
+                                          p_currentKeyFrame->id,
+                                          nullptr,
+                                          false) !=
+                OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: fullInertialBA returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
-    Verbose::printMess("Global Bundle Adjustment finished\nUpdating map ...",
-                       Verbose::VERBOSITY_NORMAL);
+    if (Verbose::printMess(
+            "Global Bundle Adjustment finished\nUpdating map ...",
+            Verbose::VERBOSITY_NORMAL) != VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Keep semantic observations valid while corrected KFs are retired. */
-    std::unique_lock<std::mutex> semanticUpdateLock =
-        p_atlas->acquireSemanticUpdateLock();
+    std::unique_lock<std::mutex> semanticUpdateLock{};
+    if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: acquireSemanticUpdateLock returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Get Map Mutex
-    unique_lock<mutex> mapUpdateLock(p_atlas->getCurrentMap()->mapUpdateMutex);
+    Map *p_atlasCurrentMap4 = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap4) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    unique_lock<mutex> mapUpdateLock(p_atlasCurrentMap4->mapUpdateMutex);
 
     unsigned long globalBaId = p_currentKeyFrame->id;
 
     // Process keyframes in the queue
     for (;;)
     {
-        if (!checkNewKeyFrames())
+        bool hasNewKeyFrames2{};
+        if (checkNewKeyFrames(hasNewKeyFrames2) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkNewKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!hasNewKeyFrames2)
         {
             break;
         }
-        processNewKeyFrame();
+        if (processNewKeyFrame() !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: processNewKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         orderedKeyFrames.push_back(p_currentKeyFrame);
         temporalKeyFrames.push_back(p_currentKeyFrame);
     }
 
     // Correct keyframes starting at map first keyframe
+    Map *p_atlasCurrentMap5 = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap5) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    Map *p_atlasCurrentMap6 = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap6) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     list<KeyFrame *> keyFramesToCorrect(
-        p_atlas->getCurrentMap()->keyFrameOrigins.begin(),
-        p_atlas->getCurrentMap()->keyFrameOrigins.end());
+        p_atlasCurrentMap5->keyFrameOrigins.begin(),
+        p_atlasCurrentMap6->keyFrameOrigins.end());
 
     while (!keyFramesToCorrect.empty())
     {
@@ -488,8 +680,16 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
                 }
                 else
                 {
-                    Verbose::printMess("Child velocity empty!! ",
-                                       Verbose::VERBOSITY_NORMAL);
+                    if (Verbose::printMess("Child velocity empty!! ",
+                                           Verbose::VERBOSITY_NORMAL) !=
+                        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: printMess returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
                 }
 
                 IMU::Bias childKeyFrameImuBias{};
@@ -566,7 +766,16 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
 
     // Correct MapPoints
     std::vector<MapPoint *> allMapPoints{};
-    if (p_atlas->getCurrentMap()->getAllMapPoints(allMapPoints) !=
+    Map                    *p_atlasCurrentMap7 = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap7) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_atlasCurrentMap7->getAllMapPoints(allMapPoints) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -656,7 +865,14 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
         }
     }
 
-    Verbose::printMess("Map updated!", Verbose::VERBOSITY_NORMAL);
+    if (Verbose::printMess("Map updated!", Verbose::VERBOSITY_NORMAL) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     keyFrameCount = orderedKeyFrames.size();
     initIndex++;
@@ -699,7 +915,7 @@ void LocalMapping::initializeIMU(float gyroPriorWeight_in,
                      __func__);
     }
 
-    return;
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

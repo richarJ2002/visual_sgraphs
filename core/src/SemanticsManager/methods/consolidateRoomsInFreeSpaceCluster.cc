@@ -30,12 +30,20 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
+SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
     vs_graphs::core::semantic::Room    *p_retainedRoom_inout,
     const std::vector<Eigen::Vector3d> &freeSpaceCluster_World_m_in,
     const std::vector<vs_graphs::core::geometric::Plane *> &wallList_World_in)
 {
-    Map *p_currentMap = p_atlas->getCurrentMap();
+    Map *p_currentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_currentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     bool retainedRoom_inoutIsBad{};
     if (!(p_retainedRoom_inout == nullptr) &&
@@ -50,7 +58,7 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
     if (p_retainedRoom_inout == nullptr || retainedRoom_inoutIsBad ||
         p_currentMap == nullptr || freeSpaceCluster_World_m_in.empty())
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const double maximumClusterSupportDistance_m =
@@ -114,8 +122,15 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             continue;
         }
 
-        const std::vector<semantic::Passage *> activePassages =
-            p_atlas->getAllPassages();
+        std::vector<semantic::Passage *> activePassages{};
+        if (p_atlas->getAllPassages(activePassages) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const bool duplicateIsLiveProspective = std::any_of(
             activePassages.begin(),
             activePassages.end(),
@@ -238,11 +253,22 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             !std::isfinite(centroidDistance_m) ||
             distanceToCluster_m(duplicateCentroid_World_m) >
                 maximumClusterSupportDistance_m;
-        if (isDuplicateOutsideCluster ||
+        bool hasSeparatingFiniteWall2{};
+        if (!(isDuplicateOutsideCluster) &&
             hasSeparatingFiniteWall(wallList_World_in,
                                     retainedCentroid_World_m,
                                     duplicateCentroid_World_m,
-                                    finiteWallBoundsMargin_m))
+                                    finiteWallBoundsMargin_m,
+                                    hasSeparatingFiniteWall2) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: hasSeparatingFiniteWall returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (isDuplicateOutsideCluster || hasSeparatingFiniteWall2)
         {
             continue;
         }
@@ -267,7 +293,15 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         }
 
         bool              roomsSeparatedByConfirmedPassage = false;
-        geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
+        geometric::Plane *p_groundPlane                    = nullptr;
+        if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getBiggestGroundPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         bool groundPlaneIsBad{};
         if ((p_groundPlane != nullptr) &&
@@ -300,27 +334,48 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             {
                 const Eigen::Vector3d groundNormal_World =
                     groundEquation_World.head<3>() / groundNormalNorm;
-                const std::vector<semantic::Passage *> confirmedPassages =
-                    p_atlas->getAllPassages();
+                std::vector<semantic::Passage *> confirmedPassages{};
+                if (p_atlas->getAllPassages(confirmedPassages) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getAllPassages returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
 
-                roomsSeparatedByConfirmedPassage =
-                    std::any_of(confirmedPassages.begin(),
-                                confirmedPassages.end(),
-                                [&retainedCentroid_World_m,
-                                 &duplicateCentroid_World_m,
-                                 &groundNormal_World,
-                                 this](semantic::Passage *p_passage)
-                                {
-                                    return segmentCrossesPassageOpening(
-                                        retainedCentroid_World_m,
-                                        duplicateCentroid_World_m,
-                                        p_passage,
-                                        groundNormal_World,
-                                        p_sysParams->roomSeg.passagePartition
-                                            .openingMargin_m,
-                                        p_sysParams->roomSeg.passagePartition
-                                            .minimumSideDistance_m);
-                                });
+                roomsSeparatedByConfirmedPassage = std::any_of(
+                    confirmedPassages.begin(),
+                    confirmedPassages.end(),
+                    [&retainedCentroid_World_m,
+                     &duplicateCentroid_World_m,
+                     &groundNormal_World,
+                     this](semantic::Passage *p_passage)
+                    {
+                        bool crossesPassageOpening{};
+                        if (segmentCrossesPassageOpening(
+                                retainedCentroid_World_m,
+                                duplicateCentroid_World_m,
+                                p_passage,
+                                groundNormal_World,
+                                p_sysParams->roomSeg.passagePartition
+                                    .openingMargin_m,
+                                p_sysParams->roomSeg.passagePartition
+                                    .minimumSideDistance_m,
+                                crossesPassageOpening) !=
+                            SemanticsManagerStatus::
+                                SEMANTICS_MANAGER_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: segmentCrossesPassageOpening returned a "
+                                "failure status although it cannot fail; "
+                                "continuing as before.",
+                                __func__);
+                        }
+                        return crossesPassageOpening;
+                    });
             }
         }
 
@@ -453,7 +508,16 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         }
         for (geometric::Plane *p_wall : duplicateRoomWalls)
         {
-            if (!admitWallToRoom(p_retainedRoom_inout, p_wall))
+            bool wasAdmitted{};
+            if (admitWallToRoom(p_retainedRoom_inout, p_wall, wasAdmitted) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: admitWallToRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!wasAdmitted)
             {
                 allDuplicateWallsWereAdmitted = false;
                 break;
@@ -729,6 +793,8 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                   << " using connected free-space evidence (centroid distance "
                   << centroidDistance_m << " m)." << std::endl;
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -24,7 +24,7 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::recomputeRoomCentroidsFromWalls(void)
+SemanticsManagerStatus SemanticsManager::recomputeRoomCentroidsFromWalls(void)
 {
     /* Same inward-nudge-then-average construction as
      * detectRoom_FreeSpaceCluster()'s wall-centroid correction -- see that
@@ -35,7 +35,16 @@ void SemanticsManager::recomputeRoomCentroidsFromWalls(void)
      * configured default, uses the other site directly). */
     constexpr double centroidInwardOffset_m = 0.10;
 
-    for (vs_graphs::core::semantic::Room *p_room : p_atlas->getAllRooms())
+    std::vector<semantic::Room *> atlasAllRooms{};
+    if (p_atlas->getAllRooms(atlasAllRooms) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (vs_graphs::core::semantic::Room *p_room : atlasAllRooms)
     {
         bool roomIsBad{};
         if (!(p_room == nullptr) &&
@@ -126,6 +135,8 @@ void SemanticsManager::recomputeRoomCentroidsFromWalls(void)
             }
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

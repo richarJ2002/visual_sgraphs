@@ -27,6 +27,7 @@
 #define LOCALMAPPING_H
 
 #include "Atlas.h"
+#include "LocalMappingStatus.h"
 #include "Types/objects/SystemParams.h"
 #include "Utils/Settings/objects/Settings.h"
 
@@ -60,42 +61,49 @@ class LocalMapping
                  bool          inertial_in,
                  const string &sequenceName_in = std::string());
 
-    void setLoopCloser(LoopClosing *p_loopCloser_in);
+    [[nodiscard]] LocalMappingStatus
+        setLoopCloser(LoopClosing *p_loopCloser_in);
 
-    void setTracker(Tracking *p_tracker_in);
+    [[nodiscard]] LocalMappingStatus setTracker(Tracking *p_tracker_in);
 
     // Main function
     void run();
 
-    void insertKeyFrame(KeyFrame *p_keyFrame_in);
-    void emptyQueue();
+    [[nodiscard]] LocalMappingStatus insertKeyFrame(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] LocalMappingStatus emptyQueue();
 
     // Thread Synch
-    void requestStop();
-    void requestReset();
-    void requestResetActiveMap(Map *p_map_in);
-    bool stop();
-    void release();
-    bool isStopped();
-    bool stopRequested();
-    bool isAcceptingKeyFrames();
-    void setAcceptKeyFrames(bool shouldAcceptKeyFrames_in);
-    bool setNotStop(bool shouldPreventStop_in);
+    [[nodiscard]] LocalMappingStatus requestStop();
+    [[nodiscard]] LocalMappingStatus requestReset();
+    [[nodiscard]] LocalMappingStatus requestResetActiveMap(Map *p_map_in);
+    [[nodiscard]] LocalMappingStatus stop(bool &isStopped_out);
+    [[nodiscard]] LocalMappingStatus release();
+    [[nodiscard]] LocalMappingStatus isStopped(bool &isStopped_out);
+    [[nodiscard]] LocalMappingStatus stopRequested(bool &isStopRequested_out);
+    [[nodiscard]] LocalMappingStatus
+        isAcceptingKeyFrames(bool &isAcceptingKeyFrames_out);
+    [[nodiscard]] LocalMappingStatus
+        setAcceptKeyFrames(bool shouldAcceptKeyFrames_in);
+    [[nodiscard]] LocalMappingStatus setNotStop(bool  shouldPreventStop_in,
+                                                bool &wasSet_out);
 
-    void interruptBA();
+    [[nodiscard]] LocalMappingStatus interruptBA();
 
-    void requestFinish();
-    bool isFinished();
+    [[nodiscard]] LocalMappingStatus requestFinish();
+    [[nodiscard]] LocalMappingStatus isFinished(bool &isFinished_out);
 
-    int keyframesInQueue()
+    [[nodiscard]] LocalMappingStatus keyframesInQueue(int &keyFrameCount_out)
     {
         unique_lock<std::mutex> lock(newKeyFramesMutex);
-        return newKeyFrames.size();
+        keyFrameCount_out = newKeyFrames.size();
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
 
-    bool      isInitializing();
-    double    getCurrentKeyFrameTime();
-    KeyFrame *getCurrentKeyFrame();
+    [[nodiscard]] LocalMappingStatus isInitializing(bool &isInitializing_out);
+    [[nodiscard]] LocalMappingStatus
+        getCurrentKeyFrameTime(double &currentKeyFrameTime_out);
+    [[nodiscard]] LocalMappingStatus
+        getCurrentKeyFrame(KeyFrame *&p_currentKeyFrame_out);
 
     std::mutex imuInitMutex;
 
@@ -146,30 +154,31 @@ class LocalMapping
     int            localBaAbortCount;
 #endif
   protected:
-    bool checkNewKeyFrames();
-    void processNewKeyFrame();
-    void createNewMapPoints();
+    [[nodiscard]] LocalMappingStatus
+        checkNewKeyFrames(bool &hasNewKeyFrames_out);
+    [[nodiscard]] LocalMappingStatus processNewKeyFrame();
+    [[nodiscard]] LocalMappingStatus createNewMapPoints();
 
-    void mapPointCulling();
-    void searchInNeighbors();
-    void keyFrameCulling();
+    [[nodiscard]] LocalMappingStatus mapPointCulling();
+    [[nodiscard]] LocalMappingStatus searchInNeighbors();
+    [[nodiscard]] LocalMappingStatus keyFrameCulling();
 
     System *p_system;
 
     bool isMonocular;
     bool isInertial;
 
-    void       resetIfRequested();
-    bool       isResetRequested;
-    bool       isResetActiveMapRequested;
-    Map       *p_mapToReset;
-    std::mutex resetMutex;
+    [[nodiscard]] LocalMappingStatus resetIfRequested();
+    bool                             isResetRequested;
+    bool                             isResetActiveMapRequested;
+    Map                             *p_mapToReset;
+    std::mutex                       resetMutex;
 
-    bool       checkFinish();
-    void       setFinish();
-    bool       isFinishRequested;
-    bool       hasFinished;
-    std::mutex finishMutex;
+    [[nodiscard]] LocalMappingStatus checkFinish(bool &isFinishRequested_out);
+    [[nodiscard]] LocalMappingStatus setFinish();
+    bool                             isFinishRequested;
+    bool                             hasFinished;
+    std::mutex                       finishMutex;
 
     Atlas *p_atlas;
 
@@ -195,10 +204,11 @@ class LocalMapping
     bool       shouldAcceptKeyFrames;
     std::mutex acceptMutex;
 
-    void initializeIMU(float gyroPriorWeight_in         = 1e2,
-                       float accelPriorWeight_in        = 1e6,
-                       bool  shouldRunFullInertialBa_in = false);
-    void scaleRefinement();
+    [[nodiscard]] LocalMappingStatus
+        initializeIMU(float gyroPriorWeight_in         = 1e2,
+                      float accelPriorWeight_in        = 1e6,
+                      bool  shouldRunFullInertialBa_in = false);
+    [[nodiscard]] LocalMappingStatus scaleRefinement();
 
     bool isInitializationInProgress;
 

@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<KeyFrame *> Atlas::getAllKeyFrames()
+AtlasStatus Atlas::getAllKeyFrames(std::vector<KeyFrame *> &allKeyFrames_out)
 {
     unique_lock<mutex>      lock(atlasMutex);
     std::vector<KeyFrame *> activeMapAllKeyFrames{};
@@ -43,7 +43,8 @@ std::vector<KeyFrame *> Atlas::getAllKeyFrames()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllKeyFrames;
+    allKeyFrames_out = activeMapAllKeyFrames;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

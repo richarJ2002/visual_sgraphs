@@ -24,6 +24,7 @@
 #ifndef ORBMATCHER_H
 #define ORBMATCHER_H
 
+#include "ORBmatcherStatus.h"
 #include "sophus/sim3.hpp"
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -70,10 +71,14 @@ class ORBmatcher
      * @param[in]    descriptor2_in
      *               Second descriptor row.
      *
-     * @return       Hamming distance between the descriptors.
+     * @param[out] descriptorDistance_out Hamming distance between the
+     * descriptors.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    static int computeDescriptorDistance(const cv::Mat &descriptor1_in,
-                                         const cv::Mat &descriptor2_in);
+    [[nodiscard]] static ORBmatcherStatus
+        computeDescriptorDistance(const cv::Mat &descriptor1_in,
+                                  const cv::Mat &descriptor2_in,
+                                  int           &descriptorDistance_out);
 
     /*!
      * @brief        Matches frame keypoints against projected
@@ -96,11 +101,13 @@ class ORBmatcher
      *               and grows to 120 % at or above it, in metres. This
      *               disambiguates repetitive corridors.
      *
-     * @return       Number of matches found.
+     * @param[out] byProjection_out Number of matches found.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int searchByProjection(
+    [[nodiscard]] ORBmatcherStatus searchByProjection(
         Frame                         &frame_inout,
         const std::vector<MapPoint *> &mapPoints_in,
+        int                           &byProjection_out,
         const float                    threshold_in          = 3,
         const bool                     farPoints_in          = false,
         const float                    farPointsThreshold_in = 50.0f,
@@ -119,12 +126,14 @@ class ORBmatcher
      * @param[in]    mono_in
      *               True for the monocular search policy.
      *
-     * @return       Number of matches found.
+     * @param[out] byProjection_out Number of matches found.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int searchByProjection(Frame       &currentFrame_inout,
-                           const Frame &lastFrame_in,
-                           const float  threshold_in,
-                           const bool   mono_in);
+    [[nodiscard]] ORBmatcherStatus searchByProjection(Frame &currentFrame_inout,
+                                                      const Frame &lastFrame_in,
+                                                      const float  threshold_in,
+                                                      const bool   mono_in,
+                                                      int &byProjection_out);
 
     /*!
      * @brief        Matches a keyframe against a frame for
@@ -142,13 +151,16 @@ class ORBmatcher
      * @param[in]    orbDistance_in
      *               Maximum descriptor distance accepted.
      *
-     * @return       Number of matches found.
+     * @param[out] byProjection_out Number of matches found.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int searchByProjection(Frame                      &currentFrame_inout,
+    [[nodiscard]] ORBmatcherStatus
+        searchByProjection(Frame                      &currentFrame_inout,
                            KeyFrame                   *p_keyframe_in,
                            const std::set<MapPoint *> &alreadyFound_in,
                            const float                 threshold_in,
-                           const int                   orbDistance_in);
+                           const int                   orbDistance_in,
+                           int                        &byProjection_out);
 
     /*!
      * @brief        Matches map points under a similarity
@@ -170,13 +182,16 @@ class ORBmatcher
      *               Scale applied to the Hamming acceptance
      *               threshold.
      *
-     * @return       Number of matches found.
+     * @param[out] byProjection_out Number of matches found.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int searchByProjection(KeyFrame                      *p_keyframe_in,
+    [[nodiscard]] ORBmatcherStatus
+        searchByProjection(KeyFrame                      *p_keyframe_in,
                            Sophus::Sim3<float>           &similarity_in,
                            const std::vector<MapPoint *> &points_in,
                            std::vector<MapPoint *>       &matched_inout,
                            int                            threshold_in,
+                           int                           &byProjection_out,
                            float hammingRatio_in = 1.0);
 
     /*!
@@ -203,15 +218,18 @@ class ORBmatcher
      *               Scale applied to the Hamming acceptance
      *               threshold.
      *
-     * @return       Number of matches found.
+     * @param[out] byProjection_out Number of matches found.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int searchByProjection(KeyFrame                      *p_keyframe_in,
+    [[nodiscard]] ORBmatcherStatus
+        searchByProjection(KeyFrame                      *p_keyframe_in,
                            Sophus::Sim3<float>           &similarity_in,
                            const std::vector<MapPoint *> &points_in,
                            const std::vector<KeyFrame *> &pointsKeyframes_in,
                            std::vector<MapPoint *>       &matched_inout,
                            std::vector<KeyFrame *> &matchedKeyframes_inout,
                            int                      threshold_in,
+                           int                     &byProjection_out,
                            float                    hammingRatio_in = 1.0);
 
     /*!
@@ -226,11 +244,14 @@ class ORBmatcher
      * @param[out]   mapPointMatches_out
      *               Matched map point per frame keypoint.
      *
-     * @return       Number of matches found.
+     * @param[out] byBoW_out Number of matches found.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int searchByBoW(KeyFrame                *p_keyframe_in,
+    [[nodiscard]] ORBmatcherStatus
+        searchByBoW(KeyFrame                *p_keyframe_in,
                     Frame                   &frame_inout,
-                    std::vector<MapPoint *> &mapPointMatches_out);
+                    std::vector<MapPoint *> &mapPointMatches_out,
+                    int                     &byBoW_out);
     /*!
      * @brief        Matches map points between two keyframes
      *               constrained by vocabulary nodes.
@@ -244,11 +265,14 @@ class ORBmatcher
      * @param[out]   matches12_out
      *               Matched map point per first-keyframe point.
      *
-     * @return       Number of matches found.
+     * @param[out] byBoW_out Number of matches found.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int searchByBoW(KeyFrame                *p_keyframe1_in,
+    [[nodiscard]] ORBmatcherStatus
+        searchByBoW(KeyFrame                *p_keyframe1_in,
                     KeyFrame                *p_keyframe2_in,
-                    std::vector<MapPoint *> &matches12_out);
+                    std::vector<MapPoint *> &matches12_out,
+                    int                     &byBoW_out);
 
     /*!
      * @brief        Matches two frames for monocular map
@@ -265,12 +289,15 @@ class ORBmatcher
      * @param[in]    windowSize_in
      *               Search window half-size in pixels.
      *
-     * @return       Number of matches found.
+     * @param[out] forInitialization_out Number of matches found.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int searchForInitialization(Frame                    &frame1_inout,
+    [[nodiscard]] ORBmatcherStatus
+        searchForInitialization(Frame                    &frame1_inout,
                                 Frame                    &frame2_inout,
                                 std::vector<cv::Point2f> &previousMatched_inout,
                                 std::vector<int>         &matches12_out,
+                                int                      &forInitialization_out,
                                 int                       windowSize_in = 10);
 
     /*!
@@ -290,13 +317,15 @@ class ORBmatcher
      * @param[in]    coarse_in
      *               True to widen the search window.
      *
-     * @return       Number of matches found.
+     * @param[out] forTriangulation_out Number of matches found.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int searchForTriangulation(
+    [[nodiscard]] ORBmatcherStatus searchForTriangulation(
         KeyFrame                          *p_keyframe1_in,
         KeyFrame                          *p_keyframe2_in,
         std::vector<pair<size_t, size_t>> &matchedPairs_out,
         const bool                         stereoOnly_in,
+        int                               &forTriangulation_out,
         const bool                         coarse_in = false);
 
     // Search matches between MapPoints seen in KF1 and KF2 transforming by a
@@ -322,13 +351,16 @@ class ORBmatcher
      * @param[in]    threshold_in
      *               Search radius in pixels.
      *
-     * @return       Number of matches found.
+     * @param[out] bySim3_out Number of matches found.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int searchBySim3(KeyFrame                *p_keyframe1_in,
+    [[nodiscard]] ORBmatcherStatus
+        searchBySim3(KeyFrame                *p_keyframe1_in,
                      KeyFrame                *p_keyframe2_in,
                      std::vector<MapPoint *> &matches12_inout,
                      const Sophus::Sim3f     &transform12_in,
-                     const float              threshold_in);
+                     const float              threshold_in,
+                     int                     &bySim3_out);
 
     /*!
      * @brief        Fuses duplicated map points projected into
@@ -344,12 +376,14 @@ class ORBmatcher
      * @param[in]    right_in
      *               True to project into the right stereo view.
      *
-     * @return       Number of fused points.
+     * @param[out] fusedCount_out Number of fused points.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int fuse(KeyFrame                 *p_keyframe_inout,
-             const vector<MapPoint *> &mapPoints_in,
-             const float               threshold_in = 3.0,
-             const bool                right_in     = false);
+    [[nodiscard]] ORBmatcherStatus fuse(KeyFrame *p_keyframe_inout,
+                                        const vector<MapPoint *> &mapPoints_in,
+                                        int        &fusedCount_out,
+                                        const float threshold_in = 3.0,
+                                        const bool  right_in     = false);
 
     /*!
      * @brief        Fuses duplicated map points projected under
@@ -368,13 +402,16 @@ class ORBmatcher
      * @param[in,out] replacePoints_inout
      *               Replacement map point per fused candidate.
      *
-     * @return       Number of fused points.
+     * @param[out] fusedCount_out Number of fused points.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    int fuse(KeyFrame                      *p_keyframe_inout,
+    [[nodiscard]] ORBmatcherStatus
+        fuse(KeyFrame                      *p_keyframe_inout,
              Sophus::Sim3f                 &similarity_in,
              const std::vector<MapPoint *> &points_in,
              float                          threshold_in,
-             vector<MapPoint *>            &replacePoints_inout);
+             std::vector<MapPoint *>       &replacePoints_inout,
+             int                           &fusedCount_out);
 
   public:
     /*!
@@ -399,9 +436,11 @@ class ORBmatcher
      * @param[in]    viewCosine_in
      *               Cosine between the viewing rays.
      *
-     * @return       Search radius in pixels.
+     * @param[out] radius_out Search radius in pixels.
+     * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    float radiusByViewingCos(const float &viewCosine_in);
+    [[nodiscard]] ORBmatcherStatus
+        radiusByViewingCos(const float &viewCosine_in, float &radius_out);
 
     /*!
      * @brief        Finds the three fullest orientation
@@ -418,11 +457,12 @@ class ORBmatcher
      * @param[out]   maximum3_out
      *               Index of the third fullest bin.
      */
-    void computeThreeMaxima(std::vector<int> *p_histogram_in,
-                            const int         length_in,
-                            int              &maximum1_inout,
-                            int              &maximum2_inout,
-                            int              &maximum3_out);
+    [[nodiscard]] ORBmatcherStatus
+        computeThreeMaxima(std::vector<int> *p_histogram_in,
+                           const int         length_in,
+                           int              &maximum1_inout,
+                           int              &maximum2_inout,
+                           int              &maximum3_out);
 
     /*!
      * @brief        Nearest-neighbour ratio test threshold.

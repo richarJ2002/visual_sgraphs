@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-ORBVocabulary *Atlas::getORBVocabulary()
+AtlasStatus Atlas::getORBVocabulary(ORBVocabulary *&p_oRBVocabulary_out)
 {
-    return p_orbVocabulary;
+    p_oRBVocabulary_out = p_orbVocabulary;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

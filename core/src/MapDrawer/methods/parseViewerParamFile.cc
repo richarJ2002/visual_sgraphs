@@ -14,7 +14,8 @@ namespace vs_graphs
 namespace core
 {
 
-bool MapDrawer::parseViewerParamFile(cv::FileStorage &settings_in)
+MapDrawerStatus MapDrawer::parseViewerParamFile(cv::FileStorage &settings_in,
+                                                bool            &isParsed_out)
 {
     bool isParameterMissing = false;
 
@@ -98,7 +99,8 @@ bool MapDrawer::parseViewerParamFile(cv::FileStorage &settings_in)
         isParameterMissing = true;
     }
 
-    return !isParameterMissing;
+    isParsed_out = !isParameterMissing;
+    return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 }
 
 } // namespace core

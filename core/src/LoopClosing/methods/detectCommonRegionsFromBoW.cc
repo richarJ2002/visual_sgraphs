@@ -38,14 +38,15 @@ namespace vs_graphs
 namespace core
 {
 
-bool LoopClosing::detectCommonRegionsFromBoW(
+LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
     std::vector<KeyFrame *> &bowCandidates_in,
     KeyFrame               *&matchedKeyFrame_out,
     KeyFrame               *&lastCurrentKeyFrame_out,
     g2o::Sim3               &g2oScw_out,
     int                     &countCoincidenceCount_out,
     std::vector<MapPoint *> &mapPoints_out,
-    std::vector<MapPoint *> &matchedMapPoints_out)
+    std::vector<MapPoint *> &matchedMapPoints_out,
+    bool                    &isDetected_out)
 {
     int bowMatchCount           = 20;
     int bowInlierCount          = 15;
@@ -195,10 +196,18 @@ bool LoopClosing::detectCommonRegionsFromBoW(
             if (!covisibleKeyFrames[covisibleKeyFrameIndex] || isBad2)
                 continue;
 
-            int count = matcherBow.searchByBoW(
-                p_currentKF,
-                covisibleKeyFrames[covisibleKeyFrameIndex],
-                vvpMatchedMapPoints[covisibleKeyFrameIndex]);
+            int count{};
+            if (matcherBow.searchByBoW(
+                    p_currentKF,
+                    covisibleKeyFrames[covisibleKeyFrameIndex],
+                    vvpMatchedMapPoints[covisibleKeyFrameIndex],
+                    count) != ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: searchByBoW returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (count > mostBowCountMatchCount)
             {
                 mostBowCountMatchCount           = count;
@@ -277,9 +286,15 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                                            matchedPoints,
                                            isFixedScale,
                                            keyFrameMatchedMapPoints);
-            solver.setRansacParameters(0.99,
-                                       bowInlierCount,
-                                       300); // at least 15 inliers
+            if (solver.setRansacParameters(0.99, bowInlierCount, 300) !=
+                Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setRansacParameters returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            } // at least 15 inliers
 
             bool            areIterationsExhausted = false;
             vector<bool>    inliersFlags;
@@ -288,11 +303,22 @@ bool LoopClosing::detectCommonRegionsFromBoW(
             Eigen::Matrix4f mTcm;
             while (!hasConverged && !areIterationsExhausted)
             {
-                mTcm = solver.iterate(20,
-                                      areIterationsExhausted,
-                                      inliersFlags,
-                                      inlierCount,
-                                      hasConverged);
+                Eigen::Matrix4f solverTransform{};
+                if (solver.iterate(20,
+                                   areIterationsExhausted,
+                                   inliersFlags,
+                                   inlierCount,
+                                   hasConverged,
+                                   solverTransform) !=
+                    Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: iterate returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                mTcm = solverTransform;
                 // Verbose::PrintMess("BoW guess: Solver achieve " +
                 // to_string(nInliers) + " geometrical inliers among " +
                 // to_string(nBoWInliers) + " BoW matches",
@@ -378,9 +404,40 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                 // std::cout << "There are " << vpKeyFrames.size() <<" KFs which
                 // view all the mappoints" << std::endl;
 
-                g2o::Sim3 gScm(solver.getEstimatedRotation().cast<double>(),
-                               solver.getEstimatedTranslation().cast<double>(),
-                               (double)solver.getEstimatedScale());
+                Eigen::Matrix3f solverEstimatedRotation{};
+                if (solver.getEstimatedRotation(solverEstimatedRotation) !=
+                    Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getEstimatedRotation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                Eigen::Vector3f solverEstimatedTranslation{};
+                if (solver.getEstimatedTranslation(
+                        solverEstimatedTranslation) !=
+                    Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getEstimatedTranslation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                float solverEstimatedScale{};
+                if (solver.getEstimatedScale(solverEstimatedScale) !=
+                    Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getEstimatedScale returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                g2o::Sim3       gScm(solverEstimatedRotation.cast<double>(),
+                               solverEstimatedTranslation.cast<double>(),
+                               (double)solverEstimatedScale);
                 Eigen::Matrix3f mostBowMatchesKeyFrameRotation{};
                 if (p_mostBowMatchesKeyFrame->getRotation(
                         mostBowMatchesKeyFrameRotation) !=
@@ -448,15 +505,24 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                 }
                 matchedKeyFrames.resize(currentKFMapPointMatches4.size(),
                                         static_cast<KeyFrame *>(nullptr));
-                int numProjMatches =
-                    matcher.searchByProjection(p_currentKF,
+                int numProjMatches{};
+                if (matcher.searchByProjection(p_currentKF,
                                                correctedPose,
                                                candidateMapPoints,
                                                keyFrames,
                                                bowMatchedMapPoints,
                                                matchedKeyFrames,
                                                8,
-                                               1.5);
+                                               numProjMatches,
+                                               1.5) !=
+                    ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: searchByProjection returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 // cout <<"BoW: " << numProjMatches << " matches between " <<
                 // vpMapPoints.size() << " points with coarse Sim3" << endl;
 
@@ -492,15 +558,24 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                         !inertialBA22)
                         isFixedScale = false;
 
-                    int optMatchCount =
-                        Optimizer::optimizeSim3(p_currentKF,
+                    int optMatchCount{};
+                    if (Optimizer::optimizeSim3(p_currentKF,
                                                 p_keyFrame,
                                                 bowMatchedMapPoints,
                                                 gScm,
                                                 10,
                                                 isScaleFixed,
                                                 hessian7x7,
-                                                true);
+                                                optMatchCount,
+                                                true) !=
+                        OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: optimizeSim3 returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     if (optMatchCount >= nSim3Inliers)
                     {
@@ -562,13 +637,23 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                         bowMatchedMapPoints.resize(
                             currentKFMapPointMatches5.size(),
                             static_cast<MapPoint *>(nullptr));
-                        int optimizedProjectionMatchCount =
-                            matcher.searchByProjection(p_currentKF,
-                                                       correctedPose,
-                                                       candidateMapPoints,
-                                                       bowMatchedMapPoints,
-                                                       5,
-                                                       1.0);
+                        int optimizedProjectionMatchCount{};
+                        if (matcher.searchByProjection(
+                                p_currentKF,
+                                correctedPose,
+                                candidateMapPoints,
+                                bowMatchedMapPoints,
+                                5,
+                                optimizedProjectionMatchCount,
+                                1.0) !=
+                            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: searchByProjection returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
 
                         if (optimizedProjectionMatchCount >=
                             projectionOptMatchCount)
@@ -699,13 +784,25 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                                 g2o::Sim3 gSjw = gSjc * gScw;
                                 int       covisibleProjectionMatchCount = 0;
                                 vector<MapPoint *> covisibleMatchedMapPoints;
-                                bool isValid = detectCommonRegionsFromLastKF(
-                                    p_currentCovisibleKeyFrame,
-                                    p_mostBowMatchesKeyFrame,
-                                    gSjw,
-                                    covisibleProjectionMatchCount,
-                                    candidateMapPoints,
-                                    covisibleMatchedMapPoints);
+                                bool               isValid{};
+                                if (detectCommonRegionsFromLastKF(
+                                        p_currentCovisibleKeyFrame,
+                                        p_mostBowMatchesKeyFrame,
+                                        gSjw,
+                                        covisibleProjectionMatchCount,
+                                        candidateMapPoints,
+                                        covisibleMatchedMapPoints,
+                                        isValid) !=
+                                    LoopClosingStatus::
+                                        LOOP_CLOSING_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: detectCommonRegionsFromLastKF "
+                                        "returned a failure status although it "
+                                        "cannot fail; continuing as before.",
+                                        __func__);
+                                }
 
                                 if (isValid)
                                 {
@@ -785,7 +882,8 @@ bool LoopClosing::detectCommonRegionsFromBoW(
         mapPoints_out        = bestMapPoints;
         matchedMapPoints_out = bestMatchedMapPoints;
 
-        return countCoincidenceCount_out >= 3;
+        isDetected_out = countCoincidenceCount_out >= 3;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
     else
     {
@@ -801,7 +899,8 @@ bool LoopClosing::detectCommonRegionsFromBoW(
             }
         }
     }
-    return false;
+    isDetected_out = false;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

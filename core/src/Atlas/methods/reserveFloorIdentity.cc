@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-int Atlas::reserveFloorIdentity(void)
+AtlasStatus Atlas::reserveFloorIdentity(int &floorId_out)
 {
-    return nextFloorIdentity.fetch_add(1, std::memory_order_relaxed);
+    floorId_out = nextFloorIdentity.fetch_add(1, std::memory_order_relaxed);
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -61,9 +61,17 @@ SemanticGraphSnapshotStatus
      * before trusting that currentMapId names an entry in maps -- see
      * SemanticGraphSnapshot::currentMapStatus's Doxygen and
      * AtlasCurrentMapStatus.h. */
-    const std::vector<core::Map *> maps =
-        p_atlas_in->getCoherentMapView(snapshot.currentMapId,
-                                       snapshot.currentMapStatus);
+    std::vector<core::Map *> maps{};
+    if (p_atlas_in->getCoherentMapView(snapshot.currentMapId,
+                                       snapshot.currentMapStatus,
+                                       maps) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCoherentMapView returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Pass 1: invert Room -> Wall ownership across every live map so each
      * WallRecord can carry its owning rooms without Plane storing a

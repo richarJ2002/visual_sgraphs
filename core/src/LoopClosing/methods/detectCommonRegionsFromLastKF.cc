@@ -24,37 +24,50 @@
  */
 
 #include "LoopClosing.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool LoopClosing::detectCommonRegionsFromLastKF(
+LoopClosingStatus LoopClosing::detectCommonRegionsFromLastKF(
     KeyFrame                *p_currentKeyFrame_in,
     KeyFrame                *p_matchedKeyFrame_in,
     g2o::Sim3               &gScw_inout,
     int                     &countProjectionMatchCount_out,
     std::vector<MapPoint *> &mapPoints_inout,
-    std::vector<MapPoint *> &matchedMapPoints_inout)
+    std::vector<MapPoint *> &matchedMapPoints_inout,
+    bool                    &isDetected_out)
 {
     set<MapPoint *> alreadyMatchedMapPoints(matchedMapPoints_inout.begin(),
                                             matchedMapPoints_inout.end());
-    countProjectionMatchCount_out =
-        findMatchesByProjection(p_currentKeyFrame_in,
+    int             matches{};
+    if (findMatchesByProjection(p_currentKeyFrame_in,
                                 p_matchedKeyFrame_in,
                                 gScw_inout,
                                 alreadyMatchedMapPoints,
                                 mapPoints_inout,
-                                matchedMapPoints_inout);
+                                matchedMapPoints_inout,
+                                matches) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: findMatchesByProjection returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    countProjectionMatchCount_out = matches;
 
     int projectionMatchCount = 30;
     if (countProjectionMatchCount_out >= projectionMatchCount)
     {
-        return true;
+        isDetected_out = true;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
-    return false;
+    isDetected_out = false;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

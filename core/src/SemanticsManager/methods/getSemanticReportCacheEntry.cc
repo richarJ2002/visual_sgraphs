@@ -24,8 +24,8 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::SemanticReportCacheEntry
-    SemanticsManager::getSemanticReportCacheEntry(void) const
+SemanticsManagerStatus SemanticsManager::getSemanticReportCacheEntry(
+    semantic::SemanticReportCacheEntry &getSemanticReportCacheEntry_out) const
 {
     semantic::SemanticReportCacheEntry semanticReportCacheGetLatest{};
     if (semanticReportCache.getLatest(semanticReportCacheGetLatest) !=
@@ -37,7 +37,8 @@ semantic::SemanticReportCacheEntry
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return semanticReportCacheGetLatest;
+    getSemanticReportCacheEntry_out = semanticReportCacheGetLatest;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

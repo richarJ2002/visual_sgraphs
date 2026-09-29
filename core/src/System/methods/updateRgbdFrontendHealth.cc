@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-void System::updateRgbdFrontendHealth(
+SystemStatus System::updateRgbdFrontendHealth(
     const std::uint64_t acceptedCount_in,
     const std::uint64_t processedCount_in,
     const std::uint64_t overwrittenCount_in,
@@ -48,6 +48,8 @@ void System::updateRgbdFrontendHealth(
     rgbdFrontendLastProcessedSensorTimestampNanoseconds.store(
         lastProcessedSensorTimestampNanoseconds_in,
         std::memory_order_relaxed);
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

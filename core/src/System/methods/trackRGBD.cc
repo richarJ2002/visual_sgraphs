@@ -36,12 +36,13 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f System::trackRGBD(
+SystemStatus System::trackRGBD(
     const cv::Mat                                &colorImage_in,
     const cv::Mat                                &depthmap_in,
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
     const double                                 &timestamp_in,
-    const vector<IMU::Point>                     &imuMeas_in,
+    Sophus::SE3f                                 &cameraPose_out,
+    const std::vector<IMU::Point>                &imuMeas_in,
     string                                        filename_in,
     const std::vector<semantic::Marker *>         markers_in)
 {
@@ -93,7 +94,14 @@ Sophus::SE3f System::trackRGBD(
         cv::resize(depthmap_in, imDepthToFeed, settingsNewImSize2);
     }
 
-    applyPendingModeAndResetRequests();
+    if (applyPendingModeAndResetRequests() !=
+        SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: applyPendingModeAndResetRequests returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Apply IMU measurements
     if (sensor == System::IMU_RGBD)
@@ -102,22 +110,47 @@ Sophus::SE3f System::trackRGBD(
              imuMeasurementIndex < imuMeas_in.size();
              imuMeasurementIndex++)
         {
-            p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]);
+            if (p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: grabImuData returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
     // Track RGB-D images
-    Sophus::SE3f Tcw = p_tracker->grabImageRGBD(imToFeed,
-                                                imDepthToFeed,
-                                                p_mainCloud_in,
-                                                timestamp_in,
-                                                filename_in,
-                                                markers_in,
-                                                envRooms);
+    Sophus::SE3f Tcw{};
+    if (p_tracker->grabImageRGBD(imToFeed,
+                                 imDepthToFeed,
+                                 p_mainCloud_in,
+                                 timestamp_in,
+                                 filename_in,
+                                 markers_in,
+                                 envRooms,
+                                 Tcw) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: grabImageRGBD returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     unique_lock<mutex> lock2(stateMutex);
-    trackingState      = p_tracker->state;
-    trackingInliers    = p_tracker->getMatchesInliers();
+    trackingState = p_tracker->state;
+    int trackerMatchesInliers{};
+    if (p_tracker->getMatchesInliers(trackerMatchesInliers) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMatchesInliers returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    trackingInliers    = trackerMatchesInliers;
     lastFrameTimestamp = timestamp_in;
     trackedMapPoints   = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn = p_tracker->currentFrame.keyPointsUndistorted;
@@ -144,11 +177,26 @@ Sophus::SE3f System::trackRGBD(
     {
         if (trackingState == Tracking::LOST)
         {
-            p_semanticsManager->onTrackingLost();
+            if (p_semanticsManager->onTrackingLost() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: onTrackingLost returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
-            p_semanticsManager->onTrackingRecovered();
+            if (p_semanticsManager->onTrackingRecovered() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: onTrackingRecovered returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
     }
 
@@ -156,7 +204,15 @@ Sophus::SE3f System::trackRGBD(
      * The SemanticsManager::Run() thread performs the actual room
      * matching once rooms exist in the new map; we only log here. */
     {
-        Map *p_currentMap = p_atlas->getCurrentMap();
+        Map *p_currentMap = nullptr;
+        if (p_atlas->getCurrentMap(p_currentMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (p_currentMap)
         {
             unsigned long mapIdValue{};
@@ -188,7 +244,8 @@ Sophus::SE3f System::trackRGBD(
         }
     }
 
-    return Tcw;
+    cameraPose_out = Tcw;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

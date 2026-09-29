@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-KeyFrame *Atlas::getKeyFrameById(long unsigned int idCount_in)
+AtlasStatus Atlas::getKeyFrameById(long unsigned int idCount_in,
+                                   KeyFrame        *&p_keyFrameById_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     KeyFrame          *p_activeMapKeyFrameById = nullptr;
@@ -44,7 +45,9 @@ KeyFrame *Atlas::getKeyFrameById(long unsigned int idCount_in)
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    return p_activeMap != nullptr ? p_activeMapKeyFrameById : nullptr;
+    p_keyFrameById_out =
+        p_activeMap != nullptr ? p_activeMapKeyFrameById : nullptr;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::interruptBA()
+LocalMappingStatus LocalMapping::interruptBA()
 {
     shouldAbortBa = true;
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

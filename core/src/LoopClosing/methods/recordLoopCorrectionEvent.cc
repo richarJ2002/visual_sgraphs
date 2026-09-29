@@ -33,8 +33,9 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::recordLoopCorrectionEvent(bool               accepted_in,
-                                            const std::string &reason_in)
+LoopClosingStatus
+    LoopClosing::recordLoopCorrectionEvent(bool               accepted_in,
+                                           const std::string &reason_in)
 {
     {
         std::lock_guard<std::mutex> lock(loopCorrectionStatusMutex);
@@ -96,6 +97,8 @@ void LoopClosing::recordLoopCorrectionEvent(bool               accepted_in,
                 p_loopMatchedKF->timeStamp;
         }
     }
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

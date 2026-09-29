@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<semantic::Marker *> Atlas::getAllMarkers()
+AtlasStatus
+    Atlas::getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out)
 {
     unique_lock<mutex>              lock(atlasMutex);
     std::vector<semantic::Marker *> activeMapAllMarkers{};
@@ -43,7 +44,8 @@ std::vector<semantic::Marker *> Atlas::getAllMarkers()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllMarkers;
+    allMarkers_out = activeMapAllMarkers;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

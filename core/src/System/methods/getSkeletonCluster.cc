@@ -24,15 +24,27 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-std::vector<std::vector<Eigen::Vector3d>> System::getSkeletonCluster()
+SystemStatus System::getSkeletonCluster(
+    std::vector<std::vector<Eigen::Vector3d>> &skeletonCluster_out)
 {
-    return p_atlas->getSkeletonClusterPoints();
+    std::vector<std::vector<Eigen::Vector3d>> atlasSkeletonClusterPoints{};
+    if (p_atlas->getSkeletonClusterPoints(atlasSkeletonClusterPoints) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSkeletonClusterPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    skeletonCluster_out = atlasSkeletonClusterPoints;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

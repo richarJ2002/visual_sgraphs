@@ -54,7 +54,8 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3d MLPnPsolver::rot2rodrigues(const Eigen::Matrix3d &R_in)
+MLPnPsolverStatus MLPnPsolver::rot2rodrigues(const Eigen::Matrix3d &R_in,
+                                             Eigen::Vector3d &rodrigues_out)
 {
     RodriguesVector omega;
     omega << 0.0, 0.0, 0.0;
@@ -69,7 +70,8 @@ Eigen::Vector3d MLPnPsolver::rot2rodrigues(const Eigen::Matrix3d &R_in)
         double sc = wnorm / (2.0 * sin(wnorm));
         omega *= sc;
     }
-    return omega;
+    rodrigues_out = omega;
+    return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -120,8 +120,16 @@ FrameStatus Frame::computeStereoMatches()
             if (uR >= minimumU && uR <= maximumU)
             {
                 const cv::Mat &dR = descriptorsRight.row(iR);
-                const int      distance =
-                    ORBmatcher::computeDescriptorDistance(dL, dR);
+                int            distance{};
+                if (ORBmatcher::computeDescriptorDistance(dL, dR, distance) !=
+                    ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: computeDescriptorDistance returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 if (distance < bestDistance)
                 {

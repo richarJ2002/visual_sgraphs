@@ -189,15 +189,16 @@ PlanarTwoViewScene buildPlanarTwoViewScene()
 }
 
 /*! Signature of the private TwoViewReconstruction::reconstructH(). */
-using ReconstructHPointer =
-    bool (TwoViewReconstruction::*)(std::vector<bool> &,
-                                    Eigen::Matrix3f &,
-                                    Eigen::Matrix3f &,
-                                    Sophus::SE3f &,
-                                    std::vector<cv::Point3f> &,
-                                    std::vector<bool> &,
-                                    float,
-                                    int);
+using ReconstructHPointer = TwoViewReconstructionStatus (
+    TwoViewReconstruction::*)(std::vector<bool> &,
+                              Eigen::Matrix3f &,
+                              Eigen::Matrix3f &,
+                              Sophus::SE3f &,
+                              std::vector<cv::Point3f> &,
+                              std::vector<bool> &,
+                              float,
+                              int,
+                              bool &);
 
 /*!
  * @brief        Carries the recovered member pointer out of the explicit
@@ -253,12 +254,16 @@ void loadSceneCorrespondences(const PlanarTwoViewScene &scene_in,
     std::vector<cv::Point3f> unusedPoints;
     std::vector<bool>        unusedFlags;
 
-    reconstruction_inout.reconstruct(scene_in.keypointsView1,
-                                     scene_in.keypointsView2,
-                                     scene_in.matchesView1ToView2,
-                                     unusedPose,
-                                     unusedPoints,
-                                     unusedFlags);
+    bool reconstructionIsReconstructed{};
+    ASSERT_EQ(
+        (reconstruction_inout.reconstruct(scene_in.keypointsView1,
+                                          scene_in.keypointsView2,
+                                          scene_in.matchesView1ToView2,
+                                          unusedPose,
+                                          unusedPoints,
+                                          unusedFlags,
+                                          reconstructionIsReconstructed)),
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS);
 }
 
 } // namespace
@@ -280,16 +285,19 @@ TEST(TwoViewReconstruction, HomographyBranchPublishesTriangulatedStructure)
     std::vector<cv::Point3f> pointsView1_m;
     std::vector<bool>        triangulatedFlags;
 
-    const bool isReconstructed =
-        (reconstruction.*
-         getReconstructH(ReconstructHAccess{}))(matchInliers,
-                                                homography,
-                                                calibrationMatrix,
-                                                pose_view1ToView2,
-                                                pointsView1_m,
-                                                triangulatedFlags,
-                                                MIN_PARALLAX_DEG,
-                                                MIN_TRIANGULATED_COUNT);
+    bool isReconstructed{};
+    ASSERT_EQ(
+        ((reconstruction.*
+          getReconstructH(ReconstructHAccess{}))(matchInliers,
+                                                 homography,
+                                                 calibrationMatrix,
+                                                 pose_view1ToView2,
+                                                 pointsView1_m,
+                                                 triangulatedFlags,
+                                                 MIN_PARALLAX_DEG,
+                                                 MIN_TRIANGULATED_COUNT,
+                                                 isReconstructed)),
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS);
 
     ASSERT_TRUE(isReconstructed);
     /* Both assertions are fatal: the per-point checks below index vP3D by
@@ -359,16 +367,19 @@ TEST(TwoViewReconstruction, HomographyBranchRejectsAnEmptyInlierSet)
     std::vector<cv::Point3f> pointsView1_m;
     std::vector<bool>        triangulatedFlags;
 
-    const bool isReconstructed =
-        (reconstruction.*
-         getReconstructH(ReconstructHAccess{}))(matchInliers,
-                                                homography,
-                                                calibrationMatrix,
-                                                pose_view1ToView2,
-                                                pointsView1_m,
-                                                triangulatedFlags,
-                                                MIN_PARALLAX_DEG,
-                                                MIN_TRIANGULATED_COUNT);
+    bool isReconstructed{};
+    ASSERT_EQ(
+        ((reconstruction.*
+          getReconstructH(ReconstructHAccess{}))(matchInliers,
+                                                 homography,
+                                                 calibrationMatrix,
+                                                 pose_view1ToView2,
+                                                 pointsView1_m,
+                                                 triangulatedFlags,
+                                                 MIN_PARALLAX_DEG,
+                                                 MIN_TRIANGULATED_COUNT,
+                                                 isReconstructed)),
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS);
 
     EXPECT_FALSE(isReconstructed);
     EXPECT_TRUE(pointsView1_m.empty());

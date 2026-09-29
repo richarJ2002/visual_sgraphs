@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::monocularInitialization()
+TrackingStatus Tracking::monocularInitialization()
 {
     if (!isReadyToInitialize)
     {
@@ -67,7 +67,7 @@ void Tracking::monocularInitialization()
             }
 
             isReadyToInitialize = true;
-            return;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
     }
     else
@@ -77,22 +77,32 @@ void Tracking::monocularInitialization()
              (lastFrame.timeStamp - initialFrame.timeStamp > 1.0)))
         {
             isReadyToInitialize = false;
-            return;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
 
         // Find correspondences
         ORBmatcher matcher(0.9, true);
-        int        nmatches = matcher.searchForInitialization(initialFrame,
-                                                       currentFrame,
-                                                       previousMatchedPoints,
-                                                       iniMatches,
-                                                       100);
+        int        nmatches{};
+        if (matcher.searchForInitialization(initialFrame,
+                                            currentFrame,
+                                            previousMatchedPoints,
+                                            iniMatches,
+                                            nmatches,
+                                            100) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: searchForInitialization returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         // Check if there are enough correspondences
         if (nmatches < 100)
         {
             isReadyToInitialize = false;
-            return;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
 
         Sophus::SE3f Tcw;
@@ -137,9 +147,19 @@ void Tracking::monocularInitialization()
                              __func__);
             }
 
-            createInitialMapMonocular();
+            if (createInitialMapMonocular() !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: createInitialMapMonocular returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
     }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

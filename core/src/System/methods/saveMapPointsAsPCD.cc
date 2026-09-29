@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-bool System::saveMapPointsAsPCD(const string &filename_in)
+SystemStatus System::saveMapPointsAsPCD(const string &filename_in,
+                                        bool         &isSaved_out)
 {
     try
     {
@@ -39,7 +40,16 @@ bool System::saveMapPointsAsPCD(const string &filename_in)
         pcl::PointCloud<pcl::PointXYZ>::Ptr p_cloud(
             new pcl::PointCloud<pcl::PointXYZ>);
         std::vector<MapPoint *> mapPoints{};
-        if (p_atlas->getCurrentMap()->getAllMapPoints(mapPoints) !=
+        Map                    *p_atlasCurrentMap = nullptr;
+        if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_atlasCurrentMap->getAllMapPoints(mapPoints) !=
             MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -83,17 +93,20 @@ bool System::saveMapPointsAsPCD(const string &filename_in)
         // save the pointcloud
         pcl::io::savePCDFileBinary(filename_in + ".pcd", *p_cloud);
 
-        return true;
+        isSaved_out = true;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
     catch (const std::exception &e)
     {
         std::cerr << e.what() << std::endl;
-        return false;
+        isSaved_out = false;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
     catch (...)
     {
         std::cerr << "Unknows exeption" << std::endl;
-        return false;
+        isSaved_out = false;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 }
 

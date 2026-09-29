@@ -25,23 +25,42 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool System::isLost()
+SystemStatus System::isLost(bool &isLost_out)
 {
-    if (!p_atlas->isImuInitialized())
-        return false;
+    bool atlasIsImuInitialized{};
+    if (p_atlas->isImuInitialized(atlasIsImuInitialized) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!atlasIsImuInitialized)
+    {
+        isLost_out = false;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
+    }
     else
     {
         if ((p_tracker->state ==
              Tracking::LOST)) //||(mpTracker->mState==Tracking::RECENTLY_LOST))
-            return true;
+        {
+            isLost_out = true;
+            return SystemStatus::SYSTEM_STATUS_SUCCESS;
+        }
         else
-            return false;
+        {
+            isLost_out = false;
+            return SystemStatus::SYSTEM_STATUS_SUCCESS;
+        }
     }
 }
 

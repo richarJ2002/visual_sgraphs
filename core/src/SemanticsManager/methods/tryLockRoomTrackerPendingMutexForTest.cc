@@ -23,11 +23,13 @@ namespace vs_graphs
 namespace core
 {
 
-bool SemanticsManager::tryLockRoomTrackerPendingMutexForTest() const
+SemanticsManagerStatus SemanticsManager::tryLockRoomTrackerPendingMutexForTest(
+    bool &isLocked_out) const
 {
     std::unique_lock<std::mutex> currentRoomLock(currentRoomMutex,
                                                  std::try_to_lock);
-    return currentRoomLock.owns_lock();
+    isLocked_out = currentRoomLock.owns_lock();
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

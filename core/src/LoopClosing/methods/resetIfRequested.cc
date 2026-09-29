@@ -33,7 +33,7 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::resetIfRequested()
+LoopClosingStatus LoopClosing::resetIfRequested()
 {
     unique_lock<mutex> lock(resetMutex);
     if (isResetRequested)
@@ -70,11 +70,22 @@ void LoopClosing::resetIfRequested()
                 ++loopKeyFrameIt;
         }
 
+        unsigned long atlasLastInitKeyFrameId{};
+        if (p_atlas->getLastInitKeyFrameId(atlasLastInitKeyFrameId) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getLastInitKeyFrameId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         lastLoopKeyFrameId =
-            p_atlas->getLastInitKeyFrameId(); // TODO old variable, it is not
-                                              // use in the new algorithm
+            atlasLastInitKeyFrameId; // TODO old variable, it is not
+                                     // use in the new algorithm
         isResetActiveMapRequested = false;
     }
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

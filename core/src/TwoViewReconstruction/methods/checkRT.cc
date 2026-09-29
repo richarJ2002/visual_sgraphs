@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-int TwoViewReconstruction::checkRT(const Eigen::Matrix3f      &R_in,
+TwoViewReconstructionStatus
+    TwoViewReconstruction::checkRT(const Eigen::Matrix3f      &R_in,
                                    const Eigen::Vector3f      &t_in,
                                    const vector<cv::KeyPoint> &keys1_in,
                                    const vector<cv::KeyPoint> &keys2_in,
@@ -41,7 +42,8 @@ int TwoViewReconstruction::checkRT(const Eigen::Matrix3f      &R_in,
                                    vector<cv::Point3f>   &vP3D_inout,
                                    float                  threshold2_in,
                                    vector<bool>          &goodFlags_out,
-                                   float                 &parallax_out)
+                                   float                 &parallax_out,
+                                   int                   &goodPointCount_out)
 {
     // Calibration parameters
     const float fx = K_in(0, 0);
@@ -173,7 +175,8 @@ int TwoViewReconstruction::checkRT(const Eigen::Matrix3f      &R_in,
     else
         parallax_out = 0;
 
-    return goodCount;
+    goodPointCount_out = goodCount;
+    return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
 } // namespace core

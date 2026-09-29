@@ -26,17 +26,30 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-Eigen::Matrix3d rightJacobianSO3(const Eigen::Vector3d &rotationVector_in)
+G2oTypesStatus rightJacobianSO3(const Eigen::Vector3d &rotationVector_in,
+                                Eigen::Matrix3d       &rightJacobian_out)
 {
-    return rightJacobianSO3(rotationVector_in[0],
-                            rotationVector_in[1],
-                            rotationVector_in[2]);
+    Eigen::Matrix3d rightJacobian{};
+    if (rightJacobianSO3(rotationVector_in[0],
+                         rotationVector_in[1],
+                         rotationVector_in[2],
+                         rightJacobian) !=
+        G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rightJacobianSO3 returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    rightJacobian_out = rightJacobian;
+    return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
 }
 
 } // namespace core

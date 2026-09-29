@@ -35,11 +35,18 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::preintegrateIMU()
+TrackingStatus Tracking::preintegrateIMU()
 {
     if (!currentFrame.p_previousFrame)
     {
-        Verbose::printMess("non prev frame ", Verbose::VERBOSITY_NORMAL);
+        if (Verbose::printMess("non prev frame ", Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         if (currentFrame.setIntegrated() != FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -47,15 +54,22 @@ void Tracking::preintegrateIMU()
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        return;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     imuFromLastFrame.clear();
     imuFromLastFrame.reserve(queueImuData.size());
     if (queueImuData.size() == 0)
     {
-        Verbose::printMess("Not IMU data in mlQueueImuData!!",
-                           Verbose::VERBOSITY_NORMAL);
+        if (Verbose::printMess("Not IMU data in mlQueueImuData!!",
+                               Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         if (currentFrame.setIntegrated() != FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -63,7 +77,7 @@ void Tracking::preintegrateIMU()
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        return;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     while (true)
@@ -102,7 +116,7 @@ void Tracking::preintegrateIMU()
     if (n == 0)
     {
         cout << "Empty IMU measurements vector!!!\n";
-        return;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame =
@@ -176,12 +190,27 @@ void Tracking::preintegrateIMU()
 
         if (!p_imuPreintegratedFromLastKF)
             cout << "mpImuPreintegratedFromLastKF does not exist" << endl;
-        p_imuPreintegratedFromLastKF->integrateNewMeasurement(acceleration,
-                                                              angleVelocity,
-                                                              tstep);
-        pImuPreintegratedFromLastFrame->integrateNewMeasurement(acceleration,
-                                                                angleVelocity,
-                                                                tstep);
+        if (p_imuPreintegratedFromLastKF->integrateNewMeasurement(acceleration,
+                                                                  angleVelocity,
+                                                                  tstep) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: integrateNewMeasurement returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (pImuPreintegratedFromLastFrame
+                ->integrateNewMeasurement(acceleration, angleVelocity, tstep) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: integrateNewMeasurement returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
 
     currentFrame.p_imuPreintegratedFrame = pImuPreintegratedFromLastFrame;
@@ -198,6 +227,8 @@ void Tracking::preintegrateIMU()
 
     // Verbose::PrintMess("Preintegration is finished!! ",
     // Verbose::VERBOSITY_DEBUG);
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

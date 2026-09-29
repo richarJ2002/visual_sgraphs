@@ -32,10 +32,13 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::setAcceptKeyFrames(bool shouldAcceptKeyFrames_in)
+LocalMappingStatus
+    LocalMapping::setAcceptKeyFrames(bool shouldAcceptKeyFrames_in)
 {
     unique_lock<mutex> acceptLock(acceptMutex);
     shouldAcceptKeyFrames = shouldAcceptKeyFrames_in;
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

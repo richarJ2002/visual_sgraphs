@@ -50,21 +50,24 @@ namespace core
  *              and opening size come from, never in how the crossing test
  *              itself works.
  */
-bool segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
-                            const Eigen::Vector3d &segmentEnd_World_m_in,
-                            const Eigen::Vector4d &apertureEquation_World_in,
-                            const Eigen::Vector3d &apertureCentroid_World_m_in,
-                            const double           apertureWidth_m_in,
-                            const double           apertureHeight_m_in,
-                            const Eigen::Vector3d &groundNormal_World_in,
-                            const double           openingMargin_m_in,
-                            const double           minimumSideDistance_m_in)
+SemanticsManagerStatus
+    segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
+                           const Eigen::Vector3d &segmentEnd_World_m_in,
+                           const Eigen::Vector4d &apertureEquation_World_in,
+                           const Eigen::Vector3d &apertureCentroid_World_m_in,
+                           const double           apertureWidth_m_in,
+                           const double           apertureHeight_m_in,
+                           const Eigen::Vector3d &groundNormal_World_in,
+                           const double           openingMargin_m_in,
+                           const double           minimumSideDistance_m_in,
+                           bool                  &crossesAperture_out)
 {
     if (!segmentStart_World_m_in.allFinite() ||
         !segmentEnd_World_m_in.allFinite() ||
         !apertureCentroid_World_m_in.allFinite())
     {
-        return false;
+        crossesAperture_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     Eigen::Vector4d apertureEquation_World = apertureEquation_World_in;
@@ -72,7 +75,8 @@ bool segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
 
     if (!apertureEquation_World.allFinite() || apertureNormalNorm < 1e-8)
     {
-        return false;
+        crossesAperture_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     apertureEquation_World /= apertureNormalNorm;
@@ -88,7 +92,8 @@ bool segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
         std::abs(startSide_m) < minimumSideDistance_m_in ||
         std::abs(endSide_m) < minimumSideDistance_m_in)
     {
-        return false;
+        crossesAperture_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const double interpolation = startSide_m / (startSide_m - endSide_m);
@@ -96,7 +101,8 @@ bool segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
     if (!std::isfinite(interpolation) || interpolation < 0.0 ||
         interpolation > 1.0)
     {
-        return false;
+        crossesAperture_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d intersection_World_m =
@@ -116,9 +122,10 @@ bool segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
             groundNormal_World_in;
     const double horizontalOffset_m = horizontalOffset_World_m.norm();
 
-    return horizontalOffset_m <=
-               0.5 * apertureWidth_m_in + openingMargin_m_in &&
-           verticalOffset_m <= 0.5 * apertureHeight_m_in + openingMargin_m_in;
+    crossesAperture_out =
+        horizontalOffset_m <= 0.5 * apertureWidth_m_in + openingMargin_m_in &&
+        verticalOffset_m <= 0.5 * apertureHeight_m_in + openingMargin_m_in;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

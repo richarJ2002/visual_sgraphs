@@ -44,8 +44,9 @@ namespace core
  *               the transferred object must NOT enter the current map
  *               (it retires with the absorbed map instead).
  */
-bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
-                                   semantic::Passage *p_transferred_in)
+AtlasStatus resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
+                                          semantic::Passage *p_transferred_in,
+                                          bool              &wasResurfaced_out)
 {
     bool proxy_inoutIsRecoveryProxy{};
     if (!(p_proxy_inout == nullptr || p_transferred_in == nullptr ||
@@ -85,7 +86,8 @@ bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
         p_proxy_inout == p_transferred_in || !proxy_inoutIsRecoveryProxy ||
         proxy_inoutIsBad || transferred_inIsBad)
     {
-        return false;
+        wasResurfaced_out = false;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     Eigen::Vector3d transferredCentroid{};
@@ -428,7 +430,8 @@ bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
                  "\"map_id\":"
               << proxy_inoutMapId << ",\"passage_id\":" << proxy_inoutId << "}"
               << std::endl;
-    return true;
+    wasResurfaced_out = true;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -19,20 +19,33 @@
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool SemanticsManager::evaluateWallAdmissionEvidenceAdmissibleForTest(
-    geometric::Plane      *p_wall_in,
-    const Eigen::Vector3d &groundNormal_World_in) const
+SemanticsManagerStatus
+    SemanticsManager::evaluateWallAdmissionEvidenceAdmissibleForTest(
+        geometric::Plane      *p_wall_in,
+        const Eigen::Vector3d &groundNormal_World_in,
+        bool                  &isAdmissible_out) const
 {
-    return evaluateWallAdmissionEvidence(p_wall_in,
-                                         p_sysParams,
-                                         groundNormal_World_in)
-        .isAdmissible;
+    WallAdmissionEvidence admissionEvidence{};
+    if (evaluateWallAdmissionEvidence(p_wall_in,
+                                      p_sysParams,
+                                      groundNormal_World_in,
+                                      admissionEvidence) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: evaluateWallAdmissionEvidence returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    isAdmissible_out = admissionEvidence.isAdmissible;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -42,7 +42,16 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
 
     // get the ground planes from the Atlas
     std::vector<vs_graphs::core::geometric::Plane *> groundPlanes;
-    for (const auto &plane : p_atlas_in->getAllPlanes())
+    std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
+    if (p_atlas_in->getAllPlanes(atlasAllPlanes) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (const auto &plane : atlasAllPlanes)
     {
         geometric::Plane::PlaneVariant planeType{};
         if (plane->getPlaneType(planeType) !=
@@ -104,8 +113,17 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
             // set the biggest ground plane as the ground plane of the room
             // [TODO] - logic for when ground plane is not found within the
             // walls
-            if (p_givenRoom_inout->setGroundPlane(
-                    p_atlas_in->getBiggestGroundPlane()) !=
+            geometric::Plane *p_atlasBiggestGroundPlane = nullptr;
+            if (p_atlas_in->getBiggestGroundPlane(p_atlasBiggestGroundPlane) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getBiggestGroundPlane returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (p_givenRoom_inout->setGroundPlane(p_atlasBiggestGroundPlane) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

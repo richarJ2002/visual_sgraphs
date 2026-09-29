@@ -35,16 +35,16 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::matchRoomsToContext(Map *p_newMap_in)
+AtlasStatus Atlas::matchRoomsToContext(Map *p_newMap_in)
 {
     if (!p_newMap_in)
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
     /* Candidate generation is intentionally separate from P4 verification.
      * This legacy method used cross-map centroids/normals and transferred live
      * walls before verification; it is retained as a disabled compatibility
      * entry point until the verified merge seam exists. */
-    return;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
     /* Snapshot Atlas membership before taking the room-context lock. Map
      * creation takes these locks in the opposite sequence by necessity. */
@@ -54,12 +54,19 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
         vsGraphsAtlasLockOrderBeforeMapSnapshot();
     }
 #endif
-    const std::vector<Map *> allMaps = getAllMaps();
+    std::vector<Map *> allMaps{};
+    if (getAllMaps(allMaps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     std::unique_lock<std::mutex> lock(roomContextMutex);
 
     if (roomContextHistory.empty())
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
     /* Match BOTH detected rooms AND candidate/prospective rooms.
      * Candidate rooms need identity tags for cross-restart continuity. */
@@ -86,7 +93,7 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                     candidateRooms.end());
 
     if (newRooms.empty())
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
     std::vector<semantic::RoomContextSnapshot> allContext;
     for (const auto &entry : roomContextHistory)
@@ -94,7 +101,7 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
             allContext.push_back(snap);
 
     if (allContext.empty())
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
     for (semantic::Room *p_room : newRooms)
     {
@@ -497,6 +504,8 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                       << ", dist=" << bestDistance << " m)" << std::endl;
         }
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

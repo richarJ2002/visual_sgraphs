@@ -37,12 +37,14 @@ namespace core
  *        wall thickness apart, observed from opposite exterior sides, and
  *        overlapping in-plane footprint.
  */
-bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
-                               geometric::Plane      *p_second_in,
-                               double                 minimumThickness_m_in,
-                               double                 maximumThickness_m_in,
-                               double                 minimumOverlapRatio_in,
-                               const Eigen::Vector3d &groundNormal_World_in)
+SemanticsManagerStatus
+    arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
+                              geometric::Plane      *p_second_in,
+                              double                 minimumThickness_m_in,
+                              double                 maximumThickness_m_in,
+                              double                 minimumOverlapRatio_in,
+                              const Eigen::Vector3d &groundNormal_World_in,
+                              bool &arePlausibleTwinWallFaces_out)
 {
     bool firstIsBad{};
     if (!(p_first_in == nullptr) &&
@@ -67,7 +69,8 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
     if (p_first_in == nullptr || firstIsBad || p_second_in == nullptr ||
         secondIsBad || p_first_in == p_second_in)
     {
-        return false;
+        arePlausibleTwinWallFaces_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     bool arePlanesParallel2{};
@@ -83,7 +86,8 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
     }
     if (!arePlanesParallel2)
     {
-        return false;
+        arePlausibleTwinWallFaces_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     g2o::Plane3D firstGetGlobalEquation{};
@@ -112,7 +116,8 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
     if (!equation1.allFinite() || !equation2.allFinite() ||
         normalNorm1 < 1e-8 || normalNorm2 < 1e-8)
     {
-        return false;
+        arePlausibleTwinWallFaces_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     equation1 /= normalNorm1;
@@ -130,7 +135,8 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
     if (separation_m < minimumThickness_m_in ||
         separation_m > maximumThickness_m_in)
     {
-        return false;
+        arePlausibleTwinWallFaces_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* Opposite-exterior-side check, generalising isWallFaceForeignToRoom's
@@ -162,7 +168,8 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
     {
         /* Planes created before the stamp existed carry no face identity;
          * make no claim rather than a wrong one. */
-        return false;
+        arePlausibleTwinWallFaces_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     constexpr double minimumResolvableSide_m = 0.10;
@@ -182,7 +189,8 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
         std::abs(side2AtOrigin1) < minimumResolvableSide_m ||
         std::abs(side2AtOrigin2) < minimumResolvableSide_m)
     {
-        return false;
+        arePlausibleTwinWallFaces_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const bool oppositeAcrossPlane1 = (side1AtOrigin1 * side1AtOrigin2) < 0.0;
@@ -190,7 +198,8 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
 
     if (!oppositeAcrossPlane1 || !oppositeAcrossPlane2)
     {
-        return false;
+        arePlausibleTwinWallFaces_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* In-plane footprint overlap, projected onto one shared ground-anchored
@@ -220,22 +229,45 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
 
     double minimumU1 = 0.0, maximumU1 = 0.0, minimumV1 = 0.0, maximumV1 = 0.0;
     double minimumU2 = 0.0, maximumU2 = 0.0, minimumV2 = 0.0, maximumV2 = 0.0;
-    if (!projectPlaneFootprintOntoSharedAxes(p_first_in,
-                                             axisU_World,
-                                             axisV_World,
-                                             minimumU1,
-                                             maximumU1,
-                                             minimumV1,
-                                             maximumV1) ||
-        !projectPlaneFootprintOntoSharedAxes(p_second_in,
-                                             axisU_World,
-                                             axisV_World,
-                                             minimumU2,
-                                             maximumU2,
-                                             minimumV2,
-                                             maximumV2))
+    bool   isProjected{};
+    if (projectPlaneFootprintOntoSharedAxes(p_first_in,
+                                            axisU_World,
+                                            axisV_World,
+                                            minimumU1,
+                                            maximumU1,
+                                            minimumV1,
+                                            maximumV1,
+                                            isProjected) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        return false;
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: projectPlaneFootprintOntoSharedAxes returned a failure status "
+            "although it cannot fail; continuing as before.",
+            __func__);
+    }
+    bool isProjected2{};
+    if (!(!isProjected) &&
+        projectPlaneFootprintOntoSharedAxes(p_second_in,
+                                            axisU_World,
+                                            axisV_World,
+                                            minimumU2,
+                                            maximumU2,
+                                            minimumV2,
+                                            maximumV2,
+                                            isProjected2) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: projectPlaneFootprintOntoSharedAxes returned a failure status "
+            "although it cannot fail; continuing as before.",
+            __func__);
+    }
+    if (!isProjected || !isProjected2)
+    {
+        arePlausibleTwinWallFaces_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const double overlapU_m =
@@ -245,7 +277,8 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
 
     if (overlapU_m <= 0.0 || overlapV_m <= 0.0)
     {
-        return false;
+        arePlausibleTwinWallFaces_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const double overlapArea_m2 = overlapU_m * overlapV_m;
@@ -255,10 +288,13 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
 
     if (!std::isfinite(smallerArea_m2) || smallerArea_m2 < 1e-6)
     {
-        return false;
+        arePlausibleTwinWallFaces_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    return (overlapArea_m2 / smallerArea_m2) >= minimumOverlapRatio_in;
+    arePlausibleTwinWallFaces_out =
+        (overlapArea_m2 / smallerArea_m2) >= minimumOverlapRatio_in;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

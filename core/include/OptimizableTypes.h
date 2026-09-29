@@ -27,6 +27,9 @@
 #define VS_GRAPHS_CORE_OPTIMIZABLETYPES_H
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
+#include "EdgeSE3KFPointToPlaneStatus.h"
+#include "EdgeVertexNPlaneProjectSE3RoomStatus.h"
+#include "EdgeVertexPlaneProjectSE3KFStatus.h"
 #include "Thirdparty/g2o/g2o/core/base_multi_edge.h"
 #include "Thirdparty/g2o/g2o/core/base_unary_edge.h"
 #include "Thirdparty/g2o/g2o/types/isometry3d_mappings.h"
@@ -35,6 +38,7 @@
 #include <Thirdparty/g2o/g2o/types/sim3.h>
 #include <Thirdparty/g2o/g2o/types/types_six_dof_expmap.h>
 #include <Thirdparty/g2o/g2o/types/vertex_plane.h>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -488,7 +492,8 @@ class EdgeSE3KFPointToPlane : public g2o::BaseBinaryEdge<1,
     }
 
     // Checks if the plane distance d is in the correct direction
-    bool isDistanceCorrect()
+    [[nodiscard]] EdgeSE3KFPointToPlaneStatus
+        isDistanceCorrect(bool &isDistanceCorrect_out)
     {
         const g2o::VertexSE3Expmap *p_keyFrameGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
@@ -499,7 +504,9 @@ class EdgeSE3KFPointToPlane : public g2o::BaseBinaryEdge<1,
         Eigen::Isometry3d keyFramePose = p_keyFrameGpVertex->estimate();
         g2o::Plane3D localPlane = keyFramePose * p_planeGpVertex->estimate();
 
-        return (localPlane.coeffs()(3) > 0);
+        isDistanceCorrect_out = (localPlane.coeffs()(3) > 0);
+        return EdgeSE3KFPointToPlaneStatus::
+            EDGE_SE3_KFPOINT_TO_PLANE_STATUS_SUCCESS;
     }
 };
 
@@ -548,7 +555,8 @@ class EdgeVertexPlaneProjectSE3KF
     }
 
     // Checks if the plane distance d is in the correct direction
-    bool isDistanceCorrect()
+    [[nodiscard]] EdgeVertexPlaneProjectSE3KFStatus
+        isDistanceCorrect(bool &isDistanceCorrect_out)
     {
         const g2o::VertexSE3Expmap *p_keyFrameGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
@@ -559,7 +567,9 @@ class EdgeVertexPlaneProjectSE3KF
         Eigen::Isometry3d keyFramePose = p_keyFrameGpVertex->estimate();
         g2o::Plane3D localPlane = keyFramePose * p_planeGpVertex->estimate();
 
-        return (localPlane.coeffs()(3) > 0);
+        isDistanceCorrect_out = (localPlane.coeffs()(3) > 0);
+        return EdgeVertexPlaneProjectSE3KFStatus::
+            EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_SUCCESS;
     }
 };
 
@@ -907,7 +917,16 @@ class EdgeVertexNPlaneProjectSE3Room
             const g2o::VertexPlane *p_wallVertex =
                 static_cast<const g2o::VertexPlane *>(_vertices[vertexIndex]);
             Eigen::Vector4d plane = p_wallVertex->estimate().coeffs();
-            correctPlaneDirection(plane);
+            if (correctPlaneDirection(plane) !=
+                EdgeVertexNPlaneProjectSE3RoomStatus::
+                    EDGE_VERTEX_NPLANE_PROJECT_SE3_ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: correctPlaneDirection returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             walls.push_back(plane);
         }
 
@@ -932,10 +951,14 @@ class EdgeVertexNPlaneProjectSE3Room
     }
 
   protected:
-    void correctPlaneDirection(Eigen::Vector4d &plane_inout)
+    [[nodiscard]] EdgeVertexNPlaneProjectSE3RoomStatus
+        correctPlaneDirection(Eigen::Vector4d &plane_inout)
     {
         if (plane_inout(3) > 0)
             plane_inout *= -1;
+
+        return EdgeVertexNPlaneProjectSE3RoomStatus::
+            EDGE_VERTEX_NPLANE_PROJECT_SE3_ROOM_STATUS_SUCCESS;
     }
 };
 

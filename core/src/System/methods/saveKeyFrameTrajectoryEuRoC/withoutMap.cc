@@ -33,14 +33,21 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveKeyFrameTrajectoryEuRoC(const string &filename_in)
+SystemStatus System::saveKeyFrameTrajectoryEuRoC(const string &filename_in)
 {
     cout << endl
          << "Saving keyframe trajectory to " << filename_in << " ..." << endl;
 
-    vector<Map *> maps                 = p_atlas->getAllMaps();
-    Map          *p_biggerMap          = nullptr;
-    std::size_t   maximumKeyFrameCount = 0;
+    std::vector<Map *> maps{};
+    if (p_atlas->getAllMaps(maps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    Map        *p_biggerMap          = nullptr;
+    std::size_t maximumKeyFrameCount = 0;
     for (Map *p_map : maps)
     {
         std::vector<KeyFrame *> mapAllKeyFrames{};
@@ -71,7 +78,7 @@ void System::saveKeyFrameTrajectoryEuRoC(const string &filename_in)
     if (!p_biggerMap)
     {
         std::cout << "There is not a map!!" << std::endl;
-        return;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 
     std::vector<KeyFrame *> keyFrames{};
@@ -145,6 +152,8 @@ void System::saveKeyFrameTrajectoryEuRoC(const string &filename_in)
         }
     }
     f.close();
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

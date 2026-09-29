@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <opencv2/core/core.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "KeyFrame.h"
@@ -31,14 +32,25 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix4f Sim3Solver::find(vector<bool> &inliers12Flags_inout,
-                                 int          &inlierCount_inout)
+Sim3SolverStatus Sim3Solver::find(std::vector<bool> &inliers12Flags_inout,
+                                  int               &inlierCount_inout,
+                                  Eigen::Matrix4f   &transform_out)
 {
-    bool areIterationsExhausted;
-    return iterate(ransacMaxIterations,
-                   areIterationsExhausted,
-                   inliers12Flags_inout,
-                   inlierCount_inout);
+    bool            areIterationsExhausted;
+    Eigen::Matrix4f transform{};
+    if (iterate(ransacMaxIterations,
+                areIterationsExhausted,
+                inliers12Flags_inout,
+                inlierCount_inout,
+                transform) != Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: iterate returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    transform_out = transform;
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

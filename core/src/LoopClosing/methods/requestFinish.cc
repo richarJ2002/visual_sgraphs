@@ -32,11 +32,13 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::requestFinish()
+LoopClosingStatus LoopClosing::requestFinish()
 {
     unique_lock<mutex> lock(finishMutex);
     // cout << "LC: Finish requested" << endl;
     isFinishRequested = true;
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -24,17 +24,18 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
+SemanticsManagerStatus
+    SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
 {
     if (p_activeMap_in == nullptr)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
     if (currentRoomId != -1)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::vector<semantic::Room *> rooms{};
@@ -80,10 +81,20 @@ void SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
                              __func__);
             }
             currentRoomId = roomId;
-            p_atlas->setCurrentSemanticRoomIdentity(currentRoomId);
-            return;
+            if (p_atlas->setCurrentSemanticRoomIdentity(currentRoomId) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setCurrentSemanticRoomIdentity returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

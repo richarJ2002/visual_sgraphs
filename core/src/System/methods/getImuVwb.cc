@@ -25,15 +25,26 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-Eigen::Vector3f System::getImuVwb()
+SystemStatus System::getImuVwb(Eigen::Vector3f &imuVwb_out)
 {
-    return p_tracker->getImuVwb();
+    Eigen::Vector3f trackerImuVwb{};
+    if (p_tracker->getImuVwb(trackerImuVwb) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getImuVwb returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    imuVwb_out = trackerImuVwb;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

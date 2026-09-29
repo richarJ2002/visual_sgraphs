@@ -26,7 +26,9 @@ namespace core
 namespace IMU
 {
 
-Eigen::Vector3f Preintegrated::getDeltaVelocity(const Bias &referenceBias_in)
+PreintegratedStatus
+    Preintegrated::getDeltaVelocity(const Bias      &referenceBias_in,
+                                    Eigen::Vector3f &deltaVelocity_out)
 {
     std::unique_lock<std::mutex> lock(preintegrationMutex);
     Eigen::Vector3f              gyroBiasDelta, accelBiasDelta;
@@ -34,7 +36,8 @@ Eigen::Vector3f Preintegrated::getDeltaVelocity(const Bias &referenceBias_in)
         referenceBias_in.bwz - b.bwz;
     accelBiasDelta << referenceBias_in.bax - b.bax,
         referenceBias_in.bay - b.bay, referenceBias_in.baz - b.baz;
-    return dV + JVg * gyroBiasDelta + JVa * accelBiasDelta;
+    deltaVelocity_out = dV + JVg * gyroBiasDelta + JVa * accelBiasDelta;
+    return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
 } // namespace IMU

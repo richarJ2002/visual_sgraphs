@@ -26,6 +26,7 @@
 #include "Tracking.h"
 
 #include <iomanip>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,13 +34,31 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-void Tracking::trackStats2File()
+TrackingStatus Tracking::trackStats2File()
 {
     ofstream f;
     f.open("SessionInfo.txt");
     f << fixed;
-    f << "Number of KFs: " << p_atlas->getAllKeyFrames().size() << endl;
-    f << "Number of MPs: " << p_atlas->getAllMapPoints().size() << endl;
+    std::vector<KeyFrame *> atlasAllKeyFrames{};
+    if (p_atlas->getAllKeyFrames(atlasAllKeyFrames) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    f << "Number of KFs: " << atlasAllKeyFrames.size() << endl;
+    std::vector<MapPoint *> atlasAllMapPoints{};
+    if (p_atlas->getAllMapPoints(atlasAllMapPoints) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    f << "Number of MPs: " << atlasAllMapPoints.size() << endl;
 
     f << "OpenCV version: " << CV_VERSION << endl;
 
@@ -90,6 +109,8 @@ void Tracking::trackStats2File()
     }
 
     f.close();
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 #endif
 

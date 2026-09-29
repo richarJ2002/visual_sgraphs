@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addMapPoint(MapPoint *p_mapPoint_in)
+AtlasStatus Atlas::addMapPoint(MapPoint *p_mapPoint_in)
 {
     Map *p_ownerMap = nullptr;
     if (p_mapPoint_in->getMap(p_ownerMap) !=
@@ -49,6 +49,8 @@ void Atlas::addMapPoint(MapPoint *p_mapPoint_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

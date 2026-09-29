@@ -42,12 +42,20 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
-                                            unsigned long loopKeyFrameCount_in,
-                                            unsigned int  generation_in)
+LoopClosingStatus
+    LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
+                                           unsigned long loopKeyFrameCount_in,
+                                           unsigned int  generation_in)
 {
-    Verbose::printMess("Starting Global Bundle Adjustment",
-                       Verbose::VERBOSITY_NORMAL);
+    if (Verbose::printMess("Starting Global Bundle Adjustment",
+                           Verbose::VERBOSITY_NORMAL) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point timeStartFGba =
@@ -98,28 +106,51 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
 
     if (!isImuInitialized)
     {
-        Optimizer::globalBundleAdjustment(
-            p_activeMap_inout,
-            10,
-            &optimizerStopRequested,
-            loopKeyFrameCount_in,
-            false,
-            p_tracker->getMarkerImpact(),
-            &isGlobalBundleAdjustmentStopRequested);
+        double trackerGetMarkerImpact{};
+        if (p_tracker->getMarkerImpact(trackerGetMarkerImpact) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMarkerImpact returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (Optimizer::globalBundleAdjustment(
+                p_activeMap_inout,
+                10,
+                &optimizerStopRequested,
+                loopKeyFrameCount_in,
+                false,
+                trackerGetMarkerImpact,
+                &isGlobalBundleAdjustmentStopRequested) !=
+            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: globalBundleAdjustment returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
     else
     {
-        Optimizer::fullInertialBA(p_activeMap_inout,
-                                  7,
-                                  false,
-                                  loopKeyFrameCount_in,
-                                  &optimizerStopRequested,
-                                  false,
-                                  1e2F,
-                                  1e6F,
-                                  nullptr,
-                                  nullptr,
-                                  &isGlobalBundleAdjustmentStopRequested);
+        if (Optimizer::fullInertialBA(p_activeMap_inout,
+                                      7,
+                                      false,
+                                      loopKeyFrameCount_in,
+                                      &optimizerStopRequested,
+                                      false,
+                                      1e2F,
+                                      1e6F,
+                                      nullptr,
+                                      nullptr,
+                                      &isGlobalBundleAdjustmentStopRequested) !=
+            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: fullInertialBA returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
 #ifdef REGISTER_TIMES
@@ -149,7 +180,7 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
         {
             hasGbaFinished = true;
             isGbaRunning   = false;
-            return;
+            return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
         }
 
         bool activeMapIsImuInitialized{};
@@ -166,30 +197,80 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
         {
             hasGbaFinished = true;
             isGbaRunning   = false;
-            return;
+            return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
         }
 
         if (!optimizerStopRequested)
         {
-            Verbose::printMess("Global Bundle Adjustment finished",
-                               Verbose::VERBOSITY_NORMAL);
-            Verbose::printMess("Updating map ...", Verbose::VERBOSITY_NORMAL);
+            if (Verbose::printMess("Global Bundle Adjustment finished",
+                                   Verbose::VERBOSITY_NORMAL) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (Verbose::printMess("Updating map ...",
+                                   Verbose::VERBOSITY_NORMAL) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
 
-            p_localMapper->requestStop();
+            if (p_localMapper->requestStop() !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: requestStop returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             // Wait until Local Mapping has effectively stopped
 
             for (;;)
             {
-                if (!(!p_localMapper->isStopped() &&
-                      !p_localMapper->isFinished()))
+                bool localMapperIsStopped{};
+                if (p_localMapper->isStopped(localMapperIsStopped) !=
+                    LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isStopped returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                bool localMapperIsFinished{};
+                if ((!localMapperIsStopped) &&
+                    p_localMapper->isFinished(localMapperIsFinished) !=
+                        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isFinished returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (!(!localMapperIsStopped && !localMapperIsFinished))
                 {
                     break;
                 }
                 usleep(1000);
             }
 
-            std::unique_lock<std::mutex> semanticUpdateLock =
-                p_atlas->acquireSemanticUpdateLock();
+            std::unique_lock<std::mutex> semanticUpdateLock{};
+            if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: acquireSemanticUpdateLock returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             // Get Map Mutex
             unique_lock<mutex> lock(p_activeMap_inout->mapUpdateMutex);
@@ -299,8 +380,16 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                         }
                         else
                         {
-                            Verbose::printMess("Child velocity empty!! ",
-                                               Verbose::VERBOSITY_NORMAL);
+                            if (Verbose::printMess("Child velocity empty!! ",
+                                                   Verbose::VERBOSITY_NORMAL) !=
+                                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: printMess returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
+                            }
                         }
 
                         IMU::Bias childImuBias{};
@@ -701,7 +790,14 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
             // mpTracker->GetLastKeyFrame()->getImuBias(),
             // mpTracker->GetLastKeyFrame());
 
-            p_localMapper->release();
+            if (p_localMapper->release() !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: release returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_EndUpdateMap =
@@ -720,12 +816,21 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                                   .count();
             fullGbaTotalTimes_ms.push_back(timeFGba);
 #endif
-            Verbose::printMess("Map updated!", Verbose::VERBOSITY_NORMAL);
+            if (Verbose::printMess("Map updated!", Verbose::VERBOSITY_NORMAL) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         hasGbaFinished = true;
         isGbaRunning   = false;
     }
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

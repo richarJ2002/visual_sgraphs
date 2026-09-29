@@ -16,6 +16,7 @@
  */
 
 #include "ImuTypes.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -24,7 +25,7 @@ namespace core
 namespace IMU
 {
 
-void Preintegrated::integrateNewMeasurement(
+PreintegratedStatus Preintegrated::integrateNewMeasurement(
     const Eigen::Vector3f &acceleration_in,
     const Eigen::Vector3f &angularVelocity_in,
     const float           &deltaTime_in)
@@ -86,7 +87,16 @@ void Preintegrated::integrateNewMeasurement(
 
     // Update delta rotation
     IntegratedRotation integratedRotation(angularVelocity_in, b, deltaTime_in);
-    dR = normalizeRotation(dR * integratedRotation.deltaR);
+    Eigen::Matrix3f    rotation2{};
+    if (normalizeRotation(dR * integratedRotation.deltaR, rotation2) !=
+        ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: normalizeRotation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    dR = rotation2;
 
     // Compute rotation parts of matrices A and B
     stateTransitionMatrix.block<3, 3>(0, 0) =
@@ -107,6 +117,8 @@ void Preintegrated::integrateNewMeasurement(
 
     // Total integrated time
     dT += deltaTime_in;
+
+    return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
 } // namespace IMU

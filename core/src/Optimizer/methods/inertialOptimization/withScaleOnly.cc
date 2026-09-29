@@ -34,9 +34,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::inertialOptimization(Map             *p_map_in,
-                                     Eigen::Matrix3d &Rwg_inout,
-                                     double          &scale_inout)
+OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
+                                                Eigen::Matrix3d &Rwg_inout,
+                                                double          &scale_inout)
 {
     int           its = 10;
     unsigned long maximumKeyFrameIdValue{};
@@ -156,16 +156,24 @@ void Optimizer::inertialOptimization(Map             *p_map_in,
                 !p_secondPoseVertex || !p_secondVelocityVertex ||
                 !p_gravityDirectionVertex || !p_scaleVertex)
             {
-                Verbose::printMess(
-                    "Error" + to_string(p_firstPoseVertex->id()) + ", " +
-                        to_string(p_firstVelocityVertex->id()) + ", " +
-                        to_string(p_gyroBiasVertex->id()) + ", " +
-                        to_string(p_accelerometerBiasVertex->id()) + ", " +
-                        to_string(p_secondPoseVertex->id()) + ", " +
-                        to_string(p_secondVelocityVertex->id()) + ", " +
-                        to_string(p_gravityDirectionVertex->id()) + ", " +
-                        to_string(p_scaleVertex->id()),
-                    Verbose::VERBOSITY_NORMAL);
+                if (Verbose::printMess(
+                        "Error" + to_string(p_firstPoseVertex->id()) + ", " +
+                            to_string(p_firstVelocityVertex->id()) + ", " +
+                            to_string(p_gyroBiasVertex->id()) + ", " +
+                            to_string(p_accelerometerBiasVertex->id()) + ", " +
+                            to_string(p_secondPoseVertex->id()) + ", " +
+                            to_string(p_secondVelocityVertex->id()) + ", " +
+                            to_string(p_gravityDirectionVertex->id()) + ", " +
+                            to_string(p_scaleVertex->id()),
+                        Verbose::VERBOSITY_NORMAL) !=
+                    VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: printMess returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 continue;
             }
@@ -216,6 +224,8 @@ void Optimizer::inertialOptimization(Map             *p_map_in,
     // Recover optimized data
     scale_inout = p_scaleVertex->estimate();
     Rwg_inout   = p_gravityDirectionVertex->estimate().Rwg;
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

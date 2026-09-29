@@ -17,15 +17,26 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void SemanticsManager::processRoomTrackerPendingForTest(double now_s_in)
+SemanticsManagerStatus
+    SemanticsManager::processRoomTrackerPendingForTest(double now_s_in)
 {
-    updateRoomTrackerState(now_s_in);
+    if (updateRoomTrackerState(now_s_in) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateRoomTrackerState returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

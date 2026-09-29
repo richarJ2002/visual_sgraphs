@@ -24,6 +24,7 @@
 
 #include "KeyFrame.h"
 #include "MapPoint.h"
+#include "Sim3SolverStatus.h"
 
 namespace vs_graphs
 {
@@ -227,49 +228,78 @@ class Sim3Solver
             }
         }
 
-        fromCameraToImage(points3Dc1, points1im1, p_firstCamera);
-        fromCameraToImage(points3Dc2, points2im2, p_secondCamera);
+        if (fromCameraToImage(points3Dc1, points1im1, p_firstCamera) !=
+            Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: fromCameraToImage returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (fromCameraToImage(points3Dc2, points2im2, p_secondCamera) !=
+            Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: fromCameraToImage returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        setRansacParameters();
+        if (setRansacParameters() !=
+            Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setRansacParameters returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
-    void setRansacParameters(double probability_in       = 0.99,
-                             int    minimumInliers_in    = 6,
-                             int    maximumIterations_in = 300);
+    [[nodiscard]] Sim3SolverStatus
+        setRansacParameters(double probability_in       = 0.99,
+                            int    minimumInliers_in    = 6,
+                            int    maximumIterations_in = 300);
 
-    Eigen::Matrix4f find(std::vector<bool> &inliers12Flags_inout,
-                         int               &inlierCount_inout);
+    [[nodiscard]] Sim3SolverStatus find(std::vector<bool> &inliers12Flags_inout,
+                                        int               &inlierCount_inout,
+                                        Eigen::Matrix4f   &transform_out);
 
-    Eigen::Matrix4f iterate(int                iterationCount_in,
-                            bool              &areIterationsExhausted_out,
-                            std::vector<bool> &inliersFlags_out,
-                            int               &inlierCount_out);
-    Eigen::Matrix4f iterate(int           iterationCount_in,
-                            bool         &areIterationsExhausted_out,
-                            vector<bool> &inliersFlags_out,
-                            int          &inlierCount_out,
-                            bool         &hasConverged_out);
+    [[nodiscard]] Sim3SolverStatus iterate(int   iterationCount_in,
+                                           bool &areIterationsExhausted_out,
+                                           std::vector<bool> &inliersFlags_out,
+                                           int               &inlierCount_out,
+                                           Eigen::Matrix4f   &transform_out);
+    [[nodiscard]] Sim3SolverStatus iterate(int   iterationCount_in,
+                                           bool &areIterationsExhausted_out,
+                                           vector<bool>    &inliersFlags_out,
+                                           int             &inlierCount_out,
+                                           bool            &hasConverged_out,
+                                           Eigen::Matrix4f &transform_out);
 
-    Eigen::Matrix4f getEstimatedTransformation();
-    Eigen::Matrix3f getEstimatedRotation();
-    Eigen::Vector3f getEstimatedTranslation();
-    float           getEstimatedScale();
+    [[nodiscard]] Sim3SolverStatus getEstimatedTransformation(
+        Eigen::Matrix4f &estimatedTransformation_out);
+    [[nodiscard]] Sim3SolverStatus
+        getEstimatedRotation(Eigen::Matrix3f &estimatedRotation_out);
+    [[nodiscard]] Sim3SolverStatus
+        getEstimatedTranslation(Eigen::Vector3f &estimatedTranslation_out);
+    [[nodiscard]] Sim3SolverStatus getEstimatedScale(float &estimatedScale_out);
 
   protected:
-    void computeCentroid(Eigen::Matrix3f &P_in,
-                         Eigen::Matrix3f &Pr_inout,
-                         Eigen::Vector3f &C_out);
+    [[nodiscard]] Sim3SolverStatus computeCentroid(Eigen::Matrix3f &P_in,
+                                                   Eigen::Matrix3f &Pr_inout,
+                                                   Eigen::Vector3f &C_out);
 
-    void computeSim3(Eigen::Matrix3f &P1_inout, Eigen::Matrix3f &P2_inout);
+    [[nodiscard]] Sim3SolverStatus computeSim3(Eigen::Matrix3f &P1_inout,
+                                               Eigen::Matrix3f &P2_inout);
 
-    void checkInliers();
+    [[nodiscard]] Sim3SolverStatus checkInliers();
 
-    void project(
+    [[nodiscard]] Sim3SolverStatus project(
         const std::vector<Eigen::Vector3f>              &vP3Dw_in,
         std::vector<Eigen::Vector2f>                    &points2D_out,
         Eigen::Matrix4f                                  Tcw_in,
         camera_models::geometriccamera::GeometricCamera *p_camera_inout);
-    void fromCameraToImage(
+    [[nodiscard]] Sim3SolverStatus fromCameraToImage(
         const std::vector<Eigen::Vector3f>              &vP3Dc_in,
         std::vector<Eigen::Vector2f>                    &points2D_out,
         camera_models::geometriccamera::GeometricCamera *p_camera_inout);

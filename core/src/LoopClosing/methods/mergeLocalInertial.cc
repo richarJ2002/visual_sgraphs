@@ -45,7 +45,8 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
+LoopClosingStatus LoopClosing::mergeLocalInertial(
+    semantic::SemanticMergeDecision &localInertial_out)
 {
     /* Reject stale place-recognition candidates before stopping workers */
     bool currentKFIsBad{};
@@ -72,7 +73,8 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     if (p_currentKF == nullptr || p_mergeMatchedKF == nullptr ||
         currentKFIsBad || mergeMatchedKFIsBad)
     {
-        return semantic::SemanticMergeDecision::REJECT;
+        localInertial_out = semantic::SemanticMergeDecision::REJECT;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     Map *p_currentMap = nullptr;
@@ -114,12 +116,35 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                      "fail; continuing as before.",
                      __func__);
     }
+    bool atlasIsActiveMap{};
+    if (!(p_currentMap == nullptr || p_mergeMap == nullptr ||
+          p_currentMap == p_mergeMap || currentMapIsBad || mergeMapIsBad) &&
+        p_atlas->isActiveMap(p_currentMap, atlasIsActiveMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isActiveMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool atlasIsActiveMap2{};
+    if (!(p_currentMap == nullptr || p_mergeMap == nullptr ||
+          p_currentMap == p_mergeMap || currentMapIsBad || mergeMapIsBad ||
+          !atlasIsActiveMap) &&
+        p_atlas->isActiveMap(p_mergeMap, atlasIsActiveMap2) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isActiveMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_currentMap == nullptr || p_mergeMap == nullptr ||
         p_currentMap == p_mergeMap || currentMapIsBad || mergeMapIsBad ||
-        !p_atlas->isActiveMap(p_currentMap) ||
-        !p_atlas->isActiveMap(p_mergeMap))
+        !atlasIsActiveMap || !atlasIsActiveMap2)
     {
-        return semantic::SemanticMergeDecision::REJECT;
+        localInertial_out = semantic::SemanticMergeDecision::REJECT;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     int temporalKeyFrameCount = 11; // [TODO] Set by parameter
@@ -139,14 +164,39 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     bool shouldRelaunchBa = false;
 
     /* Stop and reclaim GBA before either map changes frame or ownership. */
-    shouldRelaunchBa = stopGlobalBundleAdjustment();
+    bool wasRunning{};
+    if (stopGlobalBundleAdjustment(wasRunning) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: stopGlobalBundleAdjustment returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    shouldRelaunchBa = wasRunning;
 
-    p_localMapper->requestStop();
+    if (p_localMapper->requestStop() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestStop returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Wait until Local Mapping has effectively stopped
     for (;;)
     {
-        if (p_localMapper->isStopped())
+        bool localMapperIsStopped{};
+        if (p_localMapper->isStopped(localMapperIsStopped) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isStopped returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (localMapperIsStopped)
         {
             break;
         }
@@ -154,8 +204,15 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     }
 
     /* Keep the inertial semantic transfer atomic for the complete merge. */
-    std::unique_lock<std::mutex> semanticUpdateLock =
-        p_atlas->acquireSemanticUpdateLock();
+    std::unique_lock<std::mutex> semanticUpdateLock{};
+    if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: acquireSemanticUpdateLock returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     bool currentKFIsBad2{};
     if (p_currentKF->isBad(currentKFIsBad2) !=
@@ -196,14 +253,45 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                      "fail; continuing as before.",
                      __func__);
     }
+    bool atlasIsActiveMap3{};
+    if (!(currentKFIsBad2 || mergeMatchedKFIsBad2 ||
+          p_currentKFMap != p_currentMap ||
+          p_mergeMatchedKFMap != p_mergeMap) &&
+        p_atlas->isActiveMap(p_currentMap, atlasIsActiveMap3) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isActiveMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool atlasIsActiveMap4{};
+    if (!(currentKFIsBad2 || mergeMatchedKFIsBad2 ||
+          p_currentKFMap != p_currentMap || p_mergeMatchedKFMap != p_mergeMap ||
+          !atlasIsActiveMap3) &&
+        p_atlas->isActiveMap(p_mergeMap, atlasIsActiveMap4) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isActiveMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (currentKFIsBad2 || mergeMatchedKFIsBad2 ||
         p_currentKFMap != p_currentMap || p_mergeMatchedKFMap != p_mergeMap ||
-        !p_atlas->isActiveMap(p_currentMap) ||
-        !p_atlas->isActiveMap(p_mergeMap))
+        !atlasIsActiveMap3 || !atlasIsActiveMap4)
     {
         semanticUpdateLock.unlock();
-        p_localMapper->release();
-        return semantic::SemanticMergeDecision::REJECT;
+        if (p_localMapper->release() !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: release returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        localInertial_out = semantic::SemanticMergeDecision::REJECT;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     semantic::SemanticVerifyConfig configuration{};
@@ -277,12 +365,28 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     if (semanticMergeGate.decision != semantic::SemanticMergeDecision::ACCEPT)
     {
         semanticUpdateLock.unlock();
-        p_localMapper->release();
+        if (p_localMapper->release() !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: release returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         if (shouldRelaunchBa)
         {
-            relaunchGlobalBundleAdjustment(p_currentMap);
+            if (relaunchGlobalBundleAdjustment(p_currentMap) !=
+                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: relaunchGlobalBundleAdjustment returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
-        return semanticMergeGate.decision;
+        localInertial_out = semanticMergeGate.decision;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     {
@@ -293,7 +397,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         std::unique_lock<std::mutex> currentMapUpdateLock(
             p_currentMap->mapUpdateMutex);
 
-        p_localMapper->emptyQueue();
+        if (p_localMapper->emptyQueue() !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: emptyQueue returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         std::chrono::steady_clock::time_point t2 =
             std::chrono::steady_clock::now();
@@ -319,9 +430,25 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_tracker->updateFrameIMU(s_on,
-                                  currentKFImuBias,
-                                  p_tracker->getLastKeyFrame());
+        KeyFrame *p_trackerLastKeyFrame = nullptr;
+        if (p_tracker->getLastKeyFrame(p_trackerLastKeyFrame) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getLastKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_tracker->updateFrameIMU(s_on,
+                                      currentKFImuBias,
+                                      p_trackerLastKeyFrame) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateFrameIMU returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         std::chrono::steady_clock::time_point t3 =
             std::chrono::steady_clock::now();
@@ -359,11 +486,34 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         Eigen::Vector3d bg, ba;
         bg << 0., 0., 0.;
         ba << 0., 0., 0.;
-        Optimizer::inertialOptimization(p_currentMap, bg, ba);
+        if (Optimizer::inertialOptimization(p_currentMap, bg, ba) !=
+            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: inertialOptimization returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         IMU::Bias b(ba[0], ba[1], ba[2], bg[0], bg[1], bg[2]);
         std::unique_lock<std::mutex> currentMapUpdateLock(
             p_currentMap->mapUpdateMutex);
-        p_tracker->updateFrameIMU(1.0f, b, p_tracker->getLastKeyFrame());
+        KeyFrame *p_trackerLastKeyFrame2 = nullptr;
+        if (p_tracker->getLastKeyFrame(p_trackerLastKeyFrame2) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getLastKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_tracker->updateFrameIMU(1.0f, b, p_trackerLastKeyFrame2) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateFrameIMU returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Set map initialized */
         if (p_currentMap->setInertialBA2() != MapStatus::MAP_STATUS_SUCCESS)
@@ -1014,7 +1164,15 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             }
             if (p_retainedFloor != nullptr)
             {
-                mergeFloorEvidenceAndRooms(p_retainedFloor, p_floor);
+                if (mergeFloorEvidenceAndRooms(p_retainedFloor, p_floor) !=
+                    LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: mergeFloorEvidenceAndRooms returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 continue;
             }
             if (p_floor->setMap(p_currentMap) !=
@@ -1035,7 +1193,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             }
         }
 
-        collapseMergedFloors(p_currentMap);
+        if (collapseMergedFloors(p_currentMap) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: collapseMergedFloors returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Rebuild derived free-space topology in the corrected map frame. */
         if (p_currentMap->setSkeletonClusterPoints({}) !=
@@ -1296,7 +1461,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     std::copy(mapPointMerges.begin(),
               mapPointMerges.end(),
               std::back_inserter(checkFuseMapPoints));
-    searchAndFuse(currentConnectedKeyFrames, checkFuseMapPoints);
+    if (searchAndFuse(currentConnectedKeyFrames, checkFuseMapPoints) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: searchAndFuse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (KeyFrame *p_keyFrame : currentConnectedKeyFrames)
     {
@@ -1362,9 +1534,28 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                          __func__);
         }
 
-        p_atlas->changeMap(p_currentMap);
-        p_atlas->setMapBad(p_mergeMap);
-        p_atlas->removeBadMaps();
+        if (p_atlas->changeMap(p_currentMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: changeMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_atlas->setMapBad(p_mergeMap) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMapBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_atlas->removeBadMaps() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: removeBadMaps returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
     };
     for (KeyFrame *p_keyFrame : mergeConnectedKFs)
     {
@@ -1397,15 +1588,30 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
     if (keyFrameNewCount >= 10)
     {
         bool      isStopRequested   = false;
-        KeyFrame *p_currentKeyFrame = p_tracker->getLastKeyFrame();
+        KeyFrame *p_currentKeyFrame = nullptr;
+        if (p_tracker->getLastKeyFrame(p_currentKeyFrame) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getLastKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (p_currentKeyFrame != nullptr)
         {
-            Optimizer::mergeInertialBA(p_currentKeyFrame,
-                                       p_mergeMatchedKF,
-                                       &isStopRequested,
-                                       p_currentMap,
-                                       CorrectedSim3);
+            if (Optimizer::mergeInertialBA(p_currentKeyFrame,
+                                           p_mergeMatchedKF,
+                                           &isStopRequested,
+                                           p_currentMap,
+                                           CorrectedSim3) !=
+                OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: mergeInertialBA returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             inertialBundleAdjustmentRan = true;
         }
     }
@@ -1576,7 +1782,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
      */
     semanticUpdateLock.unlock();
 
-    p_localMapper->release();
+    if (p_localMapper->release() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: release returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     bool currentMapIsImuInitialized{};
     if ((shouldRelaunchBa) &&
@@ -1598,14 +1811,32 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    if (shouldRelaunchBa &&
-        (!currentMapIsImuInitialized ||
-         (currentMapKeyFrameCount < 200 && p_atlas->countMaps() == 1)))
+    int atlasMaps{};
+    if ((shouldRelaunchBa) && !(!currentMapIsImuInitialized) &&
+        (currentMapKeyFrameCount < 200) &&
+        p_atlas->countMaps(atlasMaps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        relaunchGlobalBundleAdjustment(p_currentMap);
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (shouldRelaunchBa && (!currentMapIsImuInitialized ||
+                             (currentMapKeyFrameCount < 200 && atlasMaps == 1)))
+    {
+        if (relaunchGlobalBundleAdjustment(p_currentMap) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: relaunchGlobalBundleAdjustment returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
 
-    return semantic::SemanticMergeDecision::ACCEPT;
+    localInertial_out = semantic::SemanticMergeDecision::ACCEPT;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

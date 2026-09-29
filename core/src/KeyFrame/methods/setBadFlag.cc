@@ -309,7 +309,14 @@ KeyFrameStatus KeyFrame::setBadFlag()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    p_keyFrameDatabase->erase(this);
+    if (p_keyFrameDatabase->erase(this) !=
+        KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: erase returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

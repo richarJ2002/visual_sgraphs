@@ -31,9 +31,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3f Sim3Solver::getEstimatedRotation()
+Sim3SolverStatus
+    Sim3Solver::getEstimatedRotation(Eigen::Matrix3f &estimatedRotation_out)
 {
-    return bestRotation;
+    estimatedRotation_out = bestRotation;
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

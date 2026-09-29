@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::setLocalMapper(LocalMapping *p_localMapper_in)
+TrackingStatus Tracking::setLocalMapper(LocalMapping *p_localMapper_in)
 {
     p_localMapper = p_localMapper_in;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

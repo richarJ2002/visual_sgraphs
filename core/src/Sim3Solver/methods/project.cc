@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Sim3Solver::project(
+Sim3SolverStatus Sim3Solver::project(
     const vector<Eigen::Vector3f>                   &vP3Dw_in,
     vector<Eigen::Vector2f>                         &points2D_out,
     Eigen::Matrix4f                                  Tcw_in,
@@ -50,6 +50,8 @@ void Sim3Solver::project(
         Eigen::Vector2f point2d = p_camera_inout->project(P3Dc);
         points2D_out.push_back(point2d);
     }
+
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

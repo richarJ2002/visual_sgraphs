@@ -29,7 +29,7 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::erase(KeyFrame *p_keyFrame_in)
+KeyFrameDatabaseStatus KeyFrameDatabase::erase(KeyFrame *p_keyFrame_in)
 {
     unique_lock<mutex> lock(databaseMutex);
 
@@ -55,6 +55,8 @@ void KeyFrameDatabase::erase(KeyFrame *p_keyFrame_in)
             }
         }
     }
+
+    return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
 } // namespace core

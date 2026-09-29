@@ -21,6 +21,7 @@
 #include "private_functions.h"
 
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -48,35 +49,63 @@ namespace core
  *
  * @return          False when the supporting lines are parallel.
  */
-bool intersectSupportingLines(const FiniteWallSegment2d &firstSegment_in,
-                              const FiniteWallSegment2d &secondSegment_in,
-                              Eigen::Vector2d &intersection_World_m_out,
-                              double          &firstParameter_out,
-                              double          &secondParameter_out)
+SemanticsManagerStatus
+    intersectSupportingLines(const FiniteWallSegment2d &firstSegment_in,
+                             const FiniteWallSegment2d &secondSegment_in,
+                             Eigen::Vector2d &intersection_World_m_out,
+                             double          &firstParameter_out,
+                             double          &secondParameter_out,
+                             bool            &hasIntersection_out)
 {
     const Eigen::Vector2d firstDirection =
         firstSegment_in.end_World_m - firstSegment_in.start_World_m;
     const Eigen::Vector2d secondDirection =
         secondSegment_in.end_World_m - secondSegment_in.start_World_m;
-    const double denominator = crossProduct2d(firstDirection, secondDirection);
+    double denominator{};
+    if (crossProduct2d(firstDirection, secondDirection, denominator) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: crossProduct2d returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (!std::isfinite(denominator) || std::abs(denominator) < 1e-8)
     {
-        return false;
+        hasIntersection_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const Eigen::Vector2d startOffset =
         secondSegment_in.start_World_m - firstSegment_in.start_World_m;
-    firstParameter_out =
-        crossProduct2d(startOffset, secondDirection) / denominator;
-    secondParameter_out =
-        crossProduct2d(startOffset, firstDirection) / denominator;
+    double crossProduct{};
+    if (crossProduct2d(startOffset, secondDirection, crossProduct) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: crossProduct2d returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    firstParameter_out = crossProduct / denominator;
+    double crossProduct2{};
+    if (crossProduct2d(startOffset, firstDirection, crossProduct2) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: crossProduct2d returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    secondParameter_out = crossProduct2 / denominator;
     intersection_World_m_out =
         firstSegment_in.start_World_m + firstParameter_out * firstDirection;
 
-    return intersection_World_m_out.allFinite() &&
-           std::isfinite(firstParameter_out) &&
-           std::isfinite(secondParameter_out);
+    hasIntersection_out = intersection_World_m_out.allFinite() &&
+                          std::isfinite(firstParameter_out) &&
+                          std::isfinite(secondParameter_out);
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -32,9 +32,11 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-void System::insertTrackTime(double &time_inout)
+SystemStatus System::insertTrackTime(double &time_inout)
 {
     p_tracker->trackTotalTimes_ms.push_back(time_inout);
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 #endif
 

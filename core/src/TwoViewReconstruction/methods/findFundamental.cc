@@ -22,6 +22,7 @@
 
 #include "Thirdparty/DBoW2/DUtils/Random.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 using namespace std;
@@ -30,9 +31,10 @@ namespace vs_graphs
 namespace core
 {
 
-void TwoViewReconstruction::findFundamental(vector<bool>    &inliersFlags_inout,
-                                            float           &score_inout,
-                                            Eigen::Matrix3f &F21_out)
+TwoViewReconstructionStatus TwoViewReconstruction::findFundamental(
+    std::vector<bool> &inliersFlags_inout,
+    float             &score_inout,
+    Eigen::Matrix3f   &F21_out)
 {
     // Number of putative matches
     const int N = inliersFlags_inout.size();
@@ -40,8 +42,22 @@ void TwoViewReconstruction::findFundamental(vector<bool>    &inliersFlags_inout,
     // Normalize coordinates
     vector<cv::Point2f> normalizedPoints1, normalizedPoints2;
     Eigen::Matrix3f     T1, T2;
-    normalize(keys1, normalizedPoints1, T1);
-    normalize(keys2, normalizedPoints2, T2);
+    if (normalize(keys1, normalizedPoints1, T1) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: normalize returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (normalize(keys2, normalizedPoints2, T2) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: normalize returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     Eigen::Matrix3f T2t = T2.transpose();
 
     // Best Results variables
@@ -70,11 +86,28 @@ void TwoViewReconstruction::findFundamental(vector<bool>    &inliersFlags_inout,
                 normalizedPoints2[matches12[matchIndex].second];
         }
 
-        Eigen::Matrix3f Fn = computeF21(sampledPoints1, sampledPoints2);
+        Eigen::Matrix3f Fn{};
+        if (computeF21(sampledPoints1, sampledPoints2, Fn) !=
+            TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeF21 returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         F21i = T2t * Fn * T1;
 
-        currentScore = checkFundamental(F21i, currentInliersFlags, sigma);
+        float score2{};
+        if (checkFundamental(F21i, currentInliersFlags, sigma, score2) !=
+            TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkFundamental returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        currentScore = score2;
 
         if (currentScore > score_inout)
         {
@@ -83,6 +116,8 @@ void TwoViewReconstruction::findFundamental(vector<bool>    &inliersFlags_inout,
             score_inout        = currentScore;
         }
     }
+
+    return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
 } // namespace core

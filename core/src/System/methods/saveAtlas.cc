@@ -27,27 +27,43 @@
 
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool System::saveAtlas(int type_in)
+SystemStatus System::saveAtlas(int type_in, bool &isSaved_out)
 {
     try
     {
         if (!saveAtlasFile.empty())
         {
             // Save the current session
-            p_atlas->preSave();
+            if (p_atlas->preSave() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: preSave returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             string pathSaveFileName = "./";
             pathSaveFileName        = pathSaveFileName.append(saveAtlasFile);
             pathSaveFileName        = pathSaveFileName.append(".osa");
 
-            string vocabularyChecksum =
-                calculateCheckSum(vocabularyFilePath, TEXT_FILE);
+            string vocabularyChecksum{};
+            if (calculateCheckSum(vocabularyFilePath,
+                                  TEXT_FILE,
+                                  vocabularyChecksum) !=
+                SystemStatus::SYSTEM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: calculateCheckSum returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             std::size_t found          = vocabularyFilePath.find_last_of("/\\");
             string      vocabularyName = vocabularyFilePath.substr(found + 1);
 
@@ -81,15 +97,18 @@ bool System::saveAtlas(int type_in)
     catch (const std::exception &e)
     {
         std::cerr << e.what() << std::endl;
-        return false;
+        isSaved_out = false;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
     catch (...)
     {
         std::cerr << "Unknows exeption" << std::endl;
-        return false;
+        isSaved_out = false;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 
-    return true;
+    isSaved_out = true;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

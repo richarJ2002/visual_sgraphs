@@ -30,12 +30,14 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::clearAtlas()
+AtlasStatus Atlas::clearAtlas()
 {
     unique_lock<mutex> atlasLock(atlasMutex);
     maps.clear();
     p_activeMap        = static_cast<Map *>(nullptr);
     lastInitKeyFrameId = 0;
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

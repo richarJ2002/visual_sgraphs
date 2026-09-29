@@ -26,12 +26,20 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticSegmentation::addSegmentedFrameToBuffer(
+SemanticSegmentationStatus SemanticSegmentation::addSegmentedFrameToBuffer(
     std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in)
 {
-    const std::uint64_t keyFrameId    = std::get<0>(*p_tuple_in);
-    KeyFrame           *p_keyFrame    = p_atlas->getKeyFrameById(keyFrameId);
-    Map                *p_keyFrameMap = nullptr;
+    const std::uint64_t keyFrameId = std::get<0>(*p_tuple_in);
+    KeyFrame           *p_keyFrame = nullptr;
+    if (p_atlas->getKeyFrameById(keyFrameId, p_keyFrame) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getKeyFrameById returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    Map *p_keyFrameMap = nullptr;
     if (!(p_keyFrame == nullptr) &&
         p_keyFrame->getMap(p_keyFrameMap) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -87,9 +95,18 @@ void SemanticSegmentation::addSegmentedFrameToBuffer(
 
     if (didDrop)
     {
-        recordTerminalOutcome(droppedItem.keyFrameId,
-                              TerminalOutcome::QUEUE_DROPPED);
+        if (recordTerminalOutcome(droppedItem.keyFrameId,
+                                  TerminalOutcome::QUEUE_DROPPED) !=
+            SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: recordTerminalOutcome returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
+
+    return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
 } // namespace core

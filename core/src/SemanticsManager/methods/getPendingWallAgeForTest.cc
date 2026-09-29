@@ -25,13 +25,17 @@ namespace vs_graphs
 namespace core
 {
 
-int SemanticsManager::getPendingWallAgeForTest(int wallId_in) const
+SemanticsManagerStatus SemanticsManager::getPendingWallAgeForTest(
+    int  wallId_in,
+    int &pendingWallAgeForTest_out) const
 {
     const std::unordered_map<int, UndefendedWallState>::const_iterator found =
         undefendedWalls.find(wallId_in);
-    return found == undefendedWalls.end()
-               ? -1
-               : static_cast<int>(found->second.unresolvedCycles);
+    pendingWallAgeForTest_out =
+        found == undefendedWalls.end()
+            ? -1
+            : static_cast<int>(found->second.unresolvedCycles);
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

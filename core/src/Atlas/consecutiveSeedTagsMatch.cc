@@ -39,11 +39,14 @@ namespace core
  *               means no prior link (e.g. loop closure between
  *               non-consecutive maps): not this path's job.
  */
-bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in)
+AtlasStatus consecutiveSeedTagsMatch(Map  *p_oldMap_in,
+                                     Map  *p_currentMap_in,
+                                     bool &isMatch_out)
 {
     if (p_oldMap_in == nullptr || p_currentMap_in == nullptr)
     {
-        return false;
+        isMatch_out = false;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     semantic::Room *p_oldFinalRoom = nullptr;
     if (p_oldMap_in->getFinalRoom(p_oldFinalRoom) !=
@@ -119,10 +122,11 @@ bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
-           oldFinalRoomHasRoomTag && newStartRoomHasRoomTag &&
-           !oldFinalRoomRoomTag.empty() &&
-           oldFinalRoomRoomTag2 == newStartRoomRoomTag;
+    isMatch_out = p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
+                  oldFinalRoomHasRoomTag && newStartRoomHasRoomTag &&
+                  !oldFinalRoomRoomTag.empty() &&
+                  oldFinalRoomRoomTag2 == newStartRoomRoomTag;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

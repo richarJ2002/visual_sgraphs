@@ -30,12 +30,13 @@ namespace vs_graphs
 namespace core
 {
 
-bool Atlas::consumeNewMapCreatedEvent()
+AtlasStatus Atlas::consumeNewMapCreatedEvent(bool &wasEventPending_out)
 {
     std::lock_guard<std::mutex> contextLock(roomContextMutex);
     const bool                  wasCreated = isNewMapCreatedPending;
     isNewMapCreatedPending                 = false;
-    return wasCreated;
+    wasEventPending_out                    = wasCreated;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

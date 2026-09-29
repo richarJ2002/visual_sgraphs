@@ -54,7 +54,7 @@ namespace vs_graphs
 namespace core
 {
 
-void MLPnPsolver::checkInliers()
+MLPnPsolverStatus MLPnPsolver::checkInliers()
 {
     inlierCount = 0;
 
@@ -90,6 +90,8 @@ void MLPnPsolver::checkInliers()
             inlierFlags[keyPointIndex] = false;
         }
     }
+
+    return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

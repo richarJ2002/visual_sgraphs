@@ -25,6 +25,7 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -34,7 +35,7 @@ namespace core
 // Adaptive FAST threshold: lower thresholds when tracking degrades
 // In low-texture corridors, fewer features are extracted, so we lower the
 // threshold
-void Tracking::adjustFASTThreshold()
+TrackingStatus Tracking::adjustFASTThreshold()
 {
     // Count features in current frame
     int currentFeatureCount = currentFrame.keyPointCount;
@@ -43,7 +44,7 @@ void Tracking::adjustFASTThreshold()
     if (lastFrameFeatures == 0)
     {
         lastFrameFeatures = currentFeatureCount;
-        return;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     // Check if feature count dropped significantly
@@ -86,36 +87,116 @@ void Tracking::adjustFASTThreshold()
     }
 
     // Apply new thresholds if changed
-    if (newInitialThresholdFast !=
-            p_orbExtractorLeft->getInitialFastThreshold() ||
-        newMinimumThresholdFast !=
-            p_orbExtractorLeft->getMinimumFastThreshold())
+    int orbExtractorLeftGetInitialFastThreshold{};
+    if (p_orbExtractorLeft->getInitialFastThreshold(
+            orbExtractorLeftGetInitialFastThreshold) !=
+        ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
     {
-        p_orbExtractorLeft->setInitialFastThreshold(newInitialThresholdFast);
-        p_orbExtractorLeft->setMinimumFastThreshold(newMinimumThresholdFast);
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getInitialFastThreshold returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    int orbExtractorLeftGetMinimumFastThreshold{};
+    if (!(newInitialThresholdFast != orbExtractorLeftGetInitialFastThreshold) &&
+        p_orbExtractorLeft->getMinimumFastThreshold(
+            orbExtractorLeftGetMinimumFastThreshold) !=
+            ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMinimumFastThreshold returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (newInitialThresholdFast != orbExtractorLeftGetInitialFastThreshold ||
+        newMinimumThresholdFast != orbExtractorLeftGetMinimumFastThreshold)
+    {
+        if (p_orbExtractorLeft->setInitialFastThreshold(
+                newInitialThresholdFast) !=
+            ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: setInitialFastThreshold returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (p_orbExtractorLeft->setMinimumFastThreshold(
+                newMinimumThresholdFast) !=
+            ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: setMinimumFastThreshold returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (p_orbExtractorRight)
         {
-            p_orbExtractorRight->setInitialFastThreshold(
-                newInitialThresholdFast);
-            p_orbExtractorRight->setMinimumFastThreshold(
-                newMinimumThresholdFast);
+            if (p_orbExtractorRight->setInitialFastThreshold(
+                    newInitialThresholdFast) !=
+                ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setInitialFastThreshold returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (p_orbExtractorRight->setMinimumFastThreshold(
+                    newMinimumThresholdFast) !=
+                ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setMinimumFastThreshold returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
         if (p_iniOrbExtractor)
         {
-            p_iniOrbExtractor->setInitialFastThreshold(newInitialThresholdFast);
-            p_iniOrbExtractor->setMinimumFastThreshold(newMinimumThresholdFast);
+            if (p_iniOrbExtractor->setInitialFastThreshold(
+                    newInitialThresholdFast) !=
+                ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setInitialFastThreshold returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (p_iniOrbExtractor->setMinimumFastThreshold(
+                    newMinimumThresholdFast) !=
+                ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setMinimumFastThreshold returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
-        Verbose::printMess(
-            "[Tracking] Adaptive FAST: iniTh=" +
-                std::to_string(newInitialThresholdFast) +
-                " minTh=" + std::to_string(newMinimumThresholdFast) +
-                " (features=" + std::to_string(currentFeatureCount) +
-                " consecutive_low=" + std::to_string(consecutiveLowFeatures) +
-                ")",
-            Verbose::VERBOSITY_NORMAL);
+        if (Verbose::printMess(
+                "[Tracking] Adaptive FAST: iniTh=" +
+                    std::to_string(newInitialThresholdFast) +
+                    " minTh=" + std::to_string(newMinimumThresholdFast) +
+                    " (features=" + std::to_string(currentFeatureCount) +
+                    " consecutive_low=" +
+                    std::to_string(consecutiveLowFeatures) + ")",
+                Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     lastFrameFeatures = currentFeatureCount;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

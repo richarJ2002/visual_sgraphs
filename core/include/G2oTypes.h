@@ -26,6 +26,21 @@
 #ifndef G2OTYPES_H
 #define G2OTYPES_H
 
+#include "EdgeAccRWStatus.h"
+#include "EdgeGyroRWStatus.h"
+#include "EdgeInertialGSStatus.h"
+#include "EdgeInertialStatus.h"
+#include "EdgeMonoOnlyPoseStatus.h"
+#include "EdgeMonoStatus.h"
+#include "EdgePriorAccStatus.h"
+#include "EdgePriorGyroStatus.h"
+#include "EdgePriorPoseImuStatus.h"
+#include "EdgeStereoOnlyPoseStatus.h"
+#include "EdgeStereoStatus.h"
+#include "G2oTypesStatus.h"
+#include "GDirectionStatus.h"
+#include "ImuCamPoseStatus.h"
+#include "InvDepthPointStatus.h"
 #include "Thirdparty/g2o/g2o/core/base_binary_edge.h"
 #include "Thirdparty/g2o/g2o/core/base_multi_edge.h"
 #include "Thirdparty/g2o/g2o/core/base_unary_edge.h"
@@ -68,32 +83,46 @@ typedef Eigen::Matrix<double, 12, 12> Matrix12d;
 typedef Eigen::Matrix<double, 15, 15> Matrix15d;
 typedef Eigen::Matrix<double, 9, 9>   Matrix9d;
 
-Eigen::Matrix3d expSO3(const double angleAxisX_in,
-                       const double angleAxisY_in,
-                       const double angleAxisZ_in);
-Eigen::Matrix3d expSO3(const Eigen::Vector3d &rotationVector_in);
+[[nodiscard]] G2oTypesStatus expSO3(const double     angleAxisX_in,
+                                    const double     angleAxisY_in,
+                                    const double     angleAxisZ_in,
+                                    Eigen::Matrix3d &rotation_out);
+[[nodiscard]] G2oTypesStatus expSO3(const Eigen::Vector3d &rotationVector_in,
+                                    Eigen::Matrix3d       &rotation_out);
 
-Eigen::Vector3d logSO3(const Eigen::Matrix3d &rotationMatrix_in);
+[[nodiscard]] G2oTypesStatus logSO3(const Eigen::Matrix3d &rotationMatrix_in,
+                                    Eigen::Vector3d       &rotationVector_out);
 
-Eigen::Matrix3d
-    inverseRightJacobianSO3(const Eigen::Vector3d &rotationVector_in);
-Eigen::Matrix3d rightJacobianSO3(const Eigen::Vector3d &rotationVector_in);
-Eigen::Matrix3d rightJacobianSO3(const double angleAxisX_in,
-                                 const double angleAxisY_in,
-                                 const double angleAxisZ_in);
+[[nodiscard]] G2oTypesStatus
+    inverseRightJacobianSO3(const Eigen::Vector3d &rotationVector_in,
+                            Eigen::Matrix3d       &inverseRightJacobian_out);
+[[nodiscard]] G2oTypesStatus
+    rightJacobianSO3(const Eigen::Vector3d &rotationVector_in,
+                     Eigen::Matrix3d       &rightJacobian_out);
+[[nodiscard]] G2oTypesStatus
+    rightJacobianSO3(const double     angleAxisX_in,
+                     const double     angleAxisY_in,
+                     const double     angleAxisZ_in,
+                     Eigen::Matrix3d &rightJacobian_out);
 
-Eigen::Matrix3d computeSkewMatrix(const Eigen::Vector3d &angularVelocity_in);
-Eigen::Matrix3d inverseRightJacobianSO3(const double angleAxisX_in,
-                                        const double angleAxisY_in,
-                                        const double angleAxisZ_in);
+[[nodiscard]] G2oTypesStatus
+    computeSkewMatrix(const Eigen::Vector3d &angularVelocity_in,
+                      Eigen::Matrix3d       &skewMatrix_out);
+[[nodiscard]] G2oTypesStatus
+    inverseRightJacobianSO3(const double     angleAxisX_in,
+                            const double     angleAxisY_in,
+                            const double     angleAxisZ_in,
+                            Eigen::Matrix3d &inverseRightJacobian_out);
 
 template <typename T = double>
-Eigen::Matrix<T, 3, 3> normalizeRotation(const Eigen::Matrix<T, 3, 3> &R)
+G2oTypesStatus normalizeRotation(const Eigen::Matrix<T, 3, 3> &R,
+                                 Eigen::Matrix<T, 3, 3>       &rotation_out)
 {
     Eigen::JacobiSVD<Eigen::Matrix<T, 3, 3>> svd(R,
                                                  Eigen::ComputeFullU |
                                                      Eigen::ComputeFullV);
-    return svd.matrixU() * svd.matrixV().transpose();
+    rotation_out = svd.matrixU() * svd.matrixV().transpose();
+    return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
 }
 
 class ImuCamPose
@@ -324,21 +353,27 @@ class ImuCamPose
         DR.setIdentity();
     }
 
-    void setParam(const std::vector<Eigen::Matrix3d> &Rcw_in,
-                  const std::vector<Eigen::Vector3d> &tcw_in,
-                  const std::vector<Eigen::Matrix3d> &Rbc_in,
-                  const std::vector<Eigen::Vector3d> &tbc_in,
-                  const double                       &baselineFocalProduct_in);
+    [[nodiscard]] ImuCamPoseStatus
+        setParam(const std::vector<Eigen::Matrix3d> &Rcw_in,
+                 const std::vector<Eigen::Vector3d> &tcw_in,
+                 const std::vector<Eigen::Matrix3d> &Rbc_in,
+                 const std::vector<Eigen::Vector3d> &tbc_in,
+                 const double                       &baselineFocalProduct_in);
 
-    void update(const double *p_updateVector_in); // update in the imu reference
-    void updateW(
+    [[nodiscard]] ImuCamPoseStatus
+        update(const double *p_updateVector_in); // update in the imu reference
+    [[nodiscard]] ImuCamPoseStatus updateW(
         const double *p_updateVector_in); // update in the world reference
-    Eigen::Vector2d project(const Eigen::Vector3d &Xw_in,
-                            int cameraIndex_in = 0) const; // Mono
-    Eigen::Vector3d projectStereo(const Eigen::Vector3d &Xw_in,
-                                  int cameraIndex_in = 0) const; // Stereo
-    bool            isDepthPositive(const Eigen::Vector3d &Xw_in,
-                                    int                    cameraIndex_in = 0) const;
+    [[nodiscard]] ImuCamPoseStatus
+        project(const Eigen::Vector3d &Xw_in,
+                Eigen::Vector2d       &projection_out,
+                int                    cameraIndex_in = 0) const; // Mono
+    [[nodiscard]] ImuCamPoseStatus
+         projectStereo(const Eigen::Vector3d &Xw_in,
+                       Eigen::Vector3d       &stereo_out,
+                       int cameraIndex_in = 0) const; // Stereo
+    bool isDepthPositive(const Eigen::Vector3d &Xw_in,
+                         int                    cameraIndex_in = 0) const;
 
   public:
     // For IMU
@@ -379,7 +414,8 @@ class InvDepthPoint
         bf(p_hostKeyFrame_inout->mbf)
     {}
 
-    void update(const double *p_inverseDepthDelta_in);
+    [[nodiscard]] InvDepthPointStatus
+        update(const double *p_inverseDepthDelta_in);
 
     double rho;
     double u, v; // they are not variables, observation in the host frame
@@ -411,7 +447,14 @@ class VertexPose : public g2o::BaseVertex<6, ImuCamPose>
 
     virtual void oplusImpl(const double *p_update_in)
     {
-        _estimate.update(p_update_in);
+        if (_estimate.update(p_update_in) !=
+            ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: update returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         updateCache();
     }
 };
@@ -458,7 +501,14 @@ class VertexPose4DoF : public g2o::BaseVertex<4, ImuCamPose>
         update6DoF[3] = p_update_in[1];
         update6DoF[4] = p_update_in[2];
         update6DoF[5] = p_update_in[3];
-        _estimate.updateW(update6DoF);
+        if (_estimate.updateW(update6DoF) !=
+            ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: updateW returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         updateCache();
     }
 };
@@ -621,10 +671,21 @@ class GDirection
         its(0)
     {}
 
-    void update(const double *p_pu_in)
+    [[nodiscard]] GDirectionStatus update(const double *p_pu_in)
     {
-        Rwg = Rwg * expSO3(p_pu_in[0], p_pu_in[1], 0.0);
+        Eigen::Matrix3d rotation{};
+        if (expSO3(p_pu_in[0], p_pu_in[1], 0.0, rotation) !=
+            G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: expSO3 returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        Rwg = Rwg * rotation;
         Rgw = Rwg.transpose();
+
+        return GDirectionStatus::GDIRECTION_STATUS_SUCCESS;
     }
 
     Eigen::Matrix3d Rwg, Rgw;
@@ -655,7 +716,14 @@ class VertexGDir : public g2o::BaseVertex<2, GDirection>
 
     virtual void oplusImpl(const double *p_update_in)
     {
-        _estimate.update(p_update_in);
+        if (_estimate.update(p_update_in) !=
+            GDirectionStatus::GDIRECTION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: update returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         updateCache();
     }
 };
@@ -722,7 +790,14 @@ class VertexInvDepth : public g2o::BaseVertex<1, InvDepthPoint>
 
     virtual void oplusImpl(const double *p_update_in)
     {
-        _estimate.update(p_update_in);
+        if (_estimate.update(p_update_in) !=
+            InvDepthPointStatus::INV_DEPTH_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: update returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         updateCache();
     }
 };
@@ -754,9 +829,18 @@ class EdgeMono
         const VertexPose *p_poseVertex =
             static_cast<const VertexPose *>(_vertices[1]);
         const Eigen::Vector2d observation(_measurement);
-        _error = observation -
-                 p_poseVertex->estimate().project(p_pointVertex->estimate(),
-                                                  cam_idx);
+        Eigen::Vector2d       projection{};
+        if (p_poseVertex->estimate().project(p_pointVertex->estimate(),
+                                             projection,
+                                             cam_idx) !=
+            ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: project returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        _error = observation - projection;
     }
 
     virtual void linearizeOplus();
@@ -772,22 +856,26 @@ class EdgeMono
             cam_idx);
     }
 
-    Eigen::Matrix<double, 2, 9> getJacobian()
+    [[nodiscard]] EdgeMonoStatus
+        getJacobian(Eigen::Matrix<double, 2, 9> &jacobian_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 2, 9> J;
         J.block<2, 3>(0, 0) = _jacobianOplusXi;
         J.block<2, 6>(0, 3) = _jacobianOplusXj;
-        return J;
+        jacobian_out        = J;
+        return EdgeMonoStatus::EDGE_MONO_STATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 9, 9> getHessian()
+    [[nodiscard]] EdgeMonoStatus
+        getHessian(Eigen::Matrix<double, 9, 9> &hessian_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 2, 9> J;
         J.block<2, 3>(0, 0) = _jacobianOplusXi;
         J.block<2, 6>(0, 3) = _jacobianOplusXj;
-        return J.transpose() * information() * J;
+        hessian_out         = J.transpose() * information() * J;
+        return EdgeMonoStatus::EDGE_MONO_STATUS_SUCCESS;
     }
 
   public:
@@ -819,7 +907,16 @@ class EdgeMonoOnlyPose
         const VertexPose *p_poseVertex =
             static_cast<const VertexPose *>(_vertices[0]);
         const Eigen::Vector2d observation(_measurement);
-        _error = observation - p_poseVertex->estimate().project(Xw, cam_idx);
+        Eigen::Vector2d       projection{};
+        if (p_poseVertex->estimate().project(Xw, projection, cam_idx) !=
+            ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: project returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        _error = observation - projection;
     }
 
     virtual void linearizeOplus();
@@ -831,10 +928,13 @@ class EdgeMonoOnlyPose
         return p_poseVertex->estimate().isDepthPositive(Xw, cam_idx);
     }
 
-    Eigen::Matrix<double, 6, 6> getHessian()
+    [[nodiscard]] EdgeMonoOnlyPoseStatus
+        getHessian(Eigen::Matrix<double, 6, 6> &hessian_out)
     {
         linearizeOplus();
-        return _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
+        hessian_out =
+            _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
+        return EdgeMonoOnlyPoseStatus::EDGE_MONO_ONLY_POSE_STATUS_SUCCESS;
     }
 
   public:
@@ -869,29 +969,42 @@ class EdgeStereo
         const VertexPose *p_poseVertex =
             static_cast<const VertexPose *>(_vertices[1]);
         const Eigen::Vector3d observation(_measurement);
-        _error = observation - p_poseVertex->estimate().projectStereo(
-                                   p_pointVertex->estimate(),
-                                   cam_idx);
+        Eigen::Vector3d       stereo{};
+        if (p_poseVertex->estimate().projectStereo(p_pointVertex->estimate(),
+                                                   stereo,
+                                                   cam_idx) !=
+            ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: projectStereo returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        _error = observation - stereo;
     }
 
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 3, 9> getJacobian()
+    [[nodiscard]] EdgeStereoStatus
+        getJacobian(Eigen::Matrix<double, 3, 9> &jacobian_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 3, 9> J;
         J.block<3, 3>(0, 0) = _jacobianOplusXi;
         J.block<3, 6>(0, 3) = _jacobianOplusXj;
-        return J;
+        jacobian_out        = J;
+        return EdgeStereoStatus::EDGE_STEREO_STATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 9, 9> getHessian()
+    [[nodiscard]] EdgeStereoStatus
+        getHessian(Eigen::Matrix<double, 9, 9> &hessian_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 3, 9> J;
         J.block<3, 3>(0, 0) = _jacobianOplusXi;
         J.block<3, 6>(0, 3) = _jacobianOplusXj;
-        return J.transpose() * information() * J;
+        hessian_out         = J.transpose() * information() * J;
+        return EdgeStereoStatus::EDGE_STEREO_STATUS_SUCCESS;
     }
 
   public:
@@ -923,16 +1036,27 @@ class EdgeStereoOnlyPose
         const VertexPose *p_poseVertex =
             static_cast<const VertexPose *>(_vertices[0]);
         const Eigen::Vector3d observation(_measurement);
-        _error =
-            observation - p_poseVertex->estimate().projectStereo(Xw, cam_idx);
+        Eigen::Vector3d       stereo{};
+        if (p_poseVertex->estimate().projectStereo(Xw, stereo, cam_idx) !=
+            ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: projectStereo returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        _error = observation - stereo;
     }
 
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 6, 6> getHessian()
+    [[nodiscard]] EdgeStereoOnlyPoseStatus
+        getHessian(Eigen::Matrix<double, 6, 6> &hessian_out)
     {
         linearizeOplus();
-        return _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
+        hessian_out =
+            _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
+        return EdgeStereoOnlyPoseStatus::EDGE_STEREO_ONLY_POSE_STATUS_SUCCESS;
     }
 
   public:
@@ -983,7 +1107,8 @@ class EdgeInertial : public g2o::BaseMultiEdge<9, Vector9d>
     void         computeError();
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 24, 24> getHessian()
+    [[nodiscard]] EdgeInertialStatus
+        getHessian(Eigen::Matrix<double, 24, 24> &hessian_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 24> J;
@@ -993,10 +1118,12 @@ class EdgeInertial : public g2o::BaseMultiEdge<9, Vector9d>
         J.block<9, 3>(0, 12) = _jacobianOplus[3];
         J.block<9, 6>(0, 15) = _jacobianOplus[4];
         J.block<9, 3>(0, 21) = _jacobianOplus[5];
-        return J.transpose() * information() * J;
+        hessian_out          = J.transpose() * information() * J;
+        return EdgeInertialStatus::EDGE_INERTIAL_STATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 18, 18> getHessianNoPose1()
+    [[nodiscard]] EdgeInertialStatus
+        getHessianNoPose1(Eigen::Matrix<double, 18, 18> &hessianNoPose1_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 18> J;
@@ -1005,16 +1132,19 @@ class EdgeInertial : public g2o::BaseMultiEdge<9, Vector9d>
         J.block<9, 3>(0, 6)  = _jacobianOplus[3];
         J.block<9, 6>(0, 9)  = _jacobianOplus[4];
         J.block<9, 3>(0, 15) = _jacobianOplus[5];
-        return J.transpose() * information() * J;
+        hessianNoPose1_out   = J.transpose() * information() * J;
+        return EdgeInertialStatus::EDGE_INERTIAL_STATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 9, 9> getHessian2()
+    [[nodiscard]] EdgeInertialStatus
+        getHessian2(Eigen::Matrix<double, 9, 9> &hessian2_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 9> J;
         J.block<9, 6>(0, 0) = _jacobianOplus[4];
         J.block<9, 3>(0, 6) = _jacobianOplus[5];
-        return J.transpose() * information() * J;
+        hessian2_out        = J.transpose() * information() * J;
+        return EdgeInertialStatus::EDGE_INERTIAL_STATUS_SUCCESS;
     }
 
     const Eigen::Matrix3d JRg, JVg, JPg;
@@ -1076,7 +1206,8 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
     const double          dt;
     Eigen::Vector3d       g, gI;
 
-    Eigen::Matrix<double, 27, 27> getHessian()
+    [[nodiscard]] EdgeInertialGSStatus
+        getHessian(Eigen::Matrix<double, 27, 27> &hessian_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 27> J;
@@ -1088,10 +1219,12 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
         J.block<9, 3>(0, 21) = _jacobianOplus[5];
         J.block<9, 2>(0, 24) = _jacobianOplus[6];
         J.block<9, 1>(0, 26) = _jacobianOplus[7];
-        return J.transpose() * information() * J;
+        hessian_out          = J.transpose() * information() * J;
+        return EdgeInertialGSStatus::EDGE_INERTIAL_GSSTATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 27, 27> getHessian2()
+    [[nodiscard]] EdgeInertialGSStatus
+        getHessian2(Eigen::Matrix<double, 27, 27> &hessian2_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 27> J;
@@ -1103,10 +1236,12 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
         J.block<9, 3>(0, 12) = _jacobianOplus[5];
         J.block<9, 6>(0, 15) = _jacobianOplus[0];
         J.block<9, 6>(0, 21) = _jacobianOplus[4];
-        return J.transpose() * information() * J;
+        hessian2_out         = J.transpose() * information() * J;
+        return EdgeInertialGSStatus::EDGE_INERTIAL_GSSTATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 9, 9> getHessian3()
+    [[nodiscard]] EdgeInertialGSStatus
+        getHessian3(Eigen::Matrix<double, 9, 9> &hessian3_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 9> J;
@@ -1114,35 +1249,44 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
         J.block<9, 3>(0, 3) = _jacobianOplus[3];
         J.block<9, 2>(0, 6) = _jacobianOplus[6];
         J.block<9, 1>(0, 8) = _jacobianOplus[7];
-        return J.transpose() * information() * J;
+        hessian3_out        = J.transpose() * information() * J;
+        return EdgeInertialGSStatus::EDGE_INERTIAL_GSSTATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 1, 1> getHessianScale()
+    [[nodiscard]] EdgeInertialGSStatus
+        getHessianScale(Eigen::Matrix<double, 1, 1> &hessianScale_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 1> J = _jacobianOplus[7];
-        return J.transpose() * information() * J;
+        hessianScale_out              = J.transpose() * information() * J;
+        return EdgeInertialGSStatus::EDGE_INERTIAL_GSSTATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 3, 3> getHessianBiasGyro()
+    [[nodiscard]] EdgeInertialGSStatus
+        getHessianBiasGyro(Eigen::Matrix<double, 3, 3> &hessianBiasGyro_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 3> J = _jacobianOplus[2];
-        return J.transpose() * information() * J;
+        hessianBiasGyro_out           = J.transpose() * information() * J;
+        return EdgeInertialGSStatus::EDGE_INERTIAL_GSSTATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 3, 3> getHessianBiasAcc()
+    [[nodiscard]] EdgeInertialGSStatus
+        getHessianBiasAcc(Eigen::Matrix<double, 3, 3> &hessianBiasAcc_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 3> J = _jacobianOplus[3];
-        return J.transpose() * information() * J;
+        hessianBiasAcc_out            = J.transpose() * information() * J;
+        return EdgeInertialGSStatus::EDGE_INERTIAL_GSSTATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 2, 2> getHessianGDir()
+    [[nodiscard]] EdgeInertialGSStatus
+        getHessianGDir(Eigen::Matrix<double, 2, 2> &hessianGDir_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 9, 2> J = _jacobianOplus[6];
-        return J.transpose() * information() * J;
+        hessianGDir_out               = J.transpose() * information() * J;
+        return EdgeInertialGSStatus::EDGE_INERTIAL_GSSTATUS_SUCCESS;
     }
 };
 
@@ -1180,19 +1324,23 @@ class EdgeGyroRW
         _jacobianOplusXj.setIdentity();
     }
 
-    Eigen::Matrix<double, 6, 6> getHessian()
+    [[nodiscard]] EdgeGyroRWStatus
+        getHessian(Eigen::Matrix<double, 6, 6> &hessian_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 3, 6> J;
         J.block<3, 3>(0, 0) = _jacobianOplusXi;
         J.block<3, 3>(0, 3) = _jacobianOplusXj;
-        return J.transpose() * information() * J;
+        hessian_out         = J.transpose() * information() * J;
+        return EdgeGyroRWStatus::EDGE_GYRO_RWSTATUS_SUCCESS;
     }
 
-    Eigen::Matrix3d getHessian2()
+    [[nodiscard]] EdgeGyroRWStatus getHessian2(Eigen::Matrix3d &hessian2_out)
     {
         linearizeOplus();
-        return _jacobianOplusXj.transpose() * information() * _jacobianOplusXj;
+        hessian2_out =
+            _jacobianOplusXj.transpose() * information() * _jacobianOplusXj;
+        return EdgeGyroRWStatus::EDGE_GYRO_RWSTATUS_SUCCESS;
     }
 };
 
@@ -1230,19 +1378,23 @@ class EdgeAccRW
         _jacobianOplusXj.setIdentity();
     }
 
-    Eigen::Matrix<double, 6, 6> getHessian()
+    [[nodiscard]] EdgeAccRWStatus
+        getHessian(Eigen::Matrix<double, 6, 6> &hessian_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 3, 6> J;
         J.block<3, 3>(0, 0) = _jacobianOplusXi;
         J.block<3, 3>(0, 3) = _jacobianOplusXj;
-        return J.transpose() * information() * J;
+        hessian_out         = J.transpose() * information() * J;
+        return EdgeAccRWStatus::EDGE_ACC_RWSTATUS_SUCCESS;
     }
 
-    Eigen::Matrix3d getHessian2()
+    [[nodiscard]] EdgeAccRWStatus getHessian2(Eigen::Matrix3d &hessian2_out)
     {
         linearizeOplus();
-        return _jacobianOplusXj.transpose() * information() * _jacobianOplusXj;
+        hessian2_out =
+            _jacobianOplusXj.transpose() * information() * _jacobianOplusXj;
+        return EdgeAccRWStatus::EDGE_ACC_RWSTATUS_SUCCESS;
     }
 };
 
@@ -1309,7 +1461,8 @@ class EdgePriorPoseImu : public g2o::BaseMultiEdge<15, Vector15d>
     void         computeError();
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 15, 15> getHessian()
+    [[nodiscard]] EdgePriorPoseImuStatus
+        getHessian(Eigen::Matrix<double, 15, 15> &hessian_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 15, 15> J;
@@ -1317,17 +1470,20 @@ class EdgePriorPoseImu : public g2o::BaseMultiEdge<15, Vector15d>
         J.block<15, 3>(0, 6)  = _jacobianOplus[1];
         J.block<15, 3>(0, 9)  = _jacobianOplus[2];
         J.block<15, 3>(0, 12) = _jacobianOplus[3];
-        return J.transpose() * information() * J;
+        hessian_out           = J.transpose() * information() * J;
+        return EdgePriorPoseImuStatus::EDGE_PRIOR_POSE_IMU_STATUS_SUCCESS;
     }
 
-    Eigen::Matrix<double, 9, 9> getHessianNoPose()
+    [[nodiscard]] EdgePriorPoseImuStatus
+        getHessianNoPose(Eigen::Matrix<double, 9, 9> &hessianNoPose_out)
     {
         linearizeOplus();
         Eigen::Matrix<double, 15, 9> J;
         J.block<15, 3>(0, 0) = _jacobianOplus[1];
         J.block<15, 3>(0, 3) = _jacobianOplus[2];
         J.block<15, 3>(0, 6) = _jacobianOplus[3];
-        return J.transpose() * information() * J;
+        hessianNoPose_out    = J.transpose() * information() * J;
+        return EdgePriorPoseImuStatus::EDGE_PRIOR_POSE_IMU_STATUS_SUCCESS;
     }
     Eigen::Matrix3d Rwb;
     Eigen::Vector3d twb, vwb;
@@ -1362,10 +1518,13 @@ class EdgePriorAcc
     }
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 3, 3> getHessian()
+    [[nodiscard]] EdgePriorAccStatus
+        getHessian(Eigen::Matrix<double, 3, 3> &hessian_out)
     {
         linearizeOplus();
-        return _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
+        hessian_out =
+            _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
+        return EdgePriorAccStatus::EDGE_PRIOR_ACC_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d bprior;
@@ -1398,10 +1557,13 @@ class EdgePriorGyro
     }
     virtual void linearizeOplus();
 
-    Eigen::Matrix<double, 3, 3> getHessian()
+    [[nodiscard]] EdgePriorGyroStatus
+        getHessian(Eigen::Matrix<double, 3, 3> &hessian_out)
     {
         linearizeOplus();
-        return _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
+        hessian_out =
+            _jacobianOplusXi.transpose() * information() * _jacobianOplusXi;
+        return EdgePriorGyroStatus::EDGE_PRIOR_GYRO_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d bprior;
@@ -1435,8 +1597,17 @@ class Edge4DoF
             static_cast<const VertexPose4DoF *>(_vertices[0]);
         const VertexPose4DoF *VPj =
             static_cast<const VertexPose4DoF *>(_vertices[1]);
-        _error << logSO3(VPi->estimate().Rcw[0] *
-                         VPj->estimate().Rcw[0].transpose() * dRij.transpose()),
+        Eigen::Vector3d rotationVector{};
+        if (logSO3(VPi->estimate().Rcw[0] * VPj->estimate().Rcw[0].transpose() *
+                       dRij.transpose(),
+                   rotationVector) != G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: logSO3 returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        _error << rotationVector,
             VPi->estimate().Rcw[0] * (-VPj->estimate().Rcw[0].transpose() *
                                       VPj->estimate().tcw[0]) +
                 VPi->estimate().tcw[0] - dtij;

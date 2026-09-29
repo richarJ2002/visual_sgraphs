@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::checkReplacedInLastFrame()
+TrackingStatus Tracking::checkReplacedInLastFrame()
 {
     for (int keyPointIndex = 0; keyPointIndex < lastFrame.keyPointCount;
          keyPointIndex++)
@@ -55,6 +55,8 @@ void Tracking::checkReplacedInLastFrame()
             }
         }
     }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

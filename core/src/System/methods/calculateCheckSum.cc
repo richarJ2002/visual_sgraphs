@@ -34,7 +34,9 @@ namespace vs_graphs
 namespace core
 {
 
-string System::calculateCheckSum(string filename_in, int type_in)
+SystemStatus System::calculateCheckSum(string  filename_in,
+                                       int     type_in,
+                                       string &checkSum_out)
 {
     string checksum = "";
 
@@ -47,7 +49,8 @@ string System::calculateCheckSum(string filename_in, int type_in)
     {
         cout << "[E] Unable to open the in file " << filename_in
              << " for Md5 hash." << endl;
-        return checksum;
+        checkSum_out = checksum;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 
     /*
@@ -62,14 +65,16 @@ string System::calculateCheckSum(string filename_in, int type_in)
     {
         cout << "[E] Unable to allocate the Md5 context for " << filename_in
              << "." << endl;
-        return checksum;
+        checkSum_out = checksum;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 
     if (EVP_DigestInit_ex(p_digestContext.get(), EVP_md5(), nullptr) != 1)
     {
         cout << "[E] Unable to start the Md5 hash of " << filename_in << "."
              << endl;
-        return checksum;
+        checkSum_out = checksum;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 
     char buffer[1024];
@@ -82,7 +87,8 @@ string System::calculateCheckSum(string filename_in, int type_in)
         {
             cout << "[E] Unable to hash the contents of " << filename_in << "."
                  << endl;
-            return checksum;
+            checkSum_out = checksum;
+            return SystemStatus::SYSTEM_STATUS_SUCCESS;
         }
     }
 
@@ -96,7 +102,8 @@ string System::calculateCheckSum(string filename_in, int type_in)
     {
         cout << "[E] Unable to finish the Md5 hash of " << filename_in << "."
              << endl;
-        return checksum;
+        checkSum_out = checksum;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 
     for (unsigned int byteIndex = 0; byteIndex < digestLengthBytes; byteIndex++)
@@ -106,7 +113,8 @@ string System::calculateCheckSum(string filename_in, int type_in)
         checksum = checksum + aux;
     }
 
-    return checksum;
+    checkSum_out = checksum;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

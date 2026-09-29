@@ -28,6 +28,7 @@
 
 #include "Atlas.h"
 #include "Frame.h"
+#include "FrameDrawerStatus.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -58,18 +59,20 @@ class FrameDrawer
     FrameDrawer(Atlas *p_atlas_in);
 
     // Update info from the last processed frame.
-    void update(Tracking *p_tracker_in);
+    [[nodiscard]] FrameDrawerStatus update(Tracking *p_tracker_in);
 
     // Draw last processed frame.
-    cv::Mat drawFrame(float imageScale_in = 1.f);
-    cv::Mat drawRightFrame(float imageScale_in = 1.f);
+    [[nodiscard]] FrameDrawerStatus drawFrame(cv::Mat &frameImage_out,
+                                              float    imageScale_in = 1.f);
+    [[nodiscard]] FrameDrawerStatus drawRightFrame(cv::Mat &frameImage_out,
+                                                   float imageScale_in = 1.f);
 
     bool shouldDrawBothImages;
 
   protected:
-    void drawTextInfo(cv::Mat &sourceImage_in,
-                      int      trackingState_in,
-                      cv::Mat &annotatedImage_out);
+    [[nodiscard]] FrameDrawerStatus drawTextInfo(cv::Mat &sourceImage_in,
+                                                 int      trackingState_in,
+                                                 cv::Mat &annotatedImage_out);
 
     // Info of the frame to be drawn
     cv::Mat              image, imageRight;

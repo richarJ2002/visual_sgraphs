@@ -24,15 +24,26 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void System::resetActiveMap()
+SystemStatus System::resetActiveMap()
 {
-    requestResetActiveMapWithCause(ResetCause::UNATTRIBUTED_PUBLIC_REQUEST);
+    if (requestResetActiveMapWithCause(
+            ResetCause::UNATTRIBUTED_PUBLIC_REQUEST) !=
+        SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestResetActiveMapWithCause returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

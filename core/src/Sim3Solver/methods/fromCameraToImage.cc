@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Sim3Solver::fromCameraToImage(
+Sim3SolverStatus Sim3Solver::fromCameraToImage(
     const vector<Eigen::Vector3f>                   &vP3Dc_in,
     vector<Eigen::Vector2f>                         &points2D_out,
     camera_models::geometriccamera::GeometricCamera *p_camera_inout)
@@ -45,6 +45,8 @@ void Sim3Solver::fromCameraToImage(
         Eigen::Vector2f point2d = p_camera_inout->project(vP3Dc_in[pointIndex]);
         points2D_out.push_back(point2d);
     }
+
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -34,7 +34,8 @@ namespace vs_graphs
 namespace core
 {
 
-bool Viewer::parseViewerParamFile(cv::FileStorage &settings_in)
+ViewerStatus Viewer::parseViewerParamFile(cv::FileStorage &settings_in,
+                                          bool            &isParsed_out)
 {
     bool isParameterMissing = false;
     imageViewerScale        = 1.f;
@@ -128,7 +129,8 @@ bool Viewer::parseViewerParamFile(cv::FileStorage &settings_in)
         isParameterMissing = true;
     }
 
-    return !isParameterMissing;
+    isParsed_out = !isParameterMissing;
+    return ViewerStatus::VIEWER_STATUS_SUCCESS;
 }
 
 } // namespace core

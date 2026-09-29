@@ -30,12 +30,19 @@ namespace vs_graphs
 namespace core
 {
 
-float ORBmatcher::radiusByViewingCos(const float &viewCos)
+ORBmatcherStatus ORBmatcher::radiusByViewingCos(const float &viewCos,
+                                                float       &radius_out)
 {
     if (viewCos > 0.998)
-        return 2.5;
+    {
+        radius_out = 2.5;
+        return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
+    }
     else
-        return 4.0;
+    {
+        radius_out = 4.0;
+        return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

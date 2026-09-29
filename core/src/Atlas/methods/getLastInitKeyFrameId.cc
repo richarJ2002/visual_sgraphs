@@ -30,10 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-unsigned long int Atlas::getLastInitKeyFrameId()
+AtlasStatus Atlas::getLastInitKeyFrameId(unsigned long &lastInitKeyFrameId_out)
 {
     unique_lock<mutex> lock(atlasMutex);
-    return lastInitKeyFrameId;
+    lastInitKeyFrameId_out = lastInitKeyFrameId;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

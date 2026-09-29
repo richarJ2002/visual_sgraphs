@@ -44,8 +44,15 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
     }
 
     /* Extract the existing rooms from the map */
-    const std::vector<vs_graphs::core::semantic::Room *> existingRooms =
-        p_atlas_inout->getAllRooms();
+    std::vector<vs_graphs::core::semantic::Room *> existingRooms{};
+    if (p_atlas_inout->getAllRooms(existingRooms) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /*!
      * Hard invariant, enforced at this single room-creation choke point
@@ -73,8 +80,15 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
      * free-space-skeleton-crosses-wall observation, never a toggled
      * passable/blocked state alone.
      */
-    const std::vector<vs_graphs::core::semantic::Passage *> currentMapPassages =
-        p_atlas_inout->getAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> currentMapPassages{};
+    if (p_atlas_inout->getAllPassages(currentMapPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     const std::size_t passablePassageCount = std::count_if(
         currentMapPassages.begin(),
         currentMapPassages.end(),
@@ -120,10 +134,26 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    const int roomId = stableRoomId_in.has_value()
-                           ? *stableRoomId_in
-                           : p_atlas_inout->reserveRoomIdentity();
-    p_atlas_inout->observeRoomIdentity(roomId);
+    int atlasRoomId{};
+    if (!(stableRoomId_in.has_value()) &&
+        p_atlas_inout->reserveRoomIdentity(atlasRoomId) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: reserveRoomIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const int roomId =
+        stableRoomId_in.has_value() ? *stableRoomId_in : atlasRoomId;
+    if (p_atlas_inout->observeRoomIdentity(roomId) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: observeRoomIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Create new room */
     vs_graphs::core::semantic::Room *p_newRoom =
@@ -150,7 +180,16 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (p_newRoom->setMap(p_atlas_inout->getCurrentMap()) !=
+    Map *p_atlasCurrentMap = nullptr;
+    if (p_atlas_inout->getCurrentMap(p_atlasCurrentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_newRoom->setMap(p_atlasCurrentMap) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

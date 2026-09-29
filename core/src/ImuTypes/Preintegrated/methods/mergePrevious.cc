@@ -18,6 +18,7 @@
 #include "ImuTypes.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -26,10 +27,11 @@ namespace core
 namespace IMU
 {
 
-void Preintegrated::mergePrevious(Preintegrated *p_previousPreintegrated_in)
+PreintegratedStatus
+    Preintegrated::mergePrevious(Preintegrated *p_previousPreintegrated_in)
 {
     if (p_previousPreintegrated_in == this)
-        return;
+        return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 
     std::unique_lock<std::mutex> currentLock(preintegrationMutex);
     std::unique_lock<std::mutex> previousLock(
@@ -46,23 +48,48 @@ void Preintegrated::mergePrevious(Preintegrated *p_previousPreintegrated_in)
         p_previousPreintegrated_in->measurements;
     const std::vector<Integrable> currentMeasurements = measurements;
 
-    initialize(mergedBias);
+    if (initialize(mergedBias) !=
+        PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: initialize returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     for (size_t measurementIndex = 0;
          measurementIndex < previousMeasurements.size();
          measurementIndex++)
     {
-        integrateNewMeasurement(previousMeasurements[measurementIndex].a,
-                                previousMeasurements[measurementIndex].w,
-                                previousMeasurements[measurementIndex].t);
+        if (integrateNewMeasurement(previousMeasurements[measurementIndex].a,
+                                    previousMeasurements[measurementIndex].w,
+                                    previousMeasurements[measurementIndex].t) !=
+            PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: integrateNewMeasurement returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
     for (size_t measurementIndex = 0;
          measurementIndex < currentMeasurements.size();
          measurementIndex++)
     {
-        integrateNewMeasurement(currentMeasurements[measurementIndex].a,
-                                currentMeasurements[measurementIndex].w,
-                                currentMeasurements[measurementIndex].t);
+        if (integrateNewMeasurement(currentMeasurements[measurementIndex].a,
+                                    currentMeasurements[measurementIndex].w,
+                                    currentMeasurements[measurementIndex].t) !=
+            PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: integrateNewMeasurement returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
+
+    return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
 } // namespace IMU

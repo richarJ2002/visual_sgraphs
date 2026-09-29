@@ -54,12 +54,12 @@ namespace vs_graphs
 namespace core
 {
 
-void MLPnPsolver::setRansacParameters(double probability_in,
-                                      int    minimumInliers_in,
-                                      int    maximumIterations_in,
-                                      int    minimumSet_in,
-                                      float  epsilon_in,
-                                      float  threshold2_in)
+MLPnPsolverStatus MLPnPsolver::setRansacParameters(double probability_in,
+                                                   int    minimumInliers_in,
+                                                   int    maximumIterations_in,
+                                                   int    minimumSet_in,
+                                                   float  epsilon_in,
+                                                   float  threshold2_in)
 {
     ransacProb          = probability_in;
     ransacMinInliers    = minimumInliers_in;
@@ -99,6 +99,8 @@ void MLPnPsolver::setRansacParameters(double probability_in,
          sigmaSquaredIndex++)
         maxError[sigmaSquaredIndex] =
             sigmaSquared[sigmaSquaredIndex] * threshold2_in;
+
+    return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

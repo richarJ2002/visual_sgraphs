@@ -26,6 +26,7 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -59,18 +60,55 @@ void EdgeInertialGS::computeError()
                                  p_gyroBiasVertex->estimate()[1],
                                  p_gyroBiasVertex->estimate()[2]);
     g = p_gravityDirectionVertex->estimate().Rwg * gI;
-    const double          scaleEstimate = p_scaleVertex->estimate();
+    const double    scaleEstimate = p_scaleVertex->estimate();
+    Eigen::Matrix3f preintegratedDeltaRotation{};
+    if (p_preintegrated->getDeltaRotation(biasEstimate,
+                                          preintegratedDeltaRotation) !=
+        IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getDeltaRotation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     const Eigen::Matrix3d deltaRotation =
-        p_preintegrated->getDeltaRotation(biasEstimate).cast<double>();
+        preintegratedDeltaRotation.cast<double>();
+    Eigen::Vector3f preintegratedDeltaVelocity{};
+    if (p_preintegrated->getDeltaVelocity(biasEstimate,
+                                          preintegratedDeltaVelocity) !=
+        IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getDeltaVelocity returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     const Eigen::Vector3d deltaVelocity =
-        p_preintegrated->getDeltaVelocity(biasEstimate).cast<double>();
+        preintegratedDeltaVelocity.cast<double>();
+    Eigen::Vector3f preintegratedDeltaPosition{};
+    if (p_preintegrated->getDeltaPosition(biasEstimate,
+                                          preintegratedDeltaPosition) !=
+        IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getDeltaPosition returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     const Eigen::Vector3d deltaPosition =
-        p_preintegrated->getDeltaPosition(biasEstimate).cast<double>();
+        preintegratedDeltaPosition.cast<double>();
 
-    const Eigen::Vector3d rotationError =
-        logSO3(deltaRotation.transpose() *
-               p_previousPoseVertex->estimate().Rwb.transpose() *
-               p_currentPoseVertex->estimate().Rwb);
+    Eigen::Vector3d rotationError{};
+    if (logSO3(deltaRotation.transpose() *
+                   p_previousPoseVertex->estimate().Rwb.transpose() *
+                   p_currentPoseVertex->estimate().Rwb,
+               rotationError) != G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: logSO3 returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     const Eigen::Vector3d velocityError =
         p_previousPoseVertex->estimate().Rwb.transpose() *
             (scaleEstimate * (p_currentVelocityVertex->estimate() -

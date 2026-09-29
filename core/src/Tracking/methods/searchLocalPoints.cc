@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::searchLocalPoints()
+TrackingStatus Tracking::searchLocalPoints()
 {
     // Do not search map points already matched
     for (vector<MapPoint *>::iterator vit  = currentFrame.mapPoints.begin(),
@@ -137,10 +137,28 @@ void Tracking::searchLocalPoints()
         int        threshold = 1;
         if (sensor == System::RGBD || sensor == System::IMU_RGBD)
             threshold = 3;
-        if (p_atlas->isImuInitialized())
+        bool atlasIsImuInitialized{};
+        if (p_atlas->isImuInitialized(atlasIsImuInitialized) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isImuInitialized returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (atlasIsImuInitialized)
         {
             bool inertialBA2{};
-            if (p_atlas->getCurrentMap()->getInertialBA2(inertialBA2) !=
+            Map *p_atlasCurrentMap = nullptr;
+            if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCurrentMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_atlasCurrentMap->getInertialBA2(inertialBA2) !=
                 MapStatus::MAP_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -159,7 +177,16 @@ void Tracking::searchLocalPoints()
         }
         else
         {
-            if (!p_atlas->isImuInitialized() &&
+            bool atlasIsImuInitialized2{};
+            if (p_atlas->isImuInitialized(atlasIsImuInitialized2) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isImuInitialized returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!atlasIsImuInitialized2 &&
                 (sensor == System::IMU_MONOCULAR ||
                  sensor == System::IMU_STEREO || sensor == System::IMU_RGBD))
             {
@@ -180,10 +207,18 @@ void Tracking::searchLocalPoints()
         if (matchesInliers < 30 && matchesInliers > 0)
         {
             threshold = std::min(threshold * 3, motionModelMaxSearchRadius);
-            Verbose::printMess("[Tracking] Expanded search radius to " +
-                                   std::to_string(threshold) + " (inliers: " +
-                                   std::to_string(matchesInliers) + ")",
-                               Verbose::VERBOSITY_NORMAL);
+            if (Verbose::printMess(
+                    "[Tracking] Expanded search radius to " +
+                        std::to_string(threshold) +
+                        " (inliers: " + std::to_string(matchesInliers) + ")",
+                    Verbose::VERBOSITY_NORMAL) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
 
         // DEPTH-AIDED TRACKING: For RGB-D, use depth to guide matching window
@@ -191,15 +226,26 @@ void Tracking::searchLocalPoints()
         const bool isDepthGuided =
             (sensor == System::RGBD || sensor == System::IMU_RGBD) &&
             currentFrame.depths.size() > 0;
-        matcher.searchByProjection(currentFrame,
-                                   localMapPoints,
-                                   threshold,
-                                   p_localMapper->shouldSkipFarPoints,
-                                   p_localMapper->farPointsThreshold,
-                                   isDepthGuided
-                                       ? std::optional<float>(depthThreshold)
-                                       : std::nullopt);
+        int matcherByProjection{};
+        if (matcher.searchByProjection(
+                currentFrame,
+                localMapPoints,
+                matcherByProjection,
+                threshold,
+                p_localMapper->shouldSkipFarPoints,
+                p_localMapper->farPointsThreshold,
+                isDepthGuided ? std::optional<float>(depthThreshold)
+                              : std::nullopt) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: searchByProjection returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -108,20 +108,23 @@ std::unique_ptr<geometric::Plane>
 
 TEST(FloorFlatness, RepointsALessObservedRoomGroundPlaneToTheCanonicalOne)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* Canonical, strongly observed ground plane at y=0. */
     std::unique_ptr<geometric::Plane> canonicalGround =
         makeRefitGroundPlane(1, p_map, 0.0, 500U);
-    atlas.addMapPlane(canonicalGround.get());
+    ASSERT_EQ((atlas.addMapPlane(canonicalGround.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* A weaker, disagreeing ground plane 0.5 m above -- well beyond
      * semantic::Floor::kMergeMaxPlaneOffset_m (0.35 m). */
     std::unique_ptr<geometric::Plane> roomGround =
         makeRefitGroundPlane(2, p_map, 0.5, 20U);
-    atlas.addMapPlane(roomGround.get());
+    ASSERT_EQ((atlas.addMapPlane(roomGround.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     std::unique_ptr<semantic::Room> room = std::make_unique<semantic::Room>();
     ASSERT_EQ((room->setId(1)),
@@ -132,11 +135,14 @@ TEST(FloorFlatness, RepointsALessObservedRoomGroundPlaneToTheCanonicalOne)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room->setGroundPlane(roomGround.get())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    atlas.addDetectedMapRoom(room.get());
+    ASSERT_EQ((atlas.addDetectedMapRoom(room.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* Establish the canonical semantic::Floor identity first, as Run() does. */
-    manager.getUpdatedFloorsForTest();
-    manager.reconcileRoomGroundPlanesForTest();
+    ASSERT_EQ((manager.getUpdatedFloorsForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.reconcileRoomGroundPlanesForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     vs_graphs::core::geometric::Plane *p_groundPlane = nullptr;
     ASSERT_EQ((room->getGroundPlane(p_groundPlane)),
@@ -146,18 +152,21 @@ TEST(FloorFlatness, RepointsALessObservedRoomGroundPlaneToTheCanonicalOne)
 
 TEST(FloorFlatness, LeavesAnAgreeingRoomGroundPlaneUntouched)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> canonicalGround =
         makeRefitGroundPlane(1, p_map, 0.0, 500U);
-    atlas.addMapPlane(canonicalGround.get());
+    ASSERT_EQ((atlas.addMapPlane(canonicalGround.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* Within tolerance: 0.05 m offset, well under 0.35 m. */
     std::unique_ptr<geometric::Plane> roomGround =
         makeRefitGroundPlane(2, p_map, 0.05, 20U);
-    atlas.addMapPlane(roomGround.get());
+    ASSERT_EQ((atlas.addMapPlane(roomGround.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     std::unique_ptr<semantic::Room> room = std::make_unique<semantic::Room>();
     ASSERT_EQ((room->setId(1)),
@@ -168,10 +177,13 @@ TEST(FloorFlatness, LeavesAnAgreeingRoomGroundPlaneUntouched)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room->setGroundPlane(roomGround.get())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    atlas.addDetectedMapRoom(room.get());
+    ASSERT_EQ((atlas.addDetectedMapRoom(room.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.getUpdatedFloorsForTest();
-    manager.reconcileRoomGroundPlanesForTest();
+    ASSERT_EQ((manager.getUpdatedFloorsForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.reconcileRoomGroundPlanesForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     vs_graphs::core::geometric::Plane *p_groundPlane = nullptr;
     ASSERT_EQ((room->getGroundPlane(p_groundPlane)),

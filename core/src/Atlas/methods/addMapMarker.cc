@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addMapMarker(semantic::Marker *p_marker_in)
+AtlasStatus Atlas::addMapMarker(semantic::Marker *p_marker_in)
 {
     Map *p_ownerMap = nullptr;
     if (p_marker_in->getMap(p_ownerMap) !=
@@ -49,6 +49,8 @@ void Atlas::addMapMarker(semantic::Marker *p_marker_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -30,11 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-void ORBmatcher::computeThreeMaxima(vector<int> *p_histogram_in,
-                                    const int    L,
-                                    int         &maximum1_inout,
-                                    int         &maximum2_inout,
-                                    int         &maximum3_out)
+ORBmatcherStatus
+    ORBmatcher::computeThreeMaxima(std::vector<int> *p_histogram_in,
+                                   const int         L,
+                                   int              &maximum1_inout,
+                                   int              &maximum2_inout,
+                                   int              &maximum3_out)
 {
     int maximum1 = 0;
     int maximum2 = 0;
@@ -75,6 +76,8 @@ void ORBmatcher::computeThreeMaxima(vector<int> *p_histogram_in,
     {
         maximum3_out = -1;
     }
+
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

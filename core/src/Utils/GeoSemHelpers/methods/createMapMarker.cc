@@ -50,7 +50,16 @@ GeoSemHelpersStatus
                      "fail; continuing as before.",
                      __func__);
     }
-    if (p_newMapMarker->setMap(p_atlas_inout->getCurrentMap()) !=
+    Map *p_atlasCurrentMap = nullptr;
+    if (p_atlas_inout->getCurrentMap(p_atlasCurrentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_newMapMarker->setMap(p_atlasCurrentMap) !=
         semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -187,7 +196,14 @@ GeoSemHelpersStatus
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    p_atlas_inout->addMapMarker(p_newMapMarker);
+    if (p_atlas_inout->addMapMarker(p_newMapMarker) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapMarker returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     p_mapMarker_out = p_newMapMarker;
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;

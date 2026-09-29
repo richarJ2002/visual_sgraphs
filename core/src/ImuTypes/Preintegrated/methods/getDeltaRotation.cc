@@ -18,6 +18,7 @@
 #include "ImuTypes.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -26,7 +27,9 @@ namespace core
 namespace IMU
 {
 
-Eigen::Matrix3f Preintegrated::getDeltaRotation(const Bias &referenceBias_in)
+PreintegratedStatus
+    Preintegrated::getDeltaRotation(const Bias      &referenceBias_in,
+                                    Eigen::Matrix3f &deltaRotation_out)
 {
     std::unique_lock<std::mutex> lock(preintegrationMutex);
     Eigen::Vector3f              gyroBiasDelta;
@@ -36,8 +39,17 @@ Eigen::Matrix3f Preintegrated::getDeltaRotation(const Bias &referenceBias_in)
         gyroBiasDelta = Eigen::Vector3f(0, 0, 0);
     if (JRg.array().isNaN()(0, 0))
         JRg.setZero();
-    return normalizeRotation(dR *
-                             Sophus::SO3f::exp(JRg * gyroBiasDelta).matrix());
+    Eigen::Matrix3f rotation{};
+    if (normalizeRotation(dR * Sophus::SO3f::exp(JRg * gyroBiasDelta).matrix(),
+                          rotation) != ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: normalizeRotation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    deltaRotation_out = rotation;
+    return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
 } // namespace IMU

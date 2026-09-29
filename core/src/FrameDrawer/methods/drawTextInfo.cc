@@ -12,15 +12,16 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void FrameDrawer::drawTextInfo(cv::Mat &sourceImage_in,
-                               int      trackingState_in,
-                               cv::Mat &annotatedImage_out)
+FrameDrawerStatus FrameDrawer::drawTextInfo(cv::Mat &sourceImage_in,
+                                            int      trackingState_in,
+                                            cv::Mat &annotatedImage_out)
 {
     stringstream textStream;
     if (trackingState_in == Tracking::NO_IMAGES_YET)
@@ -33,9 +34,34 @@ void FrameDrawer::drawTextInfo(cv::Mat &sourceImage_in,
             textStream << "SLAM MODE |  ";
         else
             textStream << "LOCALIZATION | ";
-        int mapCount      = p_atlas->countMaps();
-        int keyFrameCount = p_atlas->getKeyFrameCount();
-        int mapPointCount = p_atlas->getMapPointCount();
+        int mapCount{};
+        if (p_atlas->countMaps(mapCount) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: countMaps returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        unsigned long keyFrameCountValue{};
+        if (p_atlas->getKeyFrameCount(keyFrameCountValue) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getKeyFrameCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        int           keyFrameCount = static_cast<int>(keyFrameCountValue);
+        unsigned long mapPointCountValue{};
+        if (p_atlas->getMapPointCount(mapPointCountValue) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPointCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        int mapPointCount = static_cast<int>(mapPointCountValue);
         textStream << "Maps: " << mapCount << ", KFs: " << keyFrameCount
                    << ", MPs: " << mapPointCount
                    << ", Matches: " << trackedCount;
@@ -75,6 +101,8 @@ void FrameDrawer::drawTextInfo(cv::Mat &sourceImage_in,
                 cv::Scalar(255, 255, 255),
                 1,
                 8);
+
+    return FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS;
 }
 
 } // namespace core

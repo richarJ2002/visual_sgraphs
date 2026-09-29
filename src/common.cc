@@ -511,7 +511,14 @@ void addSegmentationToSystem(
         keyFrameId,
         cv_imgSeg->image,
         pclPc2SegPrb);
-    p_slamSystem->addSegmentedImage(&tuple);
+    if (p_slamSystem->addSegmentedImage(&tuple) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addSegmentedImage returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 namespace
@@ -3423,14 +3430,31 @@ void maybeArchiveSGraph(
         std::vector<vs_graphs::core::semantic::Passage *> passagesRaw;
     };
     std::vector<SgraphMapInput> mapInputs;
-    vs_graphs::core::Atlas           *p_atlas =
-        (p_slamSystem != nullptr) ? p_slamSystem->getAtlas() : nullptr;
+    vs_graphs::core::Atlas     *p_slamSystemAtlas = nullptr;
+    if (((p_slamSystem != nullptr)) &&
+        p_slamSystem->getAtlas(p_slamSystemAtlas) !=
+            vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAtlas returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    vs_graphs::core::Atlas *p_atlas =
+        (p_slamSystem != nullptr) ? p_slamSystemAtlas : nullptr;
     if (p_atlas != nullptr)
     {
         std::optional<long unsigned int> currentMapId;
         vs_graphs::core::AtlasCurrentMapStatus mapStatus;
-        std::vector<vs_graphs::core::Map *>    atlasMaps =
-            p_atlas->getCoherentMapView(currentMapId, mapStatus);
+        std::vector<vs_graphs::core::Map *>    atlasMaps{};
+        if (p_atlas->getCoherentMapView(currentMapId, mapStatus, atlasMaps) !=
+            vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCoherentMapView returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         std::sort(
             atlasMaps.begin(),
             atlasMaps.end(),
@@ -5080,7 +5104,15 @@ void publishKeyFrameImages(
         /* Mark the keyframe as in flight for the lockstep backlog signal */
         if (p_slamSystem != nullptr)
         {
-            p_slamSystem->incrementSegmentationPublishedCount();
+            if (p_slamSystem->incrementSegmentationPublishedCount() !=
+                vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: incrementSegmentationPublishedCount returned "
+                             "a failure status although it cannot fail; "
+                             "continuing as before.",
+                             __func__);
+            }
         }
     }
 }
@@ -5183,8 +5215,15 @@ void publishKeyFrameMarkers(
     for (vs_graphs::core::KeyFrame *keyFrame : orderedKeyFrames)
     {
         /* Obtain the globally expressed keyframe pose */
-        const Sophus::SE3f T_world_keyFrame_SE3f =
-            p_slamSystem->getKeyFramePose(keyFrame);
+        Sophus::SE3f T_world_keyFrame_SE3f{};
+        if (p_slamSystem->getKeyFramePose(keyFrame, T_world_keyFrame_SE3f) !=
+            vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getKeyFramePose returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Reject invalid poses */
         if (!T_world_keyFrame_SE3f.translation().allFinite() ||
@@ -6637,7 +6676,15 @@ void publishTopics(
     }
 
     /* Obtain the current camera pose relative to the world frame */
-    const Sophus::SE3f T_world_camera_SE3f = p_slamSystem->getCamTwc();
+    Sophus::SE3f T_world_camera_SE3f{};
+    if (p_slamSystem->getCamTwc(T_world_camera_SE3f) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCamTwc returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Prevent invalid camera transformations from entering ROS messages */
     if (!T_world_camera_SE3f.translation().allFinite() ||
@@ -6667,7 +6714,15 @@ void publishTopics(
 
     if (p_mapRevisionPublisher != nullptr)
     {
-        vs_graphs::core::Map *p_activeMap = p_slamSystem->getCurrentMap();
+        vs_graphs::core::Map *p_activeMap = nullptr;
+        if (p_slamSystem->getCurrentMap(p_activeMap) !=
+            vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (p_activeMap != nullptr)
         {
@@ -6743,23 +6798,65 @@ void publishTopics(
      * OBTAIN A SNAPSHOT OF THE CURRENT MAP COLLECTIONS
      * ---------------------------------------------------------------------- */
 
-    const std::vector<vs_graphs::core::KeyFrame *> mappedKeyFrames =
-        p_slamSystem->getAllKeyFrames();
+    std::vector<vs_graphs::core::KeyFrame *> mappedKeyFrames{};
+    if (p_slamSystem->getAllKeyFrames(mappedKeyFrames) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    const std::vector<vs_graphs::core::semantic::Marker *> mappedFiducialMarkers =
-        p_slamSystem->getAllMarkers();
+    std::vector<vs_graphs::core::semantic::Marker *> mappedFiducialMarkers{};
+    if (p_slamSystem->getAllMarkers(mappedFiducialMarkers) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkers returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    const std::vector<vs_graphs::core::semantic::Room *> mappedRooms =
-        p_slamSystem->getAllRooms();
+    std::vector<vs_graphs::core::semantic::Room *> mappedRooms{};
+    if (p_slamSystem->getAllRooms(mappedRooms) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    const std::vector<vs_graphs::core::semantic::Floor *> mappedFloors =
-        p_slamSystem->getAllFloors();
+    std::vector<vs_graphs::core::semantic::Floor *> mappedFloors{};
+    if (p_slamSystem->getAllFloors(mappedFloors) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllFloors returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    const std::vector<vs_graphs::core::semantic::Passage *> mappedPassages =
-        p_slamSystem->getAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> mappedPassages{};
+    if (p_slamSystem->getAllPassages(mappedPassages) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    const std::vector<vs_graphs::core::geometric::Plane *> mappedPlanes =
-        p_slamSystem->getAllPlanes();
+    std::vector<vs_graphs::core::geometric::Plane *> mappedPlanes{};
+    if (p_slamSystem->getAllPlanes(mappedPlanes) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* ---------------------------------------------------------------------- *
      * KEYFRAMES, TRACKING, AND STRUCTURAL ELEMENTS
@@ -6768,7 +6865,16 @@ void publishTopics(
     publishKeyFrameImages(mappedKeyFrames, msgTime_s_in);
     publishKeyFrameMarkers(mappedKeyFrames, msgTime_s_in);
     publishFiducialMarkers(mappedFiducialMarkers, msgTime_s_in);
-    publishTrackingImage(p_slamSystem->getCurrentFrame(), msgTime_s_in);
+    cv::Mat slamSystemCurrentFrame{};
+    if (p_slamSystem->getCurrentFrame(slamSystemCurrentFrame) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentFrame returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    publishTrackingImage(slamSystemCurrentFrame, msgTime_s_in);
     publishStructuralElements(mappedRooms,
                               mappedFloors,
                               mappedPassages,
@@ -6817,11 +6923,23 @@ void publishTopics(
 
         if (publishAllPoints_in)
         {
-            publishTimed(vs_graphs::observability::PublishTopic::ALL_POINTS,
-                         [&]() {
-                             publishAllPoints(p_slamSystem->getAllMapPoints(),
-                                              msgTime_s_in);
-                         });
+            publishTimed(
+                vs_graphs::observability::PublishTopic::ALL_POINTS,
+                [&]()
+                {
+                    std::vector<vs_graphs::core::MapPoint *>
+                        slamSystemAllMapPoints{};
+                    if (p_slamSystem->getAllMapPoints(slamSystemAllMapPoints) !=
+                        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getAllMapPoints returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    publishAllPoints(slamSystemAllMapPoints, msgTime_s_in);
+                });
         }
         else
         {
@@ -6830,17 +6948,41 @@ void publishTopics(
                          std::chrono::steady_clock::time_point{},
                          std::chrono::steady_clock::time_point{});
         }
-        publishTimed(vs_graphs::observability::PublishTopic::TRACKED_POINTS,
-                     [&]() {
-                         publishTrackedPoints(
-                             p_slamSystem->getTrackedMapPoints(),
-                             msgTime_s_in);
-                     });
+        publishTimed(
+            vs_graphs::observability::PublishTopic::TRACKED_POINTS,
+            [&]()
+            {
+                std::vector<vs_graphs::core::MapPoint *>
+                    slamSystemTrackedMapPoints{};
+                if (p_slamSystem->getTrackedMapPoints(
+                        slamSystemTrackedMapPoints) !=
+                    vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getTrackedMapPoints returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                publishTrackedPoints(slamSystemTrackedMapPoints, msgTime_s_in);
+            });
         publishTimed(
             vs_graphs::observability::PublishTopic::FREE_SPACE_CLUSTERS,
             [&]()
             {
-                publishFreeSpaceClusters(p_slamSystem->getSkeletonCluster(),
+                std::vector<std::vector<Eigen::Vector3d>>
+                    slamSystemSkeletonCluster{};
+                if (p_slamSystem->getSkeletonCluster(
+                        slamSystemSkeletonCluster) !=
+                    vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getSkeletonCluster returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                publishFreeSpaceClusters(slamSystemSkeletonCluster,
                                          msgTime_s_in);
             });
     }
@@ -6868,13 +7010,29 @@ void publishTopics(
     }
 
     /* T_world_body_SE3f describes the body pose relative to the world frame */
-    const Sophus::SE3f T_world_body_SE3f = p_slamSystem->getImuTwb();
+    Sophus::SE3f T_world_body_SE3f{};
+    if (p_slamSystem->getImuTwb(T_world_body_SE3f) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getImuTwb returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /*!
      * ORB-SLAM3 supplies the body linear velocity expressed in the world
      * frame.
      */
-    const Eigen::Vector3f linearVelocity_world_mps = p_slamSystem->getImuVwb();
+    Eigen::Vector3f linearVelocity_world_mps{};
+    if (p_slamSystem->getImuVwb(linearVelocity_world_mps) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getImuVwb returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Validate all inertial quantities before publication */
     if (!T_world_body_SE3f.translation().allFinite() ||
@@ -7085,8 +7243,17 @@ void saveMapPointsAsPCDService(
     /* Request that ORB-SLAM3 save the current map points */
     try
     {
-        response_out->success =
-            p_slamSystem->saveMapPointsAsPCD(request_in->name);
+        bool slamSystemIsSaved{};
+        if (p_slamSystem->saveMapPointsAsPCD(request_in->name,
+                                             slamSystemIsSaved) !=
+            vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: saveMapPointsAsPCD returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        response_out->success = slamSystemIsSaved;
     }
     catch (const std::exception &exception)
     {
@@ -7159,7 +7326,16 @@ void saveMapService(
     /* Request that ORB-SLAM3 save the current map */
     try
     {
-        response_out->success = p_slamSystem->saveMap(request_in->name);
+        bool slamSystemIsSaved{};
+        if (p_slamSystem->saveMap(request_in->name, slamSystemIsSaved) !=
+            vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: saveMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        response_out->success = slamSystemIsSaved;
     }
     catch (const std::exception &exception)
     {
@@ -7240,10 +7416,26 @@ void saveTrajectoryService(
     try
     {
         /* Save the complete estimated camera trajectory */
-        p_slamSystem->saveTrajectoryEuRoC(cameraTrajectoryFileName);
+        if (p_slamSystem->saveTrajectoryEuRoC(cameraTrajectoryFileName) !=
+            vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: saveTrajectoryEuRoC returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Save the estimated keyframe trajectory */
-        p_slamSystem->saveKeyFrameTrajectoryEuRoC(keyFrameTrajectoryFileName);
+        if (p_slamSystem->saveKeyFrameTrajectoryEuRoC(
+                keyFrameTrajectoryFileName) !=
+            vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: saveKeyFrameTrajectoryEuRoC returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         response_out->success = true;
     }
@@ -7603,8 +7795,16 @@ static void getMissionHealthService(
      * topology. A poller that only wants the segmentation backlog counters
      * (e.g. a lockstep controller sampling at ~10 Hz) sets
      * include_topology=false and gets the cheap snapshot path instead. */
-    const vs_graphs::core::System::MissionHealthSnapshot snapshot =
-        p_slamSystem->getMissionHealthSnapshot(request_in->include_topology);
+    vs_graphs::core::System::MissionHealthSnapshot snapshot{};
+    if (p_slamSystem->getMissionHealthSnapshot(snapshot,
+                                               request_in->include_topology) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMissionHealthSnapshot returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     response_out->available            = true;
     response_out->mode                 = sensorModeName();
     response_out->frame_timestamp      = snapshot.frameTimestamp;
@@ -7756,10 +7956,26 @@ static void getMissionHealthService(
          * schema-1 topology object to schema 2 with copied-cache evaluator
          * additions, without changing GetMissionHealth.srv or duplicating
          * this method's own schema-1 collection above. */
-        const bool cacheAvailable =
-            p_slamSystem->isSemanticReportCacheAvailable();
-        const vs_graphs::core::semantic::SemanticReportCacheEntry entry =
-            p_slamSystem->getSemanticReportCacheEntry();
+        bool cacheAvailable{};
+        if (p_slamSystem->isSemanticReportCacheAvailable(cacheAvailable) !=
+            vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: isSemanticReportCacheAvailable returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        vs_graphs::core::semantic::SemanticReportCacheEntry entry{};
+        if (p_slamSystem->getSemanticReportCacheEntry(entry) !=
+            vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getSemanticReportCacheEntry returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         nlohmann::json augmentedJson{};
         if (vs_graphs::core::augmentMissionHealthTopologyJsonWithSemantics(
                 std::move(topology),
@@ -8118,10 +8334,24 @@ void setVoxbloxSkeletonCluster(
     skeletonEdges = std::move(transformedSkeletonEdges_world);
 
     /* Store the connected skeleton vertices in the active map */
-    p_slamSystem->setSkeletonCluster(skeletonClusterPoints);
+    if (p_slamSystem->setSkeletonCluster(skeletonClusterPoints) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setSkeletonCluster returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Store the complete raw skeleton edges in the active map */
-    p_slamSystem->setSkeletonEdges(skeletonEdges);
+    if (p_slamSystem->setSkeletonEdges(skeletonEdges) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setSkeletonEdges returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 /*!

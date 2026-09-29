@@ -25,16 +25,31 @@
 
 #include "SemanticsManager.h"
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool System::isSemanticReportCacheAvailable() const
+SystemStatus System::isSemanticReportCacheAvailable(
+    bool &isSemanticReportCacheAvailable_out) const
 {
-    return p_semanticsManager != nullptr &&
-           p_semanticsManager->isSemanticReportCacheAvailable();
+    bool semanticsManagerIsSemanticReportCacheAvailable{};
+    if ((p_semanticsManager != nullptr) &&
+        p_semanticsManager->isSemanticReportCacheAvailable(
+            semanticsManagerIsSemanticReportCacheAvailable) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isSemanticReportCacheAvailable returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    isSemanticReportCacheAvailable_out =
+        p_semanticsManager != nullptr &&
+        semanticsManagerIsSemanticReportCacheAvailable;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

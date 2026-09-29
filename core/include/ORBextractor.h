@@ -24,6 +24,8 @@
 #ifndef ORBEXTRACTOR_H
 #define ORBEXTRACTOR_H
 
+#include "ExtractorNodeStatus.h"
+#include "ORBextractorStatus.h"
 #include <cstdint>
 #include <list>
 #include <opencv2/core.hpp>
@@ -60,10 +62,10 @@ class ExtractorNode
      * @param[in,out] node4_inout
      *               Bottom-right child.
      */
-    void divideNode(ExtractorNode &node1_inout,
-                    ExtractorNode &node2_inout,
-                    ExtractorNode &node3_inout,
-                    ExtractorNode &node4_inout);
+    [[nodiscard]] ExtractorNodeStatus divideNode(ExtractorNode &node1_inout,
+                                                 ExtractorNode &node2_inout,
+                                                 ExtractorNode &node3_inout,
+                                                 ExtractorNode &node4_inout);
 
     /*!
      * @brief        Keypoints falling inside the node.
@@ -163,63 +165,79 @@ class ORBextractor
     /*!
      * @brief        Returns the number of pyramid levels.
      *
-     * @return       Configured level count.
+     * @param[out] levelCount_out Configured level count.
+     * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    int inline getLevelCount()
+    [[nodiscard]] ORBextractorStatus getLevelCount(int &levelCount_out)
     {
-        return levelCount;
+        levelCount_out = levelCount;
+        return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the pyramid scale step.
      *
-     * @return       Configured scale factor.
+     * @param[out] scaleFactor_out Configured scale factor.
+     * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    float inline getScaleFactor()
+    [[nodiscard]] ORBextractorStatus getScaleFactor(float &scaleFactor_out)
     {
-        return scaleFactor;
+        scaleFactor_out = scaleFactor;
+        return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the per-level scale factors.
      *
-     * @return       Scale factor of every pyramid level.
+     * @param[out] scaleFactors_out Scale factor of every pyramid level.
+     * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    std::vector<float> inline getScaleFactors()
+    [[nodiscard]] ORBextractorStatus
+        getScaleFactors(std::vector<float> &scaleFactors_out)
     {
-        return scaleFactors;
+        scaleFactors_out = scaleFactors;
+        return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the per-level inverse scale factors.
      *
-     * @return       Inverse scale factor of every pyramid
-     *               level.
+     * @param[out] inverseScaleFactors_out Inverse scale factor of every pyramid
+     * level.
+     * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    std::vector<float> inline getInverseScaleFactors()
+    [[nodiscard]] ORBextractorStatus
+        getInverseScaleFactors(std::vector<float> &inverseScaleFactors_out)
     {
-        return inverseScaleFactors;
+        inverseScaleFactors_out = inverseScaleFactors;
+        return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the per-level scale sigma squares.
      *
-     * @return       Sigma square of every pyramid level.
+     * @param[out] scaleSigmaSquares_out Sigma square of every pyramid level.
+     * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    std::vector<float> inline getScaleSigmaSquares()
+    [[nodiscard]] ORBextractorStatus
+        getScaleSigmaSquares(std::vector<float> &scaleSigmaSquares_out)
     {
-        return levelSigmaSquares;
+        scaleSigmaSquares_out = levelSigmaSquares;
+        return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
     }
 
     /*!
      * @brief        Returns the per-level inverse sigma squares.
      *
-     * @return       Inverse sigma square of every pyramid
-     *               level.
+     * @param[out] inverseScaleSigmaSquares_out Inverse sigma square of every
+     * pyramid level.
+     * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    std::vector<float> inline getInverseScaleSigmaSquares()
+    [[nodiscard]] ORBextractorStatus getInverseScaleSigmaSquares(
+        std::vector<float> &inverseScaleSigmaSquares_out)
     {
-        return inverseLevelSigmaSquares;
+        inverseScaleSigmaSquares_out = inverseLevelSigmaSquares;
+        return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
     }
 
     /*!
@@ -234,7 +252,7 @@ class ORBextractor
      * @param[in]    image_in
      *               Full-resolution source image.
      */
-    void computePyramid(cv::Mat image_in);
+    [[nodiscard]] ORBextractorStatus computePyramid(cv::Mat image_in);
     /*!
      * @brief        Detects keypoints on every pyramid level
      *               with the octree distribution.
@@ -242,7 +260,7 @@ class ORBextractor
      * @param[in,out] keypointsPerLevel_inout
      *               Detected keypoints grouped by level.
      */
-    void computeKeyPointsOctTree(
+    [[nodiscard]] ORBextractorStatus computeKeyPointsOctTree(
         std::vector<std::vector<cv::KeyPoint>> &keypointsPerLevel_inout);
     /*!
      * @brief        Distributes keypoints inside a region with
@@ -263,16 +281,18 @@ class ORBextractor
      * @param[in]    level_in
      *               Pyramid level under distribution.
      *
-     * @return       Distributed keypoints of the region.
+     * @param[out] keyPoints_out Distributed keypoints of the region.
+     * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    std::vector<cv::KeyPoint>
+    [[nodiscard]] ORBextractorStatus
         distributeOctTree(const std::vector<cv::KeyPoint> &keysToDistribute_in,
                           const int                       &minimumX_in,
                           const int                       &maximumX_in,
                           const int                       &minimumY_in,
                           const int                       &maximumY_in,
                           const int                       &featureCount_in,
-                          const int                       &level_in);
+                          const int                       &level_in,
+                          std::vector<cv::KeyPoint>       &keyPoints_out);
 
     /*!
      * @brief        Detects keypoints on every pyramid level
@@ -281,7 +301,7 @@ class ORBextractor
      * @param[in,out] keypointsPerLevel_inout
      *               Detected keypoints grouped by level.
      */
-    void computeKeyPointsOld(
+    [[nodiscard]] ORBextractorStatus computeKeyPointsOld(
         std::vector<std::vector<cv::KeyPoint>> &keypointsPerLevel_inout);
     /*!
      * @brief        Sampling pattern of the BRIEF descriptor.
@@ -348,9 +368,11 @@ class ORBextractor
      * @param[in]    threshold_in
      *               New extraction threshold.
      */
-    void setInitialFastThreshold(int threshold_in)
+    [[nodiscard]] ORBextractorStatus setInitialFastThreshold(int threshold_in)
     {
         initialFastThreshold = threshold_in;
+
+        return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
     }
     /*!
      * @brief        Sets the FAST threshold used when extraction
@@ -359,29 +381,37 @@ class ORBextractor
      * @param[in]    threshold_in
      *               New retry threshold.
      */
-    void setMinimumFastThreshold(int threshold_in)
+    [[nodiscard]] ORBextractorStatus setMinimumFastThreshold(int threshold_in)
     {
         minimumFastThreshold = threshold_in;
+
+        return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the FAST threshold used at
      *               extraction.
      *
-     * @return       Current extraction threshold.
+     * @param[out] getInitialFastThreshold_out Current extraction threshold.
+     * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    int getInitialFastThreshold() const
+    [[nodiscard]] ORBextractorStatus
+        getInitialFastThreshold(int &getInitialFastThreshold_out) const
     {
-        return initialFastThreshold;
+        getInitialFastThreshold_out = initialFastThreshold;
+        return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
     }
     /*!
      * @brief        Returns the FAST threshold used when
      *               extraction is retried.
      *
-     * @return       Current retry threshold.
+     * @param[out] getMinimumFastThreshold_out Current retry threshold.
+     * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    int getMinimumFastThreshold() const
+    [[nodiscard]] ORBextractorStatus
+        getMinimumFastThreshold(int &getMinimumFastThreshold_out) const
     {
-        return minimumFastThreshold;
+        getMinimumFastThreshold_out = minimumFastThreshold;
+        return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
     }
 };
 

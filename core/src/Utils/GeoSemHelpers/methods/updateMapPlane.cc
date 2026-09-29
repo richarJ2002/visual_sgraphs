@@ -37,8 +37,15 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
     double                                          confidence_in)
 {
     // Find the matched plane among all planes of the map
-    vs_graphs::core::geometric::Plane *p_currentPlane =
-        p_atlas_in->getPlaneById(planeId_in);
+    vs_graphs::core::geometric::Plane *p_currentPlane = nullptr;
+    if (p_atlas_in->getPlaneById(planeId_in, p_currentPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneById returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // the observation of the plane
     vs_graphs::core::geometric::Plane::Observation observation;

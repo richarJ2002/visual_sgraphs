@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::detectBestCandidates(
+KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
     KeyFrame           *p_currentKeyFrame_in,
     vector<KeyFrame *> &loopCandidateKeyFrames_out,
     vector<KeyFrame *> &mergeCandidateKeyFrames_out,
@@ -88,7 +88,7 @@ void KeyFrameDatabase::detectBestCandidates(
         }
     }
     if (keyFramesSharingWords.empty())
-        return;
+        return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 
     // Only compare against those keyframes that share enough words
     int maxCommonWordCount = 0;
@@ -133,7 +133,7 @@ void KeyFrameDatabase::detectBestCandidates(
     }
 
     if (scoredCandidates.empty())
-        return;
+        return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 
     list<pair<float, KeyFrame *>> accumulatedScoredCandidates;
     float                         bestAccumulatedScore = 0;
@@ -235,6 +235,8 @@ void KeyFrameDatabase::detectBestCandidates(
             }
         }
     }
+
+    return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
 } // namespace core

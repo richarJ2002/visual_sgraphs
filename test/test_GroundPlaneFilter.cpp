@@ -27,8 +27,9 @@ namespace core
 
 TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* A freshly constructed geometric::Plane has a valid but empty support
@@ -40,8 +41,9 @@ TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
     ASSERT_EQ((groundPlane.setMap(p_map)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
-    const std::optional<float> height =
-        manager.computeGroundPlaneHeightForTest(&groundPlane);
+    std::optional<float> height{};
+    ASSERT_EQ((manager.computeGroundPlaneHeightForTest(&groundPlane, height)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_FALSE(height.has_value());
 }
 
@@ -49,8 +51,9 @@ TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
 {
     /* numPoint = yVals.size() / 2 is also 0 for a single-point cloud, not
      * only for an empty one -- the same underflow is reachable here too. */
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     geometric::Plane groundPlane;
@@ -69,15 +72,17 @@ TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
     ASSERT_EQ((groundPlane.setMapClouds(cloud)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
-    const std::optional<float> height =
-        manager.computeGroundPlaneHeightForTest(&groundPlane);
+    std::optional<float> height{};
+    ASSERT_EQ((manager.computeGroundPlaneHeightForTest(&groundPlane, height)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_FALSE(height.has_value());
 }
 
 TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     geometric::Plane groundPlane;
@@ -99,8 +104,9 @@ TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
     ASSERT_EQ((groundPlane.setMapClouds(cloud)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
-    const std::optional<float> height =
-        manager.computeGroundPlaneHeightForTest(&groundPlane);
+    std::optional<float> height{};
+    ASSERT_EQ((manager.computeGroundPlaneHeightForTest(&groundPlane, height)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_TRUE(height.has_value());
 }
 

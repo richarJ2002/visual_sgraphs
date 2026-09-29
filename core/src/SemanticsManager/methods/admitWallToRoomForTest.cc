@@ -17,17 +17,29 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool SemanticsManager::admitWallToRoomForTest(
+SemanticsManagerStatus SemanticsManager::admitWallToRoomForTest(
     semantic::Room   *p_room_in,
-    geometric::Plane *p_candidateWall_in)
+    geometric::Plane *p_candidateWall_in,
+    bool             &wasAdmitted_out)
 {
-    return admitWallToRoom(p_room_in, p_candidateWall_in);
+    bool wasAdmitted{};
+    if (admitWallToRoom(p_room_in, p_candidateWall_in, wasAdmitted) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: admitWallToRoom returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    wasAdmitted_out = wasAdmitted;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "OptimizerStatus.h"
 #include "Thirdparty/g2o/g2o/core/hyper_graph_action.h"
 
 namespace g2o
@@ -97,7 +98,7 @@ bool sortByVal(const std::pair<MapPoint *, int> &firstEntry_in,
  * @param[in,out] initialStereoCorrespondenceCount_inout
  *                Incremented once per stereo edge.
  */
-void addPoseOnlyObservationEdges(
+[[nodiscard]] OptimizerStatus addPoseOnlyObservationEdges(
     Frame                             *p_frame_inout,
     VertexPose                        *p_poseVertex_in,
     g2o::SparseOptimizer              &optimizer_inout,

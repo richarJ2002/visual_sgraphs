@@ -24,15 +24,26 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool System::isFinished()
+SystemStatus System::isFinished(bool &isFinished_out)
 {
-    return (getTimeFromIMUInit() > 0.1);
+    double timeFromIMUInit{};
+    if (getTimeFromIMUInit(timeFromIMUInit) !=
+        SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getTimeFromIMUInit returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    isFinished_out = (timeFromIMUInit > 0.1);
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

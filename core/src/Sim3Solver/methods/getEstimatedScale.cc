@@ -31,9 +31,10 @@ namespace vs_graphs
 namespace core
 {
 
-float Sim3Solver::getEstimatedScale()
+Sim3SolverStatus Sim3Solver::getEstimatedScale(float &estimatedScale_out)
 {
-    return bestScale;
+    estimatedScale_out = bestScale;
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

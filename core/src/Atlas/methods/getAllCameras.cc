@@ -30,10 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<camera_models::geometriccamera::GeometricCamera *>
-    Atlas::getAllCameras()
+AtlasStatus Atlas::getAllCameras(
+    std::vector<camera_models::geometriccamera::GeometricCamera *>
+        &allCameras_out)
 {
-    return cameras;
+    allCameras_out = cameras;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

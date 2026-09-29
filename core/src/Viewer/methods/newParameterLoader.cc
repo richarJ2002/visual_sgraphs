@@ -35,7 +35,8 @@ namespace vs_graphs
 namespace core
 {
 
-void Viewer::newParameterLoader(utils::settings::Settings *p_settings_inout)
+ViewerStatus
+    Viewer::newParameterLoader(utils::settings::Settings *p_settings_inout)
 {
     imageViewerScale = 1.f;
 
@@ -115,6 +116,8 @@ void Viewer::newParameterLoader(utils::settings::Settings *p_settings_inout)
                      __func__);
     }
     viewpointF = settingsViewPointF;
+
+    return ViewerStatus::VIEWER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -38,7 +38,9 @@
 #include <unistd.h>
 
 // JSON library
+#include "SystemStatus.h"
 #include "Thirdparty/nlohmann/json.hpp"
+#include "VerboseStatus.h"
 
 #include "Atlas.h"
 #include "DatabaseParser.h"
@@ -139,7 +141,8 @@ class Verbose
      *              The static gate `th` still filters by level: only messages
      *              with `lev <= th` are emitted.
      */
-    static void printMess(std::string message_in, VerbosityLevel level_in)
+    [[nodiscard]] static VerboseStatus printMess(std::string    message_in,
+                                                 VerbosityLevel level_in)
     {
         if (level_in <= th)
         {
@@ -164,6 +167,8 @@ class Verbose
                 break;
             }
         }
+
+        return VerboseStatus::VERBOSE_STATUS_SUCCESS;
     }
 
     /*!
@@ -177,9 +182,11 @@ class Verbose
      * Verbose::VerbosityLevel "VERBOSITY_QUIET", VERBOSITY_NORMAL,
      * VERBOSITY_VERBOSE, VERBOSITY_VERY_VERBOSE, or VERBOSITY_DEBUG.
      */
-    static void setTh(VerbosityLevel threshold_in)
+    [[nodiscard]] static VerboseStatus setTh(VerbosityLevel threshold_in)
     {
         th = threshold_in;
+
+        return VerboseStatus::VERBOSE_STATUS_SUCCESS;
     }
 
     /*!
@@ -188,30 +195,38 @@ class Verbose
      * threshold. Unknown strings default to `VERBOSITY_QUIET` so an unset or
      *              invalid value preserves the current quiet behaviour.
      */
-    static VerbosityLevel parseVerbosityLevel(const std::string &level_in)
+    [[nodiscard]] static VerboseStatus
+        parseVerbosityLevel(const std::string &level_in,
+                            VerbosityLevel    &verbosityLevel_out)
     {
         if (level_in == "debug")
         {
-            return VERBOSITY_DEBUG;
+            verbosityLevel_out = VERBOSITY_DEBUG;
+            return VerboseStatus::VERBOSE_STATUS_SUCCESS;
         }
         if (level_in == "info")
         {
-            return VERBOSITY_NORMAL;
+            verbosityLevel_out = VERBOSITY_NORMAL;
+            return VerboseStatus::VERBOSE_STATUS_SUCCESS;
         }
         if (level_in == "warn")
         {
-            return VERBOSITY_QUIET;
+            verbosityLevel_out = VERBOSITY_QUIET;
+            return VerboseStatus::VERBOSE_STATUS_SUCCESS;
         }
         if (level_in == "error")
         {
-            return VERBOSITY_QUIET;
+            verbosityLevel_out = VERBOSITY_QUIET;
+            return VerboseStatus::VERBOSE_STATUS_SUCCESS;
         }
         if (level_in == "quiet")
         {
-            return VERBOSITY_QUIET;
+            verbosityLevel_out = VERBOSITY_QUIET;
+            return VerboseStatus::VERBOSE_STATUS_SUCCESS;
         }
 
-        return VERBOSITY_QUIET;
+        verbosityLevel_out = VERBOSITY_QUIET;
+        return VerboseStatus::VERBOSE_STATUS_SUCCESS;
     }
 };
 
@@ -960,16 +975,18 @@ class System
      * @param       markers_in
      *              the vector of fiducial markers.
      *
-     * @return      The camera pose (empty if tracking fails)
+     * @param[out] cameraPose_out The camera pose (empty if tracking fails)
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    Sophus::SE3f
-        trackStereo(const cv::Mat            &imageLeft_in,
-                    const cv::Mat            &imageRight_in,
-                    const double             &timestamp_in,
-                    const vector<IMU::Point> &imuMeas_in = vector<IMU::Point>(),
-                    string                    filename_in = "",
-                    const vector<semantic::Marker *> markers_in =
-                        vector<semantic::Marker *>{});
+    [[nodiscard]] SystemStatus trackStereo(
+        const cv::Mat                   &imageLeft_in,
+        const cv::Mat                   &imageRight_in,
+        const double                    &timestamp_in,
+        Sophus::SE3f                    &cameraPose_out,
+        const std::vector<IMU::Point>   &imuMeas_in = std::vector<IMU::Point>(),
+        string                           filename_in = "",
+        const vector<semantic::Marker *> markers_in =
+            vector<semantic::Marker *>{});
 
     /*!
      * @brief       Process the given rgbd frame for tracking. The DepthMap must
@@ -996,17 +1013,19 @@ class System
      * @param       markers_in
      *              The vector of fiducial markers.
      *
-     * @return      The camera pose (empty if tracking fails)
+     * @param[out] cameraPose_out The camera pose (empty if tracking fails)
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    Sophus::SE3f
-        trackRGBD(const cv::Mat                                &colorImage_in,
-                  const cv::Mat                                &depthmap_in,
-                  const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
-                  const double                                 &timestamp_in,
-                  const vector<IMU::Point> &imuMeas_in  = vector<IMU::Point>(),
-                  string                    filename_in = "",
-                  const vector<semantic::Marker *> markers_in =
-                      vector<semantic::Marker *>{});
+    [[nodiscard]] SystemStatus trackRGBD(
+        const cv::Mat                                &colorImage_in,
+        const cv::Mat                                &depthmap_in,
+        const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
+        const double                                 &timestamp_in,
+        Sophus::SE3f                                 &cameraPose_out,
+        const std::vector<IMU::Point>   &imuMeas_in = std::vector<IMU::Point>(),
+        string                           filename_in = "",
+        const vector<semantic::Marker *> markers_in =
+            vector<semantic::Marker *>{});
 
     /*!
      * @brief       Process the given stereo frame for tracking. Images must be
@@ -1028,12 +1047,14 @@ class System
      * @param       markers_in
      *              The vector of fiducial markers.
      *
-     * @return      The camera pose (empty if tracking fails)
+     * @param[out] cameraPose_out The camera pose (empty if tracking fails)
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    Sophus::SE3f trackMonocular(
+    [[nodiscard]] SystemStatus trackMonocular(
         const cv::Mat                   &image_in,
         const double                    &timestamp_in,
-        const vector<IMU::Point>        &imuMeas_in  = vector<IMU::Point>(),
+        Sophus::SE3f                    &cameraPose_out,
+        const std::vector<IMU::Point>   &imuMeas_in = std::vector<IMU::Point>(),
         string                           filename_in = "",
         const vector<semantic::Marker *> markers_in =
             vector<semantic::Marker *>{});
@@ -1042,19 +1063,21 @@ class System
      * @brief       This stops local mapping thread (map building) and performs
      *              only camera tracking.
      */
-    void activateLocalizationMode();
+    [[nodiscard]] SystemStatus activateLocalizationMode();
 
     /*!
      * @brief        This resumes local mapping thread and performs SLAM again.
      */
-    void deactivateLocalizationMode();
+    [[nodiscard]] SystemStatus deactivateLocalizationMode();
 
     /*!
      * @brief       Get the current active map in Atlas.
      *
-     * @return      The current active map.
+     * @param[out] p_currentMap_out The current active map.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    vs_graphs::core::Map *getCurrentMap();
+    [[nodiscard]] SystemStatus
+        getCurrentMap(vs_graphs::core::Map *&p_currentMap_out);
 
     /*!
      * @brief       Get the Atlas owning every map in the system.
@@ -1064,18 +1087,21 @@ class System
      *              Atlas remains owned by the System; the caller must not
      *              delete it.
      *
-     * @return      Pointer to the Atlas, or nullptr before initialisation.
+     * @param[out] p_atlas_out Pointer to the Atlas, or nullptr before
+     * initialisation.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    vs_graphs::core::Atlas *getAtlas();
+    [[nodiscard]] SystemStatus getAtlas(vs_graphs::core::Atlas *&p_atlas_out);
 
     /*!
      * @brief       Returns true if there have been a big map change (loop
      *              closure, global BA) since last call to this function.
      */
-    bool mapChanged();
+    [[nodiscard]] SystemStatus mapChanged(bool &hasMapChanged_out);
 
-    MissionHealthSnapshot
-        getMissionHealthSnapshot(bool includeSemantics_in = true);
+    [[nodiscard]] SystemStatus getMissionHealthSnapshot(
+        System::MissionHealthSnapshot &missionHealthSnapshot_out,
+        bool                           includeSemantics_in = true);
 
     /*!
      * @brief       Updates RGB-D frontend progress exposed through mission
@@ -1093,7 +1119,7 @@ class System
      *              Latest successfully tracked sensor timestamp, in
      *              nanoseconds.
      */
-    void updateRgbdFrontendHealth(
+    [[nodiscard]] SystemStatus updateRgbdFrontendHealth(
         std::uint64_t acceptedCount_in,
         std::uint64_t processedCount_in,
         std::uint64_t overwrittenCount_in,
@@ -1107,18 +1133,21 @@ class System
      *              no SemanticsManager exists yet or no cycle has completed
      *              -- check IsSemanticReportCacheAvailable() first.
      */
-    semantic::SemanticReportCacheEntry getSemanticReportCacheEntry() const;
+    [[nodiscard]] SystemStatus getSemanticReportCacheEntry(
+        semantic::SemanticReportCacheEntry &getSemanticReportCacheEntry_out)
+        const;
 
     /*!
      * @brief       True once p_semanticsManager exists and has cached at least
      *              one complete semantic evaluation cycle.
      */
-    bool isSemanticReportCacheAvailable() const;
+    [[nodiscard]] SystemStatus isSemanticReportCacheAvailable(
+        bool &isSemanticReportCacheAvailable_out) const;
 
     /*!
      * @brief       Reset the system (clear Atlas or the active map).
      */
-    void reset();
+    [[nodiscard]] SystemStatus reset();
 
     /*!
      * @brief       Reset the active map (clear the current map while retaining
@@ -1126,7 +1155,7 @@ class System
      *              system with a fresh map while keeping map topology and
      *              previously built map points.
      */
-    void resetActiveMap();
+    [[nodiscard]] SystemStatus resetActiveMap();
 
     /*!
      * @brief       Requests an active-map reset while retaining its
@@ -1139,22 +1168,24 @@ class System
      *              multiple unlike requests as a combined cause rather than
      *              assigning one misleading cause.
      */
-    void requestResetActiveMapWithCause(ResetCause cause_in);
+    [[nodiscard]] SystemStatus
+        requestResetActiveMapWithCause(ResetCause cause_in);
 
     /*!
      * @brief       All threads will be requested to finish. It waits until all
      *              threads have finished. This function must be called before
      *              saving the trajectory to ensure a clean shutdown.
      */
-    void shutdown();
+    [[nodiscard]] SystemStatus shutdown();
 
     /*!
      * @brief       Reset the system (clear Atlas or the active map).
      *
-     * @return      `true` if the system was successfully reset, `false`
-     *              otherwise.
+     * @param[out] isShutDown_out `true` if the system was successfully reset,
+     * `false` otherwise.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    bool isShutDown();
+    [[nodiscard]] SystemStatus isShutDown(bool &isShutDown_out);
 
     /*!
      * @brief       Save camera trajectory in the TUM RGB-D dataset format.
@@ -1166,7 +1197,7 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    void saveTrajectoryTUM(const string &filename_in);
+    [[nodiscard]] SystemStatus saveTrajectoryTUM(const string &filename_in);
 
     /*!
      * @brief       Save keyframe poses in the TUM RGB-D dataset format. This
@@ -1177,7 +1208,8 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    void saveKeyFrameTrajectoryTUM(const string &filename_in);
+    [[nodiscard]] SystemStatus
+        saveKeyFrameTrajectoryTUM(const string &filename_in);
 
     /*!
      * @brief       Save camera trajectory in the EuRoC MAV dataset format.
@@ -1192,7 +1224,7 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void saveTrajectoryEuRoC(const string &filename_in);
+    [[nodiscard]] SystemStatus saveTrajectoryEuRoC(const string &filename_in);
 
     /*!
      * @brief       Save keyframe poses in the EuRoC MAV dataset format. This
@@ -1207,7 +1239,8 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void saveKeyFrameTrajectoryEuRoC(const string &filename_in);
+    [[nodiscard]] SystemStatus
+        saveKeyFrameTrajectoryEuRoC(const string &filename_in);
 
     /*!
      * @brief       Save camera trajectory in the EuRoC MAV dataset format,
@@ -1224,7 +1257,8 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void saveTrajectoryEuRoC(const string &filename_in, Map *p_map_in);
+    [[nodiscard]] SystemStatus saveTrajectoryEuRoC(const string &filename_in,
+                                                   Map          *p_map_in);
 
     /*!
      * @brief       Save keyframe poses in the EuRoC MAV dataset format,
@@ -1243,7 +1277,8 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    void saveKeyFrameTrajectoryEuRoC(const string &filename_in, Map *p_map_in);
+    [[nodiscard]] SystemStatus
+        saveKeyFrameTrajectoryEuRoC(const string &filename_in, Map *p_map_in);
 
     /*!
      * @brief       Save data used for initialization debug. This dump includes
@@ -1255,7 +1290,7 @@ class System
      *              Multiple debug dumps may be available for different
      *              initialization attempts.
      */
-    void saveDebugData(const int &initialIndex_in);
+    [[nodiscard]] SystemStatus saveDebugData(const int &initialIndex_in);
 
     /*!
      * @brief       Save camera trajectory in the KITTI dataset format. Only for
@@ -1266,7 +1301,7 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    void saveTrajectoryKITTI(const string &filename_in);
+    [[nodiscard]] SystemStatus saveTrajectoryKITTI(const string &filename_in);
 
     /*!
      * @brief       Save the map to a file. The format (text or binary) is
@@ -1275,12 +1310,13 @@ class System
      * @param[in]   filename_in
      *              Path to the output file where the map will be saved.
      *
-     * @return      `true` if the map was saved successfully, `false`
-     *              otherwise. Returns `false` if the system is not properly
-     *              initialized or if saving is not supported for the current
-     *              sensor configuration.
+     * @param[out] isSaved_out `true` if the map was saved successfully, `false`
+     * otherwise. Returns `false` if the system is not properly initialized or
+     * if saving is not supported for the current sensor configuration.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    bool saveMap(const string &filename_in);
+    [[nodiscard]] SystemStatus saveMap(const string &filename_in,
+                                       bool         &isSaved_out);
 
     /*!
      * @brief       Save map points as a PCD (Point Cloud Data) file. This can
@@ -1290,136 +1326,163 @@ class System
      * @param[in]   filename_in
      *              Path to the output PCD file where map points will be saved.
      *
-     * @return      `true` if the map points were saved successfully, `false`
-     *              otherwise. Returns `false` if the system is not properly
-     *              initialized or if there are no map points to save.
+     * @param[out] isSaved_out `true` if the map points were saved successfully,
+     * `false` otherwise. Returns `false` if the system is not properly
+     * initialized or if there are no map points to save.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    bool saveMapPointsAsPCD(const string &filename_in);
+    [[nodiscard]] SystemStatus saveMapPointsAsPCD(const string &filename_in,
+                                                  bool         &isSaved_out);
 
     /*!
      * @brief       Get the current tracking state code. This reflects the
      *              current state of the tracking system (e.g. INITIALIZED,
      *              TRACKING, LOST). Updated after each frame processing.
      *
-     * @return      Tracking state code integer.
+     * @param[out] trackingState_out Tracking state code integer.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    int getTrackingState();
+    [[nodiscard]] SystemStatus getTrackingState(int &trackingState_out);
 
     /*!
      * @brief       Get a copy of the current frame image. The returned image
      *              is in the same format as the input (monocular, stereo, or
      *              RGB-D depending on the sensor configuration).
      *
-     * @return      Current frame as a cv::Mat. May be empty if no frame
-     *              has been processed yet.
+     * @param[out] currentFrame_out Current frame as a cv::Mat. May be empty if
+     * no frame has been processed yet.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    cv::Mat getCurrentFrame();
+    [[nodiscard]] SystemStatus getCurrentFrame(cv::Mat &currentFrame_out);
 
     /*!
      * @brief       Get all rooms in the current map. Rooms are semantic
      *              elements that group related passages and have associated
      *              traversal statistics.
      *
-     * @return      Vector of pointers to Room objects. May be empty if no
-     *              rooms have been created yet.
+     * @param[out] allRooms_out Vector of pointers to Room objects. May be empty
+     * if no rooms have been created yet.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::semantic::Room *> getAllRooms();
+    [[nodiscard]] SystemStatus
+        getAllRooms(std::vector<semantic::Room *> &allRooms_out);
 
     /*!
      * @brief       Get all floors in the current map. Floors are semantic
      *              elements that group related rooms.
      *
-     * @return      Vector of pointers to Floor objects. May be empty if no
-     *              floors have been created yet.
+     * @param[out] allFloors_out Vector of pointers to Floor objects. May be
+     * empty if no floors have been created yet.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::semantic::Floor *> getAllFloors();
+    [[nodiscard]] SystemStatus getAllFloors(
+        std::vector<vs_graphs::core::semantic::Floor *> &allFloors_out);
 
     /*!
      * @brief       Get all planes in the current map. Planes represent
      *              geometric planes detected in the environment (e.g., walls,
      *              floors, ceilings).
      *
-     * @return      Vector of pointers to Plane objects. May be empty if no
-     *              planes have been detected yet.
+     * @param[out] allPlanes_out Vector of pointers to Plane objects. May be
+     * empty if no planes have been detected yet.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::geometric::Plane *> getAllPlanes();
+    [[nodiscard]] SystemStatus
+        getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out);
 
     /*!
      * @brief       Get all doors in the current map. Doors are semantic
      *              elements representing doorways between rooms.
      *
-     * @return      Vector of pointers to Door objects. May be empty if no
-     *              doors have been detected yet.
+     * @param[out] allDoors_out Vector of pointers to Door objects. May be empty
+     * if no doors have been detected yet.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::Door *> getAllDoors();
+    [[nodiscard]] SystemStatus
+        getAllDoors(std::vector<vs_graphs::core::Door *> &allDoors_out);
 
     /*!
      * @brief       Get all markers (fiducial markers/AprilTags) in the current
      *              map. Markers are used for place recognition and
      *              localization.
      *
-     * @return      Vector of pointers to Marker objects. May be empty if no
-     *              markers have been detected yet.
+     * @param[out] allMarkers_out Vector of pointers to Marker objects. May be
+     * empty if no markers have been detected yet.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::semantic::Marker *> getAllMarkers();
+    [[nodiscard]] SystemStatus
+        getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out);
 
     /*!
      * @brief       Get all passages in the current map. Passages connect rooms
      *              and have traversal statistics tracking how many times they
      *              have been crossed.
      *
-     * @return      Vector of pointers to Passage objects. May be empty if no
-     *              passages have been detected yet.
+     * @param[out] allPassages_out Vector of pointers to Passage objects. May be
+     * empty if no passages have been detected yet.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::semantic::Passage *> getAllPassages();
+    [[nodiscard]] SystemStatus getAllPassages(
+        std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out);
 
     /*!
      * @brief       Get all keyframes in the current map. Keyframes represent
      *              key poses from which the map was built.
      *
-     * @return      Vector of pointers to KeyFrame objects. May be empty if
-     *              no keyframes have been created yet.
+     * @param[out] allKeyFrames_out Vector of pointers to KeyFrame objects. May
+     * be empty if no keyframes have been created yet.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::KeyFrame *> getAllKeyFrames();
+    [[nodiscard]] SystemStatus
+        getAllKeyFrames(std::vector<KeyFrame *> &allKeyFrames_out);
 
     /*!
      * @brief       Get all map points in the current map. Map points are
      *              3D points that have been triangulated and tracked.
      *
-     * @return      Vector of pointers to MapPoint objects. May be empty if
-     *              no map points have been created yet.
+     * @param[out] allMapPoints_out Vector of pointers to MapPoint objects. May
+     * be empty if no map points have been created yet.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::MapPoint *> getAllMapPoints();
+    [[nodiscard]] SystemStatus
+        getAllMapPoints(std::vector<MapPoint *> &allMapPoints_out);
 
     /*!
      * @brief       Get only the map points that are currently being tracked.
      *              These are map points that have been observed in the most
      *              recent frame and are likely to remain in the map.
      *
-     * @return      Vector of pointers to MapPoint objects currently being
-     *              tracked. May be empty if no points are being tracked.
+     * @param[out] trackedMapPoints_out Vector of pointers to MapPoint objects
+     * currently being tracked. May be empty if no points are being tracked.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<vs_graphs::core::MapPoint *> getTrackedMapPoints();
+    [[nodiscard]] SystemStatus
+        getTrackedMapPoints(std::vector<MapPoint *> &trackedMapPoints_out);
 
     /*!
      * @brief       Get all keyframe poses in the current map. Each pose
      *              represents the camera position and orientation at the
      *              time the keyframe was captured.
      *
-     * @return      Vector of Sophus::SE3f poses, one per keyframe. May be
-     *              empty if no keyframes have been created yet.
+     * @param[out] allKeyframePoses_out Vector of Sophus::SE3f poses, one per
+     * keyframe. May be empty if no keyframes have been created yet.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<Sophus::SE3f> getAllKeyframePoses();
+    [[nodiscard]] SystemStatus
+        getAllKeyframePoses(std::vector<Sophus::SE3f> &allKeyframePoses_out);
 
     /*!
      * @brief       Get the un-tracked keypoints from the current frame. These
      *              are keypoints that were detected but not yet associated
      *              with MapPoints.
      *
-     * @return      Vector of cv::KeyPoint objects representing un-tracked
-     *              keypoints. May be empty if all keypoints are tracked.
+     * @param[out] trackedKeyPointsUn_out Vector of cv::KeyPoint objects
+     * representing un-tracked keypoints. May be empty if all keypoints are
+     * tracked.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    std::vector<cv::KeyPoint> getTrackedKeyPointsUn();
+    [[nodiscard]] SystemStatus getTrackedKeyPointsUn(
+        std::vector<cv::KeyPoint> &trackedKeyPointsUn_out);
 
     /*!
      * @brief       Get the pose of a specific keyframe.
@@ -1428,60 +1491,68 @@ class System
      *              Pointer to the KeyFrame whose pose is requested. Must not
      *              be null and must belong to the current map.
      *
-     * @return      The camera pose (Sophus::SE3f) of the requested keyframe.
-     *              Returns an empty pose if the keyframe pointer is invalid.
+     * @param[out] keyFramePose_out The camera pose (Sophus::SE3f) of the
+     * requested keyframe. Returns an empty pose if the keyframe pointer is
+     * invalid.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    Sophus::SE3f getKeyFramePose(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] SystemStatus getKeyFramePose(KeyFrame     *p_keyFrame_in,
+                                               Sophus::SE3f &keyFramePose_out);
 
     /*!
      * @brief       Get the camera pose in the world frame. This is the
      *              estimated position and orientation of the camera relative
      *              to the world origin.
      *
-     * @return      Camera pose as Sophus::SE3f. May be invalid if the
-     *              system has not yet initialized the pose.
+     * @param[out] camTwc_out Camera pose as Sophus::SE3f. May be invalid if the
+     * system has not yet initialized the pose.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    Sophus::SE3f getCamTwc();
+    [[nodiscard]] SystemStatus getCamTwc(Sophus::SE3f &camTwc_out);
 
     /*!
      * @brief       Get the IMU pose in the body frame. Represents the
      *              estimated position and orientation of the IMU relative
      *              to the body frame.
      *
-     * @return      IMU pose as Sophus::SE3f. May be invalid if IMU data
-     *              has not been sufficiently processed.
+     * @param[out] imuTwb_out IMU pose as Sophus::SE3f. May be invalid if IMU
+     * data has not been sufficiently processed.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    Sophus::SE3f getImuTwb();
+    [[nodiscard]] SystemStatus getImuTwb(Sophus::SE3f &imuTwb_out);
 
     /*!
      * @brief       Get the IMU velocity in the body frame. Represents the
      *              linear velocity of the IMU in the body frame.
      *
-     * @return      IMU velocity as Eigen::Vector3f. May be invalid if IMU
-     *              data has not been sufficiently processed.
+     * @param[out] imuVwb_out IMU velocity as Eigen::Vector3f. May be invalid if
+     * IMU data has not been sufficiently processed.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    Eigen::Vector3f getImuVwb();
+    [[nodiscard]] SystemStatus getImuVwb(Eigen::Vector3f &imuVwb_out);
 
     /*!
      * @brief       Check whether IMU preintegration is active. When `true`,
      *              IMU preintegrated measurements are being used for pose
      *              estimation, which reduces drift between IMU updates.
      *
-     * @return      `true` if IMU preintegration is enabled and active,
-     *              `false` otherwise.
+     * @param[out] isImuPreintegrated_out `true` if IMU preintegration is
+     * enabled and active, `false` otherwise.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    bool isImuPreintegrated();
+    [[nodiscard]] SystemStatus isImuPreintegrated(bool &isImuPreintegrated_out);
 
     /*!
      * @brief       Get the time elapsed since IMU initialization. This
      *              represents how long the IMU has been running and
      *              accumulating data since it was first started.
      *
-     * @return      Time in seconds since IMU initialization. A value
-     *              greater than ~0.1 seconds typically indicates the IMU
-     *              has converged and is providing reliable data.
+     * @param[out] timeFromIMUInit_out Time in seconds since IMU initialization.
+     * A value greater than ~0.1 seconds typically indicates the IMU has
+     * converged and is providing reliable data.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    double getTimeFromIMUInit();
+    [[nodiscard]] SystemStatus getTimeFromIMUInit(double &timeFromIMUInit_out);
 
     /*!
      * @brief       Check whether the system considers its current state as
@@ -1489,11 +1560,12 @@ class System
      *              when the IMU has been initialized for a sufficient
      *              duration (typically > 0.1s) and the pose is valid.
      *
-     * @return      `true` if the system is finished/initialized, `false`
-     *              otherwise. When `false`, the pose and tracking state
-     *              should not be relied upon for critical decisions.
+     * @param[out] isFinished_out `true` if the system is finished/initialized,
+     * `false` otherwise. When `false`, the pose and tracking state should not
+     * be relied upon for critical decisions.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    bool isFinished();
+    [[nodiscard]] SystemStatus isFinished(bool &isFinished_out);
 
     /*!
      * @brief       Check if the system has lost the current pose estimate.
@@ -1501,10 +1573,11 @@ class System
      *              is Tracking::LOST, meaning the camera pose cannot be
      *              reliably estimated from the current frame.
      *
-     * @return      `true` if the system has lost tracking, `false` otherwise.
-     *              When `true`, the system needs to re-localize or restart.
+     * @param[out] isLost_out `true` if the system has lost tracking, `false`
+     * otherwise. When `true`, the system needs to re-localize or restart.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    bool isLost();
+    [[nodiscard]] SystemStatus isLost(bool &isLost_out);
 
     /*!
      * @brief       Change the dataset being processed. This allows the system
@@ -1514,17 +1587,17 @@ class System
      * @note        This function is currently a placeholder. Full dataset
      *              switching support may be added in future versions.
      */
-    void changeDataset();
+    [[nodiscard]] SystemStatus changeDataset();
 
     /*!
      * @brief       Get the image scale factor used by the system. This factor
      *              relates the image pixel coordinates to real-world metrics.
      *
-     * @return      Image scale factor. The mapping from pixels to meters
-     *              depends on the specific sensor configuration and
-     *              calibration.
+     * @param[out] imageScale_out Image scale factor. The mapping from pixels to
+     * meters depends on the specific sensor configuration and calibration.
+     * @return SYSTEM_STATUS_SUCCESS.
      */
-    float getImageScale();
+    [[nodiscard]] SystemStatus getImageScale(float &imageScale_out);
 
     /*!
      * @brief       Marks one keyframe as handed off to the semantic
@@ -1535,7 +1608,7 @@ class System
      *              in-flight window, not just what `System` can see
      *              internally.
      */
-    void incrementSegmentationPublishedCount();
+    [[nodiscard]] SystemStatus incrementSegmentationPublishedCount();
 
     /*!
      * @brief       Parse the JSON file containing the environment data
@@ -1543,7 +1616,7 @@ class System
      * @param[in]   jsonFilePath_in
      *              The path to the JSON file
      */
-    void parseJsonDatabase(string jsonFilePath_in);
+    [[nodiscard]] SystemStatus parseJsonDatabase(string jsonFilePath_in);
 
     /*!
      * @brief       Add the segmented image to the buffer in the
@@ -1552,13 +1625,14 @@ class System
      * @param[in]   p_tuple_in
      *              The address of the tuple of segmented image and pointcloud
      */
-    void addSegmentedImage(
+    [[nodiscard]] SystemStatus addSegmentedImage(
         std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in);
 
     /*!
      * @brief       Get the skeleton cluster coming from the current map
      */
-    std::vector<std::vector<Eigen::Vector3d>> getSkeletonCluster();
+    [[nodiscard]] SystemStatus getSkeletonCluster(
+        std::vector<std::vector<Eigen::Vector3d>> &skeletonCluster_out);
 
     /*!
      * @brief       Update the skeleton cluster coming from `voxblox_skeleton`
@@ -1567,8 +1641,9 @@ class System
      * @param[in]   skeletonClusterPoints_World_m_in
      *              the skeleton cluster points
      */
-    void setSkeletonCluster(const std::vector<std::vector<Eigen::Vector3d>>
-                                &skeletonClusterPoints_World_m_in);
+    [[nodiscard]] SystemStatus
+        setSkeletonCluster(const std::vector<std::vector<Eigen::Vector3d>>
+                               &skeletonClusterPoints_World_m_in);
 
     /*!
      * @brief       Stores the latest connected Voxblox skeleton edges.
@@ -1576,21 +1651,21 @@ class System
      * @param[in]   skeletonEdges_World_m_in
      *              Start and end points of each connected skeleton edge.
      */
-    void setSkeletonEdges(
+    [[nodiscard]] SystemStatus setSkeletonEdges(
         const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
             &skeletonEdges_World_m_in);
 
     /*!
      * @brief       Update the GNN room candidates list
      */
-    void setGNNRoomCandidates(
+    [[nodiscard]] SystemStatus setGNNRoomCandidates(
         const std::vector<vs_graphs::core::semantic::Room *>
             &gnnRoomCandidates_in);
 
 #ifdef REGISTER_TIMES
-    void insertRectTime(double &time_inout);
-    void insertResizeTime(double &time_inout);
-    void insertTrackTime(double &time_inout);
+    [[nodiscard]] SystemStatus insertRectTime(double &time_inout);
+    [[nodiscard]] SystemStatus insertResizeTime(double &time_inout);
+    [[nodiscard]] SystemStatus insertTrackTime(double &time_inout);
 #endif
 
   private:
@@ -1623,7 +1698,19 @@ class System
      *              stopped. A full reset takes precedence over an active-map
      *              reset and clears both requests.
      */
-    void applyPendingModeAndResetRequests();
+    [[nodiscard]] SystemStatus applyPendingModeAndResetRequests();
+
+    /*!
+     * @brief       Reports whether every worker thread (local mapping, loop
+     *              closing, semantic segmentation, semantics manager and,
+     *              when present, the viewer) has finished.
+     *
+     * @param[out]  haveFinished_out
+     *              True when all of them have finished.
+     *
+     * @return      SYSTEM_STATUS_SUCCESS.
+     */
+    [[nodiscard]] SystemStatus haveWorkersFinished(bool &haveFinished_out);
 
     /*!
      * @brief       Save the current Atlas to a file. The type parameter
@@ -1633,13 +1720,15 @@ class System
      *              Format/type specifier for saving. See @ref FileType
      * "FileType" for valid values (TEXT_FILE, BINARY_FILE).
      *
-     * @return      `true` if the Atlas was saved successfully, `false`
+     * @param[out] isSaved_out `true` if the Atlas was saved successfully,
+     * `false`
+     * @return SYSTEM_STATUS_SUCCESS.
      * otherwise.
      *
      * @frame       N/A
      * @unit        N/A
      */
-    bool saveAtlas(int type_in);
+    [[nodiscard]] SystemStatus saveAtlas(int type_in, bool &isSaved_out);
 
     /*!
      * @brief       Load an Atlas from a file. The type parameter determines the
@@ -1649,13 +1738,15 @@ class System
      *              Format/type specifier for loading. See @ref FileType
      * "FileType" for valid values (TEXT_FILE, BINARY_FILE).
      *
-     * @return      `true` if the Atlas was loaded successfully, `false`
+     * @param[out] isLoaded_out `true` if the Atlas was loaded successfully,
+     * `false`
+     * @return SYSTEM_STATUS_SUCCESS.
      * otherwise.
      *
      * @frame       N/A
      * @unit        N/A
      */
-    bool loadAtlas(int type_in);
+    [[nodiscard]] SystemStatus loadAtlas(int type_in, bool &isLoaded_out);
 
     /*!
      * @brief       Calculate a checksum for a file to verify data integrity.
@@ -1669,12 +1760,16 @@ class System
      *              Format/type specifier affecting the checksum algorithm. See
      *              @ref FileType "FileType" for valid values.
      *
-     * @return      Checksum string representing the file's content hash.
+     * @param[out] checkSum_out Checksum string representing the file's content
+     * hash.
+     * @return SYSTEM_STATUS_SUCCESS.
      *
      * @frame       N/A
      * @unit        N/A
      */
-    string calculateCheckSum(string filename_in, int type_in);
+    [[nodiscard]] SystemStatus calculateCheckSum(string  filename_in,
+                                                 int     type_in,
+                                                 string &checkSum_out);
 
     /*!
      * @brief       Atlas pointer. Owned by the System class. Provides access to

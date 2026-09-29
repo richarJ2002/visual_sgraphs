@@ -29,7 +29,7 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::add(KeyFrame *p_keyFrame_in)
+KeyFrameDatabaseStatus KeyFrameDatabase::add(KeyFrame *p_keyFrame_in)
 {
     unique_lock<mutex> lock(databaseMutex);
 
@@ -39,6 +39,8 @@ void KeyFrameDatabase::add(KeyFrame *p_keyFrame_in)
          wordIt != wordEnd;
          wordIt++)
         invertedFile[wordIt->first].push_back(p_keyFrame_in);
+
+    return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
 } // namespace core

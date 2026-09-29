@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-long unsigned int Atlas::getLivedKeyFrameCount()
+AtlasStatus Atlas::getLivedKeyFrameCount(unsigned long &livedKeyFrameCount_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     long unsigned int  count = 0;
@@ -49,7 +49,8 @@ long unsigned int Atlas::getLivedKeyFrameCount()
         count += atlasMapAllKeyFrames.size();
     }
 
-    return count;
+    livedKeyFrameCount_out = count;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

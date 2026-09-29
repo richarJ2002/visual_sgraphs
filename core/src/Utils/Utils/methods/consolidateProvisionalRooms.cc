@@ -109,8 +109,14 @@ UtilsStatus Utils::consolidateProvisionalRooms(
     }
 
     /* Extract all rooms and provisional structural elements */
-    const std::vector<vs_graphs::core::semantic::Room *> allRooms =
-        p_atlas_in->getAllRooms();
+    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
+    if (p_atlas_in->getAllRooms(allRooms) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Iterate through every possible redundant structural element */
     for (vs_graphs::core::semantic::Room *p_candidateRoom : allRooms)
@@ -133,8 +139,15 @@ UtilsStatus Utils::consolidateProvisionalRooms(
             continue;
         }
 
-        const std::vector<vs_graphs::core::semantic::Passage *> activePassages =
-            p_atlas_in->getAllPassages();
+        std::vector<vs_graphs::core::semantic::Passage *> activePassages{};
+        if (p_atlas_in->getAllPassages(activePassages) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const bool candidateIsLiveProspective = std::any_of(
             activePassages.begin(),
             activePassages.end(),
@@ -370,8 +383,16 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         }
 
         /* Preserve floor membership before retiring the provisional room. */
-        for (vs_graphs::core::semantic::Floor *p_floor :
-             p_atlas_in->getAllFloors())
+        std::vector<semantic::Floor *> atlasAllFloors{};
+        if (p_atlas_in->getAllFloors(atlasAllFloors) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllFloors returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (vs_graphs::core::semantic::Floor *p_floor : atlasAllFloors)
         {
             if (p_floor != nullptr)
             {

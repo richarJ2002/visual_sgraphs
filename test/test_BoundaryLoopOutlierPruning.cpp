@@ -265,13 +265,15 @@ RectangleWithOutlier makeRectangleWithOutlier(Map *p_map_in)
 
 TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> ground =
         makeRefitGroundPlaneAtOrigin(100, p_map);
-    atlas.addMapPlane(ground.get());
+    ASSERT_EQ((atlas.addMapPlane(ground.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     RectangleWithOutlier walls = makeRectangleWithOutlier(p_map);
 
@@ -294,9 +296,11 @@ TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setWalls(walls.outlier.get())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    atlas.addDetectedMapRoom(&room);
+    ASSERT_EQ((atlas.addDetectedMapRoom(&room)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.validateRoomBoundariesForTest();
+    ASSERT_EQ((manager.validateRoomBoundariesForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     vs_graphs::core::semantic::Room::BoundaryStatus boundaryStatus{};
     ASSERT_EQ((room.getBoundaryStatus(boundaryStatus)),
@@ -328,13 +332,15 @@ TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
 
 TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> ground =
         makeRefitGroundPlaneAtOrigin(100, p_map);
-    atlas.addMapPlane(ground.get());
+    ASSERT_EQ((atlas.addMapPlane(ground.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     RectangleWithOutlier walls = makeRectangleWithOutlier(p_map);
 
@@ -357,7 +363,8 @@ TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setWalls(walls.outlier.get())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    atlas.addDetectedMapRoom(&room);
+    ASSERT_EQ((atlas.addDetectedMapRoom(&room)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* The outlier is a doorway wall framing a passage out of this room --
      * explained, so it must survive even though it is off the closed loop.
@@ -372,7 +379,8 @@ TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
     ASSERT_EQ((room.setDoorways(&passage)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-    manager.validateRoomBoundariesForTest();
+    ASSERT_EQ((manager.validateRoomBoundariesForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     vs_graphs::core::semantic::Room::BoundaryStatus boundaryStatus{};
     ASSERT_EQ((room.getBoundaryStatus(boundaryStatus)),

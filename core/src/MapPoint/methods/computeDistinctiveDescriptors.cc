@@ -103,9 +103,18 @@ MapPointStatus MapPoint::computeDistinctiveDescriptors()
              secondDescriptorIndex < N;
              secondDescriptorIndex++)
         {
-            int distij = ORBmatcher::computeDescriptorDistance(
-                descriptors[keyPointIndex],
-                descriptors[secondDescriptorIndex]);
+            int distij{};
+            if (ORBmatcher::computeDescriptorDistance(
+                    descriptors[keyPointIndex],
+                    descriptors[secondDescriptorIndex],
+                    distij) != ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computeDescriptorDistance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             distances[keyPointIndex * N + secondDescriptorIndex] = distij;
             distances[secondDescriptorIndex * N + keyPointIndex] = distij;
         }

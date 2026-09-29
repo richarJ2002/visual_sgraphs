@@ -25,15 +25,26 @@
 
 #include "FrameDrawer.h"
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-cv::Mat System::getCurrentFrame()
+SystemStatus System::getCurrentFrame(cv::Mat &currentFrame_out)
 {
-    return p_frameDrawer->drawFrame();
+    cv::Mat frameDrawerFrameImage{};
+    if (p_frameDrawer->drawFrame(frameDrawerFrameImage) !=
+        FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: drawFrame returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    currentFrame_out = frameDrawerFrameImage;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -32,18 +32,25 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f Tracking::grabImageMonocular(
+TrackingStatus Tracking::grabImageMonocular(
     const cv::Mat                        &image_in,
     const double                         &timestamp_in,
     string                                filename_in,
     const std::vector<semantic::Marker *> markers_in,
-    const std::vector<semantic::Room *>   rooms_in)
+    const std::vector<semantic::Room *>   rooms_in,
+    Sophus::SE3f                         &cameraPose_out)
 {
     // Set arguments to local variables
     env_rooms = rooms_in;
 
     // Adaptive FAST threshold: adjust before feature extraction
-    adjustFASTThreshold();
+    if (adjustFASTThreshold() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: adjustFASTThreshold returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     imageGray = image_in;
     if (imageGray.channels() == 3)
@@ -134,7 +141,13 @@ Sophus::SE3f Tracking::grabImageMonocular(
 #endif
 
     lastId = currentFrame.id;
-    track();
+    if (track() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: track returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     Sophus::SE3<float> currentFrameGetPose{};
     if (currentFrame.getPose(currentFrameGetPose) !=
@@ -145,7 +158,8 @@ Sophus::SE3f Tracking::grabImageMonocular(
                      "fail; continuing as before.",
                      __func__);
     }
-    return currentFrameGetPose;
+    cameraPose_out = currentFrameGetPose;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

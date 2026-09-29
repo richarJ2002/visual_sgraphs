@@ -31,12 +31,20 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::getUpdatedFloors(void)
+SemanticsManagerStatus SemanticsManager::getUpdatedFloors(void)
 {
-    Map *p_currentMap = p_atlas->getCurrentMap();
+    Map *p_currentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_currentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_currentMap == nullptr)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* The current implementation supports one floor */
@@ -57,12 +65,29 @@ void SemanticsManager::getUpdatedFloors(void)
          * The newly allocated Floor object deliberately carries no prior-map
          * geometry; only its semantic ID crosses the reset boundary. */
         std::optional<int> recoveredFloorId;
-        const int          currentSemanticRoomId =
-            p_atlas->getCurrentSemanticRoomIdentity();
+        int                currentSemanticRoomId{};
+        if (p_atlas->getCurrentSemanticRoomIdentity(currentSemanticRoomId) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getCurrentSemanticRoomIdentity returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (currentSemanticRoomId >= 0)
         {
-            const std::optional<semantic::RoomContextSnapshot> recoveryContext =
-                p_atlas->copyLatestRoomContext(currentSemanticRoomId);
+            std::optional<semantic::RoomContextSnapshot> recoveryContext{};
+            if (p_atlas->copyLatestRoomContext(currentSemanticRoomId,
+                                               recoveryContext) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: copyLatestRoomContext returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
             if (recoveryContext.has_value() && recoveryContext->floorId >= 0)
             {
                 recoveredFloorId = recoveryContext->floorId;
@@ -98,7 +123,7 @@ void SemanticsManager::getUpdatedFloors(void)
     }
     if (p_keeperFloor == nullptr)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
     for (semantic::Floor *p_duplicateFloor : floors)
     {
@@ -177,8 +202,15 @@ void SemanticsManager::getUpdatedFloors(void)
 
     /* Extract only CONFIRMED rooms (detected map rooms) for floor centroid.
      * Exclude candidate/prospective rooms from mspMarkerBasedRooms. */
-    std::vector<vs_graphs::core::semantic::Room *> confirmedRooms =
-        p_atlas->getAllDetectedMapRooms();
+    std::vector<vs_graphs::core::semantic::Room *> confirmedRooms{};
+    if (p_atlas->getAllDetectedMapRooms(confirmedRooms) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Remove all invalid rooms */
     confirmedRooms.erase(
@@ -212,7 +244,7 @@ void SemanticsManager::getUpdatedFloors(void)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* Create list of centroids for each confirmed room */
@@ -262,6 +294,8 @@ void SemanticsManager::getUpdatedFloors(void)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

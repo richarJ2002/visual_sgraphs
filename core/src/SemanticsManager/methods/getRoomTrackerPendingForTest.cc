@@ -23,10 +23,13 @@ namespace vs_graphs
 namespace core
 {
 
-std::pair<bool, bool> SemanticsManager::getRoomTrackerPendingForTest() const
+SemanticsManagerStatus SemanticsManager::getRoomTrackerPendingForTest(
+    std::pair<bool, bool> &getRoomTrackerPendingForTest_out) const
 {
     std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
-    return {isCrossingEventPending, isCrossingBothSidesPending};
+    getRoomTrackerPendingForTest_out = {isCrossingEventPending,
+                                        isCrossingBothSidesPending};
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

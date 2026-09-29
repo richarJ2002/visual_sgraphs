@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-vector<KeyFrame *>
-    KeyFrameDatabase::detectLoopCandidates(KeyFrame *p_currentKeyFrame_in,
-                                           float     minScore_in)
+KeyFrameDatabaseStatus KeyFrameDatabase::detectLoopCandidates(
+    KeyFrame                *p_currentKeyFrame_in,
+    float                    minScore_in,
+    std::vector<KeyFrame *> &loopCandidates_out)
 {
     std::set<KeyFrame *> connectedKeyFrames{};
     if (p_currentKeyFrame_in->getConnectedKeyFrames(connectedKeyFrames) !=
@@ -109,7 +110,10 @@ vector<KeyFrame *>
     }
 
     if (keyFramesSharingWords.empty())
-        return vector<KeyFrame *>();
+    {
+        loopCandidates_out = std::vector<KeyFrame *>();
+        return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
+    }
 
     list<pair<float, KeyFrame *>> scoredCandidates;
 
@@ -153,7 +157,10 @@ vector<KeyFrame *>
     }
 
     if (scoredCandidates.empty())
-        return vector<KeyFrame *>();
+    {
+        loopCandidates_out = std::vector<KeyFrame *>();
+        return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
+    }
 
     list<pair<float, KeyFrame *>> accumulatedScoredCandidates;
     float                         bestAccumulatedScore = minScore_in;
@@ -231,7 +238,8 @@ vector<KeyFrame *>
         }
     }
 
-    return loopCandidateKeyFrames;
+    loopCandidates_out = loopCandidateKeyFrames;
+    return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
 } // namespace core

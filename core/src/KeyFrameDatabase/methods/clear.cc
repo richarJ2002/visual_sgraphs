@@ -29,10 +29,12 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::clear()
+KeyFrameDatabaseStatus KeyFrameDatabase::clear()
 {
     invertedFile.clear();
     invertedFile.resize(p_vocabulary->size());
+
+    return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
 } // namespace core

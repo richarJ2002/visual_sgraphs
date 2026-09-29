@@ -32,7 +32,7 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::resetIfRequested()
+LocalMappingStatus LocalMapping::resetIfRequested()
 {
     {
         unique_lock<mutex> resetLock(resetMutex);
@@ -69,6 +69,8 @@ void LocalMapping::resetIfRequested()
             isResetActiveMapRequested = false;
         }
     }
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

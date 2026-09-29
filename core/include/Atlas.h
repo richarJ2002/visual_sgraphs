@@ -27,6 +27,7 @@
 #define ATLAS_H
 
 #include "AtlasCurrentMapStatus.h"
+#include "AtlasStatus.h"
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 #include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"
 #include "CameraModels/Pinhole/objects/Pinhole.h"
@@ -149,94 +150,117 @@ class Atlas
                                      // created
     ~Atlas();
 
-    void createNewMap();
-    void changeMap(Map *p_map_in);
+    [[nodiscard]] AtlasStatus createNewMap();
+    [[nodiscard]] AtlasStatus changeMap(Map *p_map_in);
 
-    unsigned long int getLastInitKeyFrameId();
+    [[nodiscard]] AtlasStatus
+        getLastInitKeyFrameId(unsigned long &lastInitKeyFrameId_out);
 
-    void setViewer(Viewer *p_viewer_in);
+    [[nodiscard]] AtlasStatus setViewer(Viewer *p_viewer_in);
 
     // Methods for adding new components in the current map
-    void addMapFloor(semantic::Floor *p_floor_in);
-    void addMapPlane(geometric::Plane *p_plane_in);
-    void addKeyFrame(KeyFrame *p_keyFrame_in);
-    void addMapPoint(MapPoint *p_mapPoint_in);
-    void addMapMarker(semantic::Marker *p_marker_in);
-    void addDetectedMapRoom(semantic::Room *p_room_in);
-    void addCandidateMapRoom(semantic::Room *p_room_in);
-    void addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in);
-    void addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in);
+    [[nodiscard]] AtlasStatus addMapFloor(semantic::Floor *p_floor_in);
+    [[nodiscard]] AtlasStatus addMapPlane(geometric::Plane *p_plane_in);
+    [[nodiscard]] AtlasStatus addKeyFrame(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] AtlasStatus addMapPoint(MapPoint *p_mapPoint_in);
+    [[nodiscard]] AtlasStatus addMapMarker(semantic::Marker *p_marker_in);
+    [[nodiscard]] AtlasStatus addDetectedMapRoom(semantic::Room *p_room_in);
+    [[nodiscard]] AtlasStatus addCandidateMapRoom(semantic::Room *p_room_in);
+    [[nodiscard]] AtlasStatus
+        addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in);
+    [[nodiscard]] AtlasStatus
+        addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in);
 
     /*! Reserves the next mission-stable room identity, beginning at zero. */
-    int reserveRoomIdentity(void);
+    [[nodiscard]] AtlasStatus reserveRoomIdentity(int &roomId_out);
 
     /*! Reserves the next mission-stable passage identity, beginning at zero. */
-    int reservePassageIdentity(void);
+    [[nodiscard]] AtlasStatus reservePassageIdentity(int &passageId_out);
 
     /*! Reserves the next mission-stable floor identity, beginning at zero. */
-    int reserveFloorIdentity(void);
+    [[nodiscard]] AtlasStatus reserveFloorIdentity(int &floorId_out);
 
     /*! Advances the room allocator past an explicitly restored identity. */
-    void observeRoomIdentity(int roomId_in);
+    [[nodiscard]] AtlasStatus observeRoomIdentity(int roomId_in);
 
     /*! Advances the passage allocator past an explicitly restored identity. */
-    void observePassageIdentity(int passageId_in);
+    [[nodiscard]] AtlasStatus observePassageIdentity(int passageId_in);
 
     /*! Advances the floor allocator past an explicitly restored identity. */
-    void observeFloorIdentity(int floorId_in);
+    [[nodiscard]] AtlasStatus observeFloorIdentity(int floorId_in);
 
     /*! Stores the mission-stable identity occupied by the camera. */
-    void setCurrentSemanticRoomIdentity(int roomId_in);
+    [[nodiscard]] AtlasStatus setCurrentSemanticRoomIdentity(int roomId_in);
 
     /*! Returns the last mission-stable room identity, or -1 before bootstrap.
      */
-    int getCurrentSemanticRoomIdentity(void) const;
+    [[nodiscard]] AtlasStatus getCurrentSemanticRoomIdentity(
+        int &getCurrentSemanticRoomIdentity_out) const;
 
-    std::vector<camera_models::geometriccamera::GeometricCamera *>
-        getAllCameras();
-    camera_models::geometriccamera::GeometricCamera *
-        addCamera(camera_models::geometriccamera::GeometricCamera *p_camera_in);
+    [[nodiscard]] AtlasStatus getAllCameras(
+        std::vector<camera_models::geometriccamera::GeometricCamera *>
+            &allCameras_out);
+    [[nodiscard]] AtlasStatus addCamera(
+        camera_models::geometriccamera::GeometricCamera  *p_camera_in,
+        camera_models::geometriccamera::GeometricCamera *&p_camera_out);
 
     /* All methods without Map pointer work on current map */
-    void informNewBigChange();
-    int  getLastBigChangeIndex();
-    void setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in);
+    [[nodiscard]] AtlasStatus informNewBigChange();
+    [[nodiscard]] AtlasStatus
+        getLastBigChangeIndex(int &lastBigChangeIndex_out);
+    [[nodiscard]] AtlasStatus
+        setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in);
 
-    long unsigned     getMarkerCount();
-    long unsigned     getKeyFrameCount();
-    long unsigned int getMapPointCount();
+    [[nodiscard]] AtlasStatus getMarkerCount(unsigned long &markerCount_out);
+    [[nodiscard]] AtlasStatus
+        getKeyFrameCount(unsigned long &keyFrameCount_out);
+    [[nodiscard]] AtlasStatus
+        getMapPointCount(unsigned long &mapPointCount_out);
 
     // List of marker-ids placed on planes detected so far
     std::vector<int> visitedPlanesMarkerIds;
 
     // Method for get data in current map
-    std::vector<semantic::Room *>                    getAllRooms();
-    std::vector<semantic::Floor *>                   getAllFloors();
-    std::vector<semantic::Marker *>                  getAllMarkers();
-    std::vector<KeyFrame *>                          getAllKeyFrames();
-    std::vector<MapPoint *>                          getAllMapPoints();
-    std::vector<semantic::Room *>                    getAllDetectedMapRooms();
-    std::vector<vs_graphs::core::geometric::Plane *> getAllPlanes();
-    std::vector<semantic::Room *> getAllMarkerBasedMapRooms();
-    std::vector<semantic::Room *> getAllCandidateMapRooms();
-    std::vector<MapPoint *>       getReferenceMapPoints();
-    std::vector<vs_graphs::core::semantic::Passage *> getAllPassages();
+    [[nodiscard]] AtlasStatus
+        getAllRooms(std::vector<semantic::Room *> &allRooms_out);
+    [[nodiscard]] AtlasStatus
+        getAllFloors(std::vector<semantic::Floor *> &allFloors_out);
+    [[nodiscard]] AtlasStatus
+        getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out);
+    [[nodiscard]] AtlasStatus
+        getAllKeyFrames(std::vector<KeyFrame *> &allKeyFrames_out);
+    [[nodiscard]] AtlasStatus
+        getAllMapPoints(std::vector<MapPoint *> &allMapPoints_out);
+    [[nodiscard]] AtlasStatus getAllDetectedMapRooms(
+        std::vector<semantic::Room *> &allDetectedMapRooms_out);
+    [[nodiscard]] AtlasStatus getAllPlanes(
+        std::vector<vs_graphs::core::geometric::Plane *> &allPlanes_out);
+    [[nodiscard]] AtlasStatus getAllMarkerBasedMapRooms(
+        std::vector<semantic::Room *> &allMarkerBasedMapRooms_out);
+    [[nodiscard]] AtlasStatus getAllCandidateMapRooms(
+        std::vector<semantic::Room *> &allCandidateMapRooms_out);
+    [[nodiscard]] AtlasStatus
+        getReferenceMapPoints(std::vector<MapPoint *> &referenceMapPoints_out);
+    [[nodiscard]] AtlasStatus getAllPassages(
+        std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out);
 
     /*!
      * @brief Get the cluster points of the map set by `voxblox_skeleton`
      */
-    std::vector<std::vector<Eigen::Vector3d>> getSkeletonClusterPoints();
+    [[nodiscard]] AtlasStatus getSkeletonClusterPoints(
+        std::vector<std::vector<Eigen::Vector3d>> &skeletonClusterPoints_out);
 
     /*!
      * @brief       Gets the latest connected Voxblox skeleton edges.
      */
-    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-        getSkeletonEdges(void);
+    [[nodiscard]] AtlasStatus getSkeletonEdges(
+        std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+            &skeletonEdges_out);
 
     /*!
      * @brief       Stores the latest connected Voxblox skeleton edges.
      */
-    void setSkeletonEdges(
+    [[nodiscard]] AtlasStatus setSkeletonEdges(
         const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
             &newSkeletonEdges_in);
 
@@ -246,28 +270,31 @@ class Atlas
      * @param[in]   newClusterPoints_in
      *              The new cluster points to set
      */
-    void setSkeletonClusterPoints(
+    [[nodiscard]] AtlasStatus setSkeletonClusterPoints(
         const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints_in);
 
-    geometric::Plane *getBiggestGroundPlane();
+    [[nodiscard]] AtlasStatus
+        getBiggestGroundPlane(geometric::Plane *&p_biggestGroundPlane_out);
 
-    vector<Map *> getAllMaps();
+    [[nodiscard]] AtlasStatus getAllMaps(std::vector<Map *> &allMaps_out);
 
     /*!
      * @brief Checks whether a map is still an active, non-retired Atlas map.
      *
      * @param[in] p_map_in Map pointer to validate.
-     * @return True only while the map is active and not marked bad.
+     * @param[out] isActiveMap_out True only while the map is active and not
+     * marked bad.
+     * @return ATLAS_STATUS_SUCCESS.
      */
-    bool isActiveMap(Map *p_map_in);
+    [[nodiscard]] AtlasStatus isActiveMap(Map *p_map_in, bool &isActiveMap_out);
 
-    int countMaps();
+    [[nodiscard]] AtlasStatus countMaps(int &maps_out);
 
-    void clearMap();
+    [[nodiscard]] AtlasStatus clearMap();
 
-    void clearAtlas();
+    [[nodiscard]] AtlasStatus clearAtlas();
 
-    Map *getCurrentMap();
+    [[nodiscard]] AtlasStatus getCurrentMap(Map *&p_currentMap_out);
 
     /*!
      * @brief       Returns the current map's id, its truthful status
@@ -307,12 +334,14 @@ class Atlas
      * @param[out]  currentMapStatus_out
      *              Set to NO_CURRENT_MAP, CURRENT_MAP_ACTIVE, or
      *              CURRENT_MAP_NOT_ACTIVE; see AtlasCurrentMapStatus.h.
-     * @return      Every active Atlas map, sorted by id -- identical
-     *              content and order to GetAllMaps().
+     * @param[out] coherentMapView_out Every active Atlas map, sorted by id --
+     * identical content and order to GetAllMaps().
+     * @return ATLAS_STATUS_SUCCESS.
      */
-    std::vector<Map *>
+    [[nodiscard]] AtlasStatus
         getCoherentMapView(std::optional<long unsigned int> &currentMapId_inout,
-                           AtlasCurrentMapStatus &currentMapStatus_out);
+                           AtlasCurrentMapStatus &currentMapStatus_out,
+                           std::vector<Map *>    &coherentMapView_out);
 
     /*!
      * @brief       Acquires exclusive access to semantic-map mutations.
@@ -322,17 +351,19 @@ class Atlas
      *              threads use the same lock before changing the graph, which
      *              prevents guarded writers from interleaving mutations.
      *
-     * @return      Movable lock which releases the semantic transaction when
-     *              it leaves scope.
+     * @param[out] semanticUpdateLock_out Movable lock which releases the
+     * semantic transaction when it leaves scope.
+     * @return ATLAS_STATUS_SUCCESS.
      */
-    std::unique_lock<std::mutex> acquireSemanticUpdateLock();
+    [[nodiscard]] AtlasStatus acquireSemanticUpdateLock(
+        std::unique_lock<std::mutex> &semanticUpdateLock_out);
 
     /*!
      * @brief Removes a map from the active Atlas and marks it invalid.
      *
      * @param[in,out] p_map_inout Map whose merge lifecycle has completed.
      */
-    void setMapBad(Map *p_map_inout);
+    [[nodiscard]] AtlasStatus setMapBad(Map *p_map_inout);
 
     /*!
      * @brief Merges the semantic graph of \p p_otherMap_in into
@@ -356,7 +387,8 @@ class Atlas
      * @param[in,out] p_otherMap_inout   Map to be transformed, absorbed, then
      * marked bad.
      */
-    void mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout);
+    [[nodiscard]] AtlasStatus mergeMapPair(Map *p_currentMap_inout,
+                                           Map *p_otherMap_inout);
 
     /*!
      * @brief Attempts validated consecutive-map merges, old into current.
@@ -371,7 +403,7 @@ class Atlas
      * The caller must already hold the semantic-update lock (see
      * \ref acquireSemanticUpdateLock); this method does not acquire it.
      */
-    void attemptConsecutiveMergeIfGated(void);
+    [[nodiscard]] AtlasStatus attemptConsecutiveMergeIfGated(void);
 
     /*!
      * @brief Captures the room geometry of the current map before it is
@@ -381,7 +413,7 @@ class Atlas
      * \ref clearMap, and \ref clearAtlas so that room identity survives map
      * transitions.
      */
-    void exportRoomContextFromCurrentMap();
+    [[nodiscard]] AtlasStatus exportRoomContextFromCurrentMap();
 
     /*!
      * @brief Transfers room identity tags from accumulated context snapshots
@@ -394,42 +426,50 @@ class Atlas
      *
      * @param[in] p_newMap_in Map whose rooms should be examined/tagged.
      */
-    void matchRoomsToContext(Map *p_newMap_in);
+    [[nodiscard]] AtlasStatus matchRoomsToContext(Map *p_newMap_in);
 
     /*! Copies room history without exposing references beyond the lock scope.
      */
-    std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
-        copyRoomContextHistory() const;
+    [[nodiscard]] AtlasStatus copyRoomContextHistory(
+        std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+            &copyRoomContextHistory_out) const;
 
     /*! Copies invariant context from a live map under the semantic transaction.
      */
-    std::vector<semantic::RoomContextSnapshot>
-        copyRoomContextForMap(Map *p_map_in);
+    [[nodiscard]] AtlasStatus copyRoomContextForMap(
+        Map                                        *p_map_in,
+        std::vector<semantic::RoomContextSnapshot> &roomContexts_out);
 
     /*! Copies the newest departed-map snapshot for one stable room identity. */
-    std::optional<semantic::RoomContextSnapshot>
-        copyLatestRoomContext(int roomId_in) const;
+    [[nodiscard]] AtlasStatus copyLatestRoomContext(
+        int                                           roomId_in,
+        std::optional<semantic::RoomContextSnapshot> &roomContext_out) const;
 
     /*! Copies live entities only when the caller owns the semantic transaction.
      */
-    SnapshotCopyResult
+    [[nodiscard]] AtlasStatus
         copyRoomContextForMapChecked(Map *p_map_inout,
-                                     bool callerOwnsSemanticLock_in);
+                                     bool callerOwnsSemanticLock_in,
+                                     Atlas::SnapshotCopyResult &copyResult_out);
 
     /*! Returns and clears the map-created lifecycle event. */
-    bool consumeNewMapCreatedEvent();
+    [[nodiscard]] AtlasStatus
+        consumeNewMapCreatedEvent(bool &wasEventPending_out);
 
     /*! Reads the lifecycle event without acknowledging it. */
-    bool peekNewMapCreatedEvent() const;
+    [[nodiscard]] AtlasStatus
+        peekNewMapCreatedEvent(bool &isEventPending_out) const;
 
     /*! Acknowledges the pending lifecycle event after verified handling. */
-    void acknowledgeNewMapCreatedEvent();
+    [[nodiscard]] AtlasStatus acknowledgeNewMapCreatedEvent();
 
     /*!
      * @brief Returns the vector of context snapshots stored for \p mapId.
      */
-    const std::vector<semantic::RoomContextSnapshot> &
-        getRoomContextForMap(long unsigned int mapId_in) const;
+    [[nodiscard]] AtlasStatus
+        getRoomContextForMap(long unsigned int mapId_in,
+                             const std::vector<semantic::RoomContextSnapshot> *
+                                 &p_roomContextForMap_out) const;
 
     /*!
      * @brief Moves invalid maps out of the transient retirement queue.
@@ -438,41 +478,56 @@ class Atlas
      * reclamation avoids invalidating raw map pointers which can still be held
      * by tracking or visualization readers after a merge.
      */
-    void removeBadMaps();
+    [[nodiscard]] AtlasStatus removeBadMaps();
 
-    bool isInertial();
-    void setInertialSensor();
-    void setImuInitialized();
-    bool isImuInitialized();
+    [[nodiscard]] AtlasStatus isInertial(bool &isInertial_out);
+    [[nodiscard]] AtlasStatus setInertialSensor();
+    [[nodiscard]] AtlasStatus setImuInitialized();
+    [[nodiscard]] AtlasStatus isImuInitialized(bool &isImuInitialized_out);
 
     // Function for garantee the correction of serialization of this object
-    void preSave();
-    void postLoad();
+    [[nodiscard]] AtlasStatus preSave();
+    [[nodiscard]] AtlasStatus postLoad();
 
-    map<long unsigned int, KeyFrame *> getAtlasKeyFrames();
+    [[nodiscard]] AtlasStatus getAtlasKeyFrames(
+        std::map<unsigned long, KeyFrame *> &atlasKeyFrames_out);
 
     // Functions for getting the entities
-    geometric::Plane *getPlaneById(int planeId_in);
-    semantic::Floor  *getFloorById(int floorId_in);
-    semantic::Marker *getMarkerById(int markerId_in);
-    KeyFrame         *getKeyFrameById(long unsigned int idCount_in);
-    vs_graphs::core::semantic::Passage *getPassageById(int passageId_in);
-    vs_graphs::core::geometric::Plane  *getRoomWallPlaneById(int planeId_in);
+    [[nodiscard]] AtlasStatus getPlaneById(int                planeId_in,
+                                           geometric::Plane *&p_planeById_out);
+    [[nodiscard]] AtlasStatus getFloorById(int               floorId_in,
+                                           semantic::Floor *&p_floorById_out);
+    [[nodiscard]] AtlasStatus
+        getMarkerById(int markerId_in, semantic::Marker *&p_markerById_out);
+    [[nodiscard]] AtlasStatus getKeyFrameById(long unsigned int idCount_in,
+                                              KeyFrame *&p_keyFrameById_out);
+    [[nodiscard]] AtlasStatus
+                              getPassageById(int                                  passageId_in,
+                                             vs_graphs::core::semantic::Passage *&p_passageById_out);
+    [[nodiscard]] AtlasStatus getRoomWallPlaneById(
+        int                                 planeId_in,
+        vs_graphs::core::geometric::Plane *&p_roomWallPlaneById_out);
 
-    KeyFrameDatabase *getKeyFrameDatabase();
-    void setKeyFrameDatabase(KeyFrameDatabase *p_keyFrameDatabase_in);
+    [[nodiscard]] AtlasStatus
+        getKeyFrameDatabase(KeyFrameDatabase *&p_keyFrameDatabase_out);
+    [[nodiscard]] AtlasStatus
+        setKeyFrameDatabase(KeyFrameDatabase *p_keyFrameDatabase_in);
 
-    ORBVocabulary *getORBVocabulary();
-    void           setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
+    [[nodiscard]] AtlasStatus
+        getORBVocabulary(ORBVocabulary *&p_oRBVocabulary_out);
+    [[nodiscard]] AtlasStatus
+        setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
 
-    long unsigned int getLivedKeyFrameCount();
-    long unsigned int getLivedMapPointCount();
+    [[nodiscard]] AtlasStatus
+        getLivedKeyFrameCount(unsigned long &livedKeyFrameCount_out);
+    [[nodiscard]] AtlasStatus
+        getLivedMapPointCount(unsigned long &livedMapPointCount_out);
 
   protected:
     /*!
      * @brief Creates the next map while the caller owns atlasMutex.
      */
-    void createNewMapWhileAtlasLocked();
+    [[nodiscard]] AtlasStatus createNewMapWhileAtlasLocked();
 
     std::set<Map *> maps;
     std::set<Map *> badMaps;

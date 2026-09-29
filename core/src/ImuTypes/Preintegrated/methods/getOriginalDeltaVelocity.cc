@@ -26,10 +26,12 @@ namespace core
 namespace IMU
 {
 
-Eigen::Vector3f Preintegrated::getOriginalDeltaVelocity()
+PreintegratedStatus Preintegrated::getOriginalDeltaVelocity(
+    Eigen::Vector3f &originalDeltaVelocity_out)
 {
     std::unique_lock<std::mutex> lock(preintegrationMutex);
-    return dV;
+    originalDeltaVelocity_out = dV;
+    return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
 } // namespace IMU

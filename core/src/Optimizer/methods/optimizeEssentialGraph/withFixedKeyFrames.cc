@@ -37,7 +37,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::optimizeEssentialGraph(
+OptimizerStatus Optimizer::optimizeEssentialGraph(
     vs_graphs::core::KeyFrame                *p_currentKeyFrame_in,
     vs_graphs::core::Map                     *p_sourceMap_in,
     std::vector<vs_graphs::core::KeyFrame *> &fixedKeyFrames_in,
@@ -499,10 +499,17 @@ void Optimizer::optimizeEssentialGraph(
 
         if (connectionCount == 0)
         {
-            Verbose::printMess("Opt_Essential: KF " +
-                                   to_string(p_fixedKeyFrame->id) +
-                                   " has 0 connections",
-                               Verbose::VERBOSITY_DEBUG);
+            if (Verbose::printMess("Opt_Essential: KF " +
+                                       to_string(p_fixedKeyFrame->id) +
+                                       " has 0 connections",
+                                   Verbose::VERBOSITY_DEBUG) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
@@ -657,9 +664,16 @@ void Optimizer::optimizeEssentialGraph(
 
         if (p_referenceKeyFrame == nullptr)
         {
-            Verbose::printMess("MP " + to_string(p_mapPoint->id) +
-                                   " without a valid reference KF",
-                               Verbose::VERBOSITY_DEBUG);
+            if (Verbose::printMess("MP " + to_string(p_mapPoint->id) +
+                                       " without a valid reference KF",
+                                   Verbose::VERBOSITY_DEBUG) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
@@ -846,6 +860,8 @@ void Optimizer::optimizeEssentialGraph(
     }
 
     std::cout << "- Corrections finished!" << std::endl;
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

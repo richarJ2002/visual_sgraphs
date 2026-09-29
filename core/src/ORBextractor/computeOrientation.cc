@@ -57,6 +57,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "private_functions.h"
@@ -69,20 +70,33 @@ namespace vs_graphs
 namespace core
 {
 
-void computeOrientation(const Mat         &image_in,
-                        vector<KeyPoint>  &keypoints_in,
-                        const vector<int> &orientationMaximumOffset_in)
+ORBextractorStatus
+    computeOrientation(const Mat         &image_in,
+                       vector<KeyPoint>  &keypoints_in,
+                       const vector<int> &orientationMaximumOffset_in)
 {
     for (vector<KeyPoint>::iterator keypoint    = keypoints_in.begin(),
                                     keypointEnd = keypoints_in.end();
          keypoint != keypointEnd;
          ++keypoint)
     {
-        keypoint->angle =
-            computeIntensityCentroidAngle(image_in,
+        float intensityCentroidAngle{};
+        if (computeIntensityCentroidAngle(image_in,
                                           keypoint->pt,
-                                          orientationMaximumOffset_in);
+                                          orientationMaximumOffset_in,
+                                          intensityCentroidAngle) !=
+            ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: computeIntensityCentroidAngle returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        keypoint->angle = intensityCentroidAngle;
     }
+
+    return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
 } // namespace core

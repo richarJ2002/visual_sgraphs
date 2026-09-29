@@ -68,9 +68,11 @@ namespace vs_graphs
 namespace core
 {
 
-float computeIntensityCentroidAngle(const Mat         &image_in,
-                                    Point2f            point_in,
-                                    const vector<int> &maximumU_in)
+ORBextractorStatus
+    computeIntensityCentroidAngle(const Mat              &image_in,
+                                  Point2f                 point_in,
+                                  const std::vector<int> &maximumU_in,
+                                  float &intensityCentroidAngle_out)
 {
     int momentY = 0, momentX = 0;
 
@@ -98,7 +100,8 @@ float computeIntensityCentroidAngle(const Mat         &image_in,
         momentY += v * sum;
     }
 
-    return fastAtan2((float)momentY, (float)momentX);
+    intensityCentroidAngle_out = fastAtan2((float)momentY, (float)momentX);
+    return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
 } // namespace core

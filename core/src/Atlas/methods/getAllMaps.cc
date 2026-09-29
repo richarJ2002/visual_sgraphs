@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-vector<Map *> Atlas::getAllMaps()
+AtlasStatus Atlas::getAllMaps(std::vector<Map *> &allMaps_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     struct CompFunctor
@@ -59,7 +59,8 @@ vector<Map *> Atlas::getAllMaps()
     };
     vector<Map *> mapList(maps.begin(), maps.end());
     sort(mapList.begin(), mapList.end(), CompFunctor());
-    return mapList;
+    allMaps_out = mapList;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

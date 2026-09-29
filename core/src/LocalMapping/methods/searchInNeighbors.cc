@@ -33,7 +33,7 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::searchInNeighbors()
+LocalMappingStatus LocalMapping::searchInNeighbors()
 {
     // Retrieve neighbor keyframes
     int neighborKeyFrameCount = 10;
@@ -166,15 +166,36 @@ void LocalMapping::searchInNeighbors()
     {
         KeyFrame *p_targetKeyFrame = *targetKeyFrameIt;
 
-        matcher.fuse(p_targetKeyFrame, currentMapPointMatches);
+        int matcherFusedCount{};
+        if (matcher.fuse(p_targetKeyFrame,
+                         currentMapPointMatches,
+                         matcherFusedCount) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: fuse returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         if (p_targetKeyFrame->leftKeyPointCount != -1)
         {
-            matcher.fuse(p_targetKeyFrame, currentMapPointMatches, true);
+            int matcherFusedCount2{};
+            if (matcher.fuse(p_targetKeyFrame,
+                             currentMapPointMatches,
+                             matcherFusedCount2,
+                             true) !=
+                ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: fuse returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
     if (shouldAbortBa)
-        return;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
     // Search matches by projection from target KFs in current KF
     vector<MapPoint *> fuseCandidateMapPoints;
@@ -225,10 +246,30 @@ void LocalMapping::searchInNeighbors()
         }
     }
 
-    matcher.fuse(p_currentKeyFrame, fuseCandidateMapPoints);
+    int matcherFusedCount3{};
+    if (matcher.fuse(p_currentKeyFrame,
+                     fuseCandidateMapPoints,
+                     matcherFusedCount3) !=
+        ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: fuse returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     if (p_currentKeyFrame->leftKeyPointCount != -1)
     {
-        matcher.fuse(p_currentKeyFrame, fuseCandidateMapPoints, true);
+        int matcherFusedCount4{};
+        if (matcher.fuse(p_currentKeyFrame,
+                         fuseCandidateMapPoints,
+                         matcherFusedCount4,
+                         true) != ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: fuse returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     // Update points
@@ -291,6 +332,8 @@ void LocalMapping::searchInNeighbors()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

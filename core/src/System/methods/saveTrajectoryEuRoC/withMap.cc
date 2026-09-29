@@ -34,7 +34,8 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveTrajectoryEuRoC(const string &filename_in, Map *p_map_in)
+SystemStatus System::saveTrajectoryEuRoC(const string &filename_in,
+                                         Map          *p_map_in)
 {
 
     unsigned long mapId{};
@@ -199,6 +200,8 @@ void System::saveTrajectoryEuRoC(const string &filename_in, Map *p_map_in)
     f.close();
     cout << endl
          << "End of saving trajectory to " << filename_in << " ..." << endl;
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

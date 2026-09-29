@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-map<long unsigned int, KeyFrame *> Atlas::getAtlasKeyFrames()
+AtlasStatus Atlas::getAtlasKeyFrames(
+    std::map<unsigned long, KeyFrame *> &atlasKeyFrames_out)
 {
     map<long unsigned int, KeyFrame *> idKeyFrames;
     for (Map *p_backupMap : backupMaps)
@@ -52,7 +53,8 @@ map<long unsigned int, KeyFrame *> Atlas::getAtlasKeyFrames()
         }
     }
 
-    return idKeyFrames;
+    atlasKeyFrames_out = idKeyFrames;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

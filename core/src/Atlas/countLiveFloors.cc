@@ -33,11 +33,12 @@ namespace vs_graphs
 namespace core
 {
 
-std::size_t countLiveFloors(Map *p_map_in)
+AtlasStatus countLiveFloors(Map *p_map_in, std::size_t &liveFloors_out)
 {
     if (p_map_in == nullptr)
     {
-        return 0U;
+        liveFloors_out = 0U;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     std::size_t                    liveCount = 0U;
     std::vector<semantic::Floor *> mapAllFloors{};
@@ -65,7 +66,8 @@ std::size_t countLiveFloors(Map *p_map_in)
             ++liveCount;
         }
     }
-    return liveCount;
+    liveFloors_out = liveCount;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

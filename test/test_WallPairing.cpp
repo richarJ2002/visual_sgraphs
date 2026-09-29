@@ -132,8 +132,9 @@ std::unique_ptr<geometric::Plane>
 
 TEST(WallPairing, LinksAPlausibleTwinPairSymmetrically)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* Face A at x=0, normal +X, camera at x=1 (its own +X exterior side). */
@@ -160,10 +161,13 @@ TEST(WallPairing, LinksAPlausibleTwinPairSymmetrically)
                      1.1,
                      1.9);
 
-    atlas.addMapPlane(faceA.get());
-    atlas.addMapPlane(faceB.get());
+    ASSERT_EQ((atlas.addMapPlane(faceA.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.addMapPlane(faceB.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.reconcileWallFacePairsForTest();
+    ASSERT_EQ((manager.reconcileWallFacePairsForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     geometric::Plane *p_getTwinFace = nullptr;
     ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
@@ -177,8 +181,9 @@ TEST(WallPairing, LinksAPlausibleTwinPairSymmetrically)
 
 TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* Only 0.01 m apart -- thinner than any plausible physical wall. */
@@ -203,10 +208,13 @@ TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
                      1.1,
                      1.9);
 
-    atlas.addMapPlane(faceA.get());
-    atlas.addMapPlane(faceB.get());
+    ASSERT_EQ((atlas.addMapPlane(faceA.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.addMapPlane(faceB.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.reconcileWallFacePairsForTest();
+    ASSERT_EQ((manager.reconcileWallFacePairsForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     geometric::Plane *p_getTwinFace = nullptr;
     ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
@@ -220,8 +228,9 @@ TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
 
 TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* 3 m apart -- two different walls, not two faces of one wall. */
@@ -246,10 +255,13 @@ TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
                      1.1,
                      1.9);
 
-    atlas.addMapPlane(faceA.get());
-    atlas.addMapPlane(faceB.get());
+    ASSERT_EQ((atlas.addMapPlane(faceA.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.addMapPlane(faceB.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.reconcileWallFacePairsForTest();
+    ASSERT_EQ((manager.reconcileWallFacePairsForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     geometric::Plane *p_getTwinFace = nullptr;
     ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
@@ -263,8 +275,9 @@ TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
 
 TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* Both cameras on the +X side -- inconsistent with being two opposite
@@ -291,10 +304,13 @@ TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
                      1.1,
                      1.9);
 
-    atlas.addMapPlane(faceA.get());
-    atlas.addMapPlane(faceB.get());
+    ASSERT_EQ((atlas.addMapPlane(faceA.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.addMapPlane(faceB.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.reconcileWallFacePairsForTest();
+    ASSERT_EQ((manager.reconcileWallFacePairsForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     geometric::Plane *p_getTwinFace = nullptr;
     ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
@@ -308,8 +324,9 @@ TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
 
 TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     /* Parallel, plausibly wall-thick apart, opposite sides -- but their
@@ -336,10 +353,13 @@ TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
                      1.1,
                      1.9);
 
-    atlas.addMapPlane(faceA.get());
-    atlas.addMapPlane(faceB.get());
+    ASSERT_EQ((atlas.addMapPlane(faceA.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.addMapPlane(faceB.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.reconcileWallFacePairsForTest();
+    ASSERT_EQ((manager.reconcileWallFacePairsForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     geometric::Plane *p_getTwinFace = nullptr;
     ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
@@ -353,8 +373,9 @@ TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
 
 TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> faceA =
@@ -378,10 +399,13 @@ TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
                      1.1,
                      1.9);
 
-    atlas.addMapPlane(faceA.get());
-    atlas.addMapPlane(faceB.get());
+    ASSERT_EQ((atlas.addMapPlane(faceA.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.addMapPlane(faceB.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.reconcileWallFacePairsForTest();
+    ASSERT_EQ((manager.reconcileWallFacePairsForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     geometric::Plane *p_getTwinFace = nullptr;
     ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
@@ -400,7 +424,8 @@ TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
         (faceB->setObservationOrigin_World(Eigen::Vector3d(-4.0, 0.0, 0.0))),
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
-    manager.reconcileWallFacePairsForTest();
+    ASSERT_EQ((manager.reconcileWallFacePairsForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     geometric::Plane *p_getTwinFace3 = nullptr;
     ASSERT_EQ((faceA->getTwinFace(p_getTwinFace3)),

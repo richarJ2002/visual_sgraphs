@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-int Tracking::getMatchesInliers()
+TrackingStatus Tracking::getMatchesInliers(int &matchesInliers_out)
 {
-    return matchesInliers;
+    matchesInliers_out = matchesInliers;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

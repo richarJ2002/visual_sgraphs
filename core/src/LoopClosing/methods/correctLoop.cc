@@ -40,19 +40,50 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::correctLoop()
+LoopClosingStatus LoopClosing::correctLoop()
 {
     // Avoid new keyframes are inserted while correcting the loop
-    p_localMapper->requestStop();
-    p_localMapper->emptyQueue();
+    if (p_localMapper->requestStop() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestStop returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_localMapper->emptyQueue() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: emptyQueue returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Stop and reclaim any global bundle-adjustment worker before mutation. */
-    stopGlobalBundleAdjustment();
+    bool wasRunning{};
+    if (stopGlobalBundleAdjustment(wasRunning) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: stopGlobalBundleAdjustment returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Wait until Local Mapping has effectively stopped
     for (;;)
     {
-        if (p_localMapper->isStopped())
+        bool localMapperIsStopped{};
+        if (p_localMapper->isStopped(localMapperIsStopped) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isStopped returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (localMapperIsStopped)
         {
             break;
         }
@@ -324,7 +355,16 @@ void LoopClosing::correctLoop()
             }
         }
         // TODO Check this index increasement
-        if (p_atlas->getCurrentMap()->increaseChangeIndex() !=
+        Map *p_atlasCurrentMap = nullptr;
+        if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_atlasCurrentMap->increaseChangeIndex() !=
             MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -407,7 +447,14 @@ void LoopClosing::correctLoop()
     // Project MapPoints observed in the neighborhood of the loop keyframe
     // into the current keyframe and neighbors using corrected poses.
     // Fuse duplications.
-    searchAndFuse(CorrectedSim3, loopMapPoints);
+    if (searchAndFuse(CorrectedSim3, loopMapPoints) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: searchAndFuse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // After the MapPoint fusion, new links in the covisibility graph will
     // appear attaching both sides of the loop
@@ -524,23 +571,38 @@ void LoopClosing::correctLoop()
     }
     if (loopMapIsInertial && loopMapIsImuInitialized)
     {
-        Optimizer::optimizeEssentialGraph4DoF(p_loopMap,
-                                              p_loopMatchedKF,
-                                              p_currentKF,
-                                              NonCorrectedSim3,
-                                              CorrectedSim3,
-                                              loopConnections);
+        if (Optimizer::optimizeEssentialGraph4DoF(p_loopMap,
+                                                  p_loopMatchedKF,
+                                                  p_currentKF,
+                                                  NonCorrectedSim3,
+                                                  CorrectedSim3,
+                                                  loopConnections) !=
+            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: optimizeEssentialGraph4DoF returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
     else
     {
         // cout << "Loop -> Scale correction: " << mg2oLoopScw.scale() << endl;
-        Optimizer::optimizeEssentialGraph(p_loopMap,
-                                          p_loopMatchedKF,
-                                          p_currentKF,
-                                          NonCorrectedSim3,
-                                          CorrectedSim3,
-                                          loopConnections,
-                                          isFixedScale);
+        if (Optimizer::optimizeEssentialGraph(p_loopMap,
+                                              p_loopMatchedKF,
+                                              p_currentKF,
+                                              NonCorrectedSim3,
+                                              CorrectedSim3,
+                                              loopConnections,
+                                              isFixedScale) !=
+            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: optimizeEssentialGraph returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point timeEndOpt =
@@ -553,7 +615,13 @@ void LoopClosing::correctLoop()
     loopEssentialGraphTimes_ms.push_back(timeOptEss);
 #endif
 
-    p_atlas->informNewBigChange();
+    if (p_atlas->informNewBigChange() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: informNewBigChange returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Add loop edge
     if (p_loopMatchedKF->addLoopEdge(p_currentKF) !=
@@ -594,8 +662,17 @@ void LoopClosing::correctLoop()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
+    int atlasMaps{};
+    if (!(!loopMapIsImuInitialized2) && (loopMapKeyFrameCount < 200) &&
+        p_atlas->countMaps(atlasMaps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (!loopMapIsImuInitialized2 ||
-        (loopMapKeyFrameCount < 200 && p_atlas->countMaps() == 1))
+        (loopMapKeyFrameCount < 200 && atlasMaps == 1))
     {
         std::unique_lock<std::mutex> globalBundleAdjustmentLock(gbaMutex);
         isGbaRunning   = true;
@@ -612,10 +689,19 @@ void LoopClosing::correctLoop()
     }
 
     // Loop closed. Release Local Mapping.
-    p_localMapper->release();
+    if (p_localMapper->release() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: release returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     lastLoopKeyFrameId =
         p_currentKF->id; // TODO old varible, it is not use in the new algorithm
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

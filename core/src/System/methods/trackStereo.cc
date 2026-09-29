@@ -35,11 +35,12 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f
+SystemStatus
     System::trackStereo(const cv::Mat                        &imageLeft_in,
                         const cv::Mat                        &imageRight_in,
                         const double                         &timestamp_in,
-                        const vector<IMU::Point>             &imuMeas_in,
+                        Sophus::SE3f                         &cameraPose_out,
+                        const std::vector<IMU::Point>        &imuMeas_in,
                         string                                filename_in,
                         const std::vector<semantic::Marker *> markers_in)
 {
@@ -143,7 +144,14 @@ Sophus::SE3f
         imRightToFeed = imageRight_in.clone();
     }
 
-    applyPendingModeAndResetRequests();
+    if (applyPendingModeAndResetRequests() !=
+        SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: applyPendingModeAndResetRequests returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (sensor == System::IMU_STEREO)
     {
@@ -151,20 +159,45 @@ Sophus::SE3f
              imuMeasurementIndex < imuMeas_in.size();
              imuMeasurementIndex++)
         {
-            p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]);
+            if (p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: grabImuData returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
-    Sophus::SE3f Tcw = p_tracker->grabImageStereo(imLeftToFeed,
-                                                  imRightToFeed,
-                                                  timestamp_in,
-                                                  filename_in,
-                                                  markers_in,
-                                                  envRooms);
+    Sophus::SE3f Tcw{};
+    if (p_tracker->grabImageStereo(imLeftToFeed,
+                                   imRightToFeed,
+                                   timestamp_in,
+                                   filename_in,
+                                   markers_in,
+                                   envRooms,
+                                   Tcw) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: grabImageStereo returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     unique_lock<mutex> lock2(stateMutex);
-    trackingState           = p_tracker->state;
-    trackingInliers         = p_tracker->getMatchesInliers();
+    trackingState = p_tracker->state;
+    int trackerMatchesInliers{};
+    if (p_tracker->getMatchesInliers(trackerMatchesInliers) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMatchesInliers returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    trackingInliers         = trackerMatchesInliers;
     lastFrameTimestamp      = timestamp_in;
     trackedMapPoints        = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn      = p_tracker->currentFrame.keyPointsUndistorted;
@@ -174,7 +207,8 @@ Sophus::SE3f
         currentCameraPose_World.translation().allFinite() &&
         currentCameraPose_World.rotationMatrix().allFinite();
 
-    return Tcw;
+    cameraPose_out = Tcw;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

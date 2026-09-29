@@ -31,15 +31,16 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-    Atlas::getSkeletonEdges(void)
+AtlasStatus Atlas::getSkeletonEdges(
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &skeletonEdges_out)
 {
     /* Lock access to the active map */
     unique_lock<mutex> lock(atlasMutex);
 
     if (p_activeMap == nullptr)
     {
-        return {};
+        skeletonEdges_out = {};
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     /* Return the connected edges from the active map */
@@ -53,7 +54,8 @@ std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapSkeletonEdges;
+    skeletonEdges_out = activeMapSkeletonEdges;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -31,9 +31,18 @@ namespace vs_graphs
 namespace core
 {
 
-vector<Sophus::SE3f> System::getAllKeyframePoses()
+SystemStatus
+    System::getAllKeyframePoses(std::vector<Sophus::SE3f> &allKeyframePoses_out)
 {
-    vector<KeyFrame *> keyFrames = p_atlas->getAllKeyFrames();
+    std::vector<KeyFrame *> keyFrames{};
+    if (p_atlas->getAllKeyFrames(keyFrames) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     vector<Sophus::SE3f> keyFramePoses;
@@ -89,7 +98,8 @@ vector<Sophus::SE3f> System::getAllKeyframePoses()
         keyFramePoses.push_back(Twb);
     }
 
-    return keyFramePoses;
+    allKeyframePoses_out = keyFramePoses;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

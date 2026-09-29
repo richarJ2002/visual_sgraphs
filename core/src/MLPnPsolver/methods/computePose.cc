@@ -48,17 +48,19 @@
 #include "MLPnPsolver.h"
 
 #include <Eigen/Sparse>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void MLPnPsolver::computePose(const BearingVectors      &f_in,
-                              const Points3             &p_in,
-                              const Covariance3Matrices &covMats_in,
-                              const std::vector<int>    &indices_in,
-                              TransformationMatrix      &result_inout)
+MLPnPsolverStatus
+    MLPnPsolver::computePose(const BearingVectors      &f_in,
+                             const Points3             &p_in,
+                             const Covariance3Matrices &covMats_in,
+                             const std::vector<int>    &indices_in,
+                             TransformationMatrix      &result_inout)
 {
     size_t numberCorrespondences = indices_in.size();
     assert(numberCorrespondences > 5);
@@ -438,7 +440,15 @@ void MLPnPsolver::computePose(const BearingVectors      &f_in,
     //////////////////////////////////////
     // 5. gauss newton
     //////////////////////////////////////
-    RodriguesVector omega = rot2rodrigues(Rout);
+    RodriguesVector omega{};
+    if (rot2rodrigues(Rout, omega) !=
+        MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rot2rodrigues returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     Eigen::VectorXd minx(6);
     minx[0] = omega[0];
     minx[1] = omega[1];
@@ -447,13 +457,31 @@ void MLPnPsolver::computePose(const BearingVectors      &f_in,
     minx[4] = tout[1];
     minx[5] = tout[2];
 
-    mlpnp_gn(minx, points3v, nullspaces, P, shouldUseCovariance);
+    if (mlpnp_gn(minx, points3v, nullspaces, P, shouldUseCovariance) !=
+        MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: mlpnp_gn returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    Rout = rodrigues2rot(RodriguesVector(minx[0], minx[1], minx[2]));
+    Eigen::Matrix3d rotation2{};
+    if (rodrigues2rot(RodriguesVector(minx[0], minx[1], minx[2]), rotation2) !=
+        MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rodrigues2rot returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    Rout = rotation2;
     tout = TranslationVector(minx[3], minx[4], minx[5]);
     // result inverse as opengv uses this convention
     result_inout.block<3, 3>(0, 0) = Rout;
     result_inout.block<3, 1>(0, 3) = tout;
+
+    return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

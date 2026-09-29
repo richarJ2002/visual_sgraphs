@@ -64,7 +64,7 @@ namespace core
  * @return      True when a foreign room's own finite wall extent blocks
  *              the segment.
  */
-bool segmentCrossesForeignWall(
+SemanticsManagerStatus segmentCrossesForeignWall(
     const Eigen::Vector3d &segmentStart_World_m_in,
     const Eigen::Vector3d &segmentEnd_World_m_in,
     const std::vector<vs_graphs::core::semantic::Room *> &excludedRooms_in,
@@ -73,12 +73,14 @@ bool segmentCrossesForeignWall(
     const Eigen::Vector3d                                &groundAxisV_World_in,
     const Eigen::Vector3d                                &groundNormal_World_in,
     const double                                          endpointTrimRatio_in,
-    const double minimumWallLength_m_in)
+    const double minimumWallLength_m_in,
+    bool        &crossesForeignWall_out)
 {
     if (!segmentStart_World_m_in.allFinite() ||
         !segmentEnd_World_m_in.allFinite())
     {
-        return false;
+        crossesForeignWall_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     FiniteWallSegment2d testSegment;
@@ -121,13 +123,24 @@ bool segmentCrossesForeignWall(
         {
             FiniteWallSegment2d wallSegment;
 
-            if (!buildFiniteWallSegment2d(p_wall,
-                                          groundNormal_World_in,
-                                          groundAxisU_World_in,
-                                          groundAxisV_World_in,
-                                          endpointTrimRatio_in,
-                                          minimumWallLength_m_in,
-                                          wallSegment))
+            bool isBuilt{};
+            if (buildFiniteWallSegment2d(p_wall,
+                                         groundNormal_World_in,
+                                         groundAxisU_World_in,
+                                         groundAxisV_World_in,
+                                         endpointTrimRatio_in,
+                                         minimumWallLength_m_in,
+                                         wallSegment,
+                                         isBuilt) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: buildFiniteWallSegment2d returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (!isBuilt)
             {
                 continue;
             }
@@ -136,20 +149,32 @@ bool segmentCrossesForeignWall(
             double          testParameter = 0.0;
             double          wallParameter = 0.0;
 
+            bool hasIntersection{};
             if (intersectSupportingLines(testSegment,
                                          wallSegment,
                                          intersection_World_m,
                                          testParameter,
-                                         wallParameter) &&
-                testParameter > 0.0 && testParameter < 1.0 &&
+                                         wallParameter,
+                                         hasIntersection) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: intersectSupportingLines returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (hasIntersection && testParameter > 0.0 && testParameter < 1.0 &&
                 wallParameter >= 0.0 && wallParameter <= 1.0)
             {
-                return true;
+                crossesForeignWall_out = true;
+                return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
             }
         }
     }
 
-    return false;
+    crossesForeignWall_out = false;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

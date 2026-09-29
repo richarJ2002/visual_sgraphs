@@ -26,6 +26,7 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -43,8 +44,15 @@ void EdgePriorPoseImu::computeError()
     const VertexAccBias *p_accBiasVertex =
         static_cast<const VertexAccBias *>(_vertices[3]);
 
-    const Eigen::Vector3d rotationError =
-        logSO3(Rwb.transpose() * p_poseVertex->estimate().Rwb);
+    Eigen::Vector3d rotationError{};
+    if (logSO3(Rwb.transpose() * p_poseVertex->estimate().Rwb, rotationError) !=
+        G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: logSO3 returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     const Eigen::Vector3d translationError =
         Rwb.transpose() * (p_poseVertex->estimate().twb - twb);
     const Eigen::Vector3d velocityError = p_velocityVertex->estimate() - vwb;

@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <opencv2/core/core.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "KeyFrame.h"
@@ -31,11 +32,25 @@ namespace vs_graphs
 namespace core
 {
 
-void Sim3Solver::checkInliers()
+Sim3SolverStatus Sim3Solver::checkInliers()
 {
     vector<Eigen::Vector2f> vP1im2, vP2im1;
-    project(points3Dc2, vP2im1, mT12i, p_firstCamera);
-    project(points3Dc1, vP1im2, mT21i, p_secondCamera);
+    if (project(points3Dc2, vP2im1, mT12i, p_firstCamera) !=
+        Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: project returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (project(points3Dc1, vP1im2, mT21i, p_secondCamera) !=
+        Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: project returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     inlierCount = 0;
 
@@ -59,6 +74,8 @@ void Sim3Solver::checkInliers()
         else
             inlierFlags[points1im1Index] = false;
     }
+
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

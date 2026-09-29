@@ -31,9 +31,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::updateFrameIMU(const float      s_in,
-                              const IMU::Bias &b_in,
-                              KeyFrame        *p_currentKeyFrame_in)
+TrackingStatus Tracking::updateFrameIMU(const float      s_in,
+                                        const IMU::Bias &b_in,
+                                        KeyFrame        *p_currentKeyFrame_in)
 {
     Map *p_map = nullptr;
     if (p_currentKeyFrame_in->getMap(p_map) !=
@@ -214,16 +214,53 @@ void Tracking::updateFrameIMU(const float      s_in,
         }
         float t12 = lastFrame.p_imuPreintegrated->dT;
 
+        Eigen::Matrix3f updatedDeltaRotation{};
+        if (lastFrame.p_imuPreintegrated->getUpdatedDeltaRotation(
+                updatedDeltaRotation) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getUpdatedDeltaRotation returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        Eigen::Matrix3f rotation{};
+        if (IMU::normalizeRotation(Rwb1 * updatedDeltaRotation, rotation) !=
+            IMU::ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: normalizeRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f updatedDeltaPosition{};
+        if (lastFrame.p_imuPreintegrated->getUpdatedDeltaPosition(
+                updatedDeltaPosition) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getUpdatedDeltaPosition returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        Eigen::Vector3f updatedDeltaVelocity{};
+        if (lastFrame.p_imuPreintegrated->getUpdatedDeltaVelocity(
+                updatedDeltaVelocity) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getUpdatedDeltaVelocity returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (lastFrame.setImuPoseVelocity(
-                IMU::normalizeRotation(
-                    Rwb1 *
-                    lastFrame.p_imuPreintegrated->getUpdatedDeltaRotation()),
+                rotation,
                 twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
-                    Rwb1 *
-                        lastFrame.p_imuPreintegrated->getUpdatedDeltaPosition(),
-                Vwb1 + Gz * t12 +
-                    Rwb1 * lastFrame.p_imuPreintegrated
-                               ->getUpdatedDeltaVelocity()) !=
+                    Rwb1 * updatedDeltaPosition,
+                Vwb1 + Gz * t12 + Rwb1 * updatedDeltaVelocity) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -266,16 +303,53 @@ void Tracking::updateFrameIMU(const float      s_in,
         }
         float t12 = currentFrame.p_imuPreintegrated->dT;
 
+        Eigen::Matrix3f updatedDeltaRotation2{};
+        if (currentFrame.p_imuPreintegrated->getUpdatedDeltaRotation(
+                updatedDeltaRotation2) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getUpdatedDeltaRotation returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        Eigen::Matrix3f rotation2{};
+        if (IMU::normalizeRotation(Rwb1 * updatedDeltaRotation2, rotation2) !=
+            IMU::ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: normalizeRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector3f updatedDeltaPosition2{};
+        if (currentFrame.p_imuPreintegrated->getUpdatedDeltaPosition(
+                updatedDeltaPosition2) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getUpdatedDeltaPosition returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        Eigen::Vector3f updatedDeltaVelocity2{};
+        if (currentFrame.p_imuPreintegrated->getUpdatedDeltaVelocity(
+                updatedDeltaVelocity2) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getUpdatedDeltaVelocity returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         if (currentFrame.setImuPoseVelocity(
-                IMU::normalizeRotation(
-                    Rwb1 *
-                    currentFrame.p_imuPreintegrated->getUpdatedDeltaRotation()),
+                rotation2,
                 twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
-                    Rwb1 * currentFrame.p_imuPreintegrated
-                               ->getUpdatedDeltaPosition(),
-                Vwb1 + Gz * t12 +
-                    Rwb1 * currentFrame.p_imuPreintegrated
-                               ->getUpdatedDeltaVelocity()) !=
+                    Rwb1 * updatedDeltaPosition2,
+                Vwb1 + Gz * t12 + Rwb1 * updatedDeltaVelocity2) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -286,6 +360,8 @@ void Tracking::updateFrameIMU(const float      s_in,
     }
 
     firstImuFrameId = currentFrame.id;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

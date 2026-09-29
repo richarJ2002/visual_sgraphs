@@ -36,7 +36,8 @@ namespace vs_graphs
 namespace core
 {
 
-int Optimizer::poseOptimization(Frame *p_frame_inout)
+OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
+                                            int   &inlierCount_out)
 {
     types::SystemParams *p_sysParams = nullptr;
     if (types::SystemParams::getParams(p_sysParams) !=
@@ -419,7 +420,10 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
     }
 
     if (initialCorrespondenceCount < 3)
-        return 0;
+    {
+        inlierCount_out = 0;
+        return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
+    }
 
     // We perform 4 optimizations, after each optimization we classify
     // observation as inlier/outlier At the next optimization, outliers are not
@@ -815,7 +819,8 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                      __func__);
     }
 
-    return initialCorrespondenceCount - badCount;
+    inlierCount_out = initialCorrespondenceCount - badCount;
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

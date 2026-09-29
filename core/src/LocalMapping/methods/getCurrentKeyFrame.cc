@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-KeyFrame *LocalMapping::getCurrentKeyFrame()
+LocalMappingStatus
+    LocalMapping::getCurrentKeyFrame(KeyFrame *&p_currentKeyFrame_out)
 {
-    return p_currentKeyFrame;
+    p_currentKeyFrame_out = p_currentKeyFrame;
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

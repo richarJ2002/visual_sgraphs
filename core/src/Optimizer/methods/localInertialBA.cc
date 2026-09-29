@@ -35,15 +35,15 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
-                                bool     *p_pbStopFlag_in,
-                                Map      *p_map_inout,
-                                int      &fixedKeyFrameCount_in,
-                                int      &optKeyFrameCount_in,
-                                int      &mapPointCount_in,
-                                int      &edgeCount_in,
-                                bool      isLargeWindow_in,
-                                bool      isRecentlyInitialized_in)
+OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
+                                           bool     *p_pbStopFlag_in,
+                                           Map      *p_map_inout,
+                                           int      &fixedKeyFrameCount_in,
+                                           int      &optKeyFrameCount_in,
+                                           int      &mapPointCount_in,
+                                           int      &edgeCount_in,
+                                           bool      isLargeWindow_in,
+                                           bool      isRecentlyInitialized_in)
 {
     Map *p_currentMap = nullptr;
     if (p_keyFrame_inout->getMap(p_currentMap) !=
@@ -419,7 +419,14 @@ void Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            p_keyFrame->p_imuPreintegrated->setNewBias(imuBias);
+            if (p_keyFrame->p_imuPreintegrated->setNewBias(imuBias) !=
+                IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setNewBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             g2o::HyperGraph::Vertex *p_firstPoseVertex =
                 optimizer.vertex(p_keyFrame->p_prevKF->id);
             g2o::HyperGraph::Vertex *p_firstVelocityVertex = optimizer.vertex(
@@ -856,7 +863,7 @@ void Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         !isLargeWindow_in) // bGN)
     {
         cout << "FAIL LOCAL-INERTIAL BA!!!!" << endl;
-        return;
+        return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
     }
 
     if (!vToErase.empty())
@@ -1003,6 +1010,8 @@ void Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

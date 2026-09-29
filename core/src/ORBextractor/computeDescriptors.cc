@@ -57,6 +57,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "private_functions.h"
@@ -69,21 +70,30 @@ namespace vs_graphs
 namespace core
 {
 
-void computeDescriptors(const Mat           &image_in,
-                        vector<KeyPoint>    &keypoints_in,
-                        Mat                 &descriptors_out,
-                        const vector<Point> &briefPattern_in)
+ORBextractorStatus computeDescriptors(const Mat           &image_in,
+                                      vector<KeyPoint>    &keypoints_in,
+                                      Mat                 &descriptors_out,
+                                      const vector<Point> &briefPattern_in)
 {
     descriptors_out = Mat::zeros((int)keypoints_in.size(), 32, CV_8UC1);
 
     for (size_t keypointIndex = 0; keypointIndex < keypoints_in.size();
          keypointIndex++)
     {
-        computeOrbDescriptor(keypoints_in[keypointIndex],
-                             image_in,
-                             &briefPattern_in[0],
-                             descriptors_out.ptr((int)keypointIndex));
+        if (computeOrbDescriptor(keypoints_in[keypointIndex],
+                                 image_in,
+                                 &briefPattern_in[0],
+                                 descriptors_out.ptr((int)keypointIndex)) !=
+            ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeOrbDescriptor returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
+
+    return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
 } // namespace core

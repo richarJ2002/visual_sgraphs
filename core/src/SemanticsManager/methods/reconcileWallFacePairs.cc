@@ -29,11 +29,19 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::reconcileWallFacePairs(void)
+SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
 {
-    geometric::Plane *p_groundPlane      = p_atlas->getBiggestGroundPlane();
-    Eigen::Vector3d   groundNormal_World = Eigen::Vector3d::Zero();
-    bool              groundPlaneIsBad{};
+    geometric::Plane *p_groundPlane = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
+    bool            groundPlaneIsBad{};
     if ((p_groundPlane != nullptr) &&
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -69,8 +77,17 @@ void SemanticsManager::reconcileWallFacePairs(void)
     const double minimumOverlapRatio = static_cast<double>(
         p_sysParams->semSeg.wallPairing.minimumOverlapRatio);
 
-    std::vector<geometric::Plane *> wallPlanes;
-    for (geometric::Plane *p_plane : p_atlas->getAllPlanes())
+    std::vector<geometric::Plane *>                  wallPlanes;
+    std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
+    if (p_atlas->getAllPlanes(atlasAllPlanes) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (geometric::Plane *p_plane : atlasAllPlanes)
     {
         bool planeIsBad{};
         if ((p_plane != nullptr) &&
@@ -144,12 +161,23 @@ void SemanticsManager::reconcileWallFacePairs(void)
                 continue;
             }
 
+            bool arePlausibleTwinWallFaces2{};
             if (arePlausibleTwinWallFaces(p_wall,
                                           p_existingTwin,
                                           minimumThickness_m,
                                           maximumThickness_m,
                                           minimumOverlapRatio,
-                                          groundNormal_World))
+                                          groundNormal_World,
+                                          arePlausibleTwinWallFaces2) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: arePlausibleTwinWallFaces returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (arePlausibleTwinWallFaces2)
             {
                 continue;
             }
@@ -216,12 +244,23 @@ void SemanticsManager::reconcileWallFacePairs(void)
                 continue;
             }
 
-            if (!arePlausibleTwinWallFaces(p_first,
-                                           p_second,
-                                           minimumThickness_m,
-                                           maximumThickness_m,
-                                           minimumOverlapRatio,
-                                           groundNormal_World))
+            bool arePlausibleTwinWallFaces3{};
+            if (arePlausibleTwinWallFaces(p_first,
+                                          p_second,
+                                          minimumThickness_m,
+                                          maximumThickness_m,
+                                          minimumOverlapRatio,
+                                          groundNormal_World,
+                                          arePlausibleTwinWallFaces3) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: arePlausibleTwinWallFaces returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (!arePlausibleTwinWallFaces3)
             {
                 continue;
             }
@@ -290,6 +329,8 @@ void SemanticsManager::reconcileWallFacePairs(void)
                       << std::endl;
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

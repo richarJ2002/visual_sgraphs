@@ -31,8 +31,9 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::checkObservations(set<KeyFrame *> &keyFramesMap1_in,
-                                    set<KeyFrame *> &keyFramesMap2_in)
+LoopClosingStatus
+    LoopClosing::checkObservations(std::set<KeyFrame *> &keyFramesMap1_in,
+                                   set<KeyFrame *>      &keyFramesMap2_in)
 {
     cout << "----------------------" << endl;
     for (KeyFrame *p_keyFrameInMap1 : keyFramesMap1_in)
@@ -112,6 +113,8 @@ void LoopClosing::checkObservations(set<KeyFrame *> &keyFramesMap1_in,
         }
     }
     cout << "----------------------" << endl;
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -23,10 +23,12 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::onTrackingRecovered(void)
+SemanticsManagerStatus SemanticsManager::onTrackingRecovered(void)
 {
     std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
     isTrackingLossEpisodeActive = false;
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -28,12 +28,14 @@
 
 #include "Atlas.h"
 #include "KeyFrame.h"
+#include "MapDrawerStatus.h"
 #include "MapPoint.h"
 #include "Utils/Settings/objects/Settings.h"
 #include <pangolin/pangolin.h>
 
 #include <iostream>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,14 +53,30 @@ class MapDrawer
     {
         if (p_settings_in)
         {
-            newParameterLoader(p_settings_in);
+            if (newParameterLoader(p_settings_in) !=
+                MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: newParameterLoader returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
             cv::FileStorage settingsFileStorage(settingsFilePath_in,
                                                 cv::FileStorage::READ);
-            bool            isViewerConfigValid =
-                parseViewerParamFile(settingsFileStorage);
+            bool            isViewerConfigValid{};
+            if (parseViewerParamFile(settingsFileStorage,
+                                     isViewerConfigValid) !=
+                MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: parseViewerParamFile returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             if (!isViewerConfigValid)
             {
@@ -75,22 +93,28 @@ class MapDrawer
         }
     }
 
-    void newParameterLoader(utils::settings::Settings *p_settings_inout);
+    [[nodiscard]] MapDrawerStatus
+        newParameterLoader(utils::settings::Settings *p_settings_inout);
 
     Atlas *p_atlas;
 
-    void drawMapPoints();
-    void drawKeyFrames(const bool shouldDrawKeyFrames_in,
-                       const bool shouldDrawGraph_in,
-                       const bool shouldDrawInertialGraph_in,
-                       const bool shouldDrawOptimizedLba_in);
-    void drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in);
-    void setCurrentCameraPose(const Sophus::SE3f &Tcw_in);
-    void getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M_in,
-                                      pangolin::OpenGlMatrix &MOw_inout);
+    [[nodiscard]] MapDrawerStatus drawMapPoints();
+    [[nodiscard]] MapDrawerStatus
+        drawKeyFrames(const bool shouldDrawKeyFrames_in,
+                      const bool shouldDrawGraph_in,
+                      const bool shouldDrawInertialGraph_in,
+                      const bool shouldDrawOptimizedLba_in);
+    [[nodiscard]] MapDrawerStatus
+        drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in);
+    [[nodiscard]] MapDrawerStatus
+        setCurrentCameraPose(const Sophus::SE3f &Tcw_in);
+    [[nodiscard]] MapDrawerStatus
+        getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M_in,
+                                     pangolin::OpenGlMatrix &MOw_inout);
 
   private:
-    bool parseViewerParamFile(cv::FileStorage &settings_in);
+    [[nodiscard]] MapDrawerStatus
+        parseViewerParamFile(cv::FileStorage &settings_in, bool &isParsed_out);
 
     float keyFrameSize;
     float keyFrameLineWidth;

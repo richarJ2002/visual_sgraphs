@@ -28,9 +28,11 @@
 
 #include "MapDrawer.h"
 #include "Utils/Settings/objects/Settings.h"
+#include "ViewerStatus.h"
 
 #include <iostream>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -64,7 +66,14 @@ class Viewer
     {
         if (p_settings_in)
         {
-            newParameterLoader(p_settings_in);
+            if (newParameterLoader(p_settings_in) !=
+                ViewerStatus::VIEWER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: newParameterLoader returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
@@ -72,7 +81,16 @@ class Viewer
             cv::FileStorage settingsFileStorage(settingsFilePath_in,
                                                 cv::FileStorage::READ);
 
-            bool isConfigValid = parseViewerParamFile(settingsFileStorage);
+            bool isConfigValid{};
+            if (parseViewerParamFile(settingsFileStorage, isConfigValid) !=
+                ViewerStatus::VIEWER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: parseViewerParamFile returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             if (!isConfigValid)
             {
@@ -91,31 +109,33 @@ class Viewer
         isTrackingStopRequested = false;
     }
 
-    void newParameterLoader(utils::settings::Settings *p_settings_inout);
+    [[nodiscard]] ViewerStatus
+        newParameterLoader(utils::settings::Settings *p_settings_inout);
 
     // Main thread function. Draw points, keyframes, the current camera pose and
     // the last processed frame. Drawing is refreshed according to the camera
     // fps. We use Pangolin.
     void run();
 
-    void requestFinish();
+    [[nodiscard]] ViewerStatus requestFinish();
 
-    void requestStop();
+    [[nodiscard]] ViewerStatus requestStop();
 
-    bool isFinished();
+    [[nodiscard]] ViewerStatus isFinished(bool &isFinished_out);
 
-    bool isStopped();
+    [[nodiscard]] ViewerStatus isStopped(bool &isStopped_out);
 
-    void release();
+    [[nodiscard]] ViewerStatus release();
 
     // void SetTrackingPause();
 
     bool shouldDrawBothImages;
 
   private:
-    bool parseViewerParamFile(cv::FileStorage &settings_in);
+    [[nodiscard]] ViewerStatus
+        parseViewerParamFile(cv::FileStorage &settings_in, bool &isParsed_out);
 
-    bool stop();
+    [[nodiscard]] ViewerStatus stop(bool &isStopped_out);
 
     System      *p_system;
     FrameDrawer *p_frameDrawer;
@@ -129,11 +149,11 @@ class Viewer
 
     float viewpointX, viewpointY, viewpointZ, viewpointF;
 
-    bool       checkFinish();
-    void       setFinish();
-    bool       isFinishRequested;
-    bool       hasFinished;
-    std::mutex finishMutex;
+    [[nodiscard]] ViewerStatus checkFinish(bool &isFinishRequested_out);
+    [[nodiscard]] ViewerStatus setFinish();
+    bool                       isFinishRequested;
+    bool                       hasFinished;
+    std::mutex                 finishMutex;
 
     bool       hasStopped;
     bool       isStopRequested;

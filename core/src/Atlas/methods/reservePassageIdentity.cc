@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-int Atlas::reservePassageIdentity(void)
+AtlasStatus Atlas::reservePassageIdentity(int &passageId_out)
 {
-    return nextPassageIdentity.fetch_add(1, std::memory_order_relaxed);
+    passageId_out = nextPassageIdentity.fetch_add(1, std::memory_order_relaxed);
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

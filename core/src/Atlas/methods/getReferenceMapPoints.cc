@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<MapPoint *> Atlas::getReferenceMapPoints()
+AtlasStatus Atlas::getReferenceMapPoints(
+    std::vector<MapPoint *> &referenceMapPoints_out)
 {
     unique_lock<mutex>      lock(atlasMutex);
     std::vector<MapPoint *> activeMapReferenceMapPoints{};
@@ -43,7 +44,8 @@ std::vector<MapPoint *> Atlas::getReferenceMapPoints()
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapReferenceMapPoints;
+    referenceMapPoints_out = activeMapReferenceMapPoints;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

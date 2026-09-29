@@ -95,7 +95,14 @@ bool VertexPose::read(std::istream &inputStream_inout)
 
     double baselineFocalProduct;
     inputStream_inout >> baselineFocalProduct;
-    _estimate.setParam(Rcw, tcw, Rbc, tbc, baselineFocalProduct);
+    if (_estimate.setParam(Rcw, tcw, Rbc, tbc, baselineFocalProduct) !=
+        ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParam returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     updateCache();
 
     return true;

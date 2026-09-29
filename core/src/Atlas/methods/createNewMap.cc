@@ -24,16 +24,25 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void Atlas::createNewMap()
+AtlasStatus Atlas::createNewMap()
 {
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
-    createNewMapWhileAtlasLocked();
+    if (createNewMapWhileAtlasLocked() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: createNewMapWhileAtlasLocked returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

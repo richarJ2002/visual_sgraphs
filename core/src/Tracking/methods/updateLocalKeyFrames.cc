@@ -32,12 +32,20 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::updateLocalKeyFrames()
+TrackingStatus Tracking::updateLocalKeyFrames()
 {
     // Each map point vote for the keyframes in which it has been observed
     map<KeyFrame *, int> keyframeCounter;
-    if (!p_atlas->isImuInitialized() ||
-        (currentFrame.id < lastRelocFrameId + 2))
+    bool                 atlasIsImuInitialized{};
+    if (p_atlas->isImuInitialized(atlasIsImuInitialized) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!atlasIsImuInitialized || (currentFrame.id < lastRelocFrameId + 2))
     {
         for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
              keyPointIndex++)
@@ -303,6 +311,8 @@ void Tracking::updateLocalKeyFrames()
         p_referenceKF                    = p_keyFrameMaximum;
         currentFrame.p_referenceKeyFrame = p_referenceKF;
     }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -27,18 +27,26 @@
 #include "System.h"
 
 #include <iomanip>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void System::saveDebugData(const int &initialIndex_in)
+SystemStatus System::saveDebugData(const int &initialIndex_in)
 {
     // 0. Save initialization trajectory
-    saveTrajectoryEuRoC("init_FrameTrajectoy_" +
-                        to_string(p_localMapper->initSection) + "_" +
-                        to_string(initialIndex_in) + ".txt");
+    if (saveTrajectoryEuRoC("init_FrameTrajectoy_" +
+                            to_string(p_localMapper->initSection) + "_" +
+                            to_string(initialIndex_in) + ".txt") !=
+        SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: saveTrajectoryEuRoC returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // 1. Save scale
     ofstream f;
@@ -104,6 +112,8 @@ void System::saveDebugData(const int &initialIndex_in)
     f << fixed;
     f << p_localMapper->initTime << endl;
     f.close();
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

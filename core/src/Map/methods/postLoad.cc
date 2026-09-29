@@ -168,7 +168,14 @@ MapStatus Map::postLoad(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_keyFrameDatabase_inout->add(p_keyFrame);
+        if (p_keyFrameDatabase_inout->add(p_keyFrame) !=
+            KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: add returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
+        }
     }
 
     if (backupInitialKeyFrameId != -1)

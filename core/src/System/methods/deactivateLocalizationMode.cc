@@ -30,10 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-void System::deactivateLocalizationMode()
+SystemStatus System::deactivateLocalizationMode()
 {
     unique_lock<mutex> lock(modeMutex);
     isLocalizationModeDeactivationRequested = true;
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -32,8 +32,8 @@ namespace vs_graphs
 namespace core
 {
 
-void Sim3Solver::computeSim3(Eigen::Matrix3f &P1_inout,
-                             Eigen::Matrix3f &P2_inout)
+Sim3SolverStatus Sim3Solver::computeSim3(Eigen::Matrix3f &P1_inout,
+                                         Eigen::Matrix3f &P2_inout)
 {
     // Custom implementation of:
     // Horn 1987, Closed-form solution of absolute orientataion using unit
@@ -46,8 +46,22 @@ void Sim3Solver::computeSim3(Eigen::Matrix3f &P1_inout,
     Eigen::Vector3f O1;  // Centroid of P1
     Eigen::Vector3f O2;  // Centroid of P2
 
-    computeCentroid(P1_inout, Pr1, O1);
-    computeCentroid(P2_inout, Pr2, O2);
+    if (computeCentroid(P1_inout, Pr1, O1) !=
+        Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeCentroid returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (computeCentroid(P2_inout, Pr2, O2) !=
+        Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeCentroid returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Step 2: Compute M matrix
 
@@ -158,6 +172,8 @@ void Sim3Solver::computeSim3(Eigen::Matrix3f &P1_inout,
 
     Eigen::Vector3f tinv    = -rinv * mt12i;
     mT21i.block<3, 1>(0, 3) = tinv;
+
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

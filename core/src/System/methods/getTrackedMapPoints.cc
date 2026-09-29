@@ -30,10 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<MapPoint *> System::getTrackedMapPoints()
+SystemStatus
+    System::getTrackedMapPoints(std::vector<MapPoint *> &trackedMapPoints_out)
 {
     unique_lock<mutex> lock(stateMutex);
-    return trackedMapPoints;
+    trackedMapPoints_out = trackedMapPoints;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

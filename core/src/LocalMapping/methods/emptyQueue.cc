@@ -24,22 +24,41 @@
  */
 
 #include "LocalMapping.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void LocalMapping::emptyQueue()
+LocalMappingStatus LocalMapping::emptyQueue()
 {
     for (;;)
     {
-        if (!checkNewKeyFrames())
+        bool hasNewKeyFrames{};
+        if (checkNewKeyFrames(hasNewKeyFrames) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkNewKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (!hasNewKeyFrames)
         {
             break;
         }
-        processNewKeyFrame();
+        if (processNewKeyFrame() !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: processNewKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

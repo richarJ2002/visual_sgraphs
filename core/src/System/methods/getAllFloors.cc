@@ -31,9 +31,18 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<vs_graphs::core::semantic::Floor *> System::getAllFloors()
+SystemStatus System::getAllFloors(
+    std::vector<vs_graphs::core::semantic::Floor *> &allFloors_out)
 {
-    vs_graphs::core::Map          *p_activeMap = p_atlas->getCurrentMap();
+    vs_graphs::core::Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     std::vector<semantic::Floor *> activeMapAllFloors{};
     if (p_activeMap->getAllFloors(activeMapAllFloors) !=
         MapStatus::MAP_STATUS_SUCCESS)
@@ -43,7 +52,8 @@ std::vector<vs_graphs::core::semantic::Floor *> System::getAllFloors()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllFloors;
+    allFloors_out = activeMapAllFloors;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

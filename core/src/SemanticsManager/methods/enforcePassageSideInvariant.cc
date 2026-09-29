@@ -26,7 +26,7 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::enforcePassageSideInvariant(void)
+SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
 {
     /* "Continuously checking the current state of the sgraph to make sure
      * the rules are followed" (as opposed to only at the moment a wall is
@@ -45,9 +45,17 @@ void SemanticsManager::enforcePassageSideInvariant(void)
      * migrate across a face it once legitimately sat beside. The aperture
      * backstop is re-checked because passage geometry itself sharpens over
      * time. */
-    geometric::Plane *p_groundPlane      = p_atlas->getBiggestGroundPlane();
-    Eigen::Vector3d   groundNormal_World = Eigen::Vector3d::Zero();
-    bool              groundPlaneIsBad{};
+    geometric::Plane *p_groundPlane = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
+    bool            groundPlaneIsBad{};
     if ((p_groundPlane != nullptr) &&
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -76,10 +84,26 @@ void SemanticsManager::enforcePassageSideInvariant(void)
         }
     }
 
-    const std::vector<semantic::Passage *> allPassages =
-        p_atlas->getAllPassages();
+    std::vector<semantic::Passage *> allPassages{};
+    if (p_atlas->getAllPassages(allPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    for (semantic::Room *p_room : p_atlas->getAllRooms())
+    std::vector<semantic::Room *> atlasAllRooms{};
+    if (p_atlas->getAllRooms(atlasAllRooms) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Room *p_room : atlasAllRooms)
     {
         bool roomIsBad{};
         if (!(p_room == nullptr) &&
@@ -215,6 +239,7 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                         "cannot fail; continuing as before.",
                         __func__);
                 }
+                bool crossesPassageOpening{};
                 if (segmentCrossesPassageOpening(
                         knownSidePoint_World_m,
                         wallGetCentroid.cast<double>(),
@@ -223,7 +248,17 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                         static_cast<double>(
                             p_sysParams->roomSeg.passagePartition
                                 .openingMargin_m),
-                        minimumSideDistance_m))
+                        minimumSideDistance_m,
+                        crossesPassageOpening) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: segmentCrossesPassageOpening returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (crossesPassageOpening)
                 {
                     wallRoutedToProspective = true;
                     break;
@@ -234,7 +269,19 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                 continue;
             }
 
-            if (isWallFaceForeignToRoom(p_room, p_wall))
+            bool isWallFaceForeignToRoom2{};
+            if (isWallFaceForeignToRoom(p_room,
+                                        p_wall,
+                                        isWallFaceForeignToRoom2) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: isWallFaceForeignToRoom returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (isWallFaceForeignToRoom2)
             {
                 bool roomWasWallRemoved{};
                 if (p_room->removeWall(p_wall, roomWasWallRemoved) !=
@@ -274,13 +321,25 @@ void SemanticsManager::enforcePassageSideInvariant(void)
 
             if (!allPassages.empty())
             {
-                enforcePassageApertureBackstop(p_room,
-                                               p_wall,
-                                               allPassages,
-                                               groundNormal_World);
+                SemanticsManager::PassageSideEnforcementOutcome outcome{};
+                if (enforcePassageApertureBackstop(p_room,
+                                                   p_wall,
+                                                   allPassages,
+                                                   groundNormal_World,
+                                                   outcome) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: enforcePassageApertureBackstop returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

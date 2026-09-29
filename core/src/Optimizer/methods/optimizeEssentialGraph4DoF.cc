@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::optimizeEssentialGraph4DoF(
+OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
     Map                                    *p_map_inout,
     KeyFrame                               *p_loopKeyFrame_in,
     KeyFrame                               *p_currentKeyFrame_in,
@@ -536,6 +536,8 @@ void Optimizer::optimizeEssentialGraph4DoF(
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

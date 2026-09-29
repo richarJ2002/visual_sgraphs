@@ -22,6 +22,7 @@
 
 #include "Thirdparty/DBoW2/DUtils/Random.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 using namespace std;
@@ -30,13 +31,14 @@ namespace vs_graphs
 namespace core
 {
 
-bool TwoViewReconstruction::reconstruct(
+TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
     const std::vector<cv::KeyPoint> &keys1_in,
     const std::vector<cv::KeyPoint> &keys2_in,
     const vector<int>               &matches12_in,
     Sophus::SE3f                    &T21_inout,
     vector<cv::Point3f>             &vP3D_inout,
-    vector<bool>                    &triangulatedFlags_inout)
+    std::vector<bool>               &triangulatedFlags_inout,
+    bool                            &isReconstructed_out)
 {
     keys1.clear();
     keys2.clear();
@@ -121,7 +123,11 @@ bool TwoViewReconstruction::reconstruct(
 
     // Compute ratio of scores
     if (SH + SF == 0.f)
-        return false;
+    {
+        isReconstructed_out = false;
+        return TwoViewReconstructionStatus::
+            TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
+    }
     float RH = SH / (SH + SF);
 
     float minimumParallax = 1.0;
@@ -131,26 +137,50 @@ bool TwoViewReconstruction::reconstruct(
     if (RH > 0.50) // if(RH>0.40)
     {
         // cout << "Initialization from Homography" << endl;
-        return reconstructH(matchesInliersHFlags,
-                            H,
-                            calibrationMatrix,
-                            T21_inout,
-                            vP3D_inout,
-                            triangulatedFlags_inout,
-                            minimumParallax,
-                            50);
+        bool isReconstructed{};
+        if (reconstructH(matchesInliersHFlags,
+                         H,
+                         calibrationMatrix,
+                         T21_inout,
+                         vP3D_inout,
+                         triangulatedFlags_inout,
+                         minimumParallax,
+                         50,
+                         isReconstructed) !=
+            TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: reconstructH returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        isReconstructed_out = isReconstructed;
+        return TwoViewReconstructionStatus::
+            TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
     }
     else // if(pF_HF>0.6)
     {
         // cout << "Initialization from Fundamental" << endl;
-        return reconstructF(matchesInliersFFlags,
-                            F,
-                            calibrationMatrix,
-                            T21_inout,
-                            vP3D_inout,
-                            triangulatedFlags_inout,
-                            minimumParallax,
-                            50);
+        bool isReconstructed2{};
+        if (reconstructF(matchesInliersFFlags,
+                         F,
+                         calibrationMatrix,
+                         T21_inout,
+                         vP3D_inout,
+                         triangulatedFlags_inout,
+                         minimumParallax,
+                         50,
+                         isReconstructed2) !=
+            TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: reconstructF returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        isReconstructed_out = isReconstructed2;
+        return TwoViewReconstructionStatus::
+            TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
     }
 }
 

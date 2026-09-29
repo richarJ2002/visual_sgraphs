@@ -17,17 +17,28 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void SemanticsManager::setCurrentRoomIdForTest(const int roomId_in)
+SemanticsManagerStatus
+    SemanticsManager::setCurrentRoomIdForTest(const int roomId_in)
 {
     std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
     currentRoomId = roomId_in;
-    p_atlas->setCurrentSemanticRoomIdentity(roomId_in);
+    if (p_atlas->setCurrentSemanticRoomIdentity(roomId_in) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCurrentSemanticRoomIdentity returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

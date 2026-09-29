@@ -31,12 +31,16 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<semantic::RoomContextSnapshot>
-    Atlas::copyRoomContextForMap(Map *p_map_in)
+AtlasStatus Atlas::copyRoomContextForMap(
+    Map                                        *p_map_in,
+    std::vector<semantic::RoomContextSnapshot> &roomContexts_out)
 {
     std::vector<semantic::RoomContextSnapshot> snapshots;
     if (p_map_in == nullptr)
-        return snapshots;
+    {
+        roomContexts_out = snapshots;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
+    }
     std::vector<semantic::Room *> rooms{};
     if (p_map_in->getAllDetectedMapRooms(rooms) !=
         MapStatus::MAP_STATUS_SUCCESS)
@@ -428,7 +432,8 @@ std::vector<semantic::RoomContextSnapshot>
         }
         snapshots.push_back(std::move(snapshot));
     }
-    return snapshots;
+    roomContexts_out = snapshots;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

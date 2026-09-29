@@ -35,10 +35,11 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f
+SystemStatus
     System::trackMonocular(const cv::Mat                        &image_in,
                            const double                         &timestamp_in,
-                           const vector<IMU::Point>             &imuMeas_in,
+                           Sophus::SE3f                         &cameraPose_out,
+                           const std::vector<IMU::Point>        &imuMeas_in,
                            string                                filename_in,
                            const std::vector<semantic::Marker *> markers_in)
 {
@@ -46,7 +47,10 @@ Sophus::SE3f
     {
         unique_lock<mutex> lock(resetMutex);
         if (isShutdownRequested)
-            return Sophus::SE3f();
+        {
+            cameraPose_out = Sophus::SE3f();
+            return SystemStatus::SYSTEM_STATUS_SUCCESS;
+        }
     }
 
     // Check if the sensor is Monocular
@@ -86,7 +90,14 @@ Sophus::SE3f
         imToFeed = resizedImage;
     }
 
-    applyPendingModeAndResetRequests();
+    if (applyPendingModeAndResetRequests() !=
+        SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: applyPendingModeAndResetRequests returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (sensor == System::IMU_MONOCULAR)
     {
@@ -94,22 +105,39 @@ Sophus::SE3f
              imuMeasurementIndex < imuMeas_in.size();
              imuMeasurementIndex++)
         {
-            p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]);
+            if (p_tracker->grabImuData(imuMeas_in[imuMeasurementIndex]) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: grabImuData returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
-    Sophus::SE3f Tcw = p_tracker->grabImageMonocular(imToFeed,
-                                                     timestamp_in,
-                                                     filename_in,
-                                                     markers_in,
-                                                     envRooms);
+    Sophus::SE3f Tcw{};
+    if (p_tracker->grabImageMonocular(imToFeed,
+                                      timestamp_in,
+                                      filename_in,
+                                      markers_in,
+                                      envRooms,
+                                      Tcw) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: grabImageMonocular returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     unique_lock<mutex> lock2(stateMutex);
     trackingState      = p_tracker->state;
     trackedMapPoints   = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn = p_tracker->currentFrame.keyPointsUndistorted;
 
-    return Tcw;
+    cameraPose_out = Tcw;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

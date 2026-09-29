@@ -31,7 +31,9 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::semantic::Passage *Atlas::getPassageById(int passageId_in)
+AtlasStatus Atlas::getPassageById(
+    int                                  passageId_in,
+    vs_graphs::core::semantic::Passage *&p_passageById_out)
 {
     unique_lock<mutex>                  lock(atlasMutex);
     vs_graphs::core::semantic::Passage *p_activeMapPassageById = nullptr;
@@ -44,7 +46,9 @@ vs_graphs::core::semantic::Passage *Atlas::getPassageById(int passageId_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return p_activeMap != nullptr ? p_activeMapPassageById : nullptr;
+    p_passageById_out =
+        p_activeMap != nullptr ? p_activeMapPassageById : nullptr;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

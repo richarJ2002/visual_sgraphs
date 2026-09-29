@@ -104,8 +104,12 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
 {
     // --- Atlas / map / passage setup ---------------------------------------
     Atlas atlas(0);
-    EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
-    Map *p_map = atlas.getCurrentMap();
+    bool  wasEventPending{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_TRUE(wasEventPending);
+    Map *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     EXPECT_NE(p_map, nullptr);
 
     // Ground plane
@@ -249,7 +253,8 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     // Run the semantic cycle: this is where updateTraversalEvidence() iterates
     // consecutive keyframe camera centres and checks
     // segmentCrossesPassageOpening().
-    manager.updateTraversalEvidence(&atlas);
+    ASSERT_EQ((manager.updateTraversalEvidence(&atlas)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     // --- Assertions --------------------------------------------------------
     // The test expects that the UAV's known-side → far-side crossing is

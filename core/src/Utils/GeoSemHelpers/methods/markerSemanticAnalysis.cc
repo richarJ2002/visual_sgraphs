@@ -93,7 +93,16 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
         }
         if (!currentMarkerIsMarkerInGMap)
         {
-            if (p_currentMarker->setMap(p_atlas_in->getCurrentMap()) !=
+            Map *p_atlasCurrentMap = nullptr;
+            if (p_atlas_in->getCurrentMap(p_atlasCurrentMap) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCurrentMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_currentMarker->setMap(p_atlasCurrentMap) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -155,7 +164,16 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
         // Else, add the observation to the existing marker
         else
         {
-            for (auto p_mappedMarker : p_atlas_in->getAllMarkers())
+            std::vector<semantic::Marker *> atlasAllMarkers{};
+            if (p_atlas_in->getAllMarkers(atlasAllMarkers) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllMarkers returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (auto p_mappedMarker : atlasAllMarkers)
             {
                 int mappedMarkerId{};
                 if (p_mappedMarker->getId(mappedMarkerId) !=

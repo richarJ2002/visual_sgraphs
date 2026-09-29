@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::Marker *Atlas::getMarkerById(int markerId_in)
+AtlasStatus Atlas::getMarkerById(int                markerId_in,
+                                 semantic::Marker *&p_markerById_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     semantic::Marker  *p_activeMapMarkerById = nullptr;
@@ -44,7 +45,8 @@ semantic::Marker *Atlas::getMarkerById(int markerId_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return p_activeMap != nullptr ? p_activeMapMarkerById : nullptr;
+    p_markerById_out = p_activeMap != nullptr ? p_activeMapMarkerById : nullptr;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

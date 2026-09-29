@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-double Tracking::getMarkerImpact() const
+TrackingStatus Tracking::getMarkerImpact(double &getMarkerImpact_out) const
 {
-    return markerImpact;
+    getMarkerImpact_out = markerImpact;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 };
 
 } // namespace core

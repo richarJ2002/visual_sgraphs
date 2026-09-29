@@ -33,11 +33,13 @@ namespace core
 {
 
 #ifdef REGISTER_LOOP
-void Tracking::release()
+TrackingStatus Tracking::release()
 {
     unique_lock<mutex> lock(stopMutex);
     hasStopped      = false;
     isStopRequested = false;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 #endif
 

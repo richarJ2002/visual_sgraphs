@@ -48,9 +48,10 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<Map *> Atlas::getCoherentMapView(
+AtlasStatus Atlas::getCoherentMapView(
     std::optional<long unsigned int> &currentMapId_inout,
-    AtlasCurrentMapStatus            &currentMapStatus_out)
+    AtlasCurrentMapStatus            &currentMapStatus_out,
+    std::vector<Map *>               &coherentMapView_out)
 {
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
@@ -105,7 +106,8 @@ std::vector<Map *> Atlas::getCoherentMapView(
                                : AtlasCurrentMapStatus::CURRENT_MAP_NOT_ACTIVE;
     }
 
-    return activeMaps;
+    coherentMapView_out = activeMaps;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

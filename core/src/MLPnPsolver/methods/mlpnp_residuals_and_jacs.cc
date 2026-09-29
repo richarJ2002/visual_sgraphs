@@ -48,13 +48,14 @@
 #include "MLPnPsolver.h"
 
 #include <Eigen/Sparse>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void MLPnPsolver::mlpnp_residuals_and_jacs(
+MLPnPsolverStatus MLPnPsolver::mlpnp_residuals_and_jacs(
     const Eigen::VectorXd              &x_in,
     const Points3                      &points_in,
     const std::vector<Eigen::MatrixXd> &nullspaces_in,
@@ -65,8 +66,15 @@ void MLPnPsolver::mlpnp_residuals_and_jacs(
     RodriguesVector   w(x_in[0], x_in[1], x_in[2]);
     TranslationVector T(x_in[3], x_in[4], x_in[5]);
 
-    RotationMatrix R  = rodrigues2rot(w);
-    int            ii = 0;
+    RotationMatrix R{};
+    if (rodrigues2rot(w, R) != MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rodrigues2rot returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    int ii = 0;
 
     Eigen::MatrixXd jacs(2, 6);
 
@@ -82,12 +90,19 @@ void MLPnPsolver::mlpnp_residuals_and_jacs(
         if (getJacs_in)
         {
             // jacs
-            mlpnpJacs(points_in[pointIndex],
-                      nullspaces_in[pointIndex].col(0),
-                      nullspaces_in[pointIndex].col(1),
-                      w,
-                      T,
-                      jacs);
+            if (mlpnpJacs(points_in[pointIndex],
+                          nullspaces_in[pointIndex].col(0),
+                          nullspaces_in[pointIndex].col(1),
+                          w,
+                          T,
+                          jacs) !=
+                MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: mlpnpJacs returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             // r
             fjac_in(ii, 0) = jacs(0, 0);
@@ -108,6 +123,8 @@ void MLPnPsolver::mlpnp_residuals_and_jacs(
         }
         ii += 2;
     }
+
+    return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

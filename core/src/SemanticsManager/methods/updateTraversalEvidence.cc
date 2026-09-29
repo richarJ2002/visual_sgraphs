@@ -29,24 +29,46 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::updateTraversalEvidence(
+SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
     vs_graphs::core::Atlas *p_atlas_in)
 {
     if (p_atlas_in == nullptr)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    Map *p_activeMap = p_atlas_in->getCurrentMap();
+    Map *p_activeMap = nullptr;
+    if (p_atlas_in->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (p_activeMap == nullptr)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    resetTemporalStateForMap(p_activeMap);
+    if (resetTemporalStateForMap(p_activeMap) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: resetTemporalStateForMap returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    seedCurrentRoomFromActiveMap(p_activeMap);
+    if (seedCurrentRoomFromActiveMap(p_activeMap) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: seedCurrentRoomFromActiveMap returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     std::vector<KeyFrame *> orderedKeyFrames{};
     if (p_activeMap->getAllKeyFrames(orderedKeyFrames) !=
@@ -89,13 +111,20 @@ void SemanticsManager::updateTraversalEvidence(
 
     if (orderedKeyFrames.empty())
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* Prepare the ground normal: aperture height/width tests need the vertical
      * axis. Without it there is no reliable opening bounds test. */
-    vs_graphs::core::geometric::Plane *p_groundPlane =
-        p_atlas_in->getBiggestGroundPlane();
+    vs_graphs::core::geometric::Plane *p_groundPlane = nullptr;
+    if (p_atlas_in->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
 
@@ -136,7 +165,7 @@ void SemanticsManager::updateTraversalEvidence(
 
     if (!hasValidGroundNormal)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const double openingMargin_m = static_cast<double>(
@@ -174,7 +203,7 @@ void SemanticsManager::updateTraversalEvidence(
     currentCameraCenter_World_m = seedKeyFrameCameraCenter.cast<double>();
     if (!currentCameraCenter_World_m.allFinite())
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
     hasCameraCenter   = true;
     p_cameraCenterMap = p_activeMap;
@@ -229,13 +258,24 @@ void SemanticsManager::updateTraversalEvidence(
              * UAV trajectory. When it crosses inside the finite aperture while
              * the passage is passable, the UAV has flown through the opening:
              * record traversal evidence. */
+            bool crossesPassageOpening{};
             if (segmentCrossesPassageOpening(previousCameraCenter_World_m,
                                              currentCameraCenter_World_m,
                                              p_passage,
                                              groundNormal_World,
                                              openingMargin_m,
                                              minimumSideDistance_m,
-                                             true))
+                                             crossesPassageOpening,
+                                             true) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: segmentCrossesPassageOpening returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (crossesPassageOpening)
             {
                 bool wasSettled{};
                 if (p_passage->getTraversalEvidence(wasSettled) !=
@@ -575,7 +615,15 @@ void SemanticsManager::updateTraversalEvidence(
                             currentRoomMutex);
                         currentRoomId = reachedRoomId;
                     }
-                    p_atlas->setCurrentSemanticRoomIdentity(reachedRoomId);
+                    if (p_atlas->setCurrentSemanticRoomIdentity(
+                            reachedRoomId) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: setCurrentSemanticRoomIdentity "
+                                     "returned a failure status although it "
+                                     "cannot fail; continuing as before.",
+                                     __func__);
+                    }
                     /* Completed passage traversal into this room: entry
                      * evidence marks it visited. */
                     if (p_reachedRoom->setPreviouslyVisited(true) !=
@@ -659,6 +707,8 @@ void SemanticsManager::updateTraversalEvidence(
     lastTraversalFrameId       = p_latestKeyFrame->frameId;
     lastTraversalKeyFrameId    = p_latestKeyFrame->id;
     hasTraversalKeyFrameCursor = true;
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

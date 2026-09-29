@@ -31,11 +31,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addMapFloor(semantic::Floor *p_floor_in)
+AtlasStatus Atlas::addMapFloor(semantic::Floor *p_floor_in)
 {
     if (p_floor_in == nullptr)
     {
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     int floor_inId{};
     if (p_floor_in->getId(floor_inId) !=
@@ -46,7 +46,13 @@ void Atlas::addMapFloor(semantic::Floor *p_floor_in)
                      "fail; continuing as before.",
                      __func__);
     }
-    observeFloorIdentity(floor_inId);
+    if (observeFloorIdentity(floor_inId) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: observeFloorIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     Map *p_ownerMap = nullptr;
     if (p_floor_in->getMap(p_ownerMap) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
@@ -63,6 +69,8 @@ void Atlas::addMapFloor(semantic::Floor *p_floor_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -33,7 +33,7 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::processNewKeyFrame()
+LocalMappingStatus LocalMapping::processNewKeyFrame()
 {
     {
         unique_lock<mutex> newKeyFramesLock(newKeyFramesMutex);
@@ -141,7 +141,16 @@ void LocalMapping::processNewKeyFrame()
     }
 
     // Insert Keyframe in Map
-    p_atlas->addKeyFrame(p_currentKeyFrame);
+    if (p_atlas->addKeyFrame(p_currentKeyFrame) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addKeyFrame returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

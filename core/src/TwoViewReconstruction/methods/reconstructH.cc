@@ -22,6 +22,7 @@
 
 #include "Thirdparty/DBoW2/DUtils/Random.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 using namespace std;
@@ -30,15 +31,16 @@ namespace vs_graphs
 namespace core
 {
 
-bool TwoViewReconstruction::reconstructH(
-    vector<bool>        &matchesInliersFlags_inout,
-    Eigen::Matrix3f     &H21_in,
-    Eigen::Matrix3f     &K_in,
-    Sophus::SE3f        &T21_out,
-    vector<cv::Point3f> &vP3D_inout,
-    vector<bool>        &triangulatedFlags_out,
-    float                minimumParallax_in,
-    int                  minimumTriangulated_in)
+TwoViewReconstructionStatus
+    TwoViewReconstruction::reconstructH(vector<bool> &matchesInliersFlags_inout,
+                                        Eigen::Matrix3f     &H21_in,
+                                        Eigen::Matrix3f     &K_in,
+                                        Sophus::SE3f        &T21_out,
+                                        vector<cv::Point3f> &vP3D_inout,
+                                        vector<bool> &triangulatedFlags_out,
+                                        float         minimumParallax_in,
+                                        int           minimumTriangulated_in,
+                                        bool         &isReconstructed_out)
 {
     int N = 0;
     for (size_t i = 0, iend = matchesInliersFlags_inout.size(); i < iend; i++)
@@ -68,7 +70,9 @@ bool TwoViewReconstruction::reconstructH(
 
     if (d1 / d2 < 1.00001 || d2 / d3 < 1.00001)
     {
-        return false;
+        isReconstructed_out = false;
+        return TwoViewReconstructionStatus::
+            TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
     }
 
     vector<Eigen::Matrix3f> vR;
@@ -178,17 +182,26 @@ bool TwoViewReconstruction::reconstructH(
         float               parallaxi;
         vector<cv::Point3f> vP3Di;
         vector<bool>        triangulatediFlags;
-        int                 goodCount = checkRT(vR[i],
-                                vt[i],
-                                keys1,
-                                keys2,
-                                matches12,
-                                matchesInliersFlags_inout,
-                                K_in,
-                                vP3Di,
-                                4.0 * sigmaSquared,
-                                triangulatediFlags,
-                                parallaxi);
+        int                 goodCount{};
+        if (checkRT(vR[i],
+                    vt[i],
+                    keys1,
+                    keys2,
+                    matches12,
+                    matchesInliersFlags_inout,
+                    K_in,
+                    vP3Di,
+                    4.0 * sigmaSquared,
+                    triangulatediFlags,
+                    parallaxi,
+                    goodCount) !=
+            TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkRT returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (goodCount > bestGood)
         {
@@ -218,10 +231,13 @@ bool TwoViewReconstruction::reconstructH(
         vP3D_inout            = bestP3d;
         triangulatedFlags_out = bestTriangulated;
 
-        return true;
+        isReconstructed_out = true;
+        return TwoViewReconstructionStatus::
+            TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
     }
 
-    return false;
+    isReconstructed_out = false;
+    return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
 } // namespace core

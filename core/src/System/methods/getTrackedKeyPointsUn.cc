@@ -30,10 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-vector<cv::KeyPoint> System::getTrackedKeyPointsUn()
+SystemStatus System::getTrackedKeyPointsUn(
+    std::vector<cv::KeyPoint> &trackedKeyPointsUn_out)
 {
     unique_lock<mutex> lock(stateMutex);
-    return trackedKeyPointsUn;
+    trackedKeyPointsUn_out = trackedKeyPointsUn;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<vs_graphs::core::geometric::Plane *> Atlas::getAllPlanes()
+AtlasStatus Atlas::getAllPlanes(
+    std::vector<vs_graphs::core::geometric::Plane *> &allPlanes_out)
 {
     unique_lock<mutex>              lock(atlasMutex);
     std::vector<geometric::Plane *> activeMapAllPlanes{};
@@ -43,7 +44,8 @@ std::vector<vs_graphs::core::geometric::Plane *> Atlas::getAllPlanes()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllPlanes;
+    allPlanes_out = activeMapAllPlanes;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

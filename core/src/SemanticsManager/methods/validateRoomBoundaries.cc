@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::validateRoomBoundaries(void)
+SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
 {
     std::cout << "[SemMgr] validateRoomBoundaries() called" << std::endl;
 
@@ -40,10 +40,18 @@ void SemanticsManager::validateRoomBoundaries(void)
     if (!topologyParameters.enabled)
     {
         std::cout << "[SemMgr] boundary topology disabled" << std::endl;
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
+    geometric::Plane *p_groundPlane = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     bool groundPlaneIsBad{};
     if (!(p_groundPlane == nullptr) &&
@@ -57,7 +65,7 @@ void SemanticsManager::validateRoomBoundaries(void)
     }
     if (p_groundPlane == nullptr || groundPlaneIsBad)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     g2o::Plane3D groundPlaneGetGlobalEquation{};
@@ -75,7 +83,7 @@ void SemanticsManager::validateRoomBoundaries(void)
 
     if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d groundNormal_World =
@@ -171,7 +179,16 @@ void SemanticsManager::validateRoomBoundaries(void)
                   << " (" << room_inWalls.size() << " walls)" << std::endl;
     };
 
-    for (semantic::Room *p_room : p_atlas->getAllRooms())
+    std::vector<semantic::Room *> atlasAllRooms{};
+    if (p_atlas->getAllRooms(atlasAllRooms) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (semantic::Room *p_room : atlasAllRooms)
     {
         bool roomIsBad{};
         if (!(p_room == nullptr) &&
@@ -211,6 +228,7 @@ void SemanticsManager::validateRoomBoundaries(void)
             {
                 FiniteWallSegment2d wallSegment;
 
+                bool isBuilt{};
                 if (buildFiniteWallSegment2d(
                         p_wall,
                         groundNormal_World,
@@ -218,7 +236,17 @@ void SemanticsManager::validateRoomBoundaries(void)
                         groundAxisV_World,
                         topologyParameters.endpointTrimRatio,
                         topologyParameters.minimumWallLength_m,
-                        wallSegment))
+                        wallSegment,
+                        isBuilt) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: buildFiniteWallSegment2d returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (isBuilt)
                 {
                     wallSegments.push_back(std::move(wallSegment));
                 }
@@ -269,13 +297,25 @@ void SemanticsManager::validateRoomBoundaries(void)
                     double          firstParameter  = 0.0;
                     double          secondParameter = 0.0;
 
-                    if (!intersectSupportingLines(wallSegments[firstWallIndex],
-                                                  wallSegments[secondWallIndex],
-                                                  intersection_World_m,
-                                                  firstParameter,
-                                                  secondParameter) ||
-                        firstParameter < 0.0 || firstParameter > 1.0 ||
-                        secondParameter < 0.0 || secondParameter > 1.0)
+                    bool hasIntersection{};
+                    if (intersectSupportingLines(wallSegments[firstWallIndex],
+                                                 wallSegments[secondWallIndex],
+                                                 intersection_World_m,
+                                                 firstParameter,
+                                                 secondParameter,
+                                                 hasIntersection) !=
+                        SemanticsManagerStatus::
+                            SEMANTICS_MANAGER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: intersectSupportingLines returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
+                    if (!hasIntersection || firstParameter < 0.0 ||
+                        firstParameter > 1.0 || secondParameter < 0.0 ||
+                        secondParameter > 1.0)
                     {
                         continue;
                     }
@@ -399,9 +439,20 @@ void SemanticsManager::validateRoomBoundaries(void)
                 const Eigen::Vector2d gapCentroidGround_m(
                     gapCentroid_World_m.dot(groundAxisU_World),
                     gapCentroid_World_m.dot(groundAxisV_World));
-                if (p_room->setObservationGaps(
-                        computeRoomObservationGaps(wallSegments,
-                                                   gapCentroidGround_m)) !=
+                std::vector<semantic::Room::ObservationGap>
+                    roomObservationGaps{};
+                if (computeRoomObservationGaps(wallSegments,
+                                               gapCentroidGround_m,
+                                               roomObservationGaps) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: computeRoomObservationGaps returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (p_room->setObservationGaps(roomObservationGaps) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -460,9 +511,18 @@ void SemanticsManager::validateRoomBoundaries(void)
             roomCentroid_World_m.dot(groundAxisU_World),
             roomCentroid_World_m.dot(groundAxisV_World));
 
-        WallLoopClosure closure = tryCloseWallLoop(wallSegments,
-                                                   roomCentroidGround_m,
-                                                   topologyParameters);
+        WallLoopClosure closure{};
+        if (tryCloseWallLoop(wallSegments,
+                             roomCentroidGround_m,
+                             topologyParameters,
+                             closure) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: tryCloseWallLoop returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* User rule: a wall the room owns but which does not belong to the
          * room's true closed boundary is invalid and must be pruned, not
@@ -513,10 +573,19 @@ void SemanticsManager::validateRoomBoundaries(void)
                     }
                 }
 
-                WallLoopClosure reducedClosure =
-                    tryCloseWallLoop(reducedWallSegments,
+                WallLoopClosure reducedClosure{};
+                if (tryCloseWallLoop(reducedWallSegments,
                                      roomCentroidGround_m,
-                                     topologyParameters);
+                                     topologyParameters,
+                                     reducedClosure) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: tryCloseWallLoop returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 if (!reducedClosure.hasOpenBoundary)
                 {
@@ -603,13 +672,24 @@ void SemanticsManager::validateRoomBoundaries(void)
                 double          firstParameter  = 0.0;
                 double          secondParameter = 0.0;
 
+                bool hasIntersection2{};
                 if (intersectSupportingLines(firstBoundaryEdge,
                                              secondBoundaryEdge,
                                              intersection_World_m,
                                              firstParameter,
-                                             secondParameter) &&
-                    firstParameter > 1e-6 && firstParameter < 1.0 - 1e-6 &&
-                    secondParameter > 1e-6 && secondParameter < 1.0 - 1e-6)
+                                             secondParameter,
+                                             hasIntersection2) !=
+                    SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: intersectSupportingLines returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (hasIntersection2 && firstParameter > 1e-6 &&
+                    firstParameter < 1.0 - 1e-6 && secondParameter > 1e-6 &&
+                    secondParameter < 1.0 - 1e-6)
                 {
                     polygonSelfIntersects = true;
                     break;
@@ -617,8 +697,15 @@ void SemanticsManager::validateRoomBoundaries(void)
             }
         }
 
-        const double enclosedArea_m2 =
-            computePolygonArea_m2(boundaryCorners_World_m);
+        double enclosedArea_m2{};
+        if (computePolygonArea_m2(boundaryCorners_World_m, enclosedArea_m2) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computePolygonArea_m2 returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         int roomId4{};
         if (p_room->getId(roomId4) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -832,6 +919,8 @@ void SemanticsManager::validateRoomBoundaries(void)
             }
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

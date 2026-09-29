@@ -30,18 +30,25 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::detectDoorsAndDoorways(
-    vs_graphs::core::Atlas *p_atlas_in)
+SemanticsManagerStatus
+    SemanticsManager::detectDoorsAndDoorways(vs_graphs::core::Atlas *p_atlas_in)
 {
     /* Confirm that the Atlas is valid */
     if (p_atlas_in == nullptr)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* Extract all planes from the current map */
-    const std::vector<vs_graphs::core::geometric::Plane *> allPlanes =
-        p_atlas_in->getAllPlanes();
+    std::vector<vs_graphs::core::geometric::Plane *> allPlanes{};
+    if (p_atlas_in->getAllPlanes(allPlanes) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Initialise lists of valid wall and door planes */
     std::vector<vs_graphs::core::geometric::Plane *> wallPlanes;
@@ -263,7 +270,17 @@ void SemanticsManager::detectDoorsAndDoorways(
      *
      * @note        Camera trajectory crossings are deliberately not used.
      */
-    detectOpenPassagesFromSkeletonEdges(confirmedWallPlanes);
+    if (detectOpenPassagesFromSkeletonEdges(confirmedWallPlanes) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: detectOpenPassagesFromSkeletonEdges returned a failure status "
+            "although it cannot fail; continuing as before.",
+            __func__);
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

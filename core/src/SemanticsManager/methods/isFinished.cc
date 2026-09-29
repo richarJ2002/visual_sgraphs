@@ -23,10 +23,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool SemanticsManager::isFinished(void)
+SemanticsManagerStatus SemanticsManager::isFinished(bool &isFinished_out)
 {
     std::unique_lock<std::mutex> lock(finishMutex);
-    return hasFinished;
+    isFinished_out = hasFinished;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

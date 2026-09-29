@@ -32,7 +32,8 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3d logSO3(const Eigen::Matrix3d &rotationMatrix_in)
+G2oTypesStatus logSO3(const Eigen::Matrix3d &rotationMatrix_in,
+                      Eigen::Vector3d       &rotationVector_out)
 {
     const double trace = rotationMatrix_in(0, 0) + rotationMatrix_in(1, 1) +
                          rotationMatrix_in(2, 2);
@@ -42,13 +43,22 @@ Eigen::Vector3d logSO3(const Eigen::Matrix3d &rotationMatrix_in)
         (rotationMatrix_in(1, 0) - rotationMatrix_in(0, 1)) / 2;
     const double cosAngle = (trace - 1.0) * 0.5f;
     if (cosAngle > 1 || cosAngle < -1)
-        return rotationVector;
+    {
+        rotationVector_out = rotationVector;
+        return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
+    }
     const double angle    = acos(cosAngle);
     const double sinAngle = sin(angle);
     if (fabs(sinAngle) < 1e-5)
-        return rotationVector;
+    {
+        rotationVector_out = rotationVector;
+        return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
+    }
     else
-        return angle * rotationVector / sinAngle;
+    {
+        rotationVector_out = angle * rotationVector / sinAngle;
+        return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

@@ -34,14 +34,21 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveTrajectoryEuRoC(const string &filename_in)
+SystemStatus System::saveTrajectoryEuRoC(const string &filename_in)
 {
 
     cout << endl << "Saving trajectory to " << filename_in << " ..." << endl;
 
-    vector<Map *> maps                 = p_atlas->getAllMaps();
-    std::size_t   maximumKeyFrameCount = 0;
-    Map          *p_biggerMap          = nullptr;
+    std::vector<Map *> maps{};
+    if (p_atlas->getAllMaps(maps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::size_t maximumKeyFrameCount = 0;
+    Map        *p_biggerMap          = nullptr;
     std::cout << "There are " << std::to_string(maps.size())
               << " maps in the atlas" << std::endl;
     for (Map *p_map : maps)
@@ -83,7 +90,7 @@ void System::saveTrajectoryEuRoC(const string &filename_in)
     {
         std::cerr << "Cannot save a trajectory: the Atlas has no keyframes."
                   << std::endl;
-        return;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 
     std::vector<KeyFrame *> keyFrames{};
@@ -239,6 +246,8 @@ void System::saveTrajectoryEuRoC(const string &filename_in)
     f.close();
     cout << endl
          << "End of saving trajectory to " << filename_in << " ..." << endl;
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -30,10 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool System::isShutDown()
+SystemStatus System::isShutDown(bool &isShutDown_out)
 {
     unique_lock<mutex> lock(resetMutex);
-    return isShutdownRequested;
+    isShutDown_out = isShutdownRequested;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

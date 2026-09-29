@@ -17,27 +17,50 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void SemanticsManager::onTrackingLost(void)
+SemanticsManagerStatus SemanticsManager::onTrackingLost(void)
 {
     std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
     if (!isTrackingLossEpisodeActive)
     {
+        int atlasGetCurrentSemanticRoomIdentity{};
+        if (!(currentRoomId >= 0 || p_atlas == nullptr) &&
+            p_atlas->getCurrentSemanticRoomIdentity(
+                atlasGetCurrentSemanticRoomIdentity) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getCurrentSemanticRoomIdentity returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         lastKnownRoomId = currentRoomId >= 0 || p_atlas == nullptr
                               ? currentRoomId
-                              : p_atlas->getCurrentSemanticRoomIdentity();
+                              : atlasGetCurrentSemanticRoomIdentity;
         if (p_atlas != nullptr && lastKnownRoomId >= 0)
         {
-            p_atlas->setCurrentSemanticRoomIdentity(lastKnownRoomId);
+            if (p_atlas->setCurrentSemanticRoomIdentity(lastKnownRoomId) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setCurrentSemanticRoomIdentity returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
         isTrackingLostPending       = true;
         isTrackingLossEpisodeActive = true;
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

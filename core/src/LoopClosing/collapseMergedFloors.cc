@@ -31,11 +31,11 @@ namespace vs_graphs
 namespace core
 {
 
-void collapseMergedFloors(Map *p_survivingMap_inout)
+LoopClosingStatus collapseMergedFloors(Map *p_survivingMap_inout)
 {
     if (p_survivingMap_inout == nullptr)
     {
-        return;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     std::vector<semantic::Floor *> allFloors{};
@@ -49,7 +49,7 @@ void collapseMergedFloors(Map *p_survivingMap_inout)
     }
     if (allFloors.size() <= 1U)
     {
-        return;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     semantic::Floor *p_keeperFloor = nullptr;
@@ -63,7 +63,7 @@ void collapseMergedFloors(Map *p_survivingMap_inout)
     }
     if (p_keeperFloor == nullptr)
     {
-        return;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     for (semantic::Floor *p_duplicateFloor : allFloors)
@@ -174,6 +174,8 @@ void collapseMergedFloors(Map *p_survivingMap_inout)
             }
         }
     }
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

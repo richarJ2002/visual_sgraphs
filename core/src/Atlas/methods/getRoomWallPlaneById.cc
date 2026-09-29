@@ -31,7 +31,9 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::geometric::Plane *Atlas::getRoomWallPlaneById(int planeId_in)
+AtlasStatus Atlas::getRoomWallPlaneById(
+    int                                 planeId_in,
+    vs_graphs::core::geometric::Plane *&p_roomWallPlaneById_out)
 {
     unique_lock<mutex>                 lock(atlasMutex);
     vs_graphs::core::geometric::Plane *p_activeMapRoomWallPlaneById = nullptr;
@@ -45,7 +47,9 @@ vs_graphs::core::geometric::Plane *Atlas::getRoomWallPlaneById(int planeId_in)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    return p_activeMap != nullptr ? p_activeMapRoomWallPlaneById : nullptr;
+    p_roomWallPlaneById_out =
+        p_activeMap != nullptr ? p_activeMapRoomWallPlaneById : nullptr;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

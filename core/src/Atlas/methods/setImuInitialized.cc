@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setImuInitialized()
+AtlasStatus Atlas::setImuInitialized()
 {
     unique_lock<mutex> lock(atlasMutex);
     if (p_activeMap->setImuInitialized() != MapStatus::MAP_STATUS_SUCCESS)
@@ -41,6 +41,8 @@ void Atlas::setImuInitialized()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -31,10 +31,19 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<vs_graphs::core::Door *> System::getAllDoors()
+SystemStatus
+    System::getAllDoors(std::vector<vs_graphs::core::Door *> &allDoors_out)
 {
-    vs_graphs::core::Map *p_activeMap = p_atlas->getCurrentMap();
-    std::vector<Door *>   activeMapAllDoors{};
+    vs_graphs::core::Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<Door *> activeMapAllDoors{};
     if (p_activeMap->getAllDoors(activeMapAllDoors) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {
@@ -43,7 +52,8 @@ std::vector<vs_graphs::core::Door *> System::getAllDoors()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllDoors;
+    allDoors_out = activeMapAllDoors;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

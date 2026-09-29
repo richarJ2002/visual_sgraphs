@@ -24,8 +24,9 @@ namespace vs_graphs
 namespace core
 {
 
-const std::vector<semantic::TransitionEvent> &
-    SemanticsManager::getRoomTrackerEventHistoryForTest() const
+SemanticsManagerStatus SemanticsManager::getRoomTrackerEventHistoryForTest(
+    const std::vector<semantic::TransitionEvent> *
+        &p_getRoomTrackerEventHistoryForTest_out) const
 {
     const std::vector<semantic::TransitionEvent> *p_roomTrackerEventHistory =
         nullptr;
@@ -37,7 +38,8 @@ const std::vector<semantic::TransitionEvent> &
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    return (*p_roomTrackerEventHistory);
+    p_getRoomTrackerEventHistoryForTest_out = &((*p_roomTrackerEventHistory));
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

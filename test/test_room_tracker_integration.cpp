@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -68,10 +69,19 @@ class ProductionCrossingScene
         thirdCrossingKeyFrameAdded(false),
         groundPlaneValid(false)
     {
-        static_cast<void>(atlas.consumeNewMapCreatedEvent());
-        atlas.createNewMap();
-        p_map = atlas.getCurrentMap();
-        static_cast<void>(atlas.consumeNewMapCreatedEvent());
+        bool atlasWasEventPending{};
+        EXPECT_EQ((atlas.consumeNewMapCreatedEvent(atlasWasEventPending)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        static_cast<void>(atlasWasEventPending);
+        EXPECT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+        Map *p_atlasCurrentMap = nullptr;
+        EXPECT_EQ((atlas.getCurrentMap(p_atlasCurrentMap)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        p_map = p_atlasCurrentMap;
+        bool atlasWasEventPending2{};
+        EXPECT_EQ((atlas.consumeNewMapCreatedEvent(atlasWasEventPending2)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        static_cast<void>(atlasWasEventPending2);
 
         EXPECT_EQ((groundPlane.setId(0)),
                   geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
@@ -199,13 +209,16 @@ class ProductionCrossingScene
 
     void confirmFirstRoom(double now_s_in)
     {
-        manager.submitVerificationVerdict(passVerdict());
-        manager.processRoomTrackerPendingForTest(now_s_in);
+        ASSERT_EQ((manager.submitVerificationVerdict(passVerdict())),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+        ASSERT_EQ((manager.processRoomTrackerPendingForTest(now_s_in)),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     }
 
     void produceTraversalEvidence()
     {
-        manager.updateTraversalEvidence(&atlas);
+        ASSERT_EQ((manager.updateTraversalEvidence(&atlas)),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     }
 
     void addReturnCrossing()
@@ -291,20 +304,27 @@ bool overlapProductionPublishAndConsume(ProductionCrossingScene &scene_inout,
     bool                    consumerHasStarted         = false;
     bool                    consumerObservedContention = false;
 
-    scene_inout.manager.setRoomTrackerPendingPublishHookForTest(
-        [&synchronizationMutex,
-         &synchronizationCondition,
-         &producerHasPendingMutex,
-         &consumerHasStarted]()
-        {
-            std::unique_lock<std::mutex> synchronizationLock(
-                synchronizationMutex);
-            producerHasPendingMutex = true;
-            synchronizationCondition.notify_all();
-            synchronizationCondition.wait(synchronizationLock,
-                                          [&consumerHasStarted]()
-                                          { return consumerHasStarted; });
-        });
+    if (scene_inout.manager.setRoomTrackerPendingPublishHookForTest(
+            [&synchronizationMutex,
+             &synchronizationCondition,
+             &producerHasPendingMutex,
+             &consumerHasStarted]()
+            {
+                std::unique_lock<std::mutex> synchronizationLock(
+                    synchronizationMutex);
+                producerHasPendingMutex = true;
+                synchronizationCondition.notify_all();
+                synchronizationCondition.wait(synchronizationLock,
+                                              [&consumerHasStarted]()
+                                              { return consumerHasStarted; });
+            }) != SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: setRoomTrackerPendingPublishHookForTest returned a failure "
+            "status although it cannot fail; continuing as before.",
+            __func__);
+    }
 
     std::thread producer([&scene_inout]()
                          { scene_inout.produceTraversalEvidence(); });
@@ -324,15 +344,34 @@ bool overlapProductionPublishAndConsume(ProductionCrossingScene &scene_inout,
          &consumerHasStarted,
          &consumerObservedContention]()
         {
-            consumerObservedContention =
-                !scene_inout.manager.tryLockRoomTrackerPendingMutexForTest();
+            bool isLocked{};
+            if (scene_inout.manager.tryLockRoomTrackerPendingMutexForTest(
+                    isLocked) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: tryLockRoomTrackerPendingMutexForTest "
+                             "returned a failure status although it cannot "
+                             "fail; continuing as before.",
+                             __func__);
+            }
+            consumerObservedContention = !isLocked;
             {
                 std::lock_guard<std::mutex> synchronizationLock(
                     synchronizationMutex);
                 consumerHasStarted = true;
             }
             synchronizationCondition.notify_all();
-            scene_inout.manager.processRoomTrackerPendingForTest(now_s_in);
+            if (scene_inout.manager.processRoomTrackerPendingForTest(
+                    now_s_in) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: processRoomTrackerPendingForTest returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
         });
 
     producer.join();
@@ -344,73 +383,165 @@ bool overlapProductionPublishAndConsume(ProductionCrossingScene &scene_inout,
 TEST(RoomTrackerProductionIntegration, LossIsOneEventPerRecoveredEpisode)
 {
     Atlas atlas(0);
-    EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
+    bool  wasEventPending{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_TRUE(wasEventPending);
     SemanticsManager manager(&atlas);
 
-    manager.submitVerificationVerdict(passVerdict());
-    manager.processRoomTrackerPendingForTest(0.0);
+    ASSERT_EQ((manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(0.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
-    std::thread firstLoss([&manager]() { manager.onTrackingLost(); });
-    std::thread secondLoss([&manager]() { manager.onTrackingLost(); });
+    std::thread firstLoss(
+        [&manager]()
+        {
+            if (manager.onTrackingLost() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: onTrackingLost returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+        });
+    std::thread secondLoss(
+        [&manager]()
+        {
+            if (manager.onTrackingLost() !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: onTrackingLost returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+        });
     firstLoss.join();
     secondLoss.join();
-    manager.processRoomTrackerPendingForTest(1.0);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(1.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
-    const std::vector<semantic::TransitionEvent> &history =
-        manager.getRoomTrackerEventHistoryForTest();
+    const std::vector<semantic::TransitionEvent> *p_historyRef = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(p_historyRef)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    const std::vector<semantic::TransitionEvent> &history = *p_historyRef;
     ASSERT_EQ(history.size(), 2U);
     EXPECT_EQ(history.back().event, semantic::RoomTrackingEvent::TRACKING_LOST);
-    EXPECT_EQ(manager.getLastKnownRoomId(), -1);
+    int getLastKnownRoomId2{};
+    ASSERT_EQ((manager.getLastKnownRoomId(getLastKnownRoomId2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getLastKnownRoomId2, -1);
 
-    manager.onTrackingRecovered();
-    atlas.createNewMap();
-    manager.submitVerificationVerdict(passVerdict());
-    manager.processRoomTrackerPendingForTest(2.0);
-    manager.submitVerificationVerdict(passVerdict());
-    manager.processRoomTrackerPendingForTest(3.0);
-    manager.onTrackingLost();
-    manager.processRoomTrackerPendingForTest(4.0);
-    EXPECT_EQ(manager.getRoomTrackerEventHistoryForTest().size(), 5U);
+    ASSERT_EQ((manager.onTrackingRecovered()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(2.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(3.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.onTrackingLost()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(4.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ((*p_getRoomTrackerEventHistoryForTest).size(), 5U);
 }
 
 TEST(RoomTrackerProductionIntegration,
      NewMapEventSurvivesUnavailableAndRejectedVerdicts)
 {
     Atlas atlas(0);
-    EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
+    bool  wasEventPending{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_TRUE(wasEventPending);
     SemanticsManager manager(&atlas);
 
-    manager.submitVerificationVerdict(passVerdict());
-    manager.processRoomTrackerPendingForTest(0.0);
-    manager.onTrackingLost();
-    manager.processRoomTrackerPendingForTest(1.0);
+    ASSERT_EQ((manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(0.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.onTrackingLost()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(1.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
-    atlas.createNewMap();
-    manager.processRoomTrackerPendingForTest(2.0);
-    EXPECT_EQ(manager.getRoomTrackerEventHistoryForTest().size(), 2U);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(2.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ((*p_getRoomTrackerEventHistoryForTest).size(), 2U);
 
-    manager.submitVerificationVerdict(rejectedVerdict());
-    manager.processRoomTrackerPendingForTest(3.0);
-    EXPECT_EQ(manager.getRoomTrackerEventHistoryForTest().size(), 2U);
+    ASSERT_EQ((manager.submitVerificationVerdict(rejectedVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(3.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest2 = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ((*p_getRoomTrackerEventHistoryForTest2).size(), 2U);
 
-    manager.submitVerificationVerdict(passVerdict());
-    manager.processRoomTrackerPendingForTest(4.0);
-    ASSERT_EQ(manager.getRoomTrackerEventHistoryForTest().size(), 3U);
-    EXPECT_EQ(manager.getRoomTrackerEventHistoryForTest().back().event,
+    ASSERT_EQ((manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(4.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest3 = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest3)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((*p_getRoomTrackerEventHistoryForTest3).size(), 3U);
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest4 = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest4)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ((*p_getRoomTrackerEventHistoryForTest4).back().event,
               semantic::RoomTrackingEvent::NEW_MAP_WITH_ROOM_MATCH);
 
-    manager.submitVerificationVerdict(passVerdict());
-    manager.processRoomTrackerPendingForTest(5.0);
-    ASSERT_EQ(manager.getRoomTrackerEventHistoryForTest().size(), 4U);
-    EXPECT_EQ(manager.getRoomTrackerEventHistoryForTest().back().event,
+    ASSERT_EQ((manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.processRoomTrackerPendingForTest(5.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest5 = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest5)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((*p_getRoomTrackerEventHistoryForTest5).size(), 4U);
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest6 = nullptr;
+    ASSERT_EQ((manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest6)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ((*p_getRoomTrackerEventHistoryForTest6).back().event,
               semantic::RoomTrackingEvent::VERIFIED_MATCH_TO_LAST_ROOM);
 }
 
 TEST(RoomTrackerProductionIntegration, AtlasMapEventIsConsumedExactlyOnce)
 {
     Atlas atlas(0);
-    EXPECT_TRUE(atlas.consumeNewMapCreatedEvent());
-    atlas.createNewMap();
+    bool  wasEventPending{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_TRUE(wasEventPending);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     std::atomic<unsigned int> deliveries{0U};
     std::vector<std::thread>  consumers;
@@ -419,7 +550,17 @@ TEST(RoomTrackerProductionIntegration, AtlasMapEventIsConsumedExactlyOnce)
         consumers.emplace_back(
             [&atlas, &deliveries]()
             {
-                if (atlas.consumeNewMapCreatedEvent())
+                bool atlasWasEventPending{};
+                if (atlas.consumeNewMapCreatedEvent(atlasWasEventPending) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: consumeNewMapCreatedEvent returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (atlasWasEventPending)
                 {
                     deliveries.fetch_add(1U, std::memory_order_relaxed);
                 }
@@ -431,7 +572,10 @@ TEST(RoomTrackerProductionIntegration, AtlasMapEventIsConsumedExactlyOnce)
     }
 
     EXPECT_EQ(deliveries.load(std::memory_order_relaxed), 1U);
-    EXPECT_FALSE(atlas.consumeNewMapCreatedEvent());
+    bool wasEventPending2{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending2)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_FALSE(wasEventPending2);
 }
 
 TEST(RoomTrackerProductionIntegration,
@@ -439,7 +583,9 @@ TEST(RoomTrackerProductionIntegration,
 {
     ProductionCrossingScene scene(100U);
     ASSERT_TRUE(scene.hasValidGroundPlane());
-    const std::vector<Map *>        mapsBefore = scene.atlas.getAllMaps();
+    std::vector<Map *> mapsBefore{};
+    ASSERT_EQ((scene.atlas.getAllMaps(mapsBefore)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     std::vector<geometric::Plane *> knownWallsBefore{};
     ASSERT_EQ((scene.knownRoom.getWalls(knownWallsBefore)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -449,17 +595,29 @@ TEST(RoomTrackerProductionIntegration,
 
     scene.confirmFirstRoom(0.0);
     scene.produceTraversalEvidence();
-    EXPECT_EQ(scene.manager.getRoomTrackerPendingForTest(),
-              std::make_pair(true, false));
-    scene.manager.processRoomTrackerPendingForTest(1.0);
+    std::pair<bool, bool> getRoomTrackerPendingForTest2{};
+    ASSERT_EQ((scene.manager.getRoomTrackerPendingForTest(
+                  getRoomTrackerPendingForTest2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerPendingForTest2, std::make_pair(true, false));
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(1.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     scene.addReturnCrossing();
     scene.produceTraversalEvidence();
-    EXPECT_EQ(scene.manager.getRoomTrackerPendingForTest(),
-              std::make_pair(true, true));
-    scene.manager.processRoomTrackerPendingForTest(3.0);
+    std::pair<bool, bool> getRoomTrackerPendingForTest3{};
+    ASSERT_EQ((scene.manager.getRoomTrackerPendingForTest(
+                  getRoomTrackerPendingForTest3)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerPendingForTest3, std::make_pair(true, true));
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(3.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
-    ASSERT_EQ(scene.manager.getRoomTrackerStateForTest(),
+    semantic::RoomTrackingState getRoomTrackerStateForTest2{};
+    ASSERT_EQ(
+        (scene.manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest2)),
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ(getRoomTrackerStateForTest2,
               semantic::RoomTrackingState::CROSSING_PASSAGE);
     std::size_t traversalKnownToFarCount{};
     ASSERT_EQ(
@@ -484,17 +642,30 @@ TEST(RoomTrackerProductionIntegration,
     EXPECT_TRUE(hasBidirectionalTraversalEvidence2);
     scene.addThirdCrossing();
     scene.produceTraversalEvidence();
-    EXPECT_EQ(scene.manager.getRoomTrackerPendingForTest(),
-              std::make_pair(true, true));
-    scene.manager.submitVerificationVerdict(passVerdict());
-    scene.manager.processRoomTrackerPendingForTest(4.0);
-    scene.manager.submitVerificationVerdict(passVerdict());
-    scene.manager.processRoomTrackerPendingForTest(6.0);
+    std::pair<bool, bool> getRoomTrackerPendingForTest4{};
+    ASSERT_EQ((scene.manager.getRoomTrackerPendingForTest(
+                  getRoomTrackerPendingForTest4)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerPendingForTest4, std::make_pair(true, true));
+    ASSERT_EQ((scene.manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(4.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((scene.manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(6.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
-    ASSERT_EQ(scene.manager.getRoomTrackerStateForTest(),
+    semantic::RoomTrackingState getRoomTrackerStateForTest3{};
+    ASSERT_EQ(
+        (scene.manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest3)),
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ(getRoomTrackerStateForTest3,
               semantic::RoomTrackingState::CONFIRMED_ROOM);
-    const std::vector<semantic::TransitionEvent> &history =
-        scene.manager.getRoomTrackerEventHistoryForTest();
+    const std::vector<semantic::TransitionEvent> *p_historyRef = nullptr;
+    ASSERT_EQ((scene.manager.getRoomTrackerEventHistoryForTest(p_historyRef)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    const std::vector<semantic::TransitionEvent> &history = *p_historyRef;
     EXPECT_EQ(countAcceptedEvents(
                   history,
                   semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
@@ -511,21 +682,37 @@ TEST(RoomTrackerProductionIntegration,
     for (double now_s = 7.0; now_s <= 10.0; now_s += 1.0)
     {
         scene.produceTraversalEvidence();
-        scene.manager.processRoomTrackerPendingForTest(now_s);
+        ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(now_s)),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     }
-    EXPECT_EQ(scene.manager.getRoomTrackerEventHistoryForTest().size(),
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest = nullptr;
+    ASSERT_EQ((scene.manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ((*p_getRoomTrackerEventHistoryForTest).size(),
               historySizeAfterTraversal);
     std::size_t traversalObservationCount2{};
     ASSERT_EQ((scene.passage.getTraversalObservationCount(
                   traversalObservationCount2)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     EXPECT_EQ(traversalObservationCount2, observationsAfterTraversal);
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest2 = nullptr;
+    ASSERT_EQ((scene.manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_EQ(countAcceptedEvents(
-                  scene.manager.getRoomTrackerEventHistoryForTest(),
+                  (*p_getRoomTrackerEventHistoryForTest2),
                   semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
               1U);
+    const std::vector<semantic::TransitionEvent>
+        *p_getRoomTrackerEventHistoryForTest3 = nullptr;
+    ASSERT_EQ((scene.manager.getRoomTrackerEventHistoryForTest(
+                  p_getRoomTrackerEventHistoryForTest3)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_EQ(countAcceptedEvents(
-                  scene.manager.getRoomTrackerEventHistoryForTest(),
+                  (*p_getRoomTrackerEventHistoryForTest3),
                   semantic::RoomTrackingEvent::PASSAGE_TRAVERSAL_COMPLETE),
               1U);
 
@@ -554,11 +741,17 @@ TEST(RoomTrackerProductionIntegration,
     ASSERT_EQ((scene.passage.getProspectiveRoom(p_prospectiveRoom)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     EXPECT_EQ(p_prospectiveRoom, &scene.farRoom);
-    EXPECT_EQ(scene.atlas.getAllMaps(), mapsBefore);
+    std::vector<Map *> allMaps{};
+    ASSERT_EQ((scene.atlas.getAllMaps(allMaps)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_EQ(allMaps, mapsBefore);
     ASSERT_EQ(mapsBefore.size(), 2U);
     for (Map *p_map : mapsBefore)
     {
-        EXPECT_TRUE(scene.atlas.isActiveMap(p_map));
+        bool isActiveMap2{};
+        ASSERT_EQ((scene.atlas.isActiveMap(p_map, isActiveMap2)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        EXPECT_TRUE(isActiveMap2);
     }
 }
 
@@ -574,21 +767,33 @@ TEST(RoomTrackerProductionIntegration,
     {
         scene.produceTraversalEvidence();
     }
-    EXPECT_EQ(scene.manager.getRoomTrackerPendingForTest(),
-              std::make_pair(true, false));
+    std::pair<bool, bool> getRoomTrackerPendingForTest2{};
+    ASSERT_EQ((scene.manager.getRoomTrackerPendingForTest(
+                  getRoomTrackerPendingForTest2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerPendingForTest2, std::make_pair(true, false));
     std::size_t traversalObservationCount{};
     ASSERT_EQ(
         (scene.passage.getTraversalObservationCount(traversalObservationCount)),
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     EXPECT_EQ(traversalObservationCount, 1U);
-    scene.manager.processRoomTrackerPendingForTest(101.0);
-    EXPECT_EQ(scene.manager.getRoomTrackerPendingForTest(),
-              std::make_pair(false, false));
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(101.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    std::pair<bool, bool> getRoomTrackerPendingForTest3{};
+    ASSERT_EQ((scene.manager.getRoomTrackerPendingForTest(
+                  getRoomTrackerPendingForTest3)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerPendingForTest3, std::make_pair(false, false));
 
     /* One crossing cycle cannot satisfy dwell. A consumer-only cycle supplies
      * zero confidence and resets the production semantic::RoomTracker dwell. */
-    scene.manager.processRoomTrackerPendingForTest(105.0);
-    EXPECT_EQ(scene.manager.getRoomTrackerStateForTest(),
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(105.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    semantic::RoomTrackingState getRoomTrackerStateForTest2{};
+    ASSERT_EQ(
+        (scene.manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest2)),
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerStateForTest2,
               semantic::RoomTrackingState::CONFIRMED_ROOM);
 
     scene.addReturnCrossing();
@@ -597,8 +802,13 @@ TEST(RoomTrackerProductionIntegration,
     {
         scene.produceTraversalEvidence();
     }
-    scene.manager.processRoomTrackerPendingForTest(106.0);
-    EXPECT_EQ(scene.manager.getRoomTrackerStateForTest(),
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(106.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    semantic::RoomTrackingState getRoomTrackerStateForTest3{};
+    ASSERT_EQ(
+        (scene.manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest3)),
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerStateForTest3,
               semantic::RoomTrackingState::CONFIRMED_ROOM);
     std::size_t traversalObservationCount2{};
     ASSERT_EQ((scene.passage.getTraversalObservationCount(
@@ -608,31 +818,53 @@ TEST(RoomTrackerProductionIntegration,
 
     scene.addAlternatingCrossing(203U, true);
     scene.produceTraversalEvidence();
-    scene.manager.processRoomTrackerPendingForTest(108.0);
-    ASSERT_EQ(scene.manager.getRoomTrackerStateForTest(),
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(108.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    semantic::RoomTrackingState getRoomTrackerStateForTest4{};
+    ASSERT_EQ(
+        (scene.manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest4)),
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ(getRoomTrackerStateForTest4,
               semantic::RoomTrackingState::CROSSING_PASSAGE);
 
     scene.addAlternatingCrossing(204U, false);
     scene.produceTraversalEvidence();
-    scene.manager.submitVerificationVerdict(passVerdict());
-    scene.manager.processRoomTrackerPendingForTest(110.0);
+    ASSERT_EQ((scene.manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(110.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     /* A one-cycle unavailable verdict is weak input and resets completion
      * dwell even though the real passage retains both-side evidence. */
-    scene.manager.processRoomTrackerPendingForTest(111.0);
-    EXPECT_EQ(scene.manager.getRoomTrackerStateForTest(),
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(111.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    semantic::RoomTrackingState getRoomTrackerStateForTest5{};
+    ASSERT_EQ(
+        (scene.manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest5)),
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getRoomTrackerStateForTest5,
               semantic::RoomTrackingState::CROSSING_PASSAGE);
 
     scene.addAlternatingCrossing(205U, true);
     scene.produceTraversalEvidence();
-    scene.manager.submitVerificationVerdict(passVerdict());
-    scene.manager.processRoomTrackerPendingForTest(112.0);
-    scene.manager.submitVerificationVerdict(passVerdict());
-    scene.manager.processRoomTrackerPendingForTest(114.0);
-    ASSERT_EQ(scene.manager.getRoomTrackerStateForTest(),
+    ASSERT_EQ((scene.manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(112.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((scene.manager.submitVerificationVerdict(passVerdict())),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(114.0)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    semantic::RoomTrackingState getRoomTrackerStateForTest6{};
+    ASSERT_EQ(
+        (scene.manager.getRoomTrackerStateForTest(getRoomTrackerStateForTest6)),
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ(getRoomTrackerStateForTest6,
               semantic::RoomTrackingState::CONFIRMED_ROOM);
-    const std::vector<semantic::TransitionEvent> &history =
-        scene.manager.getRoomTrackerEventHistoryForTest();
+    const std::vector<semantic::TransitionEvent> *p_historyRef = nullptr;
+    ASSERT_EQ((scene.manager.getRoomTrackerEventHistoryForTest(p_historyRef)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    const std::vector<semantic::TransitionEvent> &history = *p_historyRef;
     EXPECT_EQ(countAcceptedEvents(
                   history,
                   semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
@@ -665,13 +897,18 @@ TEST(RoomTrackerProductionIntegration,
         scene.confirmFirstRoom(0.0);
 
         scene.produceTraversalEvidence();
-        scene.manager.processRoomTrackerPendingForTest(1.0);
+        ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(1.0)),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
         scene.addReturnCrossing();
         if (overlapProductionPublishAndConsume(scene, 3.0))
         {
             ++observedMutexContentions;
         }
-        if (scene.manager.getRoomTrackerStateForTest() ==
+        semantic::RoomTrackingState getRoomTrackerStateForTest2{};
+        ASSERT_EQ((scene.manager.getRoomTrackerStateForTest(
+                      getRoomTrackerStateForTest2)),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+        if (getRoomTrackerStateForTest2 ==
             semantic::RoomTrackingState::CROSSING_PASSAGE)
         {
             ++acceptedCrossingHandoffs;
@@ -688,18 +925,29 @@ TEST(RoomTrackerProductionIntegration,
                 hasBidirectionalTraversalEvidence2)),
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
         ASSERT_TRUE(hasBidirectionalTraversalEvidence2);
-        scene.manager.submitVerificationVerdict(passVerdict());
-        scene.manager.processRoomTrackerPendingForTest(8.0);
-        scene.manager.submitVerificationVerdict(passVerdict());
-        scene.manager.processRoomTrackerPendingForTest(10.0);
-        if (scene.manager.getRoomTrackerStateForTest() ==
+        ASSERT_EQ((scene.manager.submitVerificationVerdict(passVerdict())),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+        ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(8.0)),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+        ASSERT_EQ((scene.manager.submitVerificationVerdict(passVerdict())),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+        ASSERT_EQ((scene.manager.processRoomTrackerPendingForTest(10.0)),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+        semantic::RoomTrackingState getRoomTrackerStateForTest3{};
+        ASSERT_EQ((scene.manager.getRoomTrackerStateForTest(
+                      getRoomTrackerStateForTest3)),
+                  SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+        if (getRoomTrackerStateForTest3 ==
             semantic::RoomTrackingState::CONFIRMED_ROOM)
         {
             ++acceptedBothSidesHandoffs;
         }
 
-        const std::vector<semantic::TransitionEvent> &history =
-            scene.manager.getRoomTrackerEventHistoryForTest();
+        const std::vector<semantic::TransitionEvent> *p_historyRef = nullptr;
+        ASSERT_EQ(
+            (scene.manager.getRoomTrackerEventHistoryForTest(p_historyRef)),
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+        const std::vector<semantic::TransitionEvent> &history = *p_historyRef;
         EXPECT_EQ(countAcceptedEvents(
                       history,
                       semantic::RoomTrackingEvent::PASSAGE_CROSSING_DETECTED),
@@ -726,10 +974,17 @@ TEST(RoomTrackerProductionIntegration,
 TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
 {
     Atlas atlas(0);
-    static_cast<void>(atlas.consumeNewMapCreatedEvent());
-    atlas.createNewMap();
-    Map *p_map = atlas.getCurrentMap();
-    static_cast<void>(atlas.consumeNewMapCreatedEvent());
+    bool  atlasWasEventPending{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(atlasWasEventPending)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    static_cast<void>(atlasWasEventPending);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    bool atlasWasEventPending2{};
+    ASSERT_EQ((atlas.consumeNewMapCreatedEvent(atlasWasEventPending2)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    static_cast<void>(atlasWasEventPending2);
     SemanticsManager manager(&atlas);
 
     /* Ground plane: traversal evidence needs a valid ground normal. */
@@ -844,9 +1099,13 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_FALSE(hasPreviouslyVisited2);
 
-    manager.updateTraversalEvidence(&atlas);
+    ASSERT_EQ((manager.updateTraversalEvidence(&atlas)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
-    EXPECT_EQ(manager.getCurrentRoomId(), 11);
+    int getCurrentRoomId2{};
+    ASSERT_EQ((manager.getCurrentRoomId(getCurrentRoomId2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getCurrentRoomId2, 11);
     bool hasPreviouslyVisited3{};
     ASSERT_EQ((farRoom.hasPreviouslyVisited(hasPreviouslyVisited3)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -859,8 +1118,9 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
 
 TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     semantic::Room room;
@@ -875,12 +1135,17 @@ TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    manager.setCurrentRoomIdForTest(-1);
-    manager.seedCurrentRoomFromActiveMapForTest(p_map);
+    ASSERT_EQ((manager.setCurrentRoomIdForTest(-1)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    ASSERT_EQ((manager.seedCurrentRoomFromActiveMapForTest(p_map)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     /* Fallback belief assigns the current room without entry evidence, so
      * the room must not be marked visited. */
-    EXPECT_EQ(manager.getCurrentRoomId(), 3);
+    int getCurrentRoomId2{};
+    ASSERT_EQ((manager.getCurrentRoomId(getCurrentRoomId2)),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
+    EXPECT_EQ(getCurrentRoomId2, 3);
     bool hasPreviouslyVisited2{};
     ASSERT_EQ((room.hasPreviouslyVisited(hasPreviouslyVisited2)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);

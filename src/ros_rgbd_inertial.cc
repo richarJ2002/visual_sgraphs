@@ -25,6 +25,7 @@
 
 #include "ResetCause.h"
 #include "common.hpp"
+#include <rclcpp/logging.hpp>
 
 using namespace std;
 
@@ -327,8 +328,16 @@ void ImageGrabber::SyncWithImu()
             pendingImuMeasurements.clear();
             pendingMaximumImuGap_seconds = 0.0;
             hasConsumedImuSample         = false;
-            p_slamSystem->requestResetActiveMapWithCause(
-                vs_graphs::core::ResetCause::IMU_DELIVERY_GAP);
+            if (p_slamSystem->requestResetActiveMapWithCause(
+                    vs_graphs::core::ResetCause::IMU_DELIVERY_GAP) !=
+                vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: requestResetActiveMapWithCause returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
             continue;
         }
         if (imuMeasurements.empty())
@@ -387,22 +396,42 @@ void ImageGrabber::SyncWithImu()
             processingStage = "inertial RGB-D tracking";
             if (markerTimeDifference_seconds < 0.05)
             {
-                p_slamSystem->trackRGBD(rgbImage,
-                                        depthImage,
-                                        p_pointCloud,
-                                        imageTimestamp_seconds,
-                                        imuMeasurements,
-                                        "",
-                                        matchedMarkers);
+                Sophus::SE3f slamSystemCameraPose{};
+                if (p_slamSystem->trackRGBD(rgbImage,
+                                            depthImage,
+                                            p_pointCloud,
+                                            imageTimestamp_seconds,
+                                            slamSystemCameraPose,
+                                            imuMeasurements,
+                                            "",
+                                            matchedMarkers) !=
+                    vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: trackRGBD returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 markersBuffer.clear();
             }
             else
             {
-                p_slamSystem->trackRGBD(rgbImage,
-                                        depthImage,
-                                        p_pointCloud,
-                                        imageTimestamp_seconds,
-                                        imuMeasurements);
+                Sophus::SE3f slamSystemCameraPose2{};
+                if (p_slamSystem->trackRGBD(rgbImage,
+                                            depthImage,
+                                            p_pointCloud,
+                                            imageTimestamp_seconds,
+                                            slamSystemCameraPose2,
+                                            imuMeasurements) !=
+                    vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: trackRGBD returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
             }
 
             double estimatorInterval_seconds = 0.0;
@@ -524,10 +553,19 @@ int main(int argc, char **argv)
     pubPointClouds  = node->get_parameter("publish_pointclouds").as_bool();
     frameBC = node->get_parameter("frame_building_component").as_string();
     frameSE = node->get_parameter("frame_structural_element").as_string();
-    pubStaticTransform      = node->get_parameter("static_transform").as_bool();
-    bool enablePangolin     = node->get_parameter("enable_pangolin").as_bool();
-    const auto verboseLevel = vs_graphs::core::Verbose::parseVerbosityLevel(
-        node->get_parameter("log_level").as_string());
+    pubStaticTransform  = node->get_parameter("static_transform").as_bool();
+    bool enablePangolin = node->get_parameter("enable_pangolin").as_bool();
+    vs_graphs::core::Verbose::VerbosityLevel verboseLevel{};
+    if (vs_graphs::core::Verbose::parseVerbosityLevel(
+            node->get_parameter("log_level").as_string(),
+            verboseLevel) !=
+        vs_graphs::core::VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: parseVerbosityLevel returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     sgraphArchiveTestRunDir = node->get_parameter("test_run_dir").as_string();
     sgraphArchiveEnabled =
@@ -694,7 +732,14 @@ int main(int argc, char **argv)
     sync_thread.join();
 
     // No sensor worker may call TrackRGBD while SLAM threads are stopping.
-    p_slamSystem->shutdown();
+    if (p_slamSystem->shutdown() !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: shutdown returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     rclcpp::shutdown();
 
@@ -748,8 +793,16 @@ void ImageGrabber::GrabRGBD(
             mpImuGb->imuBuf.swap(emptyImuBuffer);
         }
 
-        p_slamSystem->requestResetActiveMapWithCause(
-            vs_graphs::core::ResetCause::SENSOR_PROCESSING_OVERLOAD);
+        if (p_slamSystem->requestResetActiveMapWithCause(
+                vs_graphs::core::ResetCause::SENSOR_PROCESSING_OVERLOAD) !=
+            vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: requestResetActiveMapWithCause returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
         discardInputUntilBufferDrained = false;
         hasAdmittedRgbdPacket          = false;
 

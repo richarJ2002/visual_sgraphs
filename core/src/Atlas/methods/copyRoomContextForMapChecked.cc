@@ -24,23 +24,38 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-Atlas::SnapshotCopyResult
-    Atlas::copyRoomContextForMapChecked(Map       *p_map_in,
-                                        const bool callerOwnsSemanticLock_in)
+AtlasStatus Atlas::copyRoomContextForMapChecked(
+    Map                       *p_map_in,
+    const bool                 callerOwnsSemanticLock_in,
+    Atlas::SnapshotCopyResult &copyResult_out)
 {
     SnapshotCopyResult result;
     if (!callerOwnsSemanticLock_in)
-        return result;
+    {
+        copyResult_out = result;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
+    }
 
-    result.snapshots = copyRoomContextForMap(p_map_in);
+    std::vector<semantic::RoomContextSnapshot> roomContexts{};
+    if (copyRoomContextForMap(p_map_in, roomContexts) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: copyRoomContextForMap returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    result.snapshots = roomContexts;
     result.status    = SnapshotCopyStatus::COMPLETE;
-    return result;
+    copyResult_out   = result;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

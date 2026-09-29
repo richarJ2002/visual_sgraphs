@@ -26,12 +26,20 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::reconcileRoomGroundPlanes(void)
+SemanticsManagerStatus SemanticsManager::reconcileRoomGroundPlanes(void)
 {
-    Map *p_currentMap = p_atlas->getCurrentMap();
+    Map *p_currentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_currentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_currentMap == nullptr)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::vector<vs_graphs::core::semantic::Floor *> floors{};
@@ -64,7 +72,7 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
     if (p_canonicalFloor == nullptr || !canonicalFloorHasPlaneIdentity)
     {
         /* No canonical identity to reconcile against yet. */
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::optional<semantic::Floor::PlaneIdentity> canonicalIdentity{};
@@ -78,7 +86,7 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
     }
     if (!canonicalIdentity.has_value())
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     geometric::Plane *p_canonicalGroundPlane = nullptr;
@@ -91,8 +99,16 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
                      __func__);
     }
 
-    for (vs_graphs::core::semantic::Room *p_room :
-         p_atlas->getAllDetectedMapRooms())
+    std::vector<semantic::Room *> atlasAllDetectedMapRooms{};
+    if (p_atlas->getAllDetectedMapRooms(atlasAllDetectedMapRooms) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllDetectedMapRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (vs_graphs::core::semantic::Room *p_room : atlasAllDetectedMapRooms)
     {
         bool roomIsBad{};
         if (!(p_room == nullptr) &&
@@ -257,6 +273,8 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
                 << std::endl;
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

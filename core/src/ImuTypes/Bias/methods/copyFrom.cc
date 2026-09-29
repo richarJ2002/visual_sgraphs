@@ -24,7 +24,7 @@ namespace core
 namespace IMU
 {
 
-void Bias::copyFrom(Bias &b_in)
+BiasStatus Bias::copyFrom(Bias &b_in)
 {
     bax = b_in.bax;
     bay = b_in.bay;
@@ -32,6 +32,8 @@ void Bias::copyFrom(Bias &b_in)
     bwx = b_in.bwx;
     bwy = b_in.bwy;
     bwz = b_in.bwz;
+
+    return BiasStatus::BIAS_STATUS_SUCCESS;
 }
 
 } // namespace IMU

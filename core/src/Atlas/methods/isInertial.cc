@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-bool Atlas::isInertial()
+AtlasStatus Atlas::isInertial(bool &isInertial_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     bool               activeMapIsInertial{};
@@ -43,7 +43,8 @@ bool Atlas::isInertial()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapIsInertial;
+    isInertial_out = activeMapIsInertial;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

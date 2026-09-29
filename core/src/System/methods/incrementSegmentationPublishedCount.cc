@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void System::incrementSegmentationPublishedCount()
+SystemStatus System::incrementSegmentationPublishedCount()
 {
     segmentationPublishedCount.fetch_add(1U, std::memory_order_relaxed);
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

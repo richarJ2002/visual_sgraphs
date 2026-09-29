@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addKeyFrame(KeyFrame *p_keyFrame_in)
+AtlasStatus Atlas::addKeyFrame(KeyFrame *p_keyFrame_in)
 {
     Map *p_ownerMap = nullptr;
     if (p_keyFrame_in->getMap(p_ownerMap) !=
@@ -49,6 +49,8 @@ void Atlas::addKeyFrame(KeyFrame *p_keyFrame_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

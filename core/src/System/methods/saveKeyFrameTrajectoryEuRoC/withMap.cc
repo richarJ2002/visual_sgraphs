@@ -33,8 +33,8 @@ namespace vs_graphs
 namespace core
 {
 
-void System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
-                                         Map          *p_map_in)
+SystemStatus System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
+                                                 Map          *p_map_in)
 {
 
     unsigned long mapId{};
@@ -119,6 +119,8 @@ void System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
         }
     }
     f.close();
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

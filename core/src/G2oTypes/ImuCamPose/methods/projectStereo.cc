@@ -32,15 +32,17 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3d ImuCamPose::projectStereo(const Eigen::Vector3d &Xw_in,
-                                          int cameraIndex_in) const
+ImuCamPoseStatus ImuCamPose::projectStereo(const Eigen::Vector3d &Xw_in,
+                                           Eigen::Vector3d       &stereo_out,
+                                           int cameraIndex_in) const
 {
     Eigen::Vector3d Pc = Rcw[cameraIndex_in] * Xw_in + tcw[cameraIndex_in];
     Eigen::Vector3d stereoProjection;
     double          inverseDepth = 1 / Pc(2);
     stereoProjection.head(2)     = pCamera[cameraIndex_in]->project(Pc);
     stereoProjection(2)          = stereoProjection(0) - bf * inverseDepth;
-    return stereoProjection;
+    stereo_out                   = stereoProjection;
+    return ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS;
 }
 
 } // namespace core

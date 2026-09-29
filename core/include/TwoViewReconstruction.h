@@ -18,6 +18,7 @@
 #ifndef TwoViewReconstruction_H
 #define TwoViewReconstruction_H
 
+#include "TwoViewReconstructionStatus.h"
 #include <Eigen/Core>
 #include <opencv2/core.hpp>
 #include <unordered_set>
@@ -50,58 +51,76 @@ class TwoViewReconstruction
     // Computes in parallel a fundamental matrix and a homography
     // Selects a model and tries to recover the motion and the structure from
     // motion
-    bool reconstruct(const std::vector<cv::KeyPoint> &keys1_in,
-                     const std::vector<cv::KeyPoint> &keys2_in,
-                     const std::vector<int>          &matches12_in,
-                     Sophus::SE3f                    &T21_inout,
-                     std::vector<cv::Point3f>        &vP3D_inout,
-                     std::vector<bool>               &triangulatedFlags_inout);
+    [[nodiscard]] TwoViewReconstructionStatus
+        reconstruct(const std::vector<cv::KeyPoint> &keys1_in,
+                    const std::vector<cv::KeyPoint> &keys2_in,
+                    const std::vector<int>          &matches12_in,
+                    Sophus::SE3f                    &T21_inout,
+                    std::vector<cv::Point3f>        &vP3D_inout,
+                    std::vector<bool>               &triangulatedFlags_inout,
+                    bool                            &isReconstructed_out);
 
   private:
-    void findHomography(std::vector<bool> &matchesInliersFlags_out,
+    [[nodiscard]] TwoViewReconstructionStatus
+        findHomography(std::vector<bool> &matchesInliersFlags_out,
+                       float             &score_inout,
+                       Eigen::Matrix3f   &H21_out);
+    [[nodiscard]] TwoViewReconstructionStatus
+        findFundamental(std::vector<bool> &inliersFlags_inout,
                         float             &score_inout,
-                        Eigen::Matrix3f   &H21_out);
-    void findFundamental(std::vector<bool> &inliersFlags_inout,
-                         float             &score_inout,
-                         Eigen::Matrix3f   &F21_out);
+                        Eigen::Matrix3f   &F21_out);
 
-    Eigen::Matrix3f computeH21(const std::vector<cv::Point2f> &points1_in,
-                               const std::vector<cv::Point2f> &points2_in);
-    Eigen::Matrix3f computeF21(const std::vector<cv::Point2f> &points1_in,
-                               const std::vector<cv::Point2f> &points2_in);
+    [[nodiscard]] TwoViewReconstructionStatus
+        computeH21(const std::vector<cv::Point2f> &points1_in,
+                   const std::vector<cv::Point2f> &points2_in,
+                   Eigen::Matrix3f                &h21_out);
+    [[nodiscard]] TwoViewReconstructionStatus
+        computeF21(const std::vector<cv::Point2f> &points1_in,
+                   const std::vector<cv::Point2f> &points2_in,
+                   Eigen::Matrix3f                &f21_out);
 
-    float checkHomography(const Eigen::Matrix3f &H21_in,
-                          const Eigen::Matrix3f &H12_in,
-                          std::vector<bool>     &matchesInliersFlags_inout,
-                          float                  sigma_in);
+    [[nodiscard]] TwoViewReconstructionStatus
+        checkHomography(const Eigen::Matrix3f &H21_in,
+                        const Eigen::Matrix3f &H12_in,
+                        std::vector<bool>     &matchesInliersFlags_inout,
+                        float                  sigma_in,
+                        float                 &score_out);
 
-    float checkFundamental(const Eigen::Matrix3f &F21_in,
-                           std::vector<bool>     &matchesInliersFlags_inout,
-                           float                  sigma_in);
+    [[nodiscard]] TwoViewReconstructionStatus
+        checkFundamental(const Eigen::Matrix3f &F21_in,
+                         std::vector<bool>     &matchesInliersFlags_inout,
+                         float                  sigma_in,
+                         float                 &score_out);
 
-    bool reconstructF(std::vector<bool>        &matchesInliersFlags_inout,
-                      Eigen::Matrix3f          &F21_in,
-                      Eigen::Matrix3f          &K_in,
-                      Sophus::SE3f             &T21_out,
-                      std::vector<cv::Point3f> &vP3D_out,
-                      std::vector<bool>        &triangulatedFlags_out,
-                      float                     minimumParallax_in,
-                      int                       minimumTriangulated_in);
+    [[nodiscard]] TwoViewReconstructionStatus
+        reconstructF(std::vector<bool>        &matchesInliersFlags_inout,
+                     Eigen::Matrix3f          &F21_in,
+                     Eigen::Matrix3f          &K_in,
+                     Sophus::SE3f             &T21_out,
+                     std::vector<cv::Point3f> &vP3D_out,
+                     std::vector<bool>        &triangulatedFlags_out,
+                     float                     minimumParallax_in,
+                     int                       minimumTriangulated_in,
+                     bool                     &isReconstructed_out);
 
-    bool reconstructH(std::vector<bool>        &matchesInliersFlags_inout,
-                      Eigen::Matrix3f          &H21_in,
-                      Eigen::Matrix3f          &K_in,
-                      Sophus::SE3f             &T21_out,
-                      std::vector<cv::Point3f> &vP3D_inout,
-                      std::vector<bool>        &triangulatedFlags_out,
-                      float                     minimumParallax_in,
-                      int                       minimumTriangulated_in);
+    [[nodiscard]] TwoViewReconstructionStatus
+        reconstructH(std::vector<bool>        &matchesInliersFlags_inout,
+                     Eigen::Matrix3f          &H21_in,
+                     Eigen::Matrix3f          &K_in,
+                     Sophus::SE3f             &T21_out,
+                     std::vector<cv::Point3f> &vP3D_inout,
+                     std::vector<bool>        &triangulatedFlags_out,
+                     float                     minimumParallax_in,
+                     int                       minimumTriangulated_in,
+                     bool                     &isReconstructed_out);
 
-    void normalize(const std::vector<cv::KeyPoint> &keys_in,
-                   std::vector<cv::Point2f>        &normalizedPoints_inout,
-                   Eigen::Matrix3f                 &T_out);
+    [[nodiscard]] TwoViewReconstructionStatus
+        normalize(const std::vector<cv::KeyPoint> &keys_in,
+                  std::vector<cv::Point2f>        &normalizedPoints_inout,
+                  Eigen::Matrix3f                 &T_out);
 
-    int checkRT(const Eigen::Matrix3f           &R_in,
+    [[nodiscard]] TwoViewReconstructionStatus
+        checkRT(const Eigen::Matrix3f           &R_in,
                 const Eigen::Vector3f           &t_in,
                 const std::vector<cv::KeyPoint> &keys1_in,
                 const std::vector<cv::KeyPoint> &keys2_in,
@@ -111,12 +130,14 @@ class TwoViewReconstruction
                 std::vector<cv::Point3f>        &vP3D_inout,
                 float                            threshold2_in,
                 std::vector<bool>               &goodFlags_out,
-                float                           &parallax_out);
+                float                           &parallax_out,
+                int                             &goodPointCount_out);
 
-    void decomposeE(const Eigen::Matrix3f &E_in,
-                    Eigen::Matrix3f       &R1_out,
-                    Eigen::Matrix3f       &R2_out,
-                    Eigen::Vector3f       &t_out);
+    [[nodiscard]] TwoViewReconstructionStatus
+        decomposeE(const Eigen::Matrix3f &E_in,
+                   Eigen::Matrix3f       &R1_out,
+                   Eigen::Matrix3f       &R2_out,
+                   Eigen::Vector3f       &t_out);
 
     // Keypoints from Reference Frame (Frame 1)
     std::vector<cv::KeyPoint> keys1;

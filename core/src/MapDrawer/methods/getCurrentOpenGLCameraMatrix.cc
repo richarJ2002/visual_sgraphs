@@ -34,8 +34,9 @@ namespace vs_graphs
 namespace core
 {
 
-void MapDrawer::getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M_in,
-                                             pangolin::OpenGlMatrix &MOw_inout)
+MapDrawerStatus
+    MapDrawer::getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M_in,
+                                            pangolin::OpenGlMatrix &MOw_inout)
 {
     Eigen::Matrix4f Twc;
     {
@@ -55,6 +56,8 @@ void MapDrawer::getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M_in,
     MOw_inout.m[12] = Twc(0, 3);
     MOw_inout.m[13] = Twc(1, 3);
     MOw_inout.m[14] = Twc(2, 3);
+
+    return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 }
 
 } // namespace core

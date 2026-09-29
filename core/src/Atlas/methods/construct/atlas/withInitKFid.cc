@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -35,7 +36,13 @@ Atlas::Atlas(int initialKeyFrameId_in) :
     hasViewer(false)
 {
     p_activeMap = static_cast<Map *>(nullptr);
-    createNewMap();
+    if (createNewMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: createNewMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

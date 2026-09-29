@@ -17,15 +17,25 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void SemanticsManager::getUpdatedFloorsForTest(void)
+SemanticsManagerStatus SemanticsManager::getUpdatedFloorsForTest(void)
 {
-    getUpdatedFloors();
+    if (getUpdatedFloors() !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getUpdatedFloors returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

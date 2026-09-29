@@ -31,8 +31,9 @@ namespace vs_graphs
 namespace core
 {
 
-camera_models::geometriccamera::GeometricCamera *Atlas::addCamera(
-    camera_models::geometriccamera::GeometricCamera *p_camera_in)
+AtlasStatus Atlas::addCamera(
+    camera_models::geometriccamera::GeometricCamera  *p_camera_in,
+    camera_models::geometriccamera::GeometricCamera *&p_camera_out)
 {
     // Check if the camera already exists
     bool isAlreadyInMap     = false;
@@ -122,12 +123,14 @@ camera_models::geometriccamera::GeometricCamera *Atlas::addCamera(
 
     if (isAlreadyInMap)
     {
-        return cameras[matchedCameraIndex];
+        p_camera_out = cameras[matchedCameraIndex];
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     else
     {
         cameras.push_back(p_camera_in);
-        return p_camera_in;
+        p_camera_out = p_camera_in;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 }
 

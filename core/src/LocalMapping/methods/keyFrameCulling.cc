@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::keyFrameCulling()
+LocalMappingStatus LocalMapping::keyFrameCulling()
 {
     // Check redundant keyframes (only local keyframes)
     // A keyframe is considered redundant if the 90% of the MapPoints it sees,
@@ -64,8 +64,16 @@ void LocalMapping::keyFrameCulling()
     else
         redundancyThreshold = 0.5;
 
-    const bool isImuInitialized       = p_atlas->isImuInitialized();
-    int        processedKeyFrameCount = 0;
+    bool isImuInitialized{};
+    if (p_atlas->isImuInitialized(isImuInitialized) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    int processedKeyFrameCount = 0;
 
     // Compute the oldest keyframe in the optimizable inertial window.
     unsigned long lastOptimizableKeyFrameId = p_currentKeyFrame->id;
@@ -269,7 +277,17 @@ void LocalMapping::keyFrameCulling()
         {
             if (isInertial)
             {
-                if (p_atlas->getKeyFrameCount() <= temporalWindowSize)
+                unsigned long atlasKeyFrameCount{};
+                if (p_atlas->getKeyFrameCount(atlasKeyFrameCount) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getKeyFrameCount returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (atlasKeyFrameCount <= temporalWindowSize)
                     continue;
 
                 if (p_neighborKeyFrame->id > (p_currentKeyFrame->id - 2))
@@ -287,9 +305,18 @@ void LocalMapping::keyFrameCulling()
                          timeGap < 3.) ||
                         (timeGap < 0.5))
                     {
-                        p_neighborKeyFrame->p_nextKF->p_imuPreintegrated
-                            ->mergePrevious(
-                                p_neighborKeyFrame->p_imuPreintegrated);
+                        if (p_neighborKeyFrame->p_nextKF->p_imuPreintegrated
+                                ->mergePrevious(
+                                    p_neighborKeyFrame->p_imuPreintegrated) !=
+                            IMU::PreintegratedStatus::
+                                PREINTEGRATED_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: mergePrevious returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
                         p_neighborKeyFrame->p_nextKF->p_prevKF =
                             p_neighborKeyFrame->p_prevKF;
                         p_neighborKeyFrame->p_prevKF->p_nextKF =
@@ -357,9 +384,19 @@ void LocalMapping::keyFrameCulling()
                                  .norm() < 0.02) &&
                             (timeGap < 3))
                         {
-                            p_neighborKeyFrame->p_nextKF->p_imuPreintegrated
-                                ->mergePrevious(
-                                    p_neighborKeyFrame->p_imuPreintegrated);
+                            if (p_neighborKeyFrame->p_nextKF->p_imuPreintegrated
+                                    ->mergePrevious(p_neighborKeyFrame
+                                                        ->p_imuPreintegrated) !=
+                                IMU::PreintegratedStatus::
+                                    PREINTEGRATED_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: mergePrevious returned a failure "
+                                    "status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
                             p_neighborKeyFrame->p_nextKF->p_prevKF =
                                 p_neighborKeyFrame->p_prevKF;
                             p_neighborKeyFrame->p_prevKF->p_nextKF =
@@ -399,6 +436,8 @@ void LocalMapping::keyFrameCulling()
             break;
         }
     }
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

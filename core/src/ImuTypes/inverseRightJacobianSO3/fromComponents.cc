@@ -24,9 +24,11 @@ namespace core
 namespace IMU
 {
 
-Eigen::Matrix3f inverseRightJacobianSO3(const float &angleAxisX_in,
-                                        const float &angleAxisY_in,
-                                        const float &angleAxisZ_in)
+ImuTypesStatus
+    inverseRightJacobianSO3(const float     &angleAxisX_in,
+                            const float     &angleAxisY_in,
+                            const float     &angleAxisZ_in,
+                            Eigen::Matrix3f &inverseRightJacobian_out)
 {
     Eigen::Matrix3f identityMatrix;
     identityMatrix.setIdentity();
@@ -40,15 +42,18 @@ Eigen::Matrix3f inverseRightJacobianSO3(const float &angleAxisX_in,
 
     if (rotationAngle < eps)
     {
-        return identityMatrix;
+        inverseRightJacobian_out = identityMatrix;
+        return ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS;
     }
     else
     {
-        return identityMatrix + skewSymmetricMatrix / 2 +
-               skewSymmetricMatrix * skewSymmetricMatrix *
-                   (1.0f / rotationAngleSquared -
-                    (1.0f + cos(rotationAngle)) /
-                        (2.0f * rotationAngle * sin(rotationAngle)));
+        inverseRightJacobian_out =
+            identityMatrix + skewSymmetricMatrix / 2 +
+            skewSymmetricMatrix * skewSymmetricMatrix *
+                (1.0f / rotationAngleSquared -
+                 (1.0f + cos(rotationAngle)) /
+                     (2.0f * rotationAngle * sin(rotationAngle)));
+        return ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS;
     }
 }
 

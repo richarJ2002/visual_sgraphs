@@ -17,15 +17,25 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void SemanticsManager::associatePassagesToRoomsForTest(void)
+SemanticsManagerStatus SemanticsManager::associatePassagesToRoomsForTest(void)
 {
-    associatePassagesToRooms();
+    if (associatePassagesToRooms() !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: associatePassagesToRooms returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

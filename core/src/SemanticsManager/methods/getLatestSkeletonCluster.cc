@@ -17,20 +17,31 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-std::vector<std::vector<Eigen::Vector3d>>
-    SemanticsManager::getLatestSkeletonCluster(void)
+SemanticsManagerStatus SemanticsManager::getLatestSkeletonCluster(
+    std::vector<std::vector<Eigen::Vector3d>> &latestSkeletonCluster_out)
 {
     /* Lock the skeleton cluster */
     unique_lock<std::mutex> lock(newRoomsMutex);
 
     /* Get the latest skeleton cluster from Atlas */
-    return p_atlas->getSkeletonClusterPoints();
+    std::vector<std::vector<Eigen::Vector3d>> atlasSkeletonClusterPoints{};
+    if (p_atlas->getSkeletonClusterPoints(atlasSkeletonClusterPoints) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getSkeletonClusterPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    latestSkeletonCluster_out = atlasSkeletonClusterPoints;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

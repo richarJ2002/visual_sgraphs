@@ -32,7 +32,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::loadTrackingParameters(const string &settingPath_in)
+TrackingStatus Tracking::loadTrackingParameters(const string &settingPath_in)
 {
     cv::FileStorage settings(settingPath_in, cv::FileStorage::READ);
 
@@ -147,6 +147,8 @@ void Tracking::loadTrackingParameters(const string &settingPath_in)
     cout << "- Initialization Min Points: " << initializationMinPoints << endl;
     cout << "- Relocalization Min Inliers: " << relocalizationMinInliers
          << endl;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

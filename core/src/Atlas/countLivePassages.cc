@@ -33,11 +33,12 @@ namespace vs_graphs
 namespace core
 {
 
-std::size_t countLivePassages(Map *p_map_in)
+AtlasStatus countLivePassages(Map *p_map_in, std::size_t &livePassages_out)
 {
     if (p_map_in == nullptr)
     {
-        return 0U;
+        livePassages_out = 0U;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     std::size_t                                       liveCount = 0U;
     std::vector<vs_graphs::core::semantic::Passage *> mapAllPassages{};
@@ -66,7 +67,8 @@ std::size_t countLivePassages(Map *p_map_in)
             ++liveCount;
         }
     }
-    return liveCount;
+    livePassages_out = liveCount;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

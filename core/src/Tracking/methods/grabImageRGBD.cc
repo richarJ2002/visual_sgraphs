@@ -32,20 +32,27 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f Tracking::grabImageRGBD(
+TrackingStatus Tracking::grabImageRGBD(
     const cv::Mat                                &imageRgb_in,
     const cv::Mat                                &imageD_in,
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_pointcloud_in,
     const double                                 &timestamp_in,
     string                                        filename_in,
     const std::vector<semantic::Marker *>         markers_in,
-    const std::vector<semantic::Room *>           rooms_in)
+    const std::vector<semantic::Room *>           rooms_in,
+    Sophus::SE3f                                 &cameraPose_out)
 {
     // Set arguments to local variables
     env_rooms = rooms_in;
 
     // Adaptive FAST threshold: adjust before feature extraction
-    adjustFASTThreshold();
+    if (adjustFASTThreshold() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: adjustFASTThreshold returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     imageGray          = imageRgb_in;
     cv::Mat imageDepth = imageD_in;
@@ -110,7 +117,13 @@ Sophus::SE3f Tracking::grabImageRGBD(
     orbExtractionTimes_ms.push_back(currentFrame.orbExtractionTime);
 #endif
 
-    track();
+    if (track() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: track returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     Sophus::SE3<float> currentFrameGetPose{};
     if (currentFrame.getPose(currentFrameGetPose) !=
@@ -121,7 +134,8 @@ Sophus::SE3f Tracking::grabImageRGBD(
                      "fail; continuing as before.",
                      __func__);
     }
-    return currentFrameGetPose;
+    cameraPose_out = currentFrameGetPose;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

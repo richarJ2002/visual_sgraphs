@@ -80,8 +80,9 @@ TEST(SemanticCanonicalSerialization, SchemaVersionFieldsArePresentAndStable)
 
 TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -121,8 +122,9 @@ TEST(SemanticCanonicalSerialization,
      * one snapshot's own record vectors in memory, so mapId and every
      * other field stays identical between the two serialized inputs and
      * only container order differs. */
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall1;
     test::makeWallPlane(wall1,
                         1,
@@ -171,7 +173,8 @@ TEST(SemanticCanonicalSerialization,
      SnapshotSerializationPreservesEntityKeyCollisionDuplicates)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     Room roomFirst;
     test::makeRoom(roomFirst,
@@ -209,8 +212,9 @@ TEST(SemanticCanonicalSerialization,
      * re-order a copy of one report's own findings vector in memory rather
      * than comparing across two independently constructed Atlas instances,
      * whose Map ids would genuinely differ. */
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -249,7 +253,7 @@ TEST(SemanticCanonicalSerialization,
      CompletenessResultsSerializationIsInvariantUnderMapPermutation)
 {
     Atlas atlas(0);
-    atlas.createNewMap();
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
@@ -274,8 +278,9 @@ TEST(SemanticCanonicalSerialization,
      CompletenessSerializationPreservesLegacyMultiplicityDuplicateIds)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  bothCollections;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room bothCollections;
     test::makeRoom(bothCollections, 1, p_map, nullptr);
     ASSERT_EQ((p_map->addDetectedMapRoom(&bothCollections)),
               MapStatus::MAP_STATUS_SUCCESS);
@@ -301,8 +306,9 @@ TEST(SemanticCanonicalSerialization,
 TEST(SemanticCanonicalSerialization,
      SerializationNeverMutatesInputAndIsRepeatable)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,
@@ -711,8 +717,9 @@ TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
     /* The visited flag is mission state, not identity: flipping it must not
      * alter either canonical digest, or revisiting a room would break merge
      * matching. */
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     geometric::Plane wall;
     test::makeWallPlane(wall,
                         1,

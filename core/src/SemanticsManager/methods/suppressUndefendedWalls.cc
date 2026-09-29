@@ -33,14 +33,22 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::suppressUndefendedWalls(void)
+SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
 {
-    Map *p_currentMap = p_atlas->getCurrentMap();
+    Map *p_currentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_currentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (p_currentMap == nullptr)
     {
         undefendedWalls.clear();
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::vector<semantic::Room *> allRooms{};
@@ -243,10 +251,19 @@ void SemanticsManager::suppressUndefendedWalls(void)
                                  passageWalls.end(),
                                  p_wall) != passageWalls.end();
             });
-        const WallAdmissionEvidence evidence =
-            evaluateWallAdmissionEvidence(p_wall,
+        WallAdmissionEvidence evidence{};
+        if (evaluateWallAdmissionEvidence(p_wall,
                                           p_sysParams,
-                                          groundNormalForEvidence_World);
+                                          groundNormalForEvidence_World,
+                                          evidence) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateWallAdmissionEvidence returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         geometric::Plane::GeometrySnapshot wallGeometry{};
         if (p_wall->getGeometrySnapshot(wallGeometry) !=
@@ -562,6 +579,8 @@ void SemanticsManager::suppressUndefendedWalls(void)
                             ? undefendedWalls.erase(stateIterator)
                             : std::next(stateIterator);
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

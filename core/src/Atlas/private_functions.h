@@ -13,6 +13,7 @@
 #ifndef VS_GRAPHS_CORE_ATLAS_PRIVATE_FUNCTIONS_H
 #define VS_GRAPHS_CORE_ATLAS_PRIVATE_FUNCTIONS_H
 
+#include "AtlasStatus.h"
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
@@ -41,10 +42,12 @@ class Passage;
 } // namespace semantic
 
 template <typename Entity>
-bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
-                     const std::vector<Entity *>           &importedEntities_in,
-                     const char                            *entityName_in,
-                     std::vector<std::pair<Entity *, int>> &assignments_out)
+AtlasStatus
+    planImportedIds(const std::vector<Entity *>           &existingEntities_in,
+                    const std::vector<Entity *>           &importedEntities_in,
+                    const char                            *entityName_in,
+                    std::vector<std::pair<Entity *, int>> &assignments_out,
+                    bool                                  &isPlanned_out)
 {
     // Identity of an imported or existing entity. Every semantic status
     // enumeration uses 0 for SUCCESS; getId cannot fail.
@@ -78,7 +81,8 @@ bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
                       << entityName_in
                       << " already belongs to the destination container."
                       << std::endl;
-            return false;
+            isPlanned_out = false;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
 
         if (idOf(p_entity) >= 0)
@@ -103,7 +107,8 @@ bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: duplicate "
                       << entityName_in << " ID " << idOf(p_entity)
                       << " in source map." << std::endl;
-            return false;
+            isPlanned_out = false;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
 
         orderedImportedEntities.push_back(p_entity);
@@ -143,28 +148,43 @@ bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
         assignments_out.emplace_back(p_entity, assignedId);
     }
 
-    return true;
+    isPlanned_out = true;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-void advanceIdentityAllocator(std::atomic<int> &nextIdentity_inout,
-                              const int         observedIdentity_in);
+[[nodiscard]] AtlasStatus
+    advanceIdentityAllocator(std::atomic<int> &nextIdentity_inout,
+                             const int         observedIdentity_in);
 
-std::size_t countLiveRooms(Map *p_map_in);
+[[nodiscard]] AtlasStatus countLiveRooms(Map         *p_map_in,
+                                         std::size_t &liveRooms_out);
 
-std::size_t countLiveWallPlanes(Map *p_map_in);
+[[nodiscard]] AtlasStatus countLiveWallPlanes(Map         *p_map_in,
+                                              std::size_t &liveWallPlanes_out);
 
-std::size_t countLivePassages(Map *p_map_in);
+[[nodiscard]] AtlasStatus countLivePassages(Map         *p_map_in,
+                                            std::size_t &livePassages_out);
 
-std::size_t countLiveFloors(Map *p_map_in);
+[[nodiscard]] AtlasStatus countLiveFloors(Map         *p_map_in,
+                                          std::size_t &liveFloors_out);
 
-std::size_t consecutiveContentHash(Map *p_oldMap_in, Map *p_currentMap_in);
+[[nodiscard]] AtlasStatus consecutiveContentHash(Map         *p_oldMap_in,
+                                                 Map         *p_currentMap_in,
+                                                 std::size_t &contentHash_out);
 
-bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in);
+[[nodiscard]] AtlasStatus consecutiveSeedTagsMatch(Map  *p_oldMap_in,
+                                                   Map  *p_currentMap_in,
+                                                   bool &isMatch_out);
 
-std::set<std::string> collectAnchorTags(Map *p_oldMap_in, Map *p_currentMap_in);
+[[nodiscard]] AtlasStatus
+    collectAnchorTags(Map                   *p_oldMap_in,
+                      Map                   *p_currentMap_in,
+                      std::set<std::string> &anchorTags_out);
 
-bool resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
-                                   semantic::Passage *p_transferred_in);
+[[nodiscard]] AtlasStatus
+    resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
+                                  semantic::Passage *p_transferred_in,
+                                  bool              &wasResurfaced_out);
 
 } // namespace core
 } // namespace vs_graphs

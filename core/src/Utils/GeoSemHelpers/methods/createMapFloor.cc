@@ -30,7 +30,15 @@ GeoSemHelpersStatus
     GeoSemHelpers::createMapFloor(vs_graphs::core::Atlas *p_atlas_inout,
                                   std::optional<int>      stableFloorId_in)
 {
-    vs_graphs::core::Map *p_currentMap = p_atlas_inout->getCurrentMap();
+    vs_graphs::core::Map *p_currentMap = nullptr;
+    if (p_atlas_inout->getCurrentMap(p_currentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (p_currentMap == nullptr)
     {
@@ -43,10 +51,26 @@ GeoSemHelpersStatus
         new vs_graphs::core::semantic::Floor();
 
     // Variables
-    const int floorId = stableFloorId_in.has_value()
-                            ? *stableFloorId_in
-                            : p_atlas_inout->reserveFloorIdentity();
-    p_atlas_inout->observeFloorIdentity(floorId);
+    int atlasFloorId{};
+    if (!(stableFloorId_in.has_value()) &&
+        p_atlas_inout->reserveFloorIdentity(atlasFloorId) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: reserveFloorIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const int floorId =
+        stableFloorId_in.has_value() ? *stableFloorId_in : atlasFloorId;
+    if (p_atlas_inout->observeFloorIdentity(floorId) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: observeFloorIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Fill the floor entity
     if (p_newMapFloor->setOpId(-1) !=
@@ -99,7 +123,14 @@ GeoSemHelpersStatus
     }
 
     // Add the floor to the map
-    p_atlas_inout->addMapFloor(p_newMapFloor);
+    if (p_atlas_inout->addMapFloor(p_newMapFloor) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     int newMapFloorId{};
     if (p_newMapFloor->getId(newMapFloorId) !=

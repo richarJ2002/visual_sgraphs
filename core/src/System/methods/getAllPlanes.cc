@@ -31,9 +31,18 @@ namespace vs_graphs
 namespace core
 {
 
-vector<geometric::Plane *> System::getAllPlanes()
+SystemStatus
+    System::getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out)
 {
-    Map                            *p_activeMap = p_atlas->getCurrentMap();
+    Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     std::vector<geometric::Plane *> activeMapAllPlanes{};
     if (p_activeMap->getAllPlanes(activeMapAllPlanes) !=
         MapStatus::MAP_STATUS_SUCCESS)
@@ -43,7 +52,8 @@ vector<geometric::Plane *> System::getAllPlanes()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllPlanes;
+    allPlanes_out = activeMapAllPlanes;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

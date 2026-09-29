@@ -37,7 +37,15 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in,
     double                                          confidence_in)
 {
-    vs_graphs::core::Map *p_currentMap = p_atlas_inout->getCurrentMap();
+    vs_graphs::core::Map *p_currentMap = nullptr;
+    if (p_atlas_inout->getCurrentMap(p_currentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (p_currentMap == nullptr)
     {
@@ -354,7 +362,14 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     }
 
     /* Add the palne to the current map */
-    p_atlas_inout->addMapPlane(p_newMapPlane);
+    if (p_atlas_inout->addMapPlane(p_newMapPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapPlane returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     p_mapPlane_out = p_newMapPlane;
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;

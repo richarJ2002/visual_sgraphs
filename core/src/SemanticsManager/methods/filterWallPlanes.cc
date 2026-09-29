@@ -24,10 +24,19 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::filterWallPlanes(void)
+SemanticsManagerStatus SemanticsManager::filterWallPlanes(void)
 {
     /* Iterate through all the planes and filter the walls */
-    for (const auto &plane : p_atlas->getAllPlanes())
+    std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
+    if (p_atlas->getAllPlanes(atlasAllPlanes) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPlanes returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (const auto &plane : atlasAllPlanes)
     {
         /* Skip planes which are not classed as walls */
         geometric::Plane::PlaneVariant planeExpectedPlaneType{};
@@ -55,9 +64,18 @@ void SemanticsManager::filterWallPlanes(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Vector3f transformedPlaneCoefficients =
-                transformPlaneEqToGroundReference(
-                    planeGetGlobalEquation.coeffs());
+            Eigen::Vector3f transformedPlaneCoefficients{};
+            if (transformPlaneEqToGroundReference(
+                    planeGetGlobalEquation.coeffs(),
+                    transformedPlaneCoefficients) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: transformPlaneEqToGroundReference returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             /*!
              * If the transformed plane is vertical based on absolute value,
@@ -80,6 +98,8 @@ void SemanticsManager::filterWallPlanes(void)
             }
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

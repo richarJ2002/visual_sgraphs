@@ -55,7 +55,7 @@ namespace core
  *              only wall ADMISSION becomes conservative while its identity
  *              is still ambiguous.
  */
-bool segmentCrossesOpenPassageEvidence(
+SemanticsManagerStatus segmentCrossesOpenPassageEvidence(
     const Eigen::Vector3d &segmentStart_World_m_in,
     const Eigen::Vector3d &segmentEnd_World_m_in,
     geometric::Plane      *p_evidenceSupportingWall_in,
@@ -64,7 +64,8 @@ bool segmentCrossesOpenPassageEvidence(
     const double           evidenceHeightSpan_m_in,
     const Eigen::Vector3d &groundNormal_World_in,
     const double           openingMargin_m_in,
-    const double           minimumSideDistance_m_in)
+    const double           minimumSideDistance_m_in,
+    bool                  &crossesOpenPassageEvidence_out)
 {
     bool evidenceSupportingWallIsBad{};
     if (!(p_evidenceSupportingWall_in == nullptr) &&
@@ -79,7 +80,8 @@ bool segmentCrossesOpenPassageEvidence(
     if (p_evidenceSupportingWall_in == nullptr || evidenceSupportingWallIsBad ||
         evidenceOpeningRadius_m_in <= 0.0)
     {
-        return false;
+        crossesOpenPassageEvidence_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     constexpr double defaultOpenPassageHeight_m = 2.0;
@@ -94,16 +96,27 @@ bool segmentCrossesOpenPassageEvidence(
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    return segmentCrossesAperture(
-        segmentStart_World_m_in,
-        segmentEnd_World_m_in,
-        evidenceSupportingWallGetGlobalEquation.coeffs(),
-        evidenceCentroid_World_m_in,
-        2.0 * evidenceOpeningRadius_m_in,
-        std::max(evidenceHeightSpan_m_in, defaultOpenPassageHeight_m),
-        groundNormal_World_in,
-        openingMargin_m_in,
-        minimumSideDistance_m_in);
+    bool crossesAperture{};
+    if (segmentCrossesAperture(
+            segmentStart_World_m_in,
+            segmentEnd_World_m_in,
+            evidenceSupportingWallGetGlobalEquation.coeffs(),
+            evidenceCentroid_World_m_in,
+            2.0 * evidenceOpeningRadius_m_in,
+            std::max(evidenceHeightSpan_m_in, defaultOpenPassageHeight_m),
+            groundNormal_World_in,
+            openingMargin_m_in,
+            minimumSideDistance_m_in,
+            crossesAperture) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: segmentCrossesAperture returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    crossesOpenPassageEvidence_out = crossesAperture;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

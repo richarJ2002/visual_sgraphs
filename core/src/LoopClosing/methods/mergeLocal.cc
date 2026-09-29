@@ -44,7 +44,8 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::SemanticMergeDecision LoopClosing::mergeLocal()
+LoopClosingStatus
+    LoopClosing::mergeLocal(semantic::SemanticMergeDecision &local_out)
 {
     /* ---------------------------------------------------------------------- *
      * SECTION 1 - INITIALISATION
@@ -99,7 +100,8 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     if (p_currentKF == nullptr || p_mergeMatchedKF == nullptr ||
         currentKFIsBad || mergeMatchedKFIsBad)
     {
-        return semantic::SemanticMergeDecision::REJECT;
+        local_out = semantic::SemanticMergeDecision::REJECT;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     Map *p_currentMap = nullptr;
@@ -141,12 +143,35 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                      "fail; continuing as before.",
                      __func__);
     }
+    bool atlasIsActiveMap{};
+    if (!(p_currentMap == nullptr || p_mergeMap == nullptr ||
+          p_currentMap == p_mergeMap || currentMapIsBad || mergeMapIsBad) &&
+        p_atlas->isActiveMap(p_currentMap, atlasIsActiveMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isActiveMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool atlasIsActiveMap2{};
+    if (!(p_currentMap == nullptr || p_mergeMap == nullptr ||
+          p_currentMap == p_mergeMap || currentMapIsBad || mergeMapIsBad ||
+          !atlasIsActiveMap) &&
+        p_atlas->isActiveMap(p_mergeMap, atlasIsActiveMap2) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isActiveMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_currentMap == nullptr || p_mergeMap == nullptr ||
         p_currentMap == p_mergeMap || currentMapIsBad || mergeMapIsBad ||
-        !p_atlas->isActiveMap(p_currentMap) ||
-        !p_atlas->isActiveMap(p_mergeMap))
+        !atlasIsActiveMap || !atlasIsActiveMap2)
     {
-        return semantic::SemanticMergeDecision::REJECT;
+        local_out = semantic::SemanticMergeDecision::REJECT;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     /* ---------------------------------------------------------------------- *
@@ -160,19 +185,44 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     /* Flag to indicate if bundle adjustment should be relaunched */
     bool shouldRelaunchBa = false;
 
-    shouldRelaunchBa = stopGlobalBundleAdjustment();
+    bool wasRunning{};
+    if (stopGlobalBundleAdjustment(wasRunning) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: stopGlobalBundleAdjustment returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    shouldRelaunchBa = wasRunning;
 
     /* ---------------------------------------------------------------------- *
      * SECTION 3 - STOP LOCAL MAPPING
      * ---------------------------------------------------------------------- */
 
     /* Request stop */
-    p_localMapper->requestStop();
+    if (p_localMapper->requestStop() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestStop returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Wait until local mapper stops */
     for (;;)
     {
-        if (p_localMapper->isStopped())
+        bool localMapperIsStopped{};
+        if (p_localMapper->isStopped(localMapperIsStopped) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isStopped returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (localMapperIsStopped)
         {
             break;
         }
@@ -194,8 +244,15 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
      * Prevent semantic worker threads from modifying either graph while map
      * frames, ownership, and cross-entity references are being changed.
      */
-    std::unique_lock<std::mutex> semanticUpdateLock =
-        p_atlas->acquireSemanticUpdateLock();
+    std::unique_lock<std::mutex> semanticUpdateLock{};
+    if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: acquireSemanticUpdateLock returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Revalidate after quiescing workers; retained retired maps keep stale
      * raw pointers alive, so pointer non-nullness alone is insufficient. */
@@ -238,14 +295,45 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                      "fail; continuing as before.",
                      __func__);
     }
+    bool atlasIsActiveMap3{};
+    if (!(currentKFIsBad2 || mergeMatchedKFIsBad2 ||
+          p_currentKFMap != p_currentMap ||
+          p_mergeMatchedKFMap != p_mergeMap) &&
+        p_atlas->isActiveMap(p_currentMap, atlasIsActiveMap3) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isActiveMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool atlasIsActiveMap4{};
+    if (!(currentKFIsBad2 || mergeMatchedKFIsBad2 ||
+          p_currentKFMap != p_currentMap || p_mergeMatchedKFMap != p_mergeMap ||
+          !atlasIsActiveMap3) &&
+        p_atlas->isActiveMap(p_mergeMap, atlasIsActiveMap4) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isActiveMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (currentKFIsBad2 || mergeMatchedKFIsBad2 ||
         p_currentKFMap != p_currentMap || p_mergeMatchedKFMap != p_mergeMap ||
-        !p_atlas->isActiveMap(p_currentMap) ||
-        !p_atlas->isActiveMap(p_mergeMap))
+        !atlasIsActiveMap3 || !atlasIsActiveMap4)
     {
         semanticUpdateLock.unlock();
-        p_localMapper->release();
-        return semantic::SemanticMergeDecision::REJECT;
+        if (p_localMapper->release() !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: release returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        local_out = semantic::SemanticMergeDecision::REJECT;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     Sophus::SE3f currentKFPoseInverse{};
@@ -334,16 +422,39 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     if (semanticMergeGate.decision != semantic::SemanticMergeDecision::ACCEPT)
     {
         semanticUpdateLock.unlock();
-        p_localMapper->release();
+        if (p_localMapper->release() !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: release returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         if (shouldRelaunchBa)
         {
-            relaunchGlobalBundleAdjustment(p_currentMap);
+            if (relaunchGlobalBundleAdjustment(p_currentMap) !=
+                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: relaunchGlobalBundleAdjustment returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
-        return semanticMergeGate.decision;
+        local_out = semanticMergeGate.decision;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     /* Discard queued keyframes only after every merge rejection gate passed. */
-    p_localMapper->emptyQueue();
+    if (p_localMapper->emptyQueue() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: emptyQueue returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Update the connections of the current keyframe */
     if (p_currentKF->updateConnections() !=
@@ -1243,7 +1354,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         }
 
         /* Set the map to be the current map */
-        p_atlas->changeMap(p_currentMap);
+        if (p_atlas->changeMap(p_currentMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: changeMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /* Incrase index tracking the amount of times the maps been changed */
         if (p_currentMap->increaseChangeIndex() !=
@@ -1411,7 +1529,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     vpMergeConnectedKFs.push_back(p_mergeMatchedKF);
 
     /* Fuse duplicate current-map points into corrected merge keyframes */
-    searchAndFuse(vCorrectedSim3, checkFuseMapPoints);
+    if (searchAndFuse(vCorrectedSim3, checkFuseMapPoints) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: searchAndFuse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Refresh covisibility links for current-map local keyframes */
     for (KeyFrame *p_keyFrame : localWindowKeyFrames)
@@ -1513,23 +1638,45 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
         p_tracker->sensor == System::IMU_RGBD)
     {
         /* Refine the merged region using visual and inertial constraints */
-        Optimizer::mergeInertialBA(p_currentKF,
-                                   p_mergeMatchedKF,
-                                   &shouldStop,
-                                   p_currentMap,
-                                   vCorrectedSim3);
+        if (Optimizer::mergeInertialBA(p_currentKF,
+                                       p_mergeMatchedKF,
+                                       &shouldStop,
+                                       p_currentMap,
+                                       vCorrectedSim3) !=
+            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: mergeInertialBA returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
     else
     {
         /* Refine the merged region using visual observations only */
-        Optimizer::loopClosureLocalBundleAdjustment(p_mergeMatchedKF,
-                                                    vpMergeConnectedKFs,
-                                                    localCurrentWindowKeyFrames,
-                                                    &shouldStop);
+        if (Optimizer::loopClosureLocalBundleAdjustment(
+                p_mergeMatchedKF,
+                vpMergeConnectedKFs,
+                localCurrentWindowKeyFrames,
+                &shouldStop) != OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: loopClosureLocalBundleAdjustment returned a failure "
+                "status although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
 
     /* Resume local mapping after merge optimisation is complete */
-    p_localMapper->release();
+    if (p_localMapper->release() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: release returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     /* ---------------------------------------------------------------------- *
      * SECTION 16 - RETRIEVE THE REMAINING MERGE MAP
@@ -1658,11 +1805,27 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     }
 
     /* Stop local mapping before any remaining ownership is transferred. */
-    p_localMapper->requestStop();
+    if (p_localMapper->requestStop() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestStop returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (;;)
     {
-        if (p_localMapper->isStopped())
+        bool localMapperIsStopped2{};
+        if (p_localMapper->isStopped(localMapperIsStopped2) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isStopped returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (localMapperIsStopped2)
         {
             break;
         }
@@ -1936,13 +2099,21 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
 
         if (p_tracker->sensor != System::MONOCULAR)
         {
-            Optimizer::optimizeEssentialGraph(p_mergeMatchedKF,
-                                              p_mergeMap,
-                                              localCurrentWindowKeyFrames,
-                                              vpMergeConnectedKFs,
-                                              currentMapKeyFrames,
-                                              currentMapMapPoints,
-                                              g2oSwCurrentWMerge);
+            if (Optimizer::optimizeEssentialGraph(p_mergeMatchedKF,
+                                                  p_mergeMap,
+                                                  localCurrentWindowKeyFrames,
+                                                  vpMergeConnectedKFs,
+                                                  currentMapKeyFrames,
+                                                  currentMapMapPoints,
+                                                  g2oSwCurrentWMerge) !=
+                OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: optimizeEssentialGraph returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             /*!
              * Skeleton topology is derived from the live Voxblox volume. The
@@ -2808,7 +2979,15 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             }
             if (p_retainedFloor != nullptr)
             {
-                mergeFloorEvidenceAndRooms(p_retainedFloor, p_floor);
+                if (mergeFloorEvidenceAndRooms(p_retainedFloor, p_floor) !=
+                    LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: mergeFloorEvidenceAndRooms returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 continue;
             }
             if (p_floor->setMap(p_currentMap) !=
@@ -2829,7 +3008,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             }
         }
 
-        collapseMergedFloors(p_currentMap);
+        if (collapseMergedFloors(p_currentMap) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: collapseMergedFloors returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         /*
          * Voxblox topology is derived from a TSDF/ESDF volume and is not an
@@ -3028,9 +3214,27 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     }
 
     /* All surviving objects now belong to pCurrentMap. */
-    p_atlas->changeMap(p_currentMap);
-    p_atlas->setMapBad(p_mergeMap);
-    p_atlas->removeBadMaps();
+    if (p_atlas->changeMap(p_currentMap) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: changeMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_atlas->setMapBad(p_mergeMap) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMapBad returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_atlas->removeBadMaps() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: removeBadMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     unsigned long currentMapId2{};
     if (p_currentMap->getId(currentMapId2) != MapStatus::MAP_STATUS_SUCCESS)
@@ -3055,7 +3259,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
               << std::endl;
 
     semanticUpdateLock.unlock();
-    p_localMapper->release();
+    if (p_localMapper->release() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: release returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 
     bool currentMapIsImuInitialized4{};
     if ((shouldRelaunchBa) &&
@@ -3077,14 +3288,32 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    if (shouldRelaunchBa &&
-        (!currentMapIsImuInitialized4 ||
-         (currentMapKeyFrameCount < 200 && p_atlas->countMaps() == 1)))
+    int atlasMaps{};
+    if ((shouldRelaunchBa) && !(!currentMapIsImuInitialized4) &&
+        (currentMapKeyFrameCount < 200) &&
+        p_atlas->countMaps(atlasMaps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        relaunchGlobalBundleAdjustment(p_currentMap);
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (shouldRelaunchBa && (!currentMapIsImuInitialized4 ||
+                             (currentMapKeyFrameCount < 200 && atlasMaps == 1)))
+    {
+        if (relaunchGlobalBundleAdjustment(p_currentMap) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: relaunchGlobalBundleAdjustment returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
 
-    return semantic::SemanticMergeDecision::ACCEPT;
+    local_out = semantic::SemanticMergeDecision::ACCEPT;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

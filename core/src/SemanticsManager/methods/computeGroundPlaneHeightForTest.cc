@@ -17,16 +17,28 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-std::optional<float> SemanticsManager::computeGroundPlaneHeightForTest(
-    geometric::Plane *p_groundPlane_in)
+SemanticsManagerStatus SemanticsManager::computeGroundPlaneHeightForTest(
+    geometric::Plane     *p_groundPlane_in,
+    std::optional<float> &groundPlaneHeight_out)
 {
-    return computeGroundPlaneHeight(p_groundPlane_in);
+    std::optional<float> groundPlaneHeight{};
+    if (computeGroundPlaneHeight(p_groundPlane_in, groundPlaneHeight) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeGroundPlaneHeight returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    groundPlaneHeight_out = groundPlaneHeight;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

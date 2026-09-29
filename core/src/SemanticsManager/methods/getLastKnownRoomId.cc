@@ -23,10 +23,12 @@ namespace vs_graphs
 namespace core
 {
 
-int SemanticsManager::getLastKnownRoomId() const
+SemanticsManagerStatus
+    SemanticsManager::getLastKnownRoomId(int &getLastKnownRoomId_out) const
 {
     std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
-    return lastKnownRoomId;
+    getLastKnownRoomId_out = lastKnownRoomId;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

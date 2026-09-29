@@ -28,18 +28,33 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
+SemanticsManagerStatus
+    SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
 {
     // Get the ground plane
-    vs_graphs::core::geometric::Plane *p_groundPlane =
-        p_atlas_in->getBiggestGroundPlane();
+    vs_graphs::core::geometric::Plane *p_groundPlane = nullptr;
+    if (p_atlas_in->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_groundPlane == nullptr)
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 
     // Get all passages and update their global pose to be consistent with the
     // ground plane
-    std::vector<vs_graphs::core::semantic::Passage *> allPassages =
-        p_atlas_in->getAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
+    if (p_atlas_in->getAllPassages(allPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (const auto &passage : allPassages)
     {
@@ -565,6 +580,8 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             }
         }
     }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -26,17 +26,29 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-Eigen::Matrix3d expSO3(const Eigen::Vector3d &rotationVector_in)
+G2oTypesStatus expSO3(const Eigen::Vector3d &rotationVector_in,
+                      Eigen::Matrix3d       &rotation_out)
 {
-    return expSO3(rotationVector_in[0],
-                  rotationVector_in[1],
-                  rotationVector_in[2]);
+    Eigen::Matrix3d rotation{};
+    if (expSO3(rotationVector_in[0],
+               rotationVector_in[1],
+               rotationVector_in[2],
+               rotation) != G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: expSO3 returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    rotation_out = rotation;
+    return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
 }
 
 } // namespace core

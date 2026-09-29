@@ -39,7 +39,7 @@ namespace core
 {
 
 // Map initialization for Stereo and RGB-D (with/without IMU) setups
-void Tracking::stereoInitialization()
+TrackingStatus Tracking::stereoInitialization()
 {
     // Require more points for robust initialization in corridors
     if (currentFrame.keyPointCount > initializationMinPoints)
@@ -52,7 +52,7 @@ void Tracking::stereoInitialization()
                 std::cout << "[Tracking] IMU measurements are not available "
                              "for the current frame!"
                           << std::endl;
-                return;
+                return TrackingStatus::TRACKING_STATUS_SUCCESS;
             }
 
             // Check acceleration difference for fast initialization
@@ -69,7 +69,7 @@ void Tracking::stereoInitialization()
                               << std::fixed << std::setprecision(2) << accelDiff
                               << " (threshold: " << imuThresh
                               << ")! Skipping ..." << std::endl;
-                    return;
+                    return TrackingStatus::TRACKING_STATUS_SUCCESS;
                 }
             }
 
@@ -113,13 +113,29 @@ void Tracking::stereoInitialization()
         }
 
         // Create KeyFrame
+        Map *p_atlasCurrentMap = nullptr;
+        if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         vs_graphs::core::KeyFrame *p_keyFrameInitial =
             new vs_graphs::core::KeyFrame(currentFrame,
-                                          p_atlas->getCurrentMap(),
+                                          p_atlasCurrentMap,
                                           p_keyFrameDatabase);
 
         // Insert KeyFrame in the map
-        p_atlas->addKeyFrame(p_keyFrameInitial);
+        if (p_atlas->addKeyFrame(p_keyFrameInitial) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addKeyFrame returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Create MapPoints and asscoiate to KeyFrame
         int pointsCreatedCount = 0;
@@ -146,10 +162,19 @@ void Tracking::stereoInitialization()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    MapPoint *p_newMapPoint =
-                        new MapPoint(x3D,
-                                     p_keyFrameInitial,
-                                     p_atlas->getCurrentMap());
+                    Map *p_atlasCurrentMap2 = nullptr;
+                    if (p_atlas->getCurrentMap(p_atlasCurrentMap2) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCurrentMap returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    MapPoint *p_newMapPoint = new MapPoint(x3D,
+                                                           p_keyFrameInitial,
+                                                           p_atlasCurrentMap2);
                     if (p_newMapPoint->addObservation(p_keyFrameInitial,
                                                       keyPointIndex) !=
                         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -188,7 +213,15 @@ void Tracking::stereoInitialization()
                                      "continuing as before.",
                                      __func__);
                     }
-                    p_atlas->addMapPoint(p_newMapPoint);
+                    if (p_atlas->addMapPoint(p_newMapPoint) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addMapPoint returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     currentFrame.mapPoints[keyPointIndex] = p_newMapPoint;
                     pointsCreatedCount++;
@@ -207,10 +240,19 @@ void Tracking::stereoInitialization()
                     Eigen::Vector3f x3D =
                         currentFrame.stereoPoints3D[keyPointIndex];
 
-                    MapPoint *p_newMapPoint =
-                        new MapPoint(x3D,
-                                     p_keyFrameInitial,
-                                     p_atlas->getCurrentMap());
+                    Map *p_atlasCurrentMap3 = nullptr;
+                    if (p_atlas->getCurrentMap(p_atlasCurrentMap3) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCurrentMap returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    MapPoint *p_newMapPoint = new MapPoint(x3D,
+                                                           p_keyFrameInitial,
+                                                           p_atlasCurrentMap3);
 
                     if (p_newMapPoint->addObservation(p_keyFrameInitial,
                                                       keyPointIndex) !=
@@ -274,7 +316,15 @@ void Tracking::stereoInitialization()
                                      "continuing as before.",
                                      __func__);
                     }
-                    p_atlas->addMapPoint(p_newMapPoint);
+                    if (p_atlas->addMapPoint(p_newMapPoint) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addMapPoint returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     currentFrame.mapPoints[keyPointIndex] = p_newMapPoint;
                     currentFrame.mapPoints[rightIndex +
@@ -285,8 +335,17 @@ void Tracking::stereoInitialization()
             }
         }
 
+        unsigned long atlasMapPointCount{};
+        if (p_atlas->getMapPointCount(atlasMapPointCount) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPointCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         std::cout << "\n[Tracking] New map created with #" +
-                         to_string(p_atlas->getMapPointCount()) + " points!"
+                         to_string(atlasMapPointCount) + " points!"
                   << std::endl;
 
         // Require minimum points for successful initialization
@@ -295,25 +354,65 @@ void Tracking::stereoInitialization()
             std::cout << "[Tracking] Insufficient points for initialization ("
                       << pointsCreatedCount << " < " << initializationMinPoints
                       << "), resetting..." << std::endl;
-            p_system->requestResetActiveMapWithCause(
-                ResetCause::INITIALIZATION_INSUFFICIENT_POINTS);
-            return;
+            if (p_system->requestResetActiveMapWithCause(
+                    ResetCause::INITIALIZATION_INSUFFICIENT_POINTS) !=
+                SystemStatus::SYSTEM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: requestResetActiveMapWithCause returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
 
-        p_localMapper->insertKeyFrame(p_keyFrameInitial);
+        if (p_localMapper->insertKeyFrame(p_keyFrameInitial) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: insertKeyFrame returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         lastFrame      = Frame(currentFrame);
         lastKeyFrameId = currentFrame.id;
         p_lastKeyFrame = p_keyFrameInitial;
 
         localKeyFrames.push_back(p_keyFrameInitial);
-        localMapPoints                   = p_atlas->getAllMapPoints();
+        std::vector<MapPoint *> atlasAllMapPoints{};
+        if (p_atlas->getAllMapPoints(atlasAllMapPoints) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        localMapPoints                   = atlasAllMapPoints;
         p_referenceKF                    = p_keyFrameInitial;
         currentFrame.p_referenceKeyFrame = p_keyFrameInitial;
 
-        p_atlas->setReferenceMapPoints(localMapPoints);
+        if (p_atlas->setReferenceMapPoints(localMapPoints) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setReferenceMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        p_atlas->getCurrentMap()->keyFrameOrigins.push_back(p_keyFrameInitial);
+        Map *p_atlasCurrentMap4 = nullptr;
+        if (p_atlas->getCurrentMap(p_atlasCurrentMap4) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_atlasCurrentMap4->keyFrameOrigins.push_back(p_keyFrameInitial);
 
         Sophus::SE3<float> currentFrameGetPose{};
         if (currentFrame.getPose(currentFrameGetPose) !=
@@ -324,10 +423,19 @@ void Tracking::stereoInitialization()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_mapDrawer->setCurrentCameraPose(currentFrameGetPose);
+        if (p_mapDrawer->setCurrentCameraPose(currentFrameGetPose) !=
+            MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCurrentCameraPose returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         state = OK;
     }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

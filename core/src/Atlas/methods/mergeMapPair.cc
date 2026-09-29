@@ -47,20 +47,20 @@ namespace core
  *               closed-form solution; no g2o types are used. Caller must
  *               already hold the semantic-update lock.
  */
-void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
+AtlasStatus Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 {
     if (p_currentMap_inout == nullptr || p_otherMap_inout == nullptr)
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: null map pointer."
                   << std::endl;
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     if (p_currentMap_inout == p_otherMap_inout)
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: identical maps."
                   << std::endl;
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     bool currentMapIsBad{};
@@ -85,14 +85,32 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: a map is bad."
                   << std::endl;
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
-    if (!isActiveMap(p_currentMap_inout) || !isActiveMap(p_otherMap_inout))
+    bool isActiveMap2{};
+    if (isActiveMap(p_currentMap_inout, isActiveMap2) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isActiveMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool isActiveMap3{};
+    if (!(!isActiveMap2) && isActiveMap(p_otherMap_inout, isActiveMap3) !=
+                                AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isActiveMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!isActiveMap2 || !isActiveMap3)
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: map not active."
                   << std::endl;
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     /* Pair the walls of both maps using their shared room identity tags. */
@@ -120,7 +138,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: fewer than three "
                      "wall correspondences."
                   << std::endl;
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     /* Horn's closed-form transform maps other-frame points into current frame.
@@ -143,7 +161,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
     {
         std::cerr << "[Atlas::MergeMapPair] Aborting merge: invalid transform."
                   << std::endl;
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     /* Compare floor identities in the surviving map frame without mutating
@@ -280,7 +298,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                       << semantic::Floor::kMergeMaxPlaneNormalAngle_deg
                       << " deg/" << semantic::Floor::kMergeMaxPlaneOffset_m
                       << " m). result=REJECTED committed=0" << std::endl;
-            return;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
 
         unsigned long currentMapId2{};
@@ -333,7 +351,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                   << ", other="
                   << (otherFloorIdentity.has_value() ? "valid" : "missing")
                   << "); result=DEFERRED committed=0" << std::endl;
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     /* Snapshot every source-owned object and preflight destination indexes
@@ -472,7 +490,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source "
                          "keyframe has inconsistent ownership."
                       << std::endl;
-            return;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
 
         KeyFrame *p_indexedKeyFrame = nullptr;
@@ -490,7 +508,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: KeyFrame ID "
                       << p_keyFrame->id << " collides in destination map."
                       << std::endl;
-            return;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
     }
 
@@ -512,7 +530,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source map "
                          "point has inconsistent ownership."
                       << std::endl;
-            return;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
     }
 
@@ -533,7 +551,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source plane "
                          "has inconsistent ownership."
                       << std::endl;
-            return;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
     }
 
@@ -554,7 +572,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source marker "
                          "has inconsistent ownership."
                       << std::endl;
-            return;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
     }
 
@@ -575,7 +593,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source passage "
                          "has inconsistent ownership."
                       << std::endl;
-            return;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
     }
 
@@ -596,7 +614,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source room "
                          "has inconsistent ownership."
                       << std::endl;
-            return;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
     }
 
@@ -617,7 +635,7 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source floor "
                          "has inconsistent ownership."
                       << std::endl;
-            return;
+            return AtlasStatus::ATLAS_STATUS_SUCCESS;
         }
     }
 
@@ -637,12 +655,21 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (!planImportedIds(currentMapAllPlanes,
-                         importedPlanes,
-                         "plane",
-                         planeIdAssignments))
+    bool isPlanned{};
+    if (planImportedIds(currentMapAllPlanes,
+                        importedPlanes,
+                        "plane",
+                        planeIdAssignments,
+                        isPlanned) != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        return;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: planImportedIds returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!isPlanned)
+    {
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     std::vector<semantic::Marker *> currentMapAllMarkers{};
     if (p_currentMap_inout->getAllMarkers(currentMapAllMarkers) !=
@@ -653,12 +680,21 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (!planImportedIds(currentMapAllMarkers,
-                         importedMarkers,
-                         "marker",
-                         markerIdAssignments))
+    bool isPlanned2{};
+    if (planImportedIds(currentMapAllMarkers,
+                        importedMarkers,
+                        "marker",
+                        markerIdAssignments,
+                        isPlanned2) != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        return;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: planImportedIds returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!isPlanned2)
+    {
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     std::vector<vs_graphs::core::semantic::Passage *> currentMapAllPassages{};
     if (p_currentMap_inout->getAllPassages(currentMapAllPassages) !=
@@ -669,12 +705,21 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (!planImportedIds(currentMapAllPassages,
-                         importedPassages,
-                         "passage",
-                         passageIdAssignments))
+    bool isPlanned3{};
+    if (planImportedIds(currentMapAllPassages,
+                        importedPassages,
+                        "passage",
+                        passageIdAssignments,
+                        isPlanned3) != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        return;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: planImportedIds returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!isPlanned3)
+    {
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     std::vector<semantic::Room *> currentMapAllRooms{};
     if (p_currentMap_inout->getAllRooms(currentMapAllRooms) !=
@@ -685,12 +730,21 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (!planImportedIds(currentMapAllRooms,
-                         importedRooms,
-                         "room",
-                         roomIdAssignments))
+    bool isPlanned4{};
+    if (planImportedIds(currentMapAllRooms,
+                        importedRooms,
+                        "room",
+                        roomIdAssignments,
+                        isPlanned4) != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        return;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: planImportedIds returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!isPlanned4)
+    {
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     std::vector<semantic::Floor *> currentMapAllFloors2{};
     if (p_currentMap_inout->getAllFloors(currentMapAllFloors2) !=
@@ -701,12 +755,21 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (!planImportedIds(currentMapAllFloors2,
-                         importedFloors,
-                         "floor",
-                         floorIdAssignments))
+    bool isPlanned5{};
+    if (planImportedIds(currentMapAllFloors2,
+                        importedFloors,
+                        "floor",
+                        floorIdAssignments,
+                        isPlanned5) != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        return;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: planImportedIds returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!isPlanned5)
+    {
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     std::vector<MapPoint *> importedReferenceMapPoints{};
@@ -913,8 +976,20 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (p_proxy != nullptr &&
-                resurfaceProxyFromTransferred(p_proxy, p_passage))
+            bool wasResurfaced{};
+            if ((p_proxy != nullptr) &&
+                resurfaceProxyFromTransferred(p_proxy,
+                                              p_passage,
+                                              wasResurfaced) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: resurfaceProxyFromTransferred returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (p_proxy != nullptr && wasResurfaced)
             {
                 if (p_passage->setBad() !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -1507,8 +1582,20 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
     }
 
     /* Retire the absorbed map while keeping the current map active. */
-    setMapBad(p_otherMap_inout);
-    changeMap(p_currentMap_inout);
+    if (setMapBad(p_otherMap_inout) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMapBad returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (changeMap(p_currentMap_inout) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: changeMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     unsigned long otherMapId4{};
     if (p_otherMap_inout->getId(otherMapId4) != MapStatus::MAP_STATUS_SUCCESS)
@@ -1560,6 +1647,8 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

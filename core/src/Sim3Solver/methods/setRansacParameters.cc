@@ -31,9 +31,9 @@ namespace vs_graphs
 namespace core
 {
 
-void Sim3Solver::setRansacParameters(double probability_in,
-                                     int    minimumInliers_in,
-                                     int    maximumIterations_in)
+Sim3SolverStatus Sim3Solver::setRansacParameters(double probability_in,
+                                                 int    minimumInliers_in,
+                                                 int    maximumIterations_in)
 {
     ransacProb          = probability_in;
     ransacMinInliers    = minimumInliers_in;
@@ -58,6 +58,8 @@ void Sim3Solver::setRansacParameters(double probability_in,
     ransacMaxIterations = max(1, min(nIterations, ransacMaxIterations));
 
     iterationCount = 0;
+
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

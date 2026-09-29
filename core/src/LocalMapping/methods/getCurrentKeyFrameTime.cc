@@ -30,15 +30,20 @@ namespace vs_graphs
 namespace core
 {
 
-double LocalMapping::getCurrentKeyFrameTime()
+LocalMappingStatus
+    LocalMapping::getCurrentKeyFrameTime(double &currentKeyFrameTime_out)
 {
 
     if (p_currentKeyFrame)
     {
-        return p_currentKeyFrame->timeStamp;
+        currentKeyFrameTime_out = p_currentKeyFrame->timeStamp;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
     else
-        return 0.0;
+    {
+        currentKeyFrameTime_out = 0.0;
+        return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

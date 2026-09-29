@@ -24,16 +24,25 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void Atlas::setCurrentSemanticRoomIdentity(const int roomId_in)
+AtlasStatus Atlas::setCurrentSemanticRoomIdentity(const int roomId_in)
 {
     currentSemanticRoomIdentity.store(roomId_in, std::memory_order_release);
-    observeRoomIdentity(roomId_in);
+    if (observeRoomIdentity(roomId_in) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: observeRoomIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

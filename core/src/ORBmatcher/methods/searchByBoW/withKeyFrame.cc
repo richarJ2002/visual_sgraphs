@@ -31,9 +31,10 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchByBoW(KeyFrame           *pKF1,
-                            KeyFrame           *pKF2,
-                            vector<MapPoint *> &vpMatches12)
+ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
+                                         KeyFrame                *pKF2,
+                                         std::vector<MapPoint *> &vpMatches12,
+                                         int                     &byBoW_out)
 {
     const vector<cv::KeyPoint> &undistortedKeyPoints1 =
         pKF1->keyPointsUndistorted;
@@ -153,7 +154,16 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF1,
 
                     const cv::Mat &d2 = descriptors2.row(index2);
 
-                    int distance = computeDescriptorDistance(d1, d2);
+                    int distance{};
+                    if (computeDescriptorDistance(d1, d2, distance) !=
+                        ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: computeDescriptorDistance returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
 
                     if (distance < bestDistance1)
                     {
@@ -212,7 +222,14 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF1,
         int ind2 = -1;
         int ind3 = -1;
 
-        computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3);
+        if (computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeThreeMaxima returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
              histogramBinIndex++)
@@ -232,7 +249,8 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF1,
         }
     }
 
-    return nmatches;
+    byBoW_out = nmatches;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

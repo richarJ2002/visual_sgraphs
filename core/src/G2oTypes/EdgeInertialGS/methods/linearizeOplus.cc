@@ -26,6 +26,7 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -56,7 +57,15 @@ void EdgeInertialGS::linearizeOplus()
                                  p_gyroBiasVertex->estimate()[0],
                                  p_gyroBiasVertex->estimate()[1],
                                  p_gyroBiasVertex->estimate()[2]);
-    const IMU::Bias deltaBias = p_preintegrated->getDeltaBias(biasEstimate);
+    IMU::Bias       deltaBias{};
+    if (p_preintegrated->getDeltaBias(biasEstimate, deltaBias) !=
+        IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getDeltaBias returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     Eigen::Vector3d deltaGyroBias;
     deltaGyroBias << deltaBias.bwx, deltaBias.bwy, deltaBias.bwz;
@@ -70,13 +79,38 @@ void EdgeInertialGS::linearizeOplus()
     gravityBasisMatrix(1, 0)                 = IMU::GRAVITY_VALUE;
     const double          scaleEstimate      = p_scaleVertex->estimate();
     const Eigen::MatrixXd gravityDirectionJacobian = Rwg * gravityBasisMatrix;
+    Eigen::Matrix3f       preintegratedDeltaRotation{};
+    if (p_preintegrated->getDeltaRotation(biasEstimate,
+                                          preintegratedDeltaRotation) !=
+        IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getDeltaRotation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     const Eigen::Matrix3d deltaRotation =
-        p_preintegrated->getDeltaRotation(biasEstimate).cast<double>();
+        preintegratedDeltaRotation.cast<double>();
     const Eigen::Matrix3d rotationErrorMatrix =
         deltaRotation.transpose() * Rbw1 * Rwb2;
-    const Eigen::Vector3d rotationError = logSO3(rotationErrorMatrix);
-    const Eigen::Matrix3d inverseRightJacobian =
-        inverseRightJacobianSO3(rotationError);
+    Eigen::Vector3d rotationError{};
+    if (logSO3(rotationErrorMatrix, rotationError) !=
+        G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: logSO3 returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Matrix3d inverseRightJacobian{};
+    if (inverseRightJacobianSO3(rotationError, inverseRightJacobian) !=
+        G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: inverseRightJacobianSO3 returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Jacobians wrt Pose 1
     _jacobianOplus[0].setZero();
@@ -105,9 +139,18 @@ void EdgeInertialGS::linearizeOplus()
 
     // Jacobians wrt Gyro bias
     _jacobianOplus[2].setZero();
-    _jacobianOplus[2].block<3, 3>(0, 0) =
-        -inverseRightJacobian * rotationErrorMatrix.transpose() *
-        rightJacobianSO3(JRg * deltaGyroBias) * JRg;
+    Eigen::Matrix3d rightJacobian{};
+    if (rightJacobianSO3(JRg * deltaGyroBias, rightJacobian) !=
+        G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rightJacobianSO3 returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    _jacobianOplus[2].block<3, 3>(0, 0) = -inverseRightJacobian *
+                                          rotationErrorMatrix.transpose() *
+                                          rightJacobian * JRg;
     _jacobianOplus[2].block<3, 3>(3, 0) = -JVg;
     _jacobianOplus[2].block<3, 3>(6, 0) = -JPg;
 

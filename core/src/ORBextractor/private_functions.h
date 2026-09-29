@@ -13,6 +13,7 @@
 #define VS_GRAPHS_CORE_ORBEXTRACTOR_PRIVATE_FUNCTIONS_H
 
 #include "ORBextractor.h"
+#include "ORBextractorStatus.h"
 
 #include <opencv2/core/core.hpp>
 
@@ -38,24 +39,28 @@ inline constexpr int EDGE_THRESHOLD = 19;
 /*!
  * @brief        Computes the dominant orientation of a patch.
  */
-float computeIntensityCentroidAngle(const cv::Mat          &image_in,
-                                    cv::Point2f             point_in,
-                                    const std::vector<int> &maximumU_in);
+[[nodiscard]] ORBextractorStatus
+    computeIntensityCentroidAngle(const cv::Mat          &image_in,
+                                  cv::Point2f             point_in,
+                                  const std::vector<int> &maximumU_in,
+                                  float &intensityCentroidAngle_out);
 
 /*!
  * @brief        Computes the ORB descriptor of one keypoint.
  */
-void computeOrbDescriptor(const cv::KeyPoint &kpt_in,
-                          const cv::Mat      &image_in,
-                          const cv::Point    *p_briefPattern_in,
-                          unsigned char      *p_descriptor_inout);
+[[nodiscard]] ORBextractorStatus
+    computeOrbDescriptor(const cv::KeyPoint &kpt_in,
+                         const cv::Mat      &image_in,
+                         const cv::Point    *p_briefPattern_in,
+                         unsigned char      *p_descriptor_inout);
 
 /*!
  * @brief        Assigns orientations to all keypoints.
  */
-void computeOrientation(const cv::Mat             &image_in,
-                        std::vector<cv::KeyPoint> &keypoints_in,
-                        const std::vector<int>    &orientationMaximumOffset_in);
+[[nodiscard]] ORBextractorStatus
+    computeOrientation(const cv::Mat             &image_in,
+                       std::vector<cv::KeyPoint> &keypoints_in,
+                       const std::vector<int>    &orientationMaximumOffset_in);
 
 /*!
  * @brief        Orders octree nodes by keypoint count, descending.
@@ -66,10 +71,11 @@ bool compareNodes(std::pair<int, ExtractorNode *> &e1_in,
 /*!
  * @brief        Computes descriptors for all keypoints.
  */
-void computeDescriptors(const cv::Mat                &image_in,
-                        std::vector<cv::KeyPoint>    &keypoints_in,
-                        cv::Mat                      &descriptors_out,
-                        const std::vector<cv::Point> &briefPattern_in);
+[[nodiscard]] ORBextractorStatus
+    computeDescriptors(const cv::Mat                &image_in,
+                       std::vector<cv::KeyPoint>    &keypoints_in,
+                       cv::Mat                      &descriptors_out,
+                       const std::vector<cv::Point> &briefPattern_in);
 
 } // namespace core
 } // namespace vs_graphs

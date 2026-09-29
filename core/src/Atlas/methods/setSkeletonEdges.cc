@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setSkeletonEdges(
+AtlasStatus Atlas::setSkeletonEdges(
     const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
         &newSkeletonEdges_in)
 {
@@ -40,7 +40,7 @@ void Atlas::setSkeletonEdges(
 
     if (p_activeMap == nullptr)
     {
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     /* Store the connected edges in the active map */
@@ -52,6 +52,8 @@ void Atlas::setSkeletonEdges(
                      "it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

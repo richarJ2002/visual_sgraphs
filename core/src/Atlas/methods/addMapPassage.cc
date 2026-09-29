@@ -31,11 +31,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
+AtlasStatus
+    Atlas::addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
 {
     if (p_passage_in == nullptr)
     {
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     int passage_inId{};
     if (p_passage_in->getId(passage_inId) !=
@@ -46,7 +47,14 @@ void Atlas::addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
                      "fail; continuing as before.",
                      __func__);
     }
-    observePassageIdentity(passage_inId);
+    if (observePassageIdentity(passage_inId) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: observePassageIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     vs_graphs::core::Map *p_ownerMap = nullptr;
     if (p_passage_in->getMap(p_ownerMap) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -64,6 +72,8 @@ void Atlas::addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

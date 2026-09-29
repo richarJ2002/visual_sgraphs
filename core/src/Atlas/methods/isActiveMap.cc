@@ -31,11 +31,12 @@ namespace vs_graphs
 namespace core
 {
 
-bool Atlas::isActiveMap(Map *p_map_in)
+AtlasStatus Atlas::isActiveMap(Map *p_map_in, bool &isActiveMap_out)
 {
     if (p_map_in == nullptr)
     {
-        return false;
+        isActiveMap_out = false;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     unique_lock<mutex> lock(atlasMutex);
@@ -48,7 +49,8 @@ bool Atlas::isActiveMap(Map *p_map_in)
                      "fail; continuing as before.",
                      __func__);
     }
-    return maps.count(p_map_in) > 0 && !mapIsBad;
+    isActiveMap_out = maps.count(p_map_in) > 0 && !mapIsBad;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

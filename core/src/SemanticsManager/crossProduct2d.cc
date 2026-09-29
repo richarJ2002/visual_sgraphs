@@ -32,11 +32,13 @@ namespace core
  * @param[in] secondVector_in Second vector.
  * @return Signed scalar cross product.
  */
-double crossProduct2d(const Eigen::Vector2d &firstVector_in,
-                      const Eigen::Vector2d &secondVector_in)
+SemanticsManagerStatus crossProduct2d(const Eigen::Vector2d &firstVector_in,
+                                      const Eigen::Vector2d &secondVector_in,
+                                      double                &crossProduct_out)
 {
-    return firstVector_in.x() * secondVector_in.y() -
-           firstVector_in.y() * secondVector_in.x();
+    crossProduct_out = firstVector_in.x() * secondVector_in.y() -
+                       firstVector_in.y() * secondVector_in.x();
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

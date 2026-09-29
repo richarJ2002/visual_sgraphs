@@ -30,11 +30,13 @@ namespace vs_graphs
 namespace core
 {
 
-std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
-    Atlas::copyRoomContextHistory() const
+AtlasStatus Atlas::copyRoomContextHistory(
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        &copyRoomContextHistory_out) const
 {
     std::lock_guard<std::mutex> contextLock(roomContextMutex);
-    return roomContextHistory;
+    copyRoomContextHistory_out = roomContextHistory;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

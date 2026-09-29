@@ -48,10 +48,20 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
-    if (!verifyLoopMergeFloors(p_survivingMap_in,
-                               p_absorbedMap_in,
-                               transform_absorbedToSurviving_in,
-                               result.floorDecision))
+    bool isVerified{};
+    if (verifyLoopMergeFloors(p_survivingMap_in,
+                              p_absorbedMap_in,
+                              transform_absorbedToSurviving_in,
+                              result.floorDecision,
+                              isVerified) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: verifyLoopMergeFloors returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!isVerified)
     {
         result.decision = result.floorDecision == "REJECTED"
                               ? SemanticMergeDecision::REJECT

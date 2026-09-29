@@ -23,12 +23,14 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::submitVerificationVerdict(
+SemanticsManagerStatus SemanticsManager::submitVerificationVerdict(
     const semantic::VerificationVerdict &verdict_in)
 {
     std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
     verificationVerdict          = verdict_in;
     isVerificationVerdictPending = true;
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

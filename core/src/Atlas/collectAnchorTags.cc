@@ -33,12 +33,15 @@ namespace vs_graphs
 namespace core
 {
 
-std::set<std::string> collectAnchorTags(Map *p_oldMap_in, Map *p_currentMap_in)
+AtlasStatus collectAnchorTags(Map                   *p_oldMap_in,
+                              Map                   *p_currentMap_in,
+                              std::set<std::string> &anchorTags_out)
 {
     std::set<std::string> anchorTags;
     if (p_oldMap_in == nullptr || p_currentMap_in == nullptr)
     {
-        return anchorTags;
+        anchorTags_out = anchorTags;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     std::set<std::string>         currentTags;
     std::vector<semantic::Room *> currentMapAllRooms{};
@@ -164,7 +167,8 @@ std::set<std::string> collectAnchorTags(Map *p_oldMap_in, Map *p_currentMap_in)
             anchorTags.insert(roomTag5);
         }
     }
-    return anchorTags;
+    anchorTags_out = anchorTags;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

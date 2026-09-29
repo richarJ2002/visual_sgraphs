@@ -13,6 +13,7 @@
 #ifndef VS_GRAPHS_CORE_TRACKING_PRIVATE_FUNCTIONS_H
 #define VS_GRAPHS_CORE_TRACKING_PRIVATE_FUNCTIONS_H
 
+#include "TrackingStatus.h"
 #include <vector>
 
 namespace vs_graphs
@@ -24,22 +25,28 @@ namespace core
 /*!
  * @brief        Averages per-frame millisecond timings.
  */
-double calcAverage(std::vector<double> times_in);
+[[nodiscard]] TrackingStatus calcAverage(std::vector<double> times_in,
+                                         double             &average_out);
 
 /*!
  * @brief        Standard deviation of per-frame millisecond timings.
  */
-double calcDeviation(std::vector<double> times_in, double average_in);
+[[nodiscard]] TrackingStatus calcDeviation(std::vector<double> times_in,
+                                           double              average_in,
+                                           double             &deviation_out);
 
 /*!
  * @brief        Averages integer counters, skipping zero entries.
  */
-double calcAverage(std::vector<int> values_in);
+[[nodiscard]] TrackingStatus calcAverage(std::vector<int> values_in,
+                                         double          &average_out);
 
 /*!
  * @brief        Standard deviation of integer counters, skipping zeros.
  */
-double calcDeviation(std::vector<int> values_in, double average_in);
+[[nodiscard]] TrackingStatus calcDeviation(std::vector<int> values_in,
+                                           double           average_in,
+                                           double          &deviation_out);
 #endif
 
 } // namespace core

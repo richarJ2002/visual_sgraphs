@@ -31,9 +31,11 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchByBoW(KeyFrame           *pKF,
-                            Frame              &F,
-                            vector<MapPoint *> &vpMapPointMatches)
+ORBmatcherStatus
+    ORBmatcher::searchByBoW(KeyFrame                *pKF,
+                            Frame                   &F,
+                            std::vector<MapPoint *> &vpMapPointMatches,
+                            int                     &byBoW_out)
 {
     std::vector<MapPoint *> mapPointsKeyFrames{};
     if (pKF->getMapPointMatches(mapPointsKeyFrames) !=
@@ -119,8 +121,19 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
 
                         const cv::Mat &dF = F.descriptors.row(realIndexF);
 
-                        const int distance =
-                            computeDescriptorDistance(keyFrameDescriptor, dF);
+                        int distance{};
+                        if (computeDescriptorDistance(keyFrameDescriptor,
+                                                      dF,
+                                                      distance) !=
+                            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: computeDescriptorDistance returned a "
+                                "failure status although it cannot fail; "
+                                "continuing as before.",
+                                __func__);
+                        }
 
                         if (distance < bestDistance1)
                         {
@@ -142,8 +155,19 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
 
                         const cv::Mat &dF = F.descriptors.row(realIndexF);
 
-                        const int distance =
-                            computeDescriptorDistance(keyFrameDescriptor, dF);
+                        int distance{};
+                        if (computeDescriptorDistance(keyFrameDescriptor,
+                                                      dF,
+                                                      distance) !=
+                            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: computeDescriptorDistance returned a "
+                                "failure status although it cannot fail; "
+                                "continuing as before.",
+                                __func__);
+                        }
 
                         if (realIndexF < static_cast<unsigned int>(
                                              F.leftKeyPointCount) &&
@@ -279,7 +303,14 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
         int ind2 = -1;
         int ind3 = -1;
 
-        computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3);
+        if (computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeThreeMaxima returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
              histogramBinIndex++)
@@ -299,7 +330,8 @@ int ORBmatcher::searchByBoW(KeyFrame           *pKF,
         }
     }
 
-    return nmatches;
+    byBoW_out = nmatches;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

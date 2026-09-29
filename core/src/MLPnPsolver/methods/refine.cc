@@ -55,7 +55,7 @@ namespace vs_graphs
 namespace core
 {
 
-bool MLPnPsolver::refine()
+MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
 {
     vector<int> indices;
     indices.reserve(bestInlierFlags.size());
@@ -92,10 +92,23 @@ bool MLPnPsolver::refine()
     TransformationMatrix result;
 
     // Compute camera pose
-    computePose(bearingVecs, p3DS, covs, indexes, result);
+    if (computePose(bearingVecs, p3DS, covs, indexes, result) !=
+        MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computePose returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Check inliers
-    checkInliers();
+    if (checkInliers() != MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: checkInliers returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     refinedInlierCount = inlierCount;
     refinedInlierFlags = inlierFlags;
@@ -132,9 +145,11 @@ bool MLPnPsolver::refine()
         Eigen::Matrix<double, 3, 3, Eigen::RowMajor> eigRcw(mRi[0]);
         Eigen::Vector3d                              eigtcw(mti);
 
-        return true;
+        isRefined_out = true;
+        return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
     }
-    return false;
+    isRefined_out = false;
+    return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

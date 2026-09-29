@@ -74,7 +74,14 @@ Tracking::Tracking(System                    *p_sys_in,
     {
         std::cout << "[Tracking] New parameters from the config file!"
                   << std::endl;
-        newParameterLoader(p_settings_in);
+        if (newParameterLoader(p_settings_in) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: newParameterLoader returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
     else
     {
@@ -84,7 +91,15 @@ Tracking::Tracking(System                    *p_sys_in,
         std::cout
             << "[Tracking] Loading camera parameters from the config file!"
             << std::endl;
-        bool boolParseCameraParams = parseCamParamFile(settingsFile);
+        bool boolParseCameraParams{};
+        if (parseCamParamFile(settingsFile, boolParseCameraParams) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: parseCamParamFile returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (!boolParseCameraParams)
             std::cerr << "[Tracking] Error with the camera parameters in the "
                          "config file!"
@@ -93,7 +108,15 @@ Tracking::Tracking(System                    *p_sys_in,
         // Load ORB parameters
         std::cout << "[Tracking] Loading ORB parameters from the config file!"
                   << std::endl;
-        bool boolParseOrbFeats = parseORBParamFile(settingsFile);
+        bool boolParseOrbFeats{};
+        if (parseORBParamFile(settingsFile, boolParseOrbFeats) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: parseORBParamFile returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (!boolParseOrbFeats)
             std::cerr << "[Tracking] Error with the ORB parameters in the "
                          "config file!"
@@ -107,7 +130,16 @@ Tracking::Tracking(System                    *p_sys_in,
             sensorType_in == System::IMU_STEREO ||
             sensorType_in == System::IMU_RGBD)
         {
-            boolParseImu = parseIMUParamFile(settingsFile);
+            bool isParsed{};
+            if (parseIMUParamFile(settingsFile, isParsed) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: parseIMUParamFile returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            boolParseImu = isParsed;
             if (!boolParseImu)
                 std::cerr << "[Tracking] Error with the IMU parameters in the "
                              "config file!"
@@ -130,7 +162,14 @@ Tracking::Tracking(System                    *p_sys_in,
         }
     }
 
-    loadTrackingParameters(settingPath_in);
+    if (loadTrackingParameters(settingPath_in) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: loadTrackingParameters returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (sensorType_in == System::IMU_MONOCULAR ||
         sensorType_in == System::IMU_STEREO ||
         sensorType_in == System::IMU_RGBD)
@@ -182,8 +221,14 @@ Tracking::Tracking(System                    *p_sys_in,
     shouldInitializeWithThreeKeyFrames = false;
     numDataset                         = 0;
 
-    vector<camera_models::geometriccamera::GeometricCamera *> cams =
-        p_atlas->getAllCameras();
+    std::vector<camera_models::geometriccamera::GeometricCamera *> cams{};
+    if (p_atlas->getAllCameras(cams) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllCameras returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     std::cout << "\n[Tracking] Found " << cams.size() << " camera(s) in Atlas!"
               << std::endl;
     for (camera_models::geometriccamera::GeometricCamera *p_camera : cams)

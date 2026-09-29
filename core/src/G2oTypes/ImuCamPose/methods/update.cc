@@ -26,13 +26,14 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void ImuCamPose::update(const double *p_updateVector_in)
+ImuCamPoseStatus ImuCamPose::update(const double *p_updateVector_in)
 {
     Eigen::Vector3d rotationUpdate, translationUpdate;
     rotationUpdate << p_updateVector_in[0], p_updateVector_in[1],
@@ -42,13 +43,30 @@ void ImuCamPose::update(const double *p_updateVector_in)
 
     // Update body pose
     twb += Rwb * translationUpdate;
-    Rwb = Rwb * expSO3(rotationUpdate);
+    Eigen::Matrix3d rotation2{};
+    if (expSO3(rotationUpdate, rotation2) !=
+        G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: expSO3 returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    Rwb = Rwb * rotation2;
 
     // Normalize rotation after 5 updates
     its++;
     if (its >= 3)
     {
-        normalizeRotation(Rwb);
+        Eigen::Matrix<double, 3, 3> rotation3{};
+        if (normalizeRotation(Rwb, rotation3) !=
+            G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: normalizeRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         its = 0;
     }
 
@@ -62,6 +80,8 @@ void ImuCamPose::update(const double *p_updateVector_in)
         Rcw[cameraIndex] = Rcb[cameraIndex] * Rbw;
         tcw[cameraIndex] = Rcb[cameraIndex] * tbw + tcb[cameraIndex];
     }
+
+    return ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS;
 }
 
 } // namespace core

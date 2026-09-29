@@ -32,10 +32,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool LoopClosing::checkNewKeyFrames()
+LoopClosingStatus LoopClosing::checkNewKeyFrames(bool &hasNewKeyFrames_out)
 {
     unique_lock<mutex> lock(loopQueueMutex);
-    return (!loopKeyFrameQueue.empty());
+    hasNewKeyFrames_out = (!loopKeyFrameQueue.empty());
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

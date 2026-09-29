@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::changeMap(Map *p_map_in)
+AtlasStatus Atlas::changeMap(Map *p_map_in)
 {
     unique_lock<mutex> atlasLock(atlasMutex);
     std::cout << "\n[Atlas]" << std::endl;
@@ -65,6 +65,8 @@ void Atlas::changeMap(Map *p_map_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

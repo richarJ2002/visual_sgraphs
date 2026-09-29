@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::isImuPreintegrated()
+TrackingStatus Tracking::isImuPreintegrated(bool &isImuPreintegrated_out)
 {
-    return currentFrame.p_imuPreintegrated;
+    isImuPreintegrated_out = currentFrame.p_imuPreintegrated;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

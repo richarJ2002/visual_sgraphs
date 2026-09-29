@@ -103,13 +103,70 @@ Frame::Frame(const cv::Mat &imageColor_in,
     id = nextId++;
 
     // Scale Level Info
-    scaleLevelCount      = p_orbExtractorLeft->getLevelCount();
-    scaleFactor          = p_orbExtractorLeft->getScaleFactor();
-    logScaleFactor       = log(scaleFactor);
-    scaleFactors         = p_orbExtractorLeft->getScaleFactors();
-    invScaleFactors      = p_orbExtractorLeft->getInverseScaleFactors();
-    levelSigmaSquared    = p_orbExtractorLeft->getScaleSigmaSquares();
-    invLevelSigmaSquared = p_orbExtractorLeft->getInverseScaleSigmaSquares();
+    int orbExtractorLeftLevelCount{};
+    if (p_orbExtractorLeft->getLevelCount(orbExtractorLeftLevelCount) !=
+        ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getLevelCount returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    scaleLevelCount = orbExtractorLeftLevelCount;
+    float orbExtractorLeftScaleFactor{};
+    if (p_orbExtractorLeft->getScaleFactor(orbExtractorLeftScaleFactor) !=
+        ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getScaleFactor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    scaleFactor    = orbExtractorLeftScaleFactor;
+    logScaleFactor = log(scaleFactor);
+    std::vector<float> orbExtractorLeftScaleFactors{};
+    if (p_orbExtractorLeft->getScaleFactors(orbExtractorLeftScaleFactors) !=
+        ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getScaleFactors returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    scaleFactors = orbExtractorLeftScaleFactors;
+    std::vector<float> orbExtractorLeftInverseScaleFactors{};
+    if (p_orbExtractorLeft->getInverseScaleFactors(
+            orbExtractorLeftInverseScaleFactors) !=
+        ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getInverseScaleFactors returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    invScaleFactors = orbExtractorLeftInverseScaleFactors;
+    std::vector<float> orbExtractorLeftScaleSigmaSquares{};
+    if (p_orbExtractorLeft->getScaleSigmaSquares(
+            orbExtractorLeftScaleSigmaSquares) !=
+        ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getScaleSigmaSquares returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    levelSigmaSquared = orbExtractorLeftScaleSigmaSquares;
+    std::vector<float> orbExtractorLeftInverseScaleSigmaSquares{};
+    if (p_orbExtractorLeft->getInverseScaleSigmaSquares(
+            orbExtractorLeftInverseScaleSigmaSquares) !=
+        ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getInverseScaleSigmaSquares returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
     // ORB extraction
 #ifdef REGISTER_TIMES

@@ -30,13 +30,15 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::removeBadMaps()
+AtlasStatus Atlas::removeBadMaps()
 {
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
     /* Preserve ownership until no runtime reader can retain a raw Map*. */
     retiredMaps.insert(badMaps.begin(), badMaps.end());
     badMaps.clear();
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

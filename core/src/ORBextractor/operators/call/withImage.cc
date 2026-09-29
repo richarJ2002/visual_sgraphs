@@ -57,6 +57,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "../../private_functions.h"
@@ -83,10 +84,24 @@ int ORBextractor::operator()(InputArray                  image_in,
     assert(image.type() == CV_8UC1);
 
     // Pre-compute the scale pyramid
-    computePyramid(image);
+    if (computePyramid(image) !=
+        ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computePyramid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     vector<vector<KeyPoint>> allKeypoints;
-    computeKeyPointsOctTree(allKeypoints);
+    if (computeKeyPointsOctTree(allKeypoints) !=
+        ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeKeyPointsOctTree returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     // computeKeyPointsOld(allKeypoints);
 
     Mat descriptors;
@@ -129,7 +144,17 @@ int ORBextractor::operator()(InputArray                  image_in,
         // Compute the descriptors
         // Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
         Mat descriptor = cv::Mat(nkeypointsLevel, 32, CV_8U);
-        computeDescriptors(workingMatrix, keypoints, descriptor, briefPattern);
+        if (computeDescriptors(workingMatrix,
+                               keypoints,
+                               descriptor,
+                               briefPattern) !=
+            ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeDescriptors returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         offset += nkeypointsLevel;
 

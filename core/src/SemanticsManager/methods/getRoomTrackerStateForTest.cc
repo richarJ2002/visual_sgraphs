@@ -24,7 +24,8 @@ namespace vs_graphs
 namespace core
 {
 
-semantic::RoomTrackingState SemanticsManager::getRoomTrackerStateForTest() const
+SemanticsManagerStatus SemanticsManager::getRoomTrackerStateForTest(
+    semantic::RoomTrackingState &getRoomTrackerStateForTest_out) const
 {
     semantic::RoomTrackingState roomTrackerState{};
     if (roomTracker.getState(roomTrackerState) !=
@@ -35,7 +36,8 @@ semantic::RoomTrackingState SemanticsManager::getRoomTrackerStateForTest() const
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return roomTrackerState;
+    getRoomTrackerStateForTest_out = roomTrackerState;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

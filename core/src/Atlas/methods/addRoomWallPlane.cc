@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
+AtlasStatus
+    Atlas::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
 {
     vs_graphs::core::Map *p_ownerMap = nullptr;
     if (p_plane_in->getMap(p_ownerMap) !=
@@ -50,6 +51,8 @@ void Atlas::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
                      "it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

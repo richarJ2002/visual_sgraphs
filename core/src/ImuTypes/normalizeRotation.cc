@@ -24,12 +24,14 @@ namespace core
 namespace IMU
 {
 
-Eigen::Matrix3f normalizeRotation(const Eigen::Matrix3f &rotationMatrix_in)
+ImuTypesStatus normalizeRotation(const Eigen::Matrix3f &rotationMatrix_in,
+                                 Eigen::Matrix3f       &rotation_out)
 {
     Eigen::JacobiSVD<Eigen::Matrix3f> svd(rotationMatrix_in,
                                           Eigen::ComputeFullU |
                                               Eigen::ComputeFullV);
-    return svd.matrixU() * svd.matrixV().transpose();
+    rotation_out = svd.matrixU() * svd.matrixV().transpose();
+    return ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS;
 }
 
 } // namespace IMU

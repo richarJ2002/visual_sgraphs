@@ -31,13 +31,20 @@ namespace vs_graphs
 namespace core
 {
 
-Map *Atlas::getCurrentMap()
+AtlasStatus Atlas::getCurrentMap(Map *&p_currentMap_out)
 {
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
     if (!p_activeMap)
     {
-        createNewMapWhileAtlasLocked();
+        if (createNewMapWhileAtlasLocked() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: createNewMapWhileAtlasLocked returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
 
     for (;;)
@@ -63,10 +70,18 @@ Map *Atlas::getCurrentMap()
 
     if (p_activeMap == nullptr)
     {
-        createNewMapWhileAtlasLocked();
+        if (createNewMapWhileAtlasLocked() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: createNewMapWhileAtlasLocked returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
 
-    return p_activeMap;
+    p_currentMap_out = p_activeMap;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

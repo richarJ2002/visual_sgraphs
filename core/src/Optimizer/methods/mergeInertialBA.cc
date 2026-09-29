@@ -38,11 +38,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
-                                KeyFrame *p_mergeKeyFrame_inout,
-                                bool     *p_pbStopFlag_in,
-                                Map      *p_map_inout,
-                                LoopClosing::KeyFrameAndPose &corrPoses_inout)
+OptimizerStatus
+    Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
+                               KeyFrame *p_mergeKeyFrame_inout,
+                               bool     *p_pbStopFlag_in,
+                               Map      *p_map_inout,
+                               LoopClosing::KeyFrameAndPose &corrPoses_inout)
 {
     const int           Nd                = 6;
     const unsigned long maximumKeyFrameId = p_currentKeyFrame_inout->id;
@@ -376,8 +377,15 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
 
         if (!p_keyFrame->p_prevKF)
         {
-            Verbose::printMess("NOT INERTIAL LINK TO PREVIOUS FRAME!!!!",
-                               Verbose::VERBOSITY_NORMAL);
+            if (Verbose::printMess("NOT INERTIAL LINK TO PREVIOUS FRAME!!!!",
+                                   Verbose::VERBOSITY_NORMAL) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             continue;
         }
         if (p_keyFrame->isImu && p_keyFrame->p_prevKF->isImu &&
@@ -392,7 +400,14 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            p_keyFrame->p_imuPreintegrated->setNewBias(imuBias);
+            if (p_keyFrame->p_imuPreintegrated->setNewBias(imuBias) !=
+                IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setNewBias returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             g2o::HyperGraph::Vertex *p_firstPoseVertex =
                 optimizer.vertex(p_keyFrame->p_prevKF->id);
             g2o::HyperGraph::Vertex *p_firstVelocityVertex = optimizer.vertex(
@@ -474,13 +489,27 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
         }
         else
         {
-            Verbose::printMess("ERROR building inertial edge",
-                               Verbose::VERBOSITY_NORMAL);
+            if (Verbose::printMess("ERROR building inertial edge",
+                                   Verbose::VERBOSITY_NORMAL) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
     }
 
-    Verbose::printMess("end inserting inertial edges",
-                       Verbose::VERBOSITY_NORMAL);
+    if (Verbose::printMess("end inserting inertial edges",
+                           Verbose::VERBOSITY_NORMAL) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Set MapPoint vertices
     const int expectedSizeCount =
@@ -657,7 +686,7 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
 
     if (p_pbStopFlag_in)
         if (*p_pbStopFlag_in)
-            return;
+            return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 
     optimizer.initializeOptimization();
     optimizer.optimize(8);
@@ -906,6 +935,8 @@ void Optimizer::mergeInertialBA(KeyFrame *p_currentKeyFrame_inout,
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

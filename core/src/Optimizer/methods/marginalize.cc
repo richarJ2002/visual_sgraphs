@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::MatrixXd Optimizer::marginalize(const Eigen::MatrixXd &H_in,
+OptimizerStatus Optimizer::marginalize(const Eigen::MatrixXd &H_in,
                                        const int             &start_in,
-                                       const int             &end_in)
+                                       const int             &end_in,
+                                       Eigen::MatrixXd       &marginalized_out)
 {
     // Goal
     // a  | ab | ac       a*  | 0 | ac*
@@ -118,7 +119,8 @@ Eigen::MatrixXd Optimizer::marginalize(const Eigen::MatrixXd &H_in,
 
     result.block(a, a, b, b) = Hn.block(a + c, a + c, b, b);
 
-    return result;
+    marginalized_out = result;
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

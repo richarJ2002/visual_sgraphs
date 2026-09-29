@@ -24,16 +24,26 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-vs_graphs::core::Map *System::getCurrentMap()
+SystemStatus System::getCurrentMap(vs_graphs::core::Map *&p_currentMap_out)
 {
-    vs_graphs::core::Map *p_activeMap = p_atlas->getCurrentMap();
-    return p_activeMap;
+    vs_graphs::core::Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    p_currentMap_out = p_activeMap;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::postLoad()
+AtlasStatus Atlas::postLoad()
 {
     map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
         camerasById;
@@ -85,6 +85,8 @@ void Atlas::postLoad()
         mapPointCount += mapAllMapPoints.size();
     }
     backupMaps.clear();
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -17,15 +17,25 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void SemanticsManager::validateRoomBoundariesForTest(void)
+SemanticsManagerStatus SemanticsManager::validateRoomBoundariesForTest(void)
 {
-    validateRoomBoundaries();
+    if (validateRoomBoundaries() !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: validateRoomBoundaries returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -32,10 +32,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool LoopClosing::isFinished()
+LoopClosingStatus LoopClosing::isFinished(bool &isFinished_out)
 {
     unique_lock<mutex> lock(finishMutex);
-    return hasFinished;
+    isFinished_out = hasFinished;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

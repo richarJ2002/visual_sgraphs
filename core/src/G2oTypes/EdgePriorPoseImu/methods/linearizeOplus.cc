@@ -26,6 +26,7 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -36,11 +37,26 @@ void EdgePriorPoseImu::linearizeOplus()
 {
     const VertexPose *p_poseVertex =
         static_cast<const VertexPose *>(_vertices[0]);
-    const Eigen::Vector3d rotationError =
-        logSO3(Rwb.transpose() * p_poseVertex->estimate().Rwb);
+    Eigen::Vector3d rotationError{};
+    if (logSO3(Rwb.transpose() * p_poseVertex->estimate().Rwb, rotationError) !=
+        G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: logSO3 returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
     _jacobianOplus[0].setZero();
-    _jacobianOplus[0].block<3, 3>(0, 0) =
-        inverseRightJacobianSO3(rotationError);
+    Eigen::Matrix3d inverseRightJacobian{};
+    if (inverseRightJacobianSO3(rotationError, inverseRightJacobian) !=
+        G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: inverseRightJacobianSO3 returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    _jacobianOplus[0].block<3, 3>(0, 0) = inverseRightJacobian;
     _jacobianOplus[0].block<3, 3>(3, 3) =
         Rwb.transpose() * p_poseVertex->estimate().Rwb;
     _jacobianOplus[1].setZero();

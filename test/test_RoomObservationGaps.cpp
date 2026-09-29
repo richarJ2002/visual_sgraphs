@@ -206,13 +206,15 @@ std::unique_ptr<geometric::Plane>
 
 TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> ground =
         makeRefitGroundPlaneAtOrigin(100, p_map);
-    atlas.addMapPlane(ground.get());
+    ASSERT_EQ((atlas.addMapPlane(ground.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     semantic::Room room;
     ASSERT_EQ((room.setId(1)),
@@ -223,9 +225,11 @@ TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setCentroid(Eigen::Vector3d(2.0, 1.5, 1.5))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    atlas.addDetectedMapRoom(&room);
+    ASSERT_EQ((atlas.addDetectedMapRoom(&room)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.validateRoomBoundariesForTest();
+    ASSERT_EQ((manager.validateRoomBoundariesForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     std::vector<semantic::Room::ObservationGap> gaps{};
     ASSERT_EQ((room.getObservationGaps(gaps)),
@@ -236,13 +240,15 @@ TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
 
 TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> ground =
         makeRefitGroundPlaneAtOrigin(100, p_map);
-    atlas.addMapPlane(ground.get());
+    ASSERT_EQ((atlas.addMapPlane(ground.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* A single wall at y=3 (north side), facing the room centre. */
     std::unique_ptr<geometric::Plane> northWall =
@@ -266,9 +272,11 @@ TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setWalls(northWall.get())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    atlas.addDetectedMapRoom(&room);
+    ASSERT_EQ((atlas.addDetectedMapRoom(&room)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.validateRoomBoundariesForTest();
+    ASSERT_EQ((manager.validateRoomBoundariesForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     /* One wall gives one point on the circle -- the gap wraps all the way
      * around back to that same point, i.e. one (nearly) full-circle gap. */
@@ -281,13 +289,15 @@ TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
 
 TEST(RoomObservationGaps, ReportsNoGapsForARoomWithACompleteBoundary)
 {
-    Atlas            atlas(0);
-    Map             *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
     std::unique_ptr<geometric::Plane> ground =
         makeRefitGroundPlaneAtOrigin(100, p_map);
-    atlas.addMapPlane(ground.get());
+    ASSERT_EQ((atlas.addMapPlane(ground.get())),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     std::unique_ptr<geometric::Plane> north =
         makeWallSegmentPlane(1,
@@ -343,9 +353,11 @@ TEST(RoomObservationGaps, ReportsNoGapsForARoomWithACompleteBoundary)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setWalls(west.get())),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    atlas.addDetectedMapRoom(&room);
+    ASSERT_EQ((atlas.addDetectedMapRoom(&room)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    manager.validateRoomBoundariesForTest();
+    ASSERT_EQ((manager.validateRoomBoundariesForTest()),
+              SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
     vs_graphs::core::semantic::Room::BoundaryStatus boundaryStatus{};
     ASSERT_EQ((room.getBoundaryStatus(boundaryStatus)),

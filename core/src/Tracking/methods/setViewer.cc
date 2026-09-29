@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::setViewer(Viewer *p_viewer_in)
+TrackingStatus Tracking::setViewer(Viewer *p_viewer_in)
 {
     p_viewer = p_viewer_in;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

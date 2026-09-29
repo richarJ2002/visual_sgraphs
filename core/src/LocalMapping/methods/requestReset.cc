@@ -32,7 +32,7 @@ namespace vs_graphs
 namespace core
 {
 
-void LocalMapping::requestReset()
+LocalMappingStatus LocalMapping::requestReset()
 {
     {
         unique_lock<mutex> resetLock(resetMutex);
@@ -50,6 +50,8 @@ void LocalMapping::requestReset()
         }
         usleep(3000);
     }
+
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

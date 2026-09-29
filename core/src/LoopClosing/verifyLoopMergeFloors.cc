@@ -34,11 +34,12 @@ namespace core
 {
 
 /* Declared in LoopClosing.h: shared with SemanticVerify. */
-bool verifyLoopMergeFloors(
+LoopClosingStatus verifyLoopMergeFloors(
     Map             *p_survivingMap_in,
     Map             *p_absorbedMap_in,
     const g2o::Sim3 &transform_absorbedWorldToSurvivingWorld_in,
-    std::string     &result_out)
+    std::string     &result_out,
+    bool            &isVerified_out)
 {
     semantic::Floor               *p_survivingFloor = nullptr;
     std::vector<semantic::Floor *> survivingMapAllFloors{};
@@ -132,7 +133,8 @@ bool verifyLoopMergeFloors(
                   << ", merge="
                   << (absorbedIdentity.has_value() ? "valid" : "missing")
                   << "); result=DEFERRED committed=0" << std::endl;
-        return false;
+        isVerified_out = false;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     std::optional<semantic::Floor::PlaneIdentity> transformedAbsorbedIdentity{};
@@ -196,7 +198,8 @@ bool verifyLoopMergeFloors(
                   << semantic::Floor::kMergeMaxPlaneNormalAngle_deg << " deg/"
                   << semantic::Floor::kMergeMaxPlaneOffset_m
                   << " m). result=REJECTED committed=0" << std::endl;
-        return false;
+        isVerified_out = false;
+        return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
     unsigned long survivingMapId3{};
@@ -222,8 +225,9 @@ bool verifyLoopMergeFloors(
               << " floor planes match (angle=" << floorNormalAngle_deg
               << " deg, offset=" << floorOffset_m
               << " m). result=ACCEPTED committed=0" << std::endl;
-    result_out = "ACCEPTED";
-    return true;
+    result_out     = "ACCEPTED";
+    isVerified_out = true;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

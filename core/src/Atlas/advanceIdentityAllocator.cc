@@ -32,12 +32,12 @@ namespace vs_graphs
 namespace core
 {
 
-void advanceIdentityAllocator(std::atomic<int> &nextIdentity_inout,
-                              const int         observedIdentity_in)
+AtlasStatus advanceIdentityAllocator(std::atomic<int> &nextIdentity_inout,
+                                     const int         observedIdentity_in)
 {
     if (observedIdentity_in < 0)
     {
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     int expectedNextIdentity =
@@ -49,6 +49,8 @@ void advanceIdentityAllocator(std::atomic<int> &nextIdentity_inout,
                                                      std::memory_order_relaxed,
                                                      std::memory_order_relaxed))
     {}
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

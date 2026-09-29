@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setSkeletonClusterPoints(
+AtlasStatus Atlas::setSkeletonClusterPoints(
     const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints_in)
 {
     unique_lock<mutex> lock(atlasMutex);
@@ -43,6 +43,8 @@ void Atlas::setSkeletonClusterPoints(
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

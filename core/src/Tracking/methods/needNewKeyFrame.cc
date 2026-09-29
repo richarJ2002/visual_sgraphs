@@ -35,12 +35,23 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::needNewKeyFrame()
+TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
 {
     bool isImuInitialized2{};
+    Map *p_atlasCurrentMap = nullptr;
+    if ((((sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
+           sensor == System::IMU_RGBD))) &&
+        p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (((sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
           sensor == System::IMU_RGBD)) &&
-        p_atlas->getCurrentMap()->isImuInitialized(isImuInitialized2) !=
+        p_atlasCurrentMap->isImuInitialized(isImuInitialized2) !=
             MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -54,35 +65,77 @@ bool Tracking::needNewKeyFrame()
     {
         if (sensor == System::IMU_MONOCULAR &&
             (currentFrame.timeStamp - p_lastKeyFrame->timeStamp) >= 0.25)
-            return true;
+        {
+            needNewKeyFrame_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
         else if ((sensor == System::IMU_STEREO || sensor == System::IMU_RGBD) &&
                  (currentFrame.timeStamp - p_lastKeyFrame->timeStamp) >= 0.25)
-            return true;
+        {
+            needNewKeyFrame_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
         else
-            return false;
+        {
+            needNewKeyFrame_out = false;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
     }
 
     if (isTrackingOnlyMode)
-        return false;
+    {
+        needNewKeyFrame_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
 
     // If Local Mapping is freezed by a Loop Closure do not insert keyframes
-    if (p_localMapper->isStopped() || p_localMapper->stopRequested())
+    bool localMapperIsStopped{};
+    if (p_localMapper->isStopped(localMapperIsStopped) !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isStopped returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool localMapperIsStopRequested{};
+    if (!(localMapperIsStopped) &&
+        p_localMapper->stopRequested(localMapperIsStopRequested) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: stopRequested returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (localMapperIsStopped || localMapperIsStopRequested)
     {
         /*if(mSensor == System::MONOCULAR)
         {
             std::cout << "NeedNewKeyFrame: localmap stopped" << std::endl;
         }*/
-        return false;
+        needNewKeyFrame_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    const int keyFrameCount = p_atlas->getKeyFrameCount();
+    unsigned long keyFrameCountValue{};
+    if (p_atlas->getKeyFrameCount(keyFrameCountValue) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getKeyFrameCount returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const int keyFrameCount = static_cast<int>(keyFrameCountValue);
 
     // Do not insert keyframes if not enough frames have passed from last
     // relocalisation
     if (currentFrame.id < lastRelocFrameId + maxFrames &&
         keyFrameCount > maxFrames)
     {
-        return false;
+        needNewKeyFrame_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     // Tracked MapPoints in the reference keyframe
@@ -157,15 +210,33 @@ bool Tracking::needNewKeyFrame()
     }
 
     // Local Mapping accept keyframes?
-    bool isLocalMappingIdle = p_localMapper->isAcceptingKeyFrames();
+    bool isLocalMappingIdle{};
+    if (p_localMapper->isAcceptingKeyFrames(isLocalMappingIdle) !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isAcceptingKeyFrames returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Condition 1a: More than "MaxFrames" have passed from last keyframe
     // insertion
     const bool c1a = currentFrame.id >= lastKeyFrameId + maxFrames;
     // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
-    const bool c1b =
-        ((currentFrame.id >= lastKeyFrameId + minFrames) &&
-         isLocalMappingIdle && p_localMapper->keyframesInQueue() < 5);
+    int        localMapperKeyFrameCount{};
+    if (((currentFrame.id >= lastKeyFrameId + minFrames) &&
+         isLocalMappingIdle) &&
+        p_localMapper->keyframesInQueue(localMapperKeyFrameCount) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: keyframesInQueue returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    const bool c1b = ((currentFrame.id >= lastKeyFrameId + minFrames) &&
+                      isLocalMappingIdle && localMapperKeyFrameCount < 5);
     // Condition 1c: tracking is weak
     const bool c1c =
         sensor != System::MONOCULAR && sensor != System::IMU_MONOCULAR &&
@@ -210,28 +281,67 @@ bool Tracking::needNewKeyFrame()
     {
         // If the mapping accepts keyframes, insert keyframe.
         // Otherwise send a signal to interrupt BA
-        if (isLocalMappingIdle || p_localMapper->isInitializing())
+        bool localMapperIsInitializing{};
+        if (!(isLocalMappingIdle) &&
+            p_localMapper->isInitializing(localMapperIsInitializing) !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
         {
-            return true;
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isInitializing returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isLocalMappingIdle || localMapperIsInitializing)
+        {
+            needNewKeyFrame_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
         else
         {
-            p_localMapper->interruptBA();
+            if (p_localMapper->interruptBA() !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: interruptBA returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (sensor != System::MONOCULAR && sensor != System::IMU_MONOCULAR)
             {
-                if (p_localMapper->keyframesInQueue() < 8)
-                    return true;
+                int localMapperKeyFrameCount2{};
+                if (p_localMapper->keyframesInQueue(
+                        localMapperKeyFrameCount2) !=
+                    LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: keyframesInQueue returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (localMapperKeyFrameCount2 < 8)
+                {
+                    needNewKeyFrame_out = true;
+                    return TrackingStatus::TRACKING_STATUS_SUCCESS;
+                }
                 else
-                    return false;
+                {
+                    needNewKeyFrame_out = false;
+                    return TrackingStatus::TRACKING_STATUS_SUCCESS;
+                }
             }
             else
             {
-                return false;
+                needNewKeyFrame_out = false;
+                return TrackingStatus::TRACKING_STATUS_SUCCESS;
             }
         }
     }
     else
-        return false;
+    {
+        needNewKeyFrame_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

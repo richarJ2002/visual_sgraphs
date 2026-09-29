@@ -33,6 +33,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
+#include <rclcpp/logging.hpp>
 #include <sophus/se3.hpp>
 
 #include "TwoViewReconstruction.h"
@@ -112,11 +113,22 @@ bool KannalaBrandt8::reconstructWithTwoViews(
         undistortedKeys2[featureIndex].pt = undistortedPoints2[featureIndex];
     }
 
-    return p_twoViewReconstruction->reconstruct(undistortedKeys1,
-                                                undistortedKeys2,
-                                                matches12_in,
-                                                pose21_inout,
-                                                points3d_inout,
-                                                triangulated_inout);
+    bool twoViewReconstructionIsReconstructed{};
+    if (p_twoViewReconstruction->reconstruct(
+            undistortedKeys1,
+            undistortedKeys2,
+            matches12_in,
+            pose21_inout,
+            points3d_inout,
+            triangulated_inout,
+            twoViewReconstructionIsReconstructed) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: reconstruct returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return twoViewReconstructionIsReconstructed;
 }
 } // namespace vs_graphs::core::camera_models::kannalabrandt8

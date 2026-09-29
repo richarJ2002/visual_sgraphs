@@ -36,6 +36,7 @@
 #include "MapDrawer.h"
 #include "ORBVocabulary.h"
 #include "ORBextractor.h"
+#include "TrackingStatus.h"
 #include "Utils/Settings/objects/Settings.h"
 
 #include <pcl/filters/extract_indices.h>
@@ -107,95 +108,109 @@ class Tracking
     ~Tracking();
 
     // Parse the config file
-    bool parseCamParamFile(cv::FileStorage &settings_in);
-    bool parseORBParamFile(cv::FileStorage &settings_in);
-    bool parseIMUParamFile(cv::FileStorage &settings_in);
+    [[nodiscard]] TrackingStatus parseCamParamFile(cv::FileStorage &settings_in,
+                                                   bool &isParsed_out);
+    [[nodiscard]] TrackingStatus parseORBParamFile(cv::FileStorage &settings_in,
+                                                   bool &isParsed_out);
+    [[nodiscard]] TrackingStatus parseIMUParamFile(cv::FileStorage &settings_in,
+                                                   bool &isParsed_out);
 
     // Preprocess the input and call Track(). Extract features and performs
     // stereo matching.
-    Sophus::SE3f
-                 grabImageStereo(const cv::Mat &imageRectifiedLeft_in,
-                                 const cv::Mat &imageRectifiedRight_in,
-                                 const double  &timestamp_in,
-                                 string         filename_in,
-                                 const std::vector<semantic::Marker *> markers_in,
-                                 const std::vector<semantic::Room *>   rooms_in);
-    Sophus::SE3f grabImageRGBD(
+    [[nodiscard]] TrackingStatus
+        grabImageStereo(const cv::Mat &imageRectifiedLeft_in,
+                        const cv::Mat &imageRectifiedRight_in,
+                        const double  &timestamp_in,
+                        string         filename_in,
+                        const std::vector<semantic::Marker *> markers_in,
+                        const std::vector<semantic::Room *>   rooms_in,
+                        Sophus::SE3f                         &cameraPose_out);
+    [[nodiscard]] TrackingStatus grabImageRGBD(
         const cv::Mat                                &imageRgb_in,
         const cv::Mat                                &imageD_in,
         const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_pointcloud_in,
         const double                                 &timestamp_in,
         string                                        filename_in,
         const std::vector<semantic::Marker *>         markers_in,
-        const std::vector<semantic::Room *>           rooms_in);
-    Sophus::SE3f
+        const std::vector<semantic::Room *>           rooms_in,
+        Sophus::SE3f                                 &cameraPose_out);
+    [[nodiscard]] TrackingStatus
         grabImageMonocular(const cv::Mat                        &image_in,
                            const double                         &timestamp_in,
                            string                                filename_in,
                            const std::vector<semantic::Marker *> markers_in,
-                           const std::vector<semantic::Room *>   rooms_in);
+                           const std::vector<semantic::Room *>   rooms_in,
+                           Sophus::SE3f &cameraPose_out);
 
-    void grabImuData(const IMU::Point &imuMeasurement_in);
+    [[nodiscard]] TrackingStatus
+        grabImuData(const IMU::Point &imuMeasurement_in);
 
     // Setters of various classes
-    void setViewer(Viewer *p_viewer_in);
-    void setLoopClosing(LoopClosing *p_loopClosing_in);
-    void setLocalMapper(LocalMapping *p_localMapper_in);
+    [[nodiscard]] TrackingStatus setViewer(Viewer *p_viewer_in);
+    [[nodiscard]] TrackingStatus setLoopClosing(LoopClosing *p_loopClosing_in);
+    [[nodiscard]] TrackingStatus setLocalMapper(LocalMapping *p_localMapper_in);
 
-    void setStepByStep(bool isEnabled_in);
-    bool getStepByStep();
+    [[nodiscard]] TrackingStatus setStepByStep(bool isEnabled_in);
+    [[nodiscard]] TrackingStatus getStepByStep(bool &stepByStep_out);
 
     // Load new settings
     // The focal lenght should be similar or scale prediction will fail when
     // projecting points
-    void changeCalibration(const string &settingPath_in);
+    [[nodiscard]] TrackingStatus
+        changeCalibration(const string &settingPath_in);
 
     // Use this function if you have deactivated local mapping and you only want
     // to localize the camera.
-    void informOnlyTracking(const bool &flag_in);
+    [[nodiscard]] TrackingStatus informOnlyTracking(const bool &flag_in);
 
-    void      updateFrameIMU(const float      s_in,
-                             const IMU::Bias &b_in,
-                             KeyFrame        *p_currentKeyFrame_in);
-    KeyFrame *getLastKeyFrame()
+    [[nodiscard]] TrackingStatus updateFrameIMU(const float      s_in,
+                                                const IMU::Bias &b_in,
+                                                KeyFrame *p_currentKeyFrame_in);
+    [[nodiscard]] TrackingStatus getLastKeyFrame(KeyFrame *&p_lastKeyFrame_out)
     {
-        return p_lastKeyFrame;
+        p_lastKeyFrame_out = p_lastKeyFrame;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    Sophus::SE3f    getCamTwc();
-    Sophus::SE3f    getImuTwb();
-    Eigen::Vector3f getImuVwb();
-    bool            isImuPreintegrated();
+    [[nodiscard]] TrackingStatus getCamTwc(Sophus::SE3f &camTwc_out);
+    [[nodiscard]] TrackingStatus getImuTwb(Sophus::SE3f &imuTwb_out);
+    [[nodiscard]] TrackingStatus getImuVwb(Eigen::Vector3f &imuVwb_out);
+    [[nodiscard]] TrackingStatus
+        isImuPreintegrated(bool &isImuPreintegrated_out);
 
-    void createMapInAtlas();
+    [[nodiscard]] TrackingStatus createMapInAtlas();
     // std::mutex mMutexTracks;
 
     //--
-    void newDataset();
-    int  getNumberDataset();
-    int  getMatchesInliers();
+    [[nodiscard]] TrackingStatus newDataset();
+    [[nodiscard]] TrackingStatus getNumberDataset(int &numberDataset_out);
+    [[nodiscard]] TrackingStatus getMatchesInliers(int &matchesInliers_out);
 
     // DEBUG
-    void saveSubTrajectory(string textNameFileFrames_in,
-                           string textNameFileKeyFrame_in,
-                           string folder_in = "");
-    void saveSubTrajectory(string textNameFileFrames_in,
-                           string textNameFileKeyFrame_in,
-                           Map   *p_map_in);
+    [[nodiscard]] TrackingStatus
+        saveSubTrajectory(string textNameFileFrames_in,
+                          string textNameFileKeyFrame_in,
+                          string folder_in = "");
+    [[nodiscard]] TrackingStatus
+        saveSubTrajectory(string textNameFileFrames_in,
+                          string textNameFileKeyFrame_in,
+                          Map   *p_map_in);
 
-    float getImageScale();
+    [[nodiscard]] TrackingStatus getImageScale(float &imageScale_out);
 
     // Get parameters
-    double getMarkerImpact() const;
-    void   setMarkerImpact(const double newValue_in);
+    [[nodiscard]] TrackingStatus
+        getMarkerImpact(double &getMarkerImpact_out) const;
+    [[nodiscard]] TrackingStatus setMarkerImpact(const double newValue_in);
 
     // Semantic Entities
     /*!
      * @brief Get the points close to a given marker
      * @param p_currentMarker_in the address of the current marker
      */
-    std::vector<MapPoint *>
-        findPointsCloseToMarker(const semantic::Marker *p_currentMarker_in);
+    [[nodiscard]] TrackingStatus
+        findPointsCloseToMarker(const semantic::Marker  *p_currentMarker_in,
+                                std::vector<MapPoint *> &pointsClose_out);
 
     /*!
      * @brief Get the points close to a given location
@@ -203,16 +218,17 @@ class Tracking
      * @param location_in the given location
      * @param distanceThreshold_in the pre-defined threshold
      */
-    std::vector<MapPoint *>
+    [[nodiscard]] TrackingStatus
         findPointsCloseToLocation(const std::vector<MapPoint *> &points_in,
                                   const Eigen::Vector3f         &location_in,
-                                  double distanceThreshold_in);
+                                  double                   distanceThreshold_in,
+                                  std::vector<MapPoint *> &pointsClose_out);
 
 #ifdef REGISTER_LOOP
-    void requestStop();
-    bool isStopped();
-    void release();
-    bool stopRequested();
+    [[nodiscard]] TrackingStatus requestStop();
+    [[nodiscard]] TrackingStatus isStopped(bool &isStopped_out);
+    [[nodiscard]] TrackingStatus release();
+    [[nodiscard]] TrackingStatus stopRequested(bool &isStopRequested_out);
 #endif
 
   public:
@@ -264,8 +280,10 @@ class Tracking
     // localization
     bool isTrackingOnlyMode;
 
-    void reset(bool isRequestedByLocalMapping_in = false);
-    void resetActiveMap(bool isRequestedByLocalMapping_in = false);
+    [[nodiscard]] TrackingStatus
+        reset(bool isRequestedByLocalMapping_in = false);
+    [[nodiscard]] TrackingStatus
+        resetActiveMap(bool isRequestedByLocalMapping_in = false);
 
     float  meanTrack;
     bool   shouldInitializeWithThreeKeyFrames;
@@ -274,7 +292,8 @@ class Tracking
     double t0IMU; // time-stamp of IMU initialization
     bool   isFastInitEnabled = false;
 
-    vector<MapPoint *> getLocalMapPoints();
+    [[nodiscard]] TrackingStatus
+        getLocalMapPoints(std::vector<MapPoint *> &localMapPoints_out);
 
     bool shouldWriteStats;
 
@@ -282,9 +301,9 @@ class Tracking
     std::vector<vs_graphs::core::semantic::Room *> env_rooms;
 
 #ifdef REGISTER_TIMES
-    void localMapStats2File();
-    void trackStats2File();
-    void printTimeStats();
+    [[nodiscard]] TrackingStatus localMapStats2File();
+    [[nodiscard]] TrackingStatus trackStats2File();
+    [[nodiscard]] TrackingStatus printTimeStats();
 
     vector<double> stereoRectificationTimes_ms;
     vector<double> imageResizeTimes_ms;
@@ -299,40 +318,40 @@ class Tracking
 
   protected:
     // Main tracking function. It is independent of the input sensor.
-    void track();
+    [[nodiscard]] TrackingStatus track();
 
     // Map initialization for stereo and RGB-D
-    void stereoInitialization();
+    [[nodiscard]] TrackingStatus stereoInitialization();
 
     // Map initialization for monocular
-    void monocularInitialization();
+    [[nodiscard]] TrackingStatus monocularInitialization();
 
     // void CreateNewMapPoints();
-    void createInitialMapMonocular();
+    [[nodiscard]] TrackingStatus createInitialMapMonocular();
 
-    void checkReplacedInLastFrame();
-    bool trackReferenceKeyFrame();
-    void updateLastFrame();
-    bool trackWithMotionModel();
-    bool predictStateIMU();
+    [[nodiscard]] TrackingStatus checkReplacedInLastFrame();
+    [[nodiscard]] TrackingStatus trackReferenceKeyFrame(bool &isTracked_out);
+    [[nodiscard]] TrackingStatus updateLastFrame();
+    [[nodiscard]] TrackingStatus trackWithMotionModel(bool &isTracked_out);
+    [[nodiscard]] TrackingStatus predictStateIMU(bool &isPredicted_out);
 
-    bool relocalization();
+    [[nodiscard]] TrackingStatus relocalization(bool &isRelocalized_out);
 
-    void updateLocalMap();
-    void updateLocalPoints();
-    void updateLocalKeyFrames();
+    [[nodiscard]] TrackingStatus updateLocalMap();
+    [[nodiscard]] TrackingStatus updateLocalPoints();
+    [[nodiscard]] TrackingStatus updateLocalKeyFrames();
 
-    bool trackLocalMap();
-    void searchLocalPoints();
+    [[nodiscard]] TrackingStatus trackLocalMap(bool &isTracked_out);
+    [[nodiscard]] TrackingStatus searchLocalPoints();
 
-    bool needNewKeyFrame();
-    void createNewKeyFrame();
+    [[nodiscard]] TrackingStatus needNewKeyFrame(bool &needNewKeyFrame_out);
+    [[nodiscard]] TrackingStatus createNewKeyFrame();
 
     // Perform preintegration from last frame
-    void preintegrateIMU();
+    [[nodiscard]] TrackingStatus preintegrateIMU();
 
     // Reset IMU biases and compute frame velocity
-    void resetFrameIMU();
+    [[nodiscard]] TrackingStatus resetFrameIMU();
 
     bool isMapUpdated;
 
@@ -492,13 +511,16 @@ class Tracking
 
     Sophus::SE3f poseTlr;
 
-    void newParameterLoader(utils::settings::Settings *p_settings_inout);
-    void loadTrackingParameters(const string &settingPath_in);
-    void adjustFASTThreshold(); // Adaptive threshold based on tracking
-                                // quality
+    [[nodiscard]] TrackingStatus
+        newParameterLoader(utils::settings::Settings *p_settings_inout);
+    [[nodiscard]] TrackingStatus
+        loadTrackingParameters(const string &settingPath_in);
+    [[nodiscard]] TrackingStatus
+        adjustFASTThreshold(); // Adaptive threshold based on tracking
+                               // quality
 
 #ifdef REGISTER_LOOP
-    bool stop();
+    [[nodiscard]] TrackingStatus stop(bool &isStopped_out);
 
     bool       hasStopped;
     bool       isStopRequested;

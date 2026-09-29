@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-long unsigned int Atlas::getMarkerCount()
+AtlasStatus Atlas::getMarkerCount(unsigned long &markerCount_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     unsigned long      activeMapMarkerCount{};
@@ -43,7 +43,8 @@ long unsigned int Atlas::getMarkerCount()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapMarkerCount;
+    markerCount_out = activeMapMarkerCount;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

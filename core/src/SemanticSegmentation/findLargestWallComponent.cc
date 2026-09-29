@@ -45,16 +45,18 @@ namespace core
  *
  * @return       Largest connected component and its support statistics.
  */
-WallComponentSupport findLargestWallComponent(
+SemanticSegmentationStatus findLargestWallComponent(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_wallCloud_in,
-    const double                                        clusterTolerance_m_in)
+    const double                                        clusterTolerance_m_in,
+    WallComponentSupport &largestWallComponent_out)
 {
     WallComponentSupport support;
 
     if (p_wallCloud_in == nullptr || p_wallCloud_in->empty() ||
         !std::isfinite(clusterTolerance_m_in) || clusterTolerance_m_in <= 0.0)
     {
-        return support;
+        largestWallComponent_out = support;
+        return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
     }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_finiteWallCloud(
@@ -80,7 +82,8 @@ WallComponentSupport findLargestWallComponent(
 
     if (p_finiteWallCloud->empty())
     {
-        return support;
+        largestWallComponent_out = support;
+        return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
     }
 
     pcl::search::KdTree<pcl::PointXYZRGBA>::Ptr p_searchTree(
@@ -100,7 +103,8 @@ WallComponentSupport findLargestWallComponent(
 
     if (connectedComponents.empty())
     {
-        return support;
+        largestWallComponent_out = support;
+        return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
     }
 
     const auto largestComponentIterator = std::max_element(
@@ -129,7 +133,8 @@ WallComponentSupport findLargestWallComponent(
     support.componentRatio = static_cast<double>(support.pointIndices.size()) /
                              static_cast<double>(support.finitePointCount);
 
-    return support;
+    largestWallComponent_out = support;
+    return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
 } // namespace core

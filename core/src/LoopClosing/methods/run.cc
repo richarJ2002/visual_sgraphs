@@ -65,7 +65,16 @@ void LoopClosing::run(void)
          * true  -> at least one queued keyframe exists; process one.
          * false -> skip directly to reset/finish handling and the timed sleep.
          */
-        if (checkNewKeyFrames())
+        bool hasNewKeyFrames{};
+        if (checkNewKeyFrames(hasNewKeyFrames) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkNewKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (hasNewKeyFrames)
         {
             /*!
              * Check that the last keyframe to be added is valid.
@@ -100,7 +109,16 @@ void LoopClosing::run(void)
              * queries the database, validates Sim3 geometry, and updates
              * mbLoopDetected / mbMergeDetected plus their matched-KF state.
              */
-            bool isFindedRegion = newDetectCommonRegions();
+            bool isFindedRegion{};
+            if (newDetectCommonRegions(isFindedRegion) !=
+                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: newDetectCommonRegions returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point timeEndPr =
@@ -300,9 +318,18 @@ void LoopClosing::run(void)
                                 mergeMPs.clear();
                                 mergeNumNotFound = 0;
                                 isMergeDetected  = false;
-                                Verbose::printMess(
-                                    "scale bad estimated. Abort merging",
-                                    Verbose::VERBOSITY_NORMAL);
+                                if (Verbose::printMess(
+                                        "scale bad estimated. Abort merging",
+                                        Verbose::VERBOSITY_NORMAL) !=
+                                    VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: printMess returned a failure "
+                                        "status although it cannot fail; "
+                                        "continuing as before.",
+                                        __func__);
+                                }
                                 continue;
                             }
                             // If inertial, force only yaw
@@ -338,13 +365,34 @@ void LoopClosing::run(void)
                                  p_tracker->sensor == System::IMU_RGBD) &&
                                 inertialBA1)
                             {
-                                Eigen::Vector3d phi =
-                                    logSO3(oldCorrectedPose.rotation()
-                                               .toRotationMatrix());
+                                Eigen::Vector3d phi{};
+                                if (logSO3(oldCorrectedPose.rotation()
+                                               .toRotationMatrix(),
+                                           phi) !=
+                                    G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: logSO3 returned a failure status "
+                                        "although it cannot fail; continuing "
+                                        "as before.",
+                                        __func__);
+                                }
                                 phi(0) = 0;
                                 phi(1) = 0;
+                                Eigen::Matrix3d rotation2{};
+                                if (expSO3(phi, rotation2) !=
+                                    G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: expSO3 returned a failure status "
+                                        "although it cannot fail; continuing "
+                                        "as before.",
+                                        __func__);
+                                }
                                 oldCorrectedPose =
-                                    g2o::Sim3(expSO3(phi),
+                                    g2o::Sim3(rotation2,
                                               oldCorrectedPose.translation(),
                                               1.0);
                             }
@@ -384,7 +432,15 @@ void LoopClosing::run(void)
 #endif
 
                         /* Set flag to indicate that mergins is happening */
-                        setMergeStatus(true);
+                        if (setMergeStatus(true) !=
+                            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: setMergeStatus returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
 
                         /* Choose merging method based on if IMU is used */
                         if (p_tracker->sensor == System::IMU_MONOCULAR ||
@@ -392,16 +448,46 @@ void LoopClosing::run(void)
                             p_tracker->sensor == System::IMU_RGBD)
                         {
                             /* Merge maps using IMU */
-                            mergeDecision = mergeLocalInertial();
+                            semantic::SemanticMergeDecision localInertial{};
+                            if (mergeLocalInertial(localInertial) !=
+                                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: mergeLocalInertial returned a failure "
+                                    "status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
+                            mergeDecision = localInertial;
                         }
                         else
                         {
                             /* Merge maps */
-                            mergeDecision = mergeLocal();
+                            semantic::SemanticMergeDecision local{};
+                            if (mergeLocal(local) !=
+                                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: mergeLocal returned a failure status "
+                                    "although it cannot fail; continuing as "
+                                    "before.",
+                                    __func__);
+                            }
+                            mergeDecision = local;
                         }
 
                         /* Set flag to indicate that mergins has finished */
-                        setMergeStatus(false);
+                        if (setMergeStatus(false) !=
+                            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: setMergeStatus returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
 
 #ifdef REGISTER_TIMES
                         if (mergeDecision ==
@@ -463,9 +549,18 @@ void LoopClosing::run(void)
                          * candidate collected against the old topology. */
                         if (isLoopDetected)
                         {
-                            recordLoopCorrectionEvent(
-                                false,
-                                "superseded_by_map_merge");
+                            if (recordLoopCorrectionEvent(
+                                    false,
+                                    "superseded_by_map_merge") !=
+                                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: recordLoopCorrectionEvent returned a "
+                                    "failure status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
                             if (p_loopLastCurrentKF->setErase() !=
                                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                             {
@@ -645,8 +740,17 @@ void LoopClosing::run(void)
                          * indicates insufficient overlap between the two
                          * observations and the correction is rejected.
                          */
-                        Eigen::Vector3d phi =
-                            logSO3(g2oSww_new.rotation().toRotationMatrix());
+                        Eigen::Vector3d phi{};
+                        if (logSO3(g2oSww_new.rotation().toRotationMatrix(),
+                                   phi) !=
+                            G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: logSO3 returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
+                        }
 
                         if (fabs(phi(0)) < 0.008f && fabs(phi(1)) < 0.008f &&
                             fabs(phi(2)) < 0.349f)
@@ -689,9 +793,20 @@ void LoopClosing::run(void)
                                  p_tracker->sensor == System::IMU_RGBD) &&
                                 inertialBA2)
                             {
-                                phi(0)     = 0;
-                                phi(1)     = 0;
-                                g2oSww_new = g2o::Sim3(expSO3(phi),
+                                phi(0) = 0;
+                                phi(1) = 0;
+                                Eigen::Matrix3d rotation3{};
+                                if (expSO3(phi, rotation3) !=
+                                    G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: expSO3 returned a failure status "
+                                        "although it cannot fail; continuing "
+                                        "as before.",
+                                        __func__);
+                                }
+                                g2oSww_new = g2o::Sim3(rotation3,
                                                        g2oSww_new.translation(),
                                                        1.0);
 
@@ -715,8 +830,17 @@ void LoopClosing::run(void)
                                    "overlap! Skipping correction ..."
                                 << std::endl;
                             isGoodLoop = false;
-                            recordLoopCorrectionEvent(false,
-                                                      "inertial_overlap");
+                            if (recordLoopCorrectionEvent(false,
+                                                          "inertial_overlap") !=
+                                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: recordLoopCorrectionEvent returned a "
+                                    "failure status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
                         }
                     }
 
@@ -754,7 +878,15 @@ void LoopClosing::run(void)
                          * After this operation, the trajectory should become
                          * globally consistent.
                          */
-                        correctLoop();
+                        if (correctLoop() !=
+                            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: correctLoop returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
 #ifdef REGISTER_TIMES
                         std::chrono::steady_clock::time_point timeEndLoop =
                             std::chrono::steady_clock::now();
@@ -776,7 +908,16 @@ void LoopClosing::run(void)
                          * accepted and used to modify the map.
                          */
                         numCorrection += 1;
-                        recordLoopCorrectionEvent(true, "corrected");
+                        if (recordLoopCorrectionEvent(true, "corrected") !=
+                            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: recordLoopCorrectionEvent returned a "
+                                "failure status although it cannot fail; "
+                                "continuing as before.",
+                                __func__);
+                        }
                     }
 
                     /*!
@@ -815,9 +956,25 @@ void LoopClosing::run(void)
             p_lastCurrentKF = p_currentKF;
         }
 
-        resetIfRequested();
+        if (resetIfRequested() !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: resetIfRequested returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        if (checkFinish())
+        bool isFinishRequested{};
+        if (checkFinish(isFinishRequested) !=
+            LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkFinish returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isFinishRequested)
         {
             break;
         }
@@ -840,8 +997,22 @@ void LoopClosing::run(void)
     }
 
     /* No optimizer may outlive LoopClosing or race Atlas serialization. */
-    stopGlobalBundleAdjustment();
-    setFinish();
+    bool wasRunning{};
+    if (stopGlobalBundleAdjustment(wasRunning) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: stopGlobalBundleAdjustment returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (setFinish() != LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

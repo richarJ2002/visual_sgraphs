@@ -24,15 +24,26 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-std::vector<KeyFrame *> System::getAllKeyFrames()
+SystemStatus System::getAllKeyFrames(std::vector<KeyFrame *> &allKeyFrames_out)
 {
-    return p_atlas->getAllKeyFrames();
+    std::vector<KeyFrame *> atlasAllKeyFrames{};
+    if (p_atlas->getAllKeyFrames(atlasAllKeyFrames) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    allKeyFrames_out = atlasAllKeyFrames;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

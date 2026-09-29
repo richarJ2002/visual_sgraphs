@@ -16,6 +16,7 @@
  */
 
 #include "ImuTypes.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -24,12 +25,24 @@ namespace core
 namespace IMU
 {
 
-Eigen::Matrix3f
-    inverseRightJacobianSO3(const Eigen::Vector3f &angleAxisVector_in)
+ImuTypesStatus
+    inverseRightJacobianSO3(const Eigen::Vector3f &angleAxisVector_in,
+                            Eigen::Matrix3f       &inverseRightJacobian_out)
 {
-    return inverseRightJacobianSO3(angleAxisVector_in(0),
-                                   angleAxisVector_in(1),
-                                   angleAxisVector_in(2));
+    Eigen::Matrix3f inverseRightJacobian{};
+    if (inverseRightJacobianSO3(angleAxisVector_in(0),
+                                angleAxisVector_in(1),
+                                angleAxisVector_in(2),
+                                inverseRightJacobian) !=
+        ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: inverseRightJacobianSO3 returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    inverseRightJacobian_out = inverseRightJacobian;
+    return ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS;
 }
 
 } // namespace IMU

@@ -67,10 +67,10 @@ namespace vs_graphs
 namespace core
 {
 
-void ExtractorNode::divideNode(ExtractorNode &node1_inout,
-                               ExtractorNode &node2_inout,
-                               ExtractorNode &node3_inout,
-                               ExtractorNode &node4_inout)
+ExtractorNodeStatus ExtractorNode::divideNode(ExtractorNode &node1_inout,
+                                              ExtractorNode &node2_inout,
+                                              ExtractorNode &node3_inout,
+                                              ExtractorNode &node4_inout)
 {
     const int halfX = ceil(static_cast<float>(topRight.x - topLeft.x) / 2);
     const int halfY = ceil(static_cast<float>(bottomRight.y - topLeft.y) / 2);
@@ -126,6 +126,8 @@ void ExtractorNode::divideNode(ExtractorNode &node1_inout,
         node3_inout.isExhausted = true;
     if (node4_inout.keys.size() == 1)
         node4_inout.isExhausted = true;
+
+    return ExtractorNodeStatus::EXTRACTOR_NODE_STATUS_SUCCESS;
 }
 
 } // namespace core

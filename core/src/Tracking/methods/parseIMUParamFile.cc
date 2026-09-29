@@ -33,7 +33,8 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::parseIMUParamFile(cv::FileStorage &settings_in)
+TrackingStatus Tracking::parseIMUParamFile(cv::FileStorage &settings_in,
+                                           bool            &isParsed_out)
 {
     bool  boolMissingParam = false;
     float Ng               = 0.0F;
@@ -51,13 +52,15 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &settings_in)
             std::cerr
                 << "\t- Tbc matrix needs to be a 4x4 transformation matrix!"
                 << std::endl;
-            return false;
+            isParsed_out = false;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
     }
     else
     {
         std::cerr << "\t- Tbc matrix does not exist!" << std::endl;
-        return false;
+        isParsed_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
     cout << "\t- Left camera to Imu Transform (Tbc): " << endl << cvTbc << endl;
     Eigen::Matrix<float, 4, 4, Eigen::RowMajor> eigTbc(cvTbc.ptr<float>(0));
@@ -161,7 +164,10 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &settings_in)
                   << std::endl;
 
     if (boolMissingParam)
-        return false;
+    {
+        isParsed_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
 
     const float sf = sqrt(imuFrequency);
     cout << endl;
@@ -177,7 +183,8 @@ bool Tracking::parseIMUParamFile(cv::FileStorage &settings_in)
     p_imuPreintegratedFromLastKF =
         new IMU::Preintegrated(IMU::Bias(), *p_imuCalibration);
 
-    return true;
+    isParsed_out = true;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

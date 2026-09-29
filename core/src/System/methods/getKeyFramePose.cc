@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f System::getKeyFramePose(KeyFrame *p_keyFrame_in)
+SystemStatus System::getKeyFramePose(KeyFrame     *p_keyFrame_in,
+                                     Sophus::SE3f &keyFramePose_out)
 {
     bool keyFrameIsBad{};
     if (p_keyFrame_in->isBad(keyFrameIsBad) !=
@@ -43,7 +44,10 @@ Sophus::SE3f System::getKeyFramePose(KeyFrame *p_keyFrame_in)
                      __func__);
     }
     if (keyFrameIsBad)
-        return Sophus::SE3f();
+    {
+        keyFramePose_out = Sophus::SE3f();
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
+    }
 
     // Twb can be world frame to cam0 frame (without IMU) or body in world frame
     // (with IMU)
@@ -76,7 +80,8 @@ Sophus::SE3f System::getKeyFramePose(KeyFrame *p_keyFrame_in)
         Twb = keyFramePoseInverse;
     }
 
-    return Twb;
+    keyFramePose_out = Twb;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

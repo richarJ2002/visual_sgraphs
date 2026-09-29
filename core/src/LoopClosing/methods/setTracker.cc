@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::setTracker(Tracking *p_tracker_in)
+LoopClosingStatus LoopClosing::setTracker(Tracking *p_tracker_in)
 {
     p_tracker = p_tracker_in;
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

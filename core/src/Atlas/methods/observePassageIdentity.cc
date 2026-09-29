@@ -26,15 +26,25 @@
 #include "Atlas.h"
 
 #include "../private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void Atlas::observePassageIdentity(const int passageId_in)
+AtlasStatus Atlas::observePassageIdentity(const int passageId_in)
 {
-    advanceIdentityAllocator(nextPassageIdentity, passageId_in);
+    if (advanceIdentityAllocator(nextPassageIdentity, passageId_in) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: advanceIdentityAllocator returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -31,14 +31,16 @@ namespace vs_graphs
 namespace core
 {
 
-void Sim3Solver::computeCentroid(Eigen::Matrix3f &P_in,
-                                 Eigen::Matrix3f &Pr_inout,
-                                 Eigen::Vector3f &C_out)
+Sim3SolverStatus Sim3Solver::computeCentroid(Eigen::Matrix3f &P_in,
+                                             Eigen::Matrix3f &Pr_inout,
+                                             Eigen::Vector3f &C_out)
 {
     C_out = P_in.rowwise().sum();
     C_out = C_out / P_in.cols();
     for (int columnIndex = 0; columnIndex < P_in.cols(); columnIndex++)
         Pr_inout.col(columnIndex) = P_in.col(columnIndex) - C_out;
+
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

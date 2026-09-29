@@ -31,11 +31,12 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
-                     Sophus::Sim3f            &Scw,
-                     const vector<MapPoint *> &vpPoints,
-                     float                     th,
-                     vector<MapPoint *>       &replacePoints_inout)
+ORBmatcherStatus ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
+                                  Sophus::Sim3f            &Scw,
+                                  const vector<MapPoint *> &vpPoints,
+                                  float                     th,
+                                  std::vector<MapPoint *>  &replacePoints_inout,
+                                  int                      &fusedCount_out)
 {
     // Decompose Scw
     Sophus::SE3f Tcw =
@@ -212,8 +213,18 @@ int ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
             const cv::Mat &keyFrameDescriptor =
                 p_keyframe_inout->descriptors.row(featureIndex);
 
-            int distance = computeDescriptorDistance(mapPointDescriptor,
-                                                     keyFrameDescriptor);
+            int distance{};
+            if (computeDescriptorDistance(mapPointDescriptor,
+                                          keyFrameDescriptor,
+                                          distance) !=
+                ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computeDescriptorDistance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             if (distance < bestDistance)
             {
@@ -273,7 +284,8 @@ int ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
         }
     }
 
-    return fusedCount;
+    fusedCount_out = fusedCount;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

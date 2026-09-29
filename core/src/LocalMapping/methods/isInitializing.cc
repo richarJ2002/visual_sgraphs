@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool LocalMapping::isInitializing()
+LocalMappingStatus LocalMapping::isInitializing(bool &isInitializing_out)
 {
-    return isInitializationInProgress;
+    isInitializing_out = isInitializationInProgress;
+    return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
 } // namespace core

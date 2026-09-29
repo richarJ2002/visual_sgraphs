@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-Sophus::SE3f Tracking::getCamTwc()
+TrackingStatus Tracking::getCamTwc(Sophus::SE3f &camTwc_out)
 {
     Sophus::SE3<float> currentFrameGetPose{};
     if (currentFrame.getPose(currentFrameGetPose) !=
@@ -42,7 +42,8 @@ Sophus::SE3f Tracking::getCamTwc()
                      "fail; continuing as before.",
                      __func__);
     }
-    return (currentFrameGetPose).inverse();
+    camTwc_out = (currentFrameGetPose).inverse();
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

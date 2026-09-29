@@ -31,8 +31,10 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchByProjection(Frame                      &F,
+ORBmatcherStatus
+    ORBmatcher::searchByProjection(Frame                      &F,
                                    const vector<MapPoint *>   &vpMapPoints,
+                                   int                        &byProjection_out,
                                    const float                 th,
                                    const bool                  bFarPoints,
                                    const float                 thFarPoints,
@@ -69,7 +71,15 @@ int ORBmatcher::searchByProjection(Frame                      &F,
             const int &predictedLevelCount = p_mapPoint->trackScaleLevel;
 
             // The size of the window will depend on the viewing direction
-            float r = radiusByViewingCos(p_mapPoint->trackViewCos);
+            float r{};
+            if (radiusByViewingCos(p_mapPoint->trackViewCos, r) !=
+                ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: radiusByViewingCos returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             if (isThresholdScaled)
                 r *= th;
@@ -155,8 +165,18 @@ int ORBmatcher::searchByProjection(Frame                      &F,
 
                     const cv::Mat &d = F.descriptors.row(featureIndex);
 
-                    const int distance =
-                        computeDescriptorDistance(mapPointDescriptor, d);
+                    int distance{};
+                    if (computeDescriptorDistance(mapPointDescriptor,
+                                                  d,
+                                                  distance) !=
+                        ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: computeDescriptorDistance returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
 
                     if (distance < bestDistance)
                     {
@@ -224,7 +244,16 @@ int ORBmatcher::searchByProjection(Frame                      &F,
             const int &predictedLevelCount = p_mapPoint->trackScaleLevelR;
             if (predictedLevelCount != -1)
             {
-                float r = radiusByViewingCos(p_mapPoint->trackViewCosR);
+                float r{};
+                if (radiusByViewingCos(p_mapPoint->trackViewCosR, r) !=
+                    ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: radiusByViewingCos returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 if (thDepth.has_value() && p_mapPoint->trackDepthR > 0)
                 {
@@ -301,8 +330,18 @@ int ORBmatcher::searchByProjection(Frame                      &F,
                     const cv::Mat &d =
                         F.descriptors.row(featureIndex + F.leftKeyPointCount);
 
-                    const int distance =
-                        computeDescriptorDistance(mapPointDescriptor, d);
+                    int distance{};
+                    if (computeDescriptorDistance(mapPointDescriptor,
+                                                  d,
+                                                  distance) !=
+                        ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: computeDescriptorDistance returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
 
                     if (distance < bestDistance)
                     {
@@ -343,7 +382,8 @@ int ORBmatcher::searchByProjection(Frame                      &F,
             }
         }
     }
-    return nmatches;
+    byProjection_out = nmatches;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

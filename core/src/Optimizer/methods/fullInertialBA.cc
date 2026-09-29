@@ -36,7 +36,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::fullInertialBA(
+OptimizerStatus Optimizer::fullInertialBA(
     Map                              *p_map_inout,
     int                               iterationCount_in,
     const bool                        fixLocalKeyFrames_in,
@@ -81,7 +81,7 @@ void Optimizer::fullInertialBA(
 
     if (keyFrames.empty())
     {
-        return;
+        return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
     }
 
     AtomicOptimizerStopBridge stopBridge(p_stopRequested_in, p_stopFlag_inout);
@@ -165,7 +165,7 @@ void Optimizer::fullInertialBA(
     {
         if (p_initializationKeyFrame == nullptr)
         {
-            return;
+            return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
         }
 
         VertexGyroBias *p_gyroBiasVertex =
@@ -183,7 +183,7 @@ void Optimizer::fullInertialBA(
     if (fixLocalKeyFrames_in)
     {
         if (nonFixedKeyFrameCount < 3)
-            return;
+            return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
     }
 
     // IMU links
@@ -194,8 +194,15 @@ void Optimizer::fullInertialBA(
 
         if (!p_keyFrame->p_prevKF)
         {
-            Verbose::printMess("NOT INERTIAL LINK TO PREVIOUS FRAME!",
-                               Verbose::VERBOSITY_NORMAL);
+            if (Verbose::printMess("NOT INERTIAL LINK TO PREVIOUS FRAME!",
+                                   Verbose::VERBOSITY_NORMAL) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             continue;
         }
 
@@ -224,7 +231,15 @@ void Optimizer::fullInertialBA(
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                p_keyFrame->p_imuPreintegrated->setNewBias(imuBias2);
+                if (p_keyFrame->p_imuPreintegrated->setNewBias(imuBias2) !=
+                    IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setNewBias returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 g2o::HyperGraph::Vertex *p_previousPoseVertex =
                     optimizer.vertex(p_keyFrame->p_prevKF->id);
                 g2o::HyperGraph::Vertex *p_previousVelocityVertex =
@@ -598,7 +613,7 @@ void Optimizer::fullInertialBA(
 
     if (p_stopFlag_inout)
         if (*p_stopFlag_inout)
-            return;
+            return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 
     optimizer.initializeOptimization();
     optimizer.optimize(iterationCount_in);
@@ -749,6 +764,8 @@ void Optimizer::fullInertialBA(
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

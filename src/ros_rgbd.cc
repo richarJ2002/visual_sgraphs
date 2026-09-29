@@ -27,6 +27,7 @@
 #include "common.hpp"
 
 #include <condition_variable>
+#include <rclcpp/logging.hpp>
 
 using namespace std;
 
@@ -213,10 +214,19 @@ int main(int argc, char **argv)
     pubPointClouds  = node->get_parameter("publish_pointclouds").as_bool();
     frameBC = node->get_parameter("frame_building_component").as_string();
     frameSE = node->get_parameter("frame_structural_element").as_string();
-    pubStaticTransform      = node->get_parameter("static_transform").as_bool();
-    bool enablePangolin     = node->get_parameter("enable_pangolin").as_bool();
-    const auto verboseLevel = vs_graphs::core::Verbose::parseVerbosityLevel(
-        node->get_parameter("log_level").as_string());
+    pubStaticTransform  = node->get_parameter("static_transform").as_bool();
+    bool enablePangolin = node->get_parameter("enable_pangolin").as_bool();
+    vs_graphs::core::Verbose::VerbosityLevel verboseLevel{};
+    if (vs_graphs::core::Verbose::parseVerbosityLevel(
+            node->get_parameter("log_level").as_string(),
+            verboseLevel) !=
+        vs_graphs::core::VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: parseVerbosityLevel returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     sgraphArchiveTestRunDir = node->get_parameter("test_run_dir").as_string();
     sgraphArchiveEnabled =
@@ -401,7 +411,14 @@ int main(int argc, char **argv)
     igb->RequestStop();
     rgbdProcessingThread.join();
     igb->LogRgbdObservabilitySummary("shutdown_after_worker_join");
-    p_slamSystem->shutdown();
+    if (p_slamSystem->shutdown() !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: shutdown returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     delete p_slamSystem;
     p_slamSystem = nullptr;
     shutdownRosInterfaces();
@@ -536,20 +553,40 @@ void ImageGrabber::ProcessRgbdPackets()
         {
             if (markerTimeDifference_seconds < 0.05)
             {
-                p_slamSystem->trackRGBD(p_rgbImage->image,
-                                        p_depthImage->image,
-                                        p_pointCloud,
-                                        rgbTimestamp_seconds,
-                                        {},
-                                        "",
-                                        matchedMarkers);
+                Sophus::SE3f slamSystemCameraPose{};
+                if (p_slamSystem->trackRGBD(p_rgbImage->image,
+                                            p_depthImage->image,
+                                            p_pointCloud,
+                                            rgbTimestamp_seconds,
+                                            slamSystemCameraPose,
+                                            {},
+                                            "",
+                                            matchedMarkers) !=
+                    vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: trackRGBD returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
             }
             else
             {
-                p_slamSystem->trackRGBD(p_rgbImage->image,
-                                        p_depthImage->image,
-                                        p_pointCloud,
-                                        rgbTimestamp_seconds);
+                Sophus::SE3f slamSystemCameraPose2{};
+                if (p_slamSystem->trackRGBD(p_rgbImage->image,
+                                            p_depthImage->image,
+                                            p_pointCloud,
+                                            rgbTimestamp_seconds,
+                                            slamSystemCameraPose2) !=
+                    vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: trackRGBD returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
             }
         }
         catch (...)
@@ -661,12 +698,19 @@ void ImageGrabber::PublishRgbdFrontendHealth() const
         snapshot.processedPackets + snapshot.imageConversionRejects +
         snapshot.cloudConversionRejects + snapshot.trackFailures +
         snapshot.publishTopicsFailures + snapshot.shutdownPendingDrops;
-    p_slamSystem->updateRgbdFrontendHealth(
-        snapshot.pendingStores,
-        terminalCount,
-        snapshot.pendingOverwrites,
-        snapshot.workersInFlight > 0U,
-        snapshot.lastProcessedSensorTimestampNanoseconds);
+    if (p_slamSystem->updateRgbdFrontendHealth(
+            snapshot.pendingStores,
+            terminalCount,
+            snapshot.pendingOverwrites,
+            snapshot.workersInFlight > 0U,
+            snapshot.lastProcessedSensorTimestampNanoseconds) !=
+        vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateRgbdFrontendHealth returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 void ImageGrabber::GrabVoxbloxSkeletonGraph(

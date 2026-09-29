@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-bool Atlas::isImuInitialized()
+AtlasStatus Atlas::isImuInitialized(bool &isImuInitialized_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     bool               activeMapIsImuInitialized{};
@@ -43,7 +43,8 @@ bool Atlas::isImuInitialized()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapIsImuInitialized;
+    isImuInitialized_out = activeMapIsImuInitialized;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

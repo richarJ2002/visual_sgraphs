@@ -26,15 +26,17 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-Eigen::Matrix3d expSO3(const double angleAxisX_in,
-                       const double angleAxisY_in,
-                       const double angleAxisZ_in)
+G2oTypesStatus expSO3(const double     angleAxisX_in,
+                      const double     angleAxisY_in,
+                      const double     angleAxisZ_in,
+                      Eigen::Matrix3d &rotation_out)
 {
     const double angleSquared = angleAxisX_in * angleAxisX_in +
                                 angleAxisY_in * angleAxisY_in +
@@ -48,14 +50,34 @@ Eigen::Matrix3d expSO3(const double angleAxisX_in,
         Eigen::Matrix3d rotationMatrix = Eigen::Matrix3d::Identity() +
                                          skewMatrix +
                                          0.5 * skewMatrix * skewMatrix;
-        return normalizeRotation(rotationMatrix);
+        Eigen::Matrix<double, 3, 3> rotation{};
+        if (normalizeRotation(rotationMatrix, rotation) !=
+            G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: normalizeRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        rotation_out = rotation;
+        return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
     }
     else
     {
         Eigen::Matrix3d rotationMatrix =
             Eigen::Matrix3d::Identity() + skewMatrix * sin(angle) / angle +
             skewMatrix * skewMatrix * (1.0 - cos(angle)) / angleSquared;
-        return normalizeRotation(rotationMatrix);
+        Eigen::Matrix<double, 3, 3> rotation2{};
+        if (normalizeRotation(rotationMatrix, rotation2) !=
+            G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: normalizeRotation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        rotation_out = rotation2;
+        return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
     }
 }
 

@@ -29,8 +29,10 @@ namespace vs_graphs
 namespace core
 {
 
-bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
-                                       geometric::Plane *p_candidateWall_in)
+SemanticsManagerStatus
+    SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
+                                      geometric::Plane *p_candidateWall_in,
+                                      bool             &wasAdmitted_out)
 {
     bool room_inoutIsBad{};
     if (!(p_room_inout == nullptr) &&
@@ -56,7 +58,8 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
     if (p_room_inout == nullptr || room_inoutIsBad ||
         p_candidateWall_in == nullptr || candidateWallIsBad)
     {
-        return false;
+        wasAdmitted_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::vector<geometric::Plane *> existingWalls{};
@@ -73,9 +76,17 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                   existingWalls.end(),
                   p_candidateWall_in) != existingWalls.end();
 
-    geometric::Plane *p_farSideGroundPlane = p_atlas->getBiggestGroundPlane();
-    Eigen::Vector3d   farSideGroundNormal_World = Eigen::Vector3d::Zero();
-    bool              farSideGroundPlaneIsBad{};
+    geometric::Plane *p_farSideGroundPlane = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_farSideGroundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    Eigen::Vector3d farSideGroundNormal_World = Eigen::Vector3d::Zero();
+    bool            farSideGroundPlaneIsBad{};
     if ((p_farSideGroundPlane != nullptr) &&
         p_farSideGroundPlane->isBad(farSideGroundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -107,38 +118,84 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
         }
     }
 
-    std::vector<semantic::Passage *> allPassages = p_atlas->getAllPassages();
+    std::vector<semantic::Passage *> allPassages{};
+    if (p_atlas->getAllPassages(allPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     std::sort(allPassages.begin(),
               allPassages.end(),
               semantic::isEntityIdLess<semantic::Passage>);
 
-    switch (enforcePassageApertureBackstop(p_room_inout,
-                                           p_candidateWall_in,
-                                           allPassages,
-                                           farSideGroundNormal_World))
+    SemanticsManager::PassageSideEnforcementOutcome outcome{};
+    if (enforcePassageApertureBackstop(p_room_inout,
+                                       p_candidateWall_in,
+                                       allPassages,
+                                       farSideGroundNormal_World,
+                                       outcome) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: enforcePassageApertureBackstop returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    switch (outcome)
     {
     case PassageSideEnforcementOutcome::REMOVED_UNBOUND:
-        return false;
+    {
+        wasAdmitted_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
     case PassageSideEnforcementOutcome::REROUTED:
-        return true;
+    {
+        wasAdmitted_out = true;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
     case PassageSideEnforcementOutcome::NO_VIOLATION:
         break;
     }
 
     if (alreadyPresent)
     {
-        return true;
+        wasAdmitted_out = true;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    if (!evaluateWallAdmissionEvidence(p_candidateWall_in,
-                                       p_sysParams,
-                                       farSideGroundNormal_World)
-             .isAdmissible)
+    WallAdmissionEvidence admissionEvidence{};
+    if (evaluateWallAdmissionEvidence(p_candidateWall_in,
+                                      p_sysParams,
+                                      farSideGroundNormal_World,
+                                      admissionEvidence) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
-        return false;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: evaluateWallAdmissionEvidence returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!admissionEvidence.isAdmissible)
+    {
+        wasAdmitted_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    if (isWallFaceForeignToRoom(p_room_inout, p_candidateWall_in))
+    bool isWallFaceForeignToRoom2{};
+    if (isWallFaceForeignToRoom(p_room_inout,
+                                p_candidateWall_in,
+                                isWallFaceForeignToRoom2) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isWallFaceForeignToRoom returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (isWallFaceForeignToRoom2)
     {
         int room_inoutId{};
         if (p_room_inout->getId(room_inoutId) !=
@@ -163,12 +220,21 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                   << ": this face was observed from the opposite side, so it "
                      "bounds the neighbouring room."
                   << std::endl;
-        return false;
+        wasAdmitted_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters =
         p_sysParams->roomSeg.boundaryTopology;
-    geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
+    geometric::Plane *p_groundPlane = nullptr;
+    if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBiggestGroundPlane returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     bool groundPlaneIsBad{};
     if (!(!topologyParameters.enabled || p_groundPlane == nullptr) &&
@@ -191,7 +257,8 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        return true;
+        wasAdmitted_out = true;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     g2o::Plane3D groundPlaneGetGlobalEquation{};
@@ -217,7 +284,8 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        return true;
+        wasAdmitted_out = true;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const Eigen::Vector3d groundNormal_World =
@@ -228,13 +296,23 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
         groundNormal_World.cross(groundAxisU_World).normalized();
     FiniteWallSegment2d candidateSegment;
 
-    if (!buildFiniteWallSegment2d(p_candidateWall_in,
-                                  groundNormal_World,
-                                  groundAxisU_World,
-                                  groundAxisV_World,
-                                  topologyParameters.endpointTrimRatio,
-                                  topologyParameters.minimumWallLength_m,
-                                  candidateSegment))
+    bool isBuilt{};
+    if (buildFiniteWallSegment2d(p_candidateWall_in,
+                                 groundNormal_World,
+                                 groundAxisU_World,
+                                 groundAxisV_World,
+                                 topologyParameters.endpointTrimRatio,
+                                 topologyParameters.minimumWallLength_m,
+                                 candidateSegment,
+                                 isBuilt) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: buildFiniteWallSegment2d returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!isBuilt)
     {
         if (p_room_inout->setWalls(p_candidateWall_in) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -244,7 +322,8 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        return true;
+        wasAdmitted_out = true;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::vector<geometric::Plane *> weakerClashingWalls;
@@ -253,13 +332,24 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
     {
         FiniteWallSegment2d existingSegment;
 
-        if (!buildFiniteWallSegment2d(p_existingWall,
-                                      groundNormal_World,
-                                      groundAxisU_World,
-                                      groundAxisV_World,
-                                      topologyParameters.endpointTrimRatio,
-                                      topologyParameters.minimumWallLength_m,
-                                      existingSegment))
+        bool isBuilt2{};
+        if (buildFiniteWallSegment2d(p_existingWall,
+                                     groundNormal_World,
+                                     groundAxisU_World,
+                                     groundAxisV_World,
+                                     topologyParameters.endpointTrimRatio,
+                                     topologyParameters.minimumWallLength_m,
+                                     existingSegment,
+                                     isBuilt2) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: buildFiniteWallSegment2d returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (!isBuilt2)
         {
             continue;
         }
@@ -268,13 +358,24 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
         double          candidateParameter = 0.0;
         double          existingParameter  = 0.0;
 
-        if (!intersectSupportingLines(candidateSegment,
-                                      existingSegment,
-                                      intersection_World_m,
-                                      candidateParameter,
-                                      existingParameter) ||
-            candidateParameter < 0.0 || candidateParameter > 1.0 ||
-            existingParameter < 0.0 || existingParameter > 1.0)
+        bool hasIntersection{};
+        if (intersectSupportingLines(candidateSegment,
+                                     existingSegment,
+                                     intersection_World_m,
+                                     candidateParameter,
+                                     existingParameter,
+                                     hasIntersection) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: intersectSupportingLines returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (!hasIntersection || candidateParameter < 0.0 ||
+            candidateParameter > 1.0 || existingParameter < 0.0 ||
+            existingParameter > 1.0)
         {
             continue;
         }
@@ -307,7 +408,8 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
         if (supportRatio < topologyParameters.decisiveConflictSupportRatio ||
             candidateSupport <= existingSupport)
         {
-            return false;
+            wasAdmitted_out = false;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
 
         weakerClashingWalls.push_back(p_existingWall);
@@ -370,7 +472,16 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
      * already-admitted wall is never taken by another room's admission
      * attempt, only by enforceUniqueWallOwnership()/validateRoomBoundaries()'
      * own intra-room repair. */
-    for (vs_graphs::core::semantic::Room *p_otherRoom : p_atlas->getAllRooms())
+    std::vector<semantic::Room *> atlasAllRooms{};
+    if (p_atlas->getAllRooms(atlasAllRooms) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (vs_graphs::core::semantic::Room *p_otherRoom : atlasAllRooms)
     {
         bool otherRoomIsBad{};
         if (!(p_otherRoom == nullptr) &&
@@ -406,14 +517,24 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
 
             FiniteWallSegment2d otherRoomSegment;
 
-            if (!buildFiniteWallSegment2d(
-                    p_otherWall,
-                    groundNormal_World,
-                    groundAxisU_World,
-                    groundAxisV_World,
-                    topologyParameters.endpointTrimRatio,
-                    topologyParameters.minimumWallLength_m,
-                    otherRoomSegment))
+            bool isBuilt3{};
+            if (buildFiniteWallSegment2d(p_otherWall,
+                                         groundNormal_World,
+                                         groundAxisU_World,
+                                         groundAxisV_World,
+                                         topologyParameters.endpointTrimRatio,
+                                         topologyParameters.minimumWallLength_m,
+                                         otherRoomSegment,
+                                         isBuilt3) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: buildFiniteWallSegment2d returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (!isBuilt3)
             {
                 continue;
             }
@@ -422,12 +543,22 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
             double          candidateOtherParameter = 0.0;
             double          otherRoomParameter      = 0.0;
 
-            if (!intersectSupportingLines(candidateSegment,
-                                          otherRoomSegment,
-                                          otherIntersection_World_m,
-                                          candidateOtherParameter,
-                                          otherRoomParameter) ||
-                candidateOtherParameter < 0.0 ||
+            bool hasIntersection2{};
+            if (intersectSupportingLines(candidateSegment,
+                                         otherRoomSegment,
+                                         otherIntersection_World_m,
+                                         candidateOtherParameter,
+                                         otherRoomParameter,
+                                         hasIntersection2) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: intersectSupportingLines returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            if (!hasIntersection2 || candidateOtherParameter < 0.0 ||
                 candidateOtherParameter > 1.0 || otherRoomParameter < 0.0 ||
                 otherRoomParameter > 1.0)
             {
@@ -490,7 +621,8 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                       << ": crosses semantic::Room#" << otherRoomId
                       << "'s already-admitted Wall#" << otherWallGetId << "."
                       << std::endl;
-            return false;
+            wasAdmitted_out = false;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
     }
 
@@ -502,7 +634,8 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return true;
+    wasAdmitted_out = true;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

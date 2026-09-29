@@ -21,18 +21,21 @@
 #include "private_functions.h"
 
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-double computePolygonArea_m2(
-    const std::vector<Eigen::Vector2d> &polygonVertices_World_m_in)
+SemanticsManagerStatus computePolygonArea_m2(
+    const std::vector<Eigen::Vector2d> &polygonVertices_World_m_in,
+    double                             &polygonArea_m2_out)
 {
     if (polygonVertices_World_m_in.size() < 3U)
     {
-        return 0.0;
+        polygonArea_m2_out = 0.0;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     double signedTwiceArea_m2 = 0.0;
@@ -46,10 +49,20 @@ double computePolygonArea_m2(
         const Eigen::Vector2d &nextVertex =
             polygonVertices_World_m_in[(vertexIndex + 1U) %
                                        polygonVertices_World_m_in.size()];
-        signedTwiceArea_m2 += crossProduct2d(currentVertex, nextVertex);
+        double crossProduct{};
+        if (crossProduct2d(currentVertex, nextVertex, crossProduct) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: crossProduct2d returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        signedTwiceArea_m2 += crossProduct;
     }
 
-    return 0.5 * std::abs(signedTwiceArea_m2);
+    polygonArea_m2_out = 0.5 * std::abs(signedTwiceArea_m2);
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

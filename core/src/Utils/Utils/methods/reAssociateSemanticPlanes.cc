@@ -66,8 +66,15 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
     {
         mergedPlaneInPass = false;
 
-        const std::vector<geometric::Plane *> mappedPlanes =
-            p_atlas_in->getAllPlanes();
+        std::vector<geometric::Plane *> mappedPlanes{};
+        if (p_atlas_in->getAllPlanes(mappedPlanes) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPlanes returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (geometric::Plane *p_candidatePlane : mappedPlanes)
         {
@@ -562,7 +569,16 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                              __func__);
             }
 
-            for (semantic::Room *p_room : p_atlas_in->getAllRooms())
+            std::vector<semantic::Room *> atlasAllRooms{};
+            if (p_atlas_in->getAllRooms(atlasAllRooms) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllRooms returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (semantic::Room *p_room : atlasAllRooms)
             {
                 bool roomIsBad{};
                 if (!(p_room == nullptr) &&
@@ -605,8 +621,18 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 }
             }
 
+            std::vector<vs_graphs::core::semantic::Passage *>
+                atlasAllPassages{};
+            if (p_atlas_in->getAllPassages(atlasAllPassages) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllPassages returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             for (vs_graphs::core::semantic::Passage *p_passage :
-                 p_atlas_in->getAllPassages())
+                 atlasAllPassages)
             {
                 if (p_passage != nullptr)
                 {
@@ -626,7 +652,16 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 }
             }
 
-            for (KeyFrame *p_keyFrame : p_atlas_in->getAllKeyFrames())
+            std::vector<KeyFrame *> atlasAllKeyFrames{};
+            if (p_atlas_in->getAllKeyFrames(atlasAllKeyFrames) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllKeyFrames returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (KeyFrame *p_keyFrame : atlasAllKeyFrames)
             {
                 bool keyFrameIsBad2{};
                 if ((p_keyFrame != nullptr) &&
@@ -655,7 +690,15 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 }
             }
 
-            Map *p_currentMap = p_atlas_in->getCurrentMap();
+            Map *p_currentMap = nullptr;
+            if (p_atlas_in->getCurrentMap(p_currentMap) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCurrentMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             if (p_currentMap != nullptr)
             {

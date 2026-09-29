@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void KeyFrameDatabase::detectCandidates(
+KeyFrameDatabaseStatus KeyFrameDatabase::detectCandidates(
     KeyFrame           *p_currentKeyFrame_in,
     float               minScore_in,
     vector<KeyFrame *> &loopCandidateKeyFrames_out,
@@ -151,7 +151,7 @@ void KeyFrameDatabase::detectCandidates(
     }
 
     if (keyFramesSharingWordsLoop.empty() && keyFramesSharingWordsMerge.empty())
-        return;
+        return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 
     if (!keyFramesSharingWordsLoop.empty())
     {
@@ -427,6 +427,8 @@ void KeyFrameDatabase::detectCandidates(
             p_candidateKeyFrame->mergeQuery = -1;
         }
     }
+
+    return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
 } // namespace core

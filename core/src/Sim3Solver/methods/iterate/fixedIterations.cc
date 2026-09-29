@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <opencv2/core/core.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "KeyFrame.h"
@@ -31,10 +32,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix4f Sim3Solver::iterate(int           iterationCount_in,
-                                    bool         &areIterationsExhausted_out,
-                                    vector<bool> &inliersFlags_out,
-                                    int          &inlierCount_out)
+Sim3SolverStatus Sim3Solver::iterate(int           iterationCount_in,
+                                     bool         &areIterationsExhausted_out,
+                                     vector<bool> &inliersFlags_out,
+                                     int          &inlierCount_out,
+                                     Eigen::Matrix4f &transform_out)
 {
     areIterationsExhausted_out = false;
     inliersFlags_out           = vector<bool>(firstMatchCount, false);
@@ -43,7 +45,8 @@ Eigen::Matrix4f Sim3Solver::iterate(int           iterationCount_in,
     if (correspondenceCount < ransacMinInliers)
     {
         areIterationsExhausted_out = true;
-        return Eigen::Matrix4f::Identity();
+        transform_out              = Eigen::Matrix4f::Identity();
+        return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
     }
 
     vector<size_t> availableIndices;
@@ -75,9 +78,22 @@ Eigen::Matrix4f Sim3Solver::iterate(int           iterationCount_in,
             availableIndices.pop_back();
         }
 
-        computeSim3(P3Dc1i, P3Dc2i);
+        if (computeSim3(P3Dc1i, P3Dc2i) !=
+            Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeSim3 returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        checkInliers();
+        if (checkInliers() != Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkInliers returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         if (inlierCount >= bestInlierCount)
         {
@@ -95,7 +111,8 @@ Eigen::Matrix4f Sim3Solver::iterate(int           iterationCount_in,
                      keyPointIndex++)
                     if (inlierFlags[keyPointIndex])
                         inliersFlags_out[indices1[keyPointIndex]] = true;
-                return mBestT12;
+                transform_out = mBestT12;
+                return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
             }
         }
     }
@@ -103,7 +120,8 @@ Eigen::Matrix4f Sim3Solver::iterate(int           iterationCount_in,
     if (iterationCount >= ransacMaxIterations)
         areIterationsExhausted_out = true;
 
-    return Eigen::Matrix4f::Identity();
+    transform_out = Eigen::Matrix4f::Identity();
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

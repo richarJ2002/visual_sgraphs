@@ -69,7 +69,7 @@ namespace vs_graphs
 namespace core
 {
 
-void ORBextractor::computePyramid(cv::Mat image_in)
+ORBextractorStatus ORBextractor::computePyramid(cv::Mat image_in)
 {
     for (int level = 0; level < levelCount; ++level)
     {
@@ -111,6 +111,8 @@ void ORBextractor::computePyramid(cv::Mat image_in)
                            BORDER_REFLECT_101);
         }
     }
+
+    return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
 } // namespace core

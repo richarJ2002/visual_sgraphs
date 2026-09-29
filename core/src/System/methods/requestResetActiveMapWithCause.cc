@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void System::requestResetActiveMapWithCause(const ResetCause cause_in)
+SystemStatus System::requestResetActiveMapWithCause(const ResetCause cause_in)
 {
     unique_lock<mutex> lock(resetMutex);
     if (retainResetCause(this, cause_in) !=
@@ -52,6 +52,8 @@ void System::requestResetActiveMapWithCause(const ResetCause cause_in)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -32,10 +32,12 @@ namespace vs_graphs
 namespace core
 {
 
-LoopClosing::LoopCorrectionStatus LoopClosing::getLoopCorrectionStatus() const
+LoopClosingStatus LoopClosing::getLoopCorrectionStatus(
+    LoopClosing::LoopCorrectionStatus &getLoopCorrectionStatus_out) const
 {
     std::lock_guard<std::mutex> lock(loopCorrectionStatusMutex);
-    return loopCorrectionStatus;
+    getLoopCorrectionStatus_out = loopCorrectionStatus;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

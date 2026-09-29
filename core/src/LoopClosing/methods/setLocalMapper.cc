@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void LoopClosing::setLocalMapper(LocalMapping *p_localMapper_in)
+LoopClosingStatus LoopClosing::setLocalMapper(LocalMapping *p_localMapper_in)
 {
     p_localMapper = p_localMapper_in;
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

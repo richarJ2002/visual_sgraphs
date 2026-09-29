@@ -28,17 +28,27 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManager::ActiveMapBootstrapResult
-    SemanticsManager::ensureActiveMapBootstrapHierarchy(
-        const std::optional<Eigen::Vector3d> &cameraPositionOverride_World_m_in)
+SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
+    SemanticsManager::ActiveMapBootstrapResult &bootstrapResult_out,
+    const std::optional<Eigen::Vector3d> &cameraPositionOverride_World_m_in)
 {
-    Map *p_activeMap = p_atlas != nullptr ? p_atlas->getCurrentMap() : nullptr;
+    Map *p_atlasCurrentMap = nullptr;
+    if ((p_atlas != nullptr) && p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+                                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    Map *p_activeMap = p_atlas != nullptr ? p_atlasCurrentMap : nullptr;
     if (p_activeMap == nullptr)
     {
         std::cout << "SG_PIPELINE {\"event\":\"initialization\","
                      "\"reason\":\"NO_ACTIVE_MAP\",\"semantic_cycle\":"
                   << pipelineSemanticCycle << "}" << std::endl;
-        return ActiveMapBootstrapResult::NO_ACTIVE_MAP;
+        bootstrapResult_out = ActiveMapBootstrapResult::NO_ACTIVE_MAP;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::vector<semantic::Room *> activeRooms{};
@@ -104,7 +114,15 @@ SemanticsManager::ActiveMapBootstrapResult
         std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
         currentRoomIdSnapshot = currentRoomId;
     }
-    const int recoveryRoomId = p_atlas->getCurrentSemanticRoomIdentity();
+    int recoveryRoomId{};
+    if (p_atlas->getCurrentSemanticRoomIdentity(recoveryRoomId) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentSemanticRoomIdentity returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     semantic::Room *p_bootstrapRoom =
         resolveLiveRoomById(currentRoomIdSnapshot);
@@ -174,10 +192,19 @@ SemanticsManager::ActiveMapBootstrapResult
         }
     }
 
+    std::optional<semantic::RoomContextSnapshot> atlasRoomContext{};
+    if ((p_bootstrapRoom == nullptr && recoveryRoomId >= 0) &&
+        p_atlas->copyLatestRoomContext(recoveryRoomId, atlasRoomContext) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: copyLatestRoomContext returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     const std::optional<semantic::RoomContextSnapshot> recoveryContext =
-        p_bootstrapRoom == nullptr && recoveryRoomId >= 0
-            ? p_atlas->copyLatestRoomContext(recoveryRoomId)
-            : std::nullopt;
+        p_bootstrapRoom == nullptr && recoveryRoomId >= 0 ? atlasRoomContext
+                                                          : std::nullopt;
 
     Eigen::Vector3d cameraPosition_World_m  = Eigen::Vector3d::Zero();
     bool            hasUsableCameraPosition = false;
@@ -276,7 +303,9 @@ SemanticsManager::ActiveMapBootstrapResult
                       << ",\"reason\":\"NO_USABLE_CAMERA_POSE\","
                          "\"semantic_cycle\":"
                       << pipelineSemanticCycle << "}" << std::endl;
-            return ActiveMapBootstrapResult::NO_USABLE_CAMERA_POSE;
+            bootstrapResult_out =
+                ActiveMapBootstrapResult::NO_USABLE_CAMERA_POSE;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
     }
 
@@ -318,9 +347,18 @@ SemanticsManager::ActiveMapBootstrapResult
                       << ",\"reason\":\"ROOM_CREATION_FAILED\","
                          "\"semantic_cycle\":"
                       << pipelineSemanticCycle << "}" << std::endl;
-            return ActiveMapBootstrapResult::ROOM_CREATION_FAILED;
+            bootstrapResult_out =
+                ActiveMapBootstrapResult::ROOM_CREATION_FAILED;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
-        p_atlas->addCandidateMapRoom(p_bootstrapRoom);
+        if (p_atlas->addCandidateMapRoom(p_bootstrapRoom) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addCandidateMapRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         if (p_activeMap->promoteCandidateMapRoom(p_bootstrapRoom) !=
             MapStatus::MAP_STATUS_SUCCESS)
         {
@@ -493,7 +531,8 @@ SemanticsManager::ActiveMapBootstrapResult
                   << bootstrapRoomId4
                   << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
                   << std::endl;
-        return ActiveMapBootstrapResult::FLOOR_CREATION_FAILED;
+        bootstrapResult_out = ActiveMapBootstrapResult::FLOOR_CREATION_FAILED;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     if (p_canonicalFloor->addRoom(p_bootstrapRoom) !=
@@ -527,7 +566,15 @@ SemanticsManager::ActiveMapBootstrapResult
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            p_atlas->setCurrentSemanticRoomIdentity(bootstrapRoomId6);
+            if (p_atlas->setCurrentSemanticRoomIdentity(bootstrapRoomId6) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setCurrentSemanticRoomIdentity returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
         /* The UAV starts inside the bootstrap room: presence evidences entry.
          * Marked outside the current-room lock; the room owns its mutex. */
@@ -670,7 +717,15 @@ SemanticsManager::ActiveMapBootstrapResult
                         // before.
                     }
                 }
-                p_atlas->addMapPassage(p_recoveryPassage);
+                if (p_atlas->addMapPassage(p_recoveryPassage) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: addMapPassage returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
 
             int bootstrapRoomId7{};
@@ -803,7 +858,8 @@ SemanticsManager::ActiveMapBootstrapResult
                   << bootstrapRoomId9 << ",\"floor_id\":" << canonicalFloorId
                   << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
                   << std::endl;
-        return ActiveMapBootstrapResult::INITIALIZED;
+        bootstrapResult_out = ActiveMapBootstrapResult::INITIALIZED;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     if (recoveredRoom)
@@ -842,10 +898,12 @@ SemanticsManager::ActiveMapBootstrapResult
                   << ",\"restored_passages\":" << restoredPassageCount
                   << ",\"semantic_cycle\":" << pipelineSemanticCycle << "}"
                   << std::endl;
-        return ActiveMapBootstrapResult::RECOVERED;
+        bootstrapResult_out = ActiveMapBootstrapResult::RECOVERED;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    return ActiveMapBootstrapResult::REUSED;
+    bootstrapResult_out = ActiveMapBootstrapResult::REUSED;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

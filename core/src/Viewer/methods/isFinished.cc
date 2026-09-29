@@ -34,10 +34,11 @@ namespace vs_graphs
 namespace core
 {
 
-bool Viewer::isFinished()
+ViewerStatus Viewer::isFinished(bool &isFinished_out)
 {
     unique_lock<mutex> lock(finishMutex);
-    return hasFinished;
+    isFinished_out = hasFinished;
+    return ViewerStatus::VIEWER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -31,9 +31,17 @@ namespace vs_graphs
 namespace core
 {
 
-vector<semantic::Room *> System::getAllRooms()
+SystemStatus System::getAllRooms(std::vector<semantic::Room *> &allRooms_out)
 {
-    Map                          *p_activeMap = p_atlas->getCurrentMap();
+    Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     std::vector<semantic::Room *> activeMapAllRooms{};
     if (p_activeMap->getAllRooms(activeMapAllRooms) !=
         MapStatus::MAP_STATUS_SUCCESS)
@@ -43,7 +51,8 @@ vector<semantic::Room *> System::getAllRooms()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllRooms;
+    allRooms_out = activeMapAllRooms;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -25,15 +25,26 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-bool System::isImuPreintegrated()
+SystemStatus System::isImuPreintegrated(bool &isImuPreintegrated_out)
 {
-    return p_tracker->isImuPreintegrated();
+    bool trackerIsImuPreintegrated{};
+    if (p_tracker->isImuPreintegrated(trackerIsImuPreintegrated) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuPreintegrated returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    isImuPreintegrated_out = trackerIsImuPreintegrated;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

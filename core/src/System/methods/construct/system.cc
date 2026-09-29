@@ -222,7 +222,15 @@ System::System(const string                 &vocabularyFile_in,
     else
     {
         /* If file given, load Atlas map from earlier session */
-        bool isRead = loadAtlas(FileType::BINARY_FILE);
+        bool isRead{};
+        if (loadAtlas(FileType::BINARY_FILE, isRead) !=
+            SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: loadAtlas returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
 
         std::cout << "[System] Initializing Atlas from file: " << loadAtlasFile
                   << "... " << std::endl;
@@ -235,7 +243,13 @@ System::System(const string                 &vocabularyFile_in,
             exit(-1);
         }
 
-        p_atlas->createNewMap();
+        if (p_atlas->createNewMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: createNewMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     /* Load the system parameters */
@@ -258,13 +272,26 @@ System::System(const string                 &vocabularyFile_in,
     }
 
     /* Parse the environment database, if provided */
-    parseJsonDatabase(p_sysParams->general.envDatabase);
+    if (parseJsonDatabase(p_sysParams->general.envDatabase) !=
+        SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: parseJsonDatabase returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* If the sensor is integrated with IMU, initialize the IMU first */
     if (sensor_in == IMU_STEREO || sensor_in == IMU_MONOCULAR ||
         sensor_in == IMU_RGBD)
     {
-        p_atlas->setInertialSensor();
+        if (p_atlas->setInertialSensor() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setInertialSensor returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     /* ---------------------------------------------------------------------- *
@@ -288,7 +315,14 @@ System::System(const string                 &vocabularyFile_in,
                              sequence_in);
 
     /* Set the value of marker impact */
-    p_tracker->setMarkerImpact(p_sysParams->markers.impact);
+    if (p_tracker->setMarkerImpact(p_sysParams->markers.impact) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMarkerImpact returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* ---------------------------------------------------------------------- *
      * LOCAL MAPPING THREAD
@@ -380,16 +414,58 @@ System::System(const string                 &vocabularyFile_in,
      * ---------------------------------------------------------------------- */
 
     /* Store loop closing and local mapper thread pointers in tracker object */
-    p_tracker->setLoopClosing(p_loopCloser);
-    p_tracker->setLocalMapper(p_localMapper);
+    if (p_tracker->setLoopClosing(p_loopCloser) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setLoopClosing returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_tracker->setLocalMapper(p_localMapper) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setLocalMapper returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Store tracking object and loop closing thread pointer in local mapper */
-    p_localMapper->setTracker(p_tracker);
-    p_localMapper->setLoopCloser(p_loopCloser);
+    if (p_localMapper->setTracker(p_tracker) !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setTracker returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_localMapper->setLoopCloser(p_loopCloser) !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setLoopCloser returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Store tracking object and local mapper thread pointer in loop closer */
-    p_loopCloser->setTracker(p_tracker);
-    p_loopCloser->setLocalMapper(p_localMapper);
+    if (p_loopCloser->setTracker(p_tracker) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setTracker returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_loopCloser->setLocalMapper(p_localMapper) !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setLocalMapper returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* If enabled, init the viewer */
     if (shouldUseViewer_in)
@@ -401,13 +477,27 @@ System::System(const string                 &vocabularyFile_in,
                               settingsFile_in,
                               p_settings);
         p_viewerThread = new thread(&Viewer::run, p_viewer);
-        p_tracker->setViewer(p_viewer);
+        if (p_tracker->setViewer(p_viewer) !=
+            TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setViewer returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         p_loopCloser->p_viewer         = p_viewer;
         p_viewer->shouldDrawBothImages = p_frameDrawer->shouldDrawBothImages;
     }
 
     /* Set verbosity level */
-    Verbose::setTh(verboseLevel_in);
+    if (Verbose::setTh(verboseLevel_in) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setTh returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

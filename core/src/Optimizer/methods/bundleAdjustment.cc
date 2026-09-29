@@ -38,7 +38,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::bundleAdjustment(
+OptimizerStatus Optimizer::bundleAdjustment(
     const std::vector<vs_graphs::core::KeyFrame *>          &keyFrames_in,
     const std::vector<vs_graphs::core::MapPoint *>          &mapPoints_in,
     const std::vector<vs_graphs::core::semantic::Marker *>  &markers_in,
@@ -69,7 +69,7 @@ void Optimizer::bundleAdjustment(
     mapPointExcludedFlags.resize(mapPoints_in.size());
 
     if (keyFrames_in.empty())
-        return;
+        return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 
     vs_graphs::core::Map *p_map = nullptr;
     if (keyFrames_in[0]->getMap(p_map) !=
@@ -1047,8 +1047,15 @@ void Optimizer::bundleAdjustment(
     optimizer.optimize(iterationCount_in);
     optimizer.removePreIterationAction(&stopBridge);
     optimizer.removePostIterationAction(&stopBridge);
-    Verbose::printMess("BA: End of the optimization",
-                       Verbose::VERBOSITY_NORMAL);
+    if (Verbose::printMess("BA: End of the optimization",
+                           Verbose::VERBOSITY_NORMAL) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // [GBA] Globally optimized KeyFrames
     for (size_t elementIndex = 0; elementIndex < keyFrames_in.size();
@@ -1502,6 +1509,8 @@ void Optimizer::bundleAdjustment(
     //         floor: " << e.what() << std::endl; continue;
     //     }
     // }
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

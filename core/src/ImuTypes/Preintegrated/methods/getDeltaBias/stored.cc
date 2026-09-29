@@ -26,10 +26,12 @@ namespace core
 namespace IMU
 {
 
-Eigen::Matrix<float, 6, 1> Preintegrated::getDeltaBias()
+PreintegratedStatus
+    Preintegrated::getDeltaBias(Eigen::Matrix<float, 6, 1> &deltaBias_out)
 {
     std::unique_lock<std::mutex> lock(preintegrationMutex);
-    return db;
+    deltaBias_out = db;
+    return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
 } // namespace IMU

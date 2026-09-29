@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void System::parseJsonDatabase(string jsonFilePath_in)
+SystemStatus System::parseJsonDatabase(string jsonFilePath_in)
 {
     // Skip the parsing
     if (jsonFilePath_in.empty())
@@ -39,7 +39,7 @@ void System::parseJsonDatabase(string jsonFilePath_in)
         std::cout << "[System] No JSON file describing the environment is "
                      "provided. Skipping ..."
                   << std::endl;
-        return;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
     // Creating an object of the database loader
     vs_graphs::core::DBParser parser;
@@ -66,6 +66,8 @@ void System::parseJsonDatabase(string jsonFilePath_in)
     envRooms = parserEnvironmentRooms;
     // Printing the success message
     std::cout << "- JSON loaded and candidates created!\n";
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

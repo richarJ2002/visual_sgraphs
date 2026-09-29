@@ -39,9 +39,17 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::relocalization()
+TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
 {
-    Verbose::printMess("Starting relocalization", Verbose::VERBOSITY_NORMAL);
+    if (Verbose::printMess("Starting relocalization",
+                           Verbose::VERBOSITY_NORMAL) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: printMess returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     // Compute Bag of Words Vector
     if (currentFrame.computeBagOfWords() != FrameStatus::FRAME_STATUS_SUCCESS)
     {
@@ -56,7 +64,15 @@ bool Tracking::relocalization()
     // topological priors
     vector<Eigen::Vector3f>  roomCentroids;
     vector<semantic::Room *> currentRooms;
-    Map                     *p_currentMap = p_atlas->getCurrentMap();
+    Map                     *p_currentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_currentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_currentMap)
     {
         std::vector<semantic::Room *> rooms{};
@@ -112,16 +128,41 @@ bool Tracking::relocalization()
     // Relocalization is performed when tracking is lost
     // Track Lost: Query KeyFrame Database for keyframe candidates for
     // relocalisation
-    vector<KeyFrame *> candidateKeyFrames =
-        p_keyFrameDatabase->detectRelocalizationCandidates(
+    Map *p_atlasCurrentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::vector<KeyFrame *> candidateKeyFrames{};
+    if (p_keyFrameDatabase->detectRelocalizationCandidates(
             &currentFrame,
-            p_atlas->getCurrentMap());
+            p_atlasCurrentMap,
+            candidateKeyFrames) !=
+        KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: detectRelocalizationCandidates returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (candidateKeyFrames.empty())
     {
-        Verbose::printMess("There are not candidates",
-                           Verbose::VERBOSITY_NORMAL);
-        return false;
+        if (Verbose::printMess("There are not candidates",
+                               Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        isRelocalized_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     const int keyFrameCount = candidateKeyFrames.size();
@@ -157,10 +198,18 @@ bool Tracking::relocalization()
             discardedFlags[keyFrameIndex] = true;
         else
         {
-            int nmatches =
-                matcher.searchByBoW(p_keyFrame,
+            int nmatches{};
+            if (matcher.searchByBoW(p_keyFrame,
                                     currentFrame,
-                                    vvpMapPointMatches[keyFrameIndex]);
+                                    vvpMapPointMatches[keyFrameIndex],
+                                    nmatches) !=
+                ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: searchByBoW returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             if (nmatches < 15)
             {
                 discardedFlags[keyFrameIndex] = true;
@@ -171,13 +220,16 @@ bool Tracking::relocalization()
                 MLPnPsolver *p_solver =
                     new MLPnPsolver(currentFrame,
                                     vvpMapPointMatches[keyFrameIndex]);
-                p_solver->setRansacParameters(
-                    0.99,
-                    10,
-                    300,
-                    6,
-                    0.5,
-                    5.991); // This solver needs at least 6 points
+                if (p_solver
+                        ->setRansacParameters(0.99, 10, 300, 6, 0.5, 5.991) !=
+                    MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setRansacParameters returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                } // This solver needs at least 6 points
                 pnpSolvers[keyFrameIndex] = p_solver;
                 candidateCount++;
             }
@@ -289,11 +341,20 @@ bool Tracking::relocalization()
 
             MLPnPsolver    *p_solver = pnpSolvers[keyFrameIndex];
             Eigen::Matrix4f eigTcw;
-            bool            bTcw = p_solver->iterate(5,
-                                          areIterationsExhausted,
-                                          inliersFlags,
-                                          inlierCount,
-                                          eigTcw);
+            bool            bTcw{};
+            if (p_solver->iterate(5,
+                                  areIterationsExhausted,
+                                  inliersFlags,
+                                  inlierCount,
+                                  eigTcw,
+                                  bTcw) !=
+                MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: iterate returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             // If Ransac reachs max. iterations discard keyframe
             if (areIterationsExhausted)
@@ -333,7 +394,16 @@ bool Tracking::relocalization()
                         currentFrame.mapPoints[j] = nullptr;
                 }
 
-                int goodCount = Optimizer::poseOptimization(&currentFrame);
+                int goodCount{};
+                if (Optimizer::poseOptimization(&currentFrame, goodCount) !=
+                    OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: poseOptimization returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 if (goodCount < 10)
                     continue;
@@ -347,16 +417,37 @@ bool Tracking::relocalization()
                 // optimize again
                 if (goodCount < 50)
                 {
-                    int nadditional = matcher2.searchByProjection(
-                        currentFrame,
-                        candidateKeyFrames[keyFrameIndex],
-                        founds,
-                        10,
-                        100);
+                    int nadditional{};
+                    if (matcher2.searchByProjection(
+                            currentFrame,
+                            candidateKeyFrames[keyFrameIndex],
+                            founds,
+                            10,
+                            100,
+                            nadditional) !=
+                        ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: searchByProjection returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     if (nadditional + goodCount >= 50)
                     {
-                        goodCount = Optimizer::poseOptimization(&currentFrame);
+                        int inlierCount2{};
+                        if (Optimizer::poseOptimization(&currentFrame,
+                                                        inlierCount2) !=
+                            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: poseOptimization returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        goodCount = inlierCount2;
 
                         // If many inliers but still not enough, search by
                         // projection again in a narrower window the camera has
@@ -368,18 +459,41 @@ bool Tracking::relocalization()
                                  ip++)
                                 if (currentFrame.mapPoints[ip])
                                     founds.insert(currentFrame.mapPoints[ip]);
-                            nadditional = matcher2.searchByProjection(
-                                currentFrame,
-                                candidateKeyFrames[keyFrameIndex],
-                                founds,
-                                3,
-                                64);
+                            int matcher2ByProjection{};
+                            if (matcher2.searchByProjection(
+                                    currentFrame,
+                                    candidateKeyFrames[keyFrameIndex],
+                                    founds,
+                                    3,
+                                    64,
+                                    matcher2ByProjection) !=
+                                ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: searchByProjection returned a failure "
+                                    "status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
+                            nadditional = matcher2ByProjection;
 
                             // Final optimization
                             if (goodCount + nadditional >= 50)
                             {
-                                goodCount =
-                                    Optimizer::poseOptimization(&currentFrame);
+                                int inlierCount3{};
+                                if (Optimizer::poseOptimization(&currentFrame,
+                                                                inlierCount3) !=
+                                    OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: poseOptimization returned a "
+                                        "failure status although it cannot "
+                                        "fail; continuing as before.",
+                                        __func__);
+                                }
+                                goodCount = inlierCount3;
 
                                 for (int io = 0;
                                      io < currentFrame.keyPointCount;
@@ -406,13 +520,15 @@ bool Tracking::relocalization()
 
     if (!isMatched)
     {
-        return false;
+        isRelocalized_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
     else
     {
         lastRelocFrameId = currentFrame.id;
         std::cout << "[Tracking] Relocalized!" << std::endl;
-        return true;
+        isRelocalized_out = true;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 }
 

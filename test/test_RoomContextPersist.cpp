@@ -24,6 +24,7 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <rclcpp/logging.hpp>
 #include <thread>
 #include <vector>
 
@@ -76,32 +77,42 @@ void makeRefitWallPlane(geometric::Plane &wall_inout, int id_in, Map *p_map_in)
 TEST(RoomContextPersist, NullCurrentMapExportIsNoOp)
 {
     Atlas atlas(0);
-    atlas.clearAtlas();
+    ASSERT_EQ((atlas.clearAtlas()), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    atlas.exportRoomContextFromCurrentMap();
+    ASSERT_EQ((atlas.exportRoomContextFromCurrentMap()),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    const auto history = atlas.copyRoomContextHistory();
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        history{};
+    ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     EXPECT_TRUE(history.empty());
 }
 
 TEST(RoomContextPersist, EmptyRoomCollectionExportIsNoOp)
 {
-    Atlas         atlas(0);
-    Map          *p_map = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     unsigned long mapIdValue{};
     ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
     const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
 
-    atlas.exportRoomContextFromCurrentMap();
+    ASSERT_EQ((atlas.exportRoomContextFromCurrentMap()),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    const auto history = atlas.copyRoomContextHistory();
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        history{};
+    ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     EXPECT_EQ(history.count(mapId), 0U);
 }
 
 TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     makeRefitWallPlane(wall, 1, p_map);
@@ -127,9 +138,13 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
     unsigned long mapIdValue{};
     ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
     const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
-    atlas.exportRoomContextFromCurrentMap();
+    ASSERT_EQ((atlas.exportRoomContextFromCurrentMap()),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    const auto history = atlas.copyRoomContextHistory();
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        history{};
+    ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_EQ(history.count(mapId), 1U);
     ASSERT_EQ(history.at(mapId).size(), 1U);
 
@@ -173,7 +188,8 @@ TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
      * tracking-loss boundary must carry that floor along too rather than
      * dropping it. */
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     makeRefitWallPlane(wall, 1, p_map);
@@ -203,9 +219,13 @@ TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
     unsigned long mapIdValue{};
     ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
     const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
-    atlas.exportRoomContextFromCurrentMap();
+    ASSERT_EQ((atlas.exportRoomContextFromCurrentMap()),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    const auto history = atlas.copyRoomContextHistory();
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        history{};
+    ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_EQ(history.count(mapId), 1U);
     const semantic::RoomContextSnapshot &snap = history.at(mapId).front();
     EXPECT_EQ(snap.roomId, 8);
@@ -215,7 +235,8 @@ TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
 TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane refitWall;
     makeRefitWallPlane(refitWall, 1, p_map);
@@ -260,9 +281,13 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
     unsigned long mapIdValue{};
     ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
     const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
-    atlas.exportRoomContextFromCurrentMap();
+    ASSERT_EQ((atlas.exportRoomContextFromCurrentMap()),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    const auto history = atlas.copyRoomContextHistory();
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        history{};
+    ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_EQ(history.count(mapId), 1U);
     const semantic::RoomContextSnapshot &snap = history.at(mapId).front();
 
@@ -283,7 +308,8 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
 TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     semantic::Room knownRoom;
     ASSERT_EQ((knownRoom.setId(20)),
@@ -394,9 +420,13 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     unsigned long mapIdValue{};
     ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
     const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
-    atlas.exportRoomContextFromCurrentMap();
+    ASSERT_EQ((atlas.exportRoomContextFromCurrentMap()),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    const auto history = atlas.copyRoomContextHistory();
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        history{};
+    ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_EQ(history.count(mapId), 1U);
 
     const std::vector<semantic::RoomContextSnapshot> &snapshots =
@@ -461,7 +491,8 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
 TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane badWall;
     ASSERT_EQ((badWall.setId(1)), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
@@ -493,9 +524,14 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
     unsigned long mapIdValue{};
     ASSERT_EQ((p_map->getId(mapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
     const long unsigned int mapId = static_cast<long unsigned int>(mapIdValue);
-    EXPECT_NO_THROW(atlas.exportRoomContextFromCurrentMap());
+    AtlasStatus             exportStatus{};
+    EXPECT_NO_THROW(exportStatus = atlas.exportRoomContextFromCurrentMap());
+    EXPECT_EQ(exportStatus, AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    const auto history = atlas.copyRoomContextHistory();
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        history{};
+    ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_EQ(history.count(mapId), 1U);
     const semantic::RoomContextSnapshot &snap = history.at(mapId).front();
     ASSERT_EQ(snap.wallBounds.size(), 1U);
@@ -512,12 +548,13 @@ TEST(RoomContextPersist, ClearMapBumpsRevisionGeneration)
      * clouds would persist alongside the fresh map. The clear must bump
      * the generation the token is built from. */
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     int changeIndexBefore{};
     ASSERT_EQ((p_map->getLastBigChangeIndex(changeIndexBefore)),
               MapStatus::MAP_STATUS_SUCCESS);
-    atlas.clearMap();
+    ASSERT_EQ((atlas.clearMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     int lastBigChangeIndex{};
     ASSERT_EQ((p_map->getLastBigChangeIndex(lastBigChangeIndex)),
@@ -528,7 +565,9 @@ TEST(RoomContextPersist, ClearMapBumpsRevisionGeneration)
 TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
 {
     Atlas atlas(0);
-    Map  *p_oldMap = atlas.getCurrentMap();
+    Map  *p_oldMap = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_oldMap)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     semantic::Room visitedRoom;
     ASSERT_EQ((visitedRoom.setId(5)),
@@ -556,9 +595,12 @@ TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
     ASSERT_EQ((p_oldMap->getId(oldMapIdValue)), MapStatus::MAP_STATUS_SUCCESS);
     const long unsigned int oldMapId =
         static_cast<long unsigned int>(oldMapIdValue);
-    atlas.createNewMap();
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    const auto history = atlas.copyRoomContextHistory();
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        history{};
+    ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_EQ(history.count(oldMapId), 1U);
     ASSERT_EQ(history.at(oldMapId).size(), 2U);
 
@@ -584,7 +626,9 @@ TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
 TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
 {
     Atlas atlas(0);
-    Map  *p_oldMap = atlas.getCurrentMap();
+    Map  *p_oldMap = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_oldMap)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     makeRefitWallPlane(wall, 1, p_oldMap);
@@ -610,11 +654,16 @@ TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
     /* Genuine tracking-loss/new-map boundary: Tracking.cc calls
      * Atlas::CreateNewMap() directly; it internally exports the outgoing
      * map's room context before installing the new current map. */
-    atlas.createNewMap();
-    Map *p_newMap = atlas.getCurrentMap();
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_newMap = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_newMap)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_NE(p_newMap, p_oldMap);
 
-    const auto history = atlas.copyRoomContextHistory();
+    std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+        history{};
+    ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_EQ(history.count(oldMapId), 1U);
     ASSERT_EQ(history.at(oldMapId).size(), 1U);
     EXPECT_EQ(history.at(oldMapId).front().roomId, 5);
@@ -635,7 +684,9 @@ TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
     for (unsigned int iteration = 0U; iteration < 100U; ++iteration)
     {
         Atlas atlas(0);
-        Map  *p_oldMap = atlas.getCurrentMap();
+        Map  *p_oldMap = nullptr;
+        ASSERT_EQ((atlas.getCurrentMap(p_oldMap)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
 
         geometric::Plane wall;
         makeRefitWallPlane(wall, 1, p_oldMap);
@@ -659,10 +710,13 @@ TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
                   MapStatus::MAP_STATUS_SUCCESS);
         const long unsigned int oldMapId =
             static_cast<long unsigned int>(oldMapIdValue);
-        atlas.createNewMap();
+        ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-        const auto history = atlas.copyRoomContextHistory();
-        const bool ok      = history.count(oldMapId) == 1U &&
+        std::map<unsigned long, std::vector<semantic::RoomContextSnapshot>>
+            history{};
+        ASSERT_EQ((atlas.copyRoomContextHistory(history)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        const bool ok = history.count(oldMapId) == 1U &&
                         history.at(oldMapId).size() == 1U &&
                         history.at(oldMapId).front().roomId ==
                             static_cast<int>(iteration) &&
@@ -692,7 +746,18 @@ TEST(RoomContextPersist,
         {
             for (unsigned int iteration = 0U; iteration < 100U; ++iteration)
             {
-                const auto history = atlas.copyRoomContextHistory();
+                std::map<unsigned long,
+                               std::vector<semantic::RoomContextSnapshot>>
+                    history{};
+                if (atlas.copyRoomContextHistory(history) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: copyRoomContextHistory returned a failure status "
+                              "although it cannot fail; continuing as before.",
+                        __func__);
+                }
                 for (const auto &entry : history)
                 {
                     for (const semantic::RoomContextSnapshot &snap :
@@ -719,7 +784,9 @@ TEST(RoomContextPersist,
 
     for (unsigned int iteration = 0U; iteration < 100U; ++iteration)
     {
-        Map *p_map = atlas.getCurrentMap();
+        Map *p_map = nullptr;
+        ASSERT_EQ((atlas.getCurrentMap(p_map)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
 
         auto p_wall = std::make_unique<geometric::Plane>();
         makeRefitWallPlane(*p_wall, static_cast<int>(iteration) + 1, p_map);
@@ -741,7 +808,7 @@ TEST(RoomContextPersist,
         walls.push_back(std::move(p_wall));
         rooms.push_back(std::move(p_room));
 
-        atlas.createNewMap();
+        ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
     }
 
     reader.join();

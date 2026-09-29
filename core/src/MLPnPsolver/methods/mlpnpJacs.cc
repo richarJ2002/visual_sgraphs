@@ -54,12 +54,12 @@ namespace vs_graphs
 namespace core
 {
 
-void MLPnPsolver::mlpnpJacs(const Point3            &point_in,
-                            const Eigen::Vector3d   &nullspace_r,
-                            const Eigen::Vector3d   &nullspace_s_in,
-                            const RodriguesVector   &w_in,
-                            const TranslationVector &t_in,
-                            Eigen::MatrixXd         &jacs_in)
+MLPnPsolverStatus MLPnPsolver::mlpnpJacs(const Point3          &point_in,
+                                         const Eigen::Vector3d &nullspace_r,
+                                         const Eigen::Vector3d &nullspace_s_in,
+                                         const RodriguesVector &w_in,
+                                         const TranslationVector &t_in,
+                                         Eigen::MatrixXd         &jacs_in)
 {
     double r1 = nullspace_r[0];
     double r2 = nullspace_r[1];
@@ -508,6 +508,8 @@ void MLPnPsolver::mlpnpJacs(const Point3            &point_in,
     jacs_in(1, 3) = s1 * t65 - t14 * t101 * t167 * t208 * (1.0 / 2.0);
     jacs_in(1, 4) = s2 * t65 - t14 * t101 * t167 * t212 * (1.0 / 2.0);
     jacs_in(1, 5) = s3 * t65 - t14 * t101 * t167 * t216 * (1.0 / 2.0);
+
+    return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

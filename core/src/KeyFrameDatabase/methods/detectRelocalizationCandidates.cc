@@ -31,9 +31,10 @@ namespace vs_graphs
 namespace core
 {
 
-vector<KeyFrame *>
-    KeyFrameDatabase::detectRelocalizationCandidates(Frame *p_frame_in,
-                                                     Map   *p_map_in)
+KeyFrameDatabaseStatus KeyFrameDatabase::detectRelocalizationCandidates(
+    Frame                   *p_frame_in,
+    Map                     *p_map_in,
+    std::vector<KeyFrame *> &relocalizationCandidates_out)
 {
     list<KeyFrame *> keyFramesSharingWords;
 
@@ -67,7 +68,10 @@ vector<KeyFrame *>
         }
     }
     if (keyFramesSharingWords.empty())
-        return vector<KeyFrame *>();
+    {
+        relocalizationCandidates_out = std::vector<KeyFrame *>();
+        return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
+    }
 
     // Only compare against those keyframes that share enough words
     int maxCommonWordCount = 0;
@@ -107,7 +111,10 @@ vector<KeyFrame *>
     }
 
     if (scoredCandidates.empty())
-        return vector<KeyFrame *>();
+    {
+        relocalizationCandidates_out = std::vector<KeyFrame *>();
+        return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
+    }
 
     list<pair<float, KeyFrame *>> accumulatedScoredCandidates;
     float                         bestAccumulatedScore = 0;
@@ -194,7 +201,8 @@ vector<KeyFrame *>
         }
     }
 
-    return relocalizationCandidateKeyFrames;
+    relocalizationCandidates_out = relocalizationCandidateKeyFrames;
+    return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
 } // namespace core

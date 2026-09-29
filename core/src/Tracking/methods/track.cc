@@ -40,7 +40,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::track()
+TrackingStatus Tracking::track()
 {
     if (isStepByStepMode)
     {
@@ -55,16 +55,32 @@ void Tracking::track()
         cout << "[Tracking] Reseting map because the Local Mapper set the 'Bad "
                 "IMU' flag ..."
              << endl;
-        p_system->requestResetActiveMapWithCause(
-            ResetCause::LOCAL_MAPPER_BAD_IMU);
-        return;
+        if (p_system->requestResetActiveMapWithCause(
+                ResetCause::LOCAL_MAPPER_BAD_IMU) !=
+            SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: requestResetActiveMapWithCause returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    Map *p_currentMap = p_atlas->getCurrentMap();
+    Map *p_currentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_currentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (!p_currentMap)
     {
         cout << "[ERROR] No active maps found in the ATLAS!" << endl;
-        return;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     if (state != NO_IMAGES_YET)
@@ -87,18 +103,43 @@ void Tracking::track()
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            createMapInAtlas();
-            return;
+            if (createMapInAtlas() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: createMapInAtlas returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
         else if (currentFrame.timeStamp > lastFrame.timeStamp + 1.0)
         {
             // cout << mCurrentFrame.timeStamp << ", " << mLastFrame.timeStamp
             // << endl; cout << "id last: " << mLastFrame.id << "    id curr:
             // " << mCurrentFrame.id << endl;
-            if (p_atlas->isInertial())
+            bool atlasIsInertial{};
+            if (p_atlas->isInertial(atlasIsInertial) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isInertial returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (atlasIsInertial)
             {
 
-                if (p_atlas->isImuInitialized())
+                bool atlasIsImuInitialized{};
+                if (p_atlas->isImuInitialized(atlasIsImuInitialized) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isImuInitialized returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (atlasIsImuInitialized)
                 {
                     cout << "Timestamp jump detected. State set to LOST. "
                             "Reseting IMU integration..."
@@ -115,8 +156,18 @@ void Tracking::track()
                     }
                     if (!currentMapInertialBA2)
                     {
-                        p_system->requestResetActiveMapWithCause(
-                            ResetCause::TIMESTAMP_JUMP_BEFORE_SECOND_IMU_BA);
+                        if (p_system->requestResetActiveMapWithCause(
+                                ResetCause::
+                                    TIMESTAMP_JUMP_BEFORE_SECOND_IMU_BA) !=
+                            SystemStatus::SYSTEM_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: requestResetActiveMapWithCause returned a "
+                                "failure status although it cannot fail; "
+                                "continuing as before.",
+                                __func__);
+                        }
                     }
                     else
                     {
@@ -128,7 +179,15 @@ void Tracking::track()
                             // reportResetAttribution cannot fail; continue as
                             // before.
                         }
-                        createMapInAtlas();
+                        if (createMapInAtlas() !=
+                            TrackingStatus::TRACKING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: createMapInAtlas returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                     }
                 }
                 else
@@ -136,10 +195,19 @@ void Tracking::track()
                     cout << "Timestamp jump detected, before IMU "
                             "initialization. Reseting..."
                          << endl;
-                    p_system->requestResetActiveMapWithCause(
-                        ResetCause::TIMESTAMP_JUMP_BEFORE_IMU_INITIALIZATION);
+                    if (p_system->requestResetActiveMapWithCause(
+                            ResetCause::
+                                TIMESTAMP_JUMP_BEFORE_IMU_INITIALIZATION) !=
+                        SystemStatus::SYSTEM_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: requestResetActiveMapWithCause "
+                                     "returned a failure status although it "
+                                     "cannot fail; continuing as before.",
+                                     __func__);
+                    }
                 }
-                return;
+                return TrackingStatus::TRACKING_STATUS_SUCCESS;
             }
         }
     }
@@ -180,7 +248,13 @@ void Tracking::track()
         std::chrono::steady_clock::time_point timeStartPreImu =
             std::chrono::steady_clock::now();
 #endif
-        preintegrateIMU();
+        if (preintegrateIMU() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: preintegrateIMU returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 #ifdef REGISTER_TIMES
         std::chrono::steady_clock::time_point timeEndPreImu =
             std::chrono::steady_clock::now();
@@ -235,21 +309,46 @@ void Tracking::track()
         if (sensor == System::STEREO || sensor == System::RGBD ||
             sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
         {
-            stereoInitialization();
+            if (stereoInitialization() !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: stereoInitialization returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
         else
         {
-            monocularInitialization();
+            if (monocularInitialization() !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: monocularInitialization returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
 
         // If initialization succesful, save frame pose
         if (state != OK)
         {
             lastFrame = Frame(currentFrame);
-            return;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
 
-        if (p_atlas->getAllMaps().size() == 1)
+        std::vector<Map *> atlasAllMaps{};
+        if (p_atlas->getAllMaps(atlasAllMaps) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllMaps returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (atlasAllMaps.size() == 1)
             firstFrameId = currentFrame.id;
     }
     else
@@ -275,7 +374,15 @@ void Tracking::track()
 
                 // Local Mapping might have changed some MapPoints tracked in
                 // last frame
-                checkReplacedInLastFrame();
+                if (checkReplacedInLastFrame() !=
+                    TrackingStatus::TRACKING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: checkReplacedInLastFrame returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
                 bool currentMapIsImuInitialized{};
                 if ((!isVelocityAvailable) && p_currentMap->isImuInitialized(
@@ -291,19 +398,65 @@ void Tracking::track()
                 if ((!isVelocityAvailable && !currentMapIsImuInitialized) ||
                     currentFrame.id < lastRelocFrameId + 2)
                 {
-                    Verbose::printMess(
-                        "TRACK: Track with respect to the reference KF ",
-                        Verbose::VERBOSITY_DEBUG);
-                    isOk = trackReferenceKeyFrame();
+                    if (Verbose::printMess(
+                            "TRACK: Track with respect to the reference KF ",
+                            Verbose::VERBOSITY_DEBUG) !=
+                        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: printMess returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    bool isTracked{};
+                    if (trackReferenceKeyFrame(isTracked) !=
+                        TrackingStatus::TRACKING_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: trackReferenceKeyFrame returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
+                    isOk = isTracked;
                 }
                 else
                 {
-                    Verbose::printMess("TRACK: Track with motion model",
-                                       Verbose::VERBOSITY_DEBUG);
-                    isOk = trackWithMotionModel();
+                    if (Verbose::printMess("TRACK: Track with motion model",
+                                           Verbose::VERBOSITY_DEBUG) !=
+                        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: printMess returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    bool isTracked2{};
+                    if (trackWithMotionModel(isTracked2) !=
+                        TrackingStatus::TRACKING_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: trackWithMotionModel returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
+                    isOk = isTracked2;
                     if (!isOk)
                     {
-                        isOk = trackReferenceKeyFrame();
+                        bool isTracked3{};
+                        if (trackReferenceKeyFrame(isTracked3) !=
+                            TrackingStatus::TRACKING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: trackReferenceKeyFrame returned "
+                                         "a failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        isOk = isTracked3;
                     }
                 }
 
@@ -349,8 +502,16 @@ void Tracking::track()
 
                 if (state == RECENTLY_LOST)
                 {
-                    Verbose::printMess("Lost for a short time",
-                                       Verbose::VERBOSITY_NORMAL);
+                    if (Verbose::printMess("Lost for a short time",
+                                           Verbose::VERBOSITY_NORMAL) !=
+                        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: printMess returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     isOk = true;
                     if ((sensor == System::IMU_MONOCULAR ||
@@ -370,7 +531,17 @@ void Tracking::track()
                         }
                         if (currentMapIsImuInitialized2)
                         {
-                            predictStateIMU();
+                            bool isPredicted{};
+                            if (predictStateIMU(isPredicted) !=
+                                TrackingStatus::TRACKING_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(
+                                    rclcpp::get_logger("vs_graphs"),
+                                    "%s: predictStateIMU returned a failure "
+                                    "status although it cannot fail; "
+                                    "continuing as before.",
+                                    __func__);
+                            }
                         }
                         else
                         {
@@ -381,15 +552,33 @@ void Tracking::track()
                             time_recently_lost)
                         {
                             state = LOST;
-                            Verbose::printMess("Track Lost...",
-                                               Verbose::VERBOSITY_NORMAL);
+                            if (Verbose::printMess("Track Lost...",
+                                                   Verbose::VERBOSITY_NORMAL) !=
+                                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: printMess returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
+                            }
                             isOk = false;
                         }
                     }
                     else
                     {
                         // Relocalization
-                        isOk = relocalization();
+                        bool isRelocalized{};
+                        if (relocalization(isRelocalized) !=
+                            TrackingStatus::TRACKING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: relocalization returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        isOk = isRelocalized;
                         // std::cout << "mCurrentFrame.timeStamp:" <<
                         // to_string(mCurrentFrame.timeStamp) << std::endl;
                         // std::cout << "mTimeStampLost:" <<
@@ -398,8 +587,16 @@ void Tracking::track()
                             !isOk)
                         {
                             state = LOST;
-                            Verbose::printMess("Track Lost...",
-                                               Verbose::VERBOSITY_NORMAL);
+                            if (Verbose::printMess("Track Lost...",
+                                                   Verbose::VERBOSITY_NORMAL) !=
+                                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                            {
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: printMess returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
+                            }
                             isOk = false;
                         }
                     }
@@ -407,8 +604,16 @@ void Tracking::track()
                 else if (state == LOST)
                 {
 
-                    Verbose::printMess("A new map is started...",
-                                       Verbose::VERBOSITY_NORMAL);
+                    if (Verbose::printMess("A new map is started...",
+                                           Verbose::VERBOSITY_NORMAL) !=
+                        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: printMess returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     unsigned long currentMapKeyFrameCount2{};
                     if (p_currentMap->getKeyFrameCount(
@@ -423,10 +628,27 @@ void Tracking::track()
                     }
                     if (currentMapKeyFrameCount2 < 10)
                     {
-                        p_system->requestResetActiveMapWithCause(
-                            ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP);
-                        Verbose::printMess("Reseting current map...",
-                                           Verbose::VERBOSITY_NORMAL);
+                        if (p_system->requestResetActiveMapWithCause(
+                                ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP) !=
+                            SystemStatus::SYSTEM_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: requestResetActiveMapWithCause returned a "
+                                "failure status although it cannot fail; "
+                                "continuing as before.",
+                                __func__);
+                        }
+                        if (Verbose::printMess("Reseting current map...",
+                                               Verbose::VERBOSITY_NORMAL) !=
+                            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: printMess returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
                     }
                     else
                     {
@@ -438,15 +660,31 @@ void Tracking::track()
                             // reportResetAttribution cannot fail; continue as
                             // before.
                         }
-                        createMapInAtlas();
+                        if (createMapInAtlas() !=
+                            TrackingStatus::TRACKING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: createMapInAtlas returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                     }
 
                     if (p_lastKeyFrame)
                         p_lastKeyFrame = static_cast<KeyFrame *>(nullptr);
 
-                    Verbose::printMess("done", Verbose::VERBOSITY_NORMAL);
+                    if (Verbose::printMess("done", Verbose::VERBOSITY_NORMAL) !=
+                        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: printMess returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
-                    return;
+                    return TrackingStatus::TRACKING_STATUS_SUCCESS;
                 }
             }
         }
@@ -459,10 +697,28 @@ void Tracking::track()
                 if (sensor == System::IMU_MONOCULAR ||
                     sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
                 {
-                    Verbose::printMess("IMU. State LOST",
-                                       Verbose::VERBOSITY_NORMAL);
+                    if (Verbose::printMess("IMU. State LOST",
+                                           Verbose::VERBOSITY_NORMAL) !=
+                        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: printMess returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
                 }
-                isOk = relocalization();
+                bool isRelocalized2{};
+                if (relocalization(isRelocalized2) !=
+                    TrackingStatus::TRACKING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: relocalization returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                isOk = isRelocalized2;
             }
             else
             {
@@ -471,11 +727,31 @@ void Tracking::track()
                     // In last frame we tracked enough MapPoints in the map
                     if (isVelocityAvailable)
                     {
-                        isOk = trackWithMotionModel();
+                        bool isTracked4{};
+                        if (trackWithMotionModel(isTracked4) !=
+                            TrackingStatus::TRACKING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: trackWithMotionModel returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        isOk = isTracked4;
                     }
                     else
                     {
-                        isOk = trackReferenceKeyFrame();
+                        bool isTracked5{};
+                        if (trackReferenceKeyFrame(isTracked5) !=
+                            TrackingStatus::TRACKING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: trackReferenceKeyFrame returned "
+                                         "a failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        isOk = isTracked5;
                     }
                 }
                 else
@@ -494,7 +770,17 @@ void Tracking::track()
                     Sophus::SE3f       TcwMM;
                     if (isVelocityAvailable)
                     {
-                        bOKMM        = trackWithMotionModel();
+                        bool isTracked6{};
+                        if (trackWithMotionModel(isTracked6) !=
+                            TrackingStatus::TRACKING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: trackWithMotionModel returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        bOKMM        = isTracked6;
                         mapPointsMMs = currentFrame.mapPoints;
                         outMmFlags   = currentFrame.outlierFlags;
                         Sophus::SE3<float> currentFrameGetPose{};
@@ -509,7 +795,17 @@ void Tracking::track()
                         }
                         TcwMM = currentFrameGetPose;
                     }
-                    isOkReloc = relocalization();
+                    bool isRelocalized3{};
+                    if (relocalization(isRelocalized3) !=
+                        TrackingStatus::TRACKING_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: relocalization returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    isOkReloc = isRelocalized3;
 
                     if (bOKMM && !isOkReloc)
                     {
@@ -584,7 +880,17 @@ void Tracking::track()
         {
             if (isOk)
             {
-                isOk = trackLocalMap();
+                bool isTracked7{};
+                if (trackLocalMap(isTracked7) !=
+                    TrackingStatus::TRACKING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: trackLocalMap returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                isOk = isTracked7;
             }
             else
             {
@@ -600,7 +906,17 @@ void Tracking::track()
             // we will use the local map again.
             if (isOk && !isVisualOdometry)
             {
-                isOk = trackLocalMap();
+                bool isTracked8{};
+                if (trackLocalMap(isTracked8) !=
+                    TrackingStatus::TRACKING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: trackLocalMap returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                isOk = isTracked8;
             }
         }
 
@@ -611,9 +927,17 @@ void Tracking::track()
             if (sensor == System::IMU_MONOCULAR ||
                 sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
             {
-                Verbose::printMess("Visual tracking lost; entering bounded "
-                                   "inertial recovery...",
-                                   Verbose::VERBOSITY_NORMAL);
+                if (Verbose::printMess("Visual tracking lost; entering bounded "
+                                       "inertial recovery...",
+                                       Verbose::VERBOSITY_NORMAL) !=
+                    VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: printMess returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
                 /* Do not destroy a newly initialized inertial map after one
                  * failed visual update. RECENTLY_LOST already propagates the
                  * state with the IMU for a bounded recovery window and the
@@ -646,7 +970,15 @@ void Tracking::track()
                 if (currentFrame.id == (lastRelocFrameId + framesToResetIMU))
                 {
                     cout << "RESETING FRAME!!!" << endl;
-                    resetFrameIMU();
+                    if (resetFrameIMU() !=
+                        TrackingStatus::TRACKING_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: resetFrameIMU returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                 }
                 else if (currentFrame.id > (lastRelocFrameId + 30))
                     lastBias = currentFrame.imuBias;
@@ -665,7 +997,14 @@ void Tracking::track()
 #endif
 
         // Update drawer
-        p_frameDrawer->update(this);
+        if (p_frameDrawer->update(this) !=
+            FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: update returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
         bool currentFrameIsSet{};
         if (currentFrame.isSet(currentFrameIsSet) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
@@ -686,7 +1025,15 @@ void Tracking::track()
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            p_mapDrawer->setCurrentCameraPose(currentFrameGetPose2);
+            if (p_mapDrawer->setCurrentCameraPose(currentFrameGetPose2) !=
+                MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setCurrentCameraPose returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
         }
 
         if (isOk || state == RECENTLY_LOST)
@@ -754,7 +1101,15 @@ void Tracking::track()
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                p_mapDrawer->setCurrentCameraPose(currentFrameGetPose4);
+                if (p_mapDrawer->setCurrentCameraPose(currentFrameGetPose4) !=
+                    MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setCurrentCameraPose returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
 
             // Clean VO matches
@@ -800,7 +1155,15 @@ void Tracking::track()
             std::chrono::steady_clock::time_point timeStartNewKeyFrame =
                 std::chrono::steady_clock::now();
 #endif
-            bool isNeedKeyFrame = needNewKeyFrame();
+            bool isNeedKeyFrame{};
+            if (needNewKeyFrame(isNeedKeyFrame) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: needNewKeyFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             // Check if we need to insert a new keyframe
             if (isNeedKeyFrame && (isOk || (shouldInsertKeyFramesWhenLost &&
@@ -810,7 +1173,15 @@ void Tracking::track()
                                              sensor == System::IMU_RGBD))))
             {
                 // Create a new KeyFrame
-                createNewKeyFrame();
+                if (createNewKeyFrame() !=
+                    TrackingStatus::TRACKING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: createNewKeyFrame returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
 
 #ifdef REGISTER_TIMES
@@ -856,9 +1227,17 @@ void Tracking::track()
             }
             if (currentMapKeyFrameCount3 <= 10)
             {
-                p_system->requestResetActiveMapWithCause(
-                    ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP);
-                return;
+                if (p_system->requestResetActiveMapWithCause(
+                        ResetCause::VISUAL_TRACKING_LOST_SMALL_MAP) !=
+                    SystemStatus::SYSTEM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: requestResetActiveMapWithCause returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                return TrackingStatus::TRACKING_STATUS_SUCCESS;
             }
             if (sensor == System::IMU_MONOCULAR ||
                 sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
@@ -876,13 +1255,29 @@ void Tracking::track()
                 }
                 if (!currentMapIsImuInitialized4)
                 {
-                    Verbose::printMess(
-                        "Track lost before IMU initialisation, reseting...",
-                        Verbose::VERBOSITY_QUIET);
-                    p_system->requestResetActiveMapWithCause(
-                        ResetCause::
-                            VISUAL_TRACKING_LOST_BEFORE_IMU_INITIALIZATION);
-                    return;
+                    if (Verbose::printMess(
+                            "Track lost before IMU initialisation, reseting...",
+                            Verbose::VERBOSITY_QUIET) !=
+                        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: printMess returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (p_system->requestResetActiveMapWithCause(
+                            ResetCause::
+                                VISUAL_TRACKING_LOST_BEFORE_IMU_INITIALIZATION) !=
+                        SystemStatus::SYSTEM_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: requestResetActiveMapWithCause "
+                                     "returned a failure status although it "
+                                     "cannot fail; continuing as before.",
+                                     __func__);
+                    }
+                    return TrackingStatus::TRACKING_STATUS_SUCCESS;
                 }
             }
 
@@ -896,9 +1291,15 @@ void Tracking::track()
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            createMapInAtlas();
+            if (createMapInAtlas() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: createMapInAtlas returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
-            return;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
 
         if (!currentFrame.p_referenceKeyFrame)
@@ -963,13 +1364,30 @@ void Tracking::track()
     }
 
 #ifdef REGISTER_LOOP
-    if (stop())
+    bool isStopped2{};
+    if (stop(isStopped2) != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: stop returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (isStopped2)
     {
 
         // Safe area to stop
         for (;;)
         {
-            if (!isStopped())
+            bool isStopped3{};
+            if (isStopped(isStopped3) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isStopped returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!isStopped3)
             {
                 break;
             }
@@ -977,6 +1395,8 @@ void Tracking::track()
         }
     }
 #endif
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

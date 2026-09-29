@@ -26,12 +26,21 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticSegmentation::updatePlaneSemantics(int    planeId_in,
-                                                int    clsId_in,
-                                                double confidence_in)
+SemanticSegmentationStatus
+    SemanticSegmentation::updatePlaneSemantics(int    planeId_in,
+                                               int    clsId_in,
+                                               double confidence_in)
 {
     // retrieve the plane from the map
-    geometric::Plane *p_matchedPlane = p_atlas->getPlaneById(planeId_in);
+    geometric::Plane *p_matchedPlane = nullptr;
+    if (p_atlas->getPlaneById(planeId_in, p_matchedPlane) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneById returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // plane type compatible with the Plane class
     vs_graphs::core::geometric::Plane::PlaneVariant planeType{};
@@ -53,6 +62,8 @@ void SemanticSegmentation::updatePlaneSemantics(int    planeId_in,
                      "it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -34,10 +34,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Viewer::release()
+ViewerStatus Viewer::release()
 {
     unique_lock<mutex> lock(stopMutex);
     hasStopped = false;
+
+    return ViewerStatus::VIEWER_STATUS_SUCCESS;
 }
 
 } // namespace core

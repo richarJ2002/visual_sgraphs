@@ -37,7 +37,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Optimizer::localBundleAdjustment(
+OptimizerStatus Optimizer::localBundleAdjustment(
     vs_graphs::core::KeyFrame *p_keyFrame_inout,
     bool                      *p_pbStopFlag_in,
     Map                       *p_map_inout,
@@ -676,7 +676,7 @@ void Optimizer::localBundleAdjustment(
     {
         std::cout << "[Optimizer] No fixed KeyFrames found for LBA! Aborting..."
                   << std::endl;
-        return;
+        return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
     }
 
     // [LBA] Setup optimizer
@@ -1675,17 +1675,24 @@ void Optimizer::localBundleAdjustment(
     // abort if no edges
     if (edgeCount == 0)
     {
-        Verbose::printMess(
-            "LM-LBA: There are 0 edges in the optimizations, LBA aborted",
-            Verbose::VERBOSITY_NORMAL);
-        return;
+        if (Verbose::printMess(
+                "LM-LBA: There are 0 edges in the optimizations, LBA aborted",
+                Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
     }
 
     if (p_pbStopFlag_in)
     {
         if (*p_pbStopFlag_in)
         {
-            return;
+            return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
         }
     }
 
@@ -1789,7 +1796,18 @@ void Optimizer::localBundleAdjustment(
         geometric::Plane *p_edgePlane = planeEdgePlanes[edgeIndex];
 
         const bool isChi2Exceeded = e->chi2() > 7.815;
-        if (isChi2Exceeded || !e->isDistanceCorrect())
+        bool       eIsDistanceCorrect{};
+        if (!(isChi2Exceeded) &&
+            e->isDistanceCorrect(eIsDistanceCorrect) !=
+                EdgeVertexPlaneProjectSE3KFStatus::
+                    EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isDistanceCorrect returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isChi2Exceeded || !eIsDistanceCorrect)
         {
 
             // if not already in ToErase, add it
@@ -1811,7 +1829,18 @@ void Optimizer::localBundleAdjustment(
         geometric::Plane *p_edgePlane = planeEdgePlanePoints[edgeIndex];
 
         const bool isChi2Exceeded = e->chi2() > 3.841;
-        if (isChi2Exceeded || !e->isDistanceCorrect())
+        bool       eIsDistanceCorrect2{};
+        if (!(isChi2Exceeded) &&
+            e->isDistanceCorrect(eIsDistanceCorrect2) !=
+                EdgeSE3KFPointToPlaneStatus::
+                    EDGE_SE3_KFPOINT_TO_PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isDistanceCorrect returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isChi2Exceeded || !eIsDistanceCorrect2)
         {
             // if not already in ToErase, add it
             std::pair<KeyFrame *, geometric::Plane *> keyFramePlane =
@@ -2113,6 +2142,8 @@ void Optimizer::localBundleAdjustment(
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

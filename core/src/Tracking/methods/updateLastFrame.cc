@@ -32,7 +32,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::updateLastFrame()
+TrackingStatus Tracking::updateLastFrame()
 {
     // Update pose according to reference keyframe
     KeyFrame    *p_reference = lastFrame.p_referenceKeyFrame;
@@ -58,7 +58,7 @@ void Tracking::updateLastFrame()
 
     if (lastKeyFrameId == lastFrame.id || sensor == System::MONOCULAR ||
         sensor == System::IMU_MONOCULAR || !isTrackingOnlyMode)
-        return;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
 
     // Create "visual odometry" MapPoints
     // We sort points according to their measured depth by the stereo/RGB-D
@@ -78,7 +78,7 @@ void Tracking::updateLastFrame()
     }
 
     if (depthIndices.empty())
-        return;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
 
     sort(depthIndices.begin(), depthIndices.end());
 
@@ -151,10 +151,17 @@ void Tracking::updateLastFrame()
                 x3D = lastFrameStereoFishEye;
             }
 
-            MapPoint *p_newMapPoint           = new MapPoint(x3D,
-                                                   p_atlas->getCurrentMap(),
-                                                   &lastFrame,
-                                                   featureIndex);
+            Map *p_atlasCurrentMap = nullptr;
+            if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCurrentMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            MapPoint *p_newMapPoint =
+                new MapPoint(x3D, p_atlasCurrentMap, &lastFrame, featureIndex);
             lastFrame.mapPoints[featureIndex] = p_newMapPoint;
 
             temporalMapPoints.push_back(p_newMapPoint);
@@ -169,6 +176,8 @@ void Tracking::updateLastFrame()
             pointCount > 100)
             break;
     }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

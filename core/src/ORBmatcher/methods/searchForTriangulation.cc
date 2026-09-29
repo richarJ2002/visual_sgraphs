@@ -31,11 +31,12 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchForTriangulation(
+ORBmatcherStatus ORBmatcher::searchForTriangulation(
     KeyFrame                     *pKF1,
     KeyFrame                     *pKF2,
     vector<pair<size_t, size_t>> &vMatchedPairs,
     const bool                    bOnlyStereo,
+    int                          &forTriangulation_out,
     const bool                    bCoarse)
 {
     const DBoW2::FeatureVector &featureVector1 = pKF1->featureVector;
@@ -228,7 +229,16 @@ int ORBmatcher::searchForTriangulation(
 
                     const cv::Mat &d2 = pKF2->descriptors.row(index2);
 
-                    const int distance = computeDescriptorDistance(d1, d2);
+                    int distance{};
+                    if (computeDescriptorDistance(d1, d2, distance) !=
+                        ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                     "%s: computeDescriptorDistance returned a "
+                                     "failure status although it cannot fail; "
+                                     "continuing as before.",
+                                     __func__);
+                    }
 
                     if (distance > TH_LOW || distance > bestDistance)
                         continue;
@@ -359,7 +369,14 @@ int ORBmatcher::searchForTriangulation(
         int ind2 = -1;
         int ind3 = -1;
 
-        computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3);
+        if (computeThreeMaxima(rotHist, HISTO_LENGTH, ind1, ind2, ind3) !=
+            ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeThreeMaxima returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
              histogramBinIndex++)
@@ -391,7 +408,8 @@ int ORBmatcher::searchForTriangulation(
             make_pair(histogramBinIndex, matches12[histogramBinIndex]));
     }
 
-    return nmatches;
+    forTriangulation_out = nmatches;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

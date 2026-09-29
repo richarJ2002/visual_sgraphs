@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchByProjection(
+ORBmatcherStatus ORBmatcher::searchByProjection(
     KeyFrame                      *pKF,
     Sophus::Sim3<float>           &Scw,
     const std::vector<MapPoint *> &vpPoints,
@@ -39,6 +39,7 @@ int ORBmatcher::searchByProjection(
     std::vector<MapPoint *>       &matched_inout,
     std::vector<KeyFrame *>       &matchedKeyframes_inout,
     int                            th,
+    int                           &byProjection_out,
     float                          ratioHamming)
 {
     // Get Calibration Parameters for later projection
@@ -216,8 +217,18 @@ int ORBmatcher::searchByProjection(
             const cv::Mat &keyFrameDescriptor =
                 pKF->descriptors.row(featureIndex);
 
-            const int distance = computeDescriptorDistance(mapPointDescriptor,
-                                                           keyFrameDescriptor);
+            int distance{};
+            if (computeDescriptorDistance(mapPointDescriptor,
+                                          keyFrameDescriptor,
+                                          distance) !=
+                ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computeDescriptorDistance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             if (distance < bestDistance)
             {
@@ -234,7 +245,8 @@ int ORBmatcher::searchByProjection(
         }
     }
 
-    return nmatches;
+    byProjection_out = nmatches;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -35,11 +35,19 @@ namespace vs_graphs
 namespace core
 {
 
-void MapDrawer::drawMapPoints()
+MapDrawerStatus MapDrawer::drawMapPoints()
 {
-    Map *p_activeMap = p_atlas->getCurrentMap();
+    Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (!p_activeMap)
-        return;
+        return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 
     std::vector<MapPoint *> mapPoints{};
     if (p_activeMap->getAllMapPoints(mapPoints) !=
@@ -63,7 +71,7 @@ void MapDrawer::drawMapPoints()
     set<MapPoint *> referenceMapPoints(vpRefMPs.begin(), vpRefMPs.end());
 
     if (mapPoints.empty())
-        return;
+        return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 
     glPointSize(pointSize);
     glBegin(GL_POINTS);
@@ -129,6 +137,8 @@ void MapDrawer::drawMapPoints()
     }
 
     glEnd();
+
+    return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 }
 
 } // namespace core

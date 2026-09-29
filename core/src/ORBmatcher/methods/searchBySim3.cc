@@ -31,11 +31,13 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchBySim3(KeyFrame                *pKF1,
+ORBmatcherStatus
+    ORBmatcher::searchBySim3(KeyFrame                *pKF1,
                              KeyFrame                *pKF2,
                              std::vector<MapPoint *> &matches12_inout,
                              const Sophus::Sim3f     &S12,
-                             const float              th)
+                             const float              th,
+                             int                     &bySim3_out)
 {
     const float &fx = pKF1->fx;
     const float &fy = pKF1->fy;
@@ -251,8 +253,18 @@ int ORBmatcher::searchBySim3(KeyFrame                *pKF1,
             const cv::Mat &keyFrameDescriptor =
                 pKF2->descriptors.row(featureIndex);
 
-            const int distance = computeDescriptorDistance(mapPointDescriptor,
-                                                           keyFrameDescriptor);
+            int distance{};
+            if (computeDescriptorDistance(mapPointDescriptor,
+                                          keyFrameDescriptor,
+                                          distance) !=
+                ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computeDescriptorDistance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             if (distance < bestDistance)
             {
@@ -406,8 +418,18 @@ int ORBmatcher::searchBySim3(KeyFrame                *pKF1,
             const cv::Mat &keyFrameDescriptor =
                 pKF1->descriptors.row(featureIndex);
 
-            const int distance = computeDescriptorDistance(mapPointDescriptor,
-                                                           keyFrameDescriptor);
+            int distance{};
+            if (computeDescriptorDistance(mapPointDescriptor,
+                                          keyFrameDescriptor,
+                                          distance) !=
+                ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computeDescriptorDistance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
 
             if (distance < bestDistance)
             {
@@ -440,7 +462,8 @@ int ORBmatcher::searchBySim3(KeyFrame                *pKF1,
         }
     }
 
-    return foundCount;
+    bySim3_out = foundCount;
+    return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -39,14 +39,21 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::attemptConsecutiveMergeIfGated(void)
+AtlasStatus Atlas::attemptConsecutiveMergeIfGated(void)
 {
     /* LOCK ORDER: the caller holds semanticUpdateMutex for the whole call.
      * This method briefly takes atlasMutex for attempt-state bookkeeping,
      * and MergeMapPair takes both maps' mapUpdateMutex. No path in the
      * codebase acquires these in reverse, so the order
      * semantic-update -> atlas -> map-update is deadlock-free. */
-    Map *p_currentMap = getCurrentMap();
+    Map *p_currentMap = nullptr;
+    if (getCurrentMap(p_currentMap) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     bool currentMapIsBad{};
     if (!(p_currentMap == nullptr) &&
         p_currentMap->isBad(currentMapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
@@ -58,7 +65,7 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
     }
     if (p_currentMap == nullptr || currentMapIsBad)
     {
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
     types::SystemParams *p_params = nullptr;
@@ -89,7 +96,15 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
                      __func__);
     }
 
-    for (Map *p_oldMap : getAllMaps())
+    std::vector<Map *> allMaps{};
+    if (getAllMaps(allMaps) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMaps returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (Map *p_oldMap : allMaps)
     {
         bool oldMapIsBad{};
         if (!(p_oldMap == nullptr || p_oldMap == p_currentMap) &&
@@ -104,16 +119,87 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         {
             continue;
         }
-        if (!consecutiveSeedTagsMatch(p_oldMap, p_currentMap))
+        bool isMatch{};
+        if (consecutiveSeedTagsMatch(p_oldMap, p_currentMap, isMatch) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: consecutiveSeedTagsMatch returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (!isMatch)
         {
             continue;
         }
-        if (countLiveRooms(p_oldMap) < minimumRooms ||
-            countLiveRooms(p_currentMap) < minimumRooms ||
-            countLiveWallPlanes(p_oldMap) < minimumWalls ||
-            countLiveWallPlanes(p_currentMap) < minimumWalls ||
-            countLiveFloors(p_oldMap) == 0U ||
-            countLiveFloors(p_currentMap) == 0U)
+        std::size_t liveRooms{};
+        if (countLiveRooms(p_oldMap, liveRooms) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: countLiveRooms returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::size_t liveRooms2{};
+        if (!(liveRooms < minimumRooms) &&
+            countLiveRooms(p_currentMap, liveRooms2) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: countLiveRooms returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::size_t liveWallPlanes{};
+        if (!(liveRooms < minimumRooms || liveRooms2 < minimumRooms) &&
+            countLiveWallPlanes(p_oldMap, liveWallPlanes) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: countLiveWallPlanes returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::size_t liveWallPlanes2{};
+        if (!(liveRooms < minimumRooms || liveRooms2 < minimumRooms ||
+              liveWallPlanes < minimumWalls) &&
+            countLiveWallPlanes(p_currentMap, liveWallPlanes2) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: countLiveWallPlanes returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::size_t liveFloors{};
+        if (!(liveRooms < minimumRooms || liveRooms2 < minimumRooms ||
+              liveWallPlanes < minimumWalls ||
+              liveWallPlanes2 < minimumWalls) &&
+            countLiveFloors(p_oldMap, liveFloors) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: countLiveFloors returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        std::size_t liveFloors2{};
+        if (!(liveRooms < minimumRooms || liveRooms2 < minimumRooms ||
+              liveWallPlanes < minimumWalls || liveWallPlanes2 < minimumWalls ||
+              liveFloors == 0U) &&
+            countLiveFloors(p_currentMap, liveFloors2) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: countLiveFloors returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (liveRooms < minimumRooms || liveRooms2 < minimumRooms ||
+            liveWallPlanes < minimumWalls || liveWallPlanes2 < minimumWalls ||
+            liveFloors == 0U || liveFloors2 == 0U)
         {
             continue;
         }
@@ -128,8 +214,15 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         }
         const long unsigned int oldMapId =
             static_cast<long unsigned int>(oldMapIdValue);
-        const std::size_t contentHash =
-            consecutiveContentHash(p_oldMap, p_currentMap);
+        std::size_t contentHash{};
+        if (consecutiveContentHash(p_oldMap, p_currentMap, contentHash) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: consecutiveContentHash returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const std::chrono::steady_clock::time_point now =
             std::chrono::steady_clock::now();
         MergeAttemptState attemptState;
@@ -154,8 +247,15 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             }
         }
 
-        const std::set<std::string> anchorTags =
-            collectAnchorTags(p_oldMap, p_currentMap);
+        std::set<std::string> anchorTags{};
+        if (collectAnchorTags(p_oldMap, p_currentMap, anchorTags) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: collectAnchorTags returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
         const std::size_t anchorCount   = anchorTags.size();
         auto              recordAttempt = [&](void)
         {
@@ -357,7 +457,14 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
         {
             continue;
         }
-        mergeMapPair(p_currentMap, p_oldMap);
+        if (mergeMapPair(p_currentMap, p_oldMap) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: mergeMapPair returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         unsigned long currentMapId5{};
         if (p_currentMap->getId(currentMapId5) != MapStatus::MAP_STATUS_SUCCESS)
         {
@@ -374,6 +481,8 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
          * pairs re-evaluate from scratch next cycle. */
         break;
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

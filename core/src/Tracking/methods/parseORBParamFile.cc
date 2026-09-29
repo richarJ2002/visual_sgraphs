@@ -33,7 +33,8 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::parseORBParamFile(cv::FileStorage &settings_in)
+TrackingStatus Tracking::parseORBParamFile(cv::FileStorage &settings_in,
+                                           bool            &isParsed_out)
 {
     bool  isParameterMissing   = false;
     int   featureCount         = 0;
@@ -109,7 +110,8 @@ bool Tracking::parseORBParamFile(cv::FileStorage &settings_in)
 
     if (isParameterMissing)
     {
-        return false;
+        isParsed_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     p_orbExtractorLeft = new ORBextractor(featureCount,
@@ -145,7 +147,8 @@ bool Tracking::parseORBParamFile(cv::FileStorage &settings_in)
     cout << "- Initial Fast Threshold: " << initialThresholdFast << endl;
     cout << "- Minimum Fast Threshold: " << minimumThresholdFast << endl;
 
-    return true;
+    isParsed_out = true;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

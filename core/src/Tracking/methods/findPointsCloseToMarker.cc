@@ -32,13 +32,22 @@ namespace core
 {
 
 // Semantic Entities
-std::vector<MapPoint *> Tracking::findPointsCloseToMarker(
-    const semantic::Marker *p_currentMarker_in)
+TrackingStatus Tracking::findPointsCloseToMarker(
+    const semantic::Marker  *p_currentMarker_in,
+    std::vector<MapPoint *> &pointsClose_out)
 {
     // Get all map points
-    std::vector<MapPoint *> allmapPoints = p_atlas->getAllMapPoints();
+    std::vector<MapPoint *> allmapPoints{};
+    if (p_atlas->getAllMapPoints(allmapPoints) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
     // Get all map points close to the marker
-    Sophus::SE3f            currentMarker_inGlobalPose{};
+    Sophus::SE3f currentMarker_inGlobalPose{};
     if (p_currentMarker_in->getGlobalPose(currentMarker_inGlobalPose) !=
         semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
     {
@@ -47,12 +56,21 @@ std::vector<MapPoint *> Tracking::findPointsCloseToMarker(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    std::vector<MapPoint *> closePoints =
-        findPointsCloseToLocation(allmapPoints,
+    std::vector<MapPoint *> closePoints{};
+    if (findPointsCloseToLocation(allmapPoints,
                                   currentMarker_inGlobalPose.translation(),
-                                  0.1);
+                                  0.1,
+                                  closePoints) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: findPointsCloseToLocation returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     // Return the close points
-    return closePoints;
+    pointsClose_out = closePoints;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

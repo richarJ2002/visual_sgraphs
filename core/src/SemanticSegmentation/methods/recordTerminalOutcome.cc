@@ -23,8 +23,9 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticSegmentation::recordTerminalOutcome(std::uint64_t   keyFrameId_in,
-                                                 TerminalOutcome outcome_in)
+SemanticSegmentationStatus
+    SemanticSegmentation::recordTerminalOutcome(std::uint64_t   keyFrameId_in,
+                                                TerminalOutcome outcome_in)
 {
     terminalCount.fetch_add(1U, std::memory_order_relaxed);
     lastTerminalKeyFrameId.store(keyFrameId_in, std::memory_order_relaxed);
@@ -46,6 +47,8 @@ void SemanticSegmentation::recordTerminalOutcome(std::uint64_t   keyFrameId_in,
         staleMapCount.fetch_add(1U, std::memory_order_relaxed);
         break;
     }
+
+    return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
 } // namespace core

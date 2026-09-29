@@ -43,10 +43,26 @@ void LocalMapping::run()
     while (1)
     {
         // Tracking will see that Local Mapping is busy
-        setAcceptKeyFrames(false);
+        if (setAcceptKeyFrames(false) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setAcceptKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Check if there are keyframes in the queue
-        if (checkNewKeyFrames() && !isImuBad)
+        bool hasNewKeyFrames{};
+        if (checkNewKeyFrames(hasNewKeyFrames) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkNewKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (hasNewKeyFrames && !isImuBad)
         {
 #ifdef REGISTER_TIMES
             double timeLocalBa_ms         = 0;
@@ -56,7 +72,14 @@ void LocalMapping::run()
                 std::chrono::steady_clock::now();
 #endif
             // BoW conversion and insertion in Map
-            processNewKeyFrame();
+            if (processNewKeyFrame() !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: processNewKeyFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point processKeyFrameEndTime =
                 std::chrono::steady_clock::now();
@@ -70,7 +93,14 @@ void LocalMapping::run()
 #endif
 
             // Check recent MapPoints
-            mapPointCulling();
+            if (mapPointCulling() !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: mapPointCulling returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point mapPointCullingEndTime =
                 std::chrono::steady_clock::now();
@@ -84,15 +114,39 @@ void LocalMapping::run()
 #endif
 
             // Triangulate new MapPoints
-            createNewMapPoints();
+            if (createNewMapPoints() !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: createNewMapPoints returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             shouldAbortBa = false;
 
-            if (!checkNewKeyFrames())
+            bool hasNewKeyFrames2{};
+            if (checkNewKeyFrames(hasNewKeyFrames2) !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: checkNewKeyFrames returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!hasNewKeyFrames2)
             {
                 // Find more matches in neighbor keyframes and fuse point
                 // duplications
-                searchInNeighbors();
+                if (searchInNeighbors() !=
+                    LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: searchInNeighbors returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
             }
 
 #ifdef REGISTER_TIMES
@@ -115,9 +169,38 @@ void LocalMapping::run()
             int baMapPointCount          = 0;
             int baEdgeCount              = 0;
 
-            if (!checkNewKeyFrames() && !stopRequested())
+            bool hasNewKeyFrames3{};
+            if (checkNewKeyFrames(hasNewKeyFrames3) !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
             {
-                if (p_atlas->getKeyFrameCount() > 2)
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: checkNewKeyFrames returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            bool isStopRequested{};
+            if ((!hasNewKeyFrames3) &&
+                stopRequested(isStopRequested) !=
+                    LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: stopRequested returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!hasNewKeyFrames3 && !isStopRequested)
+            {
+                unsigned long atlasKeyFrameCount{};
+                if (p_atlas->getKeyFrameCount(atlasKeyFrameCount) !=
+                    AtlasStatus::ATLAS_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getKeyFrameCount returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (atlasKeyFrameCount > 2)
                 {
                     Map *p_currentKeyFrameMap = nullptr;
                     if ((isInertial) &&
@@ -203,11 +286,32 @@ void LocalMapping::run()
                          * Initialization itself is gated by cumulative
                          * translation below. */
 
+                        int trackerMatchesInliers{};
+                        if (p_tracker->getMatchesInliers(
+                                trackerMatchesInliers) !=
+                            TrackingStatus::TRACKING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getMatchesInliers returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        int trackerMatchesInliers2{};
+                        if (!(((trackerMatchesInliers > 75) && isMonocular)) &&
+                            p_tracker->getMatchesInliers(
+                                trackerMatchesInliers2) !=
+                                TrackingStatus::TRACKING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getMatchesInliers returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                         bool isLargeBundleAdjustment =
-                            ((p_tracker->getMatchesInliers() > 75) &&
-                             isMonocular) ||
-                            ((p_tracker->getMatchesInliers() > 100) &&
-                             !isMonocular);
+                            ((trackerMatchesInliers > 75) && isMonocular) ||
+                            ((trackerMatchesInliers2 > 100) && !isMonocular);
                         Map *p_currentKeyFrameMap2 = nullptr;
                         if (p_currentKeyFrame->getMap(p_currentKeyFrameMap2) !=
                             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -238,15 +342,23 @@ void LocalMapping::run()
                                          "fail; continuing as before.",
                                          __func__);
                         }
-                        Optimizer::localInertialBA(p_currentKeyFrame,
-                                                   &shouldAbortBa,
-                                                   p_currentKeyFrameMap2,
-                                                   baFixedKeyFrameCount,
-                                                   baOptimizedKeyFrameCount,
-                                                   baMapPointCount,
-                                                   baEdgeCount,
-                                                   isLargeBundleAdjustment,
-                                                   !inertialBA2);
+                        if (Optimizer::localInertialBA(p_currentKeyFrame,
+                                                       &shouldAbortBa,
+                                                       p_currentKeyFrameMap2,
+                                                       baFixedKeyFrameCount,
+                                                       baOptimizedKeyFrameCount,
+                                                       baMapPointCount,
+                                                       baEdgeCount,
+                                                       isLargeBundleAdjustment,
+                                                       !inertialBA2) !=
+                            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: localInertialBA returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                         wasLocalBaExecuted = true;
                     }
                     else
@@ -272,15 +384,23 @@ void LocalMapping::run()
                                 "it cannot fail; continuing as before.",
                                 __func__);
                         }
-                        Optimizer::localBundleAdjustment(
-                            p_currentKeyFrame,
-                            &shouldAbortBa,
-                            p_currentKeyFrameMap4,
-                            baFixedKeyFrameCount,
-                            baOptimizedKeyFrameCount,
-                            baMapPointCount,
-                            baEdgeCount,
-                            p_params->markers.impact);
+                        if (Optimizer::localBundleAdjustment(
+                                p_currentKeyFrame,
+                                &shouldAbortBa,
+                                p_currentKeyFrameMap4,
+                                baFixedKeyFrameCount,
+                                baOptimizedKeyFrameCount,
+                                baMapPointCount,
+                                baEdgeCount,
+                                p_params->markers.impact) !=
+                            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: localBundleAdjustment returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
                         wasLocalBaExecuted = true;
                     }
                 }
@@ -336,16 +456,40 @@ void LocalMapping::run()
                 {
                     if (isMonocular)
                     {
-                        initializeIMU(1e2, 1e10, true);
+                        if (initializeIMU(1e2, 1e10, true) !=
+                            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: initializeIMU returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
                     }
                     else
                     {
-                        initializeIMU(1e2, 1e5, true);
+                        if (initializeIMU(1e2, 1e5, true) !=
+                            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: initializeIMU returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
+                        }
                     }
                 }
 
                 // Check redundant local Keyframes
-                keyFrameCulling();
+                if (keyFrameCulling() !=
+                    LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: keyFrameCulling returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
 
 #ifdef REGISTER_TIMES
                 std::chrono::steady_clock::time_point keyFrameCullingEndTime =
@@ -442,11 +586,31 @@ void LocalMapping::run()
                                 }
                                 if (isMonocular)
                                 {
-                                    initializeIMU(1.f, 1e5, true);
+                                    if (initializeIMU(1.f, 1e5, true) !=
+                                        LocalMappingStatus::
+                                            LOCAL_MAPPING_STATUS_SUCCESS)
+                                    {
+                                        RCLCPP_ERROR(
+                                            rclcpp::get_logger("vs_graphs"),
+                                            "%s: initializeIMU returned a "
+                                            "failure status although it cannot "
+                                            "fail; continuing as before.",
+                                            __func__);
+                                    }
                                 }
                                 else
                                 {
-                                    initializeIMU(1.f, 1e5, true);
+                                    if (initializeIMU(1.f, 1e5, true) !=
+                                        LocalMappingStatus::
+                                            LOCAL_MAPPING_STATUS_SUCCESS)
+                                    {
+                                        RCLCPP_ERROR(
+                                            rclcpp::get_logger("vs_graphs"),
+                                            "%s: initializeIMU returned a "
+                                            "failure status although it cannot "
+                                            "fail; continuing as before.",
+                                            __func__);
+                                    }
                                 }
                                 std::cout << "[Mapping] Ending IMU bias/scale "
                                              "initialization (stage#1) ..."
@@ -514,11 +678,33 @@ void LocalMapping::run()
                                     }
                                     if (isMonocular)
                                     {
-                                        initializeIMU(0.f, 0.f, true);
+                                        if (initializeIMU(0.f, 0.f, true) !=
+                                            LocalMappingStatus::
+                                                LOCAL_MAPPING_STATUS_SUCCESS)
+                                        {
+                                            RCLCPP_ERROR(
+                                                rclcpp::get_logger("vs_graphs"),
+                                                "%s: initializeIMU returned a "
+                                                "failure status although it "
+                                                "cannot fail; continuing as "
+                                                "before.",
+                                                __func__);
+                                        }
                                     }
                                     else
                                     {
-                                        initializeIMU(0.f, 0.f, true);
+                                        if (initializeIMU(0.f, 0.f, true) !=
+                                            LocalMappingStatus::
+                                                LOCAL_MAPPING_STATUS_SUCCESS)
+                                        {
+                                            RCLCPP_ERROR(
+                                                rclcpp::get_logger("vs_graphs"),
+                                                "%s: initializeIMU returned a "
+                                                "failure status although it "
+                                                "cannot fail; continuing as "
+                                                "before.",
+                                                __func__);
+                                        }
                                     }
                                     std::cout
                                         << "[Mapping] Ending IMU bias/scale "
@@ -529,7 +715,17 @@ void LocalMapping::run()
                         }
 
                         // Scale refinement
-                        if (((p_atlas->getKeyFrameCount()) <= 200) &&
+                        unsigned long atlasKeyFrameCount2{};
+                        if (p_atlas->getKeyFrameCount(atlasKeyFrameCount2) !=
+                            AtlasStatus::ATLAS_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getKeyFrameCount returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (((atlasKeyFrameCount2) <= 200) &&
                             ((initializationStartTime > 25.0f &&
                               initializationStartTime < 25.5f) ||
                              (initializationStartTime > 35.0f &&
@@ -545,7 +741,17 @@ void LocalMapping::run()
                         {
                             if (isMonocular)
                             {
-                                scaleRefinement();
+                                if (scaleRefinement() !=
+                                    LocalMappingStatus::
+                                        LOCAL_MAPPING_STATUS_SUCCESS)
+                                {
+                                    RCLCPP_ERROR(
+                                        rclcpp::get_logger("vs_graphs"),
+                                        "%s: scaleRefinement returned a "
+                                        "failure status although it cannot "
+                                        "fail; continuing as before.",
+                                        __func__);
+                                }
                             }
                         }
                     }
@@ -557,7 +763,14 @@ void LocalMapping::run()
             keyFrameCullingSyncTimes_ms.push_back(timeKeyFrameCulling_ms);
 #endif
 
-            p_loopCloser->insertKeyFrame(p_currentKeyFrame);
+            if (p_loopCloser->insertKeyFrame(p_currentKeyFrame) !=
+                LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: insertKeyFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point localMapEndTime =
@@ -573,36 +786,105 @@ void LocalMapping::run()
         }
         else
         {
-            if (stop() && !isImuBad)
+            bool isStopped2{};
+            if (stop(isStopped2) !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: stop returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (isStopped2 && !isImuBad)
             {
                 // Safe area to stop
                 for (;;)
                 {
-                    if (!(isStopped() && !checkFinish()))
+                    bool isStopped3{};
+                    if (isStopped(isStopped3) !=
+                        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isStopped returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    bool isFinishRequested{};
+                    if ((isStopped3) &&
+                        checkFinish(isFinishRequested) !=
+                            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: checkFinish returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    if (!(isStopped3 && !isFinishRequested))
                     {
                         break;
                     }
                     usleep(3000);
                 }
-                if (checkFinish())
+                bool isFinishRequested2{};
+                if (checkFinish(isFinishRequested2) !=
+                    LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: checkFinish returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (isFinishRequested2)
                 {
                     break;
                 }
             }
         }
 
-        resetIfRequested();
+        if (resetIfRequested() !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: resetIfRequested returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         // Tracking will see that Local Mapping is busy
-        setAcceptKeyFrames(true);
+        if (setAcceptKeyFrames(true) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setAcceptKeyFrames returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
 
-        if (checkFinish())
+        bool isFinishRequested3{};
+        if (checkFinish(isFinishRequested3) !=
+            LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkFinish returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isFinishRequested3)
             break;
 
         usleep(3000);
     }
 
-    setFinish();
+    if (setFinish() != LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } // namespace core

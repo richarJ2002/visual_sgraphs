@@ -35,7 +35,7 @@ namespace core
 {
 
 #ifdef REGISTER_TIMES
-void Tracking::localMapStats2File()
+TrackingStatus Tracking::localMapStats2File()
 {
     ofstream f;
     f.open("LocalMapTimeStats.txt");
@@ -72,6 +72,8 @@ void Tracking::localMapStats2File()
     }
 
     f.close();
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 #endif
 

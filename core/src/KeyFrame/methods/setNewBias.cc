@@ -29,6 +29,7 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,7 +42,14 @@ KeyFrameStatus KeyFrame::setNewBias(const IMU::Bias &b_in)
     imuBias = b_in;
     if (p_imuPreintegrated)
     {
-        p_imuPreintegrated->setNewBias(b_in);
+        if (p_imuPreintegrated->setNewBias(b_in) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setNewBias returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

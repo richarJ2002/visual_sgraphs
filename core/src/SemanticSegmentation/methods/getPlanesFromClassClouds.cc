@@ -27,10 +27,11 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<std::vector<
-    std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
-    SemanticSegmentation::getPlanesFromClassClouds(
-        std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_clsCloudPtrs_in)
+SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
+    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_clsCloudPtrs_in,
+    std::vector<std::vector<
+        std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
+        &planesFromClassClouds_out)
 {
     std::vector<std::vector<
         std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
@@ -129,7 +130,8 @@ std::vector<std::vector<
         }
         p_clsPlanes.push_back(p_extractedPlanes);
     }
-    return p_clsPlanes;
+    planesFromClassClouds_out = p_clsPlanes;
+    return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
 } // namespace core

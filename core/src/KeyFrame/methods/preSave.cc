@@ -164,7 +164,14 @@ KeyFrameStatus KeyFrame::preSave(
 
     if (p_imuPreintegrated)
     {
-        backupImuPreintegrated.copyFrom(p_imuPreintegrated);
+        if (backupImuPreintegrated.copyFrom(p_imuPreintegrated) !=
+            IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: copyFrom returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

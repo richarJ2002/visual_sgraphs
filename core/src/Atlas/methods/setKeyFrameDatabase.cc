@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setKeyFrameDatabase(KeyFrameDatabase *p_keyFrameDatabase_in)
+AtlasStatus Atlas::setKeyFrameDatabase(KeyFrameDatabase *p_keyFrameDatabase_in)
 {
     p_keyFrameDatabase = p_keyFrameDatabase_in;
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

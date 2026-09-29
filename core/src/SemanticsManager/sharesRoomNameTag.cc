@@ -43,7 +43,9 @@ namespace core
  *
  * @return      True when both maps observe at least one shared room tag.
  */
-bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
+SemanticsManagerStatus sharesRoomNameTag(Map  *p_firstMap_in,
+                                         Map  *p_secondMap_in,
+                                         bool &sharesRoomNameTag_out)
 {
     std::unordered_set<std::string> firstMapRoomTags;
     std::vector<semantic::Room *>   firstMapAllDetectedMapRooms{};
@@ -150,7 +152,8 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
                   << firstMapAllDetectedMapRooms2.size()
                   << ", marker=" << firstMapAllMarkerBasedMapRooms2.size()
                   << ")" << std::endl;
-        return false;
+        sharesRoomNameTag_out = false;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     std::vector<semantic::Room *> secondMapAllDetectedMapRooms{};
@@ -214,7 +217,8 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
             std::cout << "[SemMgr] sharesRoomNameTag: MATCH found tag "
                       << roomTag4 << " between maps " << firstMapId2 << " and "
                       << secondMapId << std::endl;
-            return true;
+            sharesRoomNameTag_out = true;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
     }
     std::vector<semantic::Room *> secondMapAllMarkerBasedMapRooms{};
@@ -278,7 +282,8 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
             std::cout << "[SemMgr] sharesRoomNameTag: MATCH found tag "
                       << roomTag6 << " between maps " << firstMapId3 << " and "
                       << secondMapId2 << std::endl;
-            return true;
+            sharesRoomNameTag_out = true;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
     }
 
@@ -323,7 +328,8 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
               << " marker=" << secondMapAllMarkerBasedMapRooms2.size()
               << std::endl;
 
-    return false;
+    sharesRoomNameTag_out = false;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

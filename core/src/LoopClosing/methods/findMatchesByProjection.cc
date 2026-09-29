@@ -34,13 +34,14 @@ namespace vs_graphs
 namespace core
 {
 
-int LoopClosing::findMatchesByProjection(
-    KeyFrame           *p_currentKeyFrame_in,
-    KeyFrame           *p_matchedKFw_in,
-    g2o::Sim3          &g2oScw_in,
-    set<MapPoint *>    &matchedMPinOrigins_in,
-    vector<MapPoint *> &mapPoints_out,
-    vector<MapPoint *> &matchedMapPoints_out)
+LoopClosingStatus LoopClosing::findMatchesByProjection(
+    KeyFrame                *p_currentKeyFrame_in,
+    KeyFrame                *p_matchedKFw_in,
+    g2o::Sim3               &g2oScw_in,
+    set<MapPoint *>         &matchedMPinOrigins_in,
+    vector<MapPoint *>      &mapPoints_out,
+    std::vector<MapPoint *> &matchedMapPoints_out,
+    int                     &matches_out)
 {
     int                     countCovisibleCount = 10;
     std::vector<KeyFrame *> covisibleKeyFrames{};
@@ -161,14 +162,24 @@ int LoopClosing::findMatchesByProjection(
     }
     matchedMapPoints_out.resize(currentKeyFrameMapPointMatches.size(),
                                 static_cast<MapPoint *>(nullptr));
-    int matchCount = matcher.searchByProjection(p_currentKeyFrame_in,
-                                                correctedPose,
-                                                mapPoints_out,
-                                                matchedMapPoints_out,
-                                                3,
-                                                1.5);
+    int matchCount{};
+    if (matcher.searchByProjection(p_currentKeyFrame_in,
+                                   correctedPose,
+                                   mapPoints_out,
+                                   matchedMapPoints_out,
+                                   3,
+                                   matchCount,
+                                   1.5) !=
+        ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: searchByProjection returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    return matchCount;
+    matches_out = matchCount;
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
 } // namespace core

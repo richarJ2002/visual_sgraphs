@@ -358,7 +358,9 @@ TEST(SerializationImu, CalibRoundTrip)
     const Sophus::SE3f known_tbc(Eigen::Quaternionf(0.0F, 0.0F, 0.0F, 1.0F),
                                  Eigen::Vector3f(0.1F, 0.2F, 0.3F));
     IMU::Calib         original;
-    original.setCalibration(known_tbc, 0.01F, 0.02F, 0.001F, 0.002F);
+    ASSERT_EQ(
+        (original.setCalibration(known_tbc, 0.01F, 0.02F, 0.001F, 0.002F)),
+        IMU::CalibStatus::CALIB_STATUS_SUCCESS);
     EXPECT_TRUE(original.isCalibrationSet);
 
     const IMU::Calib loaded = RoundTripBinaryCopyable(original);
@@ -382,15 +384,20 @@ TEST(SerializationImu, PreintegratedRoundTrip)
     const Sophus::SE3f tbc(Eigen::Quaternionf::Identity(),
                            Eigen::Vector3f(0.05F, 0.0F, 0.0F));
     IMU::Calib         calib;
-    calib.setCalibration(tbc, 0.01F, 0.02F, 0.001F, 0.002F);
+    ASSERT_EQ((calib.setCalibration(tbc, 0.01F, 0.02F, 0.001F, 0.002F)),
+              IMU::CalibStatus::CALIB_STATUS_SUCCESS);
 
     IMU::Preintegrated original(bias, calib);
-    original.integrateNewMeasurement(Eigen::Vector3f(0.0F, 0.0F, 9.81F),
-                                     Eigen::Vector3f(0.01F, 0.0F, 0.0F),
-                                     0.01F);
-    original.integrateNewMeasurement(Eigen::Vector3f(0.1F, 0.0F, 9.80F),
-                                     Eigen::Vector3f(0.0F, 0.01F, 0.0F),
-                                     0.01F);
+    ASSERT_EQ(
+        (original.integrateNewMeasurement(Eigen::Vector3f(0.0F, 0.0F, 9.81F),
+                                          Eigen::Vector3f(0.01F, 0.0F, 0.0F),
+                                          0.01F)),
+        IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (original.integrateNewMeasurement(Eigen::Vector3f(0.1F, 0.0F, 9.80F),
+                                          Eigen::Vector3f(0.0F, 0.01F, 0.0F),
+                                          0.01F)),
+        IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS);
     EXPECT_GT(original.dT, 0.0F);
 
     IMU::Preintegrated loaded;
@@ -405,10 +412,13 @@ TEST(SerializationImu, PreintegratedRoundTrip)
 
     // SKIP mutex: post-load object must remain usable (default-constructed
     // lock state). Integrating one more sample must not deadlock or crash.
-    EXPECT_NO_THROW(
-        loaded.integrateNewMeasurement(Eigen::Vector3f(0.0F, 0.0F, 9.81F),
-                                       Eigen::Vector3f::Zero(),
-                                       0.005F));
+    IMU::PreintegratedStatus integrateStatus{};
+    EXPECT_NO_THROW(integrateStatus = loaded.integrateNewMeasurement(
+                        Eigen::Vector3f(0.0F, 0.0F, 9.81F),
+                        Eigen::Vector3f::Zero(),
+                        0.005F));
+    EXPECT_EQ(integrateStatus,
+              IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS);
 }
 
 TEST(SerializationCamera, PinholeRoundTrip)
@@ -684,8 +694,11 @@ TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
 
     // SKIP mutex/vocabulary pointer: post-load DB must accept clearMap
     // on an empty map without crashing (mutex default-constructed).
-    Map empty_map;
-    EXPECT_NO_THROW(loaded.clearMap(&empty_map));
+    Map                    empty_map;
+    KeyFrameDatabaseStatus clearMapStatus{};
+    EXPECT_NO_THROW(clearMapStatus = loaded.clearMap(&empty_map));
+    EXPECT_EQ(clearMapStatus,
+              KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS);
 }
 
 TEST(SerializationKeyFrame, DefaultRoundTrip)
@@ -832,22 +845,41 @@ TEST(SerializationAtlas, EmptyAndCameraRoundTrip)
     Atlas original;
     Atlas loaded;
     RoundTripBinaryInto(original, loaded);
-    EXPECT_EQ(original.countMaps(), loaded.countMaps());
-    EXPECT_EQ(0, loaded.countMaps());
-    EXPECT_TRUE(loaded.getAllCameras().empty());
+    int maps{};
+    ASSERT_EQ((original.countMaps(maps)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    int maps2{};
+    ASSERT_EQ((loaded.countMaps(maps2)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_EQ(maps, maps2);
+    int maps3{};
+    ASSERT_EQ((loaded.countMaps(maps3)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_EQ(0, maps3);
+    std::vector<camera_models::geometriccamera::GeometricCamera *> allCameras{};
+    ASSERT_EQ((loaded.getAllCameras(allCameras)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_TRUE(allCameras.empty());
     // SKIP mutex/atomic/viewer/DB pointers: loaded atlas must be queryable.
-    EXPECT_NO_THROW(loaded.getAllMaps());
+    std::vector<Map *> loadedMaps;
+    AtlasStatus        getAllMapsStatus{};
+    EXPECT_NO_THROW(getAllMapsStatus = loaded.getAllMaps(loadedMaps));
+    EXPECT_EQ(getAllMapsStatus, AtlasStatus::ATLAS_STATUS_SUCCESS);
 }
 
 TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
 {
     Atlas original(0);
-    EXPECT_EQ(1, original.countMaps());
+    int   maps2{};
+    ASSERT_EQ((original.countMaps(maps2)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_EQ(1, maps2);
     camera_models::pinhole::Pinhole *camera =
         new camera_models::pinhole::Pinhole(
             std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
-    original.addCamera(camera);
-    ASSERT_EQ(1U, original.getAllCameras().size());
+    camera_models::geometriccamera::GeometricCamera *p_originalCamera = nullptr;
+    ASSERT_EQ((original.addCamera(camera, p_originalCamera)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    std::vector<camera_models::geometriccamera::GeometricCamera *> allCameras{};
+    ASSERT_EQ((original.getAllCameras(allCameras)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ(1U, allCameras.size());
 
     // Direct serialize saves backup maps (empty until preSave) + cameras +
     // static IDs. Active sets are rebuilt by postLoad, so compare the
@@ -866,25 +898,46 @@ TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
     }
     std::remove(path.c_str());
 
-    EXPECT_EQ(original.getLastInitKeyFrameId(), loaded.getLastInitKeyFrameId());
-    ASSERT_EQ(1U, loaded.getAllCameras().size());
+    unsigned long lastInitKeyFrameId{};
+    ASSERT_EQ((original.getLastInitKeyFrameId(lastInitKeyFrameId)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    unsigned long lastInitKeyFrameId2{};
+    ASSERT_EQ((loaded.getLastInitKeyFrameId(lastInitKeyFrameId2)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_EQ(lastInitKeyFrameId, lastInitKeyFrameId2);
+    std::vector<camera_models::geometriccamera::GeometricCamera *>
+        allCameras2{};
+    ASSERT_EQ((loaded.getAllCameras(allCameras2)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ(1U, allCameras2.size());
     unsigned int id{};
     ASSERT_EQ((camera->getId(id)),
               camera_models::geometriccamera::GeometricCameraStatus::
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
     unsigned int id2{};
-    ASSERT_EQ((loaded.getAllCameras()[0]->getId(id2)),
+    std::vector<camera_models::geometriccamera::GeometricCamera *>
+        allCameras3{};
+    ASSERT_EQ((loaded.getAllCameras(allCameras3)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((allCameras3[0]->getId(id2)),
               camera_models::geometriccamera::GeometricCameraStatus::
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
     EXPECT_EQ(id, id2);
     unsigned int type{};
-    ASSERT_EQ((loaded.getAllCameras()[0]->getType(type)),
+    std::vector<camera_models::geometriccamera::GeometricCamera *>
+        allCameras4{};
+    ASSERT_EQ((loaded.getAllCameras(allCameras4)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((allCameras4[0]->getType(type)),
               camera_models::geometriccamera::GeometricCameraStatus::
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
     EXPECT_TRUE(type ==
                 camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE);
     // SKIP mutex/atomic/thread handles: loaded atlas must stay queryable.
-    EXPECT_NO_THROW(loaded.getAllMaps());
+    std::vector<Map *> loadedMaps;
+    AtlasStatus        getAllMapsStatus{};
+    EXPECT_NO_THROW(getAllMapsStatus = loaded.getAllMaps(loadedMaps));
+    EXPECT_EQ(getAllMapsStatus, AtlasStatus::ATLAS_STATUS_SUCCESS);
 }
 
 TEST(SerializationOrdering, SortedSetMapComparisonIsDeterministic)

@@ -30,10 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-int System::getTrackingState()
+SystemStatus System::getTrackingState(int &trackingState_out)
 {
     unique_lock<mutex> lock(stateMutex);
-    return trackingState;
+    trackingState_out = trackingState;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

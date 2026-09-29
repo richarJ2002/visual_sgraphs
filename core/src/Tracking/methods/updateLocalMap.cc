@@ -24,20 +24,42 @@
  */
 
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void Tracking::updateLocalMap()
+TrackingStatus Tracking::updateLocalMap()
 {
     // This is for visualization
-    p_atlas->setReferenceMapPoints(localMapPoints);
+    if (p_atlas->setReferenceMapPoints(localMapPoints) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setReferenceMapPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Update
-    updateLocalKeyFrames();
-    updateLocalPoints();
+    if (updateLocalKeyFrames() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateLocalKeyFrames returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (updateLocalPoints() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateLocalPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

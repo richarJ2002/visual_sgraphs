@@ -13,6 +13,7 @@
 #ifndef VS_GRAPHS_CORE_SEMANTICSEGMENTATION_PRIVATE_FUNCTIONS_H
 #define VS_GRAPHS_CORE_SEMANTICSEGMENTATION_PRIVATE_FUNCTIONS_H
 
+#include "SemanticSegmentationStatus.h"
 #include <cstddef>
 #include <vector>
 
@@ -38,9 +39,10 @@ struct WallComponentSupport
     double           componentRatio = 0.0;
 };
 
-WallComponentSupport findLargestWallComponent(
+[[nodiscard]] SemanticSegmentationStatus findLargestWallComponent(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_wallCloud_in,
-    const double                                        clusterTolerance_m_in);
+    const double                                        clusterTolerance_m_in,
+    WallComponentSupport &largestWallComponent_out);
 
 } // namespace core
 } // namespace vs_graphs

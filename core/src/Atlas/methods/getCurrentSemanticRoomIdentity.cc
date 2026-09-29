@@ -30,9 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-int Atlas::getCurrentSemanticRoomIdentity(void) const
+AtlasStatus Atlas::getCurrentSemanticRoomIdentity(
+    int &getCurrentSemanticRoomIdentity_out) const
 {
-    return currentSemanticRoomIdentity.load(std::memory_order_acquire);
+    getCurrentSemanticRoomIdentity_out =
+        currentSemanticRoomIdentity.load(std::memory_order_acquire);
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

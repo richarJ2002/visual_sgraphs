@@ -30,6 +30,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
+#include <rclcpp/logging.hpp>
 #include <sophus/se3.hpp>
 
 #include "TwoViewReconstruction.h"
@@ -55,12 +56,23 @@ bool Pinhole::reconstructWithTwoViews(const std::vector<cv::KeyPoint> &keys1_in,
         p_twoViewReconstruction      = new TwoViewReconstruction(cameraMatrix);
     }
 
-    return p_twoViewReconstruction->reconstruct(keys1_in,
-                                                keys2_in,
-                                                matches12_in,
-                                                pose21_inout,
-                                                points3d_inout,
-                                                triangulated_inout);
+    bool twoViewReconstructionIsReconstructed{};
+    if (p_twoViewReconstruction->reconstruct(
+            keys1_in,
+            keys2_in,
+            matches12_in,
+            pose21_inout,
+            points3d_inout,
+            triangulated_inout,
+            twoViewReconstructionIsReconstructed) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: reconstruct returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    return twoViewReconstructionIsReconstructed;
 }
 } // namespace pinhole
 } // namespace camera_models

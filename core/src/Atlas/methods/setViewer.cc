@@ -30,10 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setViewer(Viewer *p_viewer_in)
+AtlasStatus Atlas::setViewer(Viewer *p_viewer_in)
 {
     p_viewer  = p_viewer_in;
     hasViewer = true;
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

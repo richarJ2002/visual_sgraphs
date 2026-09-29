@@ -50,8 +50,10 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
     std::optional<SemanticGraphSnapshot> capturedSnapshot;
     long unsigned int                    mapId = 0U;
     {
-        Atlas         atlas(0);
-        Map          *p_map = atlas.getCurrentMap();
+        Atlas atlas(0);
+        Map  *p_map = nullptr;
+        ASSERT_EQ((atlas.getCurrentMap(p_map)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
         unsigned long mapId2{};
         ASSERT_EQ((p_map->getId(mapId2)), MapStatus::MAP_STATUS_SUCCESS);
         mapId = mapId2;
@@ -73,8 +75,10 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
         ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
                   MapStatus::MAP_STATUS_SUCCESS);
 
-        std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-        SemanticGraphSnapshot        snapshot{};
+        std::unique_lock<std::mutex> lock{};
+        ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        SemanticGraphSnapshot snapshot{};
         ASSERT_EQ((captureSemanticGraphSnapshot(&atlas, snapshot)),
                   SemanticGraphSnapshotStatus::
                       SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -113,8 +117,10 @@ TEST(SemanticGraphSnapshot,
     std::optional<SemanticGraphSnapshot> capturedSnapshot;
     long unsigned int                    mapId = 0U;
     {
-        Atlas         atlas(0);
-        Map          *p_map = atlas.getCurrentMap();
+        Atlas atlas(0);
+        Map  *p_map = nullptr;
+        ASSERT_EQ((atlas.getCurrentMap(p_map)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
         unsigned long mapId2{};
         ASSERT_EQ((p_map->getId(mapId2)), MapStatus::MAP_STATUS_SUCCESS);
         mapId = mapId2;
@@ -157,8 +163,10 @@ TEST(SemanticGraphSnapshot,
         ASSERT_EQ((room.setFloor(&floor)),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
 
-        std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-        SemanticGraphSnapshot        snapshot{};
+        std::unique_lock<std::mutex> lock{};
+        ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        SemanticGraphSnapshot snapshot{};
         ASSERT_EQ((captureSemanticGraphSnapshot(&atlas, snapshot)),
                   SemanticGraphSnapshotStatus::
                       SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -198,9 +206,11 @@ TEST(SemanticGraphSnapshot,
 TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map          *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     unsigned long id{};
     ASSERT_EQ((p_mapA->getId(id)), MapStatus::MAP_STATUS_SUCCESS);
     unsigned long id2{};
@@ -267,8 +277,10 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
     ASSERT_EQ((p_mapB->addMapFloor(&floorB)), MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -315,9 +327,11 @@ TEST(SemanticGraphSnapshot,
      ContainingMapVersusDeclaredMapIsPreservedForEveryEntityKind)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* Room: enumerated from mapA, but declares mapB. */
     Room mismatchedRoom;
@@ -397,8 +411,10 @@ TEST(SemanticGraphSnapshot,
     ASSERT_EQ((p_mapA->addMapFloor(&noMapFloor)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -483,7 +499,8 @@ TEST(SemanticGraphSnapshot,
      DetectedCandidateAndBothCollectionMembershipAreDistinguishable)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     Room detectedOnly;
     ASSERT_EQ((detectedOnly.setId(1)),
@@ -511,8 +528,10 @@ TEST(SemanticGraphSnapshot,
     ASSERT_EQ((p_map->addCandidateMapRoom(&bothCollections)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -546,9 +565,11 @@ TEST(SemanticGraphSnapshot,
      RelationshipTargetsRetainTruthfulEvidenceAcrossEveryUnusualCase)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* Room with no ground plane at all -- null RawPlaneRef. */
     Room noGroundRoom;
@@ -625,8 +646,10 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((p_mapA->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -716,7 +739,8 @@ TEST(SemanticGraphSnapshot,
      WrongTypePlaneTargetsInWallShapedReferencesRetainTruthfulEvidence)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* A live GROUND-typed plane, never a WallRecord in this snapshot. */
     geometric::Plane groundNotWall;
@@ -766,8 +790,10 @@ TEST(SemanticGraphSnapshot,
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -816,7 +842,8 @@ TEST(SemanticGraphSnapshot,
      UnmappedNonNullRoomAndFloorReferencesRetainLocalIdentityAndLiveness)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     /* An unmapped, bad, non-null Room, referenced from a Passage. */
     Room unmappedBadRoom;
@@ -849,8 +876,10 @@ TEST(SemanticGraphSnapshot,
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -895,13 +924,17 @@ TEST(SemanticGraphSnapshot,
 TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
 {
     Atlas atlas(0);
-    atlas.clearAtlas();
-    ASSERT_EQ(atlas.getAllMaps().size(), 0U);
+    ASSERT_EQ((atlas.clearAtlas()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    std::vector<Map *> allMaps{};
+    ASSERT_EQ((atlas.getAllMaps(allMaps)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ(allMaps.size(), 0U);
 
     SemanticGraphSnapshot snapshot;
     {
-        std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-        SemanticGraphSnapshot        snapshot2{};
+        std::unique_lock<std::mutex> lock{};
+        ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        SemanticGraphSnapshot snapshot2{};
         ASSERT_EQ((captureSemanticGraphSnapshot(&atlas, snapshot2)),
                   SemanticGraphSnapshotStatus::
                       SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -913,7 +946,9 @@ TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
     EXPECT_TRUE(snapshot.maps.empty());
     /* The real proof: capture must not have created a map as a side
      * effect, unlike calling Atlas::GetCurrentMap() would have. */
-    EXPECT_EQ(atlas.getAllMaps().size(), 0U);
+    std::vector<Map *> allMaps2{};
+    ASSERT_EQ((atlas.getAllMaps(allMaps2)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_EQ(allMaps2.size(), 0U);
 }
 
 /* Atlas::SetMapBad(currentMap) erases the map from the active
@@ -925,20 +960,25 @@ TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
 TEST(SemanticGraphSnapshot,
      CurrentMapMarkedBadBeforeChangeMapIsReportedAsNotActive)
 {
-    Atlas         atlas(0);
-    Map          *p_currentMap = atlas.getCurrentMap();
+    Atlas atlas(0);
+    Map  *p_currentMap = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_currentMap)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     unsigned long currentMapIdValue{};
     ASSERT_EQ((p_currentMap->getId(currentMapIdValue)),
               MapStatus::MAP_STATUS_SUCCESS);
     const long unsigned int currentMapId =
         static_cast<long unsigned int>(currentMapIdValue);
 
-    atlas.setMapBad(p_currentMap);
+    ASSERT_EQ((atlas.setMapBad(p_currentMap)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
     /* No ChangeMap() call yet: mpCurrentMap still points at the now-bad,
      * now-inactive map. */
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -957,10 +997,13 @@ TEST(SemanticGraphSnapshot,
 TEST(SemanticGraphSnapshot, CurrentMapStatusIsActiveForAnOrdinaryCurrentMap)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -987,7 +1030,8 @@ TEST(SemanticGraphSnapshot,
      ManagerPrivateAndHistoryUnavailableDefaultsAreReported)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -1001,8 +1045,10 @@ TEST(SemanticGraphSnapshot,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
     ASSERT_EQ((p_map->addMapPlane(&wall)), MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -1038,7 +1084,14 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
     auto buildAndCapture = [](bool constructLowerCentroidFirst_in)
     {
         Atlas atlas(0);
-        Map  *p_map = atlas.getCurrentMap();
+        Map  *p_map = nullptr;
+        if (atlas.getCurrentMap(p_map) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         std::unique_ptr<Room> p_lowerCentroidRoom = std::make_unique<Room>();
         if (p_lowerCentroidRoom->setId(1) !=
@@ -1131,8 +1184,17 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
             }
         }
 
-        std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-        SemanticGraphSnapshot        snapshot{};
+        std::unique_lock<std::mutex> lock{};
+        if (atlas.acquireSemanticUpdateLock(lock) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: acquireSemanticUpdateLock returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        SemanticGraphSnapshot snapshot{};
         if (captureSemanticGraphSnapshot(&atlas, snapshot) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
@@ -1315,7 +1377,8 @@ TEST(SemanticGraphSnapshot,
 TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane sharedWall;
     test::makeWallPlane(sharedWall,
@@ -1345,8 +1408,10 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
     ASSERT_EQ((p_map->addDetectedMapRoom(&badOwnerSameId)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -1379,9 +1444,11 @@ TEST(SemanticGraphSnapshot,
      OwnerRoomRefIsKeyedByContainingMapEvenWhenRoomDeclaresADifferentMap)
 {
     Atlas atlas(0);
-    Map  *p_mapA = atlas.getCurrentMap();
-    atlas.createNewMap();
-    Map *p_mapB = atlas.getCurrentMap();
+    Map  *p_mapA = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapA)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ((atlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Map *p_mapB = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_mapB)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -1406,8 +1473,10 @@ TEST(SemanticGraphSnapshot,
     ASSERT_EQ((p_mapA->addDetectedMapRoom(&mismatchedOwner)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -1444,7 +1513,8 @@ TEST(SemanticGraphSnapshot,
 TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane sharedWall;
     test::makeWallPlane(sharedWall,
@@ -1511,8 +1581,10 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
     ASSERT_EQ((p_map->addCandidateMapRoom(&doublyRegisteredOwner)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -1569,8 +1641,15 @@ TEST(
 {
     auto buildAndCapture = [](const std::vector<int> &roomIdInsertionOrder_in)
     {
-        Atlas                              atlas(0);
-        Map                               *p_map = atlas.getCurrentMap();
+        Atlas atlas(0);
+        Map  *p_map = nullptr;
+        if (atlas.getCurrentMap(p_map) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         std::vector<std::unique_ptr<Room>> rooms;
         for (int roomId : roomIdInsertionOrder_in)
         {
@@ -1601,8 +1680,17 @@ TEST(
             }
             rooms.push_back(std::move(p_room));
         }
-        std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-        SemanticGraphSnapshot        snapshot{};
+        std::unique_lock<std::mutex> lock{};
+        if (atlas.acquireSemanticUpdateLock(lock) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: acquireSemanticUpdateLock returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        SemanticGraphSnapshot snapshot{};
         if (captureSemanticGraphSnapshot(&atlas, snapshot) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
@@ -1638,8 +1726,9 @@ TEST(
 
     /* Non-mutation: capturing must not have changed the source graph. */
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     ASSERT_EQ((room.setId(1)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setMap(p_map)),
@@ -1649,8 +1738,10 @@ TEST(
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
     {
-        std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-        SemanticGraphSnapshot        snapshot{};
+        std::unique_lock<std::mutex> lock{};
+        ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        SemanticGraphSnapshot snapshot{};
         ASSERT_EQ((captureSemanticGraphSnapshot(&atlas, snapshot)),
                   SemanticGraphSnapshotStatus::
                       SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -1685,10 +1776,23 @@ TEST(
     auto buildAndCapture = [](bool ascendingInsertionOrder_in)
     {
         Atlas atlas(0);
-        Map  *p_mapA = atlas.getCurrentMap();
+        Map  *p_mapA = nullptr;
+        if (atlas.getCurrentMap(p_mapA) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
         /* A second, otherwise-unused map only to give the top-level maps
          * vector two entries to check std::is_sorted() over. */
-        atlas.createNewMap();
+        if (atlas.createNewMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: createNewMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         std::vector<std::unique_ptr<geometric::Plane>> walls;
         std::vector<std::unique_ptr<Passage>>          passages;
@@ -1777,8 +1881,17 @@ TEST(
             floors.push_back(std::move(p_floor));
         }
 
-        std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-        SemanticGraphSnapshot        snapshot{};
+        std::unique_lock<std::mutex> lock{};
+        if (atlas.acquireSemanticUpdateLock(lock) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: acquireSemanticUpdateLock returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        SemanticGraphSnapshot snapshot{};
         if (captureSemanticGraphSnapshot(&atlas, snapshot) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
@@ -1857,7 +1970,14 @@ TEST(
     auto buildAndCapture = [](bool ascendingInsertionOrder_in)
     {
         Atlas atlas(0);
-        Map  *p_map = atlas.getCurrentMap();
+        Map  *p_map = nullptr;
+        if (atlas.getCurrentMap(p_map) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCurrentMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
 
         std::vector<std::unique_ptr<geometric::Plane>> walls;
         for (int index = 0; index < 3; ++index)
@@ -2098,8 +2218,17 @@ TEST(
                          __func__);
         }
 
-        std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-        SemanticGraphSnapshot        snapshot{};
+        std::unique_lock<std::mutex> lock{};
+        if (atlas.acquireSemanticUpdateLock(lock) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: acquireSemanticUpdateLock returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        SemanticGraphSnapshot snapshot{};
         if (captureSemanticGraphSnapshot(&atlas, snapshot) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
@@ -2174,8 +2303,9 @@ TEST(SemanticGraphSnapshot,
      CaptureUnderHeldSemanticLockCompletesWithoutReacquiring)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
-    Room  room;
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    Room room;
     ASSERT_EQ((room.setId(1)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((room.setMap(p_map)),
@@ -2183,8 +2313,10 @@ TEST(SemanticGraphSnapshot,
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
@@ -2200,7 +2332,8 @@ TEST(SemanticGraphSnapshot,
      CheapPlaneAccessorAgreesWithFullGeometrySnapshotScalars)
 {
     Atlas atlas(0);
-    Map  *p_map = atlas.getCurrentMap();
+    Map  *p_map = nullptr;
+    ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
 
     geometric::Plane wall;
     test::makeWallPlane(wall,
@@ -2235,8 +2368,10 @@ TEST(SemanticGraphSnapshot,
     ASSERT_NE(fullSnapshot.supportCloud, nullptr);
     EXPECT_GT(fullSnapshot.supportCloud->size(), 0U);
 
-    std::unique_lock<std::mutex> lock = atlas.acquireSemanticUpdateLock();
-    SemanticGraphSnapshot        snapshot{};
+    std::unique_lock<std::mutex> lock{};
+    ASSERT_EQ((atlas.acquireSemanticUpdateLock(lock)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(
         (captureSemanticGraphSnapshot(&atlas, snapshot)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);

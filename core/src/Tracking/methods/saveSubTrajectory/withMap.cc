@@ -25,22 +25,40 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
 namespace core
 {
 
-void Tracking::saveSubTrajectory(string textNameFileFrames_in,
-                                 string textNameFileKeyFrame_in,
-                                 Map   *p_map_in)
+TrackingStatus Tracking::saveSubTrajectory(string textNameFileFrames_in,
+                                           string textNameFileKeyFrame_in,
+                                           Map   *p_map_in)
 {
-    p_system->saveTrajectoryEuRoC(textNameFileFrames_in, p_map_in);
+    if (p_system->saveTrajectoryEuRoC(textNameFileFrames_in, p_map_in) !=
+        SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: saveTrajectoryEuRoC returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (!textNameFileKeyFrame_in.empty())
     {
-        p_system->saveKeyFrameTrajectoryEuRoC(textNameFileKeyFrame_in,
-                                              p_map_in);
+        if (p_system->saveKeyFrameTrajectoryEuRoC(textNameFileKeyFrame_in,
+                                                  p_map_in) !=
+            SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: saveKeyFrameTrajectoryEuRoC returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
     }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

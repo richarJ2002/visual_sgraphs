@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-geometric::Plane *Atlas::getPlaneById(int planeId_in)
+AtlasStatus Atlas::getPlaneById(int                planeId_in,
+                                geometric::Plane *&p_planeById_out)
 {
     unique_lock<mutex> lock(atlasMutex);
     geometric::Plane  *p_activeMapPlaneById = nullptr;
@@ -44,7 +45,8 @@ geometric::Plane *Atlas::getPlaneById(int planeId_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    return p_activeMap != nullptr ? p_activeMapPlaneById : nullptr;
+    p_planeById_out = p_activeMap != nullptr ? p_activeMapPlaneById : nullptr;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

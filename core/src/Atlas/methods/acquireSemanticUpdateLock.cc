@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-std::unique_lock<std::mutex> Atlas::acquireSemanticUpdateLock()
+AtlasStatus Atlas::acquireSemanticUpdateLock(
+    std::unique_lock<std::mutex> &semanticUpdateLock_out)
 {
-    return std::unique_lock<std::mutex>(semanticUpdateMutex);
+    semanticUpdateLock_out = std::unique_lock<std::mutex>(semanticUpdateMutex);
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

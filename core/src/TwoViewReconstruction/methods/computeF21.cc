@@ -30,9 +30,10 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Matrix3f
-    TwoViewReconstruction::computeF21(const vector<cv::Point2f> &points1_in,
-                                      const vector<cv::Point2f> &points2_in)
+TwoViewReconstructionStatus TwoViewReconstruction::computeF21(
+    const vector<cv::Point2f>      &points1_in,
+    const std::vector<cv::Point2f> &points2_in,
+    Eigen::Matrix3f                &f21_out)
 {
     const int N = points1_in.size();
 
@@ -70,8 +71,9 @@ Eigen::Matrix3f
     Eigen::Vector3f w = svd2.singularValues();
     w(2)              = 0;
 
-    return svd2.matrixU() * Eigen::DiagonalMatrix<float, 3>(w) *
-           svd2.matrixV().transpose();
+    f21_out = svd2.matrixU() * Eigen::DiagonalMatrix<float, 3>(w) *
+              svd2.matrixV().transpose();
+    return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-vector<MapPoint *> Tracking::getLocalMapPoints()
+TrackingStatus
+    Tracking::getLocalMapPoints(std::vector<MapPoint *> &localMapPoints_out)
 {
-    return localMapPoints;
+    localMapPoints_out = localMapPoints;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::trackLocalMap()
+TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
 {
 
     // We have an estimation of the camera pose and some map points tracked in
@@ -43,8 +43,20 @@ bool Tracking::trackLocalMap()
     // the local map.
     trackedFr++;
 
-    updateLocalMap();
-    searchLocalPoints();
+    if (updateLocalMap() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateLocalMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (searchLocalPoints() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: searchLocalPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // TOO check outliers before PO
     int aux1 = 0, aux2 = 0;
@@ -57,36 +69,106 @@ bool Tracking::trackLocalMap()
                 aux2++;
         }
 
-    if (!p_atlas->isImuInitialized())
+    bool atlasIsImuInitialized{};
+    if (p_atlas->isImuInitialized(atlasIsImuInitialized) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
-        Optimizer::poseOptimization(&currentFrame);
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!atlasIsImuInitialized)
+    {
+        int inlierCount{};
+        if (Optimizer::poseOptimization(&currentFrame, inlierCount) !=
+            OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: poseOptimization returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
     else
     {
         if (currentFrame.id <= lastRelocFrameId + framesToResetIMU)
         {
-            Verbose::printMess("TLM: PoseOptimization ",
-                               Verbose::VERBOSITY_DEBUG);
-            Optimizer::poseOptimization(&currentFrame);
+            if (Verbose::printMess("TLM: PoseOptimization ",
+                                   Verbose::VERBOSITY_DEBUG) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            int inlierCount2{};
+            if (Optimizer::poseOptimization(&currentFrame, inlierCount2) !=
+                OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: poseOptimization returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         else
         {
             // if(!mbMapUpdated && mState == OK) //  && (mnMatchesInliers>30))
             if (!isMapUpdated) //  && (mnMatchesInliers>30))
             {
-                Verbose::printMess("TLM: PoseInertialOptimizationLastFrame ",
-                                   Verbose::VERBOSITY_DEBUG);
-                Optimizer::poseInertialOptimizationLastFrame(
-                    &currentFrame); // ,
-                                    // !mpLastKeyFrame->getMap()->getInertialBA1());
+                if (Verbose::printMess(
+                        "TLM: PoseInertialOptimizationLastFrame ",
+                        Verbose::VERBOSITY_DEBUG) !=
+                    VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: printMess returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                int inlierCount3{};
+                if (Optimizer::poseInertialOptimizationLastFrame(
+                        &currentFrame,
+                        inlierCount3) !=
+                    OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: poseInertialOptimizationLastFrame "
+                                 "returned a failure status although it cannot "
+                                 "fail; continuing as before.",
+                                 __func__);
+                } // ,
+                  // !mpLastKeyFrame->getMap()->getInertialBA1());
             }
             else
             {
-                Verbose::printMess("TLM: PoseInertialOptimizationLastKeyFrame ",
-                                   Verbose::VERBOSITY_DEBUG);
-                Optimizer::poseInertialOptimizationLastKeyFrame(
-                    &currentFrame); // ,
-                                    // !mpLastKeyFrame->getMap()->getInertialBA1());
+                if (Verbose::printMess(
+                        "TLM: PoseInertialOptimizationLastKeyFrame ",
+                        Verbose::VERBOSITY_DEBUG) !=
+                    VerboseStatus::VERBOSE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: printMess returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                int inlierCount4{};
+                if (Optimizer::poseInertialOptimizationLastKeyFrame(
+                        &currentFrame,
+                        inlierCount4) !=
+                    OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: poseInertialOptimizationLastKeyFrame "
+                                 "returned a failure status although it cannot "
+                                 "fail; continuing as before.",
+                                 __func__);
+                } // ,
+                  // !mpLastKeyFrame->getMap()->getInertialBA1());
             }
         }
     }
@@ -164,10 +246,16 @@ bool Tracking::trackLocalMap()
     // More restrictive if there was a relocalization recently
     p_localMapper->matchesInliers = matchesInliers;
     if (currentFrame.id < lastRelocFrameId + maxFrames && matchesInliers < 25)
-        return false;
+    {
+        isTracked_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
 
     if ((matchesInliers > 10) && (state == RECENTLY_LOST))
-        return true;
+    {
+        isTracked_out = true;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
 
     // AGGRESSIVE TRACKING ACCEPTANCE for corridors: Require only 5 close
     // inliers In featureless corridors, close points (walls/floor) are more
@@ -176,13 +264,38 @@ bool Tracking::trackLocalMap()
     {
         // For IMU monocular, rely on IMU + minimum visual inliers - very
         // permissive LOWERED: 8->5 with IMU, 25->15 without IMU
-        if ((matchesInliers < 5 && p_atlas->isImuInitialized()) ||
-            (matchesInliers < 15 && !p_atlas->isImuInitialized()))
+        bool atlasIsImuInitialized2{};
+        if ((matchesInliers < 5) &&
+            p_atlas->isImuInitialized(atlasIsImuInitialized2) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
-            return false;
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isImuInitialized returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        bool atlasIsImuInitialized3{};
+        if (!((matchesInliers < 5 && atlasIsImuInitialized2)) &&
+            (matchesInliers < 15) &&
+            p_atlas->isImuInitialized(atlasIsImuInitialized3) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isImuInitialized returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if ((matchesInliers < 5 && atlasIsImuInitialized2) ||
+            (matchesInliers < 15 && !atlasIsImuInitialized3))
+        {
+            isTracked_out = false;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
         else
-            return true;
+        {
+            isTracked_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
     }
     else if (sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
     {
@@ -190,11 +303,20 @@ bool Tracking::trackLocalMap()
         // In corridors, close points (walls) provide strong geometric
         // constraints
         if (closeInlierCount >= 5 && matchesInliers >= 5)
-            return true;
+        {
+            isTracked_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
         else if (matchesInliers >= 10) // fallback with more total inliers
-            return true;
+        {
+            isTracked_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
         else
-            return false;
+        {
+            isTracked_out = false;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
     }
     else if (sensor == System::RGBD || sensor == System::STEREO)
     {
@@ -202,21 +324,39 @@ bool Tracking::trackLocalMap()
         // (AGGRESSIVE) Close points are more reliable in corridors (wall/floor
         // planes)
         if (closeInlierCount >= 5)
-            return true;
+        {
+            isTracked_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
         else if (closeInlierCount >= 3 && matchesInliers >= 10)
-            return true;
+        {
+            isTracked_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
         else if (matchesInliers >= 15)
-            return true;
+        {
+            isTracked_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
         else
-            return false;
+        {
+            isTracked_out = false;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
     }
     else
     {
         // Monocular: lowered threshold
         if (matchesInliers < 10)
-            return false;
+        {
+            isTracked_out = false;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
         else
-            return true;
+        {
+            isTracked_out = true;
+            return TrackingStatus::TRACKING_STATUS_SUCCESS;
+        }
     }
 }
 

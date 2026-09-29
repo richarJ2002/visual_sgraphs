@@ -27,18 +27,18 @@ namespace vs_graphs
 namespace core
 {
 
-void SemanticsManager::evaluateTopCandidateVerification(
+SemanticsManagerStatus SemanticsManager::evaluateTopCandidateVerification(
     const std::vector<semantic::SemanticCandidate> &candidates_in)
 {
     if (candidates_in.empty())
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const semantic::SemanticCandidate &topCandidate = candidates_in.front();
     if (!topCandidate.isMinimumEvidenceSatisfied)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* SemanticCandidates::generateWithStatus() marks every candidate within
@@ -51,16 +51,34 @@ void SemanticsManager::evaluateTopCandidateVerification(
         candidates_in.size() == 1U || !candidates_in[1].isAmbiguous;
     if (!topCandidateIsUniqueLeader)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    semantic::Room *p_roomA =
-        findRoomByMapAndId(topCandidate.mapAId, topCandidate.roomAId);
-    semantic::Room *p_roomB =
-        findRoomByMapAndId(topCandidate.mapBId, topCandidate.roomBId);
+    semantic::Room *p_roomA = nullptr;
+    if (findRoomByMapAndId(topCandidate.mapAId,
+                           topCandidate.roomAId,
+                           p_roomA) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: findRoomByMapAndId returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+    semantic::Room *p_roomB = nullptr;
+    if (findRoomByMapAndId(topCandidate.mapBId,
+                           topCandidate.roomBId,
+                           p_roomB) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: findRoomByMapAndId returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_roomA == nullptr || p_roomB == nullptr)
     {
-        return;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     semantic::SemanticVerifyConfig verifyConfiguration{};
@@ -243,7 +261,16 @@ void SemanticsManager::evaluateTopCandidateVerification(
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    submitVerificationVerdict(resultVerificationVerdict);
+    if (submitVerificationVerdict(resultVerificationVerdict) !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: submitVerificationVerdict returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

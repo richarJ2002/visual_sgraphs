@@ -30,10 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-void System::reset()
+SystemStatus System::reset()
 {
     unique_lock<mutex> lock(resetMutex);
     isResetRequested = true;
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

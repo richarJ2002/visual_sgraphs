@@ -31,9 +31,17 @@ namespace vs_graphs
 namespace core
 {
 
-vector<MapPoint *> System::getAllMapPoints()
+SystemStatus System::getAllMapPoints(std::vector<MapPoint *> &allMapPoints_out)
 {
-    Map                    *p_activeMap = p_atlas->getCurrentMap();
+    Map *p_activeMap = nullptr;
+    if (p_atlas->getCurrentMap(p_activeMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     std::vector<MapPoint *> activeMapAllMapPoints{};
     if (p_activeMap->getAllMapPoints(activeMapAllMapPoints) !=
         MapStatus::MAP_STATUS_SUCCESS)
@@ -43,7 +51,8 @@ vector<MapPoint *> System::getAllMapPoints()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    return activeMapAllMapPoints;
+    allMapPoints_out = activeMapAllMapPoints;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

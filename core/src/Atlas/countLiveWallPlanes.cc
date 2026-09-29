@@ -33,11 +33,12 @@ namespace vs_graphs
 namespace core
 {
 
-std::size_t countLiveWallPlanes(Map *p_map_in)
+AtlasStatus countLiveWallPlanes(Map *p_map_in, std::size_t &liveWallPlanes_out)
 {
     if (p_map_in == nullptr)
     {
-        return 0U;
+        liveWallPlanes_out = 0U;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     std::size_t                     liveCount = 0U;
     std::vector<geometric::Plane *> mapAllPlanes{};
@@ -76,7 +77,8 @@ std::size_t countLiveWallPlanes(Map *p_map_in)
             ++liveCount;
         }
     }
-    return liveCount;
+    liveWallPlanes_out = liveCount;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

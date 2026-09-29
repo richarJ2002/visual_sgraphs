@@ -30,11 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
+SemanticsManagerStatus SemanticsManager::associateRooms(
     const Eigen::Vector3d clusterCentroid_World_in,
     const std::vector<vs_graphs::core::geometric::Plane *> &wallList_World_in,
     const std::vector<Eigen::Vector3d> &freeSpaceCluster_World_m_in,
-    const std::unordered_set<int>      &excludedRoomIds_in)
+    const std::unordered_set<int>      &excludedRoomIds_in,
+    vs_graphs::core::semantic::Room   *&p_room_out)
 {
     /* Extract parameter on centre distance threshold of room */
     const double centerDistanceThreshold =
@@ -54,8 +55,15 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
     double nearestDistance    = std::numeric_limits<double>::max();
 
     /* Get a list of all rooms within map */
-    const std::vector<vs_graphs::core::semantic::Room *> allRooms_World =
-        p_atlas->getAllRooms();
+    std::vector<vs_graphs::core::semantic::Room *> allRooms_World{};
+    if (p_atlas->getAllRooms(allRooms_World) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Evaluate every room once against the complete cluster wall set. */
     for (vs_graphs::core::semantic::Room *p_room_World : allRooms_World)
@@ -106,11 +114,31 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
         const double roomCenterRelClusterCenterDistance =
             (roomCenter_World - clusterCentroid_World_in).norm();
 
-        const bool roomSeparatedFromCluster = hasSeparatingFiniteWall(
-            p_atlas->getAllPlanes(),
-            roomCenter_World,
-            clusterCentroid_World_in,
-            static_cast<double>(p_sysParams->roomSeg.finiteWallBoundsMargin_m));
+        std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
+        if (p_atlas->getAllPlanes(atlasAllPlanes) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPlanes returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        bool roomSeparatedFromCluster{};
+        if (hasSeparatingFiniteWall(
+                atlasAllPlanes,
+                roomCenter_World,
+                clusterCentroid_World_in,
+                static_cast<double>(
+                    p_sysParams->roomSeg.finiteWallBoundsMargin_m),
+                roomSeparatedFromCluster) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: hasSeparatingFiniteWall returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
 
         /* Extract the walls from the room */
         std::vector<vs_graphs::core::geometric::Plane *> roomWallsList{};
@@ -321,7 +349,8 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
     vs_graphs::core::semantic::Room *p_selectedRoom =
         p_bestSharedRoom != nullptr ? p_bestSharedRoom : p_nearestRoom;
 
-    return p_selectedRoom;
+    p_room_out = p_selectedRoom;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

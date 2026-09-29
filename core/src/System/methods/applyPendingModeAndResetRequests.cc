@@ -36,32 +36,70 @@ namespace vs_graphs
 namespace core
 {
 
-void System::applyPendingModeAndResetRequests()
+SystemStatus System::applyPendingModeAndResetRequests()
 {
     // Check mode change
     {
         std::unique_lock<std::mutex> lock(modeMutex);
         if (isLocalizationModeActivationRequested)
         {
-            p_localMapper->requestStop();
+            if (p_localMapper->requestStop() !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: requestStop returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
 
             // Wait until Local Mapping has effectively stopped
             for (;;)
             {
-                if (p_localMapper->isStopped())
+                bool localMapperIsStopped{};
+                if (p_localMapper->isStopped(localMapperIsStopped) !=
+                    LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isStopped returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (localMapperIsStopped)
                 {
                     break;
                 }
                 usleep(1000);
             }
 
-            p_tracker->informOnlyTracking(true);
+            if (p_tracker->informOnlyTracking(true) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: informOnlyTracking returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             isLocalizationModeActivationRequested = false;
         }
         if (isLocalizationModeDeactivationRequested)
         {
-            p_tracker->informOnlyTracking(false);
-            p_localMapper->release();
+            if (p_tracker->informOnlyTracking(false) !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: informOnlyTracking returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_localMapper->release() !=
+                LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: release returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             isLocalizationModeDeactivationRequested = false;
         }
     }
@@ -80,7 +118,13 @@ void System::applyPendingModeAndResetRequests()
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            p_tracker->reset();
+            if (p_tracker->reset() != TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: reset returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
             resetCount.fetch_add(1U, std::memory_order_relaxed);
             isResetRequested          = false;
             isResetActiveMapRequested = false;
@@ -107,11 +151,20 @@ void System::applyPendingModeAndResetRequests()
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            p_tracker->resetActiveMap();
+            if (p_tracker->resetActiveMap() !=
+                TrackingStatus::TRACKING_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: resetActiveMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
             resetCount.fetch_add(1U, std::memory_order_relaxed);
             isResetActiveMapRequested = false;
         }
     }
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
 } // namespace core

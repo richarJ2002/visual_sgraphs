@@ -44,24 +44,67 @@ System::~System()
     }
 
     /* Request a graceful stop on every running worker thread. */
-    p_localMapper->requestFinish();
-    p_loopCloser->requestFinish();
-    p_semanticSegmentation->requestFinish();
-    p_semanticsManager->requestFinish();
+    if (p_localMapper->requestFinish() !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_loopCloser->requestFinish() !=
+        LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_semanticSegmentation->requestFinish() !=
+        SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_semanticsManager->requestFinish() !=
+        SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: requestFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_viewer != static_cast<Viewer *>(nullptr))
     {
-        p_viewer->requestFinish();
+        if (p_viewer->requestFinish() != ViewerStatus::VIEWER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: requestFinish returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     /* Wait for each worker to report finished before joining. Shutdown() may
      * have already stopped Local Mapping / Loop Closing; isFinished() is
      * idempotent, join() below is the only join in the process. */
-    while (
-        !p_localMapper->isFinished() || !p_loopCloser->isFinished() ||
-        !p_semanticSegmentation->isFinished() ||
-        !p_semanticsManager->isFinished() ||
-        (p_viewer != static_cast<Viewer *>(nullptr) && !p_viewer->isFinished()))
+    for (;;)
     {
+        bool haveFinished{};
+        if (haveWorkersFinished(haveFinished) !=
+            SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: haveWorkersFinished returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (haveFinished)
+        {
+            break;
+        }
         usleep(1000);
     }
     /* Join and free the thread objects (first and only join). */

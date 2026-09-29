@@ -37,7 +37,7 @@ namespace vs_graphs
 namespace core
 {
 
-bool Tracking::trackReferenceKeyFrame()
+TrackingStatus Tracking::trackReferenceKeyFrame(bool &isTracked_out)
 {
     // Compute Bag of Words vector
     if (currentFrame.computeBagOfWords() != FrameStatus::FRAME_STATUS_SUCCESS)
@@ -53,14 +53,25 @@ bool Tracking::trackReferenceKeyFrame()
     ORBmatcher         matcher(0.7, true);
     vector<MapPoint *> mapPointMatches;
 
-    int nmatches =
-        matcher.searchByBoW(p_referenceKF, currentFrame, mapPointMatches);
+    int nmatches{};
+    if (matcher.searchByBoW(p_referenceKF,
+                            currentFrame,
+                            mapPointMatches,
+                            nmatches) !=
+        ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: searchByBoW returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     if (nmatches < 8)
     {
         std::cout << "[Tracking] Warning: Less than 8 features matched!"
                   << std::endl;
-        return false;
+        isTracked_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     currentFrame.mapPoints = mapPointMatches;
@@ -82,7 +93,15 @@ bool Tracking::trackReferenceKeyFrame()
                      __func__);
     }
 
-    Optimizer::poseOptimization(&currentFrame);
+    int inlierCount{};
+    if (Optimizer::poseOptimization(&currentFrame, inlierCount) !=
+        OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: poseOptimization returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     // Discard outliers
     int nmatchesMap = 0;
@@ -134,9 +153,15 @@ bool Tracking::trackReferenceKeyFrame()
 
     if (sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
         sensor == System::IMU_RGBD)
-        return true;
+    {
+        isTracked_out = true;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
     else
-        return nmatchesMap >= 10;
+    {
+        isTracked_out = nmatchesMap >= 10;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
 }
 
 } // namespace core

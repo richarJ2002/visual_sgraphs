@@ -31,6 +31,7 @@
 #include <set>
 #include <vector>
 
+#include "KeyFrameDatabaseStatus.h"
 #include "ORBVocabulary.h"
 
 #include <Eigen/Core>
@@ -62,36 +63,44 @@ class KeyFrameDatabase
         invertedFile.resize(vocabulary_in.size());
     }
 
-    void add(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] KeyFrameDatabaseStatus add(KeyFrame *p_keyFrame_in);
 
-    void erase(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] KeyFrameDatabaseStatus erase(KeyFrame *p_keyFrame_in);
 
-    void clear();
-    void clearMap(Map *p_map_in);
+    [[nodiscard]] KeyFrameDatabaseStatus clear();
+    [[nodiscard]] KeyFrameDatabaseStatus clearMap(Map *p_map_in);
 
     // Loop Detection(DEPRECATED)
-    std::vector<KeyFrame *> detectLoopCandidates(KeyFrame *p_currentKeyFrame_in,
-                                                 float     minScore_in);
+    [[nodiscard]] KeyFrameDatabaseStatus
+        detectLoopCandidates(KeyFrame                *p_currentKeyFrame_in,
+                             float                    minScore_in,
+                             std::vector<KeyFrame *> &loopCandidates_out);
 
     // Loop and Merge Detection
-    void detectCandidates(KeyFrame           *p_currentKeyFrame_in,
-                          float               minScore_in,
-                          vector<KeyFrame *> &loopCandidateKeyFrames_out,
-                          vector<KeyFrame *> &mergeCandidateKeyFrames_out);
-    void detectBestCandidates(KeyFrame           *p_currentKeyFrame_in,
+    [[nodiscard]] KeyFrameDatabaseStatus
+        detectCandidates(KeyFrame           *p_currentKeyFrame_in,
+                         float               minScore_in,
+                         vector<KeyFrame *> &loopCandidateKeyFrames_out,
+                         vector<KeyFrame *> &mergeCandidateKeyFrames_out);
+    [[nodiscard]] KeyFrameDatabaseStatus
+        detectBestCandidates(KeyFrame           *p_currentKeyFrame_in,
+                             vector<KeyFrame *> &loopCandidateKeyFrames_out,
+                             vector<KeyFrame *> &mergeCandidateKeyFrames_out,
+                             int                 minWordCount_in);
+    [[nodiscard]] KeyFrameDatabaseStatus
+        detectNBestCandidates(KeyFrame           *p_currentKeyFrame_in,
                               vector<KeyFrame *> &loopCandidateKeyFrames_out,
                               vector<KeyFrame *> &mergeCandidateKeyFrames_out,
-                              int                 minWordCount_in);
-    void detectNBestCandidates(KeyFrame           *p_currentKeyFrame_in,
-                               vector<KeyFrame *> &loopCandidateKeyFrames_out,
-                               vector<KeyFrame *> &mergeCandidateKeyFrames_out,
-                               int                 candidateCount_in);
+                              int                 candidateCount_in);
 
     // Relocalization
-    std::vector<KeyFrame *> detectRelocalizationCandidates(Frame *p_frame_in,
-                                                           Map   *p_map_in);
+    [[nodiscard]] KeyFrameDatabaseStatus detectRelocalizationCandidates(
+        Frame                   *p_frame_in,
+        Map                     *p_map_in,
+        std::vector<KeyFrame *> &relocalizationCandidates_out);
 
-    void setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
+    [[nodiscard]] KeyFrameDatabaseStatus
+        setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
 
   protected:
     // Associated vocabulary

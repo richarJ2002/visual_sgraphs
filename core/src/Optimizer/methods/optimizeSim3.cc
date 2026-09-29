@@ -34,13 +34,15 @@ namespace vs_graphs
 namespace core
 {
 
-int Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
+OptimizerStatus
+    Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
                             KeyFrame                    *p_keyFrame2_in,
                             vector<MapPoint *>          &matches1_inout,
                             g2o::Sim3                   &g2oS12_inout,
                             const float                  threshold2_in,
                             const bool                   isScaleFixed_in,
                             Eigen::Matrix<double, 7, 7> &acumHessian_out,
+                            int                         &inlierCount_out,
                             const bool                   shouldUseAllPoints_in)
 {
     g2o::SparseOptimizer                 optimizer;
@@ -267,17 +269,31 @@ int Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
 
         if (i2 < 0 && !shouldUseAllPoints_in)
         {
-            Verbose::printMess(
-                "    Remove point -> i2: " + to_string(i2) +
-                    "; bAllPoints: " + to_string(shouldUseAllPoints_in),
-                Verbose::VERBOSITY_DEBUG);
+            if (Verbose::printMess(
+                    "    Remove point -> i2: " + to_string(i2) +
+                        "; bAllPoints: " + to_string(shouldUseAllPoints_in),
+                    Verbose::VERBOSITY_DEBUG) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             continue;
         }
 
         if (P3D2c(2) < 0)
         {
-            Verbose::printMess("Sim3: Z coordinate is negative",
-                               Verbose::VERBOSITY_DEBUG);
+            if (Verbose::printMess("Sim3: Z coordinate is negative",
+                                   Verbose::VERBOSITY_DEBUG) !=
+                VerboseStatus::VERBOSE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: printMess returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
             continue;
         }
 
@@ -408,7 +424,10 @@ int Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
         moreIterationCount = 5;
 
     if (correspondenceCount - badCount < 10)
-        return 0;
+    {
+        inlierCount_out = 0;
+        return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
+    }
 
     // Optimize again only with inliers
     optimizer.initializeOptimization();
@@ -442,7 +461,8 @@ int Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
         static_cast<g2o::VertexSim3Expmap *>(optimizer.vertex(0));
     g2oS12_inout = vSim3_recov->estimate();
 
-    return inCount;
+    inlierCount_out = inCount;
+    return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
 } // namespace core

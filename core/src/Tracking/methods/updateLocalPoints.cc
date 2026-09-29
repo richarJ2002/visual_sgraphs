@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::updateLocalPoints()
+TrackingStatus Tracking::updateLocalPoints()
 {
     localMapPoints.clear();
 
@@ -82,6 +82,8 @@ void Tracking::updateLocalPoints()
             }
         }
     }
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

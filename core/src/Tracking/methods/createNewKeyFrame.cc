@@ -33,23 +33,68 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::createNewKeyFrame()
+TrackingStatus Tracking::createNewKeyFrame()
 {
-    if (p_localMapper->isInitializing() && !p_atlas->isImuInitialized())
+    bool localMapperIsInitializing{};
+    if (p_localMapper->isInitializing(localMapperIsInitializing) !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
     {
-        return;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isInitializing returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    bool atlasIsImuInitialized{};
+    if ((localMapperIsInitializing) &&
+        p_atlas->isImuInitialized(atlasIsImuInitialized) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (localMapperIsInitializing && !atlasIsImuInitialized)
+    {
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    if (!p_localMapper->setNotStop(true))
+    bool localMapperWasSet{};
+    if (p_localMapper->setNotStop(true, localMapperWasSet) !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
     {
-        return;
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setNotStop returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (!localMapperWasSet)
+    {
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    KeyFrame *p_keyFrame = new KeyFrame(currentFrame,
-                                        p_atlas->getCurrentMap(),
-                                        p_keyFrameDatabase);
+    Map *p_atlasCurrentMap = nullptr;
+    if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    KeyFrame *p_keyFrame =
+        new KeyFrame(currentFrame, p_atlasCurrentMap, p_keyFrameDatabase);
 
-    if (p_atlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())
+    bool atlasIsImuInitialized2{};
+    if (p_atlas->isImuInitialized(atlasIsImuInitialized2) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isImuInitialized returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (atlasIsImuInitialized2) //  || mpLocalMapper->IsInitializing())
     {
         p_keyFrame->isImu = true;
     }
@@ -72,8 +117,15 @@ void Tracking::createNewKeyFrame()
     }
     else
     {
-        Verbose::printMess("No last KF in KF creation!!",
-                           Verbose::VERBOSITY_NORMAL);
+        if (Verbose::printMess("No last KF in KF creation!!",
+                               Verbose::VERBOSITY_NORMAL) !=
+            VerboseStatus::VERBOSE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: printMess returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
     }
 
     // Reset preintegration from last KF (Create new object)
@@ -202,8 +254,18 @@ void Tracking::createNewKeyFrame()
                         x3D = currentFrameStereoFishEye;
                     }
 
+                    Map *p_atlasCurrentMap2 = nullptr;
+                    if (p_atlas->getCurrentMap(p_atlasCurrentMap2) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCurrentMap returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
                     MapPoint *p_newMapPoint =
-                        new MapPoint(x3D, p_keyFrame, p_atlas->getCurrentMap());
+                        new MapPoint(x3D, p_keyFrame, p_atlasCurrentMap2);
                     if (p_newMapPoint->addObservation(p_keyFrame,
                                                       keyPointIndex) !=
                         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -279,7 +341,15 @@ void Tracking::createNewKeyFrame()
                                      "continuing as before.",
                                      __func__);
                     }
-                    p_atlas->addMapPoint(p_newMapPoint);
+                    if (p_atlas->addMapPoint(p_newMapPoint) !=
+                        AtlasStatus::ATLAS_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addMapPoint returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
+                    }
 
                     currentFrame.mapPoints[keyPointIndex] = p_newMapPoint;
                     pointCount++;
@@ -300,7 +370,16 @@ void Tracking::createNewKeyFrame()
 
     // Check if the marker ids fromt he current frame exist in all the previous
     // keyframes first get the mapped marker from the keyframes
-    for (const auto p_currentMapMarker : p_atlas->getAllMarkers())
+    std::vector<semantic::Marker *> atlasAllMarkers{};
+    if (p_atlas->getAllMarkers(atlasAllMarkers) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllMarkers returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    for (const auto p_currentMapMarker : atlasAllMarkers)
     {
         // Check if the marker is already in the Global map
         for (auto p_currentFrameMaker : currentFrame.mapMarkers)
@@ -338,12 +417,29 @@ void Tracking::createNewKeyFrame()
         }
     }
 
-    p_localMapper->insertKeyFrame(p_keyFrame);
+    if (p_localMapper->insertKeyFrame(p_keyFrame) !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: insertKeyFrame returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    p_localMapper->setNotStop(false);
+    bool localMapperWasSet2{};
+    if (p_localMapper->setNotStop(false, localMapperWasSet2) !=
+        LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setNotStop returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     lastKeyFrameId = currentFrame.id;
     p_lastKeyFrame = p_keyFrame;
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

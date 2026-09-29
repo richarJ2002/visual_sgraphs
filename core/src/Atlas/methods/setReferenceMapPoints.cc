@@ -31,7 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in)
+AtlasStatus
+    Atlas::setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in)
 {
     unique_lock<mutex> lock(atlasMutex);
     if (p_activeMap->setReferenceMapPoints(mapPoints_in) !=
@@ -42,6 +43,8 @@ void Atlas::setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

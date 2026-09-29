@@ -30,10 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-float TwoViewReconstruction::checkFundamental(
+TwoViewReconstructionStatus TwoViewReconstruction::checkFundamental(
     const Eigen::Matrix3f &F21_in,
     vector<bool>          &matchesInliersFlags_inout,
-    float                  sigma_in)
+    float                  sigma_in,
+    float                 &score_out)
 {
     const int N = matches12.size();
 
@@ -110,7 +111,8 @@ float TwoViewReconstruction::checkFundamental(
             matchesInliersFlags_inout[keyPointIndex] = false;
     }
 
-    return score;
+    score_out = score;
+    return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
 } // namespace core

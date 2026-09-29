@@ -15,7 +15,7 @@ namespace vs_graphs
 namespace core
 {
 
-void FrameDrawer::update(Tracking *p_tracker_in)
+FrameDrawerStatus FrameDrawer::update(Tracking *p_tracker_in)
 {
     unique_lock<mutex> stateLock(frameStateMutex);
     p_tracker_in->imageGray.copyTo(image);
@@ -43,7 +43,16 @@ void FrameDrawer::update(Tracking *p_tracker_in)
     projectPoints = currentFrame.projectedPoints;
     matchedInImage.clear();
 
-    localMap = p_tracker_in->getLocalMapPoints();
+    std::vector<MapPoint *> trackerLocalMapPoints{};
+    if (p_tracker_in->getLocalMapPoints(trackerLocalMapPoints) !=
+        TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getLocalMapPoints returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    localMap = trackerLocalMapPoints;
     matchedKeys.clear();
     matchedKeys.reserve(keyPointCount);
     matchedMPs.clear();
@@ -97,6 +106,8 @@ void FrameDrawer::update(Tracking *p_tracker_in)
         }
     }
     state = static_cast<int>(p_tracker_in->lastProcessedState);
+
+    return FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS;
 }
 
 } // namespace core

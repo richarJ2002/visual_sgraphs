@@ -22,6 +22,7 @@
 
 #include "Thirdparty/DBoW2/DUtils/Random.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 using namespace std;
@@ -30,10 +31,10 @@ namespace vs_graphs
 namespace core
 {
 
-void TwoViewReconstruction::findHomography(
-    vector<bool>    &matchesInliersFlags_out,
-    float           &score_inout,
-    Eigen::Matrix3f &H21_out)
+TwoViewReconstructionStatus
+    TwoViewReconstruction::findHomography(vector<bool> &matchesInliersFlags_out,
+                                          float        &score_inout,
+                                          Eigen::Matrix3f &H21_out)
 {
     // Number of putative matches
     const int N = matches12.size();
@@ -41,8 +42,22 @@ void TwoViewReconstruction::findHomography(
     // Normalize coordinates
     vector<cv::Point2f> normalizedPoints1, normalizedPoints2;
     Eigen::Matrix3f     T1, T2;
-    normalize(keys1, normalizedPoints1, T1);
-    normalize(keys2, normalizedPoints2, T2);
+    if (normalize(keys1, normalizedPoints1, T1) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: normalize returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (normalize(keys2, normalizedPoints2, T2) !=
+        TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: normalize returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
     Eigen::Matrix3f T2inv = T2.inverse();
 
     // Best Results variables
@@ -71,11 +86,28 @@ void TwoViewReconstruction::findHomography(
                 normalizedPoints2[matches12[matchIndex].second];
         }
 
-        Eigen::Matrix3f Hn = computeH21(sampledPoints1, sampledPoints2);
-        H21i               = T2inv * Hn * T1;
-        H12i               = H21i.inverse();
+        Eigen::Matrix3f Hn{};
+        if (computeH21(sampledPoints1, sampledPoints2, Hn) !=
+            TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: computeH21 returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        H21i = T2inv * Hn * T1;
+        H12i = H21i.inverse();
 
-        currentScore = checkHomography(H21i, H12i, currentInliersFlags, sigma);
+        float score2{};
+        if (checkHomography(H21i, H12i, currentInliersFlags, sigma, score2) !=
+            TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkHomography returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        currentScore = score2;
 
         if (currentScore > score_inout)
         {
@@ -84,6 +116,8 @@ void TwoViewReconstruction::findHomography(
             score_inout             = currentScore;
         }
     }
+
+    return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
 } // namespace core

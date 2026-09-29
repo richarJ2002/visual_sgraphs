@@ -30,8 +30,9 @@ namespace vs_graphs
 namespace core
 {
 
-std::optional<semantic::RoomContextSnapshot>
-    Atlas::copyLatestRoomContext(const int roomId_in) const
+AtlasStatus Atlas::copyLatestRoomContext(
+    const int                                     roomId_in,
+    std::optional<semantic::RoomContextSnapshot> &roomContext_out) const
 {
     std::lock_guard<std::mutex>                  contextLock(roomContextMutex);
     std::optional<semantic::RoomContextSnapshot> latestSnapshot;
@@ -54,7 +55,8 @@ std::optional<semantic::RoomContextSnapshot>
         }
     }
 
-    return latestSnapshot;
+    roomContext_out = latestSnapshot;
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

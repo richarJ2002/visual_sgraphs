@@ -44,8 +44,14 @@ UtilsStatus Utils::reAssociateRooms(Atlas *p_atlas_in)
      *              a confirmed room or corridor to absorb redundant,
      *              single-wall provisional structural elements.
      */
-    const std::vector<vs_graphs::core::semantic::Room *> allRooms =
-        p_atlas_in->getAllRooms();
+    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
+    if (p_atlas_in->getAllRooms(allRooms) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     for (vs_graphs::core::semantic::Room *p_room : allRooms)
     {

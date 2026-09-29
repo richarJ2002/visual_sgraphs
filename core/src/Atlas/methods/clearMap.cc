@@ -31,14 +31,20 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::clearMap()
+AtlasStatus Atlas::clearMap()
 {
     unique_lock<mutex> atlasLock(atlasMutex);
     /* Same-map reset (Tracking::ResetActiveMap) wipes rooms/floors/passages
      * from the live Map object without creating a new Map. Snapshot first so
      * the bootstrap recovery path can recreate the same stable identities
      * afterwards; otherwise the next cycle allocates fresh RoomN/FloorM. */
-    exportRoomContextFromCurrentMap();
+    if (exportRoomContextFromCurrentMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: exportRoomContextFromCurrentMap returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
+    }
     if (p_activeMap->clear() != MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -57,6 +63,8 @@ void Atlas::clearMap()
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core

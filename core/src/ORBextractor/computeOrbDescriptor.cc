@@ -69,10 +69,10 @@ namespace vs_graphs
 namespace core
 {
 
-void computeOrbDescriptor(const KeyPoint &kpt_in,
-                          const Mat      &image_in,
-                          const Point    *p_briefPattern_in,
-                          uchar          *p_descriptor_inout)
+ORBextractorStatus computeOrbDescriptor(const KeyPoint &kpt_in,
+                                        const Mat      &image_in,
+                                        const Point    *p_briefPattern_in,
+                                        uchar          *p_descriptor_inout)
 {
     float angle = (float)kpt_in.angle * factorPI;
     float a = (float)cos(angle), b = (float)sin(angle);
@@ -121,6 +121,8 @@ void computeOrbDescriptor(const KeyPoint &kpt_in,
     }
 
 #undef GET_VALUE
+
+    return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
 } // namespace core

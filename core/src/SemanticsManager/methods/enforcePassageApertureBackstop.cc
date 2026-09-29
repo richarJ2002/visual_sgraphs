@@ -29,12 +29,12 @@ namespace vs_graphs
 namespace core
 {
 
-SemanticsManager::PassageSideEnforcementOutcome
-    SemanticsManager::enforcePassageApertureBackstop(
-        semantic::Room                         *p_room_inout,
-        geometric::Plane                       *p_wall_in,
-        const std::vector<semantic::Passage *> &allPassages_in,
-        const Eigen::Vector3d                  &groundNormal_World_in)
+SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
+    semantic::Room                                  *p_room_inout,
+    geometric::Plane                                *p_wall_in,
+    const std::vector<semantic::Passage *>          &allPassages_in,
+    const Eigen::Vector3d                           &groundNormal_World_in,
+    SemanticsManager::PassageSideEnforcementOutcome &outcome_out)
 {
     bool room_inoutIsBad{};
     if (!(p_room_inout == nullptr) &&
@@ -59,7 +59,8 @@ SemanticsManager::PassageSideEnforcementOutcome
     if (p_room_inout == nullptr || room_inoutIsBad || p_wall_in == nullptr ||
         wallIsBad)
     {
-        return PassageSideEnforcementOutcome::NO_VIOLATION;
+        outcome_out = PassageSideEnforcementOutcome::NO_VIOLATION;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     for (semantic::Passage *p_passage : allPassages_in)
@@ -177,21 +178,41 @@ SemanticsManager::PassageSideEnforcementOutcome
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (!segmentCrossesPassageOpening(
+        bool crossesPassageOpening{};
+        if (segmentCrossesPassageOpening(
                 segmentStart_World_m,
                 wallGetCentroid.cast<double>(),
                 p_passage,
                 groundNormal_World_in,
                 static_cast<double>(
                     p_sysParams->roomSeg.passagePartition.openingMargin_m),
-                minimumSideDistance_m))
+                minimumSideDistance_m,
+                crossesPassageOpening) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: segmentCrossesPassageOpening returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (!crossesPassageOpening)
         {
             continue;
         }
 
         /* Never steal a wall already claimed by a distinct confirmed room. */
-        bool ownedByConfirmedRoom = false;
-        for (vs_graphs::core::semantic::Room *p_other : p_atlas->getAllRooms())
+        bool                          ownedByConfirmedRoom = false;
+        std::vector<semantic::Room *> atlasAllRooms{};
+        if (p_atlas->getAllRooms(atlasAllRooms) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllRooms returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (vs_graphs::core::semantic::Room *p_other : atlasAllRooms)
         {
             bool otherIsBad{};
             if (!(p_other == nullptr) &&
@@ -250,7 +271,8 @@ SemanticsManager::PassageSideEnforcementOutcome
                     "%s: removeWall rejected its input; continuing as before.",
                     __func__);
             }
-            return PassageSideEnforcementOutcome::REMOVED_UNBOUND;
+            outcome_out = PassageSideEnforcementOutcome::REMOVED_UNBOUND;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
 
         vs_graphs::core::semantic::Room *p_prospective = nullptr;
@@ -322,7 +344,8 @@ SemanticsManager::PassageSideEnforcementOutcome
                       << " at semantic::Passage#" << passageId
                       << " has no opposite stable room; left unbound."
                       << std::endl;
-            return PassageSideEnforcementOutcome::REMOVED_UNBOUND;
+            outcome_out = PassageSideEnforcementOutcome::REMOVED_UNBOUND;
+            return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
         }
 
         bool room_inoutWasWallRemoved3{};
@@ -344,9 +367,26 @@ SemanticsManager::PassageSideEnforcementOutcome
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_atlas->getRoomWallPlaneById(wallGetId2) == nullptr)
+        vs_graphs::core::geometric::Plane *p_atlasRoomWallPlaneById = nullptr;
+        if (p_atlas->getRoomWallPlaneById(wallGetId2,
+                                          p_atlasRoomWallPlaneById) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
-            p_atlas->addRoomWallPlane(p_wall_in);
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomWallPlaneById returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_atlasRoomWallPlaneById == nullptr)
+        {
+            if (p_atlas->addRoomWallPlane(p_wall_in) !=
+                AtlasStatus::ATLAS_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addRoomWallPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
         }
         if (p_prospective->setWalls(p_wall_in) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -377,7 +417,8 @@ SemanticsManager::PassageSideEnforcementOutcome
         std::cout << "[SemMgr] Redirected far-side Wall#" << wallGetId3
                   << " to prospective semantic::Room#" << prospectiveId << "."
                   << std::endl;
-        return PassageSideEnforcementOutcome::REROUTED;
+        outcome_out = PassageSideEnforcementOutcome::REROUTED;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     /* No CONFIRMED passage caught this wall -- but confirmation lags real
@@ -407,7 +448,8 @@ SemanticsManager::PassageSideEnforcementOutcome
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (!segmentCrossesOpenPassageEvidence(
+        bool crossesOpenPassageEvidence{};
+        if (segmentCrossesOpenPassageEvidence(
                 room_inoutCentroid,
                 wallGetCentroid2.cast<double>(),
                 evidence.p_supportingWall,
@@ -418,13 +460,32 @@ SemanticsManager::PassageSideEnforcementOutcome
                 static_cast<double>(
                     p_sysParams->roomSeg.passagePartition.openingMargin_m),
                 static_cast<double>(p_sysParams->roomSeg.passagePartition
-                                        .minimumSideDistance_m)))
+                                        .minimumSideDistance_m),
+                crossesOpenPassageEvidence) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: segmentCrossesOpenPassageEvidence returned a failure "
+                "status although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (!crossesOpenPassageEvidence)
         {
             continue;
         }
 
-        bool ownedByConfirmedRoom = false;
-        for (vs_graphs::core::semantic::Room *p_other : p_atlas->getAllRooms())
+        bool                          ownedByConfirmedRoom = false;
+        std::vector<semantic::Room *> atlasAllRooms2{};
+        if (p_atlas->getAllRooms(atlasAllRooms2) !=
+            AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllRooms returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (vs_graphs::core::semantic::Room *p_other : atlasAllRooms2)
         {
             bool otherIsBad2{};
             if (!(p_other == nullptr) &&
@@ -518,10 +579,12 @@ SemanticsManager::PassageSideEnforcementOutcome
                   << (evidence.p_supportingWall != nullptr ? getId2 : -1)
                   << "); removed from semantic::Room#" << room_inoutId
                   << " pending confirmation." << std::endl;
-        return PassageSideEnforcementOutcome::REMOVED_UNBOUND;
+        outcome_out = PassageSideEnforcementOutcome::REMOVED_UNBOUND;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    return PassageSideEnforcementOutcome::NO_VIOLATION;
+    outcome_out = PassageSideEnforcementOutcome::NO_VIOLATION;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

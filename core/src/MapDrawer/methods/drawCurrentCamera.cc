@@ -34,7 +34,7 @@ namespace vs_graphs
 namespace core
 {
 
-void MapDrawer::drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in)
+MapDrawerStatus MapDrawer::drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in)
 {
     const float &w = cameraSize;
     const float  h = w * 0.75;
@@ -74,6 +74,8 @@ void MapDrawer::drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in)
     glEnd();
 
     glPopMatrix();
+
+    return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 }
 
 } // namespace core

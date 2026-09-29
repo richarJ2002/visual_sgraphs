@@ -29,8 +29,9 @@ namespace vs_graphs
 namespace core
 {
 
-std::vector<semantic::OpenPassageHypothesisRecord>
-    SemanticsManager::captureOpenPassageHypotheses(void) const
+SemanticsManagerStatus SemanticsManager::captureOpenPassageHypotheses(
+    std::vector<semantic::OpenPassageHypothesisRecord>
+        &captureOpenPassageHypotheses_out) const
 {
     std::vector<semantic::OpenPassageHypothesisRecord> records;
     records.reserve(openPassageEvidence.size());
@@ -71,7 +72,8 @@ std::vector<semantic::OpenPassageHypothesisRecord>
                   return semantic::isVector3dLess(lhs_in.centroid_World_m,
                                                   rhs_in.centroid_World_m);
               });
-    return records;
+    captureOpenPassageHypotheses_out = records;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
 } // namespace core

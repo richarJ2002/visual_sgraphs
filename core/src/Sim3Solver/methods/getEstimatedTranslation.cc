@@ -31,9 +31,11 @@ namespace vs_graphs
 namespace core
 {
 
-Eigen::Vector3f Sim3Solver::getEstimatedTranslation()
+Sim3SolverStatus Sim3Solver::getEstimatedTranslation(
+    Eigen::Vector3f &estimatedTranslation_out)
 {
-    return bestTranslation;
+    estimatedTranslation_out = bestTranslation;
+    return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
 } // namespace core

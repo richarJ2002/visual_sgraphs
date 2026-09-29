@@ -30,9 +30,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Tracking::resetFrameIMU()
+TrackingStatus Tracking::resetFrameIMU()
 {
     // TODO To implement...
+
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
 } // namespace core

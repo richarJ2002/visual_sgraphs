@@ -153,8 +153,15 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     }
 
     /* Extract all passages */
-    const std::vector<vs_graphs::core::semantic::Passage *> allPassages =
-        p_atlas_inout->getAllPassages();
+    std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
+    if (p_atlas_inout->getAllPassages(allPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* ---------------------------------------------------------------------- *
      * DETERMINE THE PASSAGE GEOMETRY
@@ -650,7 +657,15 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
      * ---------------------------------------------------------------------- */
 
     /* Passage identities belong to the mission, not to an active SLAM map. */
-    const int passageId = p_atlas_inout->reservePassageIdentity();
+    int passageId{};
+    if (p_atlas_inout->reservePassageIdentity(passageId) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: reservePassageIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
 
     /* Initialize passage object */
     vs_graphs::core::semantic::Passage *p_newMapPassage =
@@ -665,7 +680,16 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                      "fail; continuing as before.",
                      __func__);
     }
-    if (p_newMapPassage->setMap(p_atlas_inout->getCurrentMap()) !=
+    Map *p_atlasCurrentMap = nullptr;
+    if (p_atlas_inout->getCurrentMap(p_atlasCurrentMap) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCurrentMap returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_newMapPassage->setMap(p_atlasCurrentMap) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -790,11 +814,26 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     std::cout << " (" << informationStream.str()
               << "), centroid=" << centroid.transpose() << "." << std::endl;
 
-    p_atlas_inout->addMapPassage(p_newMapPassage);
+    if (p_atlas_inout->addMapPassage(p_newMapPassage) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapPassage returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 
-    std::cout << "[GeoSemHelper] Atlas now contains "
-              << p_atlas_inout->getAllPassages().size() << " passages."
-              << std::endl;
+    std::vector<vs_graphs::core::semantic::Passage *> atlasAllPassages{};
+    if (p_atlas_inout->getAllPassages(atlasAllPassages) !=
+        AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::cout << "[GeoSemHelper] Atlas now contains " << atlasAllPassages.size()
+              << " passages." << std::endl;
 
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }

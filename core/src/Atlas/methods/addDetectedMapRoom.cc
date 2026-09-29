@@ -31,11 +31,11 @@ namespace vs_graphs
 namespace core
 {
 
-void Atlas::addDetectedMapRoom(semantic::Room *p_room_in)
+AtlasStatus Atlas::addDetectedMapRoom(semantic::Room *p_room_in)
 {
     if (p_room_in == nullptr)
     {
-        return;
+        return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
     int room_inId{};
     if (p_room_in->getId(room_inId) !=
@@ -46,7 +46,13 @@ void Atlas::addDetectedMapRoom(semantic::Room *p_room_in)
                      "fail; continuing as before.",
                      __func__);
     }
-    observeRoomIdentity(room_inId);
+    if (observeRoomIdentity(room_inId) != AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: observeRoomIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
+    }
     Map *p_ownerMap = nullptr;
     if (p_room_in->getMap(p_ownerMap) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -64,6 +70,8 @@ void Atlas::addDetectedMapRoom(semantic::Room *p_room_in)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
 } // namespace core
