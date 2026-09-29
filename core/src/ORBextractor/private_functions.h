@@ -24,6 +24,17 @@ namespace vs_graphs
 namespace core
 {
 
+/*! @brief Side of the square patch the ORB descriptor samples, in pixels. */
+inline constexpr int PATCH_SIZE = 31;
+
+/*! @brief Radius of the circular patch that sets a keypoint orientation, in
+ *         pixels (PATCH_SIZE / 2). */
+inline constexpr int HALF_PATCH_SIZE = 15;
+
+/*! @brief Image border, in pixels, kept free of keypoints so that every
+ *         patch fits inside the image. */
+inline constexpr int EDGE_THRESHOLD = 19;
+
 /*!
  * @brief        Computes the dominant orientation of a patch.
  */

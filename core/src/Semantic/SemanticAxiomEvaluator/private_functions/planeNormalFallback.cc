@@ -34,11 +34,6 @@ namespace core
 namespace semantic
 {
 
-namespace
-{
-constexpr double DEGENERATE_NORMAL_NORM_SQUARED = 1e-12;
-} // namespace
-
 SemanticAxiomEvaluatorStatus
     planeNormalFallback(const std::vector<Eigen::Vector3d> &corners_in,
                         Eigen::Vector3d                    &normal_out)

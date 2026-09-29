@@ -447,6 +447,30 @@ add_library(${PROJECT_NAME}_lib SHARED
   core/include/Semantic/RoomTracker.h
 )
 
+# The library keeps one function per source file; each small file still parses
+# the full third-party header set, which dominates the compile time. A unity
+# build compiles neighbouring files of the same list together (measured on 16
+# KeyFrame methods: 111 s separately, 8 s together, same peak memory). Only
+# this library is batched: ROS-generated interface code is not unity-safe.
+option(VS_GRAPHS_UNITY_BUILD "Compile the library sources in unity batches" OFF)
+if(VS_GRAPHS_UNITY_BUILD)
+  set_target_properties(${PROJECT_NAME}_lib PROPERTIES
+    UNITY_BUILD ON
+    UNITY_BUILD_BATCH_SIZE 16)
+  # A source with file-local definitions (anonymous namespace, or a
+  # namespace-scope static/const/constexpr variable) compiles on its own, so
+  # equal names never meet in one unity unit.
+  get_target_property(VS_GRAPHS_LIB_SOURCES ${PROJECT_NAME}_lib SOURCES)
+  foreach(source IN LISTS VS_GRAPHS_LIB_SOURCES)
+    file(STRINGS ${PROJECT_SOURCE_DIR}/${source} file_local
+         REGEX "^[ \t]*namespace[ \t]*(\\{.*)?$|^(static|const|constexpr)[ \t][^(]*=")
+    if(file_local)
+      set_source_files_properties(${source} PROPERTIES
+        SKIP_UNITY_BUILD_INCLUSION ON)
+    endif()
+  endforeach()
+endif()
+
 target_link_libraries(${PROJECT_NAME}_lib
   ${OpenCV_LIBS}
   ${EIGEN3_LIBS}

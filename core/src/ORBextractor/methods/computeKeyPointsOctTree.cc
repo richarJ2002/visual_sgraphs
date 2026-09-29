@@ -61,9 +61,6 @@
 
 #include "../private_functions.h"
 
-const int PATCH_SIZE     = 31;
-const int EDGE_THRESHOLD = 19;
-
 using namespace cv;
 using namespace std;
 

@@ -47,7 +47,6 @@ namespace semantic
 namespace
 {
 constexpr double DEGENERATE_EDGE_LENGTH_SQUARED_M2 = 1e-12;
-constexpr double DEGENERATE_NORMAL_NORM_SQUARED    = 1e-12;
 } // namespace
 
 SemanticAxiomEvaluatorStatus

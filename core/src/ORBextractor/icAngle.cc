@@ -51,6 +51,7 @@
  */
 
 #include "ORBextractor.h"
+#include "private_functions.h"
 
 #include <iostream>
 #include <opencv2/core/core.hpp>
@@ -58,8 +59,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
-
-const int HALF_PATCH_SIZE = 15;
 
 using namespace cv;
 using namespace std;

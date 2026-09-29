@@ -50,6 +50,7 @@
  *
  */
 
+#include "../private_functions.h"
 #include "ORBextractor.h"
 
 #include <iostream>
@@ -66,8 +67,6 @@ namespace vs_graphs
 {
 namespace core
 {
-
-const int HALF_PATCH_SIZE = 15;
 
 static int orbBitPattern31[256 * 4] = {
     8,   -3,  9,   5 /*mean (0), correlation (0)*/,

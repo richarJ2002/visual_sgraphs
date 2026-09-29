@@ -45,6 +45,10 @@ namespace core
 {
 namespace semantic
 {
+
+/*! @brief Squared length below which a plane normal is treated as
+ *         degenerate (no usable direction). */
+inline constexpr double DEGENERATE_NORMAL_NORM_SQUARED = 1e-12;
 /*!
  * @brief        Fixed "Class" column value for \p axiomCode_in.
  */
