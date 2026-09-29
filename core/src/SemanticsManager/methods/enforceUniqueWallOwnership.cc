@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"
+#include "Semantic/ValueOrder.h"
 
 #include <algorithm>
 #include <limits>
@@ -35,77 +36,14 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
 {
     std::vector<vs_graphs::core::semantic::Room *> allRooms =
         p_atlas->getAllRooms();
-    std::sort(
-        allRooms.begin(),
-        allRooms.end(),
-        [](const semantic::Room *p_firstRoom,
-           const semantic::Room *p_secondRoom)
-        {
-            if (p_firstRoom == nullptr)
-            {
-                return false;
-            }
-
-            if (p_secondRoom == nullptr)
-            {
-                return true;
-            }
-
-            int firstRoomId{};
-            if (p_firstRoom->getId(firstRoomId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int secondRoomId{};
-            if (p_secondRoom->getId(secondRoomId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return firstRoomId < secondRoomId;
-        });
+    std::sort(allRooms.begin(),
+              allRooms.end(),
+              semantic::isEntityIdLess<semantic::Room>);
 
     std::vector<semantic::Passage *> allPassages = p_atlas->getAllPassages();
-    std::sort(
-        allPassages.begin(),
-        allPassages.end(),
-        [](const semantic::Passage *p_first, const semantic::Passage *p_second)
-        {
-            if (p_first == nullptr)
-            {
-                return false;
-            }
-            if (p_second == nullptr)
-            {
-                return true;
-            }
-            int firstId{};
-            if (p_first->getId(firstId) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int secondId{};
-            if (p_second->getId(secondId) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return firstId < secondId;
-        });
+    std::sort(allPassages.begin(),
+              allPassages.end(),
+              semantic::isEntityIdLess<semantic::Passage>);
 
     Eigen::Vector3d   groundNormal_World = Eigen::Vector3d::Zero();
     geometric::Plane *p_groundPlane      = p_atlas->getBiggestGroundPlane();

@@ -1615,6 +1615,17 @@ class System
     KeyFrameDatabase *p_keyFrameDatabase;
 
     /*!
+     * @brief       Applies the localization-mode and reset requests raised
+     *              since the previous frame, before a tracking call feeds the
+     *              next frame to the tracker.
+     *
+     *              Localization-mode activation blocks until Local Mapping has
+     *              stopped. A full reset takes precedence over an active-map
+     *              reset and clears both requests.
+     */
+    void applyPendingModeAndResetRequests();
+
+    /*!
      * @brief       Save the current Atlas to a file. The type parameter
      * determines the format (text or binary) and which map data to persist.
      *

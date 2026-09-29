@@ -1,17 +1,8 @@
 # Converter object sources: exactly this object's translation units.
 set(VS_GRAPHS_UTILS_CONVERTER_SOURCES
   core/src/Utils/Converter/methods/isRotationMatrix.cc
-  core/src/Utils/Converter/methods/toCvMat/fromMatrix3d.cc
-  core/src/Utils/Converter/methods/toCvMat/fromMatrix3f.cc
-  core/src/Utils/Converter/methods/toCvMat/fromMatrix4d.cc
-  core/src/Utils/Converter/methods/toCvMat/fromMatrix4f.cc
-  core/src/Utils/Converter/methods/toCvMat/fromMatrix3x4f.cc
-  core/src/Utils/Converter/methods/toCvMat/fromMatrixXd.cc
-  core/src/Utils/Converter/methods/toCvMat/fromMatrixXf.cc
   core/src/Utils/Converter/methods/toCvMat/fromSE3Quat.cc
   core/src/Utils/Converter/methods/toCvMat/fromSim3.cc
-  core/src/Utils/Converter/methods/toCvMat/fromVector3d.cc
-  core/src/Utils/Converter/methods/toCvMat/fromVector3f.cc
   core/src/Utils/Converter/methods/toCvSE3.cc
   core/src/Utils/Converter/methods/toCvSkewMatrix.cc
   core/src/Utils/Converter/methods/toDescriptorVector.cc

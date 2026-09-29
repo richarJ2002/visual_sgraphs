@@ -247,6 +247,20 @@ extern std::atomic<double> estimatorFrameWallSeconds;
 void recordEstimatorFrame(const double frameInterval_seconds);
 
 /*!
+ * @brief       Hands one segmenter result to the SLAM system's segmentation
+ *              buffer, which the SemanticSegmentation thread consumes.
+ *
+ * @param[in]   msgSegImage_in
+ *              Segmentation result for one keyframe.
+ * @param[in]   logger_in
+ *              Logger of the receiving node. A result whose uncertainty image
+ *              cannot be decoded is logged there and dropped.
+ */
+void addSegmentationToSystem(
+    const segmenter_ros::msg::SegmenterDataMsg &msgSegImage_in,
+    const rclcpp::Logger                       &logger_in);
+
+/*!
  * @brief       Sensor configuration used by the active ORB-SLAM3 system.
  *
  * @note        The sensor type determines whether inertial publishers and

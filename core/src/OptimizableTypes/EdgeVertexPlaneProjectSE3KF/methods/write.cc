@@ -32,10 +32,7 @@ namespace core
 
 bool EdgeVertexPlaneProjectSE3KF::write(std::ostream &outputStream_inout) const
 {
-    for (int rowIndex = 0; rowIndex < 3; rowIndex++)
-        for (int columnIndex = rowIndex; columnIndex < 3; columnIndex++)
-            outputStream_inout << " " << information()(rowIndex, columnIndex);
-    return outputStream_inout.good();
+    return writeInformationMatrix(outputStream_inout);
 }
 
 } // namespace core

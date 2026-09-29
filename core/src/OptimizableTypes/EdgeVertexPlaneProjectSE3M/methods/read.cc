@@ -32,14 +32,7 @@ namespace core
 
 bool EdgeVertexPlaneProjectSE3M::read(std::istream &inputStream_inout)
 {
-    for (int rowIndex = 0; rowIndex < 4; rowIndex++)
-        for (int columnIndex = rowIndex; columnIndex < 4; columnIndex++)
-        {
-            inputStream_inout >> information()(rowIndex, columnIndex);
-            if (rowIndex != columnIndex)
-                information()(columnIndex, rowIndex) =
-                    information()(rowIndex, columnIndex);
-        }
+    readInformationMatrix(inputStream_inout);
     return true;
 }
 

@@ -27,6 +27,7 @@
 #include "sophus/sim3.hpp"
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
+#include <optional>
 #include <vector>
 
 #include "Frame.h"
@@ -89,14 +90,21 @@ class ORBmatcher
      * @param[in]    farPointsThreshold_in
      *               Depth above which points count as far, in
      *               metres.
+     * @param[in]    depthThreshold_in
+     *               When set, depth-guided search: the window of a point
+     *               with a tracked depth shrinks to 70 % below this depth
+     *               and grows to 120 % at or above it, in metres. This
+     *               disambiguates repetitive corridors.
      *
      * @return       Number of matches found.
      */
-    int searchByProjection(Frame                         &frame_inout,
-                           const std::vector<MapPoint *> &mapPoints_in,
-                           const float                    threshold_in = 3,
-                           const bool                     farPoints_in = false,
-                           const float farPointsThreshold_in           = 50.0f);
+    int searchByProjection(
+        Frame                         &frame_inout,
+        const std::vector<MapPoint *> &mapPoints_in,
+        const float                    threshold_in          = 3,
+        const bool                     farPoints_in          = false,
+        const float                    farPointsThreshold_in = 50.0f,
+        const std::optional<float>    &depthThreshold_in     = std::nullopt);
 
     /*!
      * @brief        Matches the current frame against map points
@@ -205,37 +213,6 @@ class ORBmatcher
                            std::vector<KeyFrame *> &matchedKeyframes_inout,
                            int                      threshold_in,
                            float                    hammingRatio_in = 1.0);
-
-    /*!
-     * @brief        Matches frame keypoints against projected
-     *               map points constrained by tracked depth.
-     *
-     *              The depth gate disambiguates low-texture
-     *              repetitive corridors.
-     *
-     * @param[in,out] frame_inout
-     *                Frame receiving the matches.
-     * @param[in]    mapPoints_in
-     *               Non-owning candidate map points.
-     * @param[in]    threshold_in
-     *               Search radius in pixels.
-     * @param[in]    farPoints_in
-     *               True to widen the radius for far points.
-     * @param[in]    farPointsThreshold_in
-     *               Depth above which points count as far, in
-     *               metres.
-     * @param[in]    depthThreshold_in
-     *               Maximum accepted depth disagreement, in
-     *               metres.
-     *
-     * @return       Number of matches found.
-     */
-    int searchByProjectionWithDepth(Frame                         &frame_inout,
-                                    const std::vector<MapPoint *> &mapPoints_in,
-                                    const float                    threshold_in,
-                                    const bool                     farPoints_in,
-                                    const float farPointsThreshold_in,
-                                    const float depthThreshold_in);
 
     /*!
      * @brief        Matches keyframe map points against frame

@@ -25,6 +25,8 @@
 
 #include "Optimizer.h"
 
+#include "../private_functions.h"
+
 #include "G2oTypes.h"
 
 #include <mutex>
@@ -74,154 +76,20 @@ int Optimizer::poseInertialOptimizationLastKeyFrame(
     optimizer.addVertex(p_accelerometerBiasVertex);
 
     // Set MapPoint vertices
-    const int  N             = p_frame_inout->keyPointCount;
-    const int  leftCount     = p_frame_inout->leftKeyPointCount;
-    const bool isRightCamera = (leftCount != -1);
-
     vector<EdgeMonoOnlyPose *>   edgesMonos;
     vector<EdgeStereoOnlyPose *> edgesStereos;
     vector<size_t>               monoEdgeIndices;
     vector<size_t>               stereoEdgeIndices;
-    edgesMonos.reserve(N);
-    edgesStereos.reserve(N);
-    monoEdgeIndices.reserve(N);
-    stereoEdgeIndices.reserve(N);
+    addPoseOnlyObservationEdges(p_frame_inout,
+                                p_poseVertex,
+                                optimizer,
+                                edgesMonos,
+                                edgesStereos,
+                                monoEdgeIndices,
+                                stereoEdgeIndices,
+                                initialMonoCorrespondenceCount,
+                                initialStereoCorrespondenceCount);
 
-    const float thresholdHuberMono   = sqrt(5.991);
-    const float thresholdHuberStereo = sqrt(7.815);
-
-    {
-        unique_lock<mutex> lock(MapPoint::globalMutex);
-
-        for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
-        {
-            MapPoint *p_mapPoint = p_frame_inout->mapPoints[keyPointIndex];
-            if (p_mapPoint)
-            {
-                cv::KeyPoint keyPointUn;
-
-                // Left monocular observation
-                if ((!isRightCamera &&
-                     p_frame_inout->uRight[keyPointIndex] < 0) ||
-                    keyPointIndex < leftCount)
-                {
-                    if (keyPointIndex < leftCount) // pair left-right
-                        keyPointUn = p_frame_inout->keyPoints[keyPointIndex];
-                    else
-                        keyPointUn =
-                            p_frame_inout->keyPointsUndistorted[keyPointIndex];
-
-                    initialMonoCorrespondenceCount++;
-                    p_frame_inout->outlierFlags[keyPointIndex] = false;
-
-                    Eigen::Matrix<double, 2, 1> observation;
-                    observation << keyPointUn.pt.x, keyPointUn.pt.y;
-
-                    EdgeMonoOnlyPose *e =
-                        new EdgeMonoOnlyPose(p_mapPoint->getWorldPos(), 0);
-
-                    e->setVertex(0, p_poseVertex);
-                    e->setMeasurement(observation);
-
-                    // Add here uncerteinty
-                    const float unc2 =
-                        p_frame_inout->p_camera->uncertainty2(observation);
-
-                    const float invSigma2 =
-                        p_frame_inout->invLevelSigmaSquared[keyPointUn.octave] /
-                        unc2;
-                    e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
-
-                    g2o::RobustKernelHuber *p_robustKernel =
-                        new g2o::RobustKernelHuber;
-                    e->setRobustKernel(p_robustKernel);
-                    p_robustKernel->setDelta(thresholdHuberMono);
-
-                    optimizer.addEdge(e);
-
-                    edgesMonos.push_back(e);
-                    monoEdgeIndices.push_back(keyPointIndex);
-                }
-                // Stereo observation
-                else if (!isRightCamera)
-                {
-                    initialStereoCorrespondenceCount++;
-                    p_frame_inout->outlierFlags[keyPointIndex] = false;
-
-                    keyPointUn =
-                        p_frame_inout->keyPointsUndistorted[keyPointIndex];
-                    const float rightKeyPointU =
-                        p_frame_inout->uRight[keyPointIndex];
-                    Eigen::Matrix<double, 3, 1> observation;
-                    observation << keyPointUn.pt.x, keyPointUn.pt.y,
-                        rightKeyPointU;
-
-                    EdgeStereoOnlyPose *e =
-                        new EdgeStereoOnlyPose(p_mapPoint->getWorldPos());
-
-                    e->setVertex(0, p_poseVertex);
-                    e->setMeasurement(observation);
-
-                    // Add here uncerteinty
-                    const float unc2 = p_frame_inout->p_camera->uncertainty2(
-                        observation.head(2));
-
-                    const float &invSigma2 =
-                        p_frame_inout->invLevelSigmaSquared[keyPointUn.octave] /
-                        unc2;
-                    e->setInformation(Eigen::Matrix3d::Identity() * invSigma2);
-
-                    g2o::RobustKernelHuber *p_robustKernel =
-                        new g2o::RobustKernelHuber;
-                    e->setRobustKernel(p_robustKernel);
-                    p_robustKernel->setDelta(thresholdHuberStereo);
-
-                    optimizer.addEdge(e);
-
-                    edgesStereos.push_back(e);
-                    stereoEdgeIndices.push_back(keyPointIndex);
-                }
-
-                // Right monocular observation
-                if (isRightCamera && keyPointIndex >= leftCount)
-                {
-                    initialMonoCorrespondenceCount++;
-                    p_frame_inout->outlierFlags[keyPointIndex] = false;
-
-                    keyPointUn =
-                        p_frame_inout
-                            ->keyPointsRight[keyPointIndex - leftCount];
-                    Eigen::Matrix<double, 2, 1> observation;
-                    observation << keyPointUn.pt.x, keyPointUn.pt.y;
-
-                    EdgeMonoOnlyPose *e =
-                        new EdgeMonoOnlyPose(p_mapPoint->getWorldPos(), 1);
-
-                    e->setVertex(0, p_poseVertex);
-                    e->setMeasurement(observation);
-
-                    // Add here uncerteinty
-                    const float unc2 =
-                        p_frame_inout->p_camera->uncertainty2(observation);
-
-                    const float invSigma2 =
-                        p_frame_inout->invLevelSigmaSquared[keyPointUn.octave] /
-                        unc2;
-                    e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
-
-                    g2o::RobustKernelHuber *p_robustKernel =
-                        new g2o::RobustKernelHuber;
-                    e->setRobustKernel(p_robustKernel);
-                    p_robustKernel->setDelta(thresholdHuberMono);
-
-                    optimizer.addEdge(e);
-
-                    edgesMonos.push_back(e);
-                    monoEdgeIndices.push_back(keyPointIndex);
-                }
-            }
-        }
-    }
     initialCorrespondenceCount =
         initialMonoCorrespondenceCount + initialStereoCorrespondenceCount;
 

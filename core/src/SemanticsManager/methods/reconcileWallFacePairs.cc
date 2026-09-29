@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"
+#include "Semantic/ValueOrder.h"
 
 #include <algorithm>
 #include <rclcpp/logging.hpp>
@@ -100,39 +101,9 @@ void SemanticsManager::reconcileWallFacePairs(void)
     /* Lock two Planes in ascending id order to avoid a lock-order hazard,
      * matching the convention already used for passages in
      * admitWallToRoom(). */
-    std::sort(
-        wallPlanes.begin(),
-        wallPlanes.end(),
-        [](const geometric::Plane *p_first, const geometric::Plane *p_second)
-        {
-            if (p_first == nullptr)
-            {
-                return false;
-            }
-            if (p_second == nullptr)
-            {
-                return true;
-            }
-            int firstGetId{};
-            if (p_first->getId(firstGetId) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int secondGetId{};
-            if (p_second->getId(secondGetId) !=
-                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return firstGetId < secondGetId;
-        });
+    std::sort(wallPlanes.begin(),
+              wallPlanes.end(),
+              semantic::isEntityIdLess<geometric::Plane>);
 
     for (geometric::Plane *p_wall : wallPlanes)
     {

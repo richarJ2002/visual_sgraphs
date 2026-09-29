@@ -21,6 +21,7 @@
 #include "../private_functions.h"
 #include "GeoSemHelpers.h"
 #include "GeoSemHelpersStatus.h"
+#include "Semantic/ValueOrder.h"
 
 #include <algorithm>
 #include <cmath>
@@ -53,42 +54,9 @@ void SemanticsManager::associatePassagesToRooms(void)
 
     /* Stable room ordering makes equal-distance passage associations
      * repeatable. */
-    std::sort(
-        allRooms.begin(),
-        allRooms.end(),
-        [](const semantic::Room *p_firstRoom,
-           const semantic::Room *p_secondRoom)
-        {
-            if (p_firstRoom == nullptr)
-            {
-                return false;
-            }
-
-            if (p_secondRoom == nullptr)
-            {
-                return true;
-            }
-
-            int firstRoomId{};
-            if (p_firstRoom->getId(firstRoomId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int secondRoomId{};
-            if (p_secondRoom->getId(secondRoomId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return firstRoomId < secondRoomId;
-        });
+    std::sort(allRooms.begin(),
+              allRooms.end(),
+              semantic::isEntityIdLess<semantic::Room>);
 
     /*!
      * Snapshot the previous topology before rebuilding it. The semantic pass

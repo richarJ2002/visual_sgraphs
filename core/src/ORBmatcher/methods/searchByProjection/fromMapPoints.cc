@@ -30,11 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-int ORBmatcher::searchByProjection(Frame                    &F,
-                                   const vector<MapPoint *> &vpMapPoints,
-                                   const float               th,
-                                   const bool                bFarPoints,
-                                   const float               thFarPoints)
+int ORBmatcher::searchByProjection(Frame                      &F,
+                                   const vector<MapPoint *>   &vpMapPoints,
+                                   const float                 th,
+                                   const bool                  bFarPoints,
+                                   const float                 thFarPoints,
+                                   const std::optional<float> &thDepth)
 {
     int nmatches = 0, left = 0, right = 0;
 
@@ -62,6 +63,16 @@ int ORBmatcher::searchByProjection(Frame                    &F,
 
             if (isThresholdScaled)
                 r *= th;
+
+            // Depth-guided search: a tighter window for close points helps
+            // in repetitive corridors where visual ambiguity is high
+            if (thDepth.has_value() && p_mapPoint->trackDepth > 0)
+            {
+                if (p_mapPoint->trackDepth < *thDepth)
+                    r *= 0.7f;
+                else
+                    r *= 1.2f;
+            }
 
             const vector<size_t> indices =
                 F.getFeaturesInArea(p_mapPoint->trackProjX,
@@ -173,6 +184,14 @@ int ORBmatcher::searchByProjection(Frame                    &F,
             if (predictedLevelCount != -1)
             {
                 float r = radiusByViewingCos(p_mapPoint->trackViewCosR);
+
+                if (thDepth.has_value() && p_mapPoint->trackDepthR > 0)
+                {
+                    if (p_mapPoint->trackDepthR < *thDepth)
+                        r *= 0.7f;
+                    else
+                        r *= 1.2f;
+                }
 
                 const vector<size_t> indices =
                     F.getFeaturesInArea(p_mapPoint->trackProjXR,

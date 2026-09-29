@@ -113,7 +113,6 @@ class Converter
      */
     static g2o::SE3Quat toSE3Quat(const g2o::Sim3 &similarity_in);
 
-    // TODO templetize these functions
     /*!
      * @brief        Converts a rigid transform to a 4x4 cv matrix.
      *
@@ -138,120 +137,23 @@ class Converter
     [[nodiscard]] static ConverterStatus toCvMat(const g2o::Sim3 &similarity_in,
                                                  cv::Mat         &cvMat_out);
     /*!
-     * @brief        Converts a double 4x4 matrix to a cv matrix.
+     * @brief        Converts an Eigen matrix or vector to a cv matrix.
+     *
+     * @tparam       Derived
+     *               Eigen matrix or expression type. Coefficients are
+     *               converted to single precision.
      *
      * @param[in]    matrix_in
-     *               Eigen matrix to convert.
+     *               Eigen matrix or vector to convert.
      *
      * @param[out] cvMat_out CV_32F matrix with the same dimensions and
-     * coefficients.
+     * coefficients, in a newly allocated buffer.
      * @return CONVERTER_STATUS_SUCCESS.
      */
+    template <typename Derived>
     [[nodiscard]] static ConverterStatus
-        toCvMat(const Eigen::Matrix<double, 4, 4> &matrix_in,
-                cv::Mat                           &cvMat_out);
-    /*!
-     * @brief        Converts a float 4x4 matrix to a cv matrix.
-     *
-     * @param[in]    matrix_in
-     *               Eigen matrix to convert.
-     *
-     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
-     * coefficients.
-     * @return CONVERTER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static ConverterStatus
-        toCvMat(const Eigen::Matrix<float, 4, 4> &matrix_in,
+        toCvMat(const Eigen::MatrixBase<Derived> &matrix_in,
                 cv::Mat                          &cvMat_out);
-    /*!
-     * @brief        Converts a float 3x4 matrix to a cv matrix.
-     *
-     * @param[in]    matrix_in
-     *               Eigen matrix to convert.
-     *
-     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
-     * coefficients.
-     * @return CONVERTER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static ConverterStatus
-        toCvMat(const Eigen::Matrix<float, 3, 4> &matrix_in,
-                cv::Mat                          &cvMat_out);
-    /*!
-     * @brief        Converts a double 3x3 matrix to a cv matrix.
-     *
-     * @param[in]    matrix_in
-     *               Eigen matrix to convert.
-     *
-     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
-     * coefficients.
-     * @return CONVERTER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static ConverterStatus
-        toCvMat(const Eigen::Matrix3d &matrix_in, cv::Mat &cvMat_out);
-    /*!
-     * @brief        Converts a double 3-vector to a cv matrix.
-     *
-     * @param[in]    matrix_in
-     *               Eigen vector to convert.
-     *
-     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
-     * coefficients.
-     * @return CONVERTER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static ConverterStatus
-        toCvMat(const Eigen::Matrix<double, 3, 1> &matrix_in,
-                cv::Mat                           &cvMat_out);
-    /*!
-     * @brief        Converts a float 3-vector to a cv matrix.
-     *
-     * @param[in]    matrix_in
-     *               Eigen vector to convert.
-     *
-     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
-     * coefficients.
-     * @return CONVERTER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static ConverterStatus
-        toCvMat(const Eigen::Matrix<float, 3, 1> &matrix_in,
-                cv::Mat                          &cvMat_out);
-    /*!
-     * @brief        Converts a float 3x3 matrix to a cv matrix.
-     *
-     * @param[in]    matrix_in
-     *               Eigen matrix to convert.
-     *
-     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
-     * coefficients.
-     * @return CONVERTER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static ConverterStatus
-        toCvMat(const Eigen::Matrix<float, 3, 3> &matrix_in,
-                cv::Mat                          &cvMat_out);
-
-    /*!
-     * @brief        Converts a dynamic float matrix to a cv matrix.
-     *
-     * @param[in]    matrix_in
-     *               Eigen matrix to convert.
-     *
-     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
-     * coefficients.
-     * @return CONVERTER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static ConverterStatus
-        toCvMat(const Eigen::MatrixXf &matrix_in, cv::Mat &cvMat_out);
-    /*!
-     * @brief        Converts a dynamic double matrix to a cv matrix.
-     *
-     * @param[in]    matrix_in
-     *               Eigen matrix to convert.
-     *
-     * @param[out] cvMat_out CV_32F matrix with the same dimensions and
-     * coefficients.
-     * @return CONVERTER_STATUS_SUCCESS.
-     */
-    [[nodiscard]] static ConverterStatus
-        toCvMat(const Eigen::MatrixXd &matrix_in, cv::Mat &cvMat_out);
 
     /*!
      * @brief        Assembles a 4x4 cv matrix from rotation and
@@ -443,5 +345,7 @@ class Converter
 } // namespace utils
 } // namespace core
 } // namespace vs_graphs
+
+#include "Utils/Converter/methods/toCvMat.tpp"
 
 #endif // CONVERTER_H

@@ -34,14 +34,7 @@ bool EdgeSE3ProjectXYZ::read(std::istream &inputStream_inout)
 {
     for (int rowIndex = 0; rowIndex < 2; rowIndex++)
         inputStream_inout >> _measurement[rowIndex];
-    for (int rowIndex = 0; rowIndex < 2; rowIndex++)
-        for (int columnIndex = rowIndex; columnIndex < 2; columnIndex++)
-        {
-            inputStream_inout >> information()(rowIndex, columnIndex);
-            if (rowIndex != columnIndex)
-                information()(columnIndex, rowIndex) =
-                    information()(rowIndex, columnIndex);
-        }
+    readInformationMatrix(inputStream_inout);
     return true;
 }
 

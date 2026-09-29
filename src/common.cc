@@ -483,6 +483,37 @@ void recordEstimatorFrame(const double frameInterval_seconds)
             .count());
 }
 
+void addSegmentationToSystem(
+    const segmenter_ros::msg::SegmenterDataMsg &msgSegImage_in,
+    const rclcpp::Logger                       &logger_in)
+{
+    cv_bridge::CvImageConstPtr cv_imgSeg;
+    const uint64_t             keyFrameId = msgSegImage_in.key_frame_id.data;
+    try
+    {
+        cv_imgSeg =
+            cv_bridge::toCvCopy(std::make_shared<sensor_msgs::msg::Image>(
+                                    msgSegImage_in.segmented_image_uncertainty),
+                                sensor_msgs::image_encodings::BGR8);
+    }
+    catch (cv_bridge::Exception &e)
+    {
+        RCLCPP_ERROR(logger_in, "[Error] `cv_bridge` exception: %s", e.what());
+        return;
+    }
+
+    // Convert to PCL PointCloud2 from `sensor_msgs` PointCloud2
+    pcl::PCLPointCloud2::Ptr pclPc2SegPrb(new pcl::PCLPointCloud2);
+    pcl_conversions::toPCL(msgSegImage_in.segmented_image_probability,
+                           *pclPc2SegPrb);
+
+    std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> tuple(
+        keyFrameId,
+        cv_imgSeg->image,
+        pclPc2SegPrb);
+    p_slamSystem->addSegmentedImage(&tuple);
+}
+
 namespace
 {
 const char *sensorModeName()

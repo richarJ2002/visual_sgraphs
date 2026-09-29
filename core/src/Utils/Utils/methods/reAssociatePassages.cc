@@ -23,6 +23,7 @@
  *                  Utils/Utils/objects/Utils.h.
  */
 
+#include "Semantic/ValueOrder.h"
 #include "Utils/Utils/objects/Utils.h"
 
 #include <algorithm>
@@ -80,42 +81,9 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                    : nullptr;
     };
 
-    std::sort(
-        passages.begin(),
-        passages.end(),
-        [](const semantic::Passage *p_firstPassage,
-           const semantic::Passage *p_secondPassage)
-        {
-            if (p_firstPassage == nullptr)
-            {
-                return false;
-            }
-
-            if (p_secondPassage == nullptr)
-            {
-                return true;
-            }
-
-            int firstPassageId{};
-            if (p_firstPassage->getId(firstPassageId) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int secondPassageId{};
-            if (p_secondPassage->getId(secondPassageId) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return firstPassageId < secondPassageId;
-        });
+    std::sort(passages.begin(),
+              passages.end(),
+              semantic::isEntityIdLess<semantic::Passage>);
 
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=

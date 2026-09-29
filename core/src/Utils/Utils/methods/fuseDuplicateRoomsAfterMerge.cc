@@ -24,6 +24,7 @@
  *                  Utils/Utils/objects/Utils.h.
  */
 
+#include "Semantic/ValueOrder.h"
 #include "Utils/Utils/objects/Utils.h"
 #include "Utils/Utils/private_functions.h"
 
@@ -750,39 +751,9 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         std::vector<WallTransfer> wallTransfers;
         wallTransfers.reserve(importedWalls.size());
         std::vector<semantic::Room *> mapRooms = p_map_inout->getAllRooms();
-        std::sort(
-            mapRooms.begin(),
-            mapRooms.end(),
-            [](const semantic::Room *p_first, const semantic::Room *p_second)
-            {
-                if (p_first == nullptr)
-                {
-                    return false;
-                }
-                if (p_second == nullptr)
-                {
-                    return true;
-                }
-                int firstId{};
-                if (p_first->getId(firstId) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                int secondId{};
-                if (p_second->getId(secondId) !=
-                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                return firstId < secondId;
-            });
+        std::sort(mapRooms.begin(),
+                  mapRooms.end(),
+                  semantic::isEntityIdLess<semantic::Room>);
 
         for (geometric::Plane *p_importedWall : importedWalls)
         {

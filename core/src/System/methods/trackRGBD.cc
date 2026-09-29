@@ -93,72 +93,7 @@ Sophus::SE3f System::trackRGBD(
         cv::resize(depthmap_in, imDepthToFeed, settingsNewImSize2);
     }
 
-    // Check for mode change
-    {
-        unique_lock<mutex> lock(modeMutex);
-        if (isLocalizationModeActivationRequested)
-        {
-            p_localMapper->requestStop();
-            // Wait until Local Mapping has effectively stopped
-            while (!p_localMapper->isStopped())
-                usleep(1000);
-            p_tracker->informOnlyTracking(true);
-            isLocalizationModeActivationRequested = false;
-        }
-        if (isLocalizationModeDeactivationRequested)
-        {
-            p_tracker->informOnlyTracking(false);
-            p_localMapper->release();
-            isLocalizationModeDeactivationRequested = false;
-        }
-    }
-
-    // Check reset
-    {
-        unique_lock<mutex> lock(resetMutex);
-        if (isResetRequested)
-        {
-            ResetCause resetCause{};
-            if (consumeResetCause(this, resetCause) !=
-                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: consumeResetCause returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            p_tracker->reset();
-            resetCount.fetch_add(1U, std::memory_order_relaxed);
-            isResetRequested          = false;
-            isResetActiveMapRequested = false;
-        }
-        else if (isResetActiveMapRequested)
-        {
-            ResetCause resetCause2{};
-            if (consumeResetCause(this, resetCause2) !=
-                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: consumeResetCause returned a failure status "
-                             "although it cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (reportResetAttribution(
-                    resetCause2,
-                    ResetAction::RESET_ACTIVE_MAP_EXECUTION) !=
-                ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: reportResetAttribution returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
-            }
-            p_tracker->resetActiveMap();
-            resetCount.fetch_add(1U, std::memory_order_relaxed);
-            isResetActiveMapRequested = false;
-        }
-    }
+    applyPendingModeAndResetRequests();
 
     // Apply IMU measurements
     if (sensor == System::IMU_RGBD)

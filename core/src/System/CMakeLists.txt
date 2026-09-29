@@ -2,6 +2,7 @@
 set(VS_GRAPHS_SYSTEM_SOURCES
   core/src/System/methods/activateLocalizationMode.cc
   core/src/System/methods/addSegmentedImage.cc
+  core/src/System/methods/applyPendingModeAndResetRequests.cc
   core/src/System/methods/calculateCheckSum.cc
   core/src/System/methods/changeDataset.cc
   core/src/System/methods/construct/system.cc

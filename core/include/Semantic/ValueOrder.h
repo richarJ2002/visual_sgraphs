@@ -28,13 +28,14 @@
  *                   private_functions.h merely to agree on one canonical
  *                   order (CPP_CODING_STANDARD.md Section 5.4).
  *
- *  @note           Strict-status profile: the six functions below are
+ *  @note           Strict-status profile: the functions below are
  *                  infallible total-order predicates over all input bit
  *                  patterns, so they stay value-returning per the
  *                  infallible-accessor/predicate exception (§3.4/§13);
  *                  a status enum would add failure paths that cannot fire.
- *                  All six are pure and thread-safe (inputs only, no shared
- *                  state). Units/frames are N/A (unitless canonical keys).
+ *                  All are thread-safe for inputs no other thread mutates
+ *                  (isEntityIdLess() reads the entities' identifiers).
+ *                  Units/frames are N/A (unitless canonical keys).
  */
 
 #ifndef SEMANTIC_VALUE_ORDER_H
@@ -136,8 +137,28 @@ bool isEntityRefLess(const EntityRef &lhs_in, const EntityRef &rhs_in);
  *                  field order. */
 bool isRawPlaneRefLess(const RawPlaneRef &lhs_in, const RawPlaneRef &rhs_in);
 
+/*! @brief Strict weak "less than" ordering entity pointers by ascending
+ *  identifier, null pointers last, so sorting a map's rooms, passages or
+ *  planes gives a repeatable processing and lock order.
+ *
+ *  @tparam         EntityT
+ *                  Entity type with `getId(int &) const` returning a status
+ *                  whose success value is 0 (Room, Passage, Plane).
+ *
+ *  @param[in]      p_first_in
+ *                  Left-hand borrowed entity; may be null.
+ *  @param[in]      p_second_in
+ *                  Right-hand borrowed entity; may be null.
+ *
+ *  @return         True when p_first_in is non-null and either p_second_in is
+ *                  null or p_first_in has the smaller identifier. */
+template <typename EntityT>
+bool isEntityIdLess(const EntityT *p_first_in, const EntityT *p_second_in);
+
 } // namespace semantic
 } // namespace core
 } // namespace vs_graphs
+
+#include "Semantic/ValueOrder/isEntityIdLess.tpp"
 
 #endif // SEMANTIC_VALUE_ORDER_H

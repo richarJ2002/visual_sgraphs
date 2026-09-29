@@ -23,6 +23,7 @@
  *                  Utils/Utils/objects/Utils.h.
  */
 
+#include "Semantic/ValueOrder.h"
 #include "Utils/Utils/objects/Utils.h"
 
 #include <algorithm>
@@ -55,57 +56,13 @@ UtilsStatus Utils::collectCorrespondingWalls(
     std::vector<semantic::Room *> roomsA = p_mapA_in->getAllRooms();
     std::vector<semantic::Room *> roomsB = p_mapB_in->getAllRooms();
 
-    std::sort(
-        roomsA.begin(),
-        roomsA.end(),
-        [](const semantic::Room *p_first, const semantic::Room *p_second)
-        {
-            int firstId{};
-            if (p_first->getId(firstId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int secondId{};
-            if (p_second->getId(secondId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return firstId < secondId;
-        });
+    std::sort(roomsA.begin(),
+              roomsA.end(),
+              semantic::isEntityIdLess<semantic::Room>);
 
-    std::sort(
-        roomsB.begin(),
-        roomsB.end(),
-        [](const semantic::Room *p_first, const semantic::Room *p_second)
-        {
-            int firstId{};
-            if (p_first->getId(firstId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int secondId{};
-            if (p_second->getId(secondId) !=
-                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return firstId < secondId;
-        });
+    std::sort(roomsB.begin(),
+              roomsB.end(),
+              semantic::isEntityIdLess<semantic::Room>);
 
     for (semantic::Room *p_roomB : roomsB)
     {

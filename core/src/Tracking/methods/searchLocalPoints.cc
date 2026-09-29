@@ -127,28 +127,17 @@ void Tracking::searchLocalPoints()
 
         // DEPTH-AIDED TRACKING: For RGB-D, use depth to guide matching window
         // In low-texture corridors, constrain search using known depth
-        if ((sensor == System::RGBD || sensor == System::IMU_RGBD) &&
-            currentFrame.depths.size() > 0)
-        {
-            // Depth-guided search: reduce search radius for points with
-            // reliable depth This helps in repetitive corridors where visual
-            // appearance is ambiguous
-            matcher.searchByProjectionWithDepth(
-                currentFrame,
-                localMapPoints,
-                threshold,
-                p_localMapper->shouldSkipFarPoints,
-                p_localMapper->farPointsThreshold,
-                depthThreshold);
-        }
-        else
-        {
-            matcher.searchByProjection(currentFrame,
-                                       localMapPoints,
-                                       threshold,
-                                       p_localMapper->shouldSkipFarPoints,
-                                       p_localMapper->farPointsThreshold);
-        }
+        const bool isDepthGuided =
+            (sensor == System::RGBD || sensor == System::IMU_RGBD) &&
+            currentFrame.depths.size() > 0;
+        matcher.searchByProjection(currentFrame,
+                                   localMapPoints,
+                                   threshold,
+                                   p_localMapper->shouldSkipFarPoints,
+                                   p_localMapper->farPointsThreshold,
+                                   isDepthGuided
+                                       ? std::optional<float>(depthThreshold)
+                                       : std::nullopt);
     }
 }
 

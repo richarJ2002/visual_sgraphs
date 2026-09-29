@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"
+#include "Semantic/ValueOrder.h"
 
 #include <algorithm>
 #include <rclcpp/logging.hpp>
@@ -101,31 +102,9 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
         }
     }
 
-    std::sort(
-        confirmedOpenPassages.begin(),
-        confirmedOpenPassages.end(),
-        [](const semantic::Passage *p_first, const semantic::Passage *p_second)
-        {
-            int firstId{};
-            if (p_first->getId(firstId) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            int secondId{};
-            if (p_second->getId(secondId) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            return firstId < secondId;
-        });
+    std::sort(confirmedOpenPassages.begin(),
+              confirmedOpenPassages.end(),
+              semantic::isEntityIdLess<semantic::Passage>);
 
     if (confirmedOpenPassages.empty())
     {

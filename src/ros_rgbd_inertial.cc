@@ -124,10 +124,8 @@ class ImageGrabber : public rclcpp::Node
     void    SyncWithImu();
     // void GrabArUcoMarker(const aruco_msgs::MarkerArray &msg);
     cv::Mat GetImage(const sensor_msgs::msg::Image::ConstSharedPtr &img_msg);
-    void    GrabSegmentation(
-           const segmenter_ros::msg::SegmenterDataMsg &msgSegImage);
-    void GrabVoxbloxSkeletonGraph(
-        const visualization_msgs::msg::MarkerArray &msgSkeletonGraphs);
+    void    GrabVoxbloxSkeletonGraph(
+           const visualization_msgs::msg::MarkerArray &msgSkeletonGraphs);
     void GrabPointCloud(
         const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC);
     void GrabRGBD(const sensor_msgs::msg::Image::ConstSharedPtr &msgRGB,
@@ -188,45 +186,6 @@ cv::Mat ImageGrabber::GetImage(
  *
  * @param msgSegImage The segmentation results from the SemanticSegmenter
  */
-void ImageGrabber::GrabSegmentation(
-    const segmenter_ros::msg::SegmenterDataMsg &msgSegImage)
-{
-    // Fetch the segmentation results
-    cv_bridge::CvImageConstPtr cv_imgSeg;
-    uint64_t                   key_frame_id = msgSegImage.key_frame_id.data;
-
-    try
-    {
-        cv_imgSeg =
-            cv_bridge::toCvCopy(std::make_shared<sensor_msgs::msg::Image>(
-                                    msgSegImage.segmented_image_uncertainty),
-                                sensor_msgs::image_encodings::BGR8);
-    }
-    catch (cv_bridge::Exception &e)
-    {
-        // ROS_ERROR("cv_bridge exception: %s", e.what());
-        RCLCPP_ERROR(this->get_logger(),
-                     "[Error] `cv_bridge` exception: %s",
-                     e.what());
-        return;
-    }
-
-    // Convert to PCL PointCloud2 from `sensor_msgs` PointCloud2
-    pcl::PCLPointCloud2::Ptr pclPc2SegPrb(new pcl::PCLPointCloud2);
-    pcl_conversions::toPCL(msgSegImage.segmented_image_probability,
-                           *pclPc2SegPrb);
-
-    // Create the tuple to be appended to the segmentedImageBuffer
-    std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> tuple(
-        key_frame_id,
-        cv_imgSeg->image,
-        pclPc2SegPrb);
-
-    // Add the segmented image to a buffer to be processed in the
-    // SemanticSegmentation thread
-    p_slamSystem->addSegmentedImage(&tuple);
-}
-
 void ImageGrabber::SyncWithImu()
 {
     if (!mpImuGb)
@@ -688,7 +647,7 @@ int main(int argc, char **argv)
             "/camera/color/image_segment",
             rclcpp::QoS(rclcpp::KeepLast(50)).reliable().transient_local(),
             [igb](const segmenter_ros::msg::SegmenterDataMsg::SharedPtr msg)
-            { igb->GrabSegmentation(*msg); },
+            { addSegmentationToSystem(*msg, igb->get_logger()); },
             semanticSubscriptionOptions);
 
     // Subsriber to get skeletonized graph from the `voxblox` module

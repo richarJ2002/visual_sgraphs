@@ -84,16 +84,6 @@ class ImageGrabber : public rclcpp::Node
     void LogRgbdObservabilitySummary(const std::string &event_in) const;
 
     /*!
-     * @brief       Callback function to get scene segmentation results from the
-     *              SemanticSegmenter module
-     *
-     * @param       msgSegImage_in
-     *              The segmentation results from the SemanticSegmenter
-     */
-    void GrabSegmentation(
-        const segmenter_ros::msg::SegmenterDataMsg &msgSegImage_in);
-
-    /*!
      * @brief       Callback function to get the skeleton graph from the
      *              `voxblox` module
      *
@@ -341,7 +331,7 @@ int main(int argc, char **argv)
             "/camera/color/image_segment",
             rclcpp::QoS(rclcpp::KeepLast(50)).reliable().transient_local(),
             [igb](const segmenter_ros::msg::SegmenterDataMsg::SharedPtr msg)
-            { igb->GrabSegmentation(*msg); },
+            { addSegmentationToSystem(*msg, igb->get_logger()); },
             semanticSubscriptionOptions);
 
     /* Subsriber to get skeletonized graph from the `voxblox` module */
@@ -677,49 +667,6 @@ void ImageGrabber::PublishRgbdFrontendHealth() const
         snapshot.pendingOverwrites,
         snapshot.workersInFlight > 0U,
         snapshot.lastProcessedSensorTimestampNanoseconds);
-}
-
-void ImageGrabber::GrabSegmentation(
-    const segmenter_ros::msg::SegmenterDataMsg &msgSegImage_in)
-{
-    /* Declare local variables */
-    cv_bridge::CvImageConstPtr cv_imgSeg;
-
-    /* Extract the kayframe id from the segmented image */
-    uint64_t key_frame_id = msgSegImage_in.key_frame_id.data;
-
-    /* Fetch the segmentation results */
-    try
-    {
-        /* Extract the image as an open cv object */
-        cv_imgSeg =
-            cv_bridge::toCvCopy(std::make_shared<sensor_msgs::msg::Image>(
-                                    msgSegImage_in.segmented_image_uncertainty),
-                                sensor_msgs::image_encodings::BGR8);
-    }
-    catch (cv_bridge::Exception &e)
-    {
-        return;
-    }
-
-    /* Init a net PCL PointCloud object */
-    pcl::PCLPointCloud2::Ptr pclPc2SegPrb(new pcl::PCLPointCloud2);
-
-    /* Convert to PCL PointCloud2 from `sensor_msgs` PointCloud2 */
-    pcl_conversions::toPCL(msgSegImage_in.segmented_image_probability,
-                           *pclPc2SegPrb);
-
-    /* Create the tuple to be appended to the segmentedImageBuffer */
-    std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> tuple(
-        key_frame_id,
-        cv_imgSeg->image,
-        pclPc2SegPrb);
-
-    /*!
-     * Add segmented image to buffer to be processed in SemanticSegmentation
-     * thread.
-     */
-    p_slamSystem->addSegmentedImage(&tuple);
 }
 
 void ImageGrabber::GrabVoxbloxSkeletonGraph(

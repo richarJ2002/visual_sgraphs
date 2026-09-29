@@ -33,11 +33,7 @@ namespace core
 bool EdgeVertexNSE3RoomProjectSE3Floor::write(
     std::ostream &outputStream_inout) const
 {
-    for (int rowIndex = 0; rowIndex < information().rows(); rowIndex++)
-        for (int columnIndex = rowIndex; columnIndex < information().cols();
-             columnIndex++)
-            outputStream_inout << " " << information()(rowIndex, columnIndex);
-    return outputStream_inout.good();
+    return writeInformationMatrix(outputStream_inout);
 }
 
 } // namespace core
