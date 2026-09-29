@@ -30,13 +30,36 @@ std::unique_ptr<geometric::Plane> makeAdmissibleWall(const int    id_in,
 {
     std::unique_ptr<geometric::Plane> p_wall =
         std::make_unique<geometric::Plane>();
-    p_wall->setId(id_in);
-    p_wall->setMap(p_map_in);
-    p_wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
-    p_wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
-    p_wall->setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -x_m_in)));
-    p_wall->setCentroid(Eigen::Vector3d(x_m_in, 0.0, 1.0));
+    if (p_wall->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (p_wall->setMap(p_map_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (p_wall->setPlaneType(geometric::Plane::PlaneVariant::WALL) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setPlaneType cannot fail; continue as before.
+    }
+    if (p_wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // castWeightedVote cannot fail; continue as before.
+    }
+    if (p_wall->setGlobalEquation(
+            g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -x_m_in))) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setGlobalEquation cannot fail; continue as before.
+    }
+    if (p_wall->setCentroid(Eigen::Vector3d(x_m_in, 0.0, 1.0)) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_cloud =
         std::make_shared<pcl::PointCloud<pcl::PointXYZRGBA>>();
@@ -51,8 +74,16 @@ std::unique_ptr<geometric::Plane> makeAdmissibleWall(const int    id_in,
             p_cloud->push_back(point);
         }
     }
-    p_wall->setMapClouds(p_cloud);
-    p_wall->updateSizeOfPlane();
+    if (p_wall->setMapClouds(p_cloud) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMapClouds cannot fail; continue as before.
+    }
+    if (p_wall->updateSizeOfPlane() !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // updateSizeOfPlane cannot fail; continue as before.
+    }
     return p_wall;
 }
 
@@ -923,9 +954,12 @@ TEST(SemanticBootstrapPhase1, PendingWallHasFiveCycleGraceAndGrowthReset)
     manager.suppressUndefendedWallsForTest();
     EXPECT_EQ(manager.getPendingWallAgeForTest(1), 2);
 
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_cloud = p_wall->getMapClouds();
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_cloud{};
+    ASSERT_EQ((p_wall->getMapClouds(p_cloud)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_cloud->push_back(p_cloud->back());
-    p_wall->setMapClouds(p_cloud);
+    ASSERT_EQ((p_wall->setMapClouds(p_cloud)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     manager.suppressUndefendedWallsForTest();
     EXPECT_EQ(manager.getPendingWallAgeForTest(1), 0);
 
@@ -933,9 +967,15 @@ TEST(SemanticBootstrapPhase1, PendingWallHasFiveCycleGraceAndGrowthReset)
     {
         manager.suppressUndefendedWallsForTest();
     }
-    EXPECT_FALSE(p_wall->isBad());
+    bool isBad2{};
+    ASSERT_EQ((p_wall->isBad(isBad2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_FALSE(isBad2);
     manager.suppressUndefendedWallsForTest();
-    EXPECT_TRUE(p_wall->isBad());
+    bool isBad3{};
+    ASSERT_EQ((p_wall->isBad(isBad3)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_TRUE(isBad3);
 }
 
 TEST(SemanticBootstrapPhase1, OwnedAndPassageWallsCannotRetireUndefended)
@@ -969,8 +1009,14 @@ TEST(SemanticBootstrapPhase1, OwnedAndPassageWallsCannotRetireUndefended)
     {
         manager.suppressUndefendedWallsForTest();
     }
-    EXPECT_FALSE(p_ownedWall->isBad());
-    EXPECT_FALSE(p_passageWall->isBad());
+    bool isBad2{};
+    ASSERT_EQ((p_ownedWall->isBad(isBad2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_FALSE(isBad2);
+    bool isBad3{};
+    ASSERT_EQ((p_passageWall->isBad(isBad3)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_FALSE(isBad3);
 }
 
 TEST(SemanticBootstrapPhase1, NewRoomIsUnvisitedByDefault)

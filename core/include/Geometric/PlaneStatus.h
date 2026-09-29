@@ -2,8 +2,8 @@
  * This file is part of Visual S-Graphs (vS-Graphs).
  * Copyright (C) 2023-2025 SnT, University of Luxembourg
  *
- * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
- * and Holger Voos
+ * 📝 Authors:  Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ *              and Holger Voos
  *
  * vS-Graphs is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -16,14 +16,16 @@
  * details: https://www.gnu.org/licenses/
  */
 
-#include "Geometric/Plane.h"
-#include <algorithm>
-#include <boost/make_shared.hpp>
-#include <boost/shared_ptr.hpp>
-#include <cmath>
-#include <limits>
-#include <pcl/octree/octree_search.h>
-#include <vector>
+/*!
+ * @file            PlaneStatus.h
+ *
+ * @brief           Declares the status returned by every Plane operation.
+ */
+
+#ifndef PLANE_STATUS_H
+#define PLANE_STATUS_H
+
+#include <cstdint>
 
 namespace vs_graphs
 {
@@ -32,13 +34,18 @@ namespace core
 namespace geometric
 {
 
-PlaneStatus Plane::isBad(bool &isBad_out)
+/*!
+ * @brief       Result of a Plane operation. Values are fixed and never
+ *              reordered.
+ */
+enum class PlaneStatus : std::uint8_t
 {
-    unique_lock<mutex> lock(typeMutex);
-    isBad_out = isFlaggedBad;
-    return PlaneStatus::PLANE_STATUS_SUCCESS;
-}
+    /*! @brief The operation completed and every output was written. */
+    PLANE_STATUS_SUCCESS = 0U
+};
 
 } // namespace geometric
 } // namespace core
 } // namespace vs_graphs
+
+#endif // PLANE_STATUS_H

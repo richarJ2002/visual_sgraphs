@@ -85,13 +85,17 @@ void Optimizer::localBundleAdjustment(
 
     // [LBA] Fill in the neighbor KeyFrames
     if (p_sysParams->planeBasedCovisibility.enabled)
+    {
         // Get the KeyFrames that see the same planes
         neighborKeyFrameVector = p_keyFrame_inout->getBestCovisibilityKeyFrames(
             p_sysParams->planeBasedCovisibility.maxKeyframes);
+    }
     else
+    {
         // Get the KeyFrames that see the same MapPoints
         neighborKeyFrameVector =
             p_keyFrame_inout->getVectorCovisibleKeyFrames();
+    }
 
     // Iterate through all neighboring KeyFrames
     for (int markerIt = 0, indexEnd = neighborKeyFrameVector.size();
@@ -133,7 +137,9 @@ void Optimizer::localBundleAdjustment(
         // If the KeyFrame is the initial KeyFrame of the map, mark that as a
         // fixed KeyFrame
         if (p_keyFrame->id == p_map_inout->getInitKeyFrameId())
+        {
             fixedKeyFrameCount_inout = 1;
+        }
 
         // [LBA] Loop through all the MapPoints and prepare them for LBA
         for (std::vector<vs_graphs::core::MapPoint *>::iterator
@@ -148,6 +154,7 @@ void Optimizer::localBundleAdjustment(
             // If the MapPoint is proper, add it to the list of local MapPoints
             // for LBA
             if (p_mapPoint)
+            {
                 if (!p_mapPoint->isBad() &&
                     p_mapPoint->getMap() == p_currentMap)
                 {
@@ -158,6 +165,7 @@ void Optimizer::localBundleAdjustment(
                         p_mapPoint->baLocalKeyFrameId   = p_keyFrame_inout->id;
                     }
                 }
+            }
         }
 
         // [LBA] Loop through all the Markers and prepare them for LBA
@@ -197,16 +205,38 @@ void Optimizer::localBundleAdjustment(
             vs_graphs::core::geometric::Plane *p_localPlane = *markerIt;
             // If the plane does not exist, skip it
             if (!p_localPlane)
+            {
                 continue;
+            }
             // If the plane is not known, do not add it to the local map
-            if (p_localPlane->getPlaneType() ==
+            geometric::Plane::PlaneVariant localPlanePlaneType{};
+            if (p_localPlane->getPlaneType(localPlanePlaneType) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getPlaneType cannot fail; continue as before.
+            }
+            if (localPlanePlaneType ==
                 geometric::Plane::PlaneVariant::UNDEFINED)
+            {
                 continue;
+            }
             // Otherwise, add the plane to the local map
-            if (localPlaneId.find(p_localPlane->getId()) == localPlaneId.end())
+            int localPlaneGetId{};
+            if (p_localPlane->getId(localPlaneGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (localPlaneId.find(localPlaneGetId) == localPlaneId.end())
             {
                 localPlaneList.push_back(p_localPlane);
-                localPlaneId[p_localPlane->getId()] = true;
+                int localPlaneGetId2{};
+                if (p_localPlane->getId(localPlaneGetId2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                localPlaneId[localPlaneGetId2] = true;
             }
         }
 
@@ -251,11 +281,19 @@ void Optimizer::localBundleAdjustment(
         // Add the room to the local map if any of the walls are in the local
         // map
         for (const auto &wall : roomWalls)
-            if (localPlaneId.find(wall->getId()) != localPlaneId.end())
+        {
+            int wallGetId{};
+            if (wall->getId(wallGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (localPlaneId.find(wallGetId) != localPlaneId.end())
             {
                 localRoomList.push_back(room);
                 break;
             }
+        }
     }
 
     // [LBA] Loop through all the local Rooms to add all their walls to LBA
@@ -274,10 +312,22 @@ void Optimizer::localBundleAdjustment(
         }
         for (const auto &roomWall : roomWalls)
         {
-            if (localPlaneId.find(roomWall->getId()) == localPlaneId.end())
+            int roomWallGetId{};
+            if (roomWall->getId(roomWallGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (localPlaneId.find(roomWallGetId) == localPlaneId.end())
             {
                 localPlaneList.push_back(roomWall);
-                localPlaneId[roomWall->getId()] = true;
+                int roomWallGetId2{};
+                if (roomWall->getId(roomWallGetId2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                localPlaneId[roomWallGetId2] = true;
                 recentLocalMapPlanes.push_back(roomWall);
             }
         }
@@ -294,7 +344,12 @@ void Optimizer::localBundleAdjustment(
     {
         std::map<vs_graphs::core::KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>
-            planeObservations = (*markerIt)->getObservations();
+            planeObservations{};
+        if ((*markerIt)->getObservations(planeObservations) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getObservations cannot fail; continue as before.
+        }
         for (std::map<
                  vs_graphs::core::KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>::const_iterator
@@ -336,6 +391,7 @@ void Optimizer::localBundleAdjustment(
         {
             vs_graphs::core::MapPoint *p_mapPoint = *vit;
             if (p_mapPoint)
+            {
                 if (!p_mapPoint->isBad() &&
                     p_mapPoint->getMap() == p_currentMap)
                 {
@@ -346,6 +402,7 @@ void Optimizer::localBundleAdjustment(
                         p_mapPoint->baLocalKeyFrameId   = p_keyFrame_inout->id;
                     }
                 }
+            }
         }
     }
 
@@ -375,7 +432,9 @@ void Optimizer::localBundleAdjustment(
                 p_keyFrame->baFixedKeyFrameId = p_keyFrame_inout->id;
                 if (!p_keyFrame->isBad() &&
                     p_keyFrame->getMap() == p_currentMap)
+                {
                     fixedCameras.push_back(p_keyFrame);
+                }
             }
         }
     }
@@ -401,13 +460,17 @@ void Optimizer::localBundleAdjustment(
     g2o::OptimizationAlgorithmLevenberg *p_solver =
         new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
     if (p_map_inout->isInertial())
+    {
         p_solver->setUserLambdaInit(100.0);
+    }
 
     optimizer.setAlgorithm(p_solver);
     optimizer.setVerbose(false);
 
     if (p_pbStopFlag_in)
+    {
         optimizer.setForceStopFlag(p_pbStopFlag_in);
+    }
 
     unsigned long maximumKeyFrameId = 0;
 
@@ -433,7 +496,9 @@ void Optimizer::localBundleAdjustment(
                               p_map_inout->getInitKeyFrameId());
         optimizer.addVertex(p_se3Vertex);
         if (p_keyFrame->id > maximumKeyFrameId)
+        {
             maximumKeyFrameId = p_keyFrame->id;
+        }
         p_currentMap->optKeyFrameIds.insert(p_keyFrame->id);
     }
     optKeyFrameCount_out = localKeyFrameList.size();
@@ -455,7 +520,9 @@ void Optimizer::localBundleAdjustment(
         p_se3Vertex->setFixed(true);
         optimizer.addVertex(p_se3Vertex);
         if (p_keyFrame->id > maximumKeyFrameId)
+        {
             maximumKeyFrameId = p_keyFrame->id;
+        }
         p_currentMap->fixedKeyFrameIds.insert(p_keyFrame->id);
     }
 
@@ -543,7 +610,9 @@ void Optimizer::localBundleAdjustment(
 
         // Update the maxOpId to hold the biggest value
         if (id > maximumOpId)
+        {
             maximumOpId = id;
+        }
 
         const map<KeyFrame *, tuple<int, int>> observations =
             p_mapPoint->getObservations();
@@ -773,21 +842,37 @@ void Optimizer::localBundleAdjustment(
         p_planeVertex->setId(opId);
 
         if (p_sysParams->optimization.shouldMarginalizePlanes)
+        {
             p_planeVertex->setMarginalized(true);
+        }
 
-        g2o::Plane3D planeGlobalEquation = p_mapPlane->getGlobalEquation();
+        g2o::Plane3D planeGlobalEquation{};
+        if (p_mapPlane->getGlobalEquation(planeGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
         p_planeVertex->setEstimate(planeGlobalEquation);
         optimizer.addVertex(p_planeVertex);
         planeCount++;
 
         // Setting the local optimization ID for the plane
-        p_mapPlane->setOpId(opId);
+        if (p_mapPlane->setOpId(opId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setOpId cannot fail; continue as before.
+        }
 
         // Adding edge between plane and MapPoints
         if (p_sysParams->optimization.planeMapPoint.enabled &&
             !p_sysParams->optimization.shouldMarginalizePlanes)
         {
-            set<MapPoint *> mapPoints = p_mapPlane->getMapPoints();
+            set<MapPoint *> mapPoints{};
+            if (p_mapPlane->getMapPoints(mapPoints) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getMapPoints cannot fail; continue as before.
+            }
             for (set<MapPoint *>::iterator lit  = mapPoints.begin(),
                                            lend = mapPoints.end();
                  lit != lend;
@@ -796,7 +881,9 @@ void Optimizer::localBundleAdjustment(
                 MapPoint *p_mapPoint = *lit;
 
                 if (!p_mapPoint || p_mapPoint->isBad())
+                {
                     continue;
+                }
 
                 if (optimizer.vertex(opId) &&
                     optimizer.vertex(p_mapPoint->id + maximumKeyFrameId + 1))
@@ -825,8 +912,13 @@ void Optimizer::localBundleAdjustment(
         }
 
         // Adding an edge between the plane and the keyframes
-        const map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
-            observations = p_mapPlane->getObservations();
+        map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
+            observations{};
+        if (p_mapPlane->getObservations(observations) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getObservations cannot fail; continue as before.
+        }
         for (map<KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>::const_iterator
                  observationId = observations.begin(),
@@ -843,7 +935,11 @@ void Optimizer::localBundleAdjustment(
                 std::cout
                     << "[Optimizer] Bad KeyFrame detected for LBA! Skipping..."
                     << std::endl;
-                p_mapPlane->eraseObservation(p_keyFrame);
+                if (p_mapPlane->eraseObservation(p_keyFrame) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // eraseObservation cannot fail; continue as before.
+                }
                 continue;
             }
 
@@ -889,9 +985,15 @@ void Optimizer::localBundleAdjustment(
                 if (p_sysParams->optimization.planePoint.enabled)
                 {
                     // Get the class index of the plane
-                    int clsCloudIndex{};
+                    int                            clsCloudIndex{};
+                    geometric::Plane::PlaneVariant mapPlanePlaneType{};
+                    if (p_mapPlane->getPlaneType(mapPlanePlaneType) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getPlaneType cannot fail; continue as before.
+                    }
                     if (utils::utils::Utils::getClassIdFromPlaneType(
-                            p_mapPlane->getPlaneType(),
+                            mapPlanePlaneType,
                             clsCloudIndex) !=
                         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                     {
@@ -957,7 +1059,9 @@ void Optimizer::localBundleAdjustment(
 
             // No need to optimize if there are no walls
             if (walls.empty())
+            {
                 continue;
+            }
 
             // Adding a vertex for each room
             g2o::VertexSE3Expmap *p_vertexRoom = new g2o::VertexSE3Expmap();
@@ -992,6 +1096,7 @@ void Optimizer::localBundleAdjustment(
 
             // Optimizing the parallel walls of the room
             for (size_t edgeIndex = 0; edgeIndex < walls.size(); edgeIndex++)
+            {
                 for (size_t otherWallIndex = edgeIndex + 1;
                      otherWallIndex < walls.size();
                      otherWallIndex++)
@@ -1002,8 +1107,22 @@ void Optimizer::localBundleAdjustment(
                         walls[otherWallIndex];
 
                     // If the same wall, skip
-                    if (p_wall1->getId() == p_wall2->getId())
+                    int wall1GetId{};
+                    if (p_wall1->getId(wall1GetId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    int wall2GetId{};
+                    if (p_wall2->getId(wall2GetId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    if (wall1GetId == wall2GetId)
+                    {
                         continue;
+                    }
 
                     // Check if the walls are parallel
                     bool arePlanesParallel2{};
@@ -1032,8 +1151,18 @@ void Optimizer::localBundleAdjustment(
                         if (arePlanesFacingEachOther2)
                         {
                             // Variables
-                            int opId1 = p_wall1->getOpId();
-                            int opId2 = p_wall2->getOpId();
+                            int opId1{};
+                            if (p_wall1->getOpId(opId1) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                            {
+                                // getOpId cannot fail; continue as before.
+                            }
+                            int opId2{};
+                            if (p_wall2->getOpId(opId2) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                            {
+                                // getOpId cannot fail; continue as before.
+                            }
 
                             if (optimizer.vertex(opId) &&
                                 optimizer.vertex(opId1) &&
@@ -1085,8 +1214,18 @@ void Optimizer::localBundleAdjustment(
                     if (arePlanesPerpendicular2)
                     {
                         // Variables
-                        int opId1 = p_wall1->getOpId();
-                        int opId2 = p_wall2->getOpId();
+                        int opId1{};
+                        if (p_wall1->getOpId(opId1) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getOpId cannot fail; continue as before.
+                        }
+                        int opId2{};
+                        if (p_wall2->getOpId(opId2) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getOpId cannot fail; continue as before.
+                        }
 
                         if (optimizer.vertex(opId) && optimizer.vertex(opId1) &&
                             optimizer.vertex(opId2))
@@ -1119,6 +1258,7 @@ void Optimizer::localBundleAdjustment(
                         }
                     }
                 }
+            }
         }
         catch (std::exception &e)
         {
@@ -1140,8 +1280,12 @@ void Optimizer::localBundleAdjustment(
     }
 
     if (p_pbStopFlag_in)
+    {
         if (*p_pbStopFlag_in)
+        {
             return;
+        }
+    }
 
     optimizer.initializeOptimization();
     optimizer.optimize(10);
@@ -1161,7 +1305,9 @@ void Optimizer::localBundleAdjustment(
         MapPoint *p_mapPoint                  = mapPointEdgeMonos[edgeIndex];
 
         if (p_mapPoint->isBad())
+        {
             continue;
+        }
 
         if (e->chi2() > 5.991 || !e->isDepthPositive())
         {
@@ -1177,7 +1323,9 @@ void Optimizer::localBundleAdjustment(
         MapPoint *p_mapPoint = mapPointEdgeBodies[edgeIndex];
 
         if (p_mapPoint->isBad())
+        {
             continue;
+        }
 
         if (e->chi2() > 5.991 || !e->isDepthPositive())
         {
@@ -1193,7 +1341,9 @@ void Optimizer::localBundleAdjustment(
         MapPoint *p_mapPoint            = mapPointEdgeStereos[edgeIndex];
 
         if (p_mapPoint->isBad())
+        {
             continue;
+        }
 
         if (e->chi2() > 7.815 || !e->isDepthPositive())
         {
@@ -1218,7 +1368,9 @@ void Optimizer::localBundleAdjustment(
             if (std::find(vToErasePlane.begin(),
                           vToErasePlane.end(),
                           keyFramePlane) == vToErasePlane.end())
+            {
                 vToErasePlane.push_back(keyFramePlane);
+            }
         }
     }
 
@@ -1236,7 +1388,9 @@ void Optimizer::localBundleAdjustment(
             if (std::find(vToErasePlane.begin(),
                           vToErasePlane.end(),
                           keyFramePlane) == vToErasePlane.end())
+            {
                 vToErasePlane.push_back(keyFramePlane);
+            }
         }
     }
 
@@ -1261,7 +1415,11 @@ void Optimizer::localBundleAdjustment(
         {
             KeyFrame         *p_keyFrame = vToErasePlane[edgeIndex].first;
             geometric::Plane *p_plane    = vToErasePlane[edgeIndex].second;
-            p_plane->eraseObservation(p_keyFrame);
+            if (p_plane->eraseObservation(p_keyFrame) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // eraseObservation cannot fail; continue as before.
+            }
             p_keyFrame->removeMapPlane(p_plane);
         }
     }
@@ -1362,10 +1520,20 @@ void Optimizer::localBundleAdjustment(
         try
         {
             vs_graphs::core::geometric::Plane *p_mapPlane = *markerIt;
+            int                                mapPlaneGetOpId{};
+            if (p_mapPlane->getOpId(mapPlaneGetOpId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getOpId cannot fail; continue as before.
+            }
             g2o::VertexPlane *p_planeVertex = static_cast<g2o::VertexPlane *>(
-                optimizer.vertex(p_mapPlane->getOpId()));
+                optimizer.vertex(mapPlaneGetOpId));
             g2o::Plane3D planePlane = p_planeVertex->estimate();
-            p_mapPlane->setGlobalEquation(planePlane);
+            if (p_mapPlane->setGlobalEquation(planePlane) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setGlobalEquation cannot fail; continue as before.
+            }
         }
         catch (std::exception &e)
         {

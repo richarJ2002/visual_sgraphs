@@ -32,10 +32,12 @@ namespace core
 namespace geometric
 {
 
-std::size_t Plane::getObservationCount(void) const
+PlaneStatus
+    Plane::getObservationCount(std::size_t &getObservationCount_out) const
 {
     unique_lock<mutex> lock(featuresMutex);
-    return observationCount;
+    getObservationCount_out = observationCount;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

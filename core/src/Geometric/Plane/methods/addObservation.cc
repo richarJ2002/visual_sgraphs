@@ -32,13 +32,13 @@ namespace core
 namespace geometric
 {
 
-void Plane::addObservation(core::KeyFrame    *p_keyFrame_inout,
-                           const Observation &observation_in)
+PlaneStatus Plane::addObservation(core::KeyFrame    *p_keyFrame_inout,
+                                  const Observation &observation_in)
 {
     /* Confirm the keyframe is valid */
     if (p_keyFrame_inout == nullptr || p_keyFrame_inout->isBad())
     {
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     /* Lock the plane observation data */
@@ -61,6 +61,8 @@ void Plane::addObservation(core::KeyFrame    *p_keyFrame_inout,
             p_refKeyFrame = p_keyFrame_inout;
         }
     }
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

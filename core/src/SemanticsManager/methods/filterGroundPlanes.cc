@@ -46,15 +46,34 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
         *groundPlaneHeight - p_sysParams->semSeg.maxStepElevation;
 
     /* Extract the main associated ground plane */
-    int groundPlaneId = p_groundPlane_in->getId();
+    int groundPlaneId{};
+    if (p_groundPlane_in->getId(groundPlaneId) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
 
     /* Go through all ground planes to check validity */
     for (const auto &plane : p_atlas->getAllPlanes())
     {
         /* Skip planes not classed as ground, or are the main ground plane */
-        if (plane->getExpectedPlaneType() !=
+        geometric::Plane::PlaneVariant planeExpectedPlaneType{};
+        if (plane->getExpectedPlaneType(planeExpectedPlaneType) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getExpectedPlaneType cannot fail; continue as before.
+        }
+        int planeGetId{};
+        if (!(planeExpectedPlaneType !=
+              vs_graphs::core::geometric::Plane::PlaneVariant::GROUND) &&
+            plane->getId(planeGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        if (planeExpectedPlaneType !=
                 vs_graphs::core::geometric::Plane::PlaneVariant::GROUND ||
-            plane->getId() == groundPlaneId)
+            planeGetId == groundPlaneId)
         {
             continue;
         }
@@ -69,14 +88,23 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
         }
         if (*planeHeight < thresholdY)
         {
-            plane->resetPlaneSemantics();
+            if (plane->resetPlaneSemantics() !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // resetPlaneSemantics cannot fail; continue as before.
+            }
             continue;
         }
 
         /* Find trnsform of the plane */
+        g2o::Plane3D planeGetGlobalEquation{};
+        if (plane->getGlobalEquation(planeGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
         Eigen::Vector3f transformedPlaneCoefficients =
-            transformPlaneEqToGroundReference(
-                plane->getGlobalEquation().coeffs());
+            transformPlaneEqToGroundReference(planeGetGlobalEquation.coeffs());
 
         /*!
          * If the transformed plane is horizontal based on absolute value, then
@@ -88,7 +116,11 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
         if (abs(transformedPlaneCoefficients(0)) >
             p_sysParams->semSeg.maxTiltGround)
         {
-            plane->resetPlaneSemantics();
+            if (plane->resetPlaneSemantics() !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // resetPlaneSemantics cannot fail; continue as before.
+            }
         }
     }
 }

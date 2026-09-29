@@ -32,14 +32,15 @@ namespace core
 namespace geometric
 {
 
-std::optional<Plane::GeometrySnapshot> Plane::beginMapCloudRefit(void)
+PlaneStatus Plane::beginMapCloudRefit(std::optional<Plane::GeometrySnapshot> &geometrySnapshot_out)
 {
     std::scoped_lock lock(positionMutex, featuresMutex);
 
     if (planeCloud == nullptr || planeCloud->empty() ||
         cloudGeneration <= lastRefitAttemptGeneration)
     {
-        return std::nullopt;
+        geometrySnapshot_out = std::nullopt;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     lastRefitAttemptGeneration = cloudGeneration;
@@ -57,7 +58,8 @@ std::optional<Plane::GeometrySnapshot> Plane::beginMapCloudRefit(void)
     snapshot.observationCount          = observationCount;
     snapshot.cloudGeneration           = cloudGeneration;
     snapshot.successfulRefitGeneration = successfulRefitGeneration;
-    return snapshot;
+    geometrySnapshot_out               = snapshot;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

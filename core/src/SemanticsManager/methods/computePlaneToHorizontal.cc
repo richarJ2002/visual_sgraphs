@@ -31,8 +31,13 @@ Eigen::Matrix4f SemanticsManager::computePlaneToHorizontal(
     planePose.translation() = Eigen::Vector3d(0, 0, 0);
 
     // normalize the normal vector
-    Eigen::Vector3d planeNormal =
-        p_plane_in->getGlobalEquation().coeffs().head<3>();
+    g2o::Plane3D planeGetGlobalEquation{};
+    if (p_plane_in->getGlobalEquation(planeGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector3d planeNormal = planeGetGlobalEquation.coeffs().head<3>();
 
     // get the rotation from the ground plane to the plane with y-facing
     // vertical downwards

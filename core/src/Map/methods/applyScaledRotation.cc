@@ -77,9 +77,20 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
 
     for (geometric::Plane *p_plane : planes)
     {
-        if (p_plane != nullptr && !p_plane->isBad())
+        bool planeIsBad{};
+        if ((p_plane != nullptr) &&
+            p_plane->isBad(planeIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            p_plane->applyTransform(transform_oldWorldToNewWorld);
+            // isBad cannot fail; continue as before.
+        }
+        if (p_plane != nullptr && !planeIsBad)
+        {
+            if (p_plane->applyTransform(transform_oldWorldToNewWorld) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // applyTransform cannot fail; continue as before.
+            }
         }
     }
 

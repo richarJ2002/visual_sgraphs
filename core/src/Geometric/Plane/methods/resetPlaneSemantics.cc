@@ -32,12 +32,14 @@ namespace core
 namespace geometric
 {
 
-void Plane::resetPlaneSemantics(void)
+PlaneStatus Plane::resetPlaneSemantics(void)
 {
     unique_lock<mutex> lock(typeMutex);
 
     semanticVotes.clear();
     planeType = PlaneVariant::UNDEFINED;
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

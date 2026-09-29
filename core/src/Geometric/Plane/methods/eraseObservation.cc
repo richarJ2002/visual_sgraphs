@@ -32,12 +32,12 @@ namespace core
 namespace geometric
 {
 
-void Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
+PlaneStatus Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
 {
     /* Confirm the keyframe is valid */
     if (p_keyFrame_in == nullptr)
     {
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     {
@@ -49,7 +49,7 @@ void Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
         /* Return when the keyframe has no observation */
         if (observationIt == observations.end())
         {
-            return;
+            return PlaneStatus::PLANE_STATUS_SUCCESS;
         }
 
         /* Remove the observation */
@@ -83,8 +83,14 @@ void Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
             }
         }
 
-        rebuildSemanticVotesWithoutLock();
+        if (rebuildSemanticVotesWithoutLock() !=
+            PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // rebuildSemanticVotesWithoutLock cannot fail; continue as before.
+        }
     }
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

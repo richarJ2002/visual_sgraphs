@@ -32,12 +32,12 @@ namespace core
 namespace geometric
 {
 
-void Plane::setMapClouds(
+PlaneStatus Plane::setMapClouds(
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_additionalCloud_in)
 {
     if (!p_additionalCloud_in || p_additionalCloud_in->empty())
     {
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     std::lock_guard<std::mutex> lock(featuresMutex);
@@ -60,6 +60,8 @@ void Plane::setMapClouds(
     p_octree->setInputCloud(planeCloud);
     p_octree->addPointsFromInputCloud();
     ++cloudGeneration;
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

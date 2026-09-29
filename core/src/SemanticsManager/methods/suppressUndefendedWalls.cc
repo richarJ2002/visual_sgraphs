@@ -54,11 +54,24 @@ void SemanticsManager::suppressUndefendedWalls(void)
     geometric::Plane *p_groundPlaneForEvidence =
         p_currentMap->getBiggestGroundPlane();
     Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
-    if (p_groundPlaneForEvidence != nullptr &&
-        !p_groundPlaneForEvidence->isBad())
+    bool            groundPlaneForEvidenceIsBad{};
+    if ((p_groundPlaneForEvidence != nullptr) &&
+        p_groundPlaneForEvidence->isBad(groundPlaneForEvidenceIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlaneForEvidence != nullptr && !groundPlaneForEvidenceIsBad)
+    {
+        g2o::Plane3D groundPlaneForEvidenceGetGlobalEquation{};
+        if (p_groundPlaneForEvidence->getGlobalEquation(
+                groundPlaneForEvidenceGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
         const Eigen::Vector4d groundEq =
-            p_groundPlaneForEvidence->getGlobalEquation().coeffs();
+            groundPlaneForEvidenceGetGlobalEquation.coeffs();
         const double groundNorm = groundEq.head<3>().norm();
         if (groundEq.allFinite() && groundNorm > 1e-8)
         {
@@ -73,11 +86,27 @@ void SemanticsManager::suppressUndefendedWalls(void)
             continue;
         }
 
-        const int wallId = p_wall->getId();
+        int wallId{};
+        if (p_wall->getId(wallId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         mappedWallIds.insert(wallId);
 
-        if (p_wall->isBad() ||
-            p_wall->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
+        bool wallIsBad{};
+        if (p_wall->isBad(wallIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        geometric::Plane::PlaneVariant wallPlaneType{};
+        if (!(wallIsBad) && p_wall->getPlaneType(wallPlaneType) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getPlaneType cannot fail; continue as before.
+        }
+        if (wallIsBad || wallPlaneType != geometric::Plane::PlaneVariant::WALL)
         {
             undefendedWalls.erase(wallId);
             continue;
@@ -149,8 +178,12 @@ void SemanticsManager::suppressUndefendedWalls(void)
                                           p_sysParams,
                                           groundNormalForEvidence_World);
 
-        const geometric::Plane::GeometrySnapshot wallGeometry =
-            p_wall->getGeometrySnapshot();
+        geometric::Plane::GeometrySnapshot wallGeometry{};
+        if (p_wall->getGeometrySnapshot(wallGeometry) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGeometrySnapshot cannot fail; continue as before.
+        }
         const Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
         const double wallNormalNorm = wallEquation_World.head<3>().norm();
         bool         hasCompatibleLiveCluster = false;
@@ -238,11 +271,22 @@ void SemanticsManager::suppressUndefendedWalls(void)
             continue;
         }
 
-        const auto        p_cloud = p_wall->getGeometrySnapshot().supportCloud;
+        geometric::Plane::GeometrySnapshot wallGetGeometrySnapshot{};
+        if (p_wall->getGeometrySnapshot(wallGetGeometrySnapshot) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGeometrySnapshot cannot fail; continue as before.
+        }
+        const auto        p_cloud = wallGetGeometrySnapshot.supportCloud;
         const std::size_t cloudPointCount =
             p_cloud != nullptr ? p_cloud->size() : 0U;
-        const std::size_t observationCount = p_wall->getObservationCount();
-        auto [stateIterator, inserted]     = undefendedWalls.try_emplace(
+        std::size_t observationCount{};
+        if (p_wall->getObservationCount(observationCount) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getObservationCount cannot fail; continue as before.
+        }
+        auto [stateIterator, inserted] = undefendedWalls.try_emplace(
             wallId,
             UndefendedWallState{p_wall, 0U, cloudPointCount, observationCount});
 
@@ -298,8 +342,12 @@ void SemanticsManager::suppressUndefendedWalls(void)
         const unsigned int retiredAfterCycles = state.unresolvedCycles;
 
         /* Relationships were checked above under the semantic transaction. */
-        const std::map<KeyFrame *, geometric::Plane::Observation>
-            wallObservations = p_wall->getObservations();
+        std::map<KeyFrame *, geometric::Plane::Observation> wallObservations{};
+        if (p_wall->getObservations(wallObservations) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getObservations cannot fail; continue as before.
+        }
 
         /* Sweep every keyframe that references this plane, including
          * those that hold it in mvpMapPlanes without an Observation
@@ -319,15 +367,26 @@ void SemanticsManager::suppressUndefendedWalls(void)
             static_cast<void>(observation);
             if (p_keyFrame != nullptr)
             {
-                p_wall->eraseObservation(p_keyFrame);
+                if (p_wall->eraseObservation(p_keyFrame) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // eraseObservation cannot fail; continue as before.
+                }
             }
         }
 
-        p_wall->setBad();
+        if (p_wall->setBad() != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setBad cannot fail; continue as before.
+        }
         p_currentMap->eraseRoomWallPlane(p_wall);
         p_currentMap->eraseMapPlane(p_wall);
         p_wall->p_refKeyFrame = nullptr;
-        p_wall->setMap(nullptr);
+        if (p_wall->setMap(nullptr) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setMap cannot fail; continue as before.
+        }
         undefendedWalls.erase(wallId);
 
         if (loggedRetiredWallIds.insert(wallId).second)

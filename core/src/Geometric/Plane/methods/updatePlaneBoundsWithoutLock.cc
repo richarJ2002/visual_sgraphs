@@ -32,7 +32,7 @@ namespace core
 namespace geometric
 {
 
-void Plane::updatePlaneBoundsWithoutLock(void)
+PlaneStatus Plane::updatePlaneBoundsWithoutLock(void)
 {
 
     /* Reset the plane size */
@@ -51,7 +51,7 @@ void Plane::updatePlaneBoundsWithoutLock(void)
     {
         std::cerr << "[GeoSemHelper] Cannot create open passage: wall " << id
                   << " has an invalid plane equation." << std::endl;
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     /* Normalize the norm vector */
@@ -75,7 +75,7 @@ void Plane::updatePlaneBoundsWithoutLock(void)
     if (!normalVector.allFinite() ||
         normalVector.squaredNorm() < std::numeric_limits<double>::epsilon())
     {
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     /* Normalize the plane normal in the world frame */
@@ -96,7 +96,7 @@ void Plane::updatePlaneBoundsWithoutLock(void)
     /* Skip if cloud is invalid */
     if (!planeCloud || planeCloud->empty())
     {
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     /* Collect in-plane projections first: bounds are outlier-trimmed
@@ -136,7 +136,7 @@ void Plane::updatePlaneBoundsWithoutLock(void)
     if (!foundValidPoint)
     {
         isFlaggedBad = true;
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     constexpr std::size_t minimumRobustPoints = 10U;
@@ -170,6 +170,8 @@ void Plane::updatePlaneBoundsWithoutLock(void)
         minPlaneV = robustBound(projectionsV, lowerPercentile);
         maxPlaneV = robustBound(projectionsV, upperPercentile);
     }
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

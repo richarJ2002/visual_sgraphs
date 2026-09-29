@@ -32,21 +32,28 @@ namespace core
 namespace geometric
 {
 
-Plane::ObservationSideSnapshot Plane::getObservationSideSnapshot(
-    const Eigen::Vector4d &normalizedEquation_World_in) const
+PlaneStatus Plane::getObservationSideSnapshot(
+    const Eigen::Vector4d          &normalizedEquation_World_in,
+    Plane::ObservationSideSnapshot &observationSideSnapshot_out) const
 {
     ObservationSideSnapshot snapshot;
     if (!normalizedEquation_World_in.allFinite() ||
         std::abs(normalizedEquation_World_in.head<3>().norm() - 1.0) > 1e-3)
     {
-        return snapshot;
+        observationSideSnapshot_out = snapshot;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     constexpr double    minimumReliableSideDistance_m = 0.10;
     constexpr double    minimumSignConsensusRatio     = 0.75;
     std::vector<double> signedDistances_m;
 
-    for (const auto &[p_keyFrame, observation] : getObservations())
+    std::map<core::KeyFrame *, Plane::Observation> getObservations2{};
+    if (getObservations(getObservations2) != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getObservations cannot fail; continue as before.
+    }
+    for (const auto &[p_keyFrame, observation] : getObservations2)
     {
         static_cast<void>(observation);
         if (p_keyFrame == nullptr || p_keyFrame->isBad())
@@ -70,7 +77,8 @@ Plane::ObservationSideSnapshot Plane::getObservationSideSnapshot(
     snapshot.evidenceCount = signedDistances_m.size();
     if (signedDistances_m.empty())
     {
-        return snapshot;
+        observationSideSnapshot_out = snapshot;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     const std::size_t positiveCount  = static_cast<std::size_t>(std::count_if(
@@ -83,8 +91,9 @@ Plane::ObservationSideSnapshot Plane::getObservationSideSnapshot(
                               static_cast<double>(signedDistances_m.size());
     if (snapshot.consensusRatio < minimumSignConsensusRatio)
     {
-        snapshot.face = ObservationSideSnapshot::Face::AMBIGUOUS;
-        return snapshot;
+        snapshot.face               = ObservationSideSnapshot::Face::AMBIGUOUS;
+        observationSideSnapshot_out = snapshot;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     const bool positiveConsensus = positiveCount >= negativeCount;
@@ -101,7 +110,8 @@ Plane::ObservationSideSnapshot Plane::getObservationSideSnapshot(
                      signedDistances_m.begin() + medianIndex,
                      signedDistances_m.end());
     snapshot.medianSignedDistance_m = signedDistances_m[medianIndex];
-    return snapshot;
+    observationSideSnapshot_out     = snapshot;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

@@ -46,10 +46,26 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
 
     vs_graphs::core::geometric::Plane *p_newMapPlane =
         new vs_graphs::core::geometric::Plane();
-    p_newMapPlane->setColor();
-    p_newMapPlane->setLocalEquation(estimatedPlane_in);
-    p_newMapPlane->setMap(p_currentMap);
-    p_newMapPlane->setId(p_currentMap->reservePlaneId());
+    if (p_newMapPlane->setColor() !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setColor cannot fail; continue as before.
+    }
+    if (p_newMapPlane->setLocalEquation(estimatedPlane_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setLocalEquation cannot fail; continue as before.
+    }
+    if (p_newMapPlane->setMap(p_currentMap) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (p_newMapPlane->setId(p_currentMap->reservePlaneId()) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
     p_newMapPlane->p_refKeyFrame = p_keyFrame_inout;
 
     /* Stamp which face of the physical surface this is, from the camera that
@@ -64,8 +80,12 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
 
         if (observationOrigin_World_m.allFinite())
         {
-            p_newMapPlane->setObservationOrigin_World(
-                observationOrigin_World_m);
+            if (p_newMapPlane->setObservationOrigin_World(
+                    observationOrigin_World_m) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setObservationOrigin_World cannot fail; continue as before.
+            }
         }
     }
 
@@ -126,10 +146,18 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
      * ---------------------------------------------------------------------- */
 
     /* Add observation and keyframe to plane */
-    p_newMapPlane->addObservation(p_keyFrame_inout, observation);
+    if (p_newMapPlane->addObservation(p_keyFrame_inout, observation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // addObservation cannot fail; continue as before.
+    }
 
     /* Set the plane type */
-    p_newMapPlane->setPlaneType(semanticType_in);
+    if (p_newMapPlane->setPlaneType(semanticType_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setPlaneType cannot fail; continue as before.
+    }
 
     /* Get the global equation of the plane */
     g2o::Plane3D globalEquation_World{};
@@ -143,7 +171,11 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     }
 
     /* Set the global equation of the plane in the map world plane */
-    p_newMapPlane->setGlobalEquation(globalEquation_World);
+    if (p_newMapPlane->setGlobalEquation(globalEquation_World) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setGlobalEquation cannot fail; continue as before.
+    }
 
     /* Transform the plane cloud to the global frame */
     pcl::transformPointCloud(
@@ -155,7 +187,11 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     if (!p_planeCloud_in->points.empty())
     {
         /* Add the point clouds to the new map plane */
-        p_newMapPlane->replaceMapClouds(p_planeCloud_in);
+        if (p_newMapPlane->replaceMapClouds(p_planeCloud_in) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // replaceMapClouds cannot fail; continue as before.
+        }
         bool wasPlaneRefit{};
         if (refitMappedPlaneFromCloud(p_newMapPlane, wasPlaneRefit) !=
             GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
@@ -185,10 +221,21 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
         for (const auto &mapPoint : p_keyFrame_inout->getMapPoints())
         {
             /* If the orb feature is within the plane, set as map point */
+            bool newMapPlaneIsPointinPlaneCloud{};
             if (p_newMapPlane->isPointinPlaneCloud(
-                    mapPoint->getWorldPos().cast<double>()))
+                    mapPoint->getWorldPos().cast<double>(),
+                    newMapPlaneIsPointinPlaneCloud) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                p_newMapPlane->setMapPoints(mapPoint);
+                // isPointinPlaneCloud cannot fail; continue as before.
+            }
+            if (newMapPlaneIsPointinPlaneCloud)
+            {
+                if (p_newMapPlane->setMapPoints(mapPoint) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // setMapPoints cannot fail; continue as before.
+                }
             }
         }
     }

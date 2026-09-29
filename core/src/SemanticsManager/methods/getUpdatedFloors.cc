@@ -93,8 +93,12 @@ void SemanticsManager::getUpdatedFloors(void)
     bool              groundIdentityUpdated = false;
     if (p_groundPlane != nullptr)
     {
-        const geometric::Plane::GeometrySnapshot groundGeometry =
-            p_groundPlane->getGeometrySnapshot();
+        geometric::Plane::GeometrySnapshot groundGeometry{};
+        if (p_groundPlane->getGeometrySnapshot(groundGeometry) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGeometrySnapshot cannot fail; continue as before.
+        }
         const double groundNormalNorm =
             groundGeometry.equation_World.head<3>().norm();
         if (groundGeometry.cloudGeneration ==

@@ -326,13 +326,24 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
             /* Preserve plane variables which were optimized directly by GBA. */
             for (geometric::Plane *p_plane : p_activeMap_inout->getAllPlanes())
             {
-                if (p_plane == nullptr || p_plane->isBad() ||
+                bool planeIsBad{};
+                if (!(p_plane == nullptr) &&
+                    p_plane->isBad(planeIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_plane == nullptr || planeIsBad ||
                     p_plane->baGlobalKeyFrameId != loopKeyFrameCount_in)
                 {
                     continue;
                 }
 
-                p_plane->alignGeometryToEquation(p_plane->planeGBA);
+                if (p_plane->alignGeometryToEquation(p_plane->planeGBA) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // alignGeometryToEquation cannot fail; continue as before.
+                }
             }
 
             p_activeMap_inout->informNewBigChange();

@@ -56,11 +56,24 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
     geometric::Plane *p_groundPlaneForEvidence =
         p_atlas->getBiggestGroundPlane();
     Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
-    if (p_groundPlaneForEvidence != nullptr &&
-        !p_groundPlaneForEvidence->isBad())
+    bool            groundPlaneForEvidenceIsBad{};
+    if ((p_groundPlaneForEvidence != nullptr) &&
+        p_groundPlaneForEvidence->isBad(groundPlaneForEvidenceIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlaneForEvidence != nullptr && !groundPlaneForEvidenceIsBad)
+    {
+        g2o::Plane3D groundPlaneForEvidenceGetGlobalEquation{};
+        if (p_groundPlaneForEvidence->getGlobalEquation(
+                groundPlaneForEvidenceGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
         const Eigen::Vector4d groundEq =
-            p_groundPlaneForEvidence->getGlobalEquation().coeffs();
+            groundPlaneForEvidenceGetGlobalEquation.coeffs();
         const double groundNorm = groundEq.head<3>().norm();
         if (groundEq.allFinite() && groundNorm > 1e-8)
         {
@@ -72,7 +85,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
     for (vs_graphs::core::geometric::Plane *p_plane : allPlanes)
     {
         /* Skip bad planes */
-        if (p_plane == nullptr || p_plane->isBad())
+        bool planeIsBad{};
+        if (!(p_plane == nullptr) &&
+            p_plane->isBad(planeIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_plane == nullptr || planeIsBad)
         {
             continue;
         }
@@ -125,14 +145,25 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         for (vs_graphs::core::geometric::Plane *wall : allWalls)
         {
             /* Skip wall if it is bad */
-            if (wall == nullptr || wall->isBad())
+            bool wallIsBad{};
+            if (!(wall == nullptr) &&
+                wall->isBad(wallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (wall == nullptr || wallIsBad)
             {
                 continue;
             }
 
             /* Extract the point cloud for the wall */
-            const geometric::Plane::GeometrySnapshot wallGeometry =
-                wall->getGeometrySnapshot();
+            geometric::Plane::GeometrySnapshot wallGeometry{};
+            if (wall->getGeometrySnapshot(wallGeometry) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGeometrySnapshot cannot fail; continue as before.
+            }
             const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallCloud =
                 wallGeometry.supportCloud;
 
@@ -167,7 +198,13 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
             }
 
             /* Extract plane equation for the wall */
-            Eigen::Vector4d wallEquation = wall->getGlobalEquation().coeffs();
+            g2o::Plane3D wallGetGlobalEquation{};
+            if (wall->getGlobalEquation(wallGetGlobalEquation) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
+            Eigen::Vector4d wallEquation = wallGetGlobalEquation.coeffs();
 
             /* Extract the norm of the normal of the wall */
             const double normalMagnitude = wallEquation.head<3>().norm();
@@ -369,7 +406,21 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                   closestWalls.end(),
                   [](vs_graphs::core::geometric::Plane *p_first,
                      vs_graphs::core::geometric::Plane *p_second)
-                  { return p_first->getId() < p_second->getId(); });
+                  {
+                      int firstGetId{};
+                      if (p_first->getId(firstGetId) !=
+                          geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                      {
+                          // getId cannot fail; continue as before.
+                      }
+                      int secondGetId{};
+                      if (p_second->getId(secondGetId) !=
+                          geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                      {
+                          // getId cannot fail; continue as before.
+                      }
+                      return firstGetId < secondGetId;
+                  });
 
         /* Remove duplicate walls using IDs rather than pointers */
         closestWalls.erase(
@@ -377,7 +428,21 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         closestWalls.end(),
                         [](vs_graphs::core::geometric::Plane *p_first,
                            vs_graphs::core::geometric::Plane *p_second)
-                        { return p_first->getId() == p_second->getId(); }),
+                        {
+                            int firstGetId{};
+                            if (p_first->getId(firstGetId) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                            {
+                                // getId cannot fail; continue as before.
+                            }
+                            int secondGetId{};
+                            if (p_second->getId(secondGetId) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                            {
+                                // getId cannot fail; continue as before.
+                            }
+                            return firstGetId == secondGetId;
+                        }),
             closestWalls.end());
 
         /* If there are no closest walls then skip to next cluster */
@@ -499,8 +564,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 [&closestWalls](
                     vs_graphs::core::geometric::Plane *p_prospectiveWall)
                 {
+                    bool prospectiveWallIsBad{};
+                    if ((p_prospectiveWall != nullptr) &&
+                        p_prospectiveWall->isBad(prospectiveWallIsBad) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
                     return p_prospectiveWall != nullptr &&
-                           !p_prospectiveWall->isBad() &&
+                           !prospectiveWallIsBad &&
                            std::find(closestWalls.begin(),
                                      closestWalls.end(),
                                      p_prospectiveWall) != closestWalls.end();
@@ -562,7 +634,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
             for (vs_graphs::core::geometric::Plane *p_candidateWall :
                  closestWalls)
             {
-                if (p_candidateWall == nullptr || p_candidateWall->isBad())
+                bool candidateWallIsBad{};
+                if (!(p_candidateWall == nullptr) &&
+                    p_candidateWall->isBad(candidateWallIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_candidateWall == nullptr || candidateWallIsBad)
                 {
                     continue;
                 }
@@ -785,7 +864,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
         for (vs_graphs::core::geometric::Plane *wall : closestWalls)
         {
             /* Skip invalid walls */
-            if (wall == nullptr || wall->isBad())
+            bool wallIsBad2{};
+            if (!(wall == nullptr) &&
+                wall->isBad(wallIsBad2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (wall == nullptr || wallIsBad2)
             {
                 continue;
             }
@@ -797,10 +883,24 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 geometric::Plane *p_groundPlane =
                     p_atlas->getBiggestGroundPlane();
                 Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
-                if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+                bool            groundPlaneIsBad{};
+                if ((p_groundPlane != nullptr) &&
+                    p_groundPlane->isBad(groundPlaneIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_groundPlane != nullptr && !groundPlaneIsBad)
+                {
+                    g2o::Plane3D groundPlaneGetGlobalEquation{};
+                    if (p_groundPlane->getGlobalEquation(
+                            groundPlaneGetGlobalEquation) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getGlobalEquation cannot fail; continue as before.
+                    }
                     const Eigen::Vector4d groundEq =
-                        p_groundPlane->getGlobalEquation().coeffs();
+                        groundPlaneGetGlobalEquation.coeffs();
                     const double groundNorm = groundEq.head<3>().norm();
                     if (groundEq.allFinite() && groundNorm > 1e-8)
                     {
@@ -824,9 +924,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     {
                         // getCentroid cannot fail; continue as before.
                     }
+                    Eigen::Vector3d wallGetCentroid{};
+                    if (wall->getCentroid(wallGetCentroid) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getCentroid cannot fail; continue as before.
+                    }
                     if (!segmentCrossesPassageOpening(
                             roomCentroid,
-                            wall->getCentroid().cast<double>(),
+                            wallGetCentroid.cast<double>(),
                             p_passage,
                             groundNormal_World,
                             static_cast<double>(
@@ -922,8 +1028,13 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             roomWasWallRemoved =
                                 false; // rejected input reads as before
                         }
-                        if (p_atlas->getRoomWallPlaneById(wall->getId()) ==
-                            nullptr)
+                        int wallGetId{};
+                        if (wall->getId(wallGetId) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        if (p_atlas->getRoomWallPlaneById(wallGetId) == nullptr)
                         {
                             p_atlas->addRoomWallPlane(wall);
                         }
@@ -933,8 +1044,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         {
                             // getId cannot fail; continue as before.
                         }
+                        int wallGetId2{};
+                        if (wall->getId(wallGetId2) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
                         std::cout
-                            << "[SemMgr] Far-side Wall#" << wall->getId()
+                            << "[SemMgr] Far-side Wall#" << wallGetId2
                             << " at semantic::Passage#" << passageId
                             << " has no prospective yet; held unbound for the "
                                "far-side room."
@@ -950,7 +1067,13 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         roomWasWallRemoved2 =
                             false; // rejected input reads as before
                     }
-                    if (p_atlas->getRoomWallPlaneById(wall->getId()) == nullptr)
+                    int wallGetId3{};
+                    if (wall->getId(wallGetId3) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    if (p_atlas->getRoomWallPlaneById(wallGetId3) == nullptr)
                     {
                         p_atlas->addRoomWallPlane(wall);
                     }
@@ -986,9 +1109,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         {
                             // getCentroid cannot fail; continue as before.
                         }
+                        Eigen::Vector3d wallGetCentroid2{};
+                        if (wall->getCentroid(wallGetCentroid2) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getCentroid cannot fail; continue as before.
+                        }
                         if (!segmentCrossesOpenPassageEvidence(
                                 roomCentroid2,
-                                wall->getCentroid().cast<double>(),
+                                wallGetCentroid2.cast<double>(),
                                 evidence.p_supportingWall,
                                 evidence.centroid_World_m,
                                 evidence.openingRadius_m,
@@ -1011,19 +1140,38 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             roomWasWallRemoved3 =
                                 false; // rejected input reads as before
                         }
-                        if (p_atlas->getRoomWallPlaneById(wall->getId()) ==
+                        int wallGetId4{};
+                        if (wall->getId(wallGetId4) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        if (p_atlas->getRoomWallPlaneById(wallGetId4) ==
                             nullptr)
                         {
                             p_atlas->addRoomWallPlane(wall);
                         }
-                        std::cout << "[SemMgr] Far-side Wall#" << wall->getId()
-                                  << " crosses an unconfirmed passage opening "
-                                     "(evidence at wall "
-                                  << (evidence.p_supportingWall != nullptr
-                                          ? evidence.p_supportingWall->getId()
-                                          : -1)
-                                  << "); held unbound pending confirmation."
-                                  << std::endl;
+                        int wallGetId5{};
+                        if (wall->getId(wallGetId5) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        int getId2{};
+                        if ((evidence.p_supportingWall != nullptr) &&
+                            evidence.p_supportingWall->getId(getId2) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        std::cout
+                            << "[SemMgr] Far-side Wall#" << wallGetId5
+                            << " crosses an unconfirmed passage opening "
+                               "(evidence at wall "
+                            << (evidence.p_supportingWall != nullptr ? getId2
+                                                                     : -1)
+                            << "); held unbound pending confirmation."
+                            << std::endl;
                         farSideBound = true;
                         break;
                     }
@@ -1041,8 +1189,22 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 roomWalls.end(),
                 [wall](vs_graphs::core::geometric::Plane *p_existingWall)
                 {
+                    int existingWallGetId{};
+                    if ((p_existingWall != nullptr) &&
+                        p_existingWall->getId(existingWallGetId) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    int wallGetId{};
+                    if ((p_existingWall != nullptr) &&
+                        wall->getId(wallGetId) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
                     return p_existingWall != nullptr &&
-                           p_existingWall->getId() == wall->getId();
+                           existingWallGetId == wallGetId;
                 });
 
             /* If the wall is already in a room, skip to next slosest wall */
@@ -1099,8 +1261,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
             if (p_existingWallOwner != nullptr)
             {
+                g2o::Plane3D wallGetGlobalEquation2{};
+                if (wall->getGlobalEquation(wallGetGlobalEquation2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getGlobalEquation cannot fail; continue as before.
+                }
                 Eigen::Vector4d wallEquation_World =
-                    wall->getGlobalEquation().coeffs();
+                    wallGetGlobalEquation2.coeffs();
                 const double wallNormalNorm =
                     wallEquation_World.head<3>().norm();
 
@@ -1156,8 +1324,15 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     Eigen::Vector3d::Zero();
                 std::size_t validObservationCount = 0U;
 
+                std::map<core::KeyFrame *, geometric::Plane::Observation>
+                    wallGetObservations{};
+                if (wall->getObservations(wallGetObservations) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getObservations cannot fail; continue as before.
+                }
                 for (const auto &[p_keyFrame, observation] :
-                     wall->getObservations())
+                     wallGetObservations)
                 {
                     static_cast<void>(observation);
 
@@ -1176,15 +1351,30 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     }
                 }
 
+                bool groundPlaneIsBad2{};
+                if ((!existingOwnerIsTransferableProvisional &&
+                     validObservationCount > 0U && p_groundPlane != nullptr) &&
+                    p_groundPlane->isBad(groundPlaneIsBad2) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
                 if (!existingOwnerIsTransferableProvisional &&
                     validObservationCount > 0U && p_groundPlane != nullptr &&
-                    !p_groundPlane->isBad())
+                    !groundPlaneIsBad2)
                 {
                     meanObservationPosition_World_m /=
                         static_cast<double>(validObservationCount);
 
+                    g2o::Plane3D groundPlaneGetGlobalEquation2{};
+                    if (p_groundPlane->getGlobalEquation(
+                            groundPlaneGetGlobalEquation2) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getGlobalEquation cannot fail; continue as before.
+                    }
                     Eigen::Vector4d groundEquation_World =
-                        p_groundPlane->getGlobalEquation().coeffs();
+                        groundPlaneGetGlobalEquation2.coeffs();
                     const double groundNormalNorm =
                         groundEquation_World.head<3>().norm();
 
@@ -1321,8 +1511,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     {
                         // getId cannot fail; continue as before.
                     }
+                    int wallGetId6{};
+                    if (wall->getId(wallGetId6) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
                     std::cout << "[SemMgr] Transferred orphan Wall#"
-                              << wall->getId() << " from provisional SE#"
+                              << wallGetId6 << " from provisional SE#"
                               << existingWallOwnerId << " to semantic::Room#"
                               << roomId3 << "." << std::endl;
                 }
@@ -1346,8 +1542,14 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     {
                         // getId cannot fail; continue as before.
                     }
+                    int wallGetId7{};
+                    if (wall->getId(wallGetId7) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
                     std::cout
-                        << "[SemMgr] Transferred Wall#" << wall->getId()
+                        << "[SemMgr] Transferred Wall#" << wallGetId7
                         << " from semantic::Room#" << existingWallOwnerId2
                         << " to semantic::Room#" << roomId4
                         << " through semantic::Passage#" << transferPassageId
@@ -1364,7 +1566,13 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
             roomWalls = roomWalls2;
 
             /* Register the uniquely owned room-wall surface. */
-            if (p_atlas->getRoomWallPlaneById(wall->getId()) == nullptr)
+            int wallGetId8{};
+            if (wall->getId(wallGetId8) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (p_atlas->getRoomWallPlaneById(wallGetId8) == nullptr)
             {
                 p_atlas->addRoomWallPlane(wall);
             }
@@ -1431,13 +1639,26 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
             for (vs_graphs::core::geometric::Plane *p_roomWall : roomWalls)
             {
-                if (p_roomWall == nullptr || p_roomWall->isBad())
+                bool roomWallIsBad{};
+                if (!(p_roomWall == nullptr) &&
+                    p_roomWall->isBad(roomWallIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_roomWall == nullptr || roomWallIsBad)
                 {
                     continue;
                 }
 
+                Eigen::Vector3d roomWallGetCentroid{};
+                if (p_roomWall->getCentroid(roomWallGetCentroid) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
                 const Eigen::Vector3d wallCentroid_World_m =
-                    p_roomWall->getCentroid().cast<double>();
+                    roomWallGetCentroid.cast<double>();
 
                 if (!wallCentroid_World_m.allFinite())
                 {
@@ -1529,19 +1750,27 @@ void SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
         const bool prospectiveWallEvidenceStillMatches =
             p_clusterProspective == p_room && p_clusterPassage != nullptr &&
-            std::any_of(prospectiveWallsBeforeCluster.begin(),
-                        prospectiveWallsBeforeCluster.end(),
-                        [&closestWalls,
-                         &roomWalls](vs_graphs::core::geometric::Plane *p_wall)
-                        {
-                            return p_wall != nullptr && !p_wall->isBad() &&
-                                   std::find(closestWalls.begin(),
-                                             closestWalls.end(),
-                                             p_wall) != closestWalls.end() &&
-                                   std::find(roomWalls.begin(),
-                                             roomWalls.end(),
-                                             p_wall) != roomWalls.end();
-                        });
+            std::any_of(
+                prospectiveWallsBeforeCluster.begin(),
+                prospectiveWallsBeforeCluster.end(),
+                [&closestWalls,
+                 &roomWalls](vs_graphs::core::geometric::Plane *p_wall)
+                {
+                    bool wallIsBad{};
+                    if ((p_wall != nullptr) &&
+                        p_wall->isBad(wallIsBad) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
+                    return p_wall != nullptr && !wallIsBad &&
+                           std::find(closestWalls.begin(),
+                                     closestWalls.end(),
+                                     p_wall) != closestWalls.end() &&
+                           std::find(roomWalls.begin(),
+                                     roomWalls.end(),
+                                     p_wall) != roomWalls.end();
+                });
 
         /* Confirm the cluster-backed structural element as a room. */
         semantic::Room::RoomVariant roomVariant{};

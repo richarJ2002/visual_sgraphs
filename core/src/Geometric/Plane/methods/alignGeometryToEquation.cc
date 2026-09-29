@@ -32,7 +32,7 @@ namespace core
 namespace geometric
 {
 
-void Plane::alignGeometryToEquation(
+PlaneStatus Plane::alignGeometryToEquation(
     const g2o::Plane3D &targetEquation_NewWorld_in)
 {
     std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
@@ -46,7 +46,7 @@ void Plane::alignGeometryToEquation(
     if (!currentCoefficients.allFinite() || !targetCoefficients.allFinite() ||
         currentNormalNorm < 1e-12 || targetNormalNorm < 1e-12)
     {
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     currentCoefficients /= currentNormalNorm;
@@ -95,7 +95,7 @@ void Plane::alignGeometryToEquation(
 
     if (!rotation_oldPlaneToOptimizedPlane.coeffs().allFinite())
     {
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     /*!
@@ -143,9 +143,14 @@ void Plane::alignGeometryToEquation(
     p_octree->deleteTree();
     p_octree->setInputCloud(planeCloud);
     p_octree->addPointsFromInputCloud();
-    updatePlaneBoundsWithoutLock();
+    if (updatePlaneBoundsWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // updatePlaneBoundsWithoutLock cannot fail; continue as before.
+    }
     ++cloudGeneration;
     successfulRefitGeneration = cloudGeneration;
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

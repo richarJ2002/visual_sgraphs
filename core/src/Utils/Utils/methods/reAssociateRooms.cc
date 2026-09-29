@@ -91,7 +91,14 @@ UtilsStatus Utils::reAssociateRooms(Atlas *p_atlas_in)
 
         for (vs_graphs::core::geometric::Plane *p_wall : roomWalls)
         {
-            if (p_wall != nullptr && !p_wall->isBad())
+            bool wallIsBad{};
+            if ((p_wall != nullptr) &&
+                p_wall->isBad(wallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_wall != nullptr && !wallIsBad)
             {
                 validWallCount++;
             }

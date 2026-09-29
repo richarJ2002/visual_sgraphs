@@ -65,10 +65,22 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    if (p_wallPlane_in->isBad())
+    bool wallPlaneIsBad{};
+    if (p_wallPlane_in->isBad(wallPlaneIsBad) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
+        // isBad cannot fail; continue as before.
+    }
+    if (wallPlaneIsBad)
+    {
+        int wallPlaneGetId{};
+        if (p_wallPlane_in->getId(wallPlaneGetId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         std::cerr << "[GeoSemHelper] Cannot create passage: wall plane"
-                  << p_wallPlane_in->getId() << " is bad." << std::endl;
+                  << wallPlaneGetId << " is bad." << std::endl;
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
@@ -86,17 +98,35 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     }
     const size_t minimumObservation =
         p_params->roomSeg.minimumWallObservationCount;
-    if (p_wallPlane_in->getObservationCount() >= minimumObservation)
+    std::size_t wallPlaneGetObservationCount{};
+    if (p_wallPlane_in->getObservationCount(wallPlaneGetObservationCount) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getObservationCount cannot fail; continue as before.
+    }
+    if (wallPlaneGetObservationCount >= minimumObservation)
     {
         wallHasConfirmedRoom = true;
     }
 
     if (!wallHasConfirmedRoom)
     {
+        int wallPlaneGetId2{};
+        if (p_wallPlane_in->getId(wallPlaneGetId2) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        std::size_t wallPlaneGetObservationCount2{};
+        if (p_wallPlane_in->getObservationCount(
+                wallPlaneGetObservationCount2) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getObservationCount cannot fail; continue as before.
+        }
         std::cerr << "[GeoSemHelper] Cannot create passage: wall plane "
-                  << p_wallPlane_in->getId()
-                  << " has insufficient observations ("
-                  << p_wallPlane_in->getObservationCount() << " < "
+                  << wallPlaneGetId2 << " has insufficient observations ("
+                  << wallPlaneGetObservationCount2 << " < "
                   << minimumObservation << ")." << std::endl;
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
@@ -132,20 +162,50 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     if (p_doorPlane_in != nullptr)
     {
         /* Confirm the door plane is not bad */
-        if (p_doorPlane_in->isBad())
+        bool doorPlaneIsBad{};
+        if (p_doorPlane_in->isBad(doorPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
+            // isBad cannot fail; continue as before.
+        }
+        if (doorPlaneIsBad)
+        {
+            int doorPlaneGetId{};
+            if (p_doorPlane_in->getId(doorPlaneGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cerr << "[GeoSemHelper] Cannot create passage: door plane "
-                      << p_doorPlane_in->getId() << " is bad." << std::endl;
+                      << doorPlaneGetId << " is bad." << std::endl;
             return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
         }
 
         /* Extract centroid and plane equation */
-        centroid        = p_doorPlane_in->getCentroid();
-        passageEquation = p_doorPlane_in->getGlobalEquation();
+        Eigen::Vector3d doorPlaneGetCentroid{};
+        if (p_doorPlane_in->getCentroid(doorPlaneGetCentroid) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
+        centroid = doorPlaneGetCentroid;
+        g2o::Plane3D doorPlaneGetGlobalEquation{};
+        if (p_doorPlane_in->getGlobalEquation(doorPlaneGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        passageEquation = doorPlaneGetGlobalEquation;
 
         /* Extract point cloud of door */
+        geometric::Plane::GeometrySnapshot doorPlaneGetGeometrySnapshot{};
+        if (p_doorPlane_in->getGeometrySnapshot(doorPlaneGetGeometrySnapshot) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGeometrySnapshot cannot fail; continue as before.
+        }
         const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_doorCloud =
-            p_doorPlane_in->getGeometrySnapshot().supportCloud;
+            doorPlaneGetGeometrySnapshot.supportCloud;
 
         /* Use measured door dimensions when a valid point cloud if available */
         if (p_doorCloud != nullptr && !p_doorCloud->empty())
@@ -202,17 +262,28 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         centroid = passageCentroid_World_m_in;
 
         /* Extract the plane coefficients of the wall */
-        Eigen::Vector4d wallEquation =
-            p_wallPlane_in->getGlobalEquation().coeffs();
+        g2o::Plane3D wallPlaneGetGlobalEquation{};
+        if (p_wallPlane_in->getGlobalEquation(wallPlaneGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        Eigen::Vector4d wallEquation = wallPlaneGetGlobalEquation.coeffs();
 
         /* Extract the magnitude of the norm from the coefficients */
         const double normalNorm = wallEquation.head<3>().norm();
 
         if (!std::isfinite(normalNorm) || normalNorm < 1e-8)
         {
+            int wallPlaneGetId3{};
+            if (p_wallPlane_in->getId(wallPlaneGetId3) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cerr << "[GeoSemHelper] Cannot create open passage: wall "
-                      << p_wallPlane_in->getId()
-                      << " has an invalid plane equation." << std::endl;
+                      << wallPlaneGetId3 << " has an invalid plane equation."
+                      << std::endl;
             return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
         }
 
@@ -560,12 +631,24 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                       << std::fixed << std::setprecision(2) << width << "x"
                       << height << "m";
 
+    int wallPlaneGetId4{};
+    if (p_wallPlane_in->getId(wallPlaneGetId4) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
     std::cout << "[GeoSemHelper] Creating semantic::Passage#" << passageId
-              << " associated with wall " << p_wallPlane_in->getId();
+              << " associated with wall " << wallPlaneGetId4;
 
     if (p_doorPlane_in != nullptr)
     {
-        std::cout << " and door plane " << p_doorPlane_in->getId();
+        int doorPlaneGetId2{};
+        if (p_doorPlane_in->getId(doorPlaneGetId2) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        std::cout << " and door plane " << doorPlaneGetId2;
     }
 
     std::cout << " (" << informationStream.str()

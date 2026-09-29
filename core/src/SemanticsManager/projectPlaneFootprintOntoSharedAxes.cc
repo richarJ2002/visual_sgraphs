@@ -50,8 +50,12 @@ bool projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
         return false;
     }
 
-    const geometric::Plane::GeometrySnapshot geometry =
-        p_plane_in->getGeometrySnapshot();
+    geometric::Plane::GeometrySnapshot geometry{};
+    if (p_plane_in->getGeometrySnapshot(geometry) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGeometrySnapshot cannot fail; continue as before.
+    }
     if (geometry.supportCloud == nullptr || geometry.supportCloud->empty())
     {
         return false;

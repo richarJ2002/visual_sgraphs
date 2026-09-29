@@ -75,7 +75,12 @@ void KeyFrame::updateConnections(bool upParent_in)
                 continue;
 
             map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
-                observations = p_plane->getObservations();
+                observations{};
+            if (p_plane->getObservations(observations) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getObservations cannot fail; continue as before.
+            }
 
             for (map<KeyFrame *,
                      vs_graphs::core::geometric::Plane::Observation>::iterator
@@ -88,8 +93,13 @@ void KeyFrame::updateConnections(bool upParent_in)
                     mit->first->getMap() != p_map)
                     continue;
 
-                if (p_plane->getPlaneType() ==
-                    geometric::Plane::PlaneVariant::UNDEFINED)
+                geometric::Plane::PlaneVariant planeType{};
+                if (p_plane->getPlaneType(planeType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getPlaneType cannot fail; continue as before.
+                }
+                if (planeType == geometric::Plane::PlaneVariant::UNDEFINED)
                     keyFrameCounter[mit->first] += static_cast<int>(
                         scorePerPlane *
                         0.2); // undefined planes have less weight

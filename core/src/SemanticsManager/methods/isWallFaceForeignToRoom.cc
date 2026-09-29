@@ -35,8 +35,15 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
     {
         // isBad cannot fail; continue as before.
     }
+    bool wallIsBad{};
+    if (!(p_room_in == nullptr || room_inIsBad || p_wall_in == nullptr) &&
+        p_wall_in->isBad(wallIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
     if (p_room_in == nullptr || room_inIsBad || p_wall_in == nullptr ||
-        p_wall_in->isBad())
+        wallIsBad)
     {
         return false;
     }
@@ -45,8 +52,12 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
      * Only the side of a physical surface turned toward a camera can be
      * seen, so this fixes which of the wall's two faces this plane is -- and
      * therefore which room it bounds -- for the plane's whole lifetime. */
-    const std::optional<Eigen::Vector3d> observationOrigin_World_m =
-        p_wall_in->getObservationOrigin_World();
+    std::optional<Eigen::Vector3d> observationOrigin_World_m{};
+    if (p_wall_in->getObservationOrigin_World(observationOrigin_World_m) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getObservationOrigin_World cannot fail; continue as before.
+    }
 
     if (!observationOrigin_World_m.has_value() ||
         !observationOrigin_World_m->allFinite())
@@ -56,7 +67,13 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
         return false;
     }
 
-    Eigen::Vector4d equation_World = p_wall_in->getGlobalEquation().coeffs();
+    g2o::Plane3D wallGetGlobalEquation{};
+    if (p_wall_in->getGlobalEquation(wallGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector4d equation_World = wallGetGlobalEquation.coeffs();
     const double    normalNorm     = equation_World.head<3>().norm();
 
     if (!equation_World.allFinite() || normalNorm <= 1e-8)

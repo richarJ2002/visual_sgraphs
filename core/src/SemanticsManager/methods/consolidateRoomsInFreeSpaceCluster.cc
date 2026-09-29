@@ -218,10 +218,24 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         bool              roomsSeparatedByConfirmedPassage = false;
         geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
 
-        if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+        bool groundPlaneIsBad{};
+        if ((p_groundPlane != nullptr) &&
+            p_groundPlane->isBad(groundPlaneIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_groundPlane != nullptr && !groundPlaneIsBad)
+        {
+            g2o::Plane3D groundPlaneGetGlobalEquation{};
+            if (p_groundPlane->getGlobalEquation(
+                    groundPlaneGetGlobalEquation) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
             Eigen::Vector4d groundEquation_World =
-                p_groundPlane->getGlobalEquation().coeffs();
+                groundPlaneGetGlobalEquation.coeffs();
             const double groundNormalNorm =
                 groundEquation_World.head<3>().norm();
 

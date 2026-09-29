@@ -35,8 +35,10 @@ TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
      * cloud -- exactly the state a plane can be in before its first successful
      * refit, or right after replaceMapClouds() clears it. */
     geometric::Plane groundPlane;
-    groundPlane.setId(1);
-    groundPlane.setMap(p_map);
+    ASSERT_EQ((groundPlane.setId(1)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((groundPlane.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     const std::optional<float> height =
         manager.computeGroundPlaneHeightForTest(&groundPlane);
@@ -52,8 +54,10 @@ TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
     SemanticsManager manager(&atlas);
 
     geometric::Plane groundPlane;
-    groundPlane.setId(1);
-    groundPlane.setMap(p_map);
+    ASSERT_EQ((groundPlane.setId(1)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((groundPlane.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -62,7 +66,8 @@ TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
     point.y = 0.5f;
     point.z = 0.0f;
     cloud->push_back(point);
-    groundPlane.setMapClouds(cloud);
+    ASSERT_EQ((groundPlane.setMapClouds(cloud)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     const std::optional<float> height =
         manager.computeGroundPlaneHeightForTest(&groundPlane);
@@ -76,8 +81,10 @@ TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
     SemanticsManager manager(&atlas);
 
     geometric::Plane groundPlane;
-    groundPlane.setId(1);
-    groundPlane.setMap(p_map);
+    ASSERT_EQ((groundPlane.setId(1)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((groundPlane.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -89,7 +96,8 @@ TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
         point.z = 0.0f;
         cloud->push_back(point);
     }
-    groundPlane.setMapClouds(cloud);
+    ASSERT_EQ((groundPlane.setMapClouds(cloud)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     const std::optional<float> height =
         manager.computeGroundPlaneHeightForTest(&groundPlane);

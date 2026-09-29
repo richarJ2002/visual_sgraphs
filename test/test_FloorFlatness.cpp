@@ -35,9 +35,20 @@ std::unique_ptr<geometric::Plane>
                          std::size_t pointCount_in)
 {
     auto ground = std::make_unique<geometric::Plane>();
-    ground->setId(id_in);
-    ground->setMap(p_map_in);
-    ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND);
+    if (ground->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (ground->setMap(p_map_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setPlaneType cannot fail; continue as before.
+    }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -49,14 +60,28 @@ std::unique_ptr<geometric::Plane>
         point.z = static_cast<float>(index) * 0.05f;
         cloud->push_back(point);
     }
-    ground->replaceMapClouds(cloud);
+    if (ground->replaceMapClouds(cloud) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // replaceMapClouds cannot fail; continue as before.
+    }
 
-    const auto snapshot = ground->beginMapCloudRefit();
-    ground->completeMapCloudRefit(
-        snapshot->cloudGeneration,
-        Eigen::Vector3d(0.0, height_m_in, 0.0),
-        g2o::Plane3D(Eigen::Vector4d(0.0, 1.0, 0.0, -height_m_in)),
-        pointCount_in);
+    std::optional<geometric::Plane::GeometrySnapshot> snapshot{};
+    if (ground->beginMapCloudRefit(snapshot) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // beginMapCloudRefit cannot fail; continue as before.
+    }
+    bool wasRefitPublished{};
+    if (ground->completeMapCloudRefit(
+            snapshot->cloudGeneration,
+            Eigen::Vector3d(0.0, height_m_in, 0.0),
+            g2o::Plane3D(Eigen::Vector4d(0.0, 1.0, 0.0, -height_m_in)),
+            pointCount_in,
+            wasRefitPublished) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // completeMapCloudRefit cannot fail; continue as before.
+    }
     return ground;
 }
 

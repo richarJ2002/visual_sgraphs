@@ -39,8 +39,13 @@ RoomStatus Room::getWallNormalTowardRoom_World(
     }
 
     /* Read, but never modify, the globally expressed wall equation. */
-    Eigen::Vector4d wallEquation_World =
-        p_wall_in->getGlobalEquation().coeffs();
+    g2o::Plane3D wallGetGlobalEquation{};
+    if (p_wall_in->getGlobalEquation(wallGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector4d wallEquation_World = wallGetGlobalEquation.coeffs();
 
     Eigen::Vector3d roomCentroid_World_m;
 

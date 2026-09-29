@@ -41,9 +41,22 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
                                double                 minimumOverlapRatio_in,
                                const Eigen::Vector3d &groundNormal_World_in)
 {
-    if (p_first_in == nullptr || p_first_in->isBad() ||
-        p_second_in == nullptr || p_second_in->isBad() ||
-        p_first_in == p_second_in)
+    bool firstIsBad{};
+    if (!(p_first_in == nullptr) &&
+        p_first_in->isBad(firstIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    bool secondIsBad{};
+    if (!(p_first_in == nullptr || firstIsBad || p_second_in == nullptr) &&
+        p_second_in->isBad(secondIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_first_in == nullptr || firstIsBad || p_second_in == nullptr ||
+        secondIsBad || p_first_in == p_second_in)
     {
         return false;
     }
@@ -61,8 +74,20 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
         return false;
     }
 
-    Eigen::Vector4d equation1   = p_first_in->getGlobalEquation().coeffs();
-    Eigen::Vector4d equation2   = p_second_in->getGlobalEquation().coeffs();
+    g2o::Plane3D firstGetGlobalEquation{};
+    if (p_first_in->getGlobalEquation(firstGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector4d equation1 = firstGetGlobalEquation.coeffs();
+    g2o::Plane3D    secondGetGlobalEquation{};
+    if (p_second_in->getGlobalEquation(secondGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector4d equation2   = secondGetGlobalEquation.coeffs();
     const double    normalNorm1 = equation1.head<3>().norm();
     const double    normalNorm2 = equation2.head<3>().norm();
 
@@ -95,10 +120,18 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
      * faces are observed from cameras standing on opposite exterior sides,
      * so each face's observation origin must resolve to opposite sides of
      * the OTHER face's equation. */
-    const std::optional<Eigen::Vector3d> origin1 =
-        p_first_in->getObservationOrigin_World();
-    const std::optional<Eigen::Vector3d> origin2 =
-        p_second_in->getObservationOrigin_World();
+    std::optional<Eigen::Vector3d> origin1{};
+    if (p_first_in->getObservationOrigin_World(origin1) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getObservationOrigin_World cannot fail; continue as before.
+    }
+    std::optional<Eigen::Vector3d> origin2{};
+    if (p_second_in->getObservationOrigin_World(origin2) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getObservationOrigin_World cannot fail; continue as before.
+    }
 
     if (!origin1.has_value() || !origin1->allFinite() || !origin2.has_value() ||
         !origin2->allFinite())

@@ -32,16 +32,19 @@ namespace core
 namespace geometric
 {
 
-bool Plane::completeMapCloudRefit(const std::uint64_t sourceCloudGeneration_in,
-                                  const Eigen::Vector3d &centroid_World_m_in,
-                                  const g2o::Plane3D    &equation_World_in,
-                                  const std::size_t      finitePointCount_in)
+PlaneStatus
+    Plane::completeMapCloudRefit(const std::uint64_t sourceCloudGeneration_in,
+                                 const Eigen::Vector3d &centroid_World_m_in,
+                                 const g2o::Plane3D    &equation_World_in,
+                                 const std::size_t      finitePointCount_in,
+                                 bool                  &wasRefitPublished_out)
 {
     std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
 
     if (sourceCloudGeneration_in != cloudGeneration)
     {
-        return false;
+        wasRefitPublished_out = false;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     centroid                            = centroid_World_m_in;
@@ -49,8 +52,12 @@ bool Plane::completeMapCloudRefit(const std::uint64_t sourceCloudGeneration_in,
     lastSuccessfulRefitFinitePointCount = finitePointCount_in;
     successfulRefitGeneration           = sourceCloudGeneration_in;
 
-    updatePlaneBoundsWithoutLock();
-    return true;
+    if (updatePlaneBoundsWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // updatePlaneBoundsWithoutLock cannot fail; continue as before.
+    }
+    wasRefitPublished_out = true;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

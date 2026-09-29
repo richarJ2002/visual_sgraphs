@@ -32,13 +32,13 @@ namespace core
 namespace geometric
 {
 
-void Plane::castWeightedVote(Plane::PlaneVariant semanticType_in,
-                             double              voteWeight_in)
+PlaneStatus Plane::castWeightedVote(Plane::PlaneVariant semanticType_in,
+                                    double              voteWeight_in)
 {
     unique_lock<mutex> lock(typeMutex);
 
     if (semanticType_in == PlaneVariant::UNDEFINED)
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
 
     // check if semantic type is already in the semanticVotes map
     if (semanticVotes.find(semanticType_in) == semanticVotes.end())
@@ -70,6 +70,8 @@ void Plane::castWeightedVote(Plane::PlaneVariant semanticType_in,
         planeType = maximumType;
     else
         planeType = PlaneVariant::UNDEFINED;
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

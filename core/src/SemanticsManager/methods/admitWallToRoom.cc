@@ -37,8 +37,16 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
     {
         // isBad cannot fail; continue as before.
     }
+    bool candidateWallIsBad{};
+    if (!(p_room_inout == nullptr || room_inoutIsBad ||
+          p_candidateWall_in == nullptr) &&
+        p_candidateWall_in->isBad(candidateWallIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
     if (p_room_inout == nullptr || room_inoutIsBad ||
-        p_candidateWall_in == nullptr || p_candidateWall_in->isBad())
+        p_candidateWall_in == nullptr || candidateWallIsBad)
     {
         return false;
     }
@@ -56,10 +64,24 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
 
     geometric::Plane *p_farSideGroundPlane = p_atlas->getBiggestGroundPlane();
     Eigen::Vector3d   farSideGroundNormal_World = Eigen::Vector3d::Zero();
-    if (p_farSideGroundPlane != nullptr && !p_farSideGroundPlane->isBad())
+    bool              farSideGroundPlaneIsBad{};
+    if ((p_farSideGroundPlane != nullptr) &&
+        p_farSideGroundPlane->isBad(farSideGroundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_farSideGroundPlane != nullptr && !farSideGroundPlaneIsBad)
+    {
+        g2o::Plane3D farSideGroundPlaneGetGlobalEquation{};
+        if (p_farSideGroundPlane->getGlobalEquation(
+                farSideGroundPlaneGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
         const Eigen::Vector4d groundEquation =
-            p_farSideGroundPlane->getGlobalEquation().coeffs();
+            farSideGroundPlaneGetGlobalEquation.coeffs();
         const double groundEquationNormalNorm = groundEquation.head<3>().norm();
         if (groundEquation.allFinite() && groundEquationNormalNorm > 1e-8)
         {
@@ -131,7 +153,13 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
         {
             // getId cannot fail; continue as before.
         }
-        std::cout << "[SemMgr] Wall#" << p_candidateWall_in->getId()
+        int candidateWallGetId{};
+        if (p_candidateWall_in->getId(candidateWallGetId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        std::cout << "[SemMgr] Wall#" << candidateWallGetId
                   << " rejected from semantic::Room#" << room_inoutId
                   << ": this face was observed from the opposite side, so it "
                      "bounds the neighbouring room."
@@ -143,8 +171,15 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
         p_sysParams->roomSeg.boundaryTopology;
     geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
 
+    bool groundPlaneIsBad{};
+    if (!(!topologyParameters.enabled || p_groundPlane == nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
     if (!topologyParameters.enabled || p_groundPlane == nullptr ||
-        p_groundPlane->isBad())
+        groundPlaneIsBad)
     {
         if (p_room_inout->setWalls(p_candidateWall_in) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -154,8 +189,14 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
         return true;
     }
 
+    g2o::Plane3D groundPlaneGetGlobalEquation{};
+    if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
     Eigen::Vector4d groundEquation_World =
-        p_groundPlane->getGlobalEquation().coeffs();
+        groundPlaneGetGlobalEquation.coeffs();
     const double groundNormalNorm = groundEquation_World.head<3>().norm();
 
     if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)
@@ -274,10 +315,22 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
             {
                 // getId cannot fail; continue as before.
             }
-            std::cout << "[SemMgr] Replaced clashing Wall#"
-                      << p_weakerWall->getId() << " in semantic::Room#"
-                      << room_inoutId2 << " with stronger Wall#"
-                      << p_candidateWall_in->getId() << "." << std::endl;
+            int weakerWallGetId{};
+            if (p_weakerWall->getId(weakerWallGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int candidateWallGetId2{};
+            if (p_candidateWall_in->getId(candidateWallGetId2) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            std::cout << "[SemMgr] Replaced clashing Wall#" << weakerWallGetId
+                      << " in semantic::Room#" << room_inoutId2
+                      << " with stronger Wall#" << candidateWallGetId2 << "."
+                      << std::endl;
         }
     }
 
@@ -375,11 +428,23 @@ bool SemanticsManager::admitWallToRoom(semantic::Room   *p_room_inout,
             {
                 // getId cannot fail; continue as before.
             }
-            std::cout << "[SemMgr] Wall#" << p_candidateWall_in->getId()
+            int candidateWallGetId3{};
+            if (p_candidateWall_in->getId(candidateWallGetId3) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int otherWallGetId{};
+            if (p_otherWall->getId(otherWallGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            std::cout << "[SemMgr] Wall#" << candidateWallGetId3
                       << " rejected from semantic::Room#" << room_inoutId3
                       << ": crosses semantic::Room#" << otherRoomId
-                      << "'s already-admitted Wall#" << p_otherWall->getId()
-                      << "." << std::endl;
+                      << "'s already-admitted Wall#" << otherWallGetId << "."
+                      << std::endl;
             return false;
         }
     }

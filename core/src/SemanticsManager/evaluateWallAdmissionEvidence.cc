@@ -50,16 +50,32 @@ WallAdmissionEvidence
 {
     WallAdmissionEvidence evidence;
 
-    if (p_wall_in == nullptr || p_wall_in->isBad() ||
-        p_systemParams_in == nullptr)
+    bool wallIsBad{};
+    if (!(p_wall_in == nullptr) &&
+        p_wall_in->isBad(wallIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_wall_in == nullptr || wallIsBad || p_systemParams_in == nullptr)
     {
         return evidence;
     }
 
-    evidence.observationCount = p_wall_in->getObservationCount();
+    std::size_t wallGetObservationCount{};
+    if (p_wall_in->getObservationCount(wallGetObservationCount) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getObservationCount cannot fail; continue as before.
+    }
+    evidence.observationCount = wallGetObservationCount;
 
-    const geometric::Plane::GeometrySnapshot geometry =
-        p_wall_in->getGeometrySnapshot();
+    geometric::Plane::GeometrySnapshot geometry{};
+    if (p_wall_in->getGeometrySnapshot(geometry) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGeometrySnapshot cannot fail; continue as before.
+    }
     Eigen::Vector4d equation_World = geometry.equation_World;
     const double    normalNorm     = equation_World.head<3>().norm();
 
@@ -188,10 +204,22 @@ WallAdmissionEvidence
         std::max<std::size_t>(
             p_systemParams_in->roomSeg.minimumWallObservationCount,
             1U);
+    geometric::Plane::PlaneVariant wallPlaneType{};
+    if (p_wall_in->getPlaneType(wallPlaneType) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getPlaneType cannot fail; continue as before.
+    }
+    geometric::Plane::PlaneVariant wallExpectedPlaneType{};
+    if ((wallPlaneType == geometric::Plane::PlaneVariant::WALL) &&
+        p_wall_in->getExpectedPlaneType(wallExpectedPlaneType) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getExpectedPlaneType cannot fail; continue as before.
+    }
     const bool wallDominatesSemantics =
-        p_wall_in->getPlaneType() == geometric::Plane::PlaneVariant::WALL &&
-        p_wall_in->getExpectedPlaneType() ==
-            geometric::Plane::PlaneVariant::WALL;
+        wallPlaneType == geometric::Plane::PlaneVariant::WALL &&
+        wallExpectedPlaneType == geometric::Plane::PlaneVariant::WALL;
 
     evidence.isAdmissible =
         wallDominatesSemantics && evidence.hasAdequateFiniteFit &&

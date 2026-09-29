@@ -32,10 +32,12 @@ namespace core
 namespace geometric
 {
 
-void Plane::clearTwinFace(void)
+PlaneStatus Plane::clearTwinFace(void)
 {
     unique_lock<mutex> lock(positionMutex);
     p_twinFace = nullptr;
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

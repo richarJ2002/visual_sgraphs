@@ -32,7 +32,7 @@ namespace core
 namespace geometric
 {
 
-void Plane::rebuildSemanticVotesWithoutLock(void)
+PlaneStatus Plane::rebuildSemanticVotesWithoutLock(void)
 {
     semanticVotes.clear();
     for (const auto &[p_keyFrame, observation] : observations)
@@ -76,6 +76,8 @@ void Plane::rebuildSemanticVotesWithoutLock(void)
     planeType = maximumVotes >= p_params->semSeg.minVotes
                     ? maximumType
                     : PlaneVariant::UNDEFINED;
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

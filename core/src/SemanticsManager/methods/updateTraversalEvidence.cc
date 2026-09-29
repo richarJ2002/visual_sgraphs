@@ -80,11 +80,23 @@ void SemanticsManager::updateTraversalEvidence(
 
     bool hasValidGroundNormal = false;
 
-    if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+    bool groundPlaneIsBad{};
+    if ((p_groundPlane != nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        Eigen::Vector4d groundEquation =
-            p_groundPlane->getGlobalEquation().coeffs();
-        const double groundNormalNorm = groundEquation.head<3>().norm();
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlane != nullptr && !groundPlaneIsBad)
+    {
+        g2o::Plane3D groundPlaneGetGlobalEquation{};
+        if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        Eigen::Vector4d groundEquation = groundPlaneGetGlobalEquation.coeffs();
+        const double    groundNormalNorm = groundEquation.head<3>().norm();
 
         if (groundEquation.allFinite() && std::isfinite(groundNormalNorm) &&
             groundNormalNorm > 1e-8)

@@ -36,7 +36,14 @@ GeoSemHelpersStatus GeoSemHelpers::refitMappedPlaneFromCloud(
     bool                              &wasPlaneRefit_out)
 {
     /* Confirm the mapped plane is valid */
-    if (p_plane_inout == nullptr || p_plane_inout->isBad())
+    bool planeIsBad{};
+    if (!(p_plane_inout == nullptr) &&
+        p_plane_inout->isBad(planeIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_plane_inout == nullptr || planeIsBad)
     {
         wasPlaneRefit_out = false;
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
@@ -44,8 +51,12 @@ GeoSemHelpersStatus GeoSemHelpers::refitMappedPlaneFromCloud(
 
     /* Claim one immutable generation; fitting never observes concurrent growth.
      */
-    const std::optional<geometric::Plane::GeometrySnapshot> geometrySnapshot =
-        p_plane_inout->beginMapCloudRefit();
+    std::optional<geometric::Plane::GeometrySnapshot> geometrySnapshot{};
+    if (p_plane_inout->beginMapCloudRefit(geometrySnapshot) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // beginMapCloudRefit cannot fail; continue as before.
+    }
 
     /* Require sufficient points for a stable covariance estimate */
     if (!geometrySnapshot.has_value() ||
@@ -159,11 +170,17 @@ GeoSemHelpersStatus GeoSemHelpers::refitMappedPlaneFromCloud(
     fittedEquation(3) = -fittedNormal.dot(centroid);
 
     /* Publish the complete fitted geometry and recompute finite bounds once. */
-    wasPlaneRefit_out =
-        p_plane_inout->completeMapCloudRefit(geometrySnapshot->cloudGeneration,
+    bool planeWasRefitPublished{};
+    if (p_plane_inout->completeMapCloudRefit(geometrySnapshot->cloudGeneration,
                                              centroid,
                                              g2o::Plane3D(fittedEquation),
-                                             validPointCount);
+                                             validPointCount,
+                                             planeWasRefitPublished) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // completeMapCloudRefit cannot fail; continue as before.
+    }
+    wasPlaneRefit_out = planeWasRefitPublished;
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 

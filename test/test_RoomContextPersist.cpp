@@ -40,12 +40,17 @@ namespace
  * geometric::Plane::getGeometrySnapshot() reads from). */
 void makeRefitWallPlane(geometric::Plane &wall_inout, int id_in, Map *p_map_in)
 {
-    wall_inout.setId(id_in);
-    wall_inout.setMap(p_map_in);
-    wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL);
-    wall_inout.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
-    wall_inout.setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0));
+    ASSERT_EQ((wall_inout.setId(id_in)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall_inout.setMap(p_map_in)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall_inout.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall_inout.setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -60,8 +65,10 @@ void makeRefitWallPlane(geometric::Plane &wall_inout, int id_in, Map *p_map_in)
             cloud->push_back(point);
         }
     }
-    wall_inout.setMapClouds(cloud);
-    wall_inout.updateSizeOfPlane();
+    ASSERT_EQ((wall_inout.setMapClouds(cloud)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall_inout.updateSizeOfPlane()),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 }
 
 } // namespace
@@ -136,9 +143,14 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
     ASSERT_EQ(snap.wallCentroids.size(), 1U);
     ASSERT_EQ(snap.wallDistances.size(), 1U);
     EXPECT_TRUE(snap.wallNormals.front().allFinite());
-    EXPECT_TRUE(snap.wallCentroids.front().isApprox(wall.getCentroid()));
-    EXPECT_DOUBLE_EQ(snap.wallDistances.front(),
-                     wall.getGlobalEquation().distance());
+    Eigen::Vector3d getCentroid2{};
+    ASSERT_EQ((wall.getCentroid(getCentroid2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_TRUE(snap.wallCentroids.front().isApprox(getCentroid2));
+    g2o::Plane3D getGlobalEquation2{};
+    ASSERT_EQ((wall.getGlobalEquation(getGlobalEquation2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_DOUBLE_EQ(snap.wallDistances.front(), getGlobalEquation2.distance());
 
     /* The room-tag side effect on the live semantic::Room mirrors the exported
      * field (verifies the exporter uses the same production
@@ -204,16 +216,20 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
     geometric::Plane
         unrefitWall; // Never assigned a cloud: bounds stay at the
                      // sentinel min>max default, so valid() is false.
-    unrefitWall.setId(2);
-    unrefitWall.setMap(p_map);
-    unrefitWall.setPlaneType(geometric::Plane::PlaneVariant::WALL);
-    unrefitWall.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(0.0, 1.0, 0.0, 0.0)));
+    ASSERT_EQ((unrefitWall.setId(2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((unrefitWall.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((unrefitWall.setPlaneType(geometric::Plane::PlaneVariant::WALL)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((unrefitWall.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(0.0, 1.0, 0.0, 0.0)))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_map->addMapPlane(&unrefitWall);
 
     geometric::Plane badWall;
     makeRefitWallPlane(badWall, 3, p_map);
-    badWall.setBad();
+    ASSERT_EQ((badWall.setBad()), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_map->addMapPlane(&badWall);
 
     semantic::Room room;
@@ -428,9 +444,10 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
     Map  *p_map = atlas.getCurrentMap();
 
     geometric::Plane badWall;
-    badWall.setId(1);
-    badWall.setMap(p_map);
-    badWall.setBad();
+    ASSERT_EQ((badWall.setId(1)), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((badWall.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((badWall.setBad()), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_map->addMapPlane(&badWall);
 
     semantic::Passage defaultPassage;

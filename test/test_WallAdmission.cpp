@@ -67,16 +67,23 @@ void makeWallWithGridCloud(geometric::Plane      &wall_inout,
                            double                 halfU_m_in,
                            double                 halfV_m_in)
 {
-    wall_inout.setId(id_in);
-    wall_inout.setMap(p_map_in);
-    wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL);
+    ASSERT_EQ((wall_inout.setId(id_in)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall_inout.setMap(p_map_in)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     /* evaluateWallAdmissionEvidence's wallDominatesSemantics gate compares
      * getPlaneType() against getExpectedPlaneType(), which is derived from
      * semanticVotes rather than settable directly -- cast a vote so the two
      * agree, matching what real wall classification does over time. */
-    wall_inout.castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
-    wall_inout.setGlobalEquation(g2o::Plane3D(equation_World_in));
-    wall_inout.setCentroid(Eigen::Vector3d::Zero());
+    ASSERT_EQ((wall_inout.castWeightedVote(geometric::Plane::PlaneVariant::WALL,
+                                           1.0)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall_inout.setGlobalEquation(g2o::Plane3D(equation_World_in))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall_inout.setCentroid(Eigen::Vector3d::Zero())),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -101,8 +108,10 @@ void makeWallWithGridCloud(geometric::Plane      &wall_inout,
             cloud->push_back(pclPoint);
         }
     }
-    wall_inout.setMapClouds(cloud);
-    wall_inout.updateSizeOfPlane();
+    ASSERT_EQ((wall_inout.setMapClouds(cloud)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall_inout.updateSizeOfPlane()),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 }
 
 } // namespace
@@ -300,13 +309,17 @@ TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
      * face identity from the single stamped observationOrigin_World_m (the
      * 2026-09-04 rewrite), not from observation history -- stamp it here to
      * match what GeoSemHelpers::createMapPlane() does in production. */
-    wall->setObservationOrigin_World(Eigen::Vector3d(1.0, 0.0, 0.0));
+    ASSERT_EQ(
+        (wall->setObservationOrigin_World(Eigen::Vector3d(1.0, 0.0, 0.0))),
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     std::vector<std::unique_ptr<KeyFrame>> keyFrames;
     for (int index = 0; index < 4; ++index)
     {
         keyFrames.push_back(
             makeKeyFrameAt(Eigen::Vector3d(1.0, 0.1 * index, 0.0)));
-        wall->addObservation(keyFrames.back().get(), makeMinimalObservation());
+        ASSERT_EQ((wall->addObservation(keyFrames.back().get(),
+                                        makeMinimalObservation())),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     }
 
     semantic::Room room;
@@ -337,13 +350,17 @@ TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
         makeAdmissibleWallAtOrigin(1, p_map);
 
     /* Same four keyframes' side as the room this time. */
-    wall->setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0));
+    ASSERT_EQ(
+        (wall->setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     std::vector<std::unique_ptr<KeyFrame>> keyFrames;
     for (int index = 0; index < 4; ++index)
     {
         keyFrames.push_back(
             makeKeyFrameAt(Eigen::Vector3d(-1.0, 0.1 * index, 0.0)));
-        wall->addObservation(keyFrames.back().get(), makeMinimalObservation());
+        ASSERT_EQ((wall->addObservation(keyFrames.back().get(),
+                                        makeMinimalObservation())),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     }
 
     semantic::Room room;
@@ -438,9 +455,11 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
 
     /* Candidate wall unambiguously on the far side of the passage. */
     geometric::Plane wall;
-    wall.setId(3);
-    wall.setMap(p_map);
-    wall.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
+    ASSERT_EQ((wall.setId(3)), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     semantic::Room room;
     ASSERT_EQ((room.setId(4)),
@@ -512,9 +531,11 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
     atlas.addMapPassage(&passage);
 
     geometric::Plane wall;
-    wall.setId(3);
-    wall.setMap(p_map);
-    wall.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0));
+    ASSERT_EQ((wall.setId(3)), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     semantic::Room room;
     ASSERT_EQ((room.setId(4)),
@@ -552,9 +573,20 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
                                                                Map *p_map_in)
 {
     auto ground = std::make_unique<geometric::Plane>();
-    ground->setId(id_in);
-    ground->setMap(p_map_in);
-    ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND);
+    if (ground->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (ground->setMap(p_map_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setPlaneType cannot fail; continue as before.
+    }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -566,14 +598,28 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
         point.z = 0.0f;
         cloud->push_back(point);
     }
-    ground->replaceMapClouds(cloud);
+    if (ground->replaceMapClouds(cloud) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // replaceMapClouds cannot fail; continue as before.
+    }
 
-    const auto snapshot = ground->beginMapCloudRefit();
-    ground->completeMapCloudRefit(
-        snapshot->cloudGeneration,
-        Eigen::Vector3d::Zero(),
-        g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)),
-        50U);
+    std::optional<geometric::Plane::GeometrySnapshot> snapshot{};
+    if (ground->beginMapCloudRefit(snapshot) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // beginMapCloudRefit cannot fail; continue as before.
+    }
+    bool wasRefitPublished{};
+    if (ground->completeMapCloudRefit(
+            snapshot->cloudGeneration,
+            Eigen::Vector3d::Zero(),
+            g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)),
+            50U,
+            wasRefitPublished) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // completeMapCloudRefit cannot fail; continue as before.
+    }
     return ground;
 }
 
@@ -587,15 +633,37 @@ std::unique_ptr<geometric::Plane>
                               const Eigen::Vector3d &axisAlong_World_in)
 {
     auto wall = std::make_unique<geometric::Plane>();
-    wall->setId(id_in);
-    wall->setMap(p_map_in);
-    wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
-    wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
-    wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(normal_World_in.x(),
-                                                         normal_World_in.y(),
-                                                         normal_World_in.z(),
-                                                         0.0)));
-    wall->setCentroid(Eigen::Vector3d(0.0, 0.0, 1.5));
+    if (wall->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (wall->setMap(p_map_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (wall->setPlaneType(geometric::Plane::PlaneVariant::WALL) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setPlaneType cannot fail; continue as before.
+    }
+    if (wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // castWeightedVote cannot fail; continue as before.
+    }
+    if (wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(
+            normal_World_in.x(),
+            normal_World_in.y(),
+            normal_World_in.z(),
+            0.0))) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setGlobalEquation cannot fail; continue as before.
+    }
+    if (wall->setCentroid(Eigen::Vector3d(0.0, 0.0, 1.5)) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -617,7 +685,11 @@ std::unique_ptr<geometric::Plane>
             cloud->push_back(pclPoint);
         }
     }
-    wall->setMapClouds(cloud);
+    if (wall->setMapClouds(cloud) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMapClouds cannot fail; continue as before.
+    }
     return wall;
 }
 
@@ -736,11 +808,17 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
 
     /* Far-side wall at x=1.5, first observed from the near side. */
     geometric::Plane wall;
-    wall.setId(3);
-    wall.setMap(p_map);
-    wall.setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -1.5)));
-    wall.setCentroid(Eigen::Vector3d(1.5, 0.0, 0.0));
-    wall.setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0));
+    ASSERT_EQ((wall.setId(3)), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -1.5)))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.setCentroid(Eigen::Vector3d(1.5, 0.0, 0.0))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (wall.setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     /* Pre-place the wall as the aperture backstop would have routed it. */
     ASSERT_EQ((prospective.setWalls(&wall)),
@@ -801,11 +879,17 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     atlas.addDetectedMapRoom(&prospective);
 
     geometric::Plane wall;
-    wall.setId(3);
-    wall.setMap(p_map);
-    wall.setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -1.5)));
-    wall.setCentroid(Eigen::Vector3d(1.5, 0.0, 0.0));
-    wall.setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0));
+    ASSERT_EQ((wall.setId(3)), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -1.5)))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.setCentroid(Eigen::Vector3d(1.5, 0.0, 0.0))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (wall.setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     ASSERT_EQ((prospective.setWalls(&wall)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -836,7 +920,9 @@ TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)
 
     /* Six far-flung but on-plane strays: without trimming these alone
      * would stretch the quad to +-10 m. */
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud = wall.getMapClouds();
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud{};
+    ASSERT_EQ((wall.getMapClouds(cloud)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     for (const double stray : {-10.0, 10.0})
     {
         for (int axis = 0; axis < 3; ++axis)
@@ -861,11 +947,14 @@ TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)
             cloud->push_back(point);
         }
     }
-    wall.setMapClouds(cloud);
-    wall.updateSizeOfPlane();
+    ASSERT_EQ((wall.setMapClouds(cloud)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall.updateSizeOfPlane()),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
-    const geometric::Plane::GeometrySnapshot geometry =
-        wall.getGeometrySnapshot();
+    geometric::Plane::GeometrySnapshot geometry{};
+    ASSERT_EQ((wall.getGeometrySnapshot(geometry)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     /* Production projects onto its own deterministic in-plane axes: for
      * this x=0 wall axisU is world +Z and axisV is world -Y, so the
      * 3.0 m generator-U span lands on V and the 2.0 m generator-V span

@@ -58,14 +58,32 @@ bool hasSeparatingFiniteWall(
 
     for (geometric::Plane *p_wall : wallList_World_in)
     {
-        if (p_wall == nullptr || p_wall->isBad() ||
-            p_wall->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
+        bool wallIsBad{};
+        if (!(p_wall == nullptr) &&
+            p_wall->isBad(wallIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        geometric::Plane::PlaneVariant wallPlaneType{};
+        if (!(p_wall == nullptr || wallIsBad) &&
+            p_wall->getPlaneType(wallPlaneType) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getPlaneType cannot fail; continue as before.
+        }
+        if (p_wall == nullptr || wallIsBad ||
+            wallPlaneType != geometric::Plane::PlaneVariant::WALL)
         {
             continue;
         }
 
-        const geometric::Plane::GeometrySnapshot wallGeometry =
-            p_wall->getGeometrySnapshot();
+        geometric::Plane::GeometrySnapshot wallGeometry{};
+        if (p_wall->getGeometrySnapshot(wallGeometry) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGeometrySnapshot cannot fail; continue as before.
+        }
         Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
         const double    wallNormalNorm = wallEquation_World.head<3>().norm();
 

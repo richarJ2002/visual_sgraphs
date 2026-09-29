@@ -32,7 +32,7 @@ namespace core
 namespace geometric
 {
 
-Plane::GeometrySnapshot Plane::getGeometrySnapshot(void) const
+PlaneStatus Plane::getGeometrySnapshot(Plane::GeometrySnapshot &getGeometrySnapshot_out) const
 {
     std::scoped_lock                        lock(positionMutex, featuresMutex);
     GeometrySnapshot                        snapshot;
@@ -54,7 +54,8 @@ Plane::GeometrySnapshot Plane::getGeometrySnapshot(void) const
     snapshot.observationCount          = observationCount;
     snapshot.cloudGeneration           = cloudGeneration;
     snapshot.successfulRefitGeneration = successfulRefitGeneration;
-    return snapshot;
+    getGeometrySnapshot_out            = snapshot;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

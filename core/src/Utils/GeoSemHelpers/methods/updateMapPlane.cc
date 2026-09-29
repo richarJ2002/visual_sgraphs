@@ -72,7 +72,11 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
 
     // the aggregated confidence of the plane
     observation.confidence = confidence_in;
-    p_currentPlane->addObservation(p_keyFrame_inout, observation);
+    if (p_currentPlane->addObservation(p_keyFrame_inout, observation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // addObservation cannot fail; continue as before.
+    }
 
     // Add the plane to the list of planes in the current KeyFrame
     p_keyFrame_inout->addMapPlane(p_currentPlane);
@@ -86,7 +90,11 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
     /* Update the point cloud of the mapped plane */
     if (!p_planeCloud_in->empty())
     {
-        p_currentPlane->setMapClouds(p_planeCloud_in);
+        if (p_currentPlane->setMapClouds(p_planeCloud_in) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setMapClouds cannot fail; continue as before.
+        }
 
         /*!
          * Refit the mapped global equation from the complete accumulated point
@@ -112,9 +120,24 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
     if (p_params2->optimization.planeMapPoint.enabled)
     {
         for (const auto &mapPoint : p_keyFrame_inout->getMapPoints())
+        {
+            bool currentPlaneIsPointinPlaneCloud{};
             if (p_currentPlane->isPointinPlaneCloud(
-                    mapPoint->getWorldPos().cast<double>()))
-                p_currentPlane->setMapPoints(mapPoint);
+                    mapPoint->getWorldPos().cast<double>(),
+                    currentPlaneIsPointinPlaneCloud) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isPointinPlaneCloud cannot fail; continue as before.
+            }
+            if (currentPlaneIsPointinPlaneCloud)
+            {
+                if (p_currentPlane->setMapPoints(mapPoint) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // setMapPoints cannot fail; continue as before.
+                }
+            }
+        }
     }
 
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;

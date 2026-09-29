@@ -32,10 +32,11 @@ namespace core
 namespace geometric
 {
 
-Plane *Plane::getTwinFace(void) const
+PlaneStatus Plane::getTwinFace(Plane *&p_getTwinFace_out) const
 {
     unique_lock<mutex> lock(positionMutex);
-    return p_twinFace;
+    p_getTwinFace_out = p_twinFace;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

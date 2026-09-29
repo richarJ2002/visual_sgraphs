@@ -68,7 +68,11 @@ void KeyFrame::setBadFlag()
     {
         if (p_plane != nullptr)
         {
-            p_plane->eraseObservation(this);
+            if (p_plane->eraseObservation(this) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // eraseObservation cannot fail; continue as before.
+            }
         }
     }
 

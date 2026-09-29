@@ -20,6 +20,7 @@
 #define PLANE_H
 
 #include "Geometric/PlaneGeometryMetadataSnapshot.h"
+#include "Geometric/PlaneStatus.h"
 #include "Map.h"
 #include "MapPoint.h"
 #include "Semantic/Marker.h"
@@ -349,11 +350,11 @@ class Plane
      * @note This helper must not acquire a mutex. It exists to prevent the
      *       cloud mutation methods from recursively locking featuresMutex.
      */
-    void updatePlaneBoundsWithoutLock(void);
+    [[nodiscard]] PlaneStatus updatePlaneBoundsWithoutLock(void);
 
     /*! @brief Rebuilds semantic votes from observations with both locks held.
      */
-    void rebuildSemanticVotesWithoutLock(void);
+    [[nodiscard]] PlaneStatus rebuildSemanticVotesWithoutLock(void);
 
   public:
     Plane(void)
@@ -400,7 +401,8 @@ class Plane
      * @param[in]   transform_oldWorldToNewWorld_in
      *              Transform from the current plane frame to the new map frame.
      */
-    void applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] PlaneStatus
+        applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
 
     /*!
      * @brief Aligns the complete finite plane geometry with an optimized
@@ -413,7 +415,7 @@ class Plane
      * @param[in] targetEquation_NewWorld_in Optimized plane equation in the
      *            active map frame.
      */
-    void
+    [[nodiscard]] PlaneStatus
         alignGeometryToEquation(const g2o::Plane3D &targetEquation_NewWorld_in);
 
     /*!
@@ -427,91 +429,99 @@ class Plane
      *              The transform from the old world frame to the new world
      *              frame, passed by reference.
      *
-     * @return      Returns the updated plane equation in the new frame.
+     * @param[out] transformedEquation_out Returns the updated plane equation in
+     * the new frame.
+     * @return PLANE_STATUS_SUCCESS.
      */
-    g2o::Plane3D transformPlaneEquation(
-        const g2o::Plane3D &plane_in,
-        const g2o::Sim3    &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] PlaneStatus
+        transformPlaneEquation(const g2o::Plane3D &plane_in,
+                               const g2o::Sim3 &transform_oldWorldToNewWorld_in,
+                               g2o::Plane3D    &transformedEquation_out);
 
     /*!
      * @brief       Returns the atlas-assigned plane identifier.
      */
-    int getId(void) const;
+    [[nodiscard]] PlaneStatus getId(int &getId_out) const;
 
     /*!
      * @brief       Sets the atlas-assigned plane identifier.
      */
-    void setId(int id_in);
+    [[nodiscard]] PlaneStatus setId(int id_in);
 
     /*!
      * @brief       Returns the local optimizer vertex identifier.
      */
-    int getOpId(void) const;
+    [[nodiscard]] PlaneStatus getOpId(int &getOpId_out) const;
 
     /*!
      * @brief       Sets the local optimizer vertex identifier.
      */
-    void setOpId(int opId_in);
+    [[nodiscard]] PlaneStatus setOpId(int opId_in);
 
     /*!
      * @brief       Returns the global optimizer vertex identifier.
      */
-    int getOpIdG(void) const;
+    [[nodiscard]] PlaneStatus getOpIdG(int &getOpIdG_out) const;
 
     /*!
      * @brief       Sets the global optimizer vertex identifier.
      */
-    void setOpIdG(int opIdG_in);
+    [[nodiscard]] PlaneStatus setOpIdG(int opIdG_in);
 
     /*!
      * @brief       Reports whether this plane has been invalidated.
      */
-    bool isBad(void);
+    [[nodiscard]] PlaneStatus isBad(bool &isBad_out);
 
     /*!
      * @brief       Marks this plane as invalid for subsequent processing.
      */
-    void setBad(void);
+    [[nodiscard]] PlaneStatus setBad(void);
 
     /*!
      * @brief       Assigns a visualization color from the semantic type.
      */
-    void setColor(void);
+    [[nodiscard]] PlaneStatus setColor(void);
 
     /*!
      * @brief       Returns the plane's RGB visualization color.
      */
-    std::vector<uint8_t> getColor(void) const;
+    [[nodiscard]] PlaneStatus
+        getColor(std::vector<uint8_t> &getColor_out) const;
 
     /*!
      * @brief       Returns the accepted semantic classification.
      */
-    PlaneVariant getPlaneType(void);
+    [[nodiscard]] PlaneStatus
+        getPlaneType(Plane::PlaneVariant &planeType_out);
 
     /*!
      * @brief       Returns the leading classification from weighted votes.
      */
-    PlaneVariant getExpectedPlaneType(void);
+    [[nodiscard]] PlaneStatus
+        getExpectedPlaneType(Plane::PlaneVariant &expectedPlaneType_out);
 
     /*!
      * @brief       Sets the accepted semantic classification.
      */
-    void setPlaneType(PlaneVariant planeType_in);
+    [[nodiscard]] PlaneStatus setPlaneType(PlaneVariant planeType_in);
 
     /*!
      * @brief       Associates a non-owning map point with the plane.
      */
-    void setMapPoints(MapPoint *p_mapPoint_in);
+    [[nodiscard]] PlaneStatus setMapPoints(MapPoint *p_mapPoint_in);
 
     /*!
      * @brief       Returns the map points associated with the plane.
      */
-    std::set<MapPoint *> getMapPoints(void);
+    [[nodiscard]] PlaneStatus
+        getMapPoints(std::set<core::MapPoint *> &mapPoints_out);
 
     /*!
      * @brief       Returns the plane centroid in the active map frame.
      */
-    Eigen::Vector3d getCentroid(void) const;
+    [[nodiscard]] PlaneStatus
+        getCentroid(Eigen::Vector3d &getCentroid_out) const;
 
     /*!
      * @brief       Method which takes the points in the map and calculates the
@@ -519,92 +529,104 @@ class Plane
      *              points associated with it. Assumes that the plane is a
      *              rectangle.
      */
-    void updateSizeOfPlane(void);
+    [[nodiscard]] PlaneStatus updateSizeOfPlane(void);
 
     /*!
      * @brief       Sets the plane centroid in the active map frame.
      */
-    void setCentroid(const Eigen::Vector3d &centroid_in);
+    [[nodiscard]] PlaneStatus setCentroid(const Eigen::Vector3d &centroid_in);
 
     /*!
      * @brief       Stamps the world-frame camera position this face was first
      *              observed from. Intended to be called once, at creation.
      */
-    void setObservationOrigin_World(const Eigen::Vector3d &origin_World_m_in);
+    [[nodiscard]] PlaneStatus
+        setObservationOrigin_World(const Eigen::Vector3d &origin_World_m_in);
 
     /*!
      * @brief       Returns the world-frame camera position this face was first
      *              observed from, when one was stamped.
      */
-    std::optional<Eigen::Vector3d> getObservationOrigin_World(void) const;
+    [[nodiscard]] PlaneStatus getObservationOrigin_World(std::optional<Eigen::Vector3d> &getObservationOrigin_World_out)
+        const;
 
     /*!
      * @brief       Returns the linked opposite-facing Plane hypothesis for
      *              this wall's other side, or nullptr when none is set.
      */
-    Plane *getTwinFace(void) const;
+    [[nodiscard]] PlaneStatus getTwinFace(Plane *&p_getTwinFace_out) const;
 
     /*!
      * @brief       Sets the linked opposite-facing Plane hypothesis. Caller
      *              is responsible for setting the reverse link symmetrically
      *              (see SemanticsManager::reconcileWallFacePairs()).
      */
-    void setTwinFace(Plane *p_twinFace_in);
+    [[nodiscard]] PlaneStatus setTwinFace(Plane *p_twinFace_in);
 
     /*!
      * @brief       Clears the linked opposite-facing Plane hypothesis.
      */
-    void clearTwinFace(void);
+    [[nodiscard]] PlaneStatus clearTwinFace(void);
 
     /*!
      * @brief       Returns the plane equation in its observation frame.
      */
-    g2o::Plane3D getLocalEquation(void) const;
+    [[nodiscard]] PlaneStatus
+        getLocalEquation(g2o::Plane3D &getLocalEquation_out) const;
 
     /*!
      * @brief       Sets the plane equation in its observation frame.
      */
-    void setLocalEquation(const g2o::Plane3D &localEquation_in);
+    [[nodiscard]] PlaneStatus
+        setLocalEquation(const g2o::Plane3D &localEquation_in);
 
     /*!
      * @brief       Returns the plane equation in the active map frame.
      */
-    g2o::Plane3D getGlobalEquation(void) const;
+    [[nodiscard]] PlaneStatus
+        getGlobalEquation(g2o::Plane3D &getGlobalEquation_out) const;
 
     /*!
      * @brief       Sets the plane equation in the active map frame.
      */
-    void setGlobalEquation(const g2o::Plane3D &globalEquation_in);
+    [[nodiscard]] PlaneStatus
+        setGlobalEquation(const g2o::Plane3D &globalEquation_in);
 
     /*!
      * @brief       Records or replaces an observation from a keyframe.
      */
-    void addObservation(KeyFrame          *p_keyFrame_inout,
-                        const Observation &observation_in);
+    [[nodiscard]] PlaneStatus addObservation(KeyFrame *p_keyFrame_inout,
+                                             const Observation &observation_in);
 
     /*! Inserts or fuses a same-keyframe observation and rebuilds semantics. */
-    void mergeObservation(KeyFrame          *p_keyFrame_inout,
-                          const Observation &observation_in);
+    [[nodiscard]] PlaneStatus
+        mergeObservation(KeyFrame          *p_keyFrame_inout,
+                         const Observation &observation_in);
 
     /*!
      * @brief       Removes the observation associated with a keyframe.
      */
-    void eraseObservation(KeyFrame *p_keyFrame_in);
+    [[nodiscard]] PlaneStatus eraseObservation(KeyFrame *p_keyFrame_in);
 
     /*!
      * @brief       Gets the unique keyframes which observed the plane.
      *
-     * @return      List of keyframes that observed the frame.
+     * @param[out] getObservations_out List of keyframes that observed the
+     * frame.
+     * @return PLANE_STATUS_SUCCESS.
      */
-    std::map<KeyFrame *, Observation> getObservations(void) const;
+    [[nodiscard]] PlaneStatus getObservations(std::map<core::KeyFrame *, Plane::Observation> &getObservations_out)
+        const;
 
     /*!
      * @brief       Gets the number of unique keyframes which observed the
      *              plane.
      *
-     * @return      Number of unique observations.
+     * @param[out] getObservationCount_out Number of unique observations.
+     * @return PLANE_STATUS_SUCCESS.
      */
-    std::size_t getObservationCount(void) const;
+    [[nodiscard]] PlaneStatus
+        getObservationCount(std::size_t &getObservationCount_out) const;
 
     /*!
      * @brief       Returns an independent deep copy of the accumulated
@@ -613,10 +635,10 @@ class Plane
      *              The copy is produced under the plane position and feature
      *              locks so callers cannot race with concurrent writers.
      */
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr getMapClouds(void);
+    [[nodiscard]] PlaneStatus getMapClouds(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &mapClouds_out);
 
     /*! Returns a deep immutable copy of the current finite geometry. */
-    GeometrySnapshot getGeometrySnapshot(void) const;
+    [[nodiscard]] PlaneStatus getGeometrySnapshot(Plane::GeometrySnapshot &getGeometrySnapshot_out) const;
 
     /*!
      * @brief       Returns the cheap scalar plane-geometry metadata
@@ -632,28 +654,30 @@ class Plane
      * @note        Thread-safe; self-locking, so callers must not already
      *              hold positionMutex or featuresMutex on this thread.
      */
-    PlaneGeometryMetadataSnapshot getGeometryMetadataSnapshot(void) const;
+    [[nodiscard]] PlaneStatus getGeometryMetadataSnapshot(PlaneGeometryMetadataSnapshot &getGeometryMetadataSnapshot_out)
+        const;
 
     /*! Applies the association path's 75% observation-side consensus rule. */
-    ObservationSideSnapshot getObservationSideSnapshot(
-        const Eigen::Vector4d &normalizedEquation_World_in) const;
+    [[nodiscard]] PlaneStatus getObservationSideSnapshot(
+        const Eigen::Vector4d          &normalizedEquation_World_in,
+        Plane::ObservationSideSnapshot &observationSideSnapshot_out) const;
 
     /*!
      * @brief       Appends points to the accumulated plane cloud.
      *
      *              Use replaceMapClouds() to substitute the whole cloud.
      */
-    void setMapClouds(
+    [[nodiscard]] PlaneStatus setMapClouds(
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_additionalCloud_in);
 
     /*!
      * @brief       Replaces the accumulated plane cloud contents.
      */
-    void replaceMapClouds(
+    [[nodiscard]] PlaneStatus replaceMapClouds(
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_replacementCloud_in);
 
     /*! Claims and returns an immutable snapshot of a new cloud generation. */
-    std::optional<GeometrySnapshot> beginMapCloudRefit(void);
+    [[nodiscard]] PlaneStatus beginMapCloudRefit(std::optional<Plane::GeometrySnapshot> &geometrySnapshot_out);
 
     /*!
      * @brief Publishes geometry from a successful whole-cloud fit.
@@ -661,21 +685,26 @@ class Plane
      * The centroid, equation and finite bounds are updated under one lock so
      * readers cannot observe partially refitted geometry.
      */
-    bool completeMapCloudRefit(std::uint64_t          sourceCloudGeneration_in,
-                               const Eigen::Vector3d &centroid_World_m_in,
-                               const g2o::Plane3D    &equation_World_in,
-                               std::size_t            finitePointCount_in);
+    [[nodiscard]] PlaneStatus
+        completeMapCloudRefit(std::uint64_t          sourceCloudGeneration_in,
+                              const Eigen::Vector3d &centroid_World_m_in,
+                              const g2o::Plane3D    &equation_World_in,
+                              std::size_t            finitePointCount_in,
+                              bool                  &wasRefitPublished_out);
 
     /*!
      * @brief       Tests whether a world-frame point belongs to the plane
      *              cloud within the configured association tolerance.
      */
-    bool isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in);
+    [[nodiscard]] PlaneStatus
+        isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in,
+                            bool                  &isPointinPlaneCloud_out);
 
     /*!
      * @brief       Adds weighted evidence for a semantic classification.
      */
-    void castWeightedVote(PlaneVariant semanticType_in, double voteWeight_in);
+    [[nodiscard]] PlaneStatus castWeightedVote(PlaneVariant semanticType_in,
+                                               double       voteWeight_in);
 
     /*!
      * @brief       Clears semantic votes and restores undefined semantics.
@@ -684,17 +713,17 @@ class Plane
      *              so that a temporarily rejected classification can recover
      *              on later observations.
      */
-    void resetPlaneSemantics(void);
+    [[nodiscard]] PlaneStatus resetPlaneSemantics(void);
 
     /*!
      * @brief       Returns the map that owns this plane.
      */
-    Map *getMap(void);
+    [[nodiscard]] PlaneStatus getMap(core::Map *&p_map_out);
 
     /*!
      * @brief       Assigns this plane to a map.
      */
-    void setMap(Map *p_map_in);
+    [[nodiscard]] PlaneStatus setMap(Map *p_map_in);
 
   protected:
     /*!

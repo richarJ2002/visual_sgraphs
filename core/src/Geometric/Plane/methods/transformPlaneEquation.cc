@@ -32,9 +32,10 @@ namespace core
 namespace geometric
 {
 
-g2o::Plane3D Plane::transformPlaneEquation(
+PlaneStatus Plane::transformPlaneEquation(
     const g2o::Plane3D &plane_in,
-    const g2o::Sim3    &transform_oldWorldToNewWorld_in)
+    const g2o::Sim3    &transform_oldWorldToNewWorld_in,
+    g2o::Plane3D       &transformedEquation_out)
 {
     /*!
      * Transform a plane equation:
@@ -89,7 +90,8 @@ g2o::Plane3D Plane::transformPlaneEquation(
                                                   transformedNormal.z(),
                                                   transformedEquationOffset));
 
-    return transformedPlane;
+    transformedEquation_out = transformedPlane;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

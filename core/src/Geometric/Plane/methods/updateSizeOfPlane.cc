@@ -32,10 +32,15 @@ namespace core
 namespace geometric
 {
 
-void Plane::updateSizeOfPlane(void)
+PlaneStatus Plane::updateSizeOfPlane(void)
 {
     std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
-    updatePlaneBoundsWithoutLock();
+    if (updatePlaneBoundsWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // updatePlaneBoundsWithoutLock cannot fail; continue as before.
+    }
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

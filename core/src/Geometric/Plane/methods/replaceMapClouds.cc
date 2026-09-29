@@ -32,7 +32,7 @@ namespace core
 namespace geometric
 {
 
-void Plane::replaceMapClouds(
+PlaneStatus Plane::replaceMapClouds(
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_replacementCloud_in)
 {
     std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
@@ -45,7 +45,7 @@ void Plane::replaceMapClouds(
         centroid.setZero();
         isFlaggedBad = true;
         p_octree->deleteTree();
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     planeCloud->assign(p_replacementCloud_in->begin(),
@@ -60,6 +60,8 @@ void Plane::replaceMapClouds(
     p_octree->deleteTree();
     p_octree->setInputCloud(planeCloud);
     p_octree->addPointsFromInputCloud();
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

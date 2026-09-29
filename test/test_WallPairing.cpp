@@ -42,19 +42,41 @@ std::unique_ptr<geometric::Plane>
                  double                 zMax_m_in)
 {
     auto wall = std::make_unique<geometric::Plane>();
-    wall->setId(id_in);
-    wall->setMap(p_map_in);
-    wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
+    if (wall->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (wall->setMap(p_map_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (wall->setPlaneType(geometric::Plane::PlaneVariant::WALL) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setPlaneType cannot fail; continue as before.
+    }
 
     const Eigen::Vector4d equation(normalXSign_in,
                                    0.0,
                                    0.0,
                                    -normalXSign_in * planeX_m_in);
-    wall->setGlobalEquation(g2o::Plane3D(equation));
-    wall->setCentroid(Eigen::Vector3d(planeX_m_in,
-                                      (yMin_m_in + yMax_m_in) / 2.0,
-                                      (zMin_m_in + zMax_m_in) / 2.0));
-    wall->setObservationOrigin_World(observationOrigin_World_in);
+    if (wall->setGlobalEquation(g2o::Plane3D(equation)) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setGlobalEquation cannot fail; continue as before.
+    }
+    if (wall->setCentroid(Eigen::Vector3d(planeX_m_in,
+                                          (yMin_m_in + yMax_m_in) / 2.0,
+                                          (zMin_m_in + zMax_m_in) / 2.0)) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
+    if (wall->setObservationOrigin_World(observationOrigin_World_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setObservationOrigin_World cannot fail; continue as before.
+    }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -76,7 +98,11 @@ std::unique_ptr<geometric::Plane>
             cloud->push_back(point);
         }
     }
-    wall->setMapClouds(cloud);
+    if (wall->setMapClouds(cloud) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMapClouds cannot fail; continue as before.
+    }
     return wall;
 }
 
@@ -117,8 +143,14 @@ TEST(WallPairing, LinksAPlausibleTwinPairSymmetrically)
 
     manager.reconcileWallFacePairsForTest();
 
-    EXPECT_EQ(faceA->getTwinFace(), faceB.get());
-    EXPECT_EQ(faceB->getTwinFace(), faceA.get());
+    geometric::Plane *p_getTwinFace = nullptr;
+    ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace, faceB.get());
+    geometric::Plane *p_getTwinFace2 = nullptr;
+    ASSERT_EQ((faceB->getTwinFace(p_getTwinFace2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace2, faceA.get());
 }
 
 TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
@@ -154,8 +186,14 @@ TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
 
     manager.reconcileWallFacePairsForTest();
 
-    EXPECT_EQ(faceA->getTwinFace(), nullptr);
-    EXPECT_EQ(faceB->getTwinFace(), nullptr);
+    geometric::Plane *p_getTwinFace = nullptr;
+    ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace, nullptr);
+    geometric::Plane *p_getTwinFace2 = nullptr;
+    ASSERT_EQ((faceB->getTwinFace(p_getTwinFace2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace2, nullptr);
 }
 
 TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
@@ -191,8 +229,14 @@ TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
 
     manager.reconcileWallFacePairsForTest();
 
-    EXPECT_EQ(faceA->getTwinFace(), nullptr);
-    EXPECT_EQ(faceB->getTwinFace(), nullptr);
+    geometric::Plane *p_getTwinFace = nullptr;
+    ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace, nullptr);
+    geometric::Plane *p_getTwinFace2 = nullptr;
+    ASSERT_EQ((faceB->getTwinFace(p_getTwinFace2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace2, nullptr);
 }
 
 TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
@@ -230,8 +274,14 @@ TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
 
     manager.reconcileWallFacePairsForTest();
 
-    EXPECT_EQ(faceA->getTwinFace(), nullptr);
-    EXPECT_EQ(faceB->getTwinFace(), nullptr);
+    geometric::Plane *p_getTwinFace = nullptr;
+    ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace, nullptr);
+    geometric::Plane *p_getTwinFace2 = nullptr;
+    ASSERT_EQ((faceB->getTwinFace(p_getTwinFace2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace2, nullptr);
 }
 
 TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
@@ -269,8 +319,14 @@ TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
 
     manager.reconcileWallFacePairsForTest();
 
-    EXPECT_EQ(faceA->getTwinFace(), nullptr);
-    EXPECT_EQ(faceB->getTwinFace(), nullptr);
+    geometric::Plane *p_getTwinFace = nullptr;
+    ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace, nullptr);
+    geometric::Plane *p_getTwinFace2 = nullptr;
+    ASSERT_EQ((faceB->getTwinFace(p_getTwinFace2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace2, nullptr);
 }
 
 TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
@@ -304,19 +360,34 @@ TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
     atlas.addMapPlane(faceB.get());
 
     manager.reconcileWallFacePairsForTest();
-    ASSERT_EQ(faceA->getTwinFace(), faceB.get());
-    ASSERT_EQ(faceB->getTwinFace(), faceA.get());
+    geometric::Plane *p_getTwinFace = nullptr;
+    ASSERT_EQ((faceA->getTwinFace(p_getTwinFace)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ(p_getTwinFace, faceB.get());
+    geometric::Plane *p_getTwinFace2 = nullptr;
+    ASSERT_EQ((faceB->getTwinFace(p_getTwinFace2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ(p_getTwinFace2, faceA.get());
 
     /* Simulate a later refit drifting faceB far away -- no longer a
      * plausible twin (too far apart to be one physical wall). */
-    faceB->setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(-1.0, 0.0, 0.0, 3.0)));
-    faceB->setObservationOrigin_World(Eigen::Vector3d(-4.0, 0.0, 0.0));
+    ASSERT_EQ((faceB->setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(-1.0, 0.0, 0.0, 3.0)))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (faceB->setObservationOrigin_World(Eigen::Vector3d(-4.0, 0.0, 0.0))),
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     manager.reconcileWallFacePairsForTest();
 
-    EXPECT_EQ(faceA->getTwinFace(), nullptr);
-    EXPECT_EQ(faceB->getTwinFace(), nullptr);
+    geometric::Plane *p_getTwinFace3 = nullptr;
+    ASSERT_EQ((faceA->getTwinFace(p_getTwinFace3)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace3, nullptr);
+    geometric::Plane *p_getTwinFace4 = nullptr;
+    ASSERT_EQ((faceB->getTwinFace(p_getTwinFace4)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(p_getTwinFace4, nullptr);
 }
 
 } // namespace core

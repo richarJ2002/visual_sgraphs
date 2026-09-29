@@ -32,10 +32,11 @@ namespace core
 namespace geometric
 {
 
-std::set<core::MapPoint *> Plane::getMapPoints(void)
+PlaneStatus Plane::getMapPoints(std::set<core::MapPoint *> &mapPoints_out)
 {
     unique_lock<mutex> lock(featuresMutex);
-    return mapPoints;
+    mapPoints_out = mapPoints;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

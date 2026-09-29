@@ -59,13 +59,28 @@ TEST(SemanticFixtures, MakeWallPlaneProducesAdmissibleGeometry)
                   1.1,
                   Eigen::Vector3d(2.0, 0.0, 1.0));
 
-    EXPECT_EQ(wall.getId(), 7);
-    EXPECT_EQ(wall.getPlaneType(), geometric::Plane::PlaneVariant::WALL);
-    EXPECT_TRUE(wall.getCentroid().isApprox(Eigen::Vector3d(2.0, 0.0, 1.0)));
-    EXPECT_GT(wall.getMapClouds()->size(), 0U);
+    int getId2{};
+    ASSERT_EQ((wall.getId(getId2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(getId2, 7);
+    geometric::Plane::PlaneVariant planeType{};
+    ASSERT_EQ((wall.getPlaneType(planeType)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(planeType, geometric::Plane::PlaneVariant::WALL);
+    Eigen::Vector3d getCentroid2{};
+    ASSERT_EQ((wall.getCentroid(getCentroid2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_TRUE(getCentroid2.isApprox(Eigen::Vector3d(2.0, 0.0, 1.0)));
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr mapClouds{};
+    ASSERT_EQ((wall.getMapClouds(mapClouds)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_GT(mapClouds->size(), 0U);
     /* The equation's normal survives normalization; only its sign is
      * arbitrary until oriented toward a room. */
-    EXPECT_NEAR(std::abs(wall.getGlobalEquation().coeffs().head<3>().dot(
+    g2o::Plane3D getGlobalEquation2{};
+    ASSERT_EQ((wall.getGlobalEquation(getGlobalEquation2)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_NEAR(std::abs(getGlobalEquation2.coeffs().head<3>().dot(
                     Eigen::Vector3d::UnitX())),
                 1.0,
                 1e-6);
@@ -80,7 +95,10 @@ TEST(SemanticFixtures, MakeGroundPlaneRefitsSuccessfully)
     const bool       refitOk = makeGroundPlane(ground, 1, p_map);
 
     EXPECT_TRUE(refitOk);
-    EXPECT_EQ(ground.getPlaneType(), geometric::Plane::PlaneVariant::GROUND);
+    geometric::Plane::PlaneVariant planeType{};
+    ASSERT_EQ((ground.getPlaneType(planeType)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    EXPECT_EQ(planeType, geometric::Plane::PlaneVariant::GROUND);
 }
 
 TEST(SemanticFixtures, MakeRoomAttachesWallAndCentroid)

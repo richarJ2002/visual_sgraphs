@@ -40,7 +40,13 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
     std::vector<vs_graphs::core::geometric::Plane *> groundPlanes;
     for (const auto &plane : p_atlas_in->getAllPlanes())
     {
-        if (plane->getPlaneType() ==
+        geometric::Plane::PlaneVariant planeType{};
+        if (plane->getPlaneType(planeType) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getPlaneType cannot fail; continue as before.
+        }
+        if (planeType ==
             vs_graphs::core::geometric::Plane::PlaneVariant::GROUND)
         {
             groundPlanes.push_back(plane);

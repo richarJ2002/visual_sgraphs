@@ -390,24 +390,45 @@ void Optimizer::bundleAdjustment(
     for (const auto &plane : planes_in)
     {
         // Skip undefined planes (if not wall for now)
-        if (plane->getPlaneType() == geometric::Plane::PlaneVariant::UNDEFINED)
+        geometric::Plane::PlaneVariant planeType{};
+        if (plane->getPlaneType(planeType) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getPlaneType cannot fail; continue as before.
+        }
+        if (planeType == geometric::Plane::PlaneVariant::UNDEFINED)
             continue;
         // Adding a vertex for each plane
         g2o::VertexPlane *p_planeVertex = new g2o::VertexPlane();
         int globalOptimizationId        = maxGlobalOptimizationId + planeCount;
         p_planeVertex->setId(globalOptimizationId);
-        p_planeVertex->setEstimate(plane->getGlobalEquation());
+        g2o::Plane3D planeGetGlobalEquation{};
+        if (plane->getGlobalEquation(planeGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        p_planeVertex->setEstimate(planeGetGlobalEquation);
         if (p_systemParams->optimization.shouldMarginalizePlanes)
             p_planeVertex->setMarginalized(true);
         optimizer.addVertex(p_planeVertex);
         planeCount++;
 
         // Setting the global optimization ID for the plane
-        plane->setOpIdG(globalOptimizationId);
+        if (plane->setOpIdG(globalOptimizationId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setOpIdG cannot fail; continue as before.
+        }
 
         // Adding an edge between the plane and the keyframes
-        const map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
-            observations = plane->getObservations();
+        map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
+            observations{};
+        if (plane->getObservations(observations) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getObservations cannot fail; continue as before.
+        }
         for (map<KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>::const_iterator
                  planeObservationIt  = observations.begin(),
@@ -424,7 +445,11 @@ void Optimizer::bundleAdjustment(
                 std::cout
                     << "[Optimizer] Bad KeyFrame detected for GBA! Skipping..."
                     << std::endl;
-                plane->eraseObservation(p_observingKeyFrame);
+                if (plane->eraseObservation(p_observingKeyFrame) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // eraseObservation cannot fail; continue as before.
+                }
                 continue;
             }
 
@@ -462,9 +487,15 @@ void Optimizer::bundleAdjustment(
                 if (p_systemParams->optimization.planePoint.enabled)
                 {
                     // get the class index of the plane
-                    int planeClassIndex{};
+                    int                            planeClassIndex{};
+                    geometric::Plane::PlaneVariant planeType2{};
+                    if (plane->getPlaneType(planeType2) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getPlaneType cannot fail; continue as before.
+                    }
                     if (utils::utils::Utils::getClassIdFromPlaneType(
-                            plane->getPlaneType(),
+                            planeType2,
                             planeClassIndex) !=
                         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                     {
@@ -591,7 +622,19 @@ void Optimizer::bundleAdjustment(
                         walls[secondElementIndex];
 
                     // If the same wall, skip
-                    if (p_firstWall->getId() == p_secondWall->getId())
+                    int firstWallGetId{};
+                    if (p_firstWall->getId(firstWallGetId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    int secondWallGetId{};
+                    if (p_secondWall->getId(secondWallGetId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    if (firstWallGetId == secondWallGetId)
                         continue;
 
                     // Check if the walls are parallel
@@ -621,10 +664,20 @@ void Optimizer::bundleAdjustment(
                         if (arePlanesFacingEachOther2)
                         {
                             // Variables
-                            int firstWallOptimizationId =
-                                p_firstWall->getOpIdG();
-                            int secondWallOptimizationId =
-                                p_secondWall->getOpIdG();
+                            int firstWallOptimizationId{};
+                            if (p_firstWall->getOpIdG(
+                                    firstWallOptimizationId) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                            {
+                                // getOpIdG cannot fail; continue as before.
+                            }
+                            int secondWallOptimizationId{};
+                            if (p_secondWall->getOpIdG(
+                                    secondWallOptimizationId) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                            {
+                                // getOpIdG cannot fail; continue as before.
+                            }
 
                             if (optimizer.vertex(globalOptimizationId) &&
                                 optimizer.vertex(firstWallOptimizationId) &&
@@ -682,8 +735,18 @@ void Optimizer::bundleAdjustment(
                     if (arePlanesPerpendicular2)
                     {
                         // Variables
-                        int firstWallOptimizationId  = p_firstWall->getOpIdG();
-                        int secondWallOptimizationId = p_secondWall->getOpIdG();
+                        int firstWallOptimizationId{};
+                        if (p_firstWall->getOpIdG(firstWallOptimizationId) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getOpIdG cannot fail; continue as before.
+                        }
+                        int secondWallOptimizationId{};
+                        if (p_secondWall->getOpIdG(secondWallOptimizationId) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getOpIdG cannot fail; continue as before.
+                        }
 
                         if (optimizer.vertex(globalOptimizationId) &&
                             optimizer.vertex(firstWallOptimizationId) &&
@@ -1015,10 +1078,22 @@ void Optimizer::bundleAdjustment(
     // [GBA] Globally optimized planes
     for (auto &plane : planes_in)
     {
-        if (optimizer.vertex(plane->getOpIdG()))
+        int planeGetOpIdG{};
+        if (plane->getOpIdG(planeGetOpIdG) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
+            // getOpIdG cannot fail; continue as before.
+        }
+        if (optimizer.vertex(planeGetOpIdG))
+        {
+            int planeGetOpIdG2{};
+            if (plane->getOpIdG(planeGetOpIdG2) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getOpIdG cannot fail; continue as before.
+            }
             g2o::VertexPlane *p_planeVertex = static_cast<g2o::VertexPlane *>(
-                optimizer.vertex(plane->getOpIdG()));
+                optimizer.vertex(planeGetOpIdG2));
 
             if (loopKeyFrameId_in == p_map->getOriginKeyFrame()->id)
             {
@@ -1028,7 +1103,11 @@ void Optimizer::bundleAdjustment(
                  * leaves the displayed wall and every geometric association at
                  * the pre-BA pose.
                  */
-                plane->alignGeometryToEquation(p_planeVertex->estimate());
+                if (plane->alignGeometryToEquation(p_planeVertex->estimate()) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // alignGeometryToEquation cannot fail; continue as before.
+                }
             }
             else
             {

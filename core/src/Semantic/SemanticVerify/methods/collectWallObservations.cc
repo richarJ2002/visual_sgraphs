@@ -71,7 +71,14 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
         {
             break;
         }
-        if (p_wall == nullptr || p_wall->isBad())
+        bool wallIsBad{};
+        if (!(p_wall == nullptr) &&
+            p_wall->isBad(wallIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_wall == nullptr || wallIsBad)
         {
             continue;
         }
@@ -81,7 +88,13 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
          * paired with the (possibly sign-flipped) normal -- the existing
          * getter returns only the oriented normal, not a paired oriented d,
          * and n^T x + d = 0 requires both to flip together. */
-        Eigen::Vector4d coeffs     = p_wall->getGlobalEquation().coeffs();
+        g2o::Plane3D wallGetGlobalEquation{};
+        if (p_wall->getGlobalEquation(wallGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        Eigen::Vector4d coeffs     = wallGetGlobalEquation.coeffs();
         const double    normalNorm = coeffs.head<3>().norm();
         if (!std::isfinite(normalNorm) || normalNorm < 1e-8)
         {
@@ -104,10 +117,22 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
         }
 
         VerifyWallObservation observation;
-        observation.wallId         = p_wall->getId();
-        observation.normal_World   = coeffs.head<3>();
-        observation.d              = coeffs(3);
-        observation.centroid_World = p_wall->getCentroid();
+        int                   wallGetId{};
+        if (p_wall->getId(wallGetId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        observation.wallId       = wallGetId;
+        observation.normal_World = coeffs.head<3>();
+        observation.d            = coeffs(3);
+        Eigen::Vector3d wallGetCentroid{};
+        if (p_wall->getCentroid(wallGetCentroid) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
+        observation.centroid_World = wallGetCentroid;
         bool isFiniteVector3{};
         if (isFiniteVector(observation.centroid_World, isFiniteVector3) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
@@ -119,8 +144,12 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
             continue;
         }
 
-        const geometric::Plane::GeometrySnapshot snapshot =
-            p_wall->getGeometrySnapshot();
+        geometric::Plane::GeometrySnapshot snapshot{};
+        if (p_wall->getGeometrySnapshot(snapshot) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGeometrySnapshot cannot fail; continue as before.
+        }
         if (snapshot.supportCloud && !snapshot.supportCloud->empty())
         {
             const std::size_t total  = snapshot.supportCloud->size();

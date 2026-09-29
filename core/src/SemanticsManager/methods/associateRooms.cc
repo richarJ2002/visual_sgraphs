@@ -120,9 +120,22 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
         for (vs_graphs::core::geometric::Plane *p_roomWall : roomWallsList)
         {
             /* Skip invalid walls */
-            if (p_roomWall != nullptr && !p_roomWall->isBad())
+            bool roomWallIsBad{};
+            if ((p_roomWall != nullptr) &&
+                p_roomWall->isBad(roomWallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                roomWallIds.insert(p_roomWall->getId());
+                // isBad cannot fail; continue as before.
+            }
+            if (p_roomWall != nullptr && !roomWallIsBad)
+            {
+                int roomWallGetId{};
+                if (p_roomWall->getId(roomWallGetId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                roomWallIds.insert(roomWallGetId);
             }
         }
 
@@ -138,13 +151,26 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
              wallList_World_in)
         {
             /* Skip invalid walls */
-            if (p_candidateWall == nullptr || p_candidateWall->isBad())
+            bool candidateWallIsBad{};
+            if (!(p_candidateWall == nullptr) &&
+                p_candidateWall->isBad(candidateWallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_candidateWall == nullptr || candidateWallIsBad)
             {
                 continue;
             }
 
             /* If wall is not linked to room, skip */
-            if (roomWallIds.count(p_candidateWall->getId()) == 0)
+            int candidateWallGetId{};
+            if (p_candidateWall->getId(candidateWallGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (roomWallIds.count(candidateWallGetId) == 0)
             {
                 continue;
             }
@@ -153,8 +179,15 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
             sharesAnyWall = true;
 
             /* Extract plane equation */
+            g2o::Plane3D candidateWallGetGlobalEquation{};
+            if (p_candidateWall->getGlobalEquation(
+                    candidateWallGetGlobalEquation) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
             Eigen::Vector4d candidateWallEquation =
-                p_candidateWall->getGlobalEquation().coeffs();
+                candidateWallGetGlobalEquation.coeffs();
 
             /* Find plane normal magnitude */
             const double normalNorm = candidateWallEquation.head<3>().norm();

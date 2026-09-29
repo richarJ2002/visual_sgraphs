@@ -41,8 +41,22 @@ std::size_t countLiveWallPlanes(Map *p_map_in)
     std::size_t liveCount = 0U;
     for (geometric::Plane *p_plane : p_map_in->getAllPlanes())
     {
-        if (p_plane != nullptr && !p_plane->isBad() &&
-            p_plane->getPlaneType() == geometric::Plane::PlaneVariant::WALL)
+        bool planeIsBad{};
+        if ((p_plane != nullptr) &&
+            p_plane->isBad(planeIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        geometric::Plane::PlaneVariant planeType{};
+        if ((p_plane != nullptr && !planeIsBad) &&
+            p_plane->getPlaneType(planeType) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getPlaneType cannot fail; continue as before.
+        }
+        if (p_plane != nullptr && !planeIsBad &&
+            planeType == geometric::Plane::PlaneVariant::WALL)
         {
             ++liveCount;
         }

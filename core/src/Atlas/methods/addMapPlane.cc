@@ -32,7 +32,12 @@ namespace core
 
 void Atlas::addMapPlane(vs_graphs::core::geometric::Plane *p_plane_in)
 {
-    vs_graphs::core::Map *p_ownerMap = p_plane_in->getMap();
+    vs_graphs::core::Map *p_ownerMap = nullptr;
+    if (p_plane_in->getMap(p_ownerMap) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     p_ownerMap->addMapPlane(p_plane_in);
 }
 

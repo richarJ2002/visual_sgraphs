@@ -28,13 +28,25 @@ namespace core
 void SemanticsManager::mergeOverlappingPassages(void)
 {
     geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
-    if (p_groundPlane == nullptr || p_groundPlane->isBad())
+    bool              groundPlaneIsBad{};
+    if (!(p_groundPlane == nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlane == nullptr || groundPlaneIsBad)
     {
         return;
     }
-    const Eigen::Vector4d groundEq =
-        p_groundPlane->getGlobalEquation().coeffs();
-    const double groundNorm = groundEq.head<3>().norm();
+    g2o::Plane3D groundPlaneGetGlobalEquation{};
+    if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    const Eigen::Vector4d groundEq   = groundPlaneGetGlobalEquation.coeffs();
+    const double          groundNorm = groundEq.head<3>().norm();
     if (!groundEq.allFinite() || groundNorm < 1e-8)
     {
         return;

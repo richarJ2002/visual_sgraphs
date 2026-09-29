@@ -32,10 +32,12 @@ namespace core
 namespace geometric
 {
 
-void Plane::setMapPoints(core::MapPoint *p_mapPoint_in)
+PlaneStatus Plane::setMapPoints(core::MapPoint *p_mapPoint_in)
 {
     unique_lock<mutex> lock(featuresMutex);
     mapPoints.insert(p_mapPoint_in);
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

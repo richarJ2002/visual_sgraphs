@@ -49,22 +49,39 @@ void SemanticsManager::detectDoorsAndDoorways(
     for (vs_graphs::core::geometric::Plane *p_plane : allPlanes)
     {
         /* Skip invalid mapped planes */
-        if (p_plane == nullptr || p_plane->isBad())
+        bool planeIsBad{};
+        if (!(p_plane == nullptr) &&
+            p_plane->isBad(planeIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_plane == nullptr || planeIsBad)
         {
             continue;
         }
 
         /* Store confirmed wall planes */
-        if (p_plane->getPlaneType() ==
-            vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
+        geometric::Plane::PlaneVariant planeType{};
+        if (p_plane->getPlaneType(planeType) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getPlaneType cannot fail; continue as before.
+        }
+        if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
         {
             wallPlanes.push_back(p_plane);
             continue;
         }
 
         /* Store confirmed door planes */
-        if (p_plane->getPlaneType() ==
-            vs_graphs::core::geometric::Plane::PlaneVariant::DOOR)
+        geometric::Plane::PlaneVariant planeType2{};
+        if (p_plane->getPlaneType(planeType2) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getPlaneType cannot fail; continue as before.
+        }
+        if (planeType2 == vs_graphs::core::geometric::Plane::PlaneVariant::DOOR)
         {
             doorPlanes.push_back(p_plane);
         }
@@ -78,22 +95,47 @@ void SemanticsManager::detectDoorsAndDoorways(
 
     for (vs_graphs::core::geometric::Plane *p_wall : wallPlanes)
     {
-        if (p_wall == nullptr || p_wall->isBad())
+        bool wallIsBad{};
+        if (!(p_wall == nullptr) &&
+            p_wall->isBad(wallIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_wall == nullptr || wallIsBad)
         {
             continue;
         }
 
         // Quality gate: minimum observations, not room confirmation status
-        if (p_wall->getObservationCount() >=
+        std::size_t wallGetObservationCount{};
+        if (p_wall->getObservationCount(wallGetObservationCount) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getObservationCount cannot fail; continue as before.
+        }
+        if (wallGetObservationCount >=
             p_sysParams->roomSeg.minimumWallObservationCount)
         {
             confirmedWallPlanes.push_back(p_wall);
         }
         else
         {
-            std::cout << "[SemMgr] Skipping wall " << p_wall->getId()
+            int wallGetId{};
+            if (p_wall->getId(wallGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            std::size_t wallGetObservationCount2{};
+            if (p_wall->getObservationCount(wallGetObservationCount2) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getObservationCount cannot fail; continue as before.
+            }
+            std::cout << "[SemMgr] Skipping wall " << wallGetId
                       << " for passage detection: insufficient observations ("
-                      << p_wall->getObservationCount() << " < "
+                      << wallGetObservationCount2 << " < "
                       << p_sysParams->roomSeg.minimumWallObservationCount
                       << ")." << std::endl;
         }
@@ -103,7 +145,14 @@ void SemanticsManager::detectDoorsAndDoorways(
     for (vs_graphs::core::geometric::Plane *p_door : doorPlanes)
     {
         /* Skip invalid door planes */
-        if (p_door == nullptr || p_door->isBad())
+        bool doorIsBad{};
+        if (!(p_door == nullptr) &&
+            p_door->isBad(doorIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_door == nullptr || doorIsBad)
         {
             continue;
         }
@@ -111,7 +160,14 @@ void SemanticsManager::detectDoorsAndDoorways(
         for (vs_graphs::core::geometric::Plane *p_wall : confirmedWallPlanes)
         {
             /* Skip invalid wall planes */
-            if (p_wall == nullptr || p_wall->isBad())
+            bool wallIsBad2{};
+            if (!(p_wall == nullptr) &&
+                p_wall->isBad(wallIsBad2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_wall == nullptr || wallIsBad2)
             {
                 continue;
             }

@@ -63,22 +63,54 @@ void makeWallPlane(geometric::Plane      &wall_inout,
                    double                 halfV_m_in,
                    const Eigen::Vector3d &centroid_World_m_in)
 {
-    wall_inout.setId(id_in);
-    wall_inout.setMap(p_map_in);
-    wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL);
+    if (wall_inout.setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (wall_inout.setMap(p_map_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setPlaneType cannot fail; continue as before.
+    }
     /* Wall-admission/ownership gates compare getPlaneType() against
      * getExpectedPlaneType(), which is derived from semanticVotes rather than
      * settable directly -- cast a vote so the two agree, matching what real
      * wall classification does over time. */
-    wall_inout.castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
-    wall_inout.setGlobalEquation(g2o::Plane3D(equation_World_in));
-    wall_inout.setCentroid(centroid_World_m_in);
-    wall_inout.setMapClouds(makeGridCloud(centroid_World_m_in,
-                                          axisU_World_in,
-                                          axisV_World_in,
-                                          halfU_m_in,
-                                          halfV_m_in));
-    wall_inout.updateSizeOfPlane();
+    if (wall_inout.castWeightedVote(geometric::Plane::PlaneVariant::WALL,
+                                    1.0) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // castWeightedVote cannot fail; continue as before.
+    }
+    if (wall_inout.setGlobalEquation(g2o::Plane3D(equation_World_in)) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setGlobalEquation cannot fail; continue as before.
+    }
+    if (wall_inout.setCentroid(centroid_World_m_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
+    if (wall_inout.setMapClouds(makeGridCloud(centroid_World_m_in,
+                                              axisU_World_in,
+                                              axisV_World_in,
+                                              halfU_m_in,
+                                              halfV_m_in)) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMapClouds cannot fail; continue as before.
+    }
+    if (wall_inout.updateSizeOfPlane() !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // updateSizeOfPlane cannot fail; continue as before.
+    }
 }
 
 bool makeGroundPlane(geometric::Plane &ground_inout,
@@ -87,17 +119,37 @@ bool makeGroundPlane(geometric::Plane &ground_inout,
                      double            halfExtent_m_in,
                      int               stepsPerSide_in)
 {
-    ground_inout.setId(id_in);
-    ground_inout.setMap(p_map_in);
-    ground_inout.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
-    ground_inout.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));
-    ground_inout.setMapClouds(makeGridCloud(Eigen::Vector3d::Zero(),
-                                            Eigen::Vector3d::UnitX(),
-                                            Eigen::Vector3d::UnitY(),
-                                            halfExtent_m_in,
-                                            halfExtent_m_in,
-                                            stepsPerSide_in));
+    if (ground_inout.setId(id_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (ground_inout.setMap(p_map_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (ground_inout.setPlaneType(geometric::Plane::PlaneVariant::GROUND) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setPlaneType cannot fail; continue as before.
+    }
+    if (ground_inout.setGlobalEquation(
+            g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0))) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setGlobalEquation cannot fail; continue as before.
+    }
+    if (ground_inout.setMapClouds(makeGridCloud(Eigen::Vector3d::Zero(),
+                                                Eigen::Vector3d::UnitX(),
+                                                Eigen::Vector3d::UnitY(),
+                                                halfExtent_m_in,
+                                                halfExtent_m_in,
+                                                stepsPerSide_in)) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMapClouds cannot fail; continue as before.
+    }
     bool wasPlaneRefit{};
     if (GeoSemHelpers::refitMappedPlaneFromCloud(&ground_inout,
                                                  wasPlaneRefit) !=

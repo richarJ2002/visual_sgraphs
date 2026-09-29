@@ -171,14 +171,25 @@ UtilsStatus Utils::associatePlanes(
     for (geometric::Plane *p_mappedPlane : mappedPlanes_in)
     {
         /* Skip invalid mapped planes */
-        if (p_mappedPlane == nullptr || p_mappedPlane->isBad())
+        bool mappedPlaneIsBad{};
+        if (!(p_mappedPlane == nullptr) &&
+            p_mappedPlane->isBad(mappedPlaneIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_mappedPlane == nullptr || mappedPlaneIsBad)
         {
             continue;
         }
 
         /* Extract the mapped plane point cloud */
-        const geometric::Plane::GeometrySnapshot mappedGeometry =
-            p_mappedPlane->getGeometrySnapshot();
+        geometric::Plane::GeometrySnapshot mappedGeometry{};
+        if (p_mappedPlane->getGeometrySnapshot(mappedGeometry) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGeometrySnapshot cannot fail; continue as before.
+        }
         const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_mappedCloud =
             mappedGeometry.supportCloud;
 
@@ -194,8 +205,12 @@ UtilsStatus Utils::associatePlanes(
          * A mapped UNDEFINED plane is allowed to match a semantically labelled
          * observation so that it can accumulate enough votes for confirmation.
          */
-        const geometric::Plane::PlaneVariant mappedPlaneType =
-            p_mappedPlane->getExpectedPlaneType();
+        geometric::Plane::PlaneVariant mappedPlaneType{};
+        if (p_mappedPlane->getExpectedPlaneType(mappedPlaneType) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getExpectedPlaneType cannot fail; continue as before.
+        }
 
         const bool semanticTypesCompatible =
             observedPlaneType_in == geometric::Plane::PlaneVariant::UNDEFINED ||
@@ -466,7 +481,13 @@ UtilsStatus Utils::associatePlanes(
         {
             bestAssociationScore = associationScore;
 
-            bestPlaneId = p_mappedPlane->getId();
+            int mappedPlaneGetId{};
+            if (p_mappedPlane->getId(mappedPlaneGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            bestPlaneId = mappedPlaneGetId;
         }
     }
 

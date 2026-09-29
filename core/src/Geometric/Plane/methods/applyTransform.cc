@@ -32,7 +32,8 @@ namespace core
 namespace geometric
 {
 
-void Plane::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
+PlaneStatus
+    Plane::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
 {
     std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
 
@@ -49,17 +50,29 @@ void Plane::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
         point.z = pointVector.z();
     }
 
-    globalEquation =
-        transformPlaneEquation(globalEquation, transform_oldWorldToNewWorld_in);
+    g2o::Plane3D transformedEquation{};
+    if (transformPlaneEquation(globalEquation,
+                               transform_oldWorldToNewWorld_in,
+                               transformedEquation) !=
+        PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // transformPlaneEquation cannot fail; continue as before.
+    }
+    globalEquation = transformedEquation;
 
     p_octree->deleteTree();
     p_octree->setInputCloud(planeCloud);
     p_octree->addPointsFromInputCloud();
 
     /* Recompute the finite bounds in the transformed frame. */
-    updatePlaneBoundsWithoutLock();
+    if (updatePlaneBoundsWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // updatePlaneBoundsWithoutLock cannot fail; continue as before.
+    }
     ++cloudGeneration;
     successfulRefitGeneration = cloudGeneration;
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

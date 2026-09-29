@@ -68,7 +68,14 @@ UtilsStatus Utils::matchWallsBetweenRooms(
         }
         for (geometric::Plane *p_wall : room_inWalls)
         {
-            if (p_wall == nullptr || p_wall->isBad())
+            bool wallIsBad{};
+            if (!(p_wall == nullptr) &&
+                p_wall->isBad(wallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_wall == nullptr || wallIsBad)
             {
                 continue;
             }
@@ -95,7 +102,21 @@ UtilsStatus Utils::matchWallsBetweenRooms(
             validWalls.end(),
             [](const std::pair<geometric::Plane *, Eigen::Vector3d> &first_in,
                const std::pair<geometric::Plane *, Eigen::Vector3d> &second_in)
-            { return first_in.first->getId() < second_in.first->getId(); });
+            {
+                int getId2{};
+                if (first_in.first->getId(getId2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int getId3{};
+                if (second_in.first->getId(getId3) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                return getId2 < getId3;
+            });
 
         return validWalls;
     };
@@ -151,11 +172,21 @@ UtilsStatus Utils::matchWallsBetweenRooms(
         matchedB[bestIndexB] = true;
 
         normalsA_inout.push_back(validWallsA[bestIndexA].second);
-        centroidsA_inout.push_back(
-            validWallsA[bestIndexA].first->getCentroid());
+        Eigen::Vector3d getCentroid2{};
+        if (validWallsA[bestIndexA].first->getCentroid(getCentroid2) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
+        centroidsA_inout.push_back(getCentroid2);
         normalsB_inout.push_back(validWallsB[bestIndexB].second);
-        centroidsB_inout.push_back(
-            validWallsB[bestIndexB].first->getCentroid());
+        Eigen::Vector3d getCentroid3{};
+        if (validWallsB[bestIndexB].first->getCentroid(getCentroid3) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
+        centroidsB_inout.push_back(getCentroid3);
 
         acceptedPairCount++;
     }

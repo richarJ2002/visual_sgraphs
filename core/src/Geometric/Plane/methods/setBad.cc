@@ -32,10 +32,12 @@ namespace core
 namespace geometric
 {
 
-void Plane::setBad(void)
+PlaneStatus Plane::setBad(void)
 {
     unique_lock<mutex> lock(typeMutex);
     isFlaggedBad = true;
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

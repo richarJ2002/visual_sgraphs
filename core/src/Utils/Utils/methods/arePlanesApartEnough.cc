@@ -48,8 +48,20 @@ UtilsStatus Utils::arePlanesApartEnough(
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    Eigen::Vector4d equation1 = p_plane1_in->getGlobalEquation().coeffs();
-    Eigen::Vector4d equation2 = p_plane2_in->getGlobalEquation().coeffs();
+    g2o::Plane3D plane1GetGlobalEquation{};
+    if (p_plane1_in->getGlobalEquation(plane1GetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector4d equation1 = plane1GetGlobalEquation.coeffs();
+    g2o::Plane3D    plane2GetGlobalEquation{};
+    if (p_plane2_in->getGlobalEquation(plane2GetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector4d equation2 = plane2GetGlobalEquation.coeffs();
 
     const double normalNorm1 = equation1.head<3>().norm();
     const double normalNorm2 = equation2.head<3>().norm();

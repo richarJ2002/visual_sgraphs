@@ -32,10 +32,11 @@ namespace core
 namespace geometric
 {
 
-Eigen::Vector3d Plane::getCentroid(void) const
+PlaneStatus Plane::getCentroid(Eigen::Vector3d &getCentroid_out) const
 {
     unique_lock<mutex> lock(positionMutex);
-    return centroid;
+    getCentroid_out = centroid;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

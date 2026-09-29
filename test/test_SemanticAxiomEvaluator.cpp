@@ -1619,7 +1619,8 @@ TEST(SemanticAxiomEvaluator, SelfTwinIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    wall.setTwinFace(&wall);
+    ASSERT_EQ((wall.setTwinFace(&wall)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_map->addMapPlane(&wall);
 
     SemanticGraphSnapshot snapshot{};
@@ -1661,7 +1662,8 @@ TEST(SemanticAxiomEvaluator, AsymmetricTwinIsFail)
                         1.0,
                         1.0);
     /* Only wallA points to wallB; wallB's own twin stays absent. */
-    wallA.setTwinFace(&wallB);
+    ASSERT_EQ((wallA.setTwinFace(&wallB)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_map->addMapPlane(&wallA);
     p_map->addMapPlane(&wallB);
 
@@ -1703,9 +1705,11 @@ TEST(SemanticAxiomEvaluator, BadTwinIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    wallA.setTwinFace(&wallB);
-    wallB.setTwinFace(&wallA);
-    wallB.setBad();
+    ASSERT_EQ((wallA.setTwinFace(&wallB)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wallB.setTwinFace(&wallA)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wallB.setBad()), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_map->addMapPlane(&wallA);
     p_map->addMapPlane(&wallB);
 
@@ -1749,8 +1753,10 @@ TEST(SemanticAxiomEvaluator, CrossMapTwinIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    wallA.setTwinFace(&wallB);
-    wallB.setTwinFace(&wallA);
+    ASSERT_EQ((wallA.setTwinFace(&wallB)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wallB.setTwinFace(&wallA)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_mapA->addMapPlane(&wallA);
     p_mapB->addMapPlane(&wallB);
 
@@ -1785,7 +1791,8 @@ TEST(SemanticAxiomEvaluator, WrongTypeTwinIsFail)
                         1.0);
     geometric::Plane groundNotWall;
     ASSERT_TRUE(test::makeGroundPlane(groundNotWall, 2, p_map));
-    wall.setTwinFace(&groundNotWall);
+    ASSERT_EQ((wall.setTwinFace(&groundNotWall)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_map->addMapPlane(&wall);
     p_map->addMapPlane(&groundNotWall);
 
@@ -1827,8 +1834,10 @@ TEST(SemanticAxiomEvaluator, SharedOwnerTwinIsFail)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    wallA.setTwinFace(&wallB);
-    wallB.setTwinFace(&wallA);
+    ASSERT_EQ((wallA.setTwinFace(&wallB)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wallB.setTwinFace(&wallA)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_map->addMapPlane(&wallA);
     p_map->addMapPlane(&wallB);
 
@@ -1876,8 +1885,10 @@ TEST(SemanticAxiomEvaluator, StructurallyValidTwinIsUnknown)
                         Eigen::Vector3d::UnitZ(),
                         1.0,
                         1.0);
-    wallA.setTwinFace(&wallB);
-    wallB.setTwinFace(&wallA);
+    ASSERT_EQ((wallA.setTwinFace(&wallB)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wallB.setTwinFace(&wallA)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     p_map->addMapPlane(&wallA);
     p_map->addMapPlane(&wallB);
 
@@ -3973,7 +3984,7 @@ TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     p_map->addDetectedMapRoom(&room);
-    wall.setBad();
+    ASSERT_EQ((wall.setBad()), geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     SemanticGraphSnapshot snapshot{};
     ASSERT_EQ(

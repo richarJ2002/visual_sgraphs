@@ -32,12 +32,12 @@ namespace core
 namespace geometric
 {
 
-void Plane::mergeObservation(core::KeyFrame    *p_keyFrame_inout,
-                             const Observation &observation_in)
+PlaneStatus Plane::mergeObservation(core::KeyFrame    *p_keyFrame_inout,
+                                    const Observation &observation_in)
 {
     if (p_keyFrame_inout == nullptr || p_keyFrame_inout->isBad())
     {
-        return;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     std::scoped_lock lock(featuresMutex, typeMutex);
@@ -90,7 +90,12 @@ void Plane::mergeObservation(core::KeyFrame    *p_keyFrame_inout,
         }
     }
 
-    rebuildSemanticVotesWithoutLock();
+    if (rebuildSemanticVotesWithoutLock() != PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // rebuildSemanticVotesWithoutLock cannot fail; continue as before.
+    }
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

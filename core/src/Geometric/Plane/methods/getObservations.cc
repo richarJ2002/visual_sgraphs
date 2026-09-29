@@ -32,11 +32,12 @@ namespace core
 namespace geometric
 {
 
-std::map<core::KeyFrame *, Plane::Observation>
-    Plane::getObservations(void) const
+PlaneStatus Plane::getObservations(std::map<core::KeyFrame *, Plane::Observation> &getObservations_out)
+    const
 {
     unique_lock<mutex> lock(featuresMutex);
-    return observations;
+    getObservations_out = observations;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

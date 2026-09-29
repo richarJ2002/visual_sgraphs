@@ -65,8 +65,14 @@ bool segmentCrossesOpenPassageEvidence(
     const double           openingMargin_m_in,
     const double           minimumSideDistance_m_in)
 {
-    if (p_evidenceSupportingWall_in == nullptr ||
-        p_evidenceSupportingWall_in->isBad() ||
+    bool evidenceSupportingWallIsBad{};
+    if (!(p_evidenceSupportingWall_in == nullptr) &&
+        p_evidenceSupportingWall_in->isBad(evidenceSupportingWallIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_evidenceSupportingWall_in == nullptr || evidenceSupportingWallIsBad ||
         evidenceOpeningRadius_m_in <= 0.0)
     {
         return false;
@@ -74,10 +80,17 @@ bool segmentCrossesOpenPassageEvidence(
 
     constexpr double defaultOpenPassageHeight_m = 2.0;
 
+    g2o::Plane3D evidenceSupportingWallGetGlobalEquation{};
+    if (p_evidenceSupportingWall_in->getGlobalEquation(
+            evidenceSupportingWallGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
     return segmentCrossesAperture(
         segmentStart_World_m_in,
         segmentEnd_World_m_in,
-        p_evidenceSupportingWall_in->getGlobalEquation().coeffs(),
+        evidenceSupportingWallGetGlobalEquation.coeffs(),
         evidenceCentroid_World_m_in,
         2.0 * evidenceOpeningRadius_m_in,
         std::max(evidenceHeightSpan_m_in, defaultOpenPassageHeight_m),

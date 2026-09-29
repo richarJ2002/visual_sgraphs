@@ -30,8 +30,12 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
 {
     // [TODO] - verify the correctness of this function
     // the point cloud of the ground plane
-    const geometric::Plane::GeometrySnapshot groundGeometry =
-        p_groundPlane_in->getGeometrySnapshot();
+    geometric::Plane::GeometrySnapshot groundGeometry{};
+    if (p_groundPlane_in->getGeometrySnapshot(groundGeometry) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGeometrySnapshot cannot fail; continue as before.
+    }
     pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_groundCloud =
         groundGeometry.supportCloud;
 
@@ -41,7 +45,15 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
     // store the wall equations
     std::vector<Eigen::Vector4d> wallEquations;
     for (const auto &wall : roomWalls_in)
-        wallEquations.push_back(wall->getGlobalEquation().coeffs());
+    {
+        g2o::Plane3D wallGetGlobalEquation{};
+        if (wall->getGlobalEquation(wallGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        wallEquations.push_back(wallGetGlobalEquation.coeffs());
+    }
 
     // for each point in the ground plane, check if it is within the walls
     for (const auto &point : p_groundCloud->points)
@@ -68,7 +80,9 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
 
         // if the point is within the walls, increment the count
         if (isWithinWalls)
+        {
             count++;
+        }
     }
     groundPlanePoints_out = count;
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;

@@ -77,9 +77,16 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             }
 
             /* Extract width height supple of door */
-            std::pair<double, double> widthHeight{};
+            std::pair<double, double>          widthHeight{};
+            geometric::Plane::GeometrySnapshot doorPlaneGetGeometrySnapshot{};
+            if (p_doorPlane->getGeometrySnapshot(
+                    doorPlaneGetGeometrySnapshot) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGeometrySnapshot cannot fail; continue as before.
+            }
             if (utils::utils::Utils::computePlaneWidthHeight(
-                    p_doorPlane->getGeometrySnapshot().supportCloud,
+                    doorPlaneGetGeometrySnapshot.supportCloud,
                     widthHeight) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
@@ -113,25 +120,43 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 {
                     // getId cannot fail; continue as before.
                 }
+                int doorPlaneGetId{};
+                if (p_doorPlane->getId(doorPlaneGetId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout << "[SemanticsManager] Rejecting door plane "
-                          << p_doorPlane->getId() << " for passage "
-                          << passageId << ": measured dimensions "
-                          << measuredWidth << "x" << measuredHeight
-                          << " m exceed limits " << maximumWidth << "x"
-                          << maximumHeight << " m." << std::endl;
+                          << doorPlaneGetId << " for passage " << passageId
+                          << ": measured dimensions " << measuredWidth << "x"
+                          << measuredHeight << " m exceed limits "
+                          << maximumWidth << "x" << maximumHeight << " m."
+                          << std::endl;
 
                 continue;
             }
 
             /* Set centroid of the door plane */
-            if (passage->setCentroid(p_doorPlane->getCentroid()) !=
+            Eigen::Vector3d doorPlaneGetCentroid{};
+            if (p_doorPlane->getCentroid(doorPlaneGetCentroid) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
+            if (passage->setCentroid(doorPlaneGetCentroid) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
                 // setCentroid cannot fail; continue as before.
             }
 
             /* Get the plane global equation */
-            if (passage->setGlobalEquation(p_doorPlane->getGlobalEquation()) !=
+            g2o::Plane3D doorPlaneGetGlobalEquation{};
+            if (p_doorPlane->getGlobalEquation(doorPlaneGetGlobalEquation) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
+            if (passage->setGlobalEquation(doorPlaneGetGlobalEquation) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
                 // setGlobalEquation cannot fail; continue as before.
@@ -178,13 +203,27 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             for (vs_graphs::core::geometric::Plane *p_candidateWall :
                  supportingFaces)
             {
-                if (p_candidateWall == nullptr || p_candidateWall->isBad())
+                bool candidateWallIsBad{};
+                if (!(p_candidateWall == nullptr) &&
+                    p_candidateWall->isBad(candidateWallIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_candidateWall == nullptr || candidateWallIsBad)
                 {
                     continue;
                 }
 
+                g2o::Plane3D candidateWallGetGlobalEquation{};
+                if (p_candidateWall->getGlobalEquation(
+                        candidateWallGetGlobalEquation) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getGlobalEquation cannot fail; continue as before.
+                }
                 Eigen::Vector4d candidateWallEquation =
-                    p_candidateWall->getGlobalEquation().coeffs();
+                    candidateWallGetGlobalEquation.coeffs();
 
                 if (!candidateWallEquation.allFinite())
                 {
@@ -258,7 +297,12 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                     firstFace.head<3>().dot(passageCentroid_World_m);
 
                 vs_graphs::core::geometric::Plane passagePlane;
-                passagePlane.setGlobalEquation(g2o::Plane3D(midPlaneEquation));
+                if (passagePlane.setGlobalEquation(
+                        g2o::Plane3D(midPlaneEquation)) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // setGlobalEquation cannot fail; continue as before.
+                }
 
                 bool arePlanesPerpendicular2{};
                 if (utils::utils::Utils::arePlanesPerpendicular(
@@ -342,7 +386,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             {
                 // getGlobalEquation cannot fail; continue as before.
             }
-            passagePlane.setGlobalEquation(passageGlobalEquation);
+            if (passagePlane.setGlobalEquation(passageGlobalEquation) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setGlobalEquation cannot fail; continue as before.
+            }
             bool arePlanesPerpendicular3{};
             if (utils::utils::Utils::arePlanesPerpendicular(
                     &passagePlane,
@@ -356,9 +404,15 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             {
                 // Project the passage normal onto the horizontal plane to
                 // remove tilt
+                g2o::Plane3D groundPlaneGetGlobalEquation{};
+                if (p_groundPlane->getGlobalEquation(
+                        groundPlaneGetGlobalEquation) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getGlobalEquation cannot fail; continue as before.
+                }
                 const Eigen::Vector3d groundNormal =
-                    p_groundPlane->getGlobalEquation()
-                        .coeffs()
+                    groundPlaneGetGlobalEquation.coeffs()
                         .head<3>()
                         .normalized();
                 g2o::Plane3D passageGlobalEquation2{};

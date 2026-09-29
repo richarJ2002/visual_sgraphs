@@ -40,13 +40,26 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
 
     geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
 
-    if (p_groundPlane == nullptr || p_groundPlane->isBad())
+    bool groundPlaneIsBad{};
+    if (!(p_groundPlane == nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlane == nullptr || groundPlaneIsBad)
     {
         return;
     }
 
+    g2o::Plane3D groundPlaneGetGlobalEquation{};
+    if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
     const Eigen::Vector4d groundEquation_World =
-        p_groundPlane->getGlobalEquation().coeffs();
+        groundPlaneGetGlobalEquation.coeffs();
     const double groundNormalNorm = groundEquation_World.head<3>().norm();
 
     if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)
@@ -139,13 +152,26 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
         }
         for (geometric::Plane *p_wall : roomWalls)
         {
-            if (p_wall == nullptr || p_wall->isBad())
+            bool wallIsBad{};
+            if (!(p_wall == nullptr) &&
+                p_wall->isBad(wallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_wall == nullptr || wallIsBad)
             {
                 continue;
             }
 
+            Eigen::Vector3d wallGetCentroid{};
+            if (p_wall->getCentroid(wallGetCentroid) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
             const Eigen::Vector3d wallCentroid_World_m =
-                p_wall->getCentroid().cast<double>();
+                wallGetCentroid.cast<double>();
 
             if (!wallCentroid_World_m.allFinite())
             {
@@ -264,8 +290,14 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
                 {
                     // getId cannot fail; continue as before.
                 }
+                int wallGetId{};
+                if (p_wall->getId(wallGetId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout
-                    << "[SemMgr] Detached far-side Wall#" << p_wall->getId()
+                    << "[SemMgr] Detached far-side Wall#" << wallGetId
                     << " from semantic::Room#" << roomId
                     << "; retained distinct confirmed owner semantic::Room#"
                     << confirmedOwnerId << "." << std::endl;
@@ -279,7 +311,13 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
                 {
                     // setWalls cannot fail; continue as before.
                 }
-                if (p_atlas->getRoomWallPlaneById(p_wall->getId()) == nullptr)
+                int wallGetId2{};
+                if (p_wall->getId(wallGetId2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                if (p_atlas->getRoomWallPlaneById(wallGetId2) == nullptr)
                 {
                     p_atlas->addRoomWallPlane(p_wall);
                 }
@@ -301,9 +339,15 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
                 {
                     // getId cannot fail; continue as before.
                 }
-                std::cout << "[SemMgr] Redirected far-side Wall#"
-                          << p_wall->getId() << " from semantic::Room#"
-                          << roomId2 << " through semantic::Passage#"
+                int wallGetId3{};
+                if (p_wall->getId(wallGetId3) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                std::cout << "[SemMgr] Redirected far-side Wall#" << wallGetId3
+                          << " from semantic::Room#" << roomId2
+                          << " through semantic::Passage#"
                           << separatingPassageId << " to stable semantic::Room#"
                           << farSideRoomId << "." << std::endl;
                 continue;
@@ -321,7 +365,13 @@ void SemanticsManager::detachWallsBeyondConfirmedPassages(void)
             {
                 // getId cannot fail; continue as before.
             }
-            std::cout << "[SemMgr] Detached far-side Wall#" << p_wall->getId()
+            int wallGetId4{};
+            if (p_wall->getId(wallGetId4) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            std::cout << "[SemMgr] Detached far-side Wall#" << wallGetId4
                       << " from semantic::Room#" << roomId3
                       << "; semantic::Passage#" << separatingPassageId2
                       << " has no stable far-side room, so the wall remains "

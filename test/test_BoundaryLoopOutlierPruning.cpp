@@ -35,9 +35,20 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
                                                                Map *p_map_in)
 {
     auto ground = std::make_unique<geometric::Plane>();
-    ground->setId(id_in);
-    ground->setMap(p_map_in);
-    ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND);
+    if (ground->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (ground->setMap(p_map_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setPlaneType cannot fail; continue as before.
+    }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -49,14 +60,28 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
         point.z = 0.0f;
         cloud->push_back(point);
     }
-    ground->replaceMapClouds(cloud);
+    if (ground->replaceMapClouds(cloud) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // replaceMapClouds cannot fail; continue as before.
+    }
 
-    const auto snapshot = ground->beginMapCloudRefit();
-    ground->completeMapCloudRefit(
-        snapshot->cloudGeneration,
-        Eigen::Vector3d::Zero(),
-        g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)),
-        50U);
+    std::optional<geometric::Plane::GeometrySnapshot> snapshot{};
+    if (ground->beginMapCloudRefit(snapshot) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // beginMapCloudRefit cannot fail; continue as before.
+    }
+    bool wasRefitPublished{};
+    if (ground->completeMapCloudRefit(
+            snapshot->cloudGeneration,
+            Eigen::Vector3d::Zero(),
+            g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)),
+            50U,
+            wasRefitPublished) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // completeMapCloudRefit cannot fail; continue as before.
+    }
     return ground;
 }
 
@@ -76,17 +101,39 @@ std::unique_ptr<geometric::Plane>
                          double                 zMax_m_in)
 {
     auto wall = std::make_unique<geometric::Plane>();
-    wall->setId(id_in);
-    wall->setMap(p_map_in);
-    wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
-    wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0);
+    if (wall->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setId cannot fail; continue as before.
+    }
+    if (wall->setMap(p_map_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMap cannot fail; continue as before.
+    }
+    if (wall->setPlaneType(geometric::Plane::PlaneVariant::WALL) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setPlaneType cannot fail; continue as before.
+    }
+    if (wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // castWeightedVote cannot fail; continue as before.
+    }
 
     const double d = -normal_World_in.dot(pointOnPlane_World_in);
-    wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(normal_World_in.x(),
-                                                         normal_World_in.y(),
-                                                         normal_World_in.z(),
-                                                         d)));
-    wall->setCentroid(pointOnPlane_World_in);
+    if (wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(
+            normal_World_in.x(),
+            normal_World_in.y(),
+            normal_World_in.z(),
+            d))) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setGlobalEquation cannot fail; continue as before.
+    }
+    if (wall->setCentroid(pointOnPlane_World_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setCentroid cannot fail; continue as before.
+    }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -111,7 +158,11 @@ std::unique_ptr<geometric::Plane>
             cloud->push_back(point);
         }
     }
-    wall->setMapClouds(cloud);
+    if (wall->setMapClouds(cloud) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // setMapClouds cannot fail; continue as before.
+    }
     return wall;
 }
 

@@ -32,7 +32,8 @@ namespace core
 namespace geometric
 {
 
-bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in)
+PlaneStatus Plane::isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in,
+                                       bool &isPointinPlaneCloud_out)
 {
     /*!
      * A NaN/Inf point (e.g. from a near-degenerate plane/line intersection
@@ -46,7 +47,8 @@ bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in)
      */
     if (!queryPoint_in.allFinite())
     {
-        return false;
+        isPointinPlaneCloud_out = false;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
     unique_lock<mutex> lock(featuresMutex);
@@ -72,10 +74,12 @@ bool Plane::isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in)
             p_systemParams->refineMapPoints.octree.minNeighbors) ==
         p_systemParams->refineMapPoints.octree.minNeighbors)
     {
-        return true;
+        isPointinPlaneCloud_out = true;
+        return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
-    return false;
+    isPointinPlaneCloud_out = false;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

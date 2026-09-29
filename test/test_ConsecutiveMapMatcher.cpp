@@ -148,14 +148,35 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
 
         // Wall A: x = 1
         Plane *wallA = new Plane();
-        wallA->setId(wallIdBase_in);
-        wallA->setMap(p_map);
-        wallA->setPlaneType(Plane::PlaneVariant::WALL);
-        wallA->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_A_NORMAL_X,
-                                                              WALL_A_NORMAL_Y,
-                                                              WALL_A_NORMAL_Z,
-                                                              WALL_A_D)));
-        wallA->setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0));
+        if (wallA->setId(wallIdBase_in) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setId cannot fail; continue as before.
+        }
+        if (wallA->setMap(p_map) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setMap cannot fail; continue as before.
+        }
+        if (wallA->setPlaneType(Plane::PlaneVariant::WALL) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setPlaneType cannot fail; continue as before.
+        }
+        if (wallA->setGlobalEquation(
+                g2o::Plane3D(Eigen::Vector4d(WALL_A_NORMAL_X,
+                                             WALL_A_NORMAL_Y,
+                                             WALL_A_NORMAL_Z,
+                                             WALL_A_D))) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setGlobalEquation cannot fail; continue as before.
+        }
+        if (wallA->setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0)) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setCentroid cannot fail; continue as before.
+        }
         p_map->addMapPlane(wallA);
         if (room->setWalls(wallA) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -165,14 +186,35 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
 
         // Wall B: y = 1
         Plane *wallB = new Plane();
-        wallB->setId(wallIdBase_in + 1);
-        wallB->setMap(p_map);
-        wallB->setPlaneType(Plane::PlaneVariant::WALL);
-        wallB->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_B_NORMAL_X,
-                                                              WALL_B_NORMAL_Y,
-                                                              WALL_B_NORMAL_Z,
-                                                              WALL_B_D)));
-        wallB->setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0));
+        if (wallB->setId(wallIdBase_in + 1) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setId cannot fail; continue as before.
+        }
+        if (wallB->setMap(p_map) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setMap cannot fail; continue as before.
+        }
+        if (wallB->setPlaneType(Plane::PlaneVariant::WALL) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setPlaneType cannot fail; continue as before.
+        }
+        if (wallB->setGlobalEquation(
+                g2o::Plane3D(Eigen::Vector4d(WALL_B_NORMAL_X,
+                                             WALL_B_NORMAL_Y,
+                                             WALL_B_NORMAL_Z,
+                                             WALL_B_D))) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setGlobalEquation cannot fail; continue as before.
+        }
+        if (wallB->setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0)) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setCentroid cannot fail; continue as before.
+        }
         p_map->addMapPlane(wallB);
         if (room->setWalls(wallB) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -182,14 +224,35 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
 
         // Wall C: x = -1 face (normal +X after toward-room orientation)
         Plane *wallC = new Plane();
-        wallC->setId(wallIdBase_in + 2);
-        wallC->setMap(p_map);
-        wallC->setPlaneType(Plane::PlaneVariant::WALL);
-        wallC->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_C_NORMAL_X,
-                                                              WALL_C_NORMAL_Y,
-                                                              WALL_C_NORMAL_Z,
-                                                              WALL_C_D)));
-        wallC->setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0));
+        if (wallC->setId(wallIdBase_in + 2) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setId cannot fail; continue as before.
+        }
+        if (wallC->setMap(p_map) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setMap cannot fail; continue as before.
+        }
+        if (wallC->setPlaneType(Plane::PlaneVariant::WALL) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setPlaneType cannot fail; continue as before.
+        }
+        if (wallC->setGlobalEquation(
+                g2o::Plane3D(Eigen::Vector4d(WALL_C_NORMAL_X,
+                                             WALL_C_NORMAL_Y,
+                                             WALL_C_NORMAL_Z,
+                                             WALL_C_D))) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setGlobalEquation cannot fail; continue as before.
+        }
+        if (wallC->setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0)) !=
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setCentroid cannot fail; continue as before.
+        }
         p_map->addMapPlane(wallC);
         if (room->setWalls(wallC) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -349,7 +412,9 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                 spanCloud->push_back(spanPoint);
             }
         }
-        p_wall->setMapClouds(spanCloud);
+        ASSERT_EQ(
+            (p_wall->setMapClouds(spanCloud)),
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     }
 };
 
@@ -718,11 +783,14 @@ TEST_F(ConsecutiveMapMatcherTest, TC6_wallRotated)
     double          theta  = 10.0 * M_PI / 180.0;
     double          c = cos(theta), s = sin(theta);
     Eigen::Vector3d rotated_normal(c, s, 0.0);
-    wall1A->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(rotated_normal.x(),
-                                                           rotated_normal.y(),
-                                                           rotated_normal.z(),
-                                                           WALL_A_D)));
-    wall1A->setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0));
+    ASSERT_EQ((wall1A->setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(rotated_normal.x(),
+                                               rotated_normal.y(),
+                                               rotated_normal.z(),
+                                               WALL_A_D)))),
+              vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((wall1A->setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0))),
+              vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     setSeedRooms(p_map0, p_map1, r0_1, r1_1);
     g2o::Sim3                      identity_sim3(Eigen::Matrix3d::Identity(),
                             Eigen::Vector3d::Zero(),
@@ -973,14 +1041,25 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
     if (r1_1_current)
     {
         Plane *wall4 = new Plane();
-        wall4->setId(4);
-        wall4->setMap(p_map1);
-        wall4->setPlaneType(Plane::PlaneVariant::WALL);
-        wall4->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(WALL_D_NORMAL_X,
-                                                              WALL_D_NORMAL_Y,
-                                                              WALL_D_NORMAL_Z,
-                                                              WALL_D_D)));
-        wall4->setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0));
+        ASSERT_EQ(
+            (wall4->setId(4)),
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        ASSERT_EQ(
+            (wall4->setMap(p_map1)),
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        ASSERT_EQ(
+            (wall4->setPlaneType(Plane::PlaneVariant::WALL)),
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        ASSERT_EQ(
+            (wall4->setGlobalEquation(
+                g2o::Plane3D(Eigen::Vector4d(WALL_D_NORMAL_X,
+                                             WALL_D_NORMAL_Y,
+                                             WALL_D_NORMAL_Z,
+                                             WALL_D_D)))),
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        ASSERT_EQ(
+            (wall4->setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0))),
+            vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
         p_map1->addMapPlane(wall4);
         ASSERT_EQ((r1_1_current->setWalls(wall4)),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);

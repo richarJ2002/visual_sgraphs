@@ -143,9 +143,22 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
     bool hasValidGroundEquation = false;
 
-    if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+    bool groundPlaneIsBad{};
+    if ((p_groundPlane != nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        groundEquation = p_groundPlane->getGlobalEquation().coeffs();
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlane != nullptr && !groundPlaneIsBad)
+    {
+        g2o::Plane3D groundPlaneGetGlobalEquation{};
+        if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        groundEquation = groundPlaneGetGlobalEquation.coeffs();
 
         const double groundNormalNorm = groundEquation.head<3>().norm();
 
@@ -217,13 +230,24 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
     for (vs_graphs::core::geometric::Plane *p_wall : wallPlanes_in)
     {
-        if (p_wall == nullptr || p_wall->isBad())
+        bool wallIsBad{};
+        if (!(p_wall == nullptr) &&
+            p_wall->isBad(wallIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_wall == nullptr || wallIsBad)
         {
             continue;
         }
 
-        const geometric::Plane::GeometrySnapshot wallGeometry =
-            p_wall->getGeometrySnapshot();
+        geometric::Plane::GeometrySnapshot wallGeometry{};
+        if (p_wall->getGeometrySnapshot(wallGeometry) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGeometrySnapshot cannot fail; continue as before.
+        }
         const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallCloud =
             wallGeometry.supportCloud;
 
@@ -698,8 +722,14 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
         for (OpenPassageEvidence &evidence : openPassageEvidence)
         {
-            if (evidence.p_supportingWall == nullptr ||
-                evidence.p_supportingWall->isBad())
+            bool isBad2{};
+            if (!(evidence.p_supportingWall == nullptr) &&
+                evidence.p_supportingWall->isBad(isBad2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (evidence.p_supportingWall == nullptr || isBad2)
             {
                 continue;
             }
@@ -721,10 +751,21 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 continue;
             }
 
-            Eigen::Vector3d evidenceWallNormal =
-                evidence.p_supportingWall->getGlobalEquation().normal();
-            Eigen::Vector3d candidateWallNormal =
-                candidate.p_wall->getGlobalEquation().normal();
+            g2o::Plane3D getGlobalEquation2{};
+            if (evidence.p_supportingWall->getGlobalEquation(
+                    getGlobalEquation2) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
+            Eigen::Vector3d evidenceWallNormal = getGlobalEquation2.normal();
+            g2o::Plane3D    getGlobalEquation3{};
+            if (candidate.p_wall->getGlobalEquation(getGlobalEquation3) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
+            Eigen::Vector3d candidateWallNormal = getGlobalEquation3.normal();
 
             if (!evidenceWallNormal.allFinite() ||
                 !candidateWallNormal.allFinite() ||
@@ -743,9 +784,14 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 continue;
             }
 
-            Eigen::Vector4d candidateWallEquation =
-                candidate.p_wall->getGlobalEquation().coeffs();
-            const double candidateWallNormalNorm =
+            g2o::Plane3D getGlobalEquation4{};
+            if (candidate.p_wall->getGlobalEquation(getGlobalEquation4) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
+            Eigen::Vector4d candidateWallEquation = getGlobalEquation4.coeffs();
+            const double    candidateWallNormalNorm =
                 candidateWallEquation.head<3>().norm();
 
             if (candidateWallNormalNorm < 1e-8)
@@ -814,9 +860,14 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         candidate.openingRadius     = p_matchingEvidence->openingRadius_m;
         candidate.heightSpan_m      = p_matchingEvidence->heightSpan_m;
 
-        Eigen::Vector4d supportingWallEquation =
-            candidate.p_wall->getGlobalEquation().coeffs();
-        const double supportingWallNormalNorm =
+        g2o::Plane3D getGlobalEquation5{};
+        if (candidate.p_wall->getGlobalEquation(getGlobalEquation5) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        Eigen::Vector4d supportingWallEquation = getGlobalEquation5.coeffs();
+        const double    supportingWallNormalNorm =
             supportingWallEquation.head<3>().norm();
 
         if (supportingWallNormalNorm > 1e-8)
@@ -839,8 +890,14 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             openPassageEvidence.end(),
             [maximumMissedUpdateCount](const OpenPassageEvidence &evidence)
             {
-                return evidence.p_supportingWall == nullptr ||
-                       evidence.p_supportingWall->isBad() ||
+                bool isBad2{};
+                if (!(evidence.p_supportingWall == nullptr) &&
+                    evidence.p_supportingWall->isBad(isBad2) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                return evidence.p_supportingWall == nullptr || isBad2 ||
                        evidence.missedUpdateCount > maximumMissedUpdateCount;
             }),
         openPassageEvidence.end());
@@ -864,13 +921,25 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
     for (const PassageCandidate &candidate : passageCandidates)
     {
-        if (candidate.p_wall == nullptr || candidate.p_wall->isBad())
+        bool isBad3{};
+        if (!(candidate.p_wall == nullptr) &&
+            candidate.p_wall->isBad(isBad3) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (candidate.p_wall == nullptr || isBad3)
         {
             continue;
         }
 
-        Eigen::Vector3d candidateNormal =
-            candidate.p_wall->getGlobalEquation().normal();
+        g2o::Plane3D getGlobalEquation6{};
+        if (candidate.p_wall->getGlobalEquation(getGlobalEquation6) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        Eigen::Vector3d candidateNormal = getGlobalEquation6.normal();
 
         if (!candidateNormal.allFinite() || candidateNormal.norm() < 1e-8)
         {
@@ -882,9 +951,14 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         vs_graphs::core::semantic::Passage *p_matchingPassage         = nullptr;
         bool                                hasAmbiguousNearbyPassage = false;
 
-        Eigen::Vector4d candidateWallEquation =
-            candidate.p_wall->getGlobalEquation().coeffs();
-        const double candidateWallNormalNorm =
+        g2o::Plane3D getGlobalEquation7{};
+        if (candidate.p_wall->getGlobalEquation(getGlobalEquation7) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        Eigen::Vector4d candidateWallEquation = getGlobalEquation7.coeffs();
+        const double    candidateWallNormalNorm =
             candidateWallEquation.head<3>().norm();
 
         if (!candidateWallEquation.allFinite() ||
@@ -1025,8 +1099,13 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
             if (isKnownSupportingFace)
             {
-                if (p_matchingPassage->setGlobalEquation(
-                        candidate.p_wall->getGlobalEquation()) !=
+                g2o::Plane3D getGlobalEquation8{};
+                if (candidate.p_wall->getGlobalEquation(getGlobalEquation8) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getGlobalEquation cannot fail; continue as before.
+                }
+                if (p_matchingPassage->setGlobalEquation(getGlobalEquation8) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
                     // setGlobalEquation cannot fail; continue as before.

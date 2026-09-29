@@ -127,7 +127,13 @@ void Atlas::exportRoomContextFromCurrentMap()
         for (geometric::Plane *p_wall : roomWalls)
         {
             semantic::WallBounds bounds;
-            if (!p_wall || p_wall->isBad())
+            bool                 wallIsBad{};
+            if (!(!p_wall) && p_wall->isBad(wallIsBad) !=
+                                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (!p_wall || wallIsBad)
             {
                 snap.wallNormals.push_back(Eigen::Vector3d::Constant(
                     std::numeric_limits<double>::quiet_NaN()));
@@ -152,11 +158,26 @@ void Atlas::exportRoomContextFromCurrentMap()
                 snap.wallNormals.push_back(Eigen::Vector3d::Constant(
                     std::numeric_limits<double>::quiet_NaN()));
 
-            snap.wallCentroids.push_back(p_wall->getCentroid());
-            snap.wallDistances.push_back(
-                p_wall->getGlobalEquation().distance());
-            const geometric::Plane::GeometrySnapshot geometry =
-                p_wall->getGeometrySnapshot();
+            Eigen::Vector3d wallGetCentroid{};
+            if (p_wall->getCentroid(wallGetCentroid) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
+            snap.wallCentroids.push_back(wallGetCentroid);
+            g2o::Plane3D wallGetGlobalEquation{};
+            if (p_wall->getGlobalEquation(wallGetGlobalEquation) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
+            snap.wallDistances.push_back(wallGetGlobalEquation.distance());
+            geometric::Plane::GeometrySnapshot geometry{};
+            if (p_wall->getGeometrySnapshot(geometry) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGeometrySnapshot cannot fail; continue as before.
+            }
             bounds.minU_m = geometry.minPlaneU_m;
             bounds.maxU_m = geometry.maxPlaneU_m;
             bounds.minV_m = geometry.minPlaneV_m;

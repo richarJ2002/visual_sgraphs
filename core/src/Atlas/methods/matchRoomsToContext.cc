@@ -291,7 +291,14 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                 }
                 for (geometric::Plane *p_wall : priorRoomWalls2)
                 {
-                    if (!p_wall || p_wall->isBad())
+                    bool wallIsBad{};
+                    if (!(!p_wall) &&
+                        p_wall->isBad(wallIsBad) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
+                    if (!p_wall || wallIsBad)
                         continue;
 
                     /* Re-associate wall to new room */
@@ -321,7 +328,13 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                     {
                         // getId cannot fail; continue as before.
                     }
-                    std::cout << "[Atlas] Transferred Wall#" << p_wall->getId()
+                    int wallGetId{};
+                    if (p_wall->getId(wallGetId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    std::cout << "[Atlas] Transferred Wall#" << wallGetId
                               << " from prior semantic::Room#" << priorRoomId2
                               << " to matched semantic::Room#" << roomId2
                               << std::endl;

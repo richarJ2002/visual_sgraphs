@@ -53,10 +53,20 @@ UtilsStatus Utils::arePlanesParallel(
         p_params->roomSeg.wallsParallelismThresh * Utils::DEG_TO_RAD;
 
     // Extract and normalize plane normals
-    Eigen::Vector3d normal1 =
-        p_plane1_in->getGlobalEquation().normal().normalized();
-    Eigen::Vector3d normal2 =
-        p_plane2_in->getGlobalEquation().normal().normalized();
+    g2o::Plane3D plane1GetGlobalEquation{};
+    if (p_plane1_in->getGlobalEquation(plane1GetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector3d normal1 = plane1GetGlobalEquation.normal().normalized();
+    g2o::Plane3D    plane2GetGlobalEquation{};
+    if (p_plane2_in->getGlobalEquation(plane2GetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
+    Eigen::Vector3d normal2 = plane2GetGlobalEquation.normal().normalized();
 
     // Compute the dot product (clamped to avoid floating-point domain errors)
     double dotProduct = std::clamp(std::abs(normal1.dot(normal2)), -1.0, 1.0);

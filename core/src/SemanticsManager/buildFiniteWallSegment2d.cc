@@ -63,13 +63,24 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
                               const double           minimumWallLength_m_in,
                               FiniteWallSegment2d   &segment_inout)
 {
-    if (p_wall_in == nullptr || p_wall_in->isBad())
+    bool wallIsBad{};
+    if (!(p_wall_in == nullptr) &&
+        p_wall_in->isBad(wallIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_wall_in == nullptr || wallIsBad)
     {
         return false;
     }
 
-    const geometric::Plane::GeometrySnapshot wallGeometry =
-        p_wall_in->getGeometrySnapshot();
+    geometric::Plane::GeometrySnapshot wallGeometry{};
+    if (p_wall_in->getGeometrySnapshot(wallGeometry) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGeometrySnapshot cannot fail; continue as before.
+    }
     Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
     const double    wallNormalNorm     = wallEquation_World.head<3>().norm();
 
@@ -144,8 +155,13 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
     const double maximumWallCoordinate_m =
         wallPointCoordinates_m[maximumCoordinateIndex];
 
-    const Eigen::Vector3d wallCentroid_World_m =
-        p_wall_in->getCentroid().cast<double>();
+    Eigen::Vector3d wallGetCentroid{};
+    if (p_wall_in->getCentroid(wallGetCentroid) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getCentroid cannot fail; continue as before.
+    }
+    const Eigen::Vector3d wallCentroid_World_m = wallGetCentroid.cast<double>();
 
     if (!wallCentroid_World_m.allFinite())
     {
@@ -169,9 +185,15 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
                                  segmentEnd_World_m.dot(groundAxisV_World_in)};
     segment_inout.length_m =
         (segment_inout.end_World_m - segment_inout.start_World_m).norm();
+    std::size_t wallGetObservationCount{};
+    if (p_wall_in->getObservationCount(wallGetObservationCount) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getObservationCount cannot fail; continue as before.
+    }
     segment_inout.supportScore =
         static_cast<double>(std::max<std::size_t>(
-            static_cast<std::size_t>(p_wall_in->getObservationCount()),
+            static_cast<std::size_t>(wallGetObservationCount),
             1U)) *
         std::sqrt(std::max(segment_inout.length_m, 0.0));
 

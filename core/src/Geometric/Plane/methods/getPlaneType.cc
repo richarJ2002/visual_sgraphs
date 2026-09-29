@@ -32,10 +32,11 @@ namespace core
 namespace geometric
 {
 
-Plane::PlaneVariant Plane::getPlaneType(void)
+PlaneStatus Plane::getPlaneType(Plane::PlaneVariant &planeType_out)
 {
     unique_lock<mutex> lock(typeMutex);
-    return planeType;
+    planeType_out = planeType;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

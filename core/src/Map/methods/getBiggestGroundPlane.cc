@@ -42,14 +42,32 @@ geometric::Plane *Map::getBiggestGroundPlane()
 
     for (geometric::Plane *p_plane : getAllPlanes())
     {
-        if (p_plane == nullptr || p_plane->isBad() ||
-            p_plane->getPlaneType() != geometric::Plane::PlaneVariant::GROUND)
+        bool planeIsBad{};
+        if (!(p_plane == nullptr) &&
+            p_plane->isBad(planeIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        geometric::Plane::PlaneVariant planeType{};
+        if (!(p_plane == nullptr || planeIsBad) &&
+            p_plane->getPlaneType(planeType) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getPlaneType cannot fail; continue as before.
+        }
+        if (p_plane == nullptr || planeIsBad ||
+            planeType != geometric::Plane::PlaneVariant::GROUND)
         {
             continue;
         }
 
-        const geometric::Plane::GeometrySnapshot geometry =
-            p_plane->getGeometrySnapshot();
+        geometric::Plane::GeometrySnapshot geometry{};
+        if (p_plane->getGeometrySnapshot(geometry) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGeometrySnapshot cannot fail; continue as before.
+        }
         const double normalNorm = geometry.equation_World.head<3>().norm();
         if (!geometry.equation_World.allFinite() ||
             !std::isfinite(normalNorm) || normalNorm < 1e-8)
@@ -64,9 +82,15 @@ geometric::Plane *Map::getBiggestGroundPlane()
             continue;
         }
 
+        int planeGetId{};
+        if (p_plane->getId(planeGetId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         const auto evidence = std::make_tuple(geometry.finiteSupportCount,
                                               geometry.observationCount,
-                                              -p_plane->getId());
+                                              -planeGetId);
         if (!hasBestEvidence || evidence > bestEvidence)
         {
             bestEvidence      = evidence;

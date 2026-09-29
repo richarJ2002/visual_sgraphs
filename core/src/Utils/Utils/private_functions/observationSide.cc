@@ -44,8 +44,13 @@ UtilsStatus getMedianObservationSide_World_m(
         medianObservationSide_World_m_out = {};
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
-    const geometric::Plane::ObservationSideSnapshot snapshot =
-        p_plane_in->getObservationSideSnapshot(planeEquation_World_in);
+    geometric::Plane::ObservationSideSnapshot snapshot{};
+    if (p_plane_in->getObservationSideSnapshot(planeEquation_World_in,
+                                               snapshot) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getObservationSideSnapshot cannot fail; continue as before.
+    }
     medianObservationSide_World_m_out = {
         snapshot.medianSignedDistance_m,
         snapshot.face ==

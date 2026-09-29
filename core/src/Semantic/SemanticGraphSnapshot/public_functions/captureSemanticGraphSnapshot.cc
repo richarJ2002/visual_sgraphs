@@ -218,8 +218,15 @@ SemanticGraphSnapshotStatus
 
         for (geometric::Plane *p_plane : p_map->getAllPlanes())
         {
+            geometric::Plane::PlaneVariant planeType{};
+            if (!(p_plane == nullptr) &&
+                p_plane->getPlaneType(planeType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getPlaneType cannot fail; continue as before.
+            }
             if (p_plane == nullptr ||
-                p_plane->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
+                planeType != geometric::Plane::PlaneVariant::WALL)
             {
                 continue;
             }

@@ -68,14 +68,27 @@ std::vector<std::vector<Eigen::Vector3d>>
 
     geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
 
+    bool groundPlaneIsBad{};
+    if (!(confirmedOpenPassages.empty() || p_groundPlane == nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
     if (confirmedOpenPassages.empty() || p_groundPlane == nullptr ||
-        p_groundPlane->isBad())
+        groundPlaneIsBad)
     {
         return freeSpaceClusters_World_m_in;
     }
 
+    g2o::Plane3D groundPlaneGetGlobalEquation{};
+    if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
     Eigen::Vector4d groundEquation_World =
-        p_groundPlane->getGlobalEquation().coeffs();
+        groundPlaneGetGlobalEquation.coeffs();
     const double groundNormalNorm = groundEquation_World.head<3>().norm();
 
     if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)

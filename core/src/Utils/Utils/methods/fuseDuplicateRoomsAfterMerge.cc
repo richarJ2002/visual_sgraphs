@@ -84,14 +84,32 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
     {
         for (geometric::Plane *p_wall : p_map_inout->getAllPlanes())
         {
-            if (p_wall == nullptr || p_wall->isBad() ||
-                p_wall->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
+            bool wallIsBad{};
+            if (!(p_wall == nullptr) &&
+                p_wall->isBad(wallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            geometric::Plane::PlaneVariant wallPlaneType{};
+            if (!(p_wall == nullptr || wallIsBad) &&
+                p_wall->getPlaneType(wallPlaneType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getPlaneType cannot fail; continue as before.
+            }
+            if (p_wall == nullptr || wallIsBad ||
+                wallPlaneType != geometric::Plane::PlaneVariant::WALL)
             {
                 continue;
             }
 
-            const geometric::Plane::GeometrySnapshot wallGeometry =
-                p_wall->getGeometrySnapshot();
+            geometric::Plane::GeometrySnapshot wallGeometry{};
+            if (p_wall->getGeometrySnapshot(wallGeometry) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGeometrySnapshot cannot fail; continue as before.
+            }
             Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
 
             const double wallNormalNorm = wallEquation_World.head<3>().norm();
@@ -417,7 +435,14 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
 
             for (geometric::Plane *p_importedWall : importedWalls)
             {
-                if (p_importedWall == nullptr || p_importedWall->isBad())
+                bool importedWallIsBad{};
+                if (!(p_importedWall == nullptr) &&
+                    p_importedWall->isBad(importedWallIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_importedWall == nullptr || importedWallIsBad)
                 {
                     continue;
                 }
@@ -432,8 +457,15 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                     continue;
                 }
 
+                g2o::Plane3D importedWallGetGlobalEquation{};
+                if (p_importedWall->getGlobalEquation(
+                        importedWallGetGlobalEquation) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getGlobalEquation cannot fail; continue as before.
+                }
                 Eigen::Vector4d wallEquation_World =
-                    p_importedWall->getGlobalEquation().coeffs();
+                    importedWallGetGlobalEquation.coeffs();
 
                 const double wallNormalNorm =
                     wallEquation_World.head<3>().norm();
@@ -498,9 +530,22 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
 
         for (geometric::Plane *p_plane : p_map_inout->getAllPlanes())
         {
-            if (p_plane != nullptr && !p_plane->isBad() &&
-                p_plane->getPlaneType() ==
-                    geometric::Plane::PlaneVariant::GROUND)
+            bool planeIsBad{};
+            if ((p_plane != nullptr) &&
+                p_plane->isBad(planeIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            geometric::Plane::PlaneVariant planeType{};
+            if ((p_plane != nullptr && !planeIsBad) &&
+                p_plane->getPlaneType(planeType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getPlaneType cannot fail; continue as before.
+            }
+            if (p_plane != nullptr && !planeIsBad &&
+                planeType == geometric::Plane::PlaneVariant::GROUND)
             {
                 p_mergeGroundPlane = p_plane;
                 break;
@@ -510,8 +555,15 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         Eigen::Vector3d mergeGroundNormal_World = Eigen::Vector3d::Zero();
         if (p_mergeGroundPlane != nullptr)
         {
+            g2o::Plane3D mergeGroundPlaneGetGlobalEquation{};
+            if (p_mergeGroundPlane->getGlobalEquation(
+                    mergeGroundPlaneGetGlobalEquation) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
             const Eigen::Vector4d groundEq =
-                p_mergeGroundPlane->getGlobalEquation().coeffs();
+                mergeGroundPlaneGetGlobalEquation.coeffs();
             const double groundNormalNorm = groundEq.head<3>().norm();
             if (groundEq.allFinite() && groundNormalNorm > 1e-8)
             {
@@ -628,13 +680,26 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
 
         for (geometric::Plane *p_importedWall : importedWalls)
         {
-            if (p_importedWall == nullptr || p_importedWall->isBad())
+            bool importedWallIsBad2{};
+            if (!(p_importedWall == nullptr) &&
+                p_importedWall->isBad(importedWallIsBad2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_importedWall == nullptr || importedWallIsBad2)
             {
                 continue;
             }
 
+            Eigen::Vector3d importedWallGetCentroid{};
+            if (p_importedWall->getCentroid(importedWallGetCentroid) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
             const Eigen::Vector3d importedWallCentroid_World_m =
-                p_importedWall->getCentroid().cast<double>();
+                importedWallGetCentroid.cast<double>();
 
             vs_graphs::core::semantic::Passage *p_separatingPassage = nullptr;
 
@@ -760,8 +825,13 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 {
                     // getId cannot fail; continue as before.
                 }
-                std::cout << "[SemanticMerge] Far-side Wall#"
-                          << transfer.p_wall->getId()
+                int getId2{};
+                if (transfer.p_wall->getId(getId2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                std::cout << "[SemanticMerge] Far-side Wall#" << getId2
                           << " at semantic::Passage#" << id
                           << " has no prospective; left unbound." << std::endl;
                 continue;
@@ -782,10 +852,15 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 {
                     // getId cannot fail; continue as before.
                 }
+                int getId3{};
+                if (transfer.p_wall->getId(getId3) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cout << "[SemanticMerge] Redirected far-side Wall#"
-                          << transfer.p_wall->getId()
-                          << " to stable semantic::Room#" << id2 << "."
-                          << std::endl;
+                          << getId3 << " to stable semantic::Room#" << id2
+                          << "." << std::endl;
             }
         }
 

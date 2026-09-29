@@ -46,11 +46,23 @@ void SemanticsManager::enforcePassageSideInvariant(void)
      * time. */
     geometric::Plane *p_groundPlane      = p_atlas->getBiggestGroundPlane();
     Eigen::Vector3d   groundNormal_World = Eigen::Vector3d::Zero();
-    if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+    bool              groundPlaneIsBad{};
+    if ((p_groundPlane != nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        const Eigen::Vector4d groundEq =
-            p_groundPlane->getGlobalEquation().coeffs();
-        const double groundNorm = groundEq.head<3>().norm();
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlane != nullptr && !groundPlaneIsBad)
+    {
+        g2o::Plane3D groundPlaneGetGlobalEquation{};
+        if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        const Eigen::Vector4d groundEq = groundPlaneGetGlobalEquation.coeffs();
+        const double          groundNorm = groundEq.head<3>().norm();
         if (groundEq.allFinite() && groundNorm > 1e-8)
         {
             groundNormal_World = groundEq.head<3>() / groundNorm;
@@ -85,7 +97,14 @@ void SemanticsManager::enforcePassageSideInvariant(void)
         }
         for (geometric::Plane *p_wall : roomWalls)
         {
-            if (p_wall == nullptr || p_wall->isBad())
+            bool wallIsBad{};
+            if (!(p_wall == nullptr) &&
+                p_wall->isBad(wallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_wall == nullptr || wallIsBad)
             {
                 continue;
             }
@@ -151,9 +170,15 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                 const Eigen::Vector3d knownSidePoint_World_m =
                     exemptPassageCentroid +
                     (minimumSideDistance_m * 2.0) * knownSide.direction_World;
+                Eigen::Vector3d wallGetCentroid{};
+                if (p_wall->getCentroid(wallGetCentroid) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
                 if (segmentCrossesPassageOpening(
                         knownSidePoint_World_m,
-                        p_wall->getCentroid().cast<double>(),
+                        wallGetCentroid.cast<double>(),
                         p_exemptPassage,
                         groundNormal_World,
                         static_cast<double>(
@@ -185,7 +210,13 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                 {
                     // getId cannot fail; continue as before.
                 }
-                std::cout << "[SemMgr] Wall#" << p_wall->getId()
+                int wallGetId{};
+                if (p_wall->getId(wallGetId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                std::cout << "[SemMgr] Wall#" << wallGetId
                           << " removed from semantic::Room#" << roomId
                           << ": this face was observed from the opposite side, "
                              "so it bounds the neighbouring room."

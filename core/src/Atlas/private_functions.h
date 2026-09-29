@@ -19,7 +19,6 @@
 #include <iostream>
 #include <set>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -51,13 +50,8 @@ bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
     const auto idOf = [](const Entity *p_entity_in)
     {
         int entityId = -1;
-        if constexpr (std::is_same<Entity, geometric::Plane>::value)
-        {
-            // Plane keeps its value-returning getId until its own conversion.
-            entityId = p_entity_in->getId();
-        }
-        else if (p_entity_in->getId(entityId) !=
-                 decltype(p_entity_in->getId(entityId)){})
+        if (p_entity_in->getId(entityId) !=
+            decltype(p_entity_in->getId(entityId)){})
         {
             // getId cannot fail; continue as before.
         }

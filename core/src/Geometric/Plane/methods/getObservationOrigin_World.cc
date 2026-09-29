@@ -32,10 +32,11 @@ namespace core
 namespace geometric
 {
 
-std::optional<Eigen::Vector3d> Plane::getObservationOrigin_World(void) const
+PlaneStatus Plane::getObservationOrigin_World(std::optional<Eigen::Vector3d> &getObservationOrigin_World_out) const
 {
     unique_lock<mutex> lock(positionMutex);
-    return observationOrigin_World_m;
+    getObservationOrigin_World_out = observationOrigin_World_m;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

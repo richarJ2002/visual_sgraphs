@@ -46,17 +46,35 @@ void Map::addMapPlane(geometric::Plane *p_plane_inout)
     for (auto planeIterator = planeIndex.begin();
          planeIterator != planeIndex.end();)
     {
+        int planeGetId{};
+        if ((planeIterator->second == p_plane_inout) &&
+            p_plane_inout->getId(planeGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
         planeIterator = planeIterator->second == p_plane_inout &&
-                                planeIterator->first != p_plane_inout->getId()
+                                planeIterator->first != planeGetId
                             ? planeIndex.erase(planeIterator)
                             : std::next(planeIterator);
     }
 
-    const auto existingPlaneIterator = planeIndex.find(p_plane_inout->getId());
+    int planeGetId2{};
+    if (p_plane_inout->getId(planeGetId2) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    const auto existingPlaneIterator = planeIndex.find(planeGetId2);
 
-    if (p_plane_inout->getId() < 0 ||
-        (existingPlaneIterator != planeIndex.end() &&
-         existingPlaneIterator->second != p_plane_inout))
+    int planeGetId3{};
+    if (p_plane_inout->getId(planeGetId3) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    if (planeGetId3 < 0 || (existingPlaneIterator != planeIndex.end() &&
+                            existingPlaneIterator->second != p_plane_inout))
     {
         while (planeIndex.count(nextAvailablePlaneId) > 0)
         {
@@ -65,20 +83,41 @@ void Map::addMapPlane(geometric::Plane *p_plane_inout)
 
         const int replacementPlaneId = nextAvailablePlaneId++;
 
-        std::cerr << "[Map] geometric::Plane ID collision for "
-                  << p_plane_inout->getId() << "; reassigned to "
-                  << replacementPlaneId << "." << std::endl;
+        int planeGetId4{};
+        if (p_plane_inout->getId(planeGetId4) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        std::cerr << "[Map] geometric::Plane ID collision for " << planeGetId4
+                  << "; reassigned to " << replacementPlaneId << "."
+                  << std::endl;
 
-        p_plane_inout->setId(replacementPlaneId);
+        if (p_plane_inout->setId(replacementPlaneId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // setId cannot fail; continue as before.
+        }
     }
     else
     {
-        nextAvailablePlaneId =
-            std::max(nextAvailablePlaneId, p_plane_inout->getId() + 1);
+        int planeGetId5{};
+        if (p_plane_inout->getId(planeGetId5) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        nextAvailablePlaneId = std::max(nextAvailablePlaneId, planeGetId5 + 1);
     }
 
     planes.insert(p_plane_inout);
-    planeIndex.insert_or_assign(p_plane_inout->getId(), p_plane_inout);
+    int planeGetId6{};
+    if (p_plane_inout->getId(planeGetId6) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    planeIndex.insert_or_assign(planeGetId6, p_plane_inout);
 }
 
 } // namespace core

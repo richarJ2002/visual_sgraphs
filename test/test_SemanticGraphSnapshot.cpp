@@ -548,7 +548,8 @@ TEST(SemanticGraphSnapshot,
     geometric::Plane badGroundPlane;
     test::makeGroundPlane(badGroundPlane, 8, p_mapA);
     p_mapA->addMapPlane(&badGroundPlane);
-    badGroundPlane.setBad();
+    ASSERT_EQ((badGroundPlane.setBad()),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     Room badGroundOwnerRoom;
     ASSERT_EQ((badGroundOwnerRoom.setId(9)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -676,7 +677,8 @@ TEST(SemanticGraphSnapshot,
                         1.0,
                         Eigen::Vector3d(0.0, 0.0, 1.0));
     p_map->addMapPlane(&wall);
-    wall.setTwinFace(&groundNotWall);
+    ASSERT_EQ((wall.setTwinFace(&groundNotWall)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     /* Case 2: a Room whose getWalls() names the GROUND-typed plane (e.g. a
      * wall-detection contract violation upstream; nothing in Room::setWalls()
@@ -1906,10 +1908,12 @@ TEST(SemanticGraphSnapshot,
                         Eigen::Vector3d(0.0, 2.0, 0.0));
     p_map->addMapPlane(&wall);
 
-    const geometric::Plane::GeometrySnapshot fullSnapshot =
-        wall.getGeometrySnapshot();
-    const geometric::PlaneGeometryMetadataSnapshot metadata =
-        wall.getGeometryMetadataSnapshot();
+    geometric::Plane::GeometrySnapshot fullSnapshot{};
+    ASSERT_EQ((wall.getGeometrySnapshot(fullSnapshot)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    geometric::PlaneGeometryMetadataSnapshot metadata{};
+    ASSERT_EQ((wall.getGeometryMetadataSnapshot(metadata)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     EXPECT_EQ(metadata.equation_World, fullSnapshot.equation_World);
     EXPECT_EQ(metadata.centroid_World_m, fullSnapshot.centroid_World_m);

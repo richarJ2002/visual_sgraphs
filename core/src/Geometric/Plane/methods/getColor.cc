@@ -32,9 +32,10 @@ namespace core
 namespace geometric
 {
 
-std::vector<uint8_t> Plane::getColor() const
+PlaneStatus Plane::getColor(std::vector<uint8_t> &getColor_out) const
 {
-    return color;
+    getColor_out = color;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

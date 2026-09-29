@@ -32,7 +32,8 @@ namespace core
 namespace geometric
 {
 
-Plane::PlaneVariant Plane::getExpectedPlaneType(void)
+PlaneStatus
+    Plane::getExpectedPlaneType(Plane::PlaneVariant &expectedPlaneType_out)
 {
     unique_lock<mutex> lock(typeMutex);
 
@@ -47,7 +48,8 @@ Plane::PlaneVariant Plane::getExpectedPlaneType(void)
             maximumType  = vote.first;
         }
     }
-    return maximumType;
+    expectedPlaneType_out = maximumType;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

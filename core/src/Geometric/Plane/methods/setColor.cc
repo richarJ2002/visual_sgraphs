@@ -32,7 +32,7 @@ namespace core
 namespace geometric
 {
 
-void Plane::setColor(void)
+PlaneStatus Plane::setColor(void)
 {
     if (color.size() == 0)
     {
@@ -40,6 +40,8 @@ void Plane::setColor(void)
         color.push_back(rand() % 256);
         color.push_back(rand() % 256);
     }
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

@@ -70,9 +70,22 @@ UtilsStatus Utils::consolidateProvisionalRooms(
     /* Insert every valid selected wall ID into the set */
     for (vs_graphs::core::geometric::Plane *p_wall : selectedWalls)
     {
-        if (p_wall != nullptr && !p_wall->isBad())
+        bool wallIsBad{};
+        if ((p_wall != nullptr) &&
+            p_wall->isBad(wallIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            selectedWallIds.insert(p_wall->getId());
+            // isBad cannot fail; continue as before.
+        }
+        if (p_wall != nullptr && !wallIsBad)
+        {
+            int wallGetId{};
+            if (p_wall->getId(wallGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            selectedWallIds.insert(wallGetId);
         }
     }
 
@@ -164,7 +177,14 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         for (vs_graphs::core::geometric::Plane *p_candidateWall :
              candidateWalls)
         {
-            if (p_candidateWall != nullptr && !p_candidateWall->isBad())
+            bool candidateWallIsBad{};
+            if ((p_candidateWall != nullptr) &&
+                p_candidateWall->isBad(candidateWallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_candidateWall != nullptr && !candidateWallIsBad)
             {
                 validCandidateWalls.push_back(p_candidateWall);
             }
@@ -181,7 +201,13 @@ UtilsStatus Utils::consolidateProvisionalRooms(
             validCandidateWalls.front();
 
         /* The selected room must already contain the candidate wall */
-        if (selectedWallIds.count(p_candidateWall->getId()) == 0)
+        int candidateWallGetId{};
+        if (p_candidateWall->getId(candidateWallGetId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        if (selectedWallIds.count(candidateWallGetId) == 0)
         {
             continue;
         }
@@ -191,8 +217,14 @@ UtilsStatus Utils::consolidateProvisionalRooms(
          * This identifies a wall-centred orphan SE rather than a free-space
          * cluster which may represent a genuine room on the opposite side.
          */
-        Eigen::Vector4d wallEquation =
-            p_candidateWall->getGlobalEquation().coeffs();
+        g2o::Plane3D candidateWallGetGlobalEquation{};
+        if (p_candidateWall->getGlobalEquation(
+                candidateWallGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        Eigen::Vector4d wallEquation = candidateWallGetGlobalEquation.coeffs();
 
         const double normalNorm = wallEquation.head<3>().norm();
 

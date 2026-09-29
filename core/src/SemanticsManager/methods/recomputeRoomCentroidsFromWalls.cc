@@ -64,13 +64,26 @@ void SemanticsManager::recomputeRoomCentroidsFromWalls(void)
 
         for (vs_graphs::core::geometric::Plane *p_wall : roomWalls)
         {
-            if (p_wall == nullptr || p_wall->isBad())
+            bool wallIsBad{};
+            if (!(p_wall == nullptr) &&
+                p_wall->isBad(wallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_wall == nullptr || wallIsBad)
             {
                 continue;
             }
 
+            Eigen::Vector3d wallGetCentroid{};
+            if (p_wall->getCentroid(wallGetCentroid) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
             const Eigen::Vector3d wallCentroid_World_m =
-                p_wall->getCentroid().cast<double>();
+                wallGetCentroid.cast<double>();
             std::optional<Eigen::Vector3d> inwardNormal_World{};
             if (p_room->getWallNormalTowardRoom_World(p_wall,
                                                       inwardNormal_World) !=

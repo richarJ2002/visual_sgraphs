@@ -119,7 +119,14 @@ std::vector<semantic::RoomContextSnapshot>
         }
         for (geometric::Plane *p_wall : roomWalls)
         {
-            if (p_wall == nullptr || p_wall->isBad())
+            bool wallIsBad{};
+            if (!(p_wall == nullptr) &&
+                p_wall->isBad(wallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_wall == nullptr || wallIsBad)
             {
                 snapshot.wallNormals.push_back(Eigen::Vector3d::Constant(
                     std::numeric_limits<double>::quiet_NaN()));
@@ -142,11 +149,26 @@ std::vector<semantic::RoomContextSnapshot>
             else
                 snapshot.wallNormals.push_back(Eigen::Vector3d::Constant(
                     std::numeric_limits<double>::quiet_NaN()));
-            snapshot.wallCentroids.push_back(p_wall->getCentroid());
-            snapshot.wallDistances.push_back(
-                p_wall->getGlobalEquation().distance());
-            const geometric::Plane::GeometrySnapshot geometry =
-                p_wall->getGeometrySnapshot();
+            Eigen::Vector3d wallGetCentroid{};
+            if (p_wall->getCentroid(wallGetCentroid) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getCentroid cannot fail; continue as before.
+            }
+            snapshot.wallCentroids.push_back(wallGetCentroid);
+            g2o::Plane3D wallGetGlobalEquation{};
+            if (p_wall->getGlobalEquation(wallGetGlobalEquation) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
+            snapshot.wallDistances.push_back(wallGetGlobalEquation.distance());
+            geometric::Plane::GeometrySnapshot geometry{};
+            if (p_wall->getGeometrySnapshot(geometry) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGeometrySnapshot cannot fail; continue as before.
+            }
             snapshot.wallBounds.push_back(
                 {std::isfinite(geometry.minPlaneU_m) &&
                      std::isfinite(geometry.maxPlaneU_m) &&

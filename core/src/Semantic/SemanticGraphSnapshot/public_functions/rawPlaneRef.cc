@@ -47,22 +47,49 @@ SemanticGraphSnapshotStatus rawPlaneRef(geometric::Plane *p_plane_in,
         return SemanticGraphSnapshotStatus::
             SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS;
     }
-    reference.reason    = UnavailableReason::NONE;
-    reference.planeId   = p_plane_in->getId();
-    reference.isLive    = !p_plane_in->isBad();
-    reference.planeType = p_plane_in->getPlaneType();
-    core::Map *p_map    = p_plane_in->getMap();
+    reference.reason = UnavailableReason::NONE;
+    int planeGetId{};
+    if (p_plane_in->getId(planeGetId) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    reference.planeId = planeGetId;
+    bool planeIsBad{};
+    if (p_plane_in->isBad(planeIsBad) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    reference.isLive = !planeIsBad;
+    geometric::Plane::PlaneVariant planeType2{};
+    if (p_plane_in->getPlaneType(planeType2) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getPlaneType cannot fail; continue as before.
+    }
+    reference.planeType = planeType2;
+    core::Map *p_map    = nullptr;
+    if (p_plane_in->getMap(p_map) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     if (p_map != nullptr)
     {
         reference.mapId = p_map->getId();
         if (reference.planeType == geometric::Plane::PlaneVariant::WALL)
         {
             EntityKey key{};
-            if (makeKey(EntityKind::WALL,
-                        p_map->getId(),
-                        p_plane_in->getId(),
-                        key) != SemanticGraphSnapshotStatus::
-                                    SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
+            int       planeGetId2{};
+            if (p_plane_in->getId(planeGetId2) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (makeKey(EntityKind::WALL, p_map->getId(), planeGetId2, key) !=
+                SemanticGraphSnapshotStatus::
+                    SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
             {
                 // makeKey cannot fail; continue as before.
             }

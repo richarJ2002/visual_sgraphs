@@ -110,13 +110,19 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
 
     // Ground plane
     geometric::Plane groundPlane;
-    groundPlane.setId(0);
-    groundPlane.setMap(p_map);
-    groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
-    groundPlane.setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(GROUND_NORMAL_X,
-                                                               GROUND_NORMAL_Y,
-                                                               GROUND_NORMAL_Z,
-                                                               0.0)));
+    ASSERT_EQ((groundPlane.setId(0)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((groundPlane.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND)),
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((groundPlane.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(GROUND_NORMAL_X,
+                                               GROUND_NORMAL_Y,
+                                               GROUND_NORMAL_Z,
+                                               0.0)))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr groundCloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
     for (int gridX = -2; gridX <= 2; ++gridX)
@@ -134,7 +140,8 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
             groundCloud->push_back(gridPoint);
         }
     }
-    groundPlane.setMapClouds(groundCloud);
+    ASSERT_EQ((groundPlane.setMapClouds(groundCloud)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     bool wasPlaneRefit{};
     ASSERT_EQ(
         (GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane, wasPlaneRefit)),

@@ -44,13 +44,26 @@ void SemanticsManager::validateRoomBoundaries(void)
 
     geometric::Plane *p_groundPlane = p_atlas->getBiggestGroundPlane();
 
-    if (p_groundPlane == nullptr || p_groundPlane->isBad())
+    bool groundPlaneIsBad{};
+    if (!(p_groundPlane == nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlane == nullptr || groundPlaneIsBad)
     {
         return;
     }
 
+    g2o::Plane3D groundPlaneGetGlobalEquation{};
+    if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGlobalEquation cannot fail; continue as before.
+    }
     Eigen::Vector4d groundEquation_World =
-        p_groundPlane->getGlobalEquation().coeffs();
+        groundPlaneGetGlobalEquation.coeffs();
     const double groundNormalNorm = groundEquation_World.head<3>().norm();
 
     if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)
@@ -289,10 +302,22 @@ void SemanticsManager::validateRoomBoundaries(void)
                         {
                             // getId cannot fail; continue as before.
                         }
+                        int rejectedWallGetId{};
+                        if (p_rejectedWall->getId(rejectedWallGetId) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        int retainedWallGetId{};
+                        if (p_retainedWall->getId(retainedWallGetId) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
                         std::cout << "[SemMgr] Detached clashing Wall#"
-                                  << p_rejectedWall->getId()
+                                  << rejectedWallGetId
                                   << " from semantic::Room#" << roomId2
-                                  << "; Wall#" << p_retainedWall->getId()
+                                  << "; Wall#" << retainedWallGetId
                                   << " has decisively stronger finite support."
                                   << std::endl;
                     }
@@ -437,10 +462,15 @@ void SemanticsManager::validateRoomBoundaries(void)
                     {
                         // getId cannot fail; continue as before.
                     }
+                    int getId2{};
+                    if (wallSegments[excludeIndex].p_wall->getId(getId2) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
                     std::cout
                         << "[SemMgr] semantic::Room#" << roomId3
-                        << ": excluding Wall#"
-                        << wallSegments[excludeIndex].p_wall->getId()
+                        << ": excluding Wall#" << getId2
                         << " lets the remaining " << reducedWallSegments.size()
                         << " wall(s) close a valid loop; treating it as an "
                            "off-loop outlier."
@@ -566,12 +596,25 @@ void SemanticsManager::validateRoomBoundaries(void)
                 if (p_currentCornerWall != nullptr &&
                     p_nextCornerWall != nullptr)
                 {
+                    Eigen::Vector3d currentCornerWallGetCentroid{};
+                    if (p_currentCornerWall->getCentroid(
+                            currentCornerWallGetCentroid) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getCentroid cannot fail; continue as before.
+                    }
+                    Eigen::Vector3d nextCornerWallGetCentroid{};
+                    if (p_nextCornerWall->getCentroid(
+                            nextCornerWallGetCentroid) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getCentroid cannot fail; continue as before.
+                    }
                     height_m =
-                        0.5 *
-                        (p_currentCornerWall->getCentroid().cast<double>().dot(
-                             groundNormal_World) +
-                         p_nextCornerWall->getCentroid().cast<double>().dot(
-                             groundNormal_World));
+                        0.5 * (currentCornerWallGetCentroid.cast<double>().dot(
+                                   groundNormal_World) +
+                               nextCornerWallGetCentroid.cast<double>().dot(
+                                   groundNormal_World));
                 }
                 boundaryCorners3d_World_m.push_back(
                     boundaryCorners_World_m[cornerIndex].x() *
@@ -672,9 +715,15 @@ void SemanticsManager::validateRoomBoundaries(void)
                     {
                         // getId cannot fail; continue as before.
                     }
+                    int ownedWallGetId{};
+                    if (p_ownedWall->getId(ownedWallGetId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
                     std::cout << "[SemMgr] semantic::Room#" << roomId5
                               << "'s boundary is COMPLETE; detached Wall#"
-                              << p_ownedWall->getId()
+                              << ownedWallGetId
                               << ", which is neither part of the closed wall "
                                  "loop nor explained by any of this room's "
                                  "passages."

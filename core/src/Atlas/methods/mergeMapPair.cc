@@ -309,7 +309,14 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
     for (geometric::Plane *p_plane : importedPlanes)
     {
-        if (p_plane == nullptr || !ownerIsTransferable(p_plane->getMap()))
+        core::Map *p_planeMap = nullptr;
+        if (!(p_plane == nullptr) &&
+            p_plane->getMap(p_planeMap) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getMap cannot fail; continue as before.
+        }
+        if (p_plane == nullptr || !ownerIsTransferable(p_planeMap))
         {
             std::cerr << "[Atlas::MergeMapPair] Aborting merge: source plane "
                          "has inconsistent ownership."
@@ -455,8 +462,16 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 
         for (const auto &[p_plane, assignedId] : planeIdAssignments)
         {
-            p_plane->setId(assignedId);
-            p_plane->setMap(p_currentMap_inout);
+            if (p_plane->setId(assignedId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
+            if (p_plane->setMap(p_currentMap_inout) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
             p_currentMap_inout->addMapPlane(p_plane);
             p_otherMap_inout->eraseRoomWallPlane(p_plane);
             p_otherMap_inout->eraseMapPlane(p_plane);
@@ -782,7 +797,14 @@ void Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             }
             for (geometric::Plane *p_wall : roomWalls)
             {
-                if (p_wall != nullptr && !p_wall->isBad())
+                bool wallIsBad{};
+                if ((p_wall != nullptr) &&
+                    p_wall->isBad(wallIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_wall != nullptr && !wallIsBad)
                 {
                     p_currentMap_inout->addRoomWallPlane(p_wall);
                 }

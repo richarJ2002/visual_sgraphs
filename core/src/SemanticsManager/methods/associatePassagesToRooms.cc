@@ -281,13 +281,26 @@ void SemanticsManager::associatePassagesToRooms(void)
              * faces created before the stamp existed. */
             for (geometric::Plane *p_supportingWall : supportingWalls)
             {
-                if (p_supportingWall == nullptr || p_supportingWall->isBad())
+                bool supportingWallIsBad{};
+                if (!(p_supportingWall == nullptr) &&
+                    p_supportingWall->isBad(supportingWallIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_supportingWall == nullptr || supportingWallIsBad)
                 {
                     continue;
                 }
 
-                const std::optional<Eigen::Vector3d> observationOrigin_World_m =
-                    p_supportingWall->getObservationOrigin_World();
+                std::optional<Eigen::Vector3d> observationOrigin_World_m{};
+                if (p_supportingWall->getObservationOrigin_World(
+                        observationOrigin_World_m) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getObservationOrigin_World cannot fail; continue as
+                    // before.
+                }
 
                 std::optional<double> observedSide_m;
 
@@ -300,10 +313,15 @@ void SemanticsManager::associatePassagesToRooms(void)
                 }
                 else
                 {
-                    const geometric::Plane::ObservationSideSnapshot
-                        sideSnapshot =
-                            p_supportingWall->getObservationSideSnapshot(
-                                passageEquation_World);
+                    geometric::Plane::ObservationSideSnapshot sideSnapshot{};
+                    if (p_supportingWall->getObservationSideSnapshot(
+                            passageEquation_World,
+                            sideSnapshot) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getObservationSideSnapshot cannot fail; continue as
+                        // before.
+                    }
                     observedSide_m = sideSnapshot.medianSignedDistance_m;
                 }
 
@@ -380,7 +398,14 @@ void SemanticsManager::associatePassagesToRooms(void)
                 roomWalls.end(),
                 [&](vs_graphs::core::geometric::Plane *p_roomWall)
                 {
-                    if (p_roomWall == nullptr || p_roomWall->isBad())
+                    bool roomWallIsBad{};
+                    if (!(p_roomWall == nullptr) &&
+                        p_roomWall->isBad(roomWallIsBad) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
+                    if (p_roomWall == nullptr || roomWallIsBad)
                     {
                         return false;
                     }
@@ -392,8 +417,12 @@ void SemanticsManager::associatePassagesToRooms(void)
                         return true;
                     }
 
-                    const geometric::Plane::GeometrySnapshot roomWallGeometry =
-                        p_roomWall->getGeometrySnapshot();
+                    geometric::Plane::GeometrySnapshot roomWallGeometry{};
+                    if (p_roomWall->getGeometrySnapshot(roomWallGeometry) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getGeometrySnapshot cannot fail; continue as before.
+                    }
                     Eigen::Vector4d roomWallEquation =
                         roomWallGeometry.equation_World;
 
@@ -504,7 +533,14 @@ void SemanticsManager::associatePassagesToRooms(void)
                 std::size_t           validWallCount                      = 0U;
                 for (geometric::Plane *p_roomWall : roomWalls)
                 {
-                    if (p_roomWall != nullptr && !p_roomWall->isBad())
+                    bool roomWallIsBad{};
+                    if ((p_roomWall != nullptr) &&
+                        p_roomWall->isBad(roomWallIsBad) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
+                    if (p_roomWall != nullptr && !roomWallIsBad)
                     {
                         ++validWallCount;
                     }
@@ -1486,13 +1522,29 @@ void SemanticsManager::associatePassagesToRooms(void)
                     geometric::Plane *p_anteChurnGroundPlane =
                         p_atlas->getBiggestGroundPlane();
 
+                    bool anteChurnGroundPlaneIsBad{};
+                    if ((p_knownRoom != nullptr &&
+                         p_anteChurnGroundPlane != nullptr) &&
+                        p_anteChurnGroundPlane->isBad(
+                            anteChurnGroundPlaneIsBad) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
                     if (p_knownRoom != nullptr &&
                         p_anteChurnGroundPlane != nullptr &&
-                        !p_anteChurnGroundPlane->isBad())
+                        !anteChurnGroundPlaneIsBad)
                     {
+                        g2o::Plane3D anteChurnGroundPlaneGetGlobalEquation{};
+                        if (p_anteChurnGroundPlane->getGlobalEquation(
+                                anteChurnGroundPlaneGetGlobalEquation) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getGlobalEquation cannot fail; continue as
+                            // before.
+                        }
                         const Eigen::Vector4d anteChurnGroundEq =
-                            p_anteChurnGroundPlane->getGlobalEquation()
-                                .coeffs();
+                            anteChurnGroundPlaneGetGlobalEquation.coeffs();
                         const double anteChurnGroundNorm =
                             anteChurnGroundEq.head<3>().norm();
 
@@ -2226,10 +2278,24 @@ void SemanticsManager::associatePassagesToRooms(void)
                 geometric::Plane *p_groundPlane =
                     p_atlas->getBiggestGroundPlane();
 
-                if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+                bool groundPlaneIsBad{};
+                if ((p_groundPlane != nullptr) &&
+                    p_groundPlane->isBad(groundPlaneIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_groundPlane != nullptr && !groundPlaneIsBad)
+                {
+                    g2o::Plane3D groundPlaneGetGlobalEquation{};
+                    if (p_groundPlane->getGlobalEquation(
+                            groundPlaneGetGlobalEquation) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getGlobalEquation cannot fail; continue as before.
+                    }
                     const Eigen::Vector4d groundEquation_World =
-                        p_groundPlane->getGlobalEquation().coeffs();
+                        groundPlaneGetGlobalEquation.coeffs();
                     const double groundNormalNorm =
                         groundEquation_World.head<3>().norm();
 

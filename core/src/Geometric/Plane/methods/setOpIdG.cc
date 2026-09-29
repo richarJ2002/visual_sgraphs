@@ -32,9 +32,11 @@ namespace core
 namespace geometric
 {
 
-void Plane::setOpIdG(int opIdG_in)
+PlaneStatus Plane::setOpIdG(int opIdG_in)
 {
     opIdG = opIdG_in;
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

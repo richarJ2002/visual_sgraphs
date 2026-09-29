@@ -67,8 +67,22 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 
         for (geometric::Plane *p_candidatePlane : mappedPlanes)
         {
-            if (p_candidatePlane == nullptr || p_candidatePlane->isBad() ||
-                p_candidatePlane->getPlaneType() ==
+            bool candidatePlaneIsBad{};
+            if (!(p_candidatePlane == nullptr) &&
+                p_candidatePlane->isBad(candidatePlaneIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            geometric::Plane::PlaneVariant candidatePlanePlaneType{};
+            if (!(p_candidatePlane == nullptr || candidatePlaneIsBad) &&
+                p_candidatePlane->getPlaneType(candidatePlanePlaneType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getPlaneType cannot fail; continue as before.
+            }
+            if (p_candidatePlane == nullptr || candidatePlaneIsBad ||
+                candidatePlanePlaneType ==
                     geometric::Plane::PlaneVariant::UNDEFINED)
             {
                 continue;
@@ -79,10 +93,33 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 
             for (geometric::Plane *p_otherPlane : mappedPlanes)
             {
+                bool otherPlaneIsBad{};
+                if (!(p_otherPlane == nullptr ||
+                      p_otherPlane == p_candidatePlane) &&
+                    p_otherPlane->isBad(otherPlaneIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                geometric::Plane::PlaneVariant otherPlanePlaneType{};
+                if (!(p_otherPlane == nullptr ||
+                      p_otherPlane == p_candidatePlane || otherPlaneIsBad) &&
+                    p_otherPlane->getPlaneType(otherPlanePlaneType) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getPlaneType cannot fail; continue as before.
+                }
+                geometric::Plane::PlaneVariant candidatePlanePlaneType2{};
+                if (!(p_otherPlane == nullptr ||
+                      p_otherPlane == p_candidatePlane || otherPlaneIsBad) &&
+                    p_candidatePlane->getPlaneType(candidatePlanePlaneType2) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getPlaneType cannot fail; continue as before.
+                }
                 if (p_otherPlane == nullptr ||
-                    p_otherPlane == p_candidatePlane || p_otherPlane->isBad() ||
-                    p_otherPlane->getPlaneType() !=
-                        p_candidatePlane->getPlaneType())
+                    p_otherPlane == p_candidatePlane || otherPlaneIsBad ||
+                    otherPlanePlaneType != candidatePlanePlaneType2)
                 {
                     continue;
                 }
@@ -93,13 +130,28 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                  * below the association threshold, but they bound different
                  * rooms and require independent ownership.
                  */
-                if (p_candidatePlane->getPlaneType() ==
+                geometric::Plane::PlaneVariant candidatePlanePlaneType3{};
+                if (p_candidatePlane->getPlaneType(candidatePlanePlaneType3) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getPlaneType cannot fail; continue as before.
+                }
+                if (candidatePlanePlaneType3 ==
                     geometric::Plane::PlaneVariant::WALL)
                 {
-                    const geometric::Plane::GeometrySnapshot candidateGeometry =
-                        p_candidatePlane->getGeometrySnapshot();
-                    const geometric::Plane::GeometrySnapshot otherGeometry =
-                        p_otherPlane->getGeometrySnapshot();
+                    geometric::Plane::GeometrySnapshot candidateGeometry{};
+                    if (p_candidatePlane->getGeometrySnapshot(
+                            candidateGeometry) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getGeometrySnapshot cannot fail; continue as before.
+                    }
+                    geometric::Plane::GeometrySnapshot otherGeometry{};
+                    if (p_otherPlane->getGeometrySnapshot(otherGeometry) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getGeometrySnapshot cannot fail; continue as before.
+                    }
                     Eigen::Vector4d candidateEquation_World =
                         candidateGeometry.equation_World;
                     Eigen::Vector4d otherEquation_World =
@@ -176,8 +228,14 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 continue;
             }
 
+            geometric::Plane::PlaneVariant candidatePlanePlaneType4{};
+            if (p_candidatePlane->getPlaneType(candidatePlanePlaneType4) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getPlaneType cannot fail; continue as before.
+            }
             const bool useWallExtensionDistance =
-                p_candidatePlane->getPlaneType() ==
+                candidatePlanePlaneType4 ==
                     geometric::Plane::PlaneVariant::WALL &&
                 p_systemParams->semSeg.reassociate.wallExtension.enabled;
 
@@ -187,16 +245,26 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                           .maximumInPlaneGap_m
                     : -1.0F;
 
-            const geometric::Plane::GeometrySnapshot
-                candidateAssociationGeometry =
-                    p_candidatePlane->getGeometrySnapshot();
-            int matchedPlaneId{};
+            geometric::Plane::GeometrySnapshot candidateAssociationGeometry{};
+            if (p_candidatePlane->getGeometrySnapshot(
+                    candidateAssociationGeometry) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGeometrySnapshot cannot fail; continue as before.
+            }
+            int                            matchedPlaneId{};
+            geometric::Plane::PlaneVariant candidatePlanePlaneType5{};
+            if (p_candidatePlane->getPlaneType(candidatePlanePlaneType5) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getPlaneType cannot fail; continue as before.
+            }
             if (associatePlanes(
                     compatiblePlanes,
                     g2o::Plane3D(candidateAssociationGeometry.equation_World),
                     candidateAssociationGeometry.supportCloud,
                     Eigen::Matrix4d::Identity(),
-                    p_candidatePlane->getPlaneType(),
+                    candidatePlanePlaneType5,
                     p_systemParams->semSeg.reassociate.associationThresh,
                     matchedPlaneId,
                     maximumFiniteCloudDistance_m) !=
@@ -210,13 +278,20 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 continue;
             }
 
-            const auto matchedPlaneIterator =
-                std::find_if(compatiblePlanes.begin(),
-                             compatiblePlanes.end(),
-                             [matchedPlaneId](const geometric::Plane *p_plane) {
-                                 return p_plane != nullptr &&
-                                        p_plane->getId() == matchedPlaneId;
-                             });
+            const auto matchedPlaneIterator = std::find_if(
+                compatiblePlanes.begin(),
+                compatiblePlanes.end(),
+                [matchedPlaneId](const geometric::Plane *p_plane)
+                {
+                    int planeGetId{};
+                    if ((p_plane != nullptr) &&
+                        p_plane->getId(planeGetId) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    return p_plane != nullptr && planeGetId == matchedPlaneId;
+                });
 
             if (matchedPlaneIterator == compatiblePlanes.end())
             {
@@ -225,23 +300,57 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
 
             geometric::Plane *p_matchedPlane = *matchedPlaneIterator;
 
-            const geometric::Plane::GeometrySnapshot candidateGeometry =
-                p_candidatePlane->getGeometrySnapshot();
-            const geometric::Plane::GeometrySnapshot matchedGeometry =
-                p_matchedPlane->getGeometrySnapshot();
+            geometric::Plane::GeometrySnapshot candidateGeometry{};
+            if (p_candidatePlane->getGeometrySnapshot(candidateGeometry) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGeometrySnapshot cannot fail; continue as before.
+            }
+            geometric::Plane::GeometrySnapshot matchedGeometry{};
+            if (p_matchedPlane->getGeometrySnapshot(matchedGeometry) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGeometrySnapshot cannot fail; continue as before.
+            }
+            std::size_t candidatePlaneGetObservationCount{};
+            if (p_candidatePlane->getObservationCount(
+                    candidatePlaneGetObservationCount) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getObservationCount cannot fail; continue as before.
+            }
+            int candidatePlaneGetId{};
+            if (p_candidatePlane->getId(candidatePlaneGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             const auto candidateEvidence =
-                std::make_tuple(p_candidatePlane->getObservationCount(),
+                std::make_tuple(candidatePlaneGetObservationCount,
                                 candidateGeometry.supportCloud != nullptr
                                     ? candidateGeometry.supportCloud->size()
                                     : 0U,
-                                -p_candidatePlane->getId());
+                                -candidatePlaneGetId);
 
+            std::size_t matchedPlaneGetObservationCount{};
+            if (p_matchedPlane->getObservationCount(
+                    matchedPlaneGetObservationCount) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getObservationCount cannot fail; continue as before.
+            }
+            int matchedPlaneGetId{};
+            if (p_matchedPlane->getId(matchedPlaneGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             const auto matchedEvidence =
-                std::make_tuple(p_matchedPlane->getObservationCount(),
+                std::make_tuple(matchedPlaneGetObservationCount,
                                 matchedGeometry.supportCloud != nullptr
                                     ? matchedGeometry.supportCloud->size()
                                     : 0U,
-                                -p_matchedPlane->getId());
+                                -matchedPlaneGetId);
 
             geometric::Plane *p_retainedPlane =
                 candidateEvidence >= matchedEvidence ? p_candidatePlane
@@ -251,26 +360,49 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 p_retainedPlane == p_candidatePlane ? p_matchedPlane
                                                     : p_candidatePlane;
 
-            const geometric::Plane::GeometrySnapshot retiredGeometry =
-                p_retiredPlane->getGeometrySnapshot();
+            geometric::Plane::GeometrySnapshot retiredGeometry{};
+            if (p_retiredPlane->getGeometrySnapshot(retiredGeometry) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGeometrySnapshot cannot fail; continue as before.
+            }
             pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_retiredCloudCopy(
                 new pcl::PointCloud<pcl::PointXYZRGBA>);
             if (retiredGeometry.supportCloud != nullptr)
             {
                 *p_retiredCloudCopy = *retiredGeometry.supportCloud;
-                p_retainedPlane->setMapClouds(p_retiredCloudCopy);
-            }
-
-            for (MapPoint *p_mapPoint : p_retiredPlane->getMapPoints())
-            {
-                if (p_mapPoint != nullptr && !p_mapPoint->isBad())
+                if (p_retainedPlane->setMapClouds(p_retiredCloudCopy) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    p_retainedPlane->setMapPoints(p_mapPoint);
+                    // setMapClouds cannot fail; continue as before.
                 }
             }
 
-            const std::map<KeyFrame *, geometric::Plane::Observation>
-                retiredObservations = p_retiredPlane->getObservations();
+            std::set<core::MapPoint *> retiredPlaneMapPoints{};
+            if (p_retiredPlane->getMapPoints(retiredPlaneMapPoints) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getMapPoints cannot fail; continue as before.
+            }
+            for (MapPoint *p_mapPoint : retiredPlaneMapPoints)
+            {
+                if (p_mapPoint != nullptr && !p_mapPoint->isBad())
+                {
+                    if (p_retainedPlane->setMapPoints(p_mapPoint) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // setMapPoints cannot fail; continue as before.
+                    }
+                }
+            }
+
+            std::map<KeyFrame *, geometric::Plane::Observation>
+                retiredObservations{};
+            if (p_retiredPlane->getObservations(retiredObservations) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getObservations cannot fail; continue as before.
+            }
 
             for (const auto &[p_keyFrame, observation] : retiredObservations)
             {
@@ -279,7 +411,12 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                     continue;
                 }
 
-                p_retainedPlane->mergeObservation(p_keyFrame, observation);
+                if (p_retainedPlane->mergeObservation(p_keyFrame,
+                                                      observation) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // mergeObservation cannot fail; continue as before.
+                }
             }
 
             bool wasPlaneRefit{};
@@ -289,8 +426,12 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             {
                 // refitMappedPlaneFromCloud cannot fail; continue as before.
             }
-            const geometric::Plane::PlaneVariant retainedPlaneType =
-                p_retainedPlane->getPlaneType();
+            geometric::Plane::PlaneVariant retainedPlaneType{};
+            if (p_retainedPlane->getPlaneType(retainedPlaneType) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getPlaneType cannot fail; continue as before.
+            }
 
             for (semantic::Room *p_room : p_atlas_in->getAllRooms())
             {
@@ -370,18 +511,38 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
              * then remove the retired hypothesis from the map container and
              * ID index so later merge passes cannot rediscover stale state.
              */
-            p_retiredPlane->setBad();
+            if (p_retiredPlane->setBad() !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setBad cannot fail; continue as before.
+            }
 
             if (p_currentMap != nullptr)
             {
                 p_currentMap->eraseMapPlane(p_retiredPlane);
             }
 
-            p_retiredPlane->setMap(nullptr);
+            if (p_retiredPlane->setMap(nullptr) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
 
+            int retiredPlaneGetId{};
+            if (p_retiredPlane->getId(retiredPlaneGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int retainedPlaneGetId{};
+            if (p_retainedPlane->getId(retainedPlaneGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cout << "[SemanticMerge] Fused geometric::Plane#"
-                      << p_retiredPlane->getId() << " into geometric::Plane#"
-                      << p_retainedPlane->getId() << '.' << std::endl;
+                      << retiredPlaneGetId << " into geometric::Plane#"
+                      << retainedPlaneGetId << '.' << std::endl;
 
             mergedPlaneInPass = true;
             break;

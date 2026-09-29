@@ -180,12 +180,24 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
 
     for (geometric::Plane *p_plane : p_map_inout->getAllPlanes())
     {
-        if (p_plane == nullptr || p_plane->isBad())
+        bool planeIsBad{};
+        if (!(p_plane == nullptr) &&
+            p_plane->isBad(planeIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_plane == nullptr || planeIsBad)
         {
             continue;
         }
 
-        const Eigen::Vector3d planeCentroid_OldWorld_m = p_plane->getCentroid();
+        Eigen::Vector3d planeCentroid_OldWorld_m{};
+        if (p_plane->getCentroid(planeCentroid_OldWorld_m) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getCentroid cannot fail; continue as before.
+        }
 
         planeCentroids_OldWorld_m.insert_or_assign(p_plane,
                                                    planeCentroid_OldWorld_m);
@@ -198,8 +210,15 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             double nearestObserverSquaredDistance_m2 =
                 std::numeric_limits<double>::infinity();
 
+            std::map<core::KeyFrame *, geometric::Plane::Observation>
+                planeGetObservations{};
+            if (p_plane->getObservations(planeGetObservations) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getObservations cannot fail; continue as before.
+            }
             for (const auto &[p_observingKeyFrame, observation] :
-                 p_plane->getObservations())
+                 planeGetObservations)
             {
                 (void)observation;
 
@@ -229,7 +248,11 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                 ? p_selectedNode->correction_oldWorldToNewWorld
                 : selectCorrectionForPoint(planeCentroid_OldWorld_m);
 
-        p_plane->applyTransform(correction_oldWorldToNewWorld);
+        if (p_plane->applyTransform(correction_oldWorldToNewWorld) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // applyTransform cannot fail; continue as before.
+        }
         planeCorrections_oldWorldToNewWorld.insert_or_assign(
             p_plane,
             correction_oldWorldToNewWorld);

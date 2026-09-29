@@ -32,7 +32,7 @@ namespace core
 namespace geometric
 {
 
-pcl::PointCloud<pcl::PointXYZRGBA>::Ptr Plane::getMapClouds(void)
+PlaneStatus Plane::getMapClouds(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &mapClouds_out)
 {
     /*!
      * Publishers retain this result after the lock is released, so return a
@@ -47,7 +47,8 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr Plane::getMapClouds(void)
         *p_planeCloudCopy = *planeCloud;
     }
 
-    return p_planeCloudCopy;
+    mapClouds_out = p_planeCloudCopy;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

@@ -378,13 +378,30 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                 {
                     if (!plane)
                         continue;
-                    if (plane->getPlaneType() !=
-                        geometric::Plane::PlaneVariant::UNDEFINED)
+                    geometric::Plane::PlaneVariant planeType{};
+                    if (plane->getPlaneType(planeType) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        if (planeCheck.find(plane->getId()) == planeCheck.end())
+                        // getPlaneType cannot fail; continue as before.
+                    }
+                    if (planeType != geometric::Plane::PlaneVariant::UNDEFINED)
+                    {
+                        int planeGetId{};
+                        if (plane->getId(planeGetId) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // getId cannot fail; continue as before.
+                        }
+                        if (planeCheck.find(planeGetId) == planeCheck.end())
                         {
                             planes.push_back(plane);
-                            planeCheck[plane->getId()] = true;
+                            int planeGetId2{};
+                            if (plane->getId(planeGetId2) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                            {
+                                // getId cannot fail; continue as before.
+                            }
+                            planeCheck[planeGetId2] = true;
                         }
                     }
                 }
@@ -396,12 +413,25 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
             Eigen::Vector3d   cameraCenter = framePose.inverse().translation();
             for (const auto &candidatePlane : planes)
             {
-                if (candidatePlane->getPlaneType() ==
+                geometric::Plane::PlaneVariant candidatePlanePlaneType{};
+                if (candidatePlane->getPlaneType(candidatePlanePlaneType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getPlaneType cannot fail; continue as before.
+                }
+                if (candidatePlanePlaneType ==
                     geometric::Plane::PlaneVariant::UNDEFINED)
                     continue;
 
+                g2o::Plane3D candidatePlaneGetGlobalEquation{};
+                if (candidatePlane->getGlobalEquation(
+                        candidatePlaneGetGlobalEquation) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getGlobalEquation cannot fail; continue as before.
+                }
                 Eigen::Vector4d planeEq =
-                    candidatePlane->getGlobalEquation().coeffs();
+                    candidatePlaneGetGlobalEquation.coeffs();
 
                 // if the camera center is behind the plane, skip the plane
                 if (planeEq.head<3>().dot(cameraCenter) + planeEq(3) < 0)
@@ -438,7 +468,16 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                         }
 
                         // check if the map point is in the plane cloud
-                        if (candidatePlane->isPointinPlaneCloud(intersect))
+                        bool candidatePlaneIsPointinPlaneCloud{};
+                        if (candidatePlane->isPointinPlaneCloud(
+                                intersect,
+                                candidatePlaneIsPointinPlaneCloud) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // isPointinPlaneCloud cannot fail; continue as
+                            // before.
+                        }
+                        if (candidatePlaneIsPointinPlaneCloud)
                         {
                             p_frame_inout->mapPoints[j]->setBadFlag();
                             p_frame_inout->mapPoints[j] =

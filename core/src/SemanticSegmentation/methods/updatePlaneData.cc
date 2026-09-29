@@ -339,9 +339,13 @@ void SemanticSegmentation::updatePlaneData(
                     }
 
                     /* Update the semantic votes of the new plane */
-                    updatePlaneSemantics(p_newMapPlane->getId(),
-                                         clsId,
-                                         confidence);
+                    int newMapPlaneGetId{};
+                    if (p_newMapPlane->getId(newMapPlaneGetId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    updatePlaneSemantics(newMapPlaneGetId, clsId, confidence);
                 }
             }
             else
@@ -378,10 +382,21 @@ void SemanticSegmentation::updatePlaneData(
                     vs_graphs::core::geometric::Plane *p_matchedPlane =
                         p_atlas->getPlaneById(matchedPlaneId);
 
-                    if (p_matchedPlane != nullptr && !p_matchedPlane->isBad() &&
+                    bool matchedPlaneIsBad{};
+                    if ((p_matchedPlane != nullptr) &&
+                        p_matchedPlane->isBad(matchedPlaneIsBad) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // isBad cannot fail; continue as before.
+                    }
+                    if (p_matchedPlane != nullptr && !matchedPlaneIsBad &&
                         !p_planeCloud->empty())
                     {
-                        p_matchedPlane->setMapClouds(p_planeCloud);
+                        if (p_matchedPlane->setMapClouds(p_planeCloud) !=
+                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            // setMapClouds cannot fail; continue as before.
+                        }
 
                         bool wasPlaneRefit{};
                         if (GeoSemHelpers::refitMappedPlaneFromCloud(

@@ -105,11 +105,24 @@ void SemanticsManager::associateAllWallsToRooms(void)
     geometric::Plane *p_groundPlaneForEvidence =
         p_atlas->getBiggestGroundPlane();
     Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
-    if (p_groundPlaneForEvidence != nullptr &&
-        !p_groundPlaneForEvidence->isBad())
+    bool            groundPlaneForEvidenceIsBad{};
+    if ((p_groundPlaneForEvidence != nullptr) &&
+        p_groundPlaneForEvidence->isBad(groundPlaneForEvidenceIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlaneForEvidence != nullptr && !groundPlaneForEvidenceIsBad)
+    {
+        g2o::Plane3D groundPlaneForEvidenceGetGlobalEquation{};
+        if (p_groundPlaneForEvidence->getGlobalEquation(
+                groundPlaneForEvidenceGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
         const Eigen::Vector4d groundEquation =
-            p_groundPlaneForEvidence->getGlobalEquation().coeffs();
+            groundPlaneForEvidenceGetGlobalEquation.coeffs();
         const double groundEquationNormalNorm = groundEquation.head<3>().norm();
         if (groundEquation.allFinite() && groundEquationNormalNorm > 1e-8)
         {
@@ -143,8 +156,22 @@ void SemanticsManager::associateAllWallsToRooms(void)
             roomWalls.end(),
             [p_wall](vs_graphs::core::geometric::Plane *p_existingWall)
             {
+                int existingWallGetId{};
+                if ((p_existingWall != nullptr) &&
+                    p_existingWall->getId(existingWallGetId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                int wallGetId{};
+                if ((p_existingWall != nullptr) &&
+                    p_wall->getId(wallGetId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 return p_existingWall != nullptr &&
-                       p_existingWall->getId() == p_wall->getId();
+                       existingWallGetId == wallGetId;
             });
     };
 
@@ -152,7 +179,14 @@ void SemanticsManager::associateAllWallsToRooms(void)
     for (vs_graphs::core::geometric::Plane *p_wall : allPlanes)
     {
         /* Skip invalid planes */
-        if (p_wall == nullptr || p_wall->isBad())
+        bool wallIsBad{};
+        if (!(p_wall == nullptr) &&
+            p_wall->isBad(wallIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_wall == nullptr || wallIsBad)
         {
             continue;
         }
@@ -164,27 +198,62 @@ void SemanticsManager::associateAllWallsToRooms(void)
                                           groundNormalForEvidence_World);
         if (!admissionEvidence.isAdmissible)
         {
+            geometric::Plane::PlaneVariant wallPlaneType{};
+            if (p_wall->getPlaneType(wallPlaneType) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getPlaneType cannot fail; continue as before.
+            }
+            geometric::Plane::PlaneVariant wallExpectedPlaneType{};
+            if (!(wallPlaneType != geometric::Plane::PlaneVariant::WALL) &&
+                p_wall->getExpectedPlaneType(wallExpectedPlaneType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getExpectedPlaneType cannot fail; continue as before.
+            }
             const std::string reason =
-                p_wall->getPlaneType() !=
-                            geometric::Plane::PlaneVariant::WALL ||
-                        p_wall->getExpectedPlaneType() !=
+                wallPlaneType != geometric::Plane::PlaneVariant::WALL ||
+                        wallExpectedPlaneType !=
                             geometric::Plane::PlaneVariant::WALL
                     ? "CLASS_NOT_WALL"
                 : !admissionEvidence.hasAdequateFiniteFit
                     ? "INADEQUATE_FINITE_FIT"
                     : "INSUFFICIENT_OBSERVATIONS";
-            if (loggedWallRejectionReasons[p_wall->getId()] != reason)
+            int wallGetId{};
+            if (p_wall->getId(wallGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                loggedWallRejectionReasons[p_wall->getId()] = reason;
+                // getId cannot fail; continue as before.
+            }
+            if (loggedWallRejectionReasons[wallGetId] != reason)
+            {
+                int wallGetId2{};
+                if (p_wall->getId(wallGetId2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                loggedWallRejectionReasons[wallGetId2] = reason;
+                int wallGetId3{};
+                if (p_wall->getId(wallGetId3) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                geometric::Plane::PlaneVariant wallPlaneType2{};
+                if (p_wall->getPlaneType(wallPlaneType2) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getPlaneType cannot fail; continue as before.
+                }
                 std::cout << "SG_PIPELINE {\"event\":\"wall_rejection\","
                              "\"map_id\":"
                           << (p_activeMap != nullptr
                                   ? static_cast<long long>(p_activeMap->getId())
                                   : -1)
                           << ",\"semantic_cycle\":" << pipelineSemanticCycle
-                          << ",\"wall_id\":" << p_wall->getId()
-                          << ",\"class\":\""
-                          << planeClassName(p_wall->getPlaneType())
+                          << ",\"wall_id\":" << wallGetId3 << ",\"class\":\""
+                          << planeClassName(wallPlaneType2)
                           << "\",\"lifecycle\":\"REJECTED\","
                              "\"owner\":\"NONE\",\"reason\":\""
                           << reason << "\",\"support\":"
@@ -195,7 +264,13 @@ void SemanticsManager::associateAllWallsToRooms(void)
             }
             continue;
         }
-        loggedWallRejectionReasons.erase(p_wall->getId());
+        int wallGetId4{};
+        if (p_wall->getId(wallGetId4) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        loggedWallRejectionReasons.erase(wallGetId4);
 
         /* Init flag which confirms whether the wall already has a parent */
         bool wallHasRoom = false;
@@ -252,15 +327,39 @@ void SemanticsManager::associateAllWallsToRooms(void)
 
         if (admitted && p_selectedOwner != nullptr)
         {
-            if (p_atlas->getRoomWallPlaneById(p_wall->getId()) == nullptr)
+            int wallGetId5{};
+            if (p_wall->getId(wallGetId5) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (p_atlas->getRoomWallPlaneById(wallGetId5) == nullptr)
             {
                 p_atlas->addRoomWallPlane(p_wall);
             }
-            undefendedWalls.erase(p_wall->getId());
-            loggedOrphanWallIds.erase(p_wall->getId());
+            int wallGetId6{};
+            if (p_wall->getId(wallGetId6) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            undefendedWalls.erase(wallGetId6);
+            int wallGetId7{};
+            if (p_wall->getId(wallGetId7) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            loggedOrphanWallIds.erase(wallGetId7);
             int selectedOwnerId{};
             if (p_selectedOwner->getId(selectedOwnerId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int wallGetId8{};
+            if (p_wall->getId(wallGetId8) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
                 // getId cannot fail; continue as before.
             }
@@ -268,7 +367,7 @@ void SemanticsManager::associateAllWallsToRooms(void)
                          "\"map_id\":"
                       << p_activeMap->getId()
                       << ",\"semantic_cycle\":" << pipelineSemanticCycle
-                      << ",\"wall_id\":" << p_wall->getId()
+                      << ",\"wall_id\":" << wallGetId8
                       << ",\"class\":\"WALL\","
                          "\"lifecycle\":\"COMMITTED\",\"owner_room_id\":"
                       << selectedOwnerId << ",\"reason\":\""
@@ -289,20 +388,38 @@ void SemanticsManager::associateAllWallsToRooms(void)
          */
 
         /* Register the uniquely owned wall in the room-wall collection. */
-        if (p_atlas->getRoomWallPlaneById(p_wall->getId()) == nullptr)
+        int wallGetId9{};
+        if (p_wall->getId(wallGetId9) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getId cannot fail; continue as before.
+        }
+        if (p_atlas->getRoomWallPlaneById(wallGetId9) == nullptr)
         {
             p_atlas->addRoomWallPlane(p_wall);
         }
 
-        if (loggedOrphanWallIds.insert(p_wall->getId()).second)
+        int wallGetId10{};
+        if (p_wall->getId(wallGetId10) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
+            // getId cannot fail; continue as before.
+        }
+        if (loggedOrphanWallIds.insert(wallGetId10).second)
+        {
+            int wallGetId11{};
+            if (p_wall->getId(wallGetId11) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
             std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                          "\"map_id\":"
                       << (p_activeMap != nullptr
                               ? static_cast<long long>(p_activeMap->getId())
                               : -1)
                       << ",\"semantic_cycle\":" << pipelineSemanticCycle
-                      << ",\"wall_id\":" << p_wall->getId()
+                      << ",\"wall_id\":" << wallGetId11
                       << ",\"class\":\"WALL\","
                          "\"lifecycle\":\"PENDING\",\"owner\":\"PENDING\","
                          "\"reason\":\""

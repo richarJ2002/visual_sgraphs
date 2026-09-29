@@ -89,7 +89,14 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
         {
             // getGroundPlane cannot fail; continue as before.
         }
-        if (p_roomGroundPlane == nullptr || p_roomGroundPlane->isBad() ||
+        bool roomGroundPlaneIsBad{};
+        if (!(p_roomGroundPlane == nullptr) &&
+            p_roomGroundPlane->isBad(roomGroundPlaneIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_roomGroundPlane == nullptr || roomGroundPlaneIsBad ||
             p_roomGroundPlane == p_canonicalGroundPlane)
         {
             /* Nothing to reconcile: no ground plane yet, or already the
@@ -97,8 +104,12 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
             continue;
         }
 
-        const geometric::Plane::GeometrySnapshot roomGroundGeometry =
-            p_roomGroundPlane->getGeometrySnapshot();
+        geometric::Plane::GeometrySnapshot roomGroundGeometry{};
+        if (p_roomGroundPlane->getGeometrySnapshot(roomGroundGeometry) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGeometrySnapshot cannot fail; continue as before.
+        }
         const double roomGroundNormalNorm =
             roomGroundGeometry.equation_World.head<3>().norm();
         if (roomGroundGeometry.cloudGeneration !=

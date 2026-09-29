@@ -95,10 +95,23 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
 
     Eigen::Vector3d   groundNormal_World = Eigen::Vector3d::Zero();
     geometric::Plane *p_groundPlane      = p_atlas->getBiggestGroundPlane();
-    if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+    bool              groundPlaneIsBad{};
+    if ((p_groundPlane != nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlane != nullptr && !groundPlaneIsBad)
+    {
+        g2o::Plane3D groundPlaneGetGlobalEquation{};
+        if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
         const Eigen::Vector4d groundEquation =
-            p_groundPlane->getGlobalEquation().coeffs();
+            groundPlaneGetGlobalEquation.coeffs();
         const double groundNormalNorm = groundEquation.head<3>().norm();
         if (groundEquation.allFinite() && groundNormalNorm > 1e-8)
         {
@@ -131,7 +144,14 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
         }
         for (geometric::Plane *p_wall : roomWalls)
         {
-            if (p_wall == nullptr || p_wall->isBad())
+            bool wallIsBad{};
+            if (!(p_wall == nullptr) &&
+                p_wall->isBad(wallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_wall == nullptr || wallIsBad)
             {
                 continue;
             }
@@ -185,10 +205,17 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                 {
                     // getCentroid cannot fail; continue as before.
                 }
+                Eigen::Vector3d wallGetCentroid{};
+                if (!(p_passage == nullptr || !passageIsPassable) &&
+                    p_wall->getCentroid(wallGetCentroid) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getCentroid cannot fail; continue as before.
+                }
                 if (p_passage == nullptr || !passageIsPassable ||
                     !segmentCrossesPassageOpening(
                         nearOwnerCentroid,
-                        p_wall->getCentroid().cast<double>(),
+                        wallGetCentroid.cast<double>(),
                         p_passage,
                         groundNormal_World,
                         p_sysParams->roomSeg.passagePartition.openingMargin_m,
@@ -356,8 +383,14 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                 Eigen::Vector3d::Zero();
             std::size_t validObservationCount = 0U;
 
-            for (const auto &[p_keyFrame, observation] :
-                 p_wall->getObservations())
+            std::map<core::KeyFrame *, geometric::Plane::Observation>
+                wallGetObservations{};
+            if (p_wall->getObservations(wallGetObservations) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getObservations cannot fail; continue as before.
+            }
+            for (const auto &[p_keyFrame, observation] : wallGetObservations)
             {
                 static_cast<void>(observation);
 
@@ -441,8 +474,14 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                 {
                     // getId cannot fail; continue as before.
                 }
+                int wallGetId{};
+                if (p_wall->getId(wallGetId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
                 std::cerr << "[SemMgr] Corrected duplicate ownership of Wall#"
-                          << p_wall->getId() << ": "
+                          << wallGetId << ": "
                           << (p_retainedOwner != nullptr
                                   ? "retained semantic::Room#" +
                                         std::to_string(retainedOwnerId2)

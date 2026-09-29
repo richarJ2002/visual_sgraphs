@@ -31,11 +31,23 @@ void SemanticsManager::reconcileWallFacePairs(void)
 {
     geometric::Plane *p_groundPlane      = p_atlas->getBiggestGroundPlane();
     Eigen::Vector3d   groundNormal_World = Eigen::Vector3d::Zero();
-    if (p_groundPlane != nullptr && !p_groundPlane->isBad())
+    bool              groundPlaneIsBad{};
+    if ((p_groundPlane != nullptr) &&
+        p_groundPlane->isBad(groundPlaneIsBad) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        const Eigen::Vector4d groundEq =
-            p_groundPlane->getGlobalEquation().coeffs();
-        const double groundNorm = groundEq.head<3>().norm();
+        // isBad cannot fail; continue as before.
+    }
+    if (p_groundPlane != nullptr && !groundPlaneIsBad)
+    {
+        g2o::Plane3D groundPlaneGetGlobalEquation{};
+        if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getGlobalEquation cannot fail; continue as before.
+        }
+        const Eigen::Vector4d groundEq = groundPlaneGetGlobalEquation.coeffs();
+        const double          groundNorm = groundEq.head<3>().norm();
         if (groundEq.allFinite() && groundNorm > 1e-8)
         {
             groundNormal_World = groundEq.head<3>() / groundNorm;
@@ -52,8 +64,22 @@ void SemanticsManager::reconcileWallFacePairs(void)
     std::vector<geometric::Plane *> wallPlanes;
     for (geometric::Plane *p_plane : p_atlas->getAllPlanes())
     {
-        if (p_plane != nullptr && !p_plane->isBad() &&
-            p_plane->getPlaneType() == geometric::Plane::PlaneVariant::WALL)
+        bool planeIsBad{};
+        if ((p_plane != nullptr) &&
+            p_plane->isBad(planeIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // isBad cannot fail; continue as before.
+        }
+        geometric::Plane::PlaneVariant planeType{};
+        if ((p_plane != nullptr && !planeIsBad) &&
+            p_plane->getPlaneType(planeType) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getPlaneType cannot fail; continue as before.
+        }
+        if (p_plane != nullptr && !planeIsBad &&
+            planeType == geometric::Plane::PlaneVariant::WALL)
         {
             wallPlanes.push_back(p_plane);
         }
@@ -74,18 +100,47 @@ void SemanticsManager::reconcileWallFacePairs(void)
             {
                 return true;
             }
-            return p_first->getId() < p_second->getId();
+            int firstGetId{};
+            if (p_first->getId(firstGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int secondGetId{};
+            if (p_second->getId(secondGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            return firstGetId < secondGetId;
         });
 
     for (geometric::Plane *p_wall : wallPlanes)
     {
-        geometric::Plane *p_existingTwin = p_wall->getTwinFace();
+        geometric::Plane *p_existingTwin = nullptr;
+        if (p_wall->getTwinFace(p_existingTwin) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getTwinFace cannot fail; continue as before.
+        }
         if (p_existingTwin != nullptr)
         {
             /* Cheap common case: re-validate rather than search again. A
              * lower-id plane already validated (and, if still plausible,
              * re-linked) this pair when it was itself visited. */
-            if (p_wall->getId() < p_existingTwin->getId())
+            int wallGetId{};
+            if (p_wall->getId(wallGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int existingTwinGetId{};
+            if (p_existingTwin->getId(existingTwinGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            if (wallGetId < existingTwinGetId)
             {
                 continue;
             }
@@ -103,16 +158,30 @@ void SemanticsManager::reconcileWallFacePairs(void)
             /* Pairing is no longer plausible (e.g. one side drifted after a
              * refit) -- unlink both sides rather than leave a stale
              * one-directional pointer. */
-            p_existingTwin->clearTwinFace();
-            p_wall->clearTwinFace();
+            if (p_existingTwin->clearTwinFace() !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // clearTwinFace cannot fail; continue as before.
+            }
+            if (p_wall->clearTwinFace() !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // clearTwinFace cannot fail; continue as before.
+            }
         }
     }
 
     for (std::size_t firstIndex = 0; firstIndex < wallPlanes.size();
          ++firstIndex)
     {
-        geometric::Plane *p_first = wallPlanes[firstIndex];
-        if (p_first->getTwinFace() != nullptr)
+        geometric::Plane *p_first            = wallPlanes[firstIndex];
+        geometric::Plane *p_firstGetTwinFace = nullptr;
+        if (p_first->getTwinFace(p_firstGetTwinFace) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getTwinFace cannot fail; continue as before.
+        }
+        if (p_firstGetTwinFace != nullptr)
         {
             continue;
         }
@@ -124,8 +193,14 @@ void SemanticsManager::reconcileWallFacePairs(void)
              secondIndex < wallPlanes.size();
              ++secondIndex)
         {
-            geometric::Plane *p_second = wallPlanes[secondIndex];
-            if (p_second->getTwinFace() != nullptr)
+            geometric::Plane *p_second            = wallPlanes[secondIndex];
+            geometric::Plane *p_secondGetTwinFace = nullptr;
+            if (p_second->getTwinFace(p_secondGetTwinFace) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getTwinFace cannot fail; continue as before.
+            }
+            if (p_secondGetTwinFace != nullptr)
             {
                 continue;
             }
@@ -143,8 +218,14 @@ void SemanticsManager::reconcileWallFacePairs(void)
             /* Prefer the most-overlapping plausible candidate when more
              * than one exists, using observation count as a simple,
              * deterministic tiebreaker proxy for "most overlap". */
+            std::size_t secondGetObservationCount{};
+            if (p_second->getObservationCount(secondGetObservationCount) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getObservationCount cannot fail; continue as before.
+            }
             const double candidateScore =
-                static_cast<double>(p_second->getObservationCount());
+                static_cast<double>(secondGetObservationCount);
             if (p_bestMatch == nullptr || candidateScore > bestOverlapRatio_m2)
             {
                 p_bestMatch         = p_second;
@@ -154,10 +235,30 @@ void SemanticsManager::reconcileWallFacePairs(void)
 
         if (p_bestMatch != nullptr)
         {
-            p_first->setTwinFace(p_bestMatch);
-            p_bestMatch->setTwinFace(p_first);
-            std::cout << "[SemMgr] Linked Wall#" << p_first->getId()
-                      << " and Wall#" << p_bestMatch->getId()
+            if (p_first->setTwinFace(p_bestMatch) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setTwinFace cannot fail; continue as before.
+            }
+            if (p_bestMatch->setTwinFace(p_first) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setTwinFace cannot fail; continue as before.
+            }
+            int firstGetId{};
+            if (p_first->getId(firstGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            int bestMatchGetId{};
+            if (p_bestMatch->getId(bestMatchGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getId cannot fail; continue as before.
+            }
+            std::cout << "[SemMgr] Linked Wall#" << firstGetId << " and Wall#"
+                      << bestMatchGetId
                       << " as opposite faces of one physical wall."
                       << std::endl;
         }

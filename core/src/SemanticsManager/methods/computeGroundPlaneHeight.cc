@@ -27,8 +27,14 @@ std::optional<float> SemanticsManager::computeGroundPlaneHeight(
     geometric::Plane *p_groundPlane_in)
 {
     /* Transform the planeCloud according to the planePose */
+    geometric::Plane::GeometrySnapshot groundPlaneGetGeometrySnapshot{};
+    if (p_groundPlane_in->getGeometrySnapshot(groundPlaneGetGeometrySnapshot) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGeometrySnapshot cannot fail; continue as before.
+    }
     pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_planeCloud =
-        p_groundPlane_in->getGeometrySnapshot().supportCloud;
+        groundPlaneGetGeometrySnapshot.supportCloud;
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_transformedCloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
     pcl::transformPointCloud(*p_planeCloud, *p_transformedCloud, planePoseMat);

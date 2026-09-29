@@ -39,7 +39,11 @@ void SemanticSegmentation::updatePlaneSemantics(int    planeId_in,
     }
 
     // cast a vote for the plane semantics
-    p_matchedPlane->castWeightedVote(planeType, confidence_in);
+    if (p_matchedPlane->castWeightedVote(planeType, confidence_in) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // castWeightedVote cannot fail; continue as before.
+    }
 }
 
 } // namespace core

@@ -32,10 +32,11 @@ namespace core
 namespace geometric
 {
 
-core::Map *Plane::getMap(void)
+PlaneStatus Plane::getMap(core::Map *&p_map_out)
 {
     unique_lock<mutex> lock(mapMutex);
-    return p_map;
+    p_map_out = p_map;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

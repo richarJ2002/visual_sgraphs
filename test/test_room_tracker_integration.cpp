@@ -73,11 +73,16 @@ class ProductionCrossingScene
         p_map = atlas.getCurrentMap();
         static_cast<void>(atlas.consumeNewMapCreatedEvent());
 
-        groundPlane.setId(0);
-        groundPlane.setMap(p_map);
-        groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
-        groundPlane.setGlobalEquation(
-            g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));
+        EXPECT_EQ((groundPlane.setId(0)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        EXPECT_EQ((groundPlane.setMap(p_map)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND)),
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        EXPECT_EQ((groundPlane.setGlobalEquation(
+                      g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)))),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr groundCloud(
             new pcl::PointCloud<pcl::PointXYZRGBA>);
         for (int xIndex = 0; xIndex < 5; ++xIndex)
@@ -91,7 +96,8 @@ class ProductionCrossingScene
                 groundCloud->push_back(point);
             }
         }
-        groundPlane.setMapClouds(groundCloud);
+        EXPECT_EQ((groundPlane.setMapClouds(groundCloud)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
         bool wasPlaneRefit{};
         EXPECT_EQ((GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane,
                                                             wasPlaneRefit)),
@@ -99,12 +105,19 @@ class ProductionCrossingScene
         groundPlaneValid = wasPlaneRefit;
         p_map->addMapPlane(&groundPlane);
 
-        knownWall.setId(1);
-        knownWall.setMap(p_map);
-        knownWall.setPlaneType(geometric::Plane::PlaneVariant::WALL);
-        farWall.setId(2);
-        farWall.setMap(p_map);
-        farWall.setPlaneType(geometric::Plane::PlaneVariant::WALL);
+        EXPECT_EQ((knownWall.setId(1)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        EXPECT_EQ((knownWall.setMap(p_map)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        EXPECT_EQ(
+            (knownWall.setPlaneType(geometric::Plane::PlaneVariant::WALL)),
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        EXPECT_EQ((farWall.setId(2)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        EXPECT_EQ((farWall.setMap(p_map)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        EXPECT_EQ((farWall.setPlaneType(geometric::Plane::PlaneVariant::WALL)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
         p_map->addMapPlane(&knownWall);
         p_map->addMapPlane(&farWall);
 
@@ -706,11 +719,16 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
 
     /* Ground plane: traversal evidence needs a valid ground normal. */
     geometric::Plane groundPlane;
-    groundPlane.setId(0);
-    groundPlane.setMap(p_map);
-    groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND);
-    groundPlane.setGlobalEquation(
-        g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)));
+    ASSERT_EQ((groundPlane.setId(0)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((groundPlane.setMap(p_map)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (groundPlane.setPlaneType(geometric::Plane::PlaneVariant::GROUND)),
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ((groundPlane.setGlobalEquation(
+                  g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0)))),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr groundCloud(
         new pcl::PointCloud<pcl::PointXYZRGBA>);
     for (int xIndex = 0; xIndex < 5; ++xIndex)
@@ -724,7 +742,8 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
             groundCloud->push_back(point);
         }
     }
-    groundPlane.setMapClouds(groundCloud);
+    ASSERT_EQ((groundPlane.setMapClouds(groundCloud)),
+              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     bool wasPlaneRefit{};
     ASSERT_EQ(
         (GeoSemHelpers::refitMappedPlaneFromCloud(&groundPlane, wasPlaneRefit)),

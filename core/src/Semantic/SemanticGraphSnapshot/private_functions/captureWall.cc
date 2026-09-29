@@ -43,23 +43,50 @@ SemanticGraphSnapshotStatus
 {
     WallRecord record;
     EntityKey  key2{};
-    if (makeKey(EntityKind::WALL, mapId_in, p_wall_in->getId(), key2) !=
+    int        wallGetId{};
+    if (p_wall_in->getId(wallGetId) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getId cannot fail; continue as before.
+    }
+    if (makeKey(EntityKind::WALL, mapId_in, wallGetId, key2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
         // makeKey cannot fail; continue as before.
     }
-    record.key       = key2;
-    record.isLive    = !p_wall_in->isBad();
-    record.planeType = p_wall_in->getPlaneType();
+    record.key = key2;
+    bool wallIsBad{};
+    if (p_wall_in->isBad(wallIsBad) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // isBad cannot fail; continue as before.
+    }
+    record.isLive = !wallIsBad;
+    geometric::Plane::PlaneVariant wallPlaneType{};
+    if (p_wall_in->getPlaneType(wallPlaneType) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getPlaneType cannot fail; continue as before.
+    }
+    record.planeType = wallPlaneType;
 
-    core::Map *p_declaredMap = p_wall_in->getMap();
+    core::Map *p_declaredMap = nullptr;
+    if (p_wall_in->getMap(p_declaredMap) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getMap cannot fail; continue as before.
+    }
     if (p_declaredMap != nullptr)
     {
         record.declaredMapId = p_declaredMap->getId();
     }
 
-    const geometric::PlaneGeometryMetadataSnapshot geometry =
-        p_wall_in->getGeometryMetadataSnapshot();
+    geometric::PlaneGeometryMetadataSnapshot geometry{};
+    if (p_wall_in->getGeometryMetadataSnapshot(geometry) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getGeometryMetadataSnapshot cannot fail; continue as before.
+    }
     record.equation_World            = geometry.equation_World;
     record.centroid_World_m          = geometry.centroid_World_m;
     record.minPlaneU_m               = geometry.minPlaneU_m;
@@ -71,9 +98,21 @@ SemanticGraphSnapshotStatus
     record.cloudGeneration           = geometry.cloudGeneration;
     record.successfulRefitGeneration = geometry.successfulRefitGeneration;
 
-    record.observationOrigin_World_m = p_wall_in->getObservationOrigin_World();
-    RawPlaneRef rawPlaneRef2{};
-    if (rawPlaneRef(p_wall_in->getTwinFace(), rawPlaneRef2) !=
+    std::optional<Eigen::Vector3d> wallGetObservationOrigin_World{};
+    if (p_wall_in->getObservationOrigin_World(wallGetObservationOrigin_World) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getObservationOrigin_World cannot fail; continue as before.
+    }
+    record.observationOrigin_World_m = wallGetObservationOrigin_World;
+    RawPlaneRef       rawPlaneRef2{};
+    geometric::Plane *p_wallGetTwinFace = nullptr;
+    if (p_wall_in->getTwinFace(p_wallGetTwinFace) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        // getTwinFace cannot fail; continue as before.
+    }
+    if (rawPlaneRef(p_wallGetTwinFace, rawPlaneRef2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
         // rawPlaneRef cannot fail; continue as before.

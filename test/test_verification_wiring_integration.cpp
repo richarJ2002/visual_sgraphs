@@ -92,13 +92,18 @@ struct SyntheticRoomFixture
     void addWall(const RawWall &wall_in)
     {
         auto wall = std::make_unique<geometric::Plane>();
-        wall->setId(wall_in.id);
-        wall->setPlaneType(geometric::Plane::PlaneVariant::WALL);
-        wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(wall_in.normal.x(),
-                                                             wall_in.normal.y(),
-                                                             wall_in.normal.z(),
-                                                             wall_in.d)));
-        wall->setCentroid(wall_in.centroid);
+        ASSERT_EQ((wall->setId(wall_in.id)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        ASSERT_EQ((wall->setPlaneType(geometric::Plane::PlaneVariant::WALL)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        ASSERT_EQ((wall->setGlobalEquation(
+                      g2o::Plane3D(Eigen::Vector4d(wall_in.normal.x(),
+                                                   wall_in.normal.y(),
+                                                   wall_in.normal.z(),
+                                                   wall_in.d)))),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+        ASSERT_EQ((wall->setCentroid(wall_in.centroid)),
+                  geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
         ASSERT_EQ((room.setWalls(wall.get())),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
         ownedWalls.push_back(std::move(wall));

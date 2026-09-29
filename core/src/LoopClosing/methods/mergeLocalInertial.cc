@@ -260,20 +260,40 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
         {
             if (p_existingPlane != nullptr)
             {
-                nextPlaneId =
-                    std::max(nextPlaneId, p_existingPlane->getId() + 1);
+                int existingPlaneGetId{};
+                if (p_existingPlane->getId(existingPlaneGetId) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // getId cannot fail; continue as before.
+                }
+                nextPlaneId = std::max(nextPlaneId, existingPlaneGetId + 1);
             }
         }
 
         for (geometric::Plane *p_plane : mergeMapPlanes)
         {
-            if (p_plane == nullptr || p_plane->isBad())
+            bool planeIsBad{};
+            if (!(p_plane == nullptr) &&
+                p_plane->isBad(planeIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            if (p_plane == nullptr || planeIsBad)
             {
                 continue;
             }
 
-            p_plane->setMap(p_currentMap);
-            p_plane->setId(nextPlaneId++);
+            if (p_plane->setMap(p_currentMap) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setMap cannot fail; continue as before.
+            }
+            if (p_plane->setId(nextPlaneId++) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // setId cannot fail; continue as before.
+            }
             p_currentMap->addMapPlane(p_plane);
             p_mergeMap->eraseMapPlane(p_plane);
         }
@@ -526,7 +546,14 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocalInertial()
             }
             for (geometric::Plane *p_wall : roomWalls)
             {
-                if (p_wall != nullptr && !p_wall->isBad())
+                bool wallIsBad{};
+                if ((p_wall != nullptr) &&
+                    p_wall->isBad(wallIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_wall != nullptr && !wallIsBad)
                 {
                     p_currentMap->addRoomWallPlane(p_wall);
                 }

@@ -32,9 +32,10 @@ namespace core
 namespace geometric
 {
 
-int Plane::getOpId() const
+PlaneStatus Plane::getOpId(int &getOpId_out) const
 {
-    return opId;
+    getOpId_out = opId;
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
 } // namespace geometric

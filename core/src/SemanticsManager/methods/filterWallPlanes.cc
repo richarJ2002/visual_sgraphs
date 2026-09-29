@@ -29,16 +29,28 @@ void SemanticsManager::filterWallPlanes(void)
     for (const auto &plane : p_atlas->getAllPlanes())
     {
         /* Skip planes which are not classed as walls */
-        if (plane->getExpectedPlaneType() ==
+        geometric::Plane::PlaneVariant planeExpectedPlaneType{};
+        if (plane->getExpectedPlaneType(planeExpectedPlaneType) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            // getExpectedPlaneType cannot fail; continue as before.
+        }
+        if (planeExpectedPlaneType ==
             vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
         {
             /*!
              * Wall validation based on the mPlanePoseMat only works if the
              * ground plane is set. Needs the correction matrix: mPlanePoseMat.
              */
+            g2o::Plane3D planeGetGlobalEquation{};
+            if (plane->getGlobalEquation(planeGetGlobalEquation) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
             Eigen::Vector3f transformedPlaneCoefficients =
                 transformPlaneEqToGroundReference(
-                    plane->getGlobalEquation().coeffs());
+                    planeGetGlobalEquation.coeffs());
 
             /*!
              * If the transformed plane is vertical based on absolute value,
@@ -49,7 +61,11 @@ void SemanticsManager::filterWallPlanes(void)
             if (abs(transformedPlaneCoefficients(1)) >
                 p_sysParams->semSeg.maxTiltWall)
             {
-                plane->resetPlaneSemantics();
+                if (plane->resetPlaneSemantics() !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    // resetPlaneSemantics cannot fail; continue as before.
+                }
             }
         }
     }

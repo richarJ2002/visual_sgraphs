@@ -506,10 +506,24 @@ void SemanticsManager::run(void)
             p_pipelineMap != nullptr ? p_pipelineMap->getBiggestGroundPlane()
                                            : nullptr;
         Eigen::Vector3d pipelineGroundNormal_World = Eigen::Vector3d::Zero();
-        if (p_pipelineGround != nullptr && !p_pipelineGround->isBad())
+        bool            pipelineGroundIsBad{};
+        if ((p_pipelineGround != nullptr) &&
+            p_pipelineGround->isBad(pipelineGroundIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
+            // isBad cannot fail; continue as before.
+        }
+        if (p_pipelineGround != nullptr && !pipelineGroundIsBad)
+        {
+            g2o::Plane3D pipelineGroundGetGlobalEquation{};
+            if (p_pipelineGround->getGlobalEquation(
+                    pipelineGroundGetGlobalEquation) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getGlobalEquation cannot fail; continue as before.
+            }
             const Eigen::Vector4d equation =
-                p_pipelineGround->getGlobalEquation().coeffs();
+                pipelineGroundGetGlobalEquation.coeffs();
             if (equation.allFinite() && equation.head<3>().norm() > 1e-8)
             {
                 pipelineGroundNormal_World = equation.head<3>().normalized();
@@ -517,8 +531,22 @@ void SemanticsManager::run(void)
         }
         for (geometric::Plane *p_plane : pipelinePlanes)
         {
-            if (p_plane == nullptr || p_plane->isBad() ||
-                p_plane->getPlaneType() != geometric::Plane::PlaneVariant::WALL)
+            bool planeIsBad{};
+            if (!(p_plane == nullptr) &&
+                p_plane->isBad(planeIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // isBad cannot fail; continue as before.
+            }
+            geometric::Plane::PlaneVariant planeType{};
+            if (!(p_plane == nullptr || planeIsBad) &&
+                p_plane->getPlaneType(planeType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                // getPlaneType cannot fail; continue as before.
+            }
+            if (p_plane == nullptr || planeIsBad ||
+                planeType != geometric::Plane::PlaneVariant::WALL)
             {
                 continue;
             }
@@ -568,9 +596,22 @@ void SemanticsManager::run(void)
             }
             for (geometric::Plane *p_wall : roomWalls)
             {
-                if (p_wall != nullptr && !p_wall->isBad())
+                bool wallIsBad{};
+                if ((p_wall != nullptr) &&
+                    p_wall->isBad(wallIsBad) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    ownedWallIds.insert(p_wall->getId());
+                    // isBad cannot fail; continue as before.
+                }
+                if (p_wall != nullptr && !wallIsBad)
+                {
+                    int wallGetId{};
+                    if (p_wall->getId(wallGetId) !=
+                        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                    {
+                        // getId cannot fail; continue as before.
+                    }
+                    ownedWallIds.insert(wallGetId);
                 }
             }
         }
