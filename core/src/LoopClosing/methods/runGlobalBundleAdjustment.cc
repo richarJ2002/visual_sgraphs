@@ -55,8 +55,28 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
 
     fullGbaExecutionCount += 1;
 
-    gbaKeyFrameCounts.push_back(p_activeMap_inout->getAllKeyFrames().size());
-    gbaMapPointCounts.push_back(p_activeMap_inout->getAllMapPoints().size());
+    std::vector<KeyFrame *> activeMapKeyFrames;
+    if (p_activeMap_inout->getAllKeyFrames(activeMapKeyFrames) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getAllKeyFrames returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
+    }
+    gbaKeyFrameCounts.push_back(activeMapKeyFrames.size());
+    std::vector<MapPoint *> activeMapMapPoints;
+    if (p_activeMap_inout->getAllMapPoints(activeMapMapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getAllMapPoints returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
+    }
+    gbaMapPointCounts.push_back(activeMapMapPoints.size());
 #endif
 
     /*

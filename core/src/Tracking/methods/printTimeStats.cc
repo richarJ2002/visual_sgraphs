@@ -25,9 +25,14 @@
 
 #include "Tracking.h"
 
+#include "LocalMapping.h"
+#include "LoopClosing.h"
+
 #include "../private_functions.h"
 
+#include <iomanip>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 
 #include "../private_functions.h"
 
@@ -219,15 +224,54 @@ void Tracking::printTimeStats()
     Map          *p_bestMap = maps[0];
     for (int mapIndex = 1; mapIndex < maps.size(); ++mapIndex)
     {
-        if (p_bestMap->getAllKeyFrames().size() <
-            maps[mapIndex]->getAllKeyFrames().size())
+        std::vector<KeyFrame *> bestMapKeyFrames;
+        if (p_bestMap->getAllKeyFrames(bestMapKeyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getAllKeyFrames returned a failure status although it "
+                "cannot fail; continuing as before.",
+                __func__);
+        }
+        std::vector<KeyFrame *> mapKeyFrames;
+        if (maps[mapIndex]->getAllKeyFrames(mapKeyFrames) !=
+            MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getAllKeyFrames returned a failure status although it "
+                "cannot fail; continuing as before.",
+                __func__);
+        }
+        if (bestMapKeyFrames.size() < mapKeyFrames.size())
         {
             p_bestMap = maps[mapIndex];
         }
     }
 
-    f << "KFs in map: " << p_bestMap->getAllKeyFrames().size() << std::endl;
-    f << "MPs in map: " << p_bestMap->getAllMapPoints().size() << std::endl;
+    std::vector<KeyFrame *> bestMapKeyFrames;
+    if (p_bestMap->getAllKeyFrames(bestMapKeyFrames) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getAllKeyFrames returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
+    }
+    std::vector<MapPoint *> bestMapMapPoints;
+    if (p_bestMap->getAllMapPoints(bestMapMapPoints) !=
+        MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(
+            rclcpp::get_logger("vs_graphs"),
+            "%s: getAllMapPoints returned a failure status although it "
+            "cannot fail; continuing as before.",
+            __func__);
+    }
+    f << "KFs in map: " << bestMapKeyFrames.size() << std::endl;
+    f << "MPs in map: " << bestMapMapPoints.size() << std::endl;
 
     f << "---------------------------" << std::endl;
     f << std::endl << "Place Recognition (mean$\\pm$std)" << std::endl;

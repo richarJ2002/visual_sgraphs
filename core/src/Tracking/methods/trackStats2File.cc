@@ -25,6 +25,8 @@
 
 #include "Tracking.h"
 
+#include <iomanip>
+
 namespace vs_graphs
 {
 namespace core

@@ -28,6 +28,7 @@
 #include "SemanticSegmentation.h"
 #include "SemanticsManager.h"
 #include "System.h"
+#include "Tracking.h"
 #include "Viewer.h"
 
 namespace vs_graphs

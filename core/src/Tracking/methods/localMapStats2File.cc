@@ -25,6 +25,10 @@
 
 #include "Tracking.h"
 
+#include "LocalMapping.h"
+
+#include <iomanip>
+
 namespace vs_graphs
 {
 namespace core
