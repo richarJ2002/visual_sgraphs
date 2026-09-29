@@ -21,6 +21,7 @@
 #include "../private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,14 +52,20 @@ std::vector<std::vector<Eigen::Vector3d>>
             p_passage->isBad(passageIsBad) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         bool passageIsPassable{};
         if ((p_passage != nullptr && !passageIsBad) &&
             p_passage->isPassable(passageIsPassable) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isPassable cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPassable returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_passage != nullptr && !passageIsBad && passageIsPassable)
         {
@@ -73,7 +80,10 @@ std::vector<std::vector<Eigen::Vector3d>>
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (confirmedOpenPassages.empty() || p_groundPlane == nullptr ||
         groundPlaneIsBad)
@@ -85,7 +95,10 @@ std::vector<std::vector<Eigen::Vector3d>>
     if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d groundEquation_World =
         groundPlaneGetGlobalEquation.coeffs();

@@ -6,6 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <rclcpp/logging.hpp>
 #include <set>
 #include <string>
 #include <tuple>
@@ -31,7 +32,10 @@ SemanticCandidatesStatus SemanticCandidates::generate(
                            anchorRoomId_in) !=
         SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
     {
-        // generateWithStatus cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: generateWithStatus returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     candidates_out = generation.candidates;
     return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;

@@ -25,6 +25,7 @@
 
 #include "Semantic/SemanticAxiomEvaluator/public_functions.h"
 
+#include <rclcpp/logging.hpp>
 #include <utility>
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -62,7 +63,11 @@ SemanticAxiomEvaluatorStatus evaluateMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // computeLegacyMapCompleteness cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: computeLegacyMapCompleteness returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         result.legacy = legacyMapCompleteness;
         result.doLegacyAndConservativeDiverge =

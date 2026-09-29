@@ -35,6 +35,7 @@
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -55,7 +56,10 @@ SemanticAxiomEvaluatorStatus
                     finding) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeFinding cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeFinding returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     findings_inout.push_back(finding);
 

@@ -41,6 +41,7 @@
 
 #include <cmath>
 #include <memory>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 namespace vs_graphs
@@ -575,17 +576,26 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
     auto ground = std::make_unique<geometric::Plane>();
     if (ground->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (ground->setMap(p_map_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (ground->setPlaneType(geometric::Plane::PlaneVariant::GROUND) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setPlaneType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPlaneType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
@@ -601,14 +611,20 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
     if (ground->replaceMapClouds(cloud) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // replaceMapClouds cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: replaceMapClouds returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
 
     std::optional<geometric::Plane::GeometrySnapshot> snapshot{};
     if (ground->beginMapCloudRefit(snapshot) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // beginMapCloudRefit cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: beginMapCloudRefit returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     bool wasRefitPublished{};
     if (ground->completeMapCloudRefit(
@@ -618,7 +634,10 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
             50U,
             wasRefitPublished) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // completeMapCloudRefit cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: completeMapCloudRefit returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     return ground;
 }
@@ -635,21 +654,33 @@ std::unique_ptr<geometric::Plane>
     auto wall = std::make_unique<geometric::Plane>();
     if (wall->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (wall->setMap(p_map_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (wall->setPlaneType(geometric::Plane::PlaneVariant::WALL) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setPlaneType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPlaneType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // castWeightedVote cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: castWeightedVote returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(
             normal_World_in.x(),
@@ -657,12 +688,18 @@ std::unique_ptr<geometric::Plane>
             normal_World_in.z(),
             0.0))) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (wall->setCentroid(Eigen::Vector3d(0.0, 0.0, 1.5)) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
@@ -688,7 +725,10 @@ std::unique_ptr<geometric::Plane>
     if (wall->setMapClouds(cloud) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMapClouds cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMapClouds returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     return wall;
 }

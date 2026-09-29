@@ -19,6 +19,7 @@
 #include "DatabaseParser.h"
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -43,28 +44,43 @@ DBParserStatus DBParser::getEnvironmentRooms(
             if (p_environmentRoom->setOpId(-1) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setOpId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setOpId returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_environmentRoom->setOpIdG(-1) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setOpIdG cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setOpIdG returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_environmentRoom->setId(stoi(environmentDatum.key())) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_environmentRoom->setName(environmentDatum.value()["name"]) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setName returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_environmentRoom->setMetaMarkerId(
                     environmentDatum.value()["metaMarker"]) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setMetaMarkerId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMetaMarkerId returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             // Set the room variant (corridors are incomplete rooms, not a
@@ -73,7 +89,10 @@ DBParserStatus DBParser::getEnvironmentRooms(
                     semantic::Room::RoomVariant::ROOM) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setRoomVariant cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setRoomVariant returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             // Fill the vector
@@ -85,7 +104,10 @@ DBParserStatus DBParser::getEnvironmentRooms(
         if (environmentRooms[0]->getName(name2) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getName returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         VSLAM_LOG_INFO("- Fetched %d rooms from the JSON file! [e.g., '%s'].\n",
                        static_cast<int>(environmentRooms.size()),

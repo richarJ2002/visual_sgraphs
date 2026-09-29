@@ -19,6 +19,7 @@
 #include "GeoSemHelpers.h"
 
 #include <iostream>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,32 +52,50 @@ GeoSemHelpersStatus
     if (p_newMapFloor->setOpId(-1) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setOpId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setOpId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapFloor->setOpIdG(-1) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setOpIdG cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setOpIdG returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapFloor->setId(floorId) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapFloor->setCentroid(centroid) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapFloor->setMap(p_currentMap) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapFloor->setName("semantic::Floor#" + std::to_string(floorId)) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setName returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
 
     // Add the floor to the map
@@ -86,7 +105,10 @@ GeoSemHelpersStatus
     if (p_newMapFloor->getId(newMapFloorId) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     std::cout << "[GeoSemHelper] Creating semantic::Floor#" << newMapFloorId
               << " ..." << std::endl;

@@ -35,6 +35,7 @@
 #include <string>
 
 #include <opencv2/core/persistence.hpp>
+#include <rclcpp/logging.hpp>
 
 #include "System.h"
 
@@ -72,7 +73,10 @@ Settings::Settings(const std::string &configurationFilePath_in,
     // Read Camera#1 (monocular, stereo or RGB-D)
     if (readCamera1(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readCamera1 cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readCamera1 returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     VSLAM_LOG_INFO("[Settings] Camera#1 settings loaded!\n");
 
@@ -81,7 +85,10 @@ Settings::Settings(const std::string &configurationFilePath_in,
     {
         if (readCamera2(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readCamera2 cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readCamera2 returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         VSLAM_LOG_INFO("[Settings] Camera#2 settings loaded!\n");
     }
@@ -89,7 +96,10 @@ Settings::Settings(const std::string &configurationFilePath_in,
     // Read image info
     if (readImageInfo(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readImageInfo cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readImageInfo returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     VSLAM_LOG_INFO("[Settings] Camera info loaded!\n");
 
@@ -99,7 +109,10 @@ Settings::Settings(const std::string &configurationFilePath_in,
     {
         if (readIMU(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readIMU cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readIMU returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         VSLAM_LOG_INFO("[Settings] IMU calibration settings loaded!\n");
     }
@@ -108,7 +121,10 @@ Settings::Settings(const std::string &configurationFilePath_in,
     {
         if (readRGBD(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readRGBD cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readRGBD returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         VSLAM_LOG_INFO("[Settings] RGB-D settings loaded!\n");
     }
@@ -116,21 +132,30 @@ Settings::Settings(const std::string &configurationFilePath_in,
     // Read ORB parameters
     if (readORB(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readORB cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readORB returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     VSLAM_LOG_INFO("[Settings] ORB settings loaded!\n");
 
     // Read Viewer parameters
     if (readViewer(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readViewer cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readViewer returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     VSLAM_LOG_INFO("[Settings] Viewer settings loaded!\n");
 
     // Read Atlas parameters
     if (readLoadAndSave(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readLoadAndSave cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readLoadAndSave returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     VSLAM_LOG_INFO("[Settings] ATLAS settings loaded!\n");
 
@@ -138,7 +163,10 @@ Settings::Settings(const std::string &configurationFilePath_in,
     if (readOtherParameters(storage_in) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readOtherParameters cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readOtherParameters returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     VSLAM_LOG_INFO("[Settings] Misc. parameters loaded!\n");
 
@@ -147,7 +175,11 @@ Settings::Settings(const std::string &configurationFilePath_in,
         if (precomputeRectificationMaps() !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // precomputeRectificationMaps cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: precomputeRectificationMaps returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         VSLAM_LOG_INFO("[Settings] Computed rectification maps!\n");
     }

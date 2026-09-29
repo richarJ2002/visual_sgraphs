@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -45,7 +46,10 @@ void Map::addMapMarker(semantic::Marker *p_marker_in)
     if (p_marker_in->getId(marker_inId) !=
         semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     markerIndex[marker_inId] = p_marker_in;
 }

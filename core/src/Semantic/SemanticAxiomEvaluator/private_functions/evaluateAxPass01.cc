@@ -44,6 +44,7 @@
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -68,7 +69,11 @@ SemanticAxiomEvaluatorStatus
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // evaluateOnePassageProvenance cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: evaluateOnePassageProvenance returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
     }

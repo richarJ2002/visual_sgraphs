@@ -25,6 +25,7 @@
 
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -39,7 +40,10 @@ void System::changeDataset()
                                    ResetAction::RESET_ACTIVE_MAP_EXECUTION) !=
             ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
         {
-            // reportResetAttribution cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: reportResetAttribution returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         p_tracker->resetActiveMap();
         resetCount.fetch_add(1U, std::memory_order_relaxed);
@@ -50,7 +54,10 @@ void System::changeDataset()
                                    ResetAction::CREATE_MAP_EXECUTION) !=
             ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
         {
-            // reportResetAttribution cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: reportResetAttribution returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         p_tracker->createMapInAtlas();
     }

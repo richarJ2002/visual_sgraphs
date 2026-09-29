@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 #include "../private_functions.h"
@@ -137,7 +138,11 @@ SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
                                             hasFiniteSample) !=
                     SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
                 {
-                    // wallSamplesSpanInterval cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: wallSamplesSpanInterval returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (!hasFiniteSample)
                 {

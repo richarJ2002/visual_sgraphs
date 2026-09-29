@@ -34,6 +34,7 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -57,7 +58,10 @@ void KeyFrame::updateConnections(bool upParent_in)
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_params->planeBasedCovisibility.enabled)
     {
@@ -65,7 +69,10 @@ void KeyFrame::updateConnections(bool upParent_in)
         if (types::SystemParams::getParams(p_params2) !=
             types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
         {
-            // getParams cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParams returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         unsigned int scorePerPlane =
             p_params2->planeBasedCovisibility.scorePerPlane;
@@ -84,7 +91,10 @@ void KeyFrame::updateConnections(bool upParent_in)
             if (p_plane->getObservations(observations) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getObservations cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getObservations returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             for (map<KeyFrame *,
@@ -102,7 +112,11 @@ void KeyFrame::updateConnections(bool upParent_in)
                 if (p_plane->getPlaneType(planeType) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getPlaneType cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPlaneType returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (planeType == geometric::Plane::PlaneVariant::UNDEFINED)
                     keyFrameCounter[mit->first] += static_cast<int>(

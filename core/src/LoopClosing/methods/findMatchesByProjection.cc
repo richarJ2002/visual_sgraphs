@@ -27,6 +27,7 @@
 
 #include "ORBmatcher.h"
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -98,7 +99,10 @@ int LoopClosing::findMatchesByProjection(
     if (utils::converter::Converter::toSophus(g2oScw_in, correctedPose) !=
         utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
     {
-        // toSophus cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: toSophus returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     ORBmatcher matcher(0.9, true);
 

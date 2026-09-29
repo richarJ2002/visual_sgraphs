@@ -19,6 +19,7 @@
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -37,7 +38,10 @@ RoomStatus Room::setWalls(geometric::Plane *p_wall_in)
 
     if (setRecoveryProxy(false) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setRecoveryProxy cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setRecoveryProxy returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
 
     std::lock_guard<std::mutex> lock(wallsMutex);

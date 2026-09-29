@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,7 +52,10 @@ void SemanticsManager::enforcePassageSideInvariant(void)
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_groundPlane != nullptr && !groundPlaneIsBad)
     {
@@ -59,7 +63,10 @@ void SemanticsManager::enforcePassageSideInvariant(void)
         if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const Eigen::Vector4d groundEq = groundPlaneGetGlobalEquation.coeffs();
         const double          groundNorm = groundEq.head<3>().norm();
@@ -79,7 +86,10 @@ void SemanticsManager::enforcePassageSideInvariant(void)
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room == nullptr || roomIsBad)
         {
@@ -93,7 +103,10 @@ void SemanticsManager::enforcePassageSideInvariant(void)
         if (p_room->getWalls(roomWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (geometric::Plane *p_wall : roomWalls)
         {
@@ -102,7 +115,10 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                 p_wall->isBad(wallIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_wall == nullptr || wallIsBad)
             {
@@ -125,7 +141,10 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                     p_exemptPassage->isBad(exemptPassageIsBad) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 vs_graphs::core::semantic::Room
                     *p_exemptPassageProspectiveRoom = nullptr;
@@ -134,7 +153,11 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                         p_exemptPassageProspectiveRoom) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_exemptPassage == nullptr || exemptPassageIsBad ||
                     p_exemptPassageProspectiveRoom != p_room)
@@ -145,14 +168,22 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                 if (p_exemptPassage->getKnownSideProvenance(knownSide) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getKnownSideProvenance cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getKnownSideProvenance returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 bool knownSideHasDirection{};
                 if (knownSide.hasDirection(knownSideHasDirection) !=
                     semantic::KnownSideProvenanceStatus::
                         KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
                 {
-                    // hasDirection cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: hasDirection returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (!knownSideHasDirection)
                 {
@@ -165,7 +196,11 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                 if (p_exemptPassage->getCentroid(exemptPassageCentroid) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 const Eigen::Vector3d knownSidePoint_World_m =
                     exemptPassageCentroid +
@@ -174,7 +209,11 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                 if (p_wall->getCentroid(wallGetCentroid) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (segmentCrossesPassageOpening(
                         knownSidePoint_World_m,
@@ -201,20 +240,29 @@ void SemanticsManager::enforcePassageSideInvariant(void)
                 if (p_room->removeWall(p_wall, roomWasWallRemoved) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    roomWasWallRemoved =
-                        false; // rejected input reads as before
+                    roomWasWallRemoved = false;
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: removeWall rejected its input; continuing "
+                                "as before.",
+                                __func__);
                 }
                 int roomId{};
                 if (p_room->getId(roomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int wallGetId{};
                 if (p_wall->getId(wallGetId) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 std::cout << "[SemMgr] Wall#" << wallGetId
                           << " removed from semantic::Room#" << roomId

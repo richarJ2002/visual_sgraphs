@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 #include "../private_functions.h"
@@ -57,7 +58,10 @@ SemanticVerifyStatus
         if (isFiniteVector(normalsB_in[index], isFiniteVector2) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // isFiniteVector cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isFiniteVector returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (!isFiniteVector2 || !std::isfinite(offsetsA_in[index]) ||
             !std::isfinite(offsetsB_in[index]))

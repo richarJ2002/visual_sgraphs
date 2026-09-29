@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -46,7 +47,10 @@ FloorStatus
         if (p_candidateFloor->getPlaneIdentity(candidateIdentity) !=
             FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getPlaneIdentity cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneIdentity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         const bool candidateIsBetter =
@@ -73,7 +77,10 @@ FloorStatus
             p_candidateFloor->getId(candidateFloorId) !=
                 FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         int bestFloorId{};
         if (!(p_bestFloor == nullptr || candidateIsBetter) &&
@@ -81,7 +88,10 @@ FloorStatus
             p_bestFloor->getId(bestFloorId) !=
                 FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_bestFloor == nullptr || candidateIsBetter ||
             (evidenceIsEqual && candidateFloorId < bestFloorId))

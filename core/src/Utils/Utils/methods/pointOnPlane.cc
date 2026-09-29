@@ -24,6 +24,7 @@
  */
 
 #include "Utils/Utils/objects/Utils.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,7 +52,10 @@ UtilsStatus Utils::pointOnPlane(Eigen::Vector4d planeEquation_in,
             p_mapPoint_in->getWorldPos().cast<double>(),
             pointPlaneDistance) != UtilsStatus::UTILS_STATUS_SUCCESS)
     {
-        // calculateDistancePointToPlane cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: calculateDistancePointToPlane returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     // Apply a threshold
@@ -59,7 +63,10 @@ UtilsStatus Utils::pointOnPlane(Eigen::Vector4d planeEquation_in,
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (pointPlaneDistance < p_params->seg.planePointDistThresh)
     {

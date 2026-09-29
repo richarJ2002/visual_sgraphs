@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,14 +34,20 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
         p_room_in->isBad(room_inIsBad) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     bool wallIsBad{};
     if (!(p_room_in == nullptr || room_inIsBad || p_wall_in == nullptr) &&
         p_wall_in->isBad(wallIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_room_in == nullptr || room_inIsBad || p_wall_in == nullptr ||
         wallIsBad)
@@ -56,7 +63,10 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
     if (p_wall_in->getObservationOrigin_World(observationOrigin_World_m) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getObservationOrigin_World cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getObservationOrigin_World returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (!observationOrigin_World_m.has_value() ||
@@ -71,7 +81,10 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
     if (p_wall_in->getGlobalEquation(wallGetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d equation_World = wallGetGlobalEquation.coeffs();
     const double    normalNorm     = equation_World.head<3>().norm();
@@ -90,7 +103,10 @@ bool SemanticsManager::isWallFaceForeignToRoom(semantic::Room   *p_room_in,
     if (p_room_in->getCentroid(room_inCentroid) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     const double roomSide_m =
         equation_World.head<3>().dot(room_inCentroid.cast<double>()) +

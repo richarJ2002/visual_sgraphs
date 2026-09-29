@@ -21,6 +21,7 @@
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,21 +34,25 @@ RoomStatus Room::removeInvalidWalls(std::size_t &removedWallCount_out)
 {
     std::lock_guard<std::mutex> lock(wallsMutex);
 
-    walls.erase(
-        std::remove_if(walls.begin(),
-                       walls.end(),
-                       [](geometric::Plane *p_wall)
-                       {
-                           bool wallIsBad{};
-                           if (!(p_wall == nullptr) &&
-                               p_wall->isBad(wallIsBad) !=
-                                   geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
-                           {
-                               // isBad cannot fail; continue as before.
-                           }
-                           return p_wall == nullptr || wallIsBad;
-                       }),
-        walls.end());
+    walls.erase(std::remove_if(
+                    walls.begin(),
+                    walls.end(),
+                    [](geometric::Plane *p_wall)
+                    {
+                        bool wallIsBad{};
+                        if (!(p_wall == nullptr) &&
+                            p_wall->isBad(wallIsBad) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: isBad returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
+                        }
+                        return p_wall == nullptr || wallIsBad;
+                    }),
+                walls.end());
 
     removedWallCount_out = walls.size();
     return RoomStatus::ROOM_STATUS_SUCCESS;

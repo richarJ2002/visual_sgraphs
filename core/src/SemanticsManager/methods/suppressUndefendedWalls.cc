@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <unordered_set>
 
 namespace vs_graphs
@@ -61,7 +62,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
         p_groundPlaneForEvidence->isBad(groundPlaneForEvidenceIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_groundPlaneForEvidence != nullptr && !groundPlaneForEvidenceIsBad)
     {
@@ -70,7 +74,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
                 groundPlaneForEvidenceGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const Eigen::Vector4d groundEq =
             groundPlaneForEvidenceGetGlobalEquation.coeffs();
@@ -92,7 +99,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (p_wall->getId(wallId) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         mappedWallIds.insert(wallId);
 
@@ -100,13 +110,19 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (p_wall->isBad(wallIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         geometric::Plane::PlaneVariant wallPlaneType{};
         if (!(wallIsBad) && p_wall->getPlaneType(wallPlaneType) !=
                                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallIsBad || wallPlaneType != geometric::Plane::PlaneVariant::WALL)
         {
@@ -124,7 +140,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
                     p_room->isBad(roomIsBad) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_room == nullptr || roomIsBad)
                 {
@@ -135,7 +154,11 @@ void SemanticsManager::suppressUndefendedWalls(void)
                 if (p_room->getWalls(roomWalls) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getWalls cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWalls returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 return std::find(roomWalls.begin(), roomWalls.end(), p_wall) !=
                        roomWalls.end();
@@ -150,7 +173,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
                     p_passage->isBad(passageIsBad) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_passage == nullptr || passageIsBad)
                 {
@@ -161,14 +187,22 @@ void SemanticsManager::suppressUndefendedWalls(void)
                 if (p_passage->getAssociateWalls(passageWalls) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getAssociateWalls cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getAssociateWalls returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 vs_graphs::core::geometric::Plane *p_passageAssociateDoor =
                     nullptr;
                 if (p_passage->getAssociateDoor(p_passageAssociateDoor) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getAssociateDoor cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getAssociateDoor returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 return p_passageAssociateDoor == p_wall ||
                        std::find(passageWalls.begin(),
@@ -184,7 +218,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (p_wall->getGeometrySnapshot(wallGeometry) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGeometrySnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
         const double wallNormalNorm = wallEquation_World.head<3>().norm();
@@ -277,7 +314,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (p_wall->getGeometrySnapshot(wallGetGeometrySnapshot) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGeometrySnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const auto        p_cloud = wallGetGeometrySnapshot.supportCloud;
         const std::size_t cloudPointCount =
@@ -286,7 +326,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (p_wall->getObservationCount(observationCount) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getObservationCount cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservationCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         auto [stateIterator, inserted] = undefendedWalls.try_emplace(
             wallId,
@@ -348,7 +391,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (p_wall->getObservations(wallObservations) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getObservations cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Sweep every keyframe that references this plane, including
@@ -372,14 +418,21 @@ void SemanticsManager::suppressUndefendedWalls(void)
                 if (p_wall->eraseObservation(p_keyFrame) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // eraseObservation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseObservation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
         }
 
         if (p_wall->setBad() != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         p_currentMap->eraseRoomWallPlane(p_wall);
         p_currentMap->eraseMapPlane(p_wall);
@@ -387,7 +440,10 @@ void SemanticsManager::suppressUndefendedWalls(void)
         if (p_wall->setMap(nullptr) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         undefendedWalls.erase(wallId);
 

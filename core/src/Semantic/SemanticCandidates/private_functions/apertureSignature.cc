@@ -6,6 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <rclcpp/logging.hpp>
 #include <set>
 #include <string>
 #include <tuple>
@@ -46,14 +47,20 @@ SemanticCandidatesStatus apertureSignature(
             finiteNonnegative(passage.width_m, isFiniteNonnegative) !=
                 SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // finiteNonnegative cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: finiteNonnegative returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         bool isFiniteNonnegative2{};
         if ((passage.isApertureValid && isFiniteNonnegative) &&
             finiteNonnegative(passage.height_m, isFiniteNonnegative2) !=
                 SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // finiteNonnegative cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: finiteNonnegative returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (passage.isApertureValid && isFiniteNonnegative &&
             isFiniteNonnegative2 && passage.width_m > 0.0 &&

@@ -20,6 +20,7 @@
 #include "Utils/Utils/objects/Utils.h"
 #include "Utils/Utils/objects/UtilsStatus.h"
 #include <pcl/point_cloud.h>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -59,7 +60,11 @@ std::vector<std::vector<
                 p_filteredCloud) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // pointcloudDistanceFilter cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: pointcloudDistanceFilter returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
 
         /* Downsample points into grid based on points within voxel grid */
@@ -71,22 +76,12 @@ std::vector<std::vector<
                 p_downsampledCloud) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // pointcloudDownsample cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: pointcloudDownsample returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         p_filteredCloud = std::move(p_downsampledCloud);
-
-        /* Remove points that are statically isolated from neighbors */
-        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_inlierCloud;
-        if (utils::utils::Utils::pointcloudOutlierRemoval<pcl::PointXYZRGBA>(
-                p_filteredCloud,
-                p_sysParams->semSeg.pointcloud.outlierRemoval.stdThreshold,
-                p_sysParams->semSeg.pointcloud.outlierRemoval.meanThreshold,
-                p_inlierCloud) !=
-            utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
-        {
-            // pointcloudOutlierRemoval cannot fail; continue as before.
-        }
-        p_filteredCloud = std::move(p_inlierCloud);
 
         /*!
          * Filtering removes arbitrary points, so the result is no longer an
@@ -126,7 +121,10 @@ std::vector<std::vector<
                                                   p_extractedPlanes) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // ransacPlaneFitting cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: ransacPlaneFitting returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
         p_clsPlanes.push_back(p_extractedPlanes);

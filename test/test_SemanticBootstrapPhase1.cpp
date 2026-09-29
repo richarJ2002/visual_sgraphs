@@ -17,6 +17,7 @@
 
 #include <limits>
 #include <memory>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,33 +33,51 @@ std::unique_ptr<geometric::Plane> makeAdmissibleWall(const int    id_in,
         std::make_unique<geometric::Plane>();
     if (p_wall->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_wall->setMap(p_map_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_wall->setPlaneType(geometric::Plane::PlaneVariant::WALL) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setPlaneType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPlaneType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_wall->castWeightedVote(geometric::Plane::PlaneVariant::WALL, 1.0) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // castWeightedVote cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: castWeightedVote returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_wall->setGlobalEquation(
             g2o::Plane3D(Eigen::Vector4d(1.0, 0.0, 0.0, -x_m_in))) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_wall->setCentroid(Eigen::Vector3d(x_m_in, 0.0, 1.0)) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_cloud =
@@ -77,12 +96,18 @@ std::unique_ptr<geometric::Plane> makeAdmissibleWall(const int    id_in,
     if (p_wall->setMapClouds(p_cloud) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMapClouds cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMapClouds returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_wall->updateSizeOfPlane() !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // updateSizeOfPlane cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateSizeOfPlane returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     return p_wall;
 }

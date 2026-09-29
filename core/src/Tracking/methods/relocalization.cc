@@ -32,6 +32,7 @@
 #include "System.h"
 
 #include <iostream>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -59,13 +60,19 @@ bool Tracking::relocalization()
             if (p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             semantic::Room::BoundaryStatus roomBoundaryStatus{};
             if ((!roomIsBad) && p_room->getBoundaryStatus(roomBoundaryStatus) !=
                                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getBoundaryStatus cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getBoundaryStatus returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (!roomIsBad &&
                 roomBoundaryStatus == semantic::Room::BoundaryStatus::COMPLETE)
@@ -74,7 +81,11 @@ bool Tracking::relocalization()
                 if (p_room->getCentroid(roomCentroid) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 roomCentroids.push_back(Eigen::Vector3f(roomCentroid.x(),
                                                         roomCentroid.y(),

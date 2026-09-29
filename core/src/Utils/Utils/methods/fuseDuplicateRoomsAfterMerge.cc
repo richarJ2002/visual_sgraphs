@@ -31,6 +31,7 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <rclcpp/logging.hpp>
 #include <string>
 #include <unordered_set>
 
@@ -57,7 +58,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
     if (types::SystemParams::getParams(p_systemParameters) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     const double maximumRoomCentroidDistance_m =
@@ -89,14 +93,20 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 p_wall->isBad(wallIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             geometric::Plane::PlaneVariant wallPlaneType{};
             if (!(p_wall == nullptr || wallIsBad) &&
                 p_wall->getPlaneType(wallPlaneType) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getPlaneType cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPlaneType returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_wall == nullptr || wallIsBad ||
                 wallPlaneType != geometric::Plane::PlaneVariant::WALL)
@@ -108,7 +118,11 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (p_wall->getGeometrySnapshot(wallGeometry) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGeometrySnapshot cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getGeometrySnapshot returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
 
@@ -239,7 +253,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             p_importedRoom->isBad(importedRoomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_importedRoom == nullptr || importedRoomIsBad)
         {
@@ -250,7 +267,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_importedRoom->getRoomVariant(importedRoomType) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (importedRoomType == semantic::Room::RoomVariant::UNDEFINED)
@@ -262,7 +282,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_importedRoom->getCentroid(importedCentroid_World_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (!importedCentroid_World_m.allFinite())
@@ -274,7 +297,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_importedRoom->getWalls(importedWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         semantic::Room *p_bestRetainedRoom = nullptr;
@@ -288,7 +314,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 p_candidateRoom->isBad(candidateRoomIsBad) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             semantic::Room::RoomVariant candidateRoomRoomVariant{};
             if (!(p_candidateRoom == nullptr ||
@@ -297,7 +326,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 p_candidateRoom->getRoomVariant(candidateRoomRoomVariant) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomVariant cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomVariant returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_candidateRoom == nullptr ||
                 p_candidateRoom == p_importedRoom || candidateRoomIsBad ||
@@ -311,27 +343,39 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (p_importedRoom->getRoomTag(importedIdentity) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             std::string candidateIdentity{};
             if (p_candidateRoom->getRoomTag(candidateIdentity) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             int importedRoomId{};
             if (!(!importedIdentity.empty() && !candidateIdentity.empty()) &&
                 p_importedRoom->getId(importedRoomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int candidateRoomId{};
             if (!(!importedIdentity.empty() && !candidateIdentity.empty()) &&
                 p_candidateRoom->getId(candidateRoomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             const bool identitiesMatch =
                 !importedIdentity.empty() && !candidateIdentity.empty()
@@ -344,7 +388,11 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 if (p_candidateRoom->getCentroid(candidateRoomCentroid) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 bestCentroidDistance_m =
                     (candidateRoomCentroid - importedCentroid_World_m).norm();
@@ -358,14 +406,20 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (p_importedRoom->getId(importedRoomId2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int candidateRoomId2{};
             if (!(importedRoomId2 >= 0) &&
                 p_candidateRoom->getId(candidateRoomId2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (importedRoomId2 >= 0 || candidateRoomId2 >= 0)
             {
@@ -376,28 +430,40 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (p_importedRoom->getHasKnownLabel(importedRoomHasKnownLabel) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getHasKnownLabel cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHasKnownLabel returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             bool candidateRoomHasKnownLabel{};
             if ((importedRoomHasKnownLabel) &&
                 p_candidateRoom->getHasKnownLabel(candidateRoomHasKnownLabel) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getHasKnownLabel cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHasKnownLabel returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             int importedRoomMetaMarkerId{};
             if ((importedRoomHasKnownLabel && candidateRoomHasKnownLabel) &&
                 p_importedRoom->getMetaMarkerId(importedRoomMetaMarkerId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getMetaMarkerId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMetaMarkerId returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             int candidateRoomMetaMarkerId{};
             if ((importedRoomHasKnownLabel && candidateRoomHasKnownLabel) &&
                 p_candidateRoom->getMetaMarkerId(candidateRoomMetaMarkerId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getMetaMarkerId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMetaMarkerId returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (importedRoomHasKnownLabel && candidateRoomHasKnownLabel &&
                 importedRoomMetaMarkerId != candidateRoomMetaMarkerId)
@@ -409,7 +475,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (p_candidateRoom->getCentroid(candidateCentroid_World_m) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             const double centroidDistance_m =
@@ -427,7 +496,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (p_candidateRoom->getWalls(candidateWalls) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
 
             std::size_t sameSideSharedWallCount   = 0U;
@@ -440,7 +512,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                     p_importedWall->isBad(importedWallIsBad) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_importedWall == nullptr || importedWallIsBad)
                 {
@@ -462,7 +537,11 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                         importedWallGetGlobalEquation) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 Eigen::Vector4d wallEquation_World =
                     importedWallGetGlobalEquation.coeffs();
@@ -516,7 +595,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_bestRetainedRoom->getWalls(retainedWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         /*! A wall can bound the retained (near) room only when no passable
@@ -535,14 +617,20 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 p_plane->isBad(planeIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             geometric::Plane::PlaneVariant planeType{};
             if ((p_plane != nullptr && !planeIsBad) &&
                 p_plane->getPlaneType(planeType) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getPlaneType cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPlaneType returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_plane != nullptr && !planeIsBad &&
                 planeType == geometric::Plane::PlaneVariant::GROUND)
@@ -560,7 +648,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                     mergeGroundPlaneGetGlobalEquation) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             const Eigen::Vector4d groundEq =
                 mergeGroundPlaneGetGlobalEquation.coeffs();
@@ -588,7 +679,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_bestRetainedRoom->getCentroid(retainedCentroid_World_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         const std::vector<semantic::Passage *> mergePassages =
@@ -624,13 +718,19 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (p_importedRoom->getId(importedRoomId3) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int bestRetainedRoomId{};
             if (p_bestRetainedRoom->getId(bestRetainedRoomId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout << "[SemanticMerge] Preserved semantic::Room#"
                       << importedRoomId3 << " and semantic::Room#"
@@ -667,13 +767,19 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 if (p_first->getId(firstId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int secondId{};
                 if (p_second->getId(secondId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 return firstId < secondId;
             });
@@ -685,7 +791,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 p_importedWall->isBad(importedWallIsBad2) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_importedWall == nullptr || importedWallIsBad2)
             {
@@ -696,7 +805,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (p_importedWall->getCentroid(importedWallGetCentroid) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             const Eigen::Vector3d importedWallCentroid_World_m =
                 importedWallGetCentroid.cast<double>();
@@ -738,7 +850,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                     p_existingOwner->isBad(existingOwnerIsBad) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 semantic::Room::RoomVariant existingOwnerRoomVariant{};
                 if (!(p_existingOwner == nullptr || existingOwnerIsBad ||
@@ -747,7 +862,11 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                     p_existingOwner->getRoomVariant(existingOwnerRoomVariant) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getRoomVariant cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomVariant returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_existingOwner == nullptr || existingOwnerIsBad ||
                     p_existingOwner == p_importedRoom ||
@@ -762,7 +881,11 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 if (p_existingOwner->getWalls(ownerWalls) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getWalls cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWalls returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (std::find(ownerWalls.begin(),
                               ownerWalls.end(),
@@ -780,7 +903,11 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 if (p_separatingPassage->getProspectiveRoom(p_farSideRoom) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
 
                 bool farSideRoomIsBad{};
@@ -788,7 +915,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                     p_farSideRoom->isBad(farSideRoomIsBad) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_farSideRoom == nullptr || farSideRoomIsBad ||
                     p_farSideRoom == p_importedRoom)
@@ -813,8 +943,11 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                                            importedRoomWasWallRemoved) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                importedRoomWasWallRemoved =
-                    false; // rejected input reads as before
+                importedRoomWasWallRemoved = false;
+                RCLCPP_WARN(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: removeWall rejected its input; continuing as before.",
+                    __func__);
             }
 
             if (transfer.p_targetRoom == nullptr)
@@ -823,13 +956,19 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 if (transfer.p_separatingPassage->getId(id) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int getId2{};
                 if (transfer.p_wall->getId(getId2) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 std::cout << "[SemanticMerge] Far-side Wall#" << getId2
                           << " at semantic::Passage#" << id
@@ -840,7 +979,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (transfer.p_targetRoom->setWalls(transfer.p_wall) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if (transfer.p_separatingPassage != nullptr &&
@@ -850,13 +992,19 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 if (transfer.p_targetRoom->getId(id2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int getId3{};
                 if (transfer.p_wall->getId(getId3) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 std::cout << "[SemanticMerge] Redirected far-side Wall#"
                           << getId3 << " to stable semantic::Room#" << id2
@@ -869,7 +1017,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_importedRoom->getPassages(importedRoomPassages) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getPassages cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPassages returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         for (vs_graphs::core::semantic::Passage *p_importedPassage :
              importedRoomPassages)
@@ -877,7 +1028,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (p_bestRetainedRoom->setDoorways(p_importedPassage) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setDoorways cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setDoorways returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -891,8 +1045,11 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                                                       passageWasRoomReplaced) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    passageWasRoomReplaced =
-                        false; // rejected input reads as before
+                    passageWasRoomReplaced = false;
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: replaceProspectiveRoom rejected its "
+                                "input; continuing as before.",
+                                __func__);
                 }
             }
         }
@@ -907,7 +1064,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_bestRetainedRoom->getCentroid(bestRetainedRoomCentroid) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         const Eigen::Vector3d fusedCentroid_World_m =
             (retainedWeight * bestRetainedRoomCentroid +
@@ -917,14 +1077,20 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_bestRetainedRoom->setCentroid(fusedCentroid_World_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         geometric::Plane *p_bestRetainedRoomGroundPlane = nullptr;
         if (p_bestRetainedRoom->getGroundPlane(p_bestRetainedRoomGroundPlane) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getGroundPlane cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGroundPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_bestRetainedRoomGroundPlane == nullptr)
         {
@@ -932,12 +1098,18 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             if (p_importedRoom->getGroundPlane(p_importedRoomGroundPlane) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getGroundPlane cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGroundPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_bestRetainedRoom->setGroundPlane(p_importedRoomGroundPlane) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setGroundPlane cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGroundPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -946,55 +1118,82 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 bestRetainedRoomHasKnownLabel) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getHasKnownLabel cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getHasKnownLabel returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         bool importedRoomHasKnownLabel2{};
         if ((!bestRetainedRoomHasKnownLabel) &&
             p_importedRoom->getHasKnownLabel(importedRoomHasKnownLabel2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getHasKnownLabel cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getHasKnownLabel returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (!bestRetainedRoomHasKnownLabel && importedRoomHasKnownLabel2)
         {
             if (p_bestRetainedRoom->setHasKnownLabel(true) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setHasKnownLabel cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setHasKnownLabel returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             semantic::Marker *p_importedRoomMetaMarker = nullptr;
             if (p_importedRoom->getMetaMarker(p_importedRoomMetaMarker) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getMetaMarker cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMetaMarker returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_bestRetainedRoom->setMetaMarker(p_importedRoomMetaMarker) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setMetaMarker cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMetaMarker returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             int importedRoomMetaMarkerId2{};
             if (p_importedRoom->getMetaMarkerId(importedRoomMetaMarkerId2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getMetaMarkerId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMetaMarkerId returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_bestRetainedRoom->setMetaMarkerId(
                     importedRoomMetaMarkerId2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setMetaMarkerId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMetaMarkerId returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             std::string importedRoomName{};
             if (p_importedRoom->getName(importedRoomName) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getName returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_bestRetainedRoom->setName(importedRoomName) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setName returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -1005,14 +1204,21 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 importedRoomHasPreviouslyVisited) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // hasPreviouslyVisited cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasPreviouslyVisited returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (importedRoomHasPreviouslyVisited)
         {
             if (p_bestRetainedRoom->setPreviouslyVisited(true) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setPreviouslyVisited cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setPreviouslyVisited returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
 
@@ -1026,8 +1232,11 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                                          floorWasRoomReplaced) !=
                     semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    floorWasRoomReplaced =
-                        false; // rejected input reads as before
+                    floorWasRoomReplaced = false;
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: replaceRoom rejected its input; "
+                                "continuing as before.",
+                                __func__);
                 }
             }
         }
@@ -1037,30 +1246,45 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         if (p_importedRoom->clearWalls() !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // clearWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: clearWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_importedRoom->clearPassages() !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // clearPassages cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: clearPassages returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_importedRoom->setBad() !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         int importedRoomId4{};
         if (p_importedRoom->getId(importedRoomId4) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         int bestRetainedRoomId2{};
         if (p_bestRetainedRoom->getId(bestRetainedRoomId2) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << "[SemanticMerge] Fused duplicate semantic::Room#"
                   << importedRoomId4 << " into semantic::Room#"

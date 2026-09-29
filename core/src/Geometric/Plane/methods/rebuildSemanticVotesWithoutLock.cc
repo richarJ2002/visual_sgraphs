@@ -23,6 +23,7 @@
 #include <cmath>
 #include <limits>
 #include <pcl/octree/octree_search.h>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 namespace vs_graphs
@@ -71,7 +72,10 @@ PlaneStatus Plane::rebuildSemanticVotesWithoutLock(void)
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     planeType = maximumVotes >= p_params->semSeg.minVotes
                     ? maximumType

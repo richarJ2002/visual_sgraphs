@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 #include "../private_functions.h"
@@ -56,7 +57,10 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
                                floorsMatch) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // checkConsecutiveFloors cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: checkConsecutiveFloors returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (!floorsMatch)
     {
@@ -82,14 +86,20 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         if ((p_room != nullptr) &&
             p_room->isBad(roomIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         Room::RoomVariant roomVariant{};
         if ((p_room != nullptr && !roomIsBad) &&
             p_room->getRoomVariant(roomVariant) !=
                 RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room != nullptr && !roomIsBad &&
             roomVariant == Room::RoomVariant::ROOM)
@@ -98,7 +108,11 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
             if (copyMergeRoomEvidence(p_room, verifyConfiguration, evidence) !=
                 SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
             {
-                // copyMergeRoomEvidence cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: copyMergeRoomEvidence returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             survivingRooms.push_back(evidence);
         }
@@ -110,14 +124,20 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         if ((p_room != nullptr) &&
             p_room->isBad(roomIsBad2) != RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         Room::RoomVariant roomVariant2{};
         if ((p_room != nullptr && !roomIsBad2) &&
             p_room->getRoomVariant(roomVariant2) !=
                 RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room != nullptr && !roomIsBad2 &&
             roomVariant2 == Room::RoomVariant::ROOM)
@@ -126,7 +146,11 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
             if (copyMergeRoomEvidence(p_room, verifyConfiguration, evidence2) !=
                 SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
             {
-                // copyMergeRoomEvidence cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: copyMergeRoomEvidence returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             absorbedRooms.push_back(evidence2);
         }
@@ -136,7 +160,10 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
     if (collectConsecutiveAnchors(survivingRooms, absorbedRooms, anchorPairs) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // collectConsecutiveAnchors cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: collectConsecutiveAnchors returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     result.sharedRoomCount = anchorPairs.size();
     if (anchorPairs.empty())
@@ -157,7 +184,10 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         p_oldFinalRoom->hasRoomTag(oldFinalRoomHasRoomTag) !=
             RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // hasRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool newStartRoomHasRoomTag{};
     if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
@@ -165,7 +195,10 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         p_newStartRoom->hasRoomTag(newStartRoomHasRoomTag) !=
             RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // hasRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     std::string oldFinalRoomRoomTag{};
     if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
@@ -173,7 +206,10 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         p_oldFinalRoom->getRoomTag(oldFinalRoomRoomTag) !=
             RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     std::string oldFinalRoomRoomTag2{};
     if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
@@ -182,7 +218,10 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         p_oldFinalRoom->getRoomTag(oldFinalRoomRoomTag2) !=
             RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     std::string newStartRoomRoomTag{};
     if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
@@ -191,7 +230,10 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         p_newStartRoom->getRoomTag(newStartRoomRoomTag) !=
             RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
         oldFinalRoomHasRoomTag && newStartRoomHasRoomTag &&
@@ -204,7 +246,10 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
             if (p_newStartRoom->getRoomTag(newStartRoomRoomTag2) !=
                 RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (pair.p_surviving->context.roomTag == newStartRoomRoomTag2)
             {
@@ -228,7 +273,10 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
                                  centroidCheck) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // checkAnchorRoomCentroids cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: checkAnchorRoomCentroids returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (centroidCheck == AlignmentCheck::CONTRADICTION)
     {
@@ -260,7 +308,10 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
             topologyCheck) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // checkConsecutivePassageTopology cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: checkConsecutivePassageTopology returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
     }
     result.matchedPassageCount = matchedPassages;
     if (topologyCheck == AlignmentCheck::CONTRADICTION)
@@ -289,7 +340,11 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
                                      wallCheck) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // checkFixedTransformWalls cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: checkFixedTransformWalls returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         result.matchedWallCount += pairMatchedWalls;
         if (wallCheck == AlignmentCheck::CONTRADICTION)
@@ -314,7 +369,11 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
                 alignmentCheck) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // checkConsecutiveWallEdgeOverlap cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: checkConsecutiveWallEdgeOverlap returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (alignmentCheck == AlignmentCheck::CONTRADICTION)
         {

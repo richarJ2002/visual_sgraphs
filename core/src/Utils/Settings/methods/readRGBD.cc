@@ -35,6 +35,7 @@
 #include <utility>
 
 #include <opencv2/core/persistence.hpp>
+#include <rclcpp/logging.hpp>
 
 #include "Types/objects/SystemParams.h"
 
@@ -58,7 +59,10 @@ SettingsStatus Settings::readRGBD(cv::FileStorage &storage_inout)
                              parameter) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     depthMapScale = parameter;
     float parameter2{};
@@ -68,14 +72,20 @@ SettingsStatus Settings::readRGBD(cv::FileStorage &storage_inout)
                              parameter2) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     depthThreshold = parameter2;
     float parameter3{};
     if (readParameter<float>(storage_inout, "Stereo.b", found, parameter3) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     stereoBaseline = parameter3;
     float calibration1Parameter{};
@@ -83,7 +93,10 @@ SettingsStatus Settings::readRGBD(cv::FileStorage &storage_inout)
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     baselineFocal = stereoBaseline * calibration1Parameter;
     float parameter4{};
@@ -93,7 +106,10 @@ SettingsStatus Settings::readRGBD(cv::FileStorage &storage_inout)
                              parameter4) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     nearThreshold = parameter4;
     float parameter5{};
@@ -103,7 +119,10 @@ SettingsStatus Settings::readRGBD(cv::FileStorage &storage_inout)
                              parameter5) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     farThreshold = parameter5;
 
@@ -112,7 +131,10 @@ SettingsStatus Settings::readRGBD(cv::FileStorage &storage_inout)
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     p_params->pointcloud.distanceThresh =
         std::make_pair(nearThreshold, farThreshold);

@@ -24,6 +24,7 @@
  */
 
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -44,7 +45,10 @@ SemanticGraphSnapshotStatus appendWallRef(geometric::Plane         *p_wall_in,
     if (rawPlaneRef(p_wall_in, rawPlaneRef2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
-        // rawPlaneRef cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rawPlaneRef returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     refs_inout.push_back(rawPlaneRef2);
 

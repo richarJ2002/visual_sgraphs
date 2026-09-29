@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -63,14 +64,20 @@ bool hasSeparatingFiniteWall(
             p_wall->isBad(wallIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         geometric::Plane::PlaneVariant wallPlaneType{};
         if (!(p_wall == nullptr || wallIsBad) &&
             p_wall->getPlaneType(wallPlaneType) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_wall == nullptr || wallIsBad ||
             wallPlaneType != geometric::Plane::PlaneVariant::WALL)
@@ -82,7 +89,10 @@ bool hasSeparatingFiniteWall(
         if (p_wall->getGeometrySnapshot(wallGeometry) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGeometrySnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
         const double    wallNormalNorm = wallEquation_World.head<3>().norm();

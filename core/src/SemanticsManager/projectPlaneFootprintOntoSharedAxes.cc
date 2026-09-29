@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -54,7 +55,10 @@ bool projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
     if (p_plane_in->getGeometrySnapshot(geometry) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGeometrySnapshot cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGeometrySnapshot returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (geometry.supportCloud == nullptr || geometry.supportCloud->empty())
     {

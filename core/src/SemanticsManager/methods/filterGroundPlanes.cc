@@ -17,6 +17,7 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -50,7 +51,10 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
     if (p_groundPlane_in->getId(groundPlaneId) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
 
     /* Go through all ground planes to check validity */
@@ -61,7 +65,10 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
         if (plane->getExpectedPlaneType(planeExpectedPlaneType) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getExpectedPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getExpectedPlaneType returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         int planeGetId{};
         if (!(planeExpectedPlaneType !=
@@ -69,7 +76,10 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
             plane->getId(planeGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (planeExpectedPlaneType !=
                 vs_graphs::core::geometric::Plane::PlaneVariant::GROUND ||
@@ -91,7 +101,11 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
             if (plane->resetPlaneSemantics() !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // resetPlaneSemantics cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: resetPlaneSemantics returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             continue;
         }
@@ -101,7 +115,10 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
         if (plane->getGlobalEquation(planeGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector3f transformedPlaneCoefficients =
             transformPlaneEqToGroundReference(planeGetGlobalEquation.coeffs());
@@ -119,7 +136,11 @@ void SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
             if (plane->resetPlaneSemantics() !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // resetPlaneSemantics cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: resetPlaneSemantics returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
     }

@@ -24,6 +24,7 @@
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -42,25 +43,37 @@ SemanticAxiomEvaluatorStatus doSegmentsIntersect(const Eigen::Vector2d &p1_in,
     if (orientation2d(p1_in, q1_in, p2_in, orientation1) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // orientation2d cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: orientation2d returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     double orientation2{};
     if (orientation2d(p1_in, q1_in, q2_in, orientation2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // orientation2d cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: orientation2d returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     double orientation3{};
     if (orientation2d(p2_in, q2_in, p1_in, orientation3) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // orientation2d cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: orientation2d returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     double orientation4{};
     if (orientation2d(p2_in, q2_in, q1_in, orientation4) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // orientation2d cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: orientation2d returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (((orientation1 > 0.0) != (orientation2 > 0.0)) &&
@@ -78,7 +91,10 @@ SemanticAxiomEvaluatorStatus doSegmentsIntersect(const Eigen::Vector2d &p1_in,
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // isOnSegmentBoundingBox cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isOnSegmentBoundingBox returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (orientation1 == 0.0 && isOnSegmentBoundingBox2)
     {
@@ -92,7 +108,10 @@ SemanticAxiomEvaluatorStatus doSegmentsIntersect(const Eigen::Vector2d &p1_in,
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // isOnSegmentBoundingBox cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isOnSegmentBoundingBox returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (orientation2 == 0.0 && isOnSegmentBoundingBox3)
     {
@@ -106,7 +125,10 @@ SemanticAxiomEvaluatorStatus doSegmentsIntersect(const Eigen::Vector2d &p1_in,
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // isOnSegmentBoundingBox cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isOnSegmentBoundingBox returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (orientation3 == 0.0 && isOnSegmentBoundingBox4)
     {
@@ -120,7 +142,10 @@ SemanticAxiomEvaluatorStatus doSegmentsIntersect(const Eigen::Vector2d &p1_in,
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // isOnSegmentBoundingBox cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isOnSegmentBoundingBox returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (orientation4 == 0.0 && isOnSegmentBoundingBox5)
     {

@@ -8,6 +8,7 @@
 #include "MissionHealthTopologyJson.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "Semantic/SemanticAxiomEvaluator.h"
@@ -31,7 +32,10 @@ MissionHealthTopologyJsonStatus
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // entityKindName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: entityKindName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         entityKeysJson.push_back({{"kind", entityKindName2},
                                   {"mapId", key.mapId},

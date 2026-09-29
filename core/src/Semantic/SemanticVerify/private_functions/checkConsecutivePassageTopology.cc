@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 #include "../private_functions.h"
@@ -83,7 +84,11 @@ SemanticVerifyStatus checkConsecutivePassageTopology(
             if (passageGeometryIsUsable(passage, isUsable) !=
                 SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
             {
-                // passageGeometryIsUsable cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: passageGeometryIsUsable returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (isUsable)
             {
@@ -130,7 +135,11 @@ SemanticVerifyStatus checkConsecutivePassageTopology(
             if (passageGeometryIsUsable(absorbedPassage, isUsable2) !=
                 SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
             {
-                // passageGeometryIsUsable cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: passageGeometryIsUsable returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (!isUsable2)
             {

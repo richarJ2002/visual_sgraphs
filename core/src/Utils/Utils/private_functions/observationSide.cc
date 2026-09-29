@@ -24,6 +24,7 @@
  */
 
 #include "Utils/Utils/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -49,7 +50,10 @@ UtilsStatus getMedianObservationSide_World_m(
                                                snapshot) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getObservationSideSnapshot cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getObservationSideSnapshot returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     medianObservationSide_World_m_out = {
         snapshot.medianSignedDistance_m,

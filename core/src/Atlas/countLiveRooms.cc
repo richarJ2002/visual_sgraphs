@@ -26,6 +26,7 @@
 #include "Atlas.h"
 
 #include "private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -46,7 +47,10 @@ std::size_t countLiveRooms(Map *p_map_in)
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room != nullptr && !roomIsBad)
         {

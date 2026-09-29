@@ -24,6 +24,7 @@
 #include <cmath>
 #include <limits>
 #include <pcl/octree/octree_search.h>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 namespace vs_graphs
@@ -87,7 +88,11 @@ PlaneStatus Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
         if (rebuildSemanticVotesWithoutLock() !=
             PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // rebuildSemanticVotesWithoutLock cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: rebuildSemanticVotesWithoutLock returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
     }
 

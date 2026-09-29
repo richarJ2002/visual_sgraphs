@@ -26,6 +26,7 @@
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 #include <string>
 #include <utility>
 
@@ -76,7 +77,10 @@ SemanticAxiomEvaluatorStatus makeFinding(AxiomCode              axiomCode_in,
     if (axiomClassFor(axiomCode_in, axiomClass) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomClassFor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomClassFor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     finding.classification = axiomClass;
     finding.reasonCode     = reasonCode_in;

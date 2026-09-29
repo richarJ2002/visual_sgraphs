@@ -26,6 +26,7 @@
 #include "LoopClosing.h"
 
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -44,14 +45,20 @@ bool verifyLoopMergeFloors(
             p_survivingMap_in->getAllFloors(),
             p_survivingFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // selectBestObservedFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: selectBestObservedFloor returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     semantic::Floor *p_absorbedFloor = nullptr;
     if (semantic::Floor::selectBestObservedFloor(
             p_absorbedMap_in->getAllFloors(),
             p_absorbedFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // selectBestObservedFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: selectBestObservedFloor returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     std::optional<semantic::Floor::PlaneIdentity> survivingFloorPlaneIdentity{};
@@ -59,7 +66,10 @@ bool verifyLoopMergeFloors(
         p_survivingFloor->getPlaneIdentity(survivingFloorPlaneIdentity) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneIdentity returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     const std::optional<semantic::Floor::PlaneIdentity> survivingIdentity =
         p_survivingFloor != nullptr ? survivingFloorPlaneIdentity
@@ -69,7 +79,10 @@ bool verifyLoopMergeFloors(
         p_absorbedFloor->getPlaneIdentity(absorbedFloorPlaneIdentity) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneIdentity returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     const std::optional<semantic::Floor::PlaneIdentity> absorbedIdentity =
         p_absorbedFloor != nullptr ? absorbedFloorPlaneIdentity : std::nullopt;
@@ -94,7 +107,10 @@ bool verifyLoopMergeFloors(
             transformedAbsorbedIdentity) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // transformPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: transformPlaneIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     double floorNormalAngle_deg = std::numeric_limits<double>::infinity();
     double floorOffset_m        = std::numeric_limits<double>::infinity();
@@ -110,7 +126,10 @@ bool verifyLoopMergeFloors(
             floorOffset_m,
             isMatch) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // planeIdentitiesMatch cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: planeIdentitiesMatch returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     const bool floorsMatch = transformedAbsorbedIdentity.has_value() && isMatch;
 

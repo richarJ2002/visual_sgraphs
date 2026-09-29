@@ -17,6 +17,7 @@
  */
 
 #include "GeoSemHelpers.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -42,13 +43,19 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
         if (p_currentMarker->getId(currentMarkerId) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::pair<bool, std::string> result{};
         if (checkIfMarkerIsDoorway(currentMarkerId, envRooms_in, result) !=
             GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
-            // checkIfMarkerIsDoorway cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkIfMarkerIsDoorway returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         bool        markerIsDoorway = result.first;
         std::string doorwayName     = result.second;
@@ -61,7 +68,10 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
                           ON_ROOM_CENTER) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // setMarkerType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMarkerType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         // If the marker is not in the map, add it
@@ -69,31 +79,46 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
         if (p_currentMarker->isMarkerInGMap(currentMarkerIsMarkerInGMap) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // isMarkerInGMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isMarkerInGMap returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (!currentMarkerIsMarkerInGMap)
         {
             if (p_currentMarker->setMap(p_atlas_in->getCurrentMap()) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             Sophus::SE3f currentMarkerLocalPose{};
             if (p_currentMarker->getLocalPose(currentMarkerLocalPose) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // getLocalPose cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getLocalPose returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_currentMarker->setGlobalPose(p_keyFrame_in->getPoseInverse() *
                                                currentMarkerLocalPose) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // setGlobalPose cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGlobalPose returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_currentMarker->setMarkerInGMap(true) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // setMarkerInGMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMarkerInGMap returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             // Creating a new marker in the map
@@ -104,7 +129,10 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
                                 p_mapMarker) !=
                 GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
             {
-                // createMapMarker cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: createMapMarker returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             p_currentMapMarker = p_mapMarker;
         }
@@ -117,13 +145,19 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
                 if (p_mappedMarker->getId(mappedMarkerId) !=
                     semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int currentMarkerId2{};
                 if (p_currentMarker->getId(currentMarkerId2) !=
                     semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (mappedMarkerId == currentMarkerId2)
                 {
@@ -133,14 +167,22 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
                             currentMarkerLocalPose2) !=
                         semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
                     {
-                        // getLocalPose cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getLocalPose returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (p_currentMapMarker->addObservation(
                             p_keyFrame_in,
                             currentMarkerLocalPose2) !=
                         semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
                     {
-                        // addObservation cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: addObservation returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                 }
             }

@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 #include <sstream>
 
 #include "../private_functions.h"
@@ -37,28 +38,40 @@ RoomTrackerStatus RoomTracker::eventToJSON(const TransitionEvent &event_in,
     if (formatDouble(event_in.timestamp_s, formattedValue) !=
         RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // formatDouble cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: formatDouble returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     textStream << "\"timestamp\":" << formattedValue << ",";
     const char *p_stateLiteral = nullptr;
     if (stateLiteral(event_in.sourceState, p_stateLiteral) !=
         RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // stateLiteral cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: stateLiteral returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     textStream << "\"source\":\"" << p_stateLiteral << "\",";
     const char *p_eventLiteral = nullptr;
     if (eventLiteral(event_in.event, p_eventLiteral) !=
         RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // eventLiteral cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: eventLiteral returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     textStream << "\"event\":\"" << p_eventLiteral << "\",";
     const char *p_stateLiteral2 = nullptr;
     if (stateLiteral(event_in.targetState, p_stateLiteral2) !=
         RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // stateLiteral cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: stateLiteral returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     textStream << "\"target\":\"" << p_stateLiteral2 << "\",";
     textStream << "\"accepted\":" << (event_in.isAccepted ? "true" : "false")
@@ -67,14 +80,20 @@ RoomTrackerStatus RoomTracker::eventToJSON(const TransitionEvent &event_in,
     if (formatDouble(event_in.dwell_s, formattedValue2) !=
         RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // formatDouble cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: formatDouble returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     textStream << "\"dwell_s\":" << formattedValue2 << ",";
     std::string formattedValue3{};
     if (formatDouble(event_in.confidence, formattedValue3) !=
         RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // formatDouble cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: formatDouble returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     textStream << "\"confidence\":" << formattedValue3 << ",";
     textStream << "\"verification_pass\":"

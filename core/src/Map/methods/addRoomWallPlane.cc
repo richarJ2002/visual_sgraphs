@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -44,7 +45,10 @@ void Map::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
     if (p_plane_in->getId(planeGetId) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     roomWallPlaneIndex[planeGetId] = p_plane_in;
 }

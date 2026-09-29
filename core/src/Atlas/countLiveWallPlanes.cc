@@ -26,6 +26,7 @@
 #include "Atlas.h"
 
 #include "private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -46,14 +47,20 @@ std::size_t countLiveWallPlanes(Map *p_map_in)
             p_plane->isBad(planeIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         geometric::Plane::PlaneVariant planeType{};
         if ((p_plane != nullptr && !planeIsBad) &&
             p_plane->getPlaneType(planeType) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_plane != nullptr && !planeIsBad &&
             planeType == geometric::Plane::PlaneVariant::WALL)

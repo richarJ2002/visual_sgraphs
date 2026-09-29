@@ -27,6 +27,7 @@
 #include "System.h"
 
 #include <iostream>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -192,7 +193,10 @@ Tracking::Tracking(System                    *p_sys_in,
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << "- Camera " << cameraId;
         unsigned int cameraType{};
@@ -200,7 +204,10 @@ Tracking::Tracking(System                    *p_sys_in,
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getType returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (cameraType ==
             camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE)

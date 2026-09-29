@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -49,22 +50,34 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     if (p_newMapPlane->setColor() !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setColor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setColor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapPlane->setLocalEquation(estimatedPlane_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setLocalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setLocalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapPlane->setMap(p_currentMap) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapPlane->setId(p_currentMap->reservePlaneId()) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     p_newMapPlane->p_refKeyFrame = p_keyFrame_inout;
 
@@ -84,7 +97,11 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
                     observationOrigin_World_m) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // setObservationOrigin_World cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setObservationOrigin_World returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
     }
@@ -104,7 +121,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_params->optimization.planePoint.enabled)
     {
@@ -149,14 +169,20 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     if (p_newMapPlane->addObservation(p_keyFrame_inout, observation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // addObservation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addObservation returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     /* Set the plane type */
     if (p_newMapPlane->setPlaneType(semanticType_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setPlaneType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPlaneType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     /* Get the global equation of the plane */
@@ -167,14 +193,20 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
             globalEquation_World) !=
         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
     {
-        // applyPoseToPlane cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: applyPoseToPlane returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
 
     /* Set the global equation of the plane in the map world plane */
     if (p_newMapPlane->setGlobalEquation(globalEquation_World) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
 
     /* Transform the plane cloud to the global frame */
@@ -190,13 +222,20 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
         if (p_newMapPlane->replaceMapClouds(p_planeCloud_in) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // replaceMapClouds cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: replaceMapClouds returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         bool wasPlaneRefit{};
         if (refitMappedPlaneFromCloud(p_newMapPlane, wasPlaneRefit) !=
             GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
-            // refitMappedPlaneFromCloud cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: refitMappedPlaneFromCloud returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
     }
 
@@ -213,7 +252,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     if (types::SystemParams::getParams(p_params2) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_params2->optimization.planeMapPoint.enabled)
     {
@@ -227,14 +269,22 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
                     newMapPlaneIsPointinPlaneCloud) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isPointinPlaneCloud cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: isPointinPlaneCloud returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (newMapPlaneIsPointinPlaneCloud)
             {
                 if (p_newMapPlane->setMapPoints(mapPoint) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // setMapPoints cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setMapPoints returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
         }

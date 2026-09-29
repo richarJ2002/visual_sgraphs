@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <rclcpp/logging.hpp>
 #include <utility>
 
 namespace vs_graphs
@@ -64,7 +65,10 @@ UtilsStatus Utils::matchWallsBetweenRooms(
         if (p_room_in->getWalls(room_inWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (geometric::Plane *p_wall : room_inWalls)
         {
@@ -73,7 +77,10 @@ UtilsStatus Utils::matchWallsBetweenRooms(
                 p_wall->isBad(wallIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_wall == nullptr || wallIsBad)
             {
@@ -107,13 +114,19 @@ UtilsStatus Utils::matchWallsBetweenRooms(
                 if (first_in.first->getId(getId2) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int getId3{};
                 if (second_in.first->getId(getId3) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 return getId2 < getId3;
             });
@@ -176,7 +189,10 @@ UtilsStatus Utils::matchWallsBetweenRooms(
         if (validWallsA[bestIndexA].first->getCentroid(getCentroid2) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         centroidsA_inout.push_back(getCentroid2);
         normalsB_inout.push_back(validWallsB[bestIndexB].second);
@@ -184,7 +200,10 @@ UtilsStatus Utils::matchWallsBetweenRooms(
         if (validWallsB[bestIndexB].first->getCentroid(getCentroid3) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         centroidsB_inout.push_back(getCentroid3);
 

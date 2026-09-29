@@ -7,6 +7,7 @@
 #include "ResetCause.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 #include <unordered_map>
 
 namespace vs_graphs
@@ -34,7 +35,10 @@ ResetCauseStatus consumeResetCause(const void *const p_owner_in,
     if (entry->second.consume(cause) !=
         ResetCauseRetentionStatus::RESET_CAUSE_RETENTION_STATUS_SUCCESS)
     {
-        // consume cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: consume returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     resetCausesByOwner.erase(entry);
     resetCause_out = cause;

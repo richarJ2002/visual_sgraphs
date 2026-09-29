@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -36,13 +37,19 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
         p_duplicate_inout->getId(duplicate_inoutId) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     int id{};
     if (!(p_duplicate_inout == nullptr || p_duplicate_inout == this) &&
         getId(id) != PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_duplicate_inout == nullptr || p_duplicate_inout == this ||
         duplicate_inoutId != id)
@@ -157,13 +164,19 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
         if (knownSideProvenance.hasDirection(knownSideHasDirection) !=
             KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
         {
-            // hasDirection cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasDirection returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         bool duplicateHasDirection{};
         if (duplicateKnownSide.hasDirection(duplicateHasDirection) !=
             KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
         {
-            // hasDirection cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasDirection returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (replacedGeometry)
         {

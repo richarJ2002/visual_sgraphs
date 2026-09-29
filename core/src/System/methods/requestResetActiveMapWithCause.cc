@@ -24,6 +24,7 @@
  */
 
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -36,14 +37,20 @@ void System::requestResetActiveMapWithCause(const ResetCause cause_in)
     if (retainResetCause(this, cause_in) !=
         ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
     {
-        // retainResetCause cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: retainResetCause returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     isResetActiveMapRequested = true;
     if (reportResetAttribution(cause_in,
                                ResetAction::RESET_ACTIVE_MAP_REQUEST) !=
         ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
     {
-        // reportResetAttribution cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: reportResetAttribution returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 }
 

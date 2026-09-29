@@ -28,6 +28,7 @@
 #include <Eigen/Geometry>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
@@ -84,7 +85,10 @@ KannalaBrandt8Status KannalaBrandt8::triangulateMatches(
                     triangulatedPoint3D) !=
         KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS)
     {
-        // triangulate cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: triangulate returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     // cv::Mat x3Dt = x3D.t();
 

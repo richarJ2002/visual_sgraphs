@@ -10,6 +10,7 @@
 #include <sophus/se3.hpp>
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -65,17 +66,26 @@ void makeWallPlane(geometric::Plane      &wall_inout,
 {
     if (wall_inout.setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (wall_inout.setMap(p_map_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (wall_inout.setPlaneType(geometric::Plane::PlaneVariant::WALL) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setPlaneType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPlaneType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     /* Wall-admission/ownership gates compare getPlaneType() against
      * getExpectedPlaneType(), which is derived from semanticVotes rather than
@@ -85,17 +95,26 @@ void makeWallPlane(geometric::Plane      &wall_inout,
                                     1.0) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // castWeightedVote cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: castWeightedVote returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (wall_inout.setGlobalEquation(g2o::Plane3D(equation_World_in)) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (wall_inout.setCentroid(centroid_World_m_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (wall_inout.setMapClouds(makeGridCloud(centroid_World_m_in,
                                               axisU_World_in,
@@ -104,12 +123,18 @@ void makeWallPlane(geometric::Plane      &wall_inout,
                                               halfV_m_in)) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMapClouds cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMapClouds returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (wall_inout.updateSizeOfPlane() !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // updateSizeOfPlane cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: updateSizeOfPlane returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
 }
 
@@ -122,23 +147,35 @@ bool makeGroundPlane(geometric::Plane &ground_inout,
     if (ground_inout.setId(id_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (ground_inout.setMap(p_map_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (ground_inout.setPlaneType(geometric::Plane::PlaneVariant::GROUND) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setPlaneType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPlaneType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (ground_inout.setGlobalEquation(
             g2o::Plane3D(Eigen::Vector4d(0.0, 0.0, 1.0, 0.0))) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (ground_inout.setMapClouds(makeGridCloud(Eigen::Vector3d::Zero(),
                                                 Eigen::Vector3d::UnitX(),
@@ -148,14 +185,20 @@ bool makeGroundPlane(geometric::Plane &ground_inout,
                                                 stepsPerSide_in)) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMapClouds cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMapClouds returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool wasPlaneRefit{};
     if (GeoSemHelpers::refitMappedPlaneFromCloud(&ground_inout,
                                                  wasPlaneRefit) !=
         GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
     {
-        // refitMappedPlaneFromCloud cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: refitMappedPlaneFromCloud returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     return wasPlaneRefit;
 }
@@ -170,29 +213,44 @@ void makeRoom(semantic::Room             &room_inout,
     if (room_inout.setId(id_in) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (room_inout.setMap(p_map_in) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (room_inout.setRoomVariant(variant_in) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setRoomVariant cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setRoomVariant returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (room_inout.setCentroid(centroid_World_m_in) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_wall_in != nullptr)
     {
         if (room_inout.setWalls(p_wall_in) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
 }
@@ -212,49 +270,76 @@ void makePassage(semantic::Passage     &passage_inout,
     if (passage_inout.setId(id_in) !=
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (passage_inout.setMap(p_map_in) !=
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (passage_inout.setPassable(passable_in) !=
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setPassable cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPassable returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (passage_inout.setWidth(width_m_in) !=
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setWidth cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setWidth returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (passage_inout.setHeight(height_m_in) !=
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setHeight cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setHeight returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (passage_inout.setCentroid(centroid_World_m_in) !=
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (passage_inout.setGlobalEquation(g2o::Plane3D(equation_World_in)) !=
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_knownSideRoom_in != nullptr)
     {
         if (passage_inout.setKnownSideRoom(p_knownSideRoom_in) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // setKnownSideRoom cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setKnownSideRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (passage_inout.setKnownSideDirection(knownSideDirection_World_in) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // Rejected input: ignored, as before.
+            RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                        "%s: setKnownSideDirection rejected its input; "
+                        "continuing as before.",
+                        __func__);
         }
     }
     if (p_farRoom_in != nullptr)
@@ -262,7 +347,10 @@ void makePassage(semantic::Passage     &passage_inout,
         if (passage_inout.setProspectiveRoom(p_farRoom_in) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // setProspectiveRoom cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setProspectiveRoom returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 }
@@ -276,23 +364,35 @@ void makeFloor(semantic::Floor                     &floor_inout,
     if (floor_inout.setId(id_in) !=
         vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (floor_inout.setMap(p_map_in) !=
         vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (floor_inout.setCentroid(
             Eigen::Vector3d(0.0, 0.0, centroidZ_World_m_in)) !=
         vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (floor_inout.setRooms(rooms_in) !=
         vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setRooms cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 }
 

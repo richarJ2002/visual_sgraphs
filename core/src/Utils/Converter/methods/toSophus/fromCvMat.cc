@@ -32,6 +32,7 @@
  */
 
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -49,7 +50,10 @@ ConverterStatus Converter::toSophus(const cv::Mat      &transform_in,
     if (toMatrix3d(transform_in.rowRange(0, 3).colRange(0, 3), eigenMatrix) !=
         ConverterStatus::CONVERTER_STATUS_SUCCESS)
     {
-        // toMatrix3d cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: toMatrix3d returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Quaternionf quaternion(eigenMatrix.cast<float>());
 
@@ -57,7 +61,10 @@ ConverterStatus Converter::toSophus(const cv::Mat      &transform_in,
     if (toVector3d(transform_in.rowRange(0, 3).col(3), vector3d) !=
         ConverterStatus::CONVERTER_STATUS_SUCCESS)
     {
-        // toVector3d cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: toVector3d returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Matrix<float, 3, 1> translation = vector3d.cast<float>();
 

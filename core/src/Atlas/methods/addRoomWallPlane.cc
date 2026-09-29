@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -36,7 +37,10 @@ void Atlas::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
     if (p_plane_in->getMap(p_ownerMap) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     p_ownerMap->addRoomWallPlane(p_plane_in);
 }

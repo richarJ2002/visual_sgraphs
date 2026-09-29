@@ -26,6 +26,7 @@
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
 
 #include "Map.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -47,26 +48,38 @@ SemanticGraphSnapshotStatus
     if (p_wall_in->getId(wallGetId) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (makeKey(EntityKind::WALL, mapId_in, wallGetId, key2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
-        // makeKey cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeKey returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     record.key = key2;
     bool wallIsBad{};
     if (p_wall_in->isBad(wallIsBad) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     record.isLive = !wallIsBad;
     geometric::Plane::PlaneVariant wallPlaneType{};
     if (p_wall_in->getPlaneType(wallPlaneType) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getPlaneType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     record.planeType = wallPlaneType;
 
@@ -74,7 +87,10 @@ SemanticGraphSnapshotStatus
     if (p_wall_in->getMap(p_declaredMap) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_declaredMap != nullptr)
     {
@@ -85,7 +101,10 @@ SemanticGraphSnapshotStatus
     if (p_wall_in->getGeometryMetadataSnapshot(geometry) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGeometryMetadataSnapshot cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGeometryMetadataSnapshot returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
     }
     record.equation_World            = geometry.equation_World;
     record.centroid_World_m          = geometry.centroid_World_m;
@@ -102,7 +121,10 @@ SemanticGraphSnapshotStatus
     if (p_wall_in->getObservationOrigin_World(wallGetObservationOrigin_World) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getObservationOrigin_World cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getObservationOrigin_World returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     record.observationOrigin_World_m = wallGetObservationOrigin_World;
     RawPlaneRef       rawPlaneRef2{};
@@ -110,12 +132,18 @@ SemanticGraphSnapshotStatus
     if (p_wall_in->getTwinFace(p_wallGetTwinFace) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getTwinFace cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getTwinFace returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (rawPlaneRef(p_wallGetTwinFace, rawPlaneRef2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
-        // rawPlaneRef cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rawPlaneRef returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     record.twinRef = rawPlaneRef2;
 

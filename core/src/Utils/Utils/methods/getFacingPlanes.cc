@@ -25,6 +25,7 @@
 
 #include "Utils/Utils/objects/Utils.h"
 
+#include <rclcpp/logging.hpp>
 #include <utility>
 
 namespace vs_graphs
@@ -47,7 +48,10 @@ UtilsStatus Utils::getFacingPlanes(
     if (vs_graphs::core::types::SystemParams::getParams(p_sysParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     std::vector<std::pair<vs_graphs::core::geometric::Plane *,
                           vs_graphs::core::geometric::Plane *>>
@@ -67,7 +71,11 @@ UtilsStatus Utils::getFacingPlanes(
             if (Utils::arePlanesFacingEachOther(p_plane1, p_plane2, isFacing) !=
                 UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // arePlanesFacingEachOther cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: arePlanesFacingEachOther returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (isFacing)
             {
@@ -78,7 +86,11 @@ UtilsStatus Utils::getFacingPlanes(
                                                 arePlanesApartEnough2) !=
                     UtilsStatus::UTILS_STATUS_SUCCESS)
                 {
-                    // arePlanesApartEnough cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: arePlanesApartEnough returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (arePlanesApartEnough2)
                     facingPlanes.push_back(std::make_pair(p_plane1, p_plane2));

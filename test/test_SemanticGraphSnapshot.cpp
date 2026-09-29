@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <rclcpp/logging.hpp>
 
 #include "Atlas.h"
 #include "AtlasCurrentMapStatus.h"
@@ -970,34 +971,52 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
         if (p_lowerCentroidRoom->setId(1) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_lowerCentroidRoom->setMap(p_map) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_lowerCentroidRoom->setCentroid(Eigen::Vector3d(1.0, 0.0, 0.0)) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         std::unique_ptr<Room> p_higherCentroidRoom = std::make_unique<Room>();
         if (p_higherCentroidRoom->setId(1) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_higherCentroidRoom->setMap(p_map) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_higherCentroidRoom->setCentroid(Eigen::Vector3d(2.0, 0.0, 0.0)) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (constructLowerCentroidFirst_in)
@@ -1016,7 +1035,11 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
         if (captureSemanticGraphSnapshot(&atlas, snapshot) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
-            // captureSemanticGraphSnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: captureSemanticGraphSnapshot returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         return snapshot;
     };
@@ -1436,12 +1459,18 @@ TEST(
             if (p_room->setId(roomId) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_room->setMap(p_map) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             p_map->addDetectedMapRoom(p_room.get());
             rooms.push_back(std::move(p_room));
@@ -1451,7 +1480,11 @@ TEST(
         if (captureSemanticGraphSnapshot(&atlas, snapshot) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
-            // captureSemanticGraphSnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: captureSemanticGraphSnapshot returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         return snapshot;
     };
@@ -1555,13 +1588,19 @@ TEST(
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_passage->setMap(p_mapA) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             p_mapA->addMapPassage(p_passage.get());
             passages.push_back(std::move(p_passage));
@@ -1570,12 +1609,18 @@ TEST(
             if (p_floor->setId(entityId) !=
                 vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // setId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_floor->setMap(p_mapA) !=
                 vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             p_mapA->addMapFloor(p_floor.get());
             floors.push_back(std::move(p_floor));
@@ -1586,7 +1631,11 @@ TEST(
         if (captureSemanticGraphSnapshot(&atlas, snapshot) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
-            // captureSemanticGraphSnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: captureSemanticGraphSnapshot returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         return std::make_pair(std::move(snapshot), p_mapA->getId());
     };
@@ -1678,13 +1727,19 @@ TEST(
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_passage->setMap(p_map) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             p_map->addMapPassage(p_passage.get());
             passages.push_back(std::move(p_passage));
@@ -1697,12 +1752,18 @@ TEST(
             if (p_room->setId(index + 20) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_room->setMap(p_map) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             owningRooms.push_back(std::move(p_room));
         }
@@ -1724,36 +1785,54 @@ TEST(
         if (subjectRoom.setId(10) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (subjectRoom.setMap(p_map) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         Floor subjectFloor;
         if (subjectFloor.setId(30) !=
             vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (subjectFloor.setMap(p_map) !=
             vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         Passage subjectPassage;
         if (subjectPassage.setId(40) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (subjectPassage.setMap(p_map) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         const std::vector<int> memberOrder = ascendingInsertionOrder_in
@@ -1765,28 +1844,43 @@ TEST(
             if (subjectRoom.setWalls(walls[memberIndex].get()) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (subjectRoom.setDoorways(passages[memberIndex].get()) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setDoorways cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setDoorways returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (owningRooms[memberIndex]->setWalls(p_sharedWall.get()) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (subjectFloor.addRoom(owningRooms[memberIndex].get()) !=
                 vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // addRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addRoom returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (subjectPassage.addAssociateWall(walls[memberIndex].get()) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // addAssociateWall cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addAssociateWall returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
         p_map->addDetectedMapRoom(&subjectRoom);
@@ -1802,7 +1896,11 @@ TEST(
         if (captureSemanticGraphSnapshot(&atlas, snapshot) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
-            // captureSemanticGraphSnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: captureSemanticGraphSnapshot returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         return snapshot;
     };

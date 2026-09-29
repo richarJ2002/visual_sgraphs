@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -46,14 +47,21 @@ FloorStatus Floor::setRooms(
             if (p_room->getFloor(p_previousFloor) !=
                 RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getFloor cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getFloor returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_previousFloor != nullptr && p_previousFloor != this)
             {
                 if (p_previousFloor->detachRoom(p_room) !=
                     FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    // detachRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: detachRoom returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             newRooms.push_back(p_room);
@@ -76,7 +84,10 @@ FloorStatus Floor::setRooms(
             p_oldRoom->getFloor(p_oldRoomFloor) !=
                 RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getFloor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getFloor returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_oldRoom != nullptr &&
             std::find(newRooms.begin(), newRooms.end(), p_oldRoom) ==
@@ -85,7 +96,10 @@ FloorStatus Floor::setRooms(
         {
             if (p_oldRoom->setFloor(nullptr) != RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setFloor cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setFloor returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }
@@ -94,7 +108,10 @@ FloorStatus Floor::setRooms(
     {
         if (p_newRoom->setFloor(this) != RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setFloor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setFloor returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
 

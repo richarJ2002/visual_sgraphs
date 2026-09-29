@@ -24,6 +24,7 @@
  */
 
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -44,7 +45,10 @@ SemanticGraphSnapshotStatus appendPassageRef(Passage *p_passage_in,
     if (entityRefForPassage(p_passage_in, entityRef) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
-        // entityRefForPassage cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: entityRefForPassage returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     refs_inout.push_back(entityRef);
 

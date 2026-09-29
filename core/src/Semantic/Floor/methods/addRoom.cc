@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,14 +42,20 @@ FloorStatus Floor::addRoom(vs_graphs::core::semantic::Room *p_value_inout)
     if (p_value_inout->getFloor(p_previousFloor) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_previousFloor != nullptr && p_previousFloor != this)
     {
         if (p_previousFloor->detachRoom(p_value_inout) !=
             FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // detachRoom cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: detachRoom returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -65,7 +72,10 @@ FloorStatus Floor::addRoom(vs_graphs::core::semantic::Room *p_value_inout)
 
     if (p_value_inout->setFloor(this) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     return FloorStatus::FLOOR_STATUS_SUCCESS;

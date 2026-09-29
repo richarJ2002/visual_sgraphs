@@ -34,6 +34,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,7 +52,10 @@ ConverterStatus Converter::toEuler(const cv::Mat      &rotationMatrix_in,
     if (isRotationMatrix(rotationMatrix_in, isRotation) !=
         ConverterStatus::CONVERTER_STATUS_SUCCESS)
     {
-        // isRotationMatrix cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isRotationMatrix returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     assert(isRotation);
     float symmetricSum = sqrt(

@@ -30,6 +30,7 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -124,7 +125,10 @@ void KeyFrame::preSave(
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         backupCameraId = cameraId;
     }
@@ -137,7 +141,10 @@ void KeyFrame::preSave(
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         backupCamera2Id = camera2Id;
     }

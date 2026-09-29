@@ -26,6 +26,7 @@
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
 
 #include "Map.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -47,13 +48,19 @@ SemanticGraphSnapshotStatus entityRefForRoom(Room      *p_room_in,
     int room_inId{};
     if (p_room_in->getId(room_inId) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     reference.localId = room_inId;
     bool room_inIsBad{};
     if (p_room_in->isBad(room_inIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     reference.isLive                    = !room_inIsBad;
     reference.livenessUnavailableReason = UnavailableReason::NONE;
@@ -61,7 +68,10 @@ SemanticGraphSnapshotStatus entityRefForRoom(Room      *p_room_in,
     core::Map *p_map = nullptr;
     if (p_room_in->getMap(p_map) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_map == nullptr)
     {
@@ -73,13 +83,19 @@ SemanticGraphSnapshotStatus entityRefForRoom(Room      *p_room_in,
     int room_inId2{};
     if (p_room_in->getId(room_inId2) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     EntityKey key2{};
     if (makeKey(EntityKind::ROOM, p_map->getId(), room_inId2, key2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
-        // makeKey cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeKey returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     reference.key    = key2;
     reference.reason = UnavailableReason::NONE;

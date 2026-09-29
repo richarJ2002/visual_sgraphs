@@ -1030,6 +1030,15 @@ if(BUILD_TESTING)
   target_link_libraries(legacy_capture_replay
     ${PROJECT_NAME}_lib
   )
+
+  # Unit targets that compile module sources directly (standalone of the
+  # production library) still need rclcpp: failure branches log through the
+  # vs_graphs ROS logger.
+  foreach(standalone_test IN ITEMS test_unit_skeleton test_RoomTracker
+          test_CandidateGen test_rgbd_observability
+          test_StereoMatchOutlierRejection test_FaultInjection)
+    ament_target_dependencies(${standalone_test} rclcpp)
+  endforeach()
 endif()
 
 # Ament package configuration

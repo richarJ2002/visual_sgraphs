@@ -28,6 +28,7 @@
 #include "Tracking.h"
 
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,7 +42,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
     if (p_settings_inout->camera1(p_settingsCamera1) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // camera1 cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: camera1 returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     p_camera = p_settingsCamera1;
     p_camera = p_atlas->addCamera(p_camera);
@@ -50,7 +54,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
     if (p_settings_inout->needToUndistort(settingsNeedToUndistort) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // needToUndistort cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: needToUndistort returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (settingsNeedToUndistort)
     {
@@ -59,7 +66,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
                 settingsCamera1DistortionCoef) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // camera1DistortionCoef cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: camera1DistortionCoef returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         distortionCoefficients = settingsCamera1DistortionCoef;
     }
@@ -77,7 +87,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     calibrationMatrix.at<float>(0, 0) = cameraParameter;
     float cameraParameter2{};
@@ -85,7 +98,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     calibrationMatrix.at<float>(1, 1) = cameraParameter2;
     float cameraParameter3{};
@@ -93,7 +109,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     calibrationMatrix.at<float>(0, 2) = cameraParameter3;
     float cameraParameter4{};
@@ -101,7 +120,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     calibrationMatrix.at<float>(1, 2) = cameraParameter4;
 
@@ -111,7 +133,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     calibrationMatrixEigen(0, 0) = cameraParameter5;
     float cameraParameter6{};
@@ -119,7 +144,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     calibrationMatrixEigen(1, 1) = cameraParameter6;
     float cameraParameter7{};
@@ -127,7 +155,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     calibrationMatrixEigen(0, 2) = cameraParameter7;
     float cameraParameter8{};
@@ -135,7 +166,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     calibrationMatrixEigen(1, 2) = cameraParameter8;
 
@@ -145,7 +179,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         p_settings_inout->cameraType(settingsCameraType) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // cameraType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: cameraType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if ((sensor == System::STEREO || sensor == System::IMU_STEREO ||
          sensor == System::IMU_RGBD) &&
@@ -157,7 +194,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         if (p_settings_inout->camera2(p_settingsCamera2) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // camera2 cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: camera2 returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         p_camera2 = p_settingsCamera2;
         p_camera2 = p_atlas->addCamera(p_camera2);
@@ -167,7 +207,11 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
                 settingsLeftToRightTransform) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // getLeftToRightTransform cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getLeftToRightTransform returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         poseTlr = settingsLeftToRightTransform;
 
@@ -181,20 +225,29 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         if (p_settings_inout->getBaselineFocal(settingsBaselineFocal) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // getBaselineFocal cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getBaselineFocal returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         mbf = settingsBaselineFocal;
         double settingsB{};
         if (p_settings_inout->b(settingsB) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // b cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: b returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
         }
         double settingsThDepth{};
         if (p_settings_inout->thDepth(settingsThDepth) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // thDepth cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: thDepth returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         depthThreshold = settingsB * settingsThDepth;
     }
@@ -205,7 +258,10 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         if (p_settings_inout->depthMapFactor(settingsDepthMapFactor) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // depthMapFactor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: depthMapFactor returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         depthMapFactor = settingsDepthMapFactor;
         if (fabs(depthMapFactor) < 1e-5)
@@ -219,14 +275,20 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
     if (p_settings_inout->getFramesPerSecond(settingsFramesPerSecond) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // getFramesPerSecond cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFramesPerSecond returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     maxFrames = settingsFramesPerSecond;
     bool settingsIsRgbEnabled{};
     if (p_settings_inout->isRgbEnabled(settingsIsRgbEnabled) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // isRgbEnabled cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isRgbEnabled returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     isRgbEnabled = settingsIsRgbEnabled;
 
@@ -235,33 +297,48 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
     if (p_settings_inout->nFeatures(featureCount) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // nFeatures cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: nFeatures returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     int levelCount{};
     if (p_settings_inout->nLevels(levelCount) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // nLevels cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: nLevels returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     double initialThresholdFastValue{};
     if (p_settings_inout->initThFAST(initialThresholdFastValue) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // initThFAST cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: initThFAST returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     int    initialThresholdFast = static_cast<int>(initialThresholdFastValue);
     double minimumThresholdFastValue{};
     if (p_settings_inout->getMinimumFastThreshold(minimumThresholdFastValue) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // getMinimumFastThreshold cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMinimumFastThreshold returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     int    minimumThresholdFast = static_cast<int>(minimumThresholdFastValue);
     double scaleFactorValue{};
     if (p_settings_inout->scaleFactor(scaleFactorValue) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // scaleFactor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: scaleFactor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     float scaleFactor = static_cast<float>(scaleFactorValue);
 
@@ -298,34 +375,49 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         if (p_settings_inout->Tbc(Tbc) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // Tbc cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: Tbc returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
         }
         double settingsImuFrequency{};
         if (p_settings_inout->imuFrequency(settingsImuFrequency) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // imuFrequency cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: imuFrequency returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         imuFrequency = settingsImuFrequency;
         double settingsImuThreshold{};
         if (p_settings_inout->imuThreshold(settingsImuThreshold) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // imuThreshold cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: imuThreshold returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         imuThresh = settingsImuThreshold;
         bool settingsInsertKFsWhenLost{};
         if (p_settings_inout->insertKFsWhenLost(settingsInsertKFsWhenLost) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // insertKFsWhenLost cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: insertKFsWhenLost returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         shouldInsertKeyFramesWhenLost = settingsInsertKFsWhenLost;
         bool settingsFastInit{};
         if (p_settings_inout->fastInit(settingsFastInit) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // fastInit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: fastInit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         isFastInitEnabled = settingsFastInit;
         imuPeriod         = 1.0 / static_cast<double>(imuFrequency);
@@ -333,28 +425,40 @@ void Tracking::newParameterLoader(utils::settings::Settings *p_settings_inout)
         if (p_settings_inout->noiseGyro(noiseGyroValue) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // noiseGyro cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: noiseGyro returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         float  Ng = static_cast<float>(noiseGyroValue);
         double noiseAccValue{};
         if (p_settings_inout->noiseAcc(noiseAccValue) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // noiseAcc cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: noiseAcc returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         float  Na = static_cast<float>(noiseAccValue);
         double gyroWalkValue{};
         if (p_settings_inout->gyroWalk(gyroWalkValue) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // gyroWalk cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: gyroWalk returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         float  gwCount = static_cast<float>(gyroWalkValue);
         double accWalkValue{};
         if (p_settings_inout->accWalk(accWalkValue) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // accWalk cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: accWalk returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         float awCount = static_cast<float>(accWalkValue);
 

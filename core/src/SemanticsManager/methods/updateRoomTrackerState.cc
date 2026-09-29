@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -86,13 +87,19 @@ void SemanticsManager::updateRoomTrackerState(double now_s_in)
                          roomTrackerNextState) !=
         semantic::RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // step cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: step returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     const semantic::TransitionEvent *p_lastEventRef = nullptr;
     if (roomTracker.getLastEvent(p_lastEventRef) !=
         semantic::RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // getLastEvent cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getLastEvent returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     const semantic::TransitionEvent &lastEvent = *p_lastEventRef;
     if (lastEvent.isAccepted &&

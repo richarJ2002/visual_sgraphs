@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -48,14 +49,20 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
         p_first_in->isBad(firstIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     bool secondIsBad{};
     if (!(p_first_in == nullptr || firstIsBad || p_second_in == nullptr) &&
         p_second_in->isBad(secondIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_first_in == nullptr || firstIsBad || p_second_in == nullptr ||
         secondIsBad || p_first_in == p_second_in)
@@ -69,7 +76,10 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
                                                arePlanesParallel2) !=
         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
     {
-        // arePlanesParallel cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: arePlanesParallel returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (!arePlanesParallel2)
     {
@@ -80,14 +90,20 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
     if (p_first_in->getGlobalEquation(firstGetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d equation1 = firstGetGlobalEquation.coeffs();
     g2o::Plane3D    secondGetGlobalEquation{};
     if (p_second_in->getGlobalEquation(secondGetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d equation2   = secondGetGlobalEquation.coeffs();
     const double    normalNorm1 = equation1.head<3>().norm();
@@ -126,13 +142,19 @@ bool arePlausibleTwinWallFaces(geometric::Plane      *p_first_in,
     if (p_first_in->getObservationOrigin_World(origin1) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getObservationOrigin_World cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getObservationOrigin_World returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     std::optional<Eigen::Vector3d> origin2{};
     if (p_second_in->getObservationOrigin_World(origin2) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getObservationOrigin_World cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getObservationOrigin_World returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (!origin1.has_value() || !origin1->allFinite() || !origin2.has_value() ||

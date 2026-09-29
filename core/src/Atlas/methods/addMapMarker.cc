@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -36,7 +37,10 @@ void Atlas::addMapMarker(semantic::Marker *p_marker_in)
     if (p_marker_in->getMap(p_ownerMap) !=
         semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
     {
-        // getMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     p_ownerMap->addMapMarker(p_marker_in);
 }

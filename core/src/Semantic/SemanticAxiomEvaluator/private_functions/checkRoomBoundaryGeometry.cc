@@ -36,6 +36,7 @@
 #include <cstddef>
 
 #include <Eigen/Geometry>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -65,7 +66,10 @@ SemanticAxiomEvaluatorStatus
     if (hasNonFiniteCoordinate(corners_in, hasNonFiniteCoordinate2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // hasNonFiniteCoordinate cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasNonFiniteCoordinate returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (hasNonFiniteCoordinate2)
     {
@@ -91,7 +95,10 @@ SemanticAxiomEvaluatorStatus
     if (newellNormal(corners_in, normal) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // newellNormal cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: newellNormal returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (normal.squaredNorm() < DEGENERATE_NORMAL_NORM_SQUARED)
     {
@@ -100,7 +107,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // planeNormalFallback cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: planeNormalFallback returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         normal = normal2;
     }
@@ -160,7 +170,11 @@ SemanticAxiomEvaluatorStatus
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // doSegmentsIntersect cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: doSegmentsIntersect returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (doSegmentsIntersect2)
             {

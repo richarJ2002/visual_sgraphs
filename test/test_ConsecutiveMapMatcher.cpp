@@ -34,6 +34,7 @@
 #include <cmath>
 #include <cstddef>
 #include <memory>
+#include <rclcpp/logging.hpp>
 #include <utility>
 #include <vector>
 
@@ -123,27 +124,42 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         if (room->setId(roomId_in) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (room->setMap(p_map) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (room->setRoomVariant(Room::RoomVariant::ROOM) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (room->setCentroid(centroid) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (room->setRoomTag(tag) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         // Wall A: x = 1
@@ -151,17 +167,26 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         if (wallA->setId(wallIdBase_in) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallA->setMap(p_map) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallA->setPlaneType(Plane::PlaneVariant::WALL) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallA->setGlobalEquation(
                 g2o::Plane3D(Eigen::Vector4d(WALL_A_NORMAL_X,
@@ -170,18 +195,27 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                                              WALL_A_D))) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallA->setCentroid(Eigen::Vector3d(1.0, 0.0, 1.0)) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         p_map->addMapPlane(wallA);
         if (room->setWalls(wallA) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         // Wall B: y = 1
@@ -189,17 +223,26 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         if (wallB->setId(wallIdBase_in + 1) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallB->setMap(p_map) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallB->setPlaneType(Plane::PlaneVariant::WALL) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallB->setGlobalEquation(
                 g2o::Plane3D(Eigen::Vector4d(WALL_B_NORMAL_X,
@@ -208,18 +251,27 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                                              WALL_B_D))) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallB->setCentroid(Eigen::Vector3d(0.0, 1.0, 1.0)) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         p_map->addMapPlane(wallB);
         if (room->setWalls(wallB) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         // Wall C: x = -1 face (normal +X after toward-room orientation)
@@ -227,17 +279,26 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         if (wallC->setId(wallIdBase_in + 2) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallC->setMap(p_map) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallC->setPlaneType(Plane::PlaneVariant::WALL) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallC->setGlobalEquation(
                 g2o::Plane3D(Eigen::Vector4d(WALL_C_NORMAL_X,
@@ -246,18 +307,27 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                                              WALL_C_D))) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallC->setCentroid(Eigen::Vector3d(1.0, 1.0, 1.0)) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         p_map->addMapPlane(wallC);
         if (room->setWalls(wallC) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         // Passage
@@ -268,37 +338,55 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setMap(p_map) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setPassable(true) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setWidth(PASSAGE_WIDTH) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setHeight(PASSAGE_HEIGHT) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setCentroid(passage_centroid) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setGlobalEquation(
                     g2o::Plane3D(Eigen::Vector4d(PASSAGE_APERTURE_A,
@@ -308,32 +396,47 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setKnownSideRoom(room) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setKnownSideRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setKnownSideRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setKnownSideDirection(
                     Eigen::Vector3d(-1.0, 0.0, 0.0)) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // Rejected input: ignored, as before.
+                RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                            "%s: setKnownSideDirection rejected its input; "
+                            "continuing as before.",
+                            __func__);
             }
             if (passage->setProspectiveRoom(p_farRoom_in) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // setProspectiveRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             p_map->addMapPassage(passage);
             if (room->setDoorways(passage) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setDoorways cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setDoorways returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -348,12 +451,18 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         if (p_floor->setId(floorId_in) !=
             vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_floor->setMap(p_map) !=
             vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // setMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         EXPECT_TRUE(
             (p_floor->setPlaneIdentity(equation_in, 100U, 10U) ==
@@ -387,7 +496,11 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
             vs_graphs::core::semantic::SemanticVerifyStatus::
                 SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // evaluateConsecutiveMergeGate cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateConsecutiveMergeGate returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         return result;
     }

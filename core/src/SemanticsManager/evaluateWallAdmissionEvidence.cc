@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -55,7 +56,10 @@ WallAdmissionEvidence
         p_wall_in->isBad(wallIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_wall_in == nullptr || wallIsBad || p_systemParams_in == nullptr)
     {
@@ -66,7 +70,10 @@ WallAdmissionEvidence
     if (p_wall_in->getObservationCount(wallGetObservationCount) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getObservationCount cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getObservationCount returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     evidence.observationCount = wallGetObservationCount;
 
@@ -74,7 +81,10 @@ WallAdmissionEvidence
     if (p_wall_in->getGeometrySnapshot(geometry) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGeometrySnapshot cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGeometrySnapshot returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d equation_World = geometry.equation_World;
     const double    normalNorm     = equation_World.head<3>().norm();
@@ -208,14 +218,20 @@ WallAdmissionEvidence
     if (p_wall_in->getPlaneType(wallPlaneType) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getPlaneType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     geometric::Plane::PlaneVariant wallExpectedPlaneType{};
     if ((wallPlaneType == geometric::Plane::PlaneVariant::WALL) &&
         p_wall_in->getExpectedPlaneType(wallExpectedPlaneType) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getExpectedPlaneType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getExpectedPlaneType returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     const bool wallDominatesSemantics =
         wallPlaneType == geometric::Plane::PlaneVariant::WALL &&

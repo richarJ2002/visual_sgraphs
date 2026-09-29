@@ -20,6 +20,7 @@
 
 #include "Semantic/SemanticCandidates.h"
 #include "Semantic/SemanticVerify.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -66,7 +67,10 @@ void SemanticsManager::evaluateTopCandidateVerification(
     if (semantic::SemanticVerify::configFromSystemParams(verifyConfiguration) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // configFromSystemParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: configFromSystemParams returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     std::vector<semantic::VerifyWallObservation> wallsA{};
     if (semantic::SemanticVerify::collectWallObservations(p_roomA,
@@ -74,7 +78,10 @@ void SemanticsManager::evaluateTopCandidateVerification(
                                                           wallsA) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // collectWallObservations cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: collectWallObservations returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     std::vector<semantic::VerifyWallObservation> wallsB{};
     if (semantic::SemanticVerify::collectWallObservations(p_roomB,
@@ -82,7 +89,10 @@ void SemanticsManager::evaluateTopCandidateVerification(
                                                           wallsB) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // collectWallObservations cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: collectWallObservations returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     semantic::SemanticVerifyResult result{};
@@ -92,7 +102,10 @@ void SemanticsManager::evaluateTopCandidateVerification(
                                          verifyConfiguration) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // verify cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: verify returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
 
     /* The floor gate can only turn a geometric PASS into a final rejection
@@ -106,20 +119,29 @@ void SemanticsManager::evaluateTopCandidateVerification(
     if (p_roomA->getFloor(p_floorA) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     semantic::Floor *p_floorB = nullptr;
     if (p_roomB->getFloor(p_floorB) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool floorAHasPlaneIdentity{};
     if ((result.hasPassed && p_floorA != nullptr && p_floorB != nullptr) &&
         p_floorA->hasPlaneIdentity(floorAHasPlaneIdentity) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // hasPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasPlaneIdentity returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     bool floorBHasPlaneIdentity{};
     if ((result.hasPassed && p_floorA != nullptr && p_floorB != nullptr &&
@@ -127,7 +149,10 @@ void SemanticsManager::evaluateTopCandidateVerification(
         p_floorB->hasPlaneIdentity(floorBHasPlaneIdentity) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // hasPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasPlaneIdentity returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (result.hasPassed && p_floorA != nullptr && p_floorB != nullptr &&
         floorAHasPlaneIdentity && floorBHasPlaneIdentity)
@@ -139,13 +164,19 @@ void SemanticsManager::evaluateTopCandidateVerification(
         if (p_roomB->getMap(p_roomBMap) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         core::Map *p_roomAMap = nullptr;
         if (p_roomA->getMap(p_roomAMap) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         bool hasPassed2{};
         if (semantic::SemanticVerify::runFloorGate(result,
@@ -155,7 +186,10 @@ void SemanticsManager::evaluateTopCandidateVerification(
                                                    hasPassed2) !=
             semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // runFloorGate cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: runFloorGate returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -204,7 +238,10 @@ void SemanticsManager::evaluateTopCandidateVerification(
         semantic::SemanticVerifyResultStatus::
             SEMANTIC_VERIFY_RESULT_STATUS_SUCCESS)
     {
-        // toVerificationVerdict cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: toVerificationVerdict returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     submitVerificationVerdict(resultVerificationVerdict);
 }

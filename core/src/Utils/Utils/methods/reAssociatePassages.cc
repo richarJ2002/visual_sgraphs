@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 #include <unordered_set>
 
 namespace vs_graphs
@@ -68,7 +69,10 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         return p_room != nullptr && !roomIsBad &&
                        activeRoomSet.count(p_room) > 0U
@@ -76,41 +80,51 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                    : nullptr;
     };
 
-    std::sort(passages.begin(),
-              passages.end(),
-              [](const semantic::Passage *p_firstPassage,
-                 const semantic::Passage *p_secondPassage)
-              {
-                  if (p_firstPassage == nullptr)
-                  {
-                      return false;
-                  }
+    std::sort(
+        passages.begin(),
+        passages.end(),
+        [](const semantic::Passage *p_firstPassage,
+           const semantic::Passage *p_secondPassage)
+        {
+            if (p_firstPassage == nullptr)
+            {
+                return false;
+            }
 
-                  if (p_secondPassage == nullptr)
-                  {
-                      return true;
-                  }
+            if (p_secondPassage == nullptr)
+            {
+                return true;
+            }
 
-                  int firstPassageId{};
-                  if (p_firstPassage->getId(firstPassageId) !=
-                      semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                  {
-                      // getId cannot fail; continue as before.
-                  }
-                  int secondPassageId{};
-                  if (p_secondPassage->getId(secondPassageId) !=
-                      semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                  {
-                      // getId cannot fail; continue as before.
-                  }
-                  return firstPassageId < secondPassageId;
-              });
+            int firstPassageId{};
+            if (p_firstPassage->getId(firstPassageId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            int secondPassageId{};
+            if (p_secondPassage->getId(secondPassageId) !=
+                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            return firstPassageId < secondPassageId;
+        });
 
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     const types::SystemParams::SemSeg::PassageDetection &passageParameters =
         p_params->semSeg.passageDetection;
@@ -144,7 +158,10 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                 retainedPassageGlobalEquation) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector4d retainedEquation =
             retainedPassageGlobalEquation.coeffs();
@@ -173,13 +190,19 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
             if (p_retainedPassage->getCentroid(retainedCentroid_World_m) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector3d candidateCentroid_World_m{};
             if (p_candidatePassage->getCentroid(candidateCentroid_World_m) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if (!retainedCentroid_World_m.allFinite() ||
@@ -195,7 +218,10 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                     candidatePassageGlobalEquation) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector4d candidateEquation =
                 candidatePassageGlobalEquation.coeffs();
@@ -234,7 +260,10 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                     p_retainedPassageProspectiveRoom) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getProspectiveRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             semantic::Room *p_retainedHandle =
                 liveRoomHandle(p_retainedPassageProspectiveRoom);
@@ -244,7 +273,10 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                     p_candidatePassageProspectiveRoom) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getProspectiveRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             semantic::Room *p_candidateHandle =
                 liveRoomHandle(p_candidatePassageProspectiveRoom);
@@ -255,19 +287,31 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                     candidatePassageKnownSideProvenance) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getKnownSideProvenance cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getKnownSideProvenance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (p_retainedPassage->mergeKnownSideProvenance(
                     candidatePassageKnownSideProvenance) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // mergeKnownSideProvenance cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: mergeKnownSideProvenance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             semantic::Passage::KnownSideProvenance knownSide{};
             if (p_retainedPassage->getKnownSideProvenance(knownSide) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getKnownSideProvenance cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getKnownSideProvenance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
 
             const auto isProvenFarSide =
@@ -280,13 +324,21 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                         semantic::KnownSideProvenanceStatus::
                             KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
                 {
-                    // hasDirection cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: hasDirection returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if ((p_room != nullptr && knownSideHasDirection) &&
                     p_room->getCentroid(roomCentroid) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 bool knownSideHasDirection2{};
                 if ((p_room != nullptr) &&
@@ -294,7 +346,11 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                         semantic::KnownSideProvenanceStatus::
                             KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
                 {
-                    // hasDirection cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: hasDirection returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 return p_room != nullptr && knownSideHasDirection2 &&
                        knownSide.direction_World.dot(
@@ -323,14 +379,21 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
             if (p_retainedPassage->setProspectiveRoom(p_survivingHandle) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setProspectiveRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_survivingHandle != nullptr)
             {
                 if (p_survivingHandle->setDoorways(p_retainedPassage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // setDoorways cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setDoorways returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
@@ -345,62 +408,92 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
             if (p_retainedPassage->setCentroid(fusedCentroid_World_m) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             double retainedPassageWidth{};
             if (p_retainedPassage->getWidth(retainedPassageWidth) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             double candidatePassageWidth{};
             if (p_candidatePassage->getWidth(candidatePassageWidth) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_retainedPassage->setWidth(
                     std::max(retainedPassageWidth, candidatePassageWidth)) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             double retainedPassageHeight{};
             if (p_retainedPassage->getHeight(retainedPassageHeight) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             double candidatePassageHeight{};
             if (p_candidatePassage->getHeight(candidatePassageHeight) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_retainedPassage->setHeight(
                     std::max(retainedPassageHeight, candidatePassageHeight)) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             bool retainedPassageIsPassable{};
             if (p_retainedPassage->isPassable(retainedPassageIsPassable) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // isPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             bool candidatePassageIsPassable{};
             if (!(retainedPassageIsPassable) &&
                 p_candidatePassage->isPassable(candidatePassageIsPassable) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // isPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_retainedPassage->setPassable(retainedPassageIsPassable ||
                                                candidatePassageIsPassable) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             std::size_t retainedTraversalCount{};
@@ -408,14 +501,22 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                     retainedTraversalCount) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getTraversalObservationCount cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getTraversalObservationCount returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
             }
             std::size_t candidateTraversalCount{};
             if (p_candidatePassage->getTraversalObservationCount(
                     candidateTraversalCount) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getTraversalObservationCount cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getTraversalObservationCount returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
             }
             const std::size_t maximumTraversalCount =
                 std::numeric_limits<std::size_t>::max();
@@ -427,7 +528,11 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                         : retainedTraversalCount + candidateTraversalCount) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setTraversalObservationCount cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: setTraversalObservationCount returned a failure "
+                    "status although it cannot fail; continuing as before.",
+                    __func__);
             }
 
             std::vector<vs_graphs::core::geometric::Plane *>
@@ -436,7 +541,10 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                     candidatePassageAssociateWalls) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getAssociateWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAssociateWalls returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             for (geometric::Plane *p_supportingWall :
                  candidatePassageAssociateWalls)
@@ -444,7 +552,11 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                 if (p_retainedPassage->addAssociateWall(p_supportingWall) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // addAssociateWall cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: addAssociateWall returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
@@ -454,7 +566,10 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                     p_retainedPassageAssociateDoor) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getAssociateDoor cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAssociateDoor returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             vs_graphs::core::geometric::Plane *p_candidatePassageAssociateDoor =
                 nullptr;
@@ -463,7 +578,10 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                     p_candidatePassageAssociateDoor) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getAssociateDoor cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAssociateDoor returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_retainedPassageAssociateDoor == nullptr &&
                 p_candidatePassageAssociateDoor != nullptr)
@@ -474,13 +592,21 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                         p_candidatePassageAssociateDoor2) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getAssociateDoor cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getAssociateDoor returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_retainedPassage->setAssociateDoor(
                         p_candidatePassageAssociateDoor2) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // setAssociateDoor cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setAssociateDoor returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
@@ -491,7 +617,10 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                     p_room->isBad(roomIsBad) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_room != nullptr && !roomIsBad)
                 {
@@ -502,8 +631,11 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                             roomWasAssociationReplaced) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        roomWasAssociationReplaced =
-                            false; // rejected input reads as before
+                        roomWasAssociationReplaced = false;
+                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                    "%s: replacePassageAssociation rejected "
+                                    "its input; continuing as before.",
+                                    __func__);
                     }
                 }
             }
@@ -521,12 +653,18 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
             if (p_candidatePassage->setProspectiveRoom(nullptr) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setProspectiveRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_candidatePassage->setMap(nullptr) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             retiredPassages.insert(p_candidatePassage);
         }

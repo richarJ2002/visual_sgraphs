@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 #include <sstream>
 
 namespace vs_graphs
@@ -44,7 +45,10 @@ RoomTrackerStatus
     if (verification_in.isPass(verificationIsPass) !=
         VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
     {
-        // isPass cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isPass returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     transitionRecord.hasVerificationPassed = verificationIsPass;
     transitionRecord.targetState = accepted_in ? trackingState : source_in;
@@ -94,7 +98,10 @@ RoomTrackerStatus
         if (eventToJSON(transitionRecord, json) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // eventToJSON cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eventToJSON returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << "[RoomTracker] transition: " << json << std::endl;
 
@@ -115,7 +122,10 @@ RoomTrackerStatus
         if (eventToJSON(transitionRecord, json2) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // eventToJSON cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: eventToJSON returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << "[RoomTracker] WARN rejected transition: " << json2
                   << std::endl;

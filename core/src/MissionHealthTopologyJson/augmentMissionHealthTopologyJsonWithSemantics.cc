@@ -11,6 +11,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <rclcpp/logging.hpp>
 #include <utility>
 #include <vector>
 
@@ -71,14 +72,20 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // axiomCodeName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: axiomCodeName returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         std::string axiomResultName2{};
         if (semantic::axiomResultName(aggregate.result, axiomResultName2) !=
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // axiomResultName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: axiomResultName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::string axiomClassName2{};
         if (semantic::axiomClassName(aggregate.classification,
@@ -86,7 +93,10 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // axiomClassName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: axiomClassName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         aggregatesJson.push_back(
             {{"axiomCode", axiomCodeName2},
@@ -122,7 +132,11 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
                 MissionHealthTopologyJsonStatus::
                     MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS)
             {
-                // finiteAwareDoubleToJson cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: finiteAwareDoubleToJson returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             evidenceJson["numericValue"] = json2;
         }
@@ -131,28 +145,40 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
             MissionHealthTopologyJsonStatus::
                 MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS)
         {
-            // entityKeysToJson cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: entityKeysToJson returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::string axiomCodeName3{};
         if (semantic::axiomCodeName(finding.axiomCode, axiomCodeName3) !=
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // axiomCodeName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: axiomCodeName returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         std::string reasonCodeName2{};
         if (semantic::reasonCodeName(finding.reasonCode, reasonCodeName2) !=
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // reasonCodeName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: reasonCodeName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::string axiomClassName3{};
         if (semantic::axiomClassName(finding.classification, axiomClassName3) !=
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // axiomClassName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: axiomClassName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         violationsJson.push_back({{"findingId", finding.id},
                                   {"axiomCode", axiomCodeName3},
@@ -177,7 +203,10 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
                 semantic::SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // reasonCodeName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: reasonCodeName returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             reasonsJson.push_back(reasonCodeName3);
         }
@@ -187,7 +216,10 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
             MissionHealthTopologyJsonStatus::
                 MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS)
         {
-            // entityKeysToJson cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: entityKeysToJson returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::string axiomResultName3{};
         if (semantic::axiomResultName(completeness.conservativeResult,
@@ -195,7 +227,10 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // axiomResultName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: axiomResultName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         completenessJson.push_back({{"mapId", completeness.mapId},
                                     {"isComplete", completeness.isComplete},
@@ -209,7 +244,10 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
         MissionHealthTopologyJsonStatus::
             MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS)
     {
-        // axiomCapabilitiesToJson cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomCapabilitiesToJson returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     topologyJson_in["semanticAxiomCapabilities"] = json5;
 

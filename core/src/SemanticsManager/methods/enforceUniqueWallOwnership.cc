@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <rclcpp/logging.hpp>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -34,35 +35,42 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
 {
     std::vector<vs_graphs::core::semantic::Room *> allRooms =
         p_atlas->getAllRooms();
-    std::sort(allRooms.begin(),
-              allRooms.end(),
-              [](const semantic::Room *p_firstRoom,
-                 const semantic::Room *p_secondRoom)
-              {
-                  if (p_firstRoom == nullptr)
-                  {
-                      return false;
-                  }
+    std::sort(
+        allRooms.begin(),
+        allRooms.end(),
+        [](const semantic::Room *p_firstRoom,
+           const semantic::Room *p_secondRoom)
+        {
+            if (p_firstRoom == nullptr)
+            {
+                return false;
+            }
 
-                  if (p_secondRoom == nullptr)
-                  {
-                      return true;
-                  }
+            if (p_secondRoom == nullptr)
+            {
+                return true;
+            }
 
-                  int firstRoomId{};
-                  if (p_firstRoom->getId(firstRoomId) !=
-                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                  {
-                      // getId cannot fail; continue as before.
-                  }
-                  int secondRoomId{};
-                  if (p_secondRoom->getId(secondRoomId) !=
-                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                  {
-                      // getId cannot fail; continue as before.
-                  }
-                  return firstRoomId < secondRoomId;
-              });
+            int firstRoomId{};
+            if (p_firstRoom->getId(firstRoomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            int secondRoomId{};
+            if (p_secondRoom->getId(secondRoomId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            return firstRoomId < secondRoomId;
+        });
 
     std::vector<semantic::Passage *> allPassages = p_atlas->getAllPassages();
     std::sort(
@@ -82,13 +90,19 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
             if (p_first->getId(firstId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int secondId{};
             if (p_second->getId(secondId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             return firstId < secondId;
         });
@@ -100,7 +114,10 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_groundPlane != nullptr && !groundPlaneIsBad)
     {
@@ -108,7 +125,10 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
         if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const Eigen::Vector4d groundEquation =
             groundPlaneGetGlobalEquation.coeffs();
@@ -129,7 +149,10 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room == nullptr || roomIsBad)
         {
@@ -140,7 +163,10 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
         if (p_room->getWalls(roomWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (geometric::Plane *p_wall : roomWalls)
         {
@@ -149,7 +175,10 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                 p_wall->isBad(wallIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_wall == nullptr || wallIsBad)
             {
@@ -196,21 +225,33 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     p_passage->isPassable(passageIsPassable) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // isPassable cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isPassable returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 Eigen::Vector3d nearOwnerCentroid{};
                 if (!(p_passage == nullptr || !passageIsPassable) &&
                     p_nearOwner->getCentroid(nearOwnerCentroid) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 Eigen::Vector3d wallGetCentroid{};
                 if (!(p_passage == nullptr || !passageIsPassable) &&
                     p_wall->getCentroid(wallGetCentroid) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_passage == nullptr || !passageIsPassable ||
                     !segmentCrossesPassageOpening(
@@ -230,14 +271,21 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                 if (p_passage->getProspectiveRoom(p_farSideOwner) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 bool farSideOwnerIsBad{};
                 if (!(p_farSideOwner == nullptr) &&
                     p_farSideOwner->isBad(farSideOwnerIsBad) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 core::Map *p_farSideOwnerMap = nullptr;
                 if (!(p_farSideOwner == nullptr || farSideOwnerIsBad ||
@@ -245,7 +293,11 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     p_farSideOwner->getMap(p_farSideOwnerMap) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getMap cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_farSideOwner == nullptr || farSideOwnerIsBad ||
                     p_farSideOwner == p_nearOwner ||
@@ -266,7 +318,11 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                             p_owner->getRoomVariant(ownerRoomVariant) !=
                                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                         {
-                            // getRoomVariant cannot fail; continue as before.
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getRoomVariant returned a "
+                                         "failure status although it cannot "
+                                         "fail; continuing as before.",
+                                         __func__);
                         }
                         return p_owner != p_nearOwner &&
                                p_owner != p_farSideOwner &&
@@ -283,7 +339,11 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     p_farSideOwner->getRoomVariant(farSideOwnerRoomVariant) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getRoomVariant cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomVariant returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 semantic::Room::RoomVariant retainedOwnerRoomVariant{};
                 if (!(p_retainedOwner == nullptr) &&
@@ -292,7 +352,11 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     p_retainedOwner->getRoomVariant(retainedOwnerRoomVariant) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getRoomVariant cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomVariant returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 semantic::Room::RoomVariant farSideOwnerRoomVariant2{};
                 if (!(p_retainedOwner == nullptr ||
@@ -303,7 +367,11 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     p_farSideOwner->getRoomVariant(farSideOwnerRoomVariant2) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getRoomVariant cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomVariant returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 semantic::Room::RoomVariant retainedOwnerRoomVariant2{};
                 if (!(p_retainedOwner == nullptr ||
@@ -315,7 +383,11 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                         retainedOwnerRoomVariant2) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getRoomVariant cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomVariant returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 int farSideOwnerId{};
                 if (!(p_retainedOwner == nullptr ||
@@ -327,7 +399,10 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     p_farSideOwner->getId(farSideOwnerId) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int retainedOwnerId{};
                 if (!(p_retainedOwner == nullptr ||
@@ -339,7 +414,10 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     p_retainedOwner->getId(retainedOwnerId) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_retainedOwner == nullptr ||
                     (farSideOwnerRoomVariant ==
@@ -364,7 +442,11 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     p_owner->getRoomVariant(ownerRoomVariant) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getRoomVariant cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomVariant returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (passageRejectedOwners.count(p_owner) == 0U &&
                     ownerRoomVariant == semantic::Room::RoomVariant::ROOM)
@@ -388,7 +470,10 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
             if (p_wall->getObservations(wallGetObservations) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getObservations cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getObservations returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             for (const auto &[p_keyFrame, observation] : wallGetObservations)
             {
@@ -424,7 +509,11 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     if (p_owner->getCentroid(ownerCentroid) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // getCentroid cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCentroid returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     const double distance_m =
                         (ownerCentroid - meanObservationPosition_World_m)
@@ -457,7 +546,11 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                 p_owner->removeWall(p_wall, ownerWasWallRemoved) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                ownerWasWallRemoved = false; // rejected input reads as before
+                ownerWasWallRemoved = false;
+                RCLCPP_WARN(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: removeWall rejected its input; continuing as before.",
+                    __func__);
             }
             if (p_owner != p_retainedOwner && ownerWasWallRemoved)
             {
@@ -466,19 +559,28 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
                     p_retainedOwner->getId(retainedOwnerId2) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int ownerId{};
                 if (p_owner->getId(ownerId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int wallGetId{};
                 if (p_wall->getId(wallGetId) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 std::cerr << "[SemMgr] Corrected duplicate ownership of Wall#"
                           << wallGetId << ": "
@@ -498,7 +600,10 @@ void SemanticsManager::enforceUniqueWallOwnership(void)
             if (p_retainedOwner->setWalls(p_wall) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }

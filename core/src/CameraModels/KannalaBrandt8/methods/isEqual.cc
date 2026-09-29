@@ -26,6 +26,7 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
@@ -37,7 +38,10 @@ KannalaBrandt8Status
     if (p_camera_in->getType(cameraType) !=
         geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getType returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (cameraType != geometriccamera::GeometricCamera::CAM_FISHEYE)
     {
@@ -51,7 +55,10 @@ KannalaBrandt8Status
     if (p_kannalaCamera->getPrecision(kannalaCameraPrecision) !=
         KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS)
     {
-        // getPrecision cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPrecision returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (abs(precision - kannalaCameraPrecision) > 1e-6)
     {
@@ -63,13 +70,19 @@ KannalaBrandt8Status
     if (size(size2) !=
         geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // size cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: size returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     size_t kannalaCameraSize{};
     if (p_kannalaCamera->size(kannalaCameraSize) !=
         geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // size cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: size returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (size2 != kannalaCameraSize)
     {
@@ -82,7 +95,10 @@ KannalaBrandt8Status
     if (size(size3) !=
         geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // size cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: size returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     for (size_t parameterIndex = 0; parameterIndex < size3; ++parameterIndex)
     {
@@ -92,7 +108,10 @@ KannalaBrandt8Status
             geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (abs(parameters[parameterIndex] - kannalaCameraParameter) > 1e-6)
         {

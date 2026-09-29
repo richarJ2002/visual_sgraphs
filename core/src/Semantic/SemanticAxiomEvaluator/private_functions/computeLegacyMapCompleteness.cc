@@ -65,6 +65,7 @@
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -121,7 +122,10 @@ SemanticAxiomEvaluatorStatus computeLegacyMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // resolveRoomEndpoint cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: resolveRoomEndpoint returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         ResolvedRoomEndpoint prospective{};
         if (resolveRoomEndpoint(passage.prospectiveRoomRef,
@@ -131,7 +135,10 @@ SemanticAxiomEvaluatorStatus computeLegacyMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // resolveRoomEndpoint cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: resolveRoomEndpoint returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const bool hasRealKnownSideRoom = knownSide.isFoundInSnapshot &&
                                           knownSide.isLive &&

@@ -29,6 +29,7 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -45,7 +46,10 @@ void KeyFrame::computeBagOfWords()
                 currentDescriptors) !=
             utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
         {
-            // toDescriptorVector cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: toDescriptorVector returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         // Feature vector associate features with nodes in the 4th level (from
         // leaves up) We assume the vocabulary tree has 6 levels, change the 4

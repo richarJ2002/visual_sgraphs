@@ -33,6 +33,7 @@
 #include "Utils/Settings/objects/Settings.h"
 
 #include <opencv2/core/persistence.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -54,7 +55,10 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              parameter) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerKeyFrameSize = parameter;
     float parameter2{};
@@ -64,7 +68,10 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              parameter2) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerKeyFrameLineWidth = parameter2;
     float parameter3{};
@@ -74,7 +81,10 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              parameter3) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerGraphLineWidth = parameter3;
     float parameter4{};
@@ -84,7 +94,10 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              parameter4) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerPointSize = parameter4;
     float parameter5{};
@@ -94,7 +107,10 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              parameter5) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerCameraSize = parameter5;
     float parameter6{};
@@ -104,7 +120,10 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              parameter6) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerCameraLineWidth = parameter6;
     float parameter7{};
@@ -114,7 +133,10 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              parameter7) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerViewPointX = parameter7;
     float parameter8{};
@@ -124,7 +146,10 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              parameter8) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerViewPointY = parameter8;
     float parameter9{};
@@ -134,7 +159,10 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              parameter9) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerViewPointZ = parameter9;
     float parameter10{};
@@ -144,7 +172,10 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              parameter10) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerViewPointF = parameter10;
     float parameter11{};
@@ -152,10 +183,12 @@ SettingsStatus Settings::readViewer(cv::FileStorage &storage_inout)
                              "Viewer.imageViewScale",
                              found,
                              parameter11,
-                             false) !=
-        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+                             false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewerImageScale = parameter11;
 

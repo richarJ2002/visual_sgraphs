@@ -17,6 +17,7 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -44,14 +45,20 @@ void SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         semantic::Room::RoomVariant roomVariant{};
         if ((p_room != nullptr && !roomIsBad) &&
             p_room->getRoomVariant(roomVariant) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room != nullptr && !roomIsBad &&
             roomVariant == semantic::Room::RoomVariant::ROOM)
@@ -60,7 +67,10 @@ void SemanticsManager::seedCurrentRoomFromActiveMap(Map *p_activeMap_in)
             if (p_room->getId(roomId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             currentRoomId = roomId;
             p_atlas->setCurrentSemanticRoomIdentity(currentRoomId);

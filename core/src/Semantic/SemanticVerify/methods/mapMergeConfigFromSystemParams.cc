@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 namespace vs_graphs
@@ -36,7 +37,10 @@ SemanticVerifyStatus SemanticVerify::mapMergeConfigFromSystemParams(
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     configuration.passage_match_tolerance_m =
         static_cast<double>(p_params->mapMerge.passageMatchTolerance_m);
@@ -44,7 +48,10 @@ SemanticVerifyStatus SemanticVerify::mapMergeConfigFromSystemParams(
     if (types::SystemParams::getParams(p_params2) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     configuration.wall_coplanar_angle_deg =
         static_cast<double>(p_params2->mapMerge.wallCoplanarAngle_deg);
@@ -52,7 +59,10 @@ SemanticVerifyStatus SemanticVerify::mapMergeConfigFromSystemParams(
     if (types::SystemParams::getParams(p_params3) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     configuration.wall_edge_overlap_m =
         static_cast<double>(p_params3->mapMerge.wallEdgeOverlap_m);
@@ -60,7 +70,10 @@ SemanticVerifyStatus SemanticVerify::mapMergeConfigFromSystemParams(
     if (types::SystemParams::getParams(p_params4) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     configuration.floor_match_tolerance_m =
         static_cast<double>(p_params4->mapMerge.floorMatchTolerance_m);
@@ -68,7 +81,10 @@ SemanticVerifyStatus SemanticVerify::mapMergeConfigFromSystemParams(
     if (types::SystemParams::getParams(p_params5) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     configuration.room_centroid_tolerance_m =
         static_cast<double>(p_params5->mapMerge.roomCentroidTolerance_m);

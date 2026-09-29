@@ -6,6 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <rclcpp/logging.hpp>
 #include <set>
 #include <string>
 #include <tuple>
@@ -42,7 +43,10 @@ SemanticCandidatesStatus
         if (isValidWallBounds(bounds, isValidWallBounds2) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // isValidWallBounds cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isValidWallBounds returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (isValidWallBounds2)
         {

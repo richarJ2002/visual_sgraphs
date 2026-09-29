@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -54,14 +55,20 @@ FloorStatus Floor::replaceRoom(Room *p_retiredRoom_inout,
     if (p_retainedRoom_inout->getFloor(p_previousRetainedFloor) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_previousRetainedFloor != nullptr && p_previousRetainedFloor != this)
     {
         if (p_previousRetainedFloor->detachRoom(p_retainedRoom_inout) !=
             FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // detachRoom cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: detachRoom returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -104,20 +111,29 @@ FloorStatus Floor::replaceRoom(Room *p_retiredRoom_inout,
         if (p_retiredRoom_inout->getFloor(p_retiredRoom_inoutFloor) !=
             RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getFloor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getFloor returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_retiredRoom_inoutFloor == this)
         {
             if (p_retiredRoom_inout->setFloor(nullptr) !=
                 RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setFloor cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setFloor returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
         }
         if (p_retainedRoom_inout->setFloor(this) !=
             RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setFloor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setFloor returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
 

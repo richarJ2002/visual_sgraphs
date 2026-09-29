@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -53,7 +54,10 @@ void Map::addMapFloor(semantic::Floor *p_floor_inout)
             p_floor_inout->getId(floor_inoutId) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         floorIterator = floorIterator->second == p_floor_inout &&
                                 floorIterator->first != floor_inoutId
@@ -65,7 +69,10 @@ void Map::addMapFloor(semantic::Floor *p_floor_inout)
     if (p_floor_inout->getId(floor_inoutId2) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     const auto existingFloorIterator = floorIndex.find(floor_inoutId2);
 
@@ -73,7 +80,10 @@ void Map::addMapFloor(semantic::Floor *p_floor_inout)
     if (p_floor_inout->getId(floor_inoutId3) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (floor_inoutId3 < 0 || (existingFloorIterator != floorIndex.end() &&
                                existingFloorIterator->second != p_floor_inout))
@@ -89,7 +99,10 @@ void Map::addMapFloor(semantic::Floor *p_floor_inout)
         if (p_floor_inout->getId(floor_inoutId4) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cerr << "[Map] semantic::Floor ID collision for " << floor_inoutId4
                   << "; reassigned to " << replacementFloorId << "."
@@ -98,7 +111,10 @@ void Map::addMapFloor(semantic::Floor *p_floor_inout)
         if (p_floor_inout->setId(replacementFloorId) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else
@@ -107,7 +123,10 @@ void Map::addMapFloor(semantic::Floor *p_floor_inout)
         if (p_floor_inout->getId(floor_inoutId5) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         nextAvailableFloorId =
             std::max(nextAvailableFloorId, floor_inoutId5 + 1);
@@ -118,7 +137,10 @@ void Map::addMapFloor(semantic::Floor *p_floor_inout)
     if (p_floor_inout->getId(floor_inoutId6) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     floorIndex.insert_or_assign(floor_inoutId6, p_floor_inout);
 }

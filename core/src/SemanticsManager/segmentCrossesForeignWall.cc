@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include "private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -94,7 +95,10 @@ bool segmentCrossesForeignWall(
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room == nullptr || roomIsBad ||
             std::find(excludedRooms_in.begin(),
@@ -108,7 +112,10 @@ bool segmentCrossesForeignWall(
         if (p_room->getWalls(roomWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (geometric::Plane *p_wall : roomWalls)
         {

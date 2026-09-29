@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -84,7 +85,10 @@ Frame::Frame(const cv::Mat &imageColor_in,
     if (utils::converter::Converter::toMatrix3f(K_in, calibrationMatrixEigen) !=
         utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
     {
-        // toMatrix3f cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: toMatrix3f returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     // Setting the color image for Semantic Segmentation

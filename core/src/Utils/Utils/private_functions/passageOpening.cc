@@ -26,6 +26,7 @@
 #include "Utils/Utils/private_functions.h"
 
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -50,7 +51,10 @@ UtilsStatus crossesPassablePassageOpening(
         p_passage_in->isPassable(passage_inIsPassable) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // isPassable cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isPassable returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_passage_in == nullptr || !passage_inIsPassable ||
         !segmentStart_World_m_in.allFinite() ||
@@ -64,7 +68,10 @@ UtilsStatus crossesPassablePassageOpening(
     if (p_passage_in->getGlobalEquation(passage_inGlobalEquation) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d passageEquation_World = passage_inGlobalEquation.coeffs();
     const double    passageNormalNorm = passageEquation_World.head<3>().norm();
@@ -107,7 +114,10 @@ UtilsStatus crossesPassablePassageOpening(
     if (p_passage_in->getCentroid(passageCentroid_World_m) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (!passageCentroid_World_m.allFinite())
@@ -133,14 +143,20 @@ UtilsStatus crossesPassablePassageOpening(
     if (p_passage_in->getWidth(passage_inWidth) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getWidth cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWidth returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     double passage_inHeight{};
     if ((horizontalOffset_m <= 0.5 * passage_inWidth + openingMargin_m_in) &&
         p_passage_in->getHeight(passage_inHeight) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getHeight cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getHeight returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     crossesOpening_out =
         horizontalOffset_m <= 0.5 * passage_inWidth + openingMargin_m_in &&

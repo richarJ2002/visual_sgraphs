@@ -17,6 +17,7 @@
  */
 
 #include "GeoSemHelpers.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -34,7 +35,10 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
     if (p_groundPlane_in->getGeometrySnapshot(groundGeometry) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGeometrySnapshot cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGeometrySnapshot returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_groundCloud =
         groundGeometry.supportCloud;
@@ -50,7 +54,10 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
         if (wall->getGlobalEquation(wallGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         wallEquations.push_back(wallGetGlobalEquation.coeffs());
     }

@@ -56,6 +56,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -143,7 +144,10 @@ SemanticAxiomEvaluatorStatus isValidBoundaryWallEvidence(
                                 wallRecords) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // countWallRecordsWithKey cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countWallRecordsWithKey returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (wallRecords > 1U)
     {
@@ -157,7 +161,10 @@ SemanticAxiomEvaluatorStatus isValidBoundaryWallEvidence(
                                 mapSnapshots) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // countMapSnapshotsWithId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countMapSnapshotsWithId returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (mapSnapshots > 1U)
     {
@@ -184,7 +191,10 @@ SemanticAxiomEvaluatorStatus isValidBoundaryWallEvidence(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // findRecordByKey cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findRecordByKey returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         p_wall = p_record;
         break;
@@ -219,7 +229,10 @@ SemanticAxiomEvaluatorStatus isValidBoundaryWallEvidence(
     if (evaluateOneWall(*p_wall, snapshot_in, wallOwnershipScratch) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // evaluateOneWall cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: evaluateOneWall returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     /* The aggregate AX-WALL-01
      * result for this wall must be a clean PASS -- a PASS finding
@@ -230,7 +243,10 @@ SemanticAxiomEvaluatorStatus isValidBoundaryWallEvidence(
     if (anyFindingIs(wallOwnershipScratch, AxiomResult::FAIL, hasFinding) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (hasFinding)
     {
@@ -242,7 +258,10 @@ SemanticAxiomEvaluatorStatus isValidBoundaryWallEvidence(
     if (anyFindingIs(wallOwnershipScratch, AxiomResult::UNKNOWN, hasFinding2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (hasFinding2)
     {

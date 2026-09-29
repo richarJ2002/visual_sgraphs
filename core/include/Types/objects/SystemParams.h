@@ -64,12 +64,6 @@ class SystemParams
         float        leafSize          = 0.03f;
         unsigned int minPointsPerVoxel = 5;
     };
-    struct OutlierRemoval
-    {
-        float        stdThreshold  = 1.0;
-        unsigned int meanThreshold = 50;
-    };
-
     // Structs for different modules
     struct General
     {
@@ -177,8 +171,7 @@ class SystemParams
     {
         struct Pointcloud
         {
-            Downsample     downsample;
-            OutlierRemoval outlierRemoval;
+            Downsample downsample;
         } pointcloud;
     } geoSeg;
 
@@ -253,8 +246,7 @@ class SystemParams
 
         struct Pointcloud
         {
-            Downsample     downsample;
-            OutlierRemoval outlierRemoval;
+            Downsample downsample;
         } pointcloud;
 
         /*!

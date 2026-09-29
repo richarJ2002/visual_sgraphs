@@ -105,10 +105,6 @@ geo_seg:
     downsample:
       leaf_size: 0.08
       min_points_per_voxel: 10
-    # Pointcloud outlier removal
-    outlier_removal:
-      mean_threshold: 50
-      std_threshold: 1.0
 
 ############################## Semantic Segmentation Parameters ####################################
 sem_seg:
@@ -117,10 +113,6 @@ sem_seg:
     downsample:
       leaf_size: 0.04
       min_points_per_voxel: 10
-    # Pointcloud outlier removal
-    outlier_removal:
-      mean_threshold: 50
-      std_threshold: 1.0
 
   # The threshold for semantic segmentation probability validation. This tracks
   # the probability that pixel belongs to a semantic class and

@@ -30,6 +30,7 @@
 #include "Utils/Utils/objects/Utils.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,7 +52,10 @@ void Optimizer::localBundleAdjustment(
     if (vs_graphs::core::types::SystemParams::getParams(p_sysParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     // Variables
@@ -180,7 +184,10 @@ void Optimizer::localBundleAdjustment(
             if ((*markerIt)->getId(id2) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (localMarkerId.find(id2) == localMarkerId.end())
             {
@@ -190,7 +197,10 @@ void Optimizer::localBundleAdjustment(
                 if (p_marker->getId(markerId) !=
                     semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 localMarkerId[markerId] = true;
             }
@@ -214,7 +224,10 @@ void Optimizer::localBundleAdjustment(
             if (p_localPlane->getPlaneType(localPlanePlaneType) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getPlaneType cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPlaneType returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (localPlanePlaneType ==
                 geometric::Plane::PlaneVariant::UNDEFINED)
@@ -226,7 +239,10 @@ void Optimizer::localBundleAdjustment(
             if (p_localPlane->getId(localPlaneGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (localPlaneId.find(localPlaneGetId) == localPlaneId.end())
             {
@@ -235,7 +251,10 @@ void Optimizer::localBundleAdjustment(
                 if (p_localPlane->getId(localPlaneGetId2) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 localPlaneId[localPlaneGetId2] = true;
             }
@@ -252,7 +271,10 @@ void Optimizer::localBundleAdjustment(
             if ((*markerIt)->getId(id3) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (localDoorwayId.find(id3) == localDoorwayId.end())
             {
@@ -262,7 +284,10 @@ void Optimizer::localBundleAdjustment(
                 if (p_doorway->getId(doorwayId) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 localDoorwayId[doorwayId] = true;
             }
@@ -277,7 +302,10 @@ void Optimizer::localBundleAdjustment(
         if (room->getWalls(roomWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         // Add the room to the local map if any of the walls are in the local
         // map
@@ -287,7 +315,10 @@ void Optimizer::localBundleAdjustment(
             if (wall->getId(wallGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (localPlaneId.find(wallGetId) != localPlaneId.end())
             {
@@ -309,7 +340,10 @@ void Optimizer::localBundleAdjustment(
         if ((*markerIt)->getWalls(roomWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (const auto &roomWall : roomWalls)
         {
@@ -317,7 +351,10 @@ void Optimizer::localBundleAdjustment(
             if (roomWall->getId(roomWallGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (localPlaneId.find(roomWallGetId) == localPlaneId.end())
             {
@@ -326,7 +363,10 @@ void Optimizer::localBundleAdjustment(
                 if (roomWall->getId(roomWallGetId2) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 localPlaneId[roomWallGetId2] = true;
                 recentLocalMapPlanes.push_back(roomWall);
@@ -349,7 +389,10 @@ void Optimizer::localBundleAdjustment(
         if ((*markerIt)->getObservations(planeObservations) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getObservations cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         for (std::map<
                  vs_graphs::core::KeyFrame *,
@@ -795,13 +838,19 @@ void Optimizer::localBundleAdjustment(
         if (p_mapMarker->getGlobalPose(mapMarkerGlobalPose) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // getGlobalPose cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalPose returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         Sophus::SE3f mapMarkerGlobalPose2{};
         if (p_mapMarker->getGlobalPose(mapMarkerGlobalPose2) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // getGlobalPose cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalPose returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         p_markerVertex->setEstimate(
             g2o::SE3Quat(mapMarkerGlobalPose.unit_quaternion().cast<double>(),
@@ -815,7 +864,10 @@ void Optimizer::localBundleAdjustment(
         if (p_mapMarker->setOpId(opId) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // setOpId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setOpId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         // 🚧 [vS-Graphs v.2.0] in contrast with the first version of visual
@@ -851,7 +903,10 @@ void Optimizer::localBundleAdjustment(
         if (p_mapPlane->getGlobalEquation(planeGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         p_planeVertex->setEstimate(planeGlobalEquation);
         optimizer.addVertex(p_planeVertex);
@@ -861,7 +916,10 @@ void Optimizer::localBundleAdjustment(
         if (p_mapPlane->setOpId(opId) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setOpId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setOpId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         // Adding edge between plane and MapPoints
@@ -872,7 +930,10 @@ void Optimizer::localBundleAdjustment(
             if (p_mapPlane->getMapPoints(mapPoints) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getMapPoints cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMapPoints returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             for (set<MapPoint *>::iterator lit  = mapPoints.begin(),
                                            lend = mapPoints.end();
@@ -918,7 +979,10 @@ void Optimizer::localBundleAdjustment(
         if (p_mapPlane->getObservations(observations) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getObservations cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         for (map<KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>::const_iterator
@@ -939,7 +1003,11 @@ void Optimizer::localBundleAdjustment(
                 if (p_mapPlane->eraseObservation(p_keyFrame) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // eraseObservation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseObservation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 continue;
             }
@@ -991,7 +1059,11 @@ void Optimizer::localBundleAdjustment(
                     if (p_mapPlane->getPlaneType(mapPlanePlaneType) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getPlaneType cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPlaneType returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (utils::utils::Utils::getClassIdFromPlaneType(
                             mapPlanePlaneType,
@@ -1055,7 +1127,10 @@ void Optimizer::localBundleAdjustment(
             if (p_mapRoom->getWalls(walls) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
 
             // No need to optimize if there are no walls
@@ -1073,7 +1148,10 @@ void Optimizer::localBundleAdjustment(
             if (p_mapRoom->setOpId(opId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setOpId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setOpId returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             roomCount++;
 
@@ -1082,7 +1160,10 @@ void Optimizer::localBundleAdjustment(
             if (p_mapRoom->getCentroid(mapRoomCentroid) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             p_vertexRoom->setEstimate(
                 g2o::SE3Quat(Eigen::Quaterniond::Identity(),
@@ -1112,13 +1193,21 @@ void Optimizer::localBundleAdjustment(
                     if (p_wall1->getId(wall1GetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     int wall2GetId{};
                     if (p_wall2->getId(wall2GetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (wall1GetId == wall2GetId)
                     {
@@ -1133,7 +1222,11 @@ void Optimizer::localBundleAdjustment(
                             arePlanesParallel2) !=
                         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                     {
-                        // arePlanesParallel cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: arePlanesParallel returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (arePlanesParallel2)
                     {
@@ -1156,13 +1249,21 @@ void Optimizer::localBundleAdjustment(
                             if (p_wall1->getOpId(opId1) !=
                                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                             {
-                                // getOpId cannot fail; continue as before.
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: getOpId returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
                             }
                             int opId2{};
                             if (p_wall2->getOpId(opId2) !=
                                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                             {
-                                // getOpId cannot fail; continue as before.
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: getOpId returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
                             }
 
                             if (optimizer.vertex(opId) &&
@@ -1219,13 +1320,21 @@ void Optimizer::localBundleAdjustment(
                         if (p_wall1->getOpId(opId1) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                         {
-                            // getOpId cannot fail; continue as before.
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getOpId returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
                         }
                         int opId2{};
                         if (p_wall2->getOpId(opId2) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                         {
-                            // getOpId cannot fail; continue as before.
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getOpId returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
                         }
 
                         if (optimizer.vertex(opId) && optimizer.vertex(opId1) &&
@@ -1419,7 +1528,10 @@ void Optimizer::localBundleAdjustment(
             if (p_plane->eraseObservation(p_keyFrame) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // eraseObservation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseObservation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             p_keyFrame->removeMapPlane(p_plane);
         }
@@ -1488,7 +1600,10 @@ void Optimizer::localBundleAdjustment(
             if (p_mapMarker->getOpId(mapMarkerOpId) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // getOpId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getOpId returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             g2o::VertexSE3Expmap *p_markerVertex =
                 static_cast<g2o::VertexSE3Expmap *>(
@@ -1499,7 +1614,10 @@ void Optimizer::localBundleAdjustment(
             if (p_mapMarker->setGlobalPose(Tiw) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // setGlobalPose cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGlobalPose returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
         catch (std::exception &e)
@@ -1525,7 +1643,10 @@ void Optimizer::localBundleAdjustment(
             if (p_mapPlane->getOpId(mapPlaneGetOpId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getOpId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getOpId returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             g2o::VertexPlane *p_planeVertex = static_cast<g2o::VertexPlane *>(
                 optimizer.vertex(mapPlaneGetOpId));
@@ -1533,7 +1654,10 @@ void Optimizer::localBundleAdjustment(
             if (p_mapPlane->setGlobalEquation(planePlane) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // setGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
         catch (std::exception &e)

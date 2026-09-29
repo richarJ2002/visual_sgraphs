@@ -32,9 +32,10 @@
 
 #include "Utils/Settings/objects/Settings.h"
 
+#include <opencv2/calib3d.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/core/persistence.hpp>
-#include <opencv2/calib3d.hpp>
+#include <rclcpp/logging.hpp>
 
 #include "System.h"
 
@@ -72,12 +73,18 @@ SettingsStatus  Settings::precomputeRectificationMaps()
     cv::Mat camera1DistortionCoef2{};
     if (camera1DistortionCoef(camera1DistortionCoef2) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-    // camera1DistortionCoef cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: camera1DistortionCoef returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     cv::Mat camera2DistortionCoef2{};
     if (camera2DistortionCoef(camera2DistortionCoef2) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-    // camera2DistortionCoef cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: camera2DistortionCoef returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     cv::stereoRectify(K1,
                       camera1DistortionCoef2,
@@ -97,7 +104,10 @@ SettingsStatus  Settings::precomputeRectificationMaps()
     cv::Mat camera1DistortionCoef3{};
     if (camera1DistortionCoef(camera1DistortionCoef3) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-    // camera1DistortionCoef cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: camera1DistortionCoef returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     cv::initUndistortRectifyMap(K1,
                                 camera1DistortionCoef3,
@@ -110,7 +120,10 @@ SettingsStatus  Settings::precomputeRectificationMaps()
     cv::Mat camera2DistortionCoef3{};
     if (camera2DistortionCoef(camera2DistortionCoef3) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-    // camera2DistortionCoef cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: camera2DistortionCoef returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     cv::initUndistortRectifyMap(K2,
                                 camera2DistortionCoef3,
@@ -124,36 +137,60 @@ SettingsStatus  Settings::precomputeRectificationMaps()
     // Update calibration
     if (p_calibration1->setParameter(P1.at<double>(0, 0), 0) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-    // setParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_calibration1->setParameter(P1.at<double>(1, 1), 1) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-    // setParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_calibration1->setParameter(P1.at<double>(0, 2), 2) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-    // setParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_calibration1->setParameter(P1.at<double>(1, 2), 3) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-    // setParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (p_calibration2->setParameter(P2.at<double>(0, 0), 0) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-    // setParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_calibration2->setParameter(P2.at<double>(1, 1), 1) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-    // setParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_calibration2->setParameter(P2.at<double>(0, 2), 2) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-    // setParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_calibration2->setParameter(P2.at<double>(1, 2), 3) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-    // setParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     // Update bf

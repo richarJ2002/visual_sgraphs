@@ -33,6 +33,7 @@
 
 #include <pcl/common/point_tests.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -73,7 +74,10 @@ UtilsStatus Utils::associatePlanes(
     if (types::SystemParams::getParams(p_sysParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     /* Extract and normalize the observed plane equation */
@@ -176,7 +180,10 @@ UtilsStatus Utils::associatePlanes(
             p_mappedPlane->isBad(mappedPlaneIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_mappedPlane == nullptr || mappedPlaneIsBad)
         {
@@ -188,7 +195,10 @@ UtilsStatus Utils::associatePlanes(
         if (p_mappedPlane->getGeometrySnapshot(mappedGeometry) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGeometrySnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_mappedCloud =
             mappedGeometry.supportCloud;
@@ -209,7 +219,10 @@ UtilsStatus Utils::associatePlanes(
         if (p_mappedPlane->getExpectedPlaneType(mappedPlaneType) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getExpectedPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getExpectedPlaneType returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         const bool semanticTypesCompatible =
@@ -236,7 +249,10 @@ UtilsStatus Utils::associatePlanes(
                                     mappedPlaneInGivenFrame) !=
             UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // applyPoseToPlane cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyPoseToPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         Eigen::Vector4d mappedEquation = mappedPlaneInGivenFrame.coeffs();
@@ -333,7 +349,11 @@ UtilsStatus Utils::associatePlanes(
                     .minimumOrthogonalOverlap_m,
                 areCompatible) != UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // finiteWallExtentsAreCompatible cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: finiteWallExtentsAreCompatible returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         const bool finiteWallExtentsCompatible =
             useWallExtension && areCompatible;
@@ -485,7 +505,10 @@ UtilsStatus Utils::associatePlanes(
             if (p_mappedPlane->getId(mappedPlaneGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             bestPlaneId = mappedPlaneGetId;
         }

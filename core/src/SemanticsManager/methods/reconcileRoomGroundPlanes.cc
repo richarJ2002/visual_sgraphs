@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -39,14 +40,20 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
     if (semantic::Floor::selectBestObservedFloor(floors, p_canonicalFloor) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // selectBestObservedFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: selectBestObservedFloor returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     bool canonicalFloorHasPlaneIdentity{};
     if (!(p_canonicalFloor == nullptr) &&
         p_canonicalFloor->hasPlaneIdentity(canonicalFloorHasPlaneIdentity) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // hasPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasPlaneIdentity returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_canonicalFloor == nullptr || !canonicalFloorHasPlaneIdentity)
     {
@@ -58,7 +65,10 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
     if (p_canonicalFloor->getPlaneIdentity(canonicalIdentity) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneIdentity returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (!canonicalIdentity.has_value())
     {
@@ -76,7 +86,10 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room == nullptr || roomIsBad)
         {
@@ -87,14 +100,20 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
         if (p_room->getGroundPlane(p_roomGroundPlane) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getGroundPlane cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGroundPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         bool roomGroundPlaneIsBad{};
         if (!(p_roomGroundPlane == nullptr) &&
             p_roomGroundPlane->isBad(roomGroundPlaneIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_roomGroundPlane == nullptr || roomGroundPlaneIsBad ||
             p_roomGroundPlane == p_canonicalGroundPlane)
@@ -108,7 +127,10 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
         if (p_roomGroundPlane->getGeometrySnapshot(roomGroundGeometry) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGeometrySnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const double roomGroundNormalNorm =
             roomGroundGeometry.equation_World.head<3>().norm();
@@ -141,7 +163,10 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
                 offset_m,
                 isMatch) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // planeIdentitiesMatch cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: planeIdentitiesMatch returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (isMatch)
         {
@@ -159,19 +184,28 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
             if (p_room->setGroundPlane(p_canonicalGroundPlane) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setGroundPlane cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGroundPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             int roomId{};
             if (p_room->getId(roomId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int canonicalFloorId{};
             if (p_canonicalFloor->getId(canonicalFloorId) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout << "[SemMgr] semantic::Room#" << roomId
                       << "'s ground plane disagreed with semantic::Floor#"
@@ -186,13 +220,19 @@ void SemanticsManager::reconcileRoomGroundPlanes(void)
             if (p_room->getId(roomId2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int canonicalFloorId2{};
             if (p_canonicalFloor->getId(canonicalFloorId2) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout
                 << "[SemMgr] semantic::Room#" << roomId2

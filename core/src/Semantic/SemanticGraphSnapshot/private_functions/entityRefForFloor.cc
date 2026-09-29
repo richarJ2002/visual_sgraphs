@@ -26,6 +26,7 @@
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
 
 #include "Map.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -56,7 +57,10 @@ SemanticGraphSnapshotStatus entityRefForFloor(Floor     *p_floor_in,
     int floor_inId{};
     if (p_floor_in->getId(floor_inId) != FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     reference.localId = floor_inId;
     reference.livenessUnavailableReason =
@@ -65,7 +69,10 @@ SemanticGraphSnapshotStatus entityRefForFloor(Floor     *p_floor_in,
     core::Map *p_map = nullptr;
     if (p_floor_in->getMap(p_map) != FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_map == nullptr)
     {
@@ -77,13 +84,19 @@ SemanticGraphSnapshotStatus entityRefForFloor(Floor     *p_floor_in,
     int floor_inId2{};
     if (p_floor_in->getId(floor_inId2) != FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     EntityKey key2{};
     if (makeKey(EntityKind::FLOOR, p_map->getId(), floor_inId2, key2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
-        // makeKey cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeKey returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     reference.key    = key2;
     reference.reason = UnavailableReason::NONE;

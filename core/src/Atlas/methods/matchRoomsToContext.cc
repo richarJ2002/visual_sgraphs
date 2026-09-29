@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 #if defined(VS_GRAPHS_ENABLE_ATLAS_LOCK_ORDER_TEST_HOOK)
 extern "C" void vsGraphsAtlasLockOrderBeforeMapSnapshot() __attribute__((weak));
@@ -87,7 +88,10 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
         if (!(!p_room) && p_room->isBad(roomIsBad) !=
                               semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (!p_room || roomIsBad)
             continue;
@@ -96,7 +100,10 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
         if (p_room->hasRoomTag(roomHasRoomTag) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // hasRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (roomHasRoomTag)
             continue;
@@ -105,7 +112,10 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
         if (p_room->getCentroid(roomCentroid) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         double bestDistance = std::numeric_limits<double>::max();
         const semantic::RoomContextSnapshot *p_bestMatch = nullptr;
@@ -119,7 +129,10 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                 p_room->hasRoomTag(roomHasRoomTag2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // hasRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: hasRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (!snap.roomTag.empty() && roomHasRoomTag2)
             {
@@ -127,7 +140,11 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                 if (p_room->getRoomTag(roomTag2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getRoomTag cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomTag returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (roomTag2 == snap.roomTag)
                 {
@@ -149,7 +166,10 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
             if (p_room->getWalls(roomWalls) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (roomWalls.empty() || snap.wallNormals.empty())
             {
@@ -201,7 +221,10 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                                    std::to_string(p_bestMatch->roomId)) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             /* Locate the snapshot pointer in the stored history so the
@@ -244,14 +267,22 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                     if ((r) && r->isBad(rIsBad) !=
                                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // isBad cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     int rId{};
                     if ((r && !rIsBad) &&
                         r->getId(rId) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (r && !rIsBad && rId == p_bestMatch->roomId)
                     {
@@ -270,13 +301,20 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                 if (p_priorRoom->getId(priorRoomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 std::vector<geometric::Plane *> priorRoomWalls{};
                 if (p_priorRoom->getWalls(priorRoomWalls) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getWalls cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWalls returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 std::cout << "[Atlas] Prior semantic::Room#" << priorRoomId
                           << " has " << priorRoomWalls.size() << " walls"
@@ -287,7 +325,11 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                 if (p_priorRoom->getWalls(priorRoomWalls2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getWalls cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWalls returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 for (geometric::Plane *p_wall : priorRoomWalls2)
                 {
@@ -296,7 +338,11 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                         p_wall->isBad(wallIsBad) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // isBad cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (!p_wall || wallIsBad)
                         continue;
@@ -307,32 +353,51 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                                                 priorRoomWasWallRemoved) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        priorRoomWasWallRemoved =
-                            false; // rejected input reads as before
+                        priorRoomWasWallRemoved = false;
+                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                    "%s: removeWall rejected its input; "
+                                    "continuing as before.",
+                                    __func__);
                     }
                     if (p_room->setWalls(p_wall) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // setWalls cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setWalls returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
                     }
 
                     int priorRoomId2{};
                     if (p_priorRoom->getId(priorRoomId2) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     int roomId2{};
                     if (p_room->getId(roomId2) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     int wallGetId{};
                     if (p_wall->getId(wallGetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     std::cout << "[Atlas] Transferred Wall#" << wallGetId
                               << " from prior semantic::Room#" << priorRoomId2
@@ -347,13 +412,20 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
                 if (p_room->getId(roomId3) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 std::vector<geometric::Plane *> roomWalls2{};
                 if (p_room->getWalls(roomWalls2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getWalls cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWalls returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 std::cout << "[Atlas] semantic::Room#" << roomId3 << " now has "
                           << roomWalls2.size()
@@ -372,13 +444,19 @@ void Atlas::matchRoomsToContext(Map *p_newMap_in)
             if (p_room->getId(roomId4) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::string roomTag3{};
             if (p_room->getRoomTag(roomTag3) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout << "[Atlas] Matched room " << roomId4
                       << " in new map, tagged with identity \"" << roomTag3

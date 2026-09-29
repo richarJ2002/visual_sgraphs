@@ -24,6 +24,7 @@
  */
 
 #include "Semantic/SemanticCanonicalSerialization/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -40,7 +41,10 @@ nlohmann::json serializeEntityKey(const EntityKey &value_in)
     if (entityKindName(value_in.kind, entityKindName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // entityKindName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: entityKindName returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     json["kindName"] = entityKindName2;
     json["mapId"]    = value_in.mapId;

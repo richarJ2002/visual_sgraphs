@@ -21,6 +21,7 @@
 #include "../private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -36,7 +37,10 @@ void SemanticsManager::reconcileWallFacePairs(void)
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_groundPlane != nullptr && !groundPlaneIsBad)
     {
@@ -44,7 +48,10 @@ void SemanticsManager::reconcileWallFacePairs(void)
         if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const Eigen::Vector4d groundEq = groundPlaneGetGlobalEquation.coeffs();
         const double          groundNorm = groundEq.head<3>().norm();
@@ -69,14 +76,20 @@ void SemanticsManager::reconcileWallFacePairs(void)
             p_plane->isBad(planeIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         geometric::Plane::PlaneVariant planeType{};
         if ((p_plane != nullptr && !planeIsBad) &&
             p_plane->getPlaneType(planeType) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_plane != nullptr && !planeIsBad &&
             planeType == geometric::Plane::PlaneVariant::WALL)
@@ -104,13 +117,19 @@ void SemanticsManager::reconcileWallFacePairs(void)
             if (p_first->getId(firstGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int secondGetId{};
             if (p_second->getId(secondGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             return firstGetId < secondGetId;
         });
@@ -121,7 +140,10 @@ void SemanticsManager::reconcileWallFacePairs(void)
         if (p_wall->getTwinFace(p_existingTwin) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getTwinFace cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTwinFace returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_existingTwin != nullptr)
         {
@@ -132,13 +154,19 @@ void SemanticsManager::reconcileWallFacePairs(void)
             if (p_wall->getId(wallGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int existingTwinGetId{};
             if (p_existingTwin->getId(existingTwinGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (wallGetId < existingTwinGetId)
             {
@@ -161,12 +189,18 @@ void SemanticsManager::reconcileWallFacePairs(void)
             if (p_existingTwin->clearTwinFace() !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // clearTwinFace cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: clearTwinFace returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_wall->clearTwinFace() !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // clearTwinFace cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: clearTwinFace returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }
@@ -179,7 +213,10 @@ void SemanticsManager::reconcileWallFacePairs(void)
         if (p_first->getTwinFace(p_firstGetTwinFace) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getTwinFace cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTwinFace returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_firstGetTwinFace != nullptr)
         {
@@ -198,7 +235,10 @@ void SemanticsManager::reconcileWallFacePairs(void)
             if (p_second->getTwinFace(p_secondGetTwinFace) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getTwinFace cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getTwinFace returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_secondGetTwinFace != nullptr)
             {
@@ -222,7 +262,11 @@ void SemanticsManager::reconcileWallFacePairs(void)
             if (p_second->getObservationCount(secondGetObservationCount) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getObservationCount cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getObservationCount returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             const double candidateScore =
                 static_cast<double>(secondGetObservationCount);
@@ -238,24 +282,36 @@ void SemanticsManager::reconcileWallFacePairs(void)
             if (p_first->setTwinFace(p_bestMatch) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // setTwinFace cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setTwinFace returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_bestMatch->setTwinFace(p_first) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // setTwinFace cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setTwinFace returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             int firstGetId{};
             if (p_first->getId(firstGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int bestMatchGetId{};
             if (p_bestMatch->getId(bestMatchGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout << "[SemMgr] Linked Wall#" << firstGetId << " and Wall#"
                       << bestMatchGetId

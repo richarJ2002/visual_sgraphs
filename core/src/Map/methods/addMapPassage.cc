@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -50,14 +51,20 @@ void vs_graphs::core::Map::addMapPassage(
     if (p_passage_inout->getId(passage_inoutId) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     const auto existingPassage = passageIndex.find(passage_inoutId);
     int        passage_inoutId2{};
     if (p_passage_inout->getId(passage_inoutId2) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (passage_inoutId2 < 0 || (existingPassage != passageIndex.end() &&
                                  existingPassage->second != p_passage_inout))
@@ -66,7 +73,10 @@ void vs_graphs::core::Map::addMapPassage(
         if (p_passage_inout->getId(passage_inoutId3) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cerr << "[Map] semantic::Passage ID collision for "
                   << passage_inoutId3
@@ -80,7 +90,10 @@ void vs_graphs::core::Map::addMapPassage(
     if (p_passage_inout->getId(passage_inoutId4) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     passageIndex.insert_or_assign(passage_inoutId4, p_passage_inout);
 }

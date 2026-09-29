@@ -17,6 +17,7 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -31,7 +32,10 @@ semantic::SemanticReportCacheEntry
         semantic::SemanticReportCacheStatus::
             SEMANTIC_REPORT_CACHE_STATUS_SUCCESS)
     {
-        // getLatest cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getLatest returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     return semanticReportCacheGetLatest;
 }

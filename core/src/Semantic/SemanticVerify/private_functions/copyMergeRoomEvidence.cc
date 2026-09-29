@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 #include "../private_functions.h"
@@ -39,33 +40,48 @@ SemanticVerifyStatus
     int                       room_inId{};
     if (p_room_in->getId(room_inId) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     evidence.context.roomId = room_inId;
     std::string room_inRoomTag{};
     if (p_room_in->getRoomTag(room_inRoomTag) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     evidence.context.roomTag = room_inRoomTag;
     Eigen::Vector3d room_inCentroid{};
     if (p_room_in->getCentroid(room_inCentroid) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     evidence.context.centroid = room_inCentroid;
     Floor *p_floor            = nullptr;
     if (p_room_in->getFloor(p_floor) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     int floorId2{};
     if ((p_floor != nullptr) &&
         p_floor->getId(floorId2) != FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     evidence.context.floorId = p_floor != nullptr ? floorId2 : -1;
     std::vector<VerifyWallObservation> observations{};
@@ -74,14 +90,20 @@ SemanticVerifyStatus
                                                 observations) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // collectWallObservations cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: collectWallObservations returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     evidence.walls = observations;
     std::vector<vs_graphs::core::semantic::Passage *> room_inPassages{};
     if (p_room_in->getPassages(room_inPassages) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getPassages cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     for (Passage *p_passage : room_inPassages)
     {
@@ -90,7 +112,10 @@ SemanticVerifyStatus
             p_passage->isBad(passageIsBad) !=
                 PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_passage == nullptr || passageIsBad)
         {
@@ -101,42 +126,60 @@ SemanticVerifyStatus
         if (p_passage->getId(passageId) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         context.id = passageId;
         bool passageIsPassable{};
         if (p_passage->isPassable(passageIsPassable) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isPassable cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPassable returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         context.isPassable = passageIsPassable;
         Eigen::Vector3d passageCentroid{};
         if (p_passage->getCentroid(passageCentroid) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         context.centroid_World = passageCentroid;
         double passageWidth{};
         if (p_passage->getWidth(passageWidth) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getWidth cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWidth returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         context.width_m = passageWidth;
         double passageHeight{};
         if (p_passage->getHeight(passageHeight) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getHeight cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getHeight returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         context.height_m = passageHeight;
         bool passageIsRecoveryProxy{};
         if (p_passage->isRecoveryProxy(passageIsRecoveryProxy) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isRecoveryProxy cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isRecoveryProxy returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         context.isRecoveryProxy = passageIsRecoveryProxy;
         context.isApertureValid =
@@ -146,7 +189,10 @@ SemanticVerifyStatus
         if (p_passage->getKnownSideProvenance(knownSide) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getKnownSideProvenance cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getKnownSideProvenance returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         context.hasKnownSideRoom = knownSide.p_room != nullptr;
         if (context.hasKnownSideRoom)
@@ -154,7 +200,10 @@ SemanticVerifyStatus
             int id2{};
             if (knownSide.p_room->getId(id2) != RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             context.knownSideRoomId = id2;
         }
@@ -162,7 +211,10 @@ SemanticVerifyStatus
         if (knownSide.hasDirection(knownSideHasDirection) !=
             KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
         {
-            // hasDirection cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasDirection returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         context.hasKnownSideDirection = knownSideHasDirection;
         if (context.hasKnownSideDirection)
@@ -173,7 +225,10 @@ SemanticVerifyStatus
         if (p_passage->getProspectiveRoomId(farSideRoomId) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getProspectiveRoomId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getProspectiveRoomId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         context.hasFarSideRoom = farSideRoomId.has_value();
         if (farSideRoomId.has_value())

@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -40,14 +41,20 @@ void Atlas::addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
     if (p_passage_in->getId(passage_inId) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     observePassageIdentity(passage_inId);
     vs_graphs::core::Map *p_ownerMap = nullptr;
     if (p_passage_in->getMap(p_ownerMap) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     p_ownerMap->addMapPassage(p_passage_in);
 }

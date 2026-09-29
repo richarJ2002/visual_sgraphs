@@ -26,6 +26,7 @@
 #include "Semantic/SemanticDiagnostics/private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 #include "Semantic/SemanticAxiomEvaluator/EnumNames.h"
 
@@ -51,7 +52,10 @@ SemanticDiagnosticsStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // entityKindName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: entityKindName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         json.push_back({{"kind", static_cast<unsigned int>(key.kind)},
                         {"kindName", entityKindName2},

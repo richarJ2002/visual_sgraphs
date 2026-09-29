@@ -62,6 +62,7 @@
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -80,7 +81,10 @@ SemanticAxiomEvaluatorStatus
     if (isRealPassageEndpoint(knownSide_in, isRealPassageEndpoint2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // isRealPassageEndpoint cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isRealPassageEndpoint returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     bool isRealPassageEndpoint3{};
     if (!(!isRealPassageEndpoint2) &&
@@ -88,7 +92,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // isRealPassageEndpoint cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isRealPassageEndpoint returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (!isRealPassageEndpoint2 || !isRealPassageEndpoint3)
     {
@@ -104,7 +111,10 @@ SemanticAxiomEvaluatorStatus
                                     knownSideRoomFloorResult) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // canonicalRoomFloorResultFor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: canonicalRoomFloorResultFor returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomResult prospectiveRoomFloorResult{};
     if (canonicalRoomFloorResultFor(prospective_in,
@@ -112,7 +122,10 @@ SemanticAxiomEvaluatorStatus
                                     prospectiveRoomFloorResult) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // canonicalRoomFloorResultFor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: canonicalRoomFloorResultFor returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (knownSideRoomFloorResult == AxiomResult::FAIL ||
         prospectiveRoomFloorResult == AxiomResult::FAIL)
@@ -156,7 +169,10 @@ SemanticAxiomEvaluatorStatus
                                  floorRecords) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // countFloorRecordsWithKey cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countFloorRecordsWithKey returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (floorRecords > 1U)
     {
@@ -170,7 +186,10 @@ SemanticAxiomEvaluatorStatus
                                 mapSnapshots) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // countMapSnapshotsWithId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countMapSnapshotsWithId returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (mapSnapshots > 1U)
     {
@@ -196,7 +215,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // findRecordByKey cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findRecordByKey returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         p_floor = p_record;
         break;

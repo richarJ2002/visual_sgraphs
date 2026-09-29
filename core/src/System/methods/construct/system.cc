@@ -45,6 +45,7 @@
 #include <memory>
 #include <openssl/evp.h>
 #include <pangolin/pangolin.h>
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -131,14 +132,20 @@ System::System(const string                 &vocabularyFile_in,
         if (p_settings->atlasLoadFile(settingsAtlasLoadFile) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // atlasLoadFile cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: atlasLoadFile returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         loadAtlasFile = settingsAtlasLoadFile;
         std::string settingsAtlasSaveFile{};
         if (p_settings->atlasSaveFile(settingsAtlasSaveFile) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // atlasSaveFile cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: atlasSaveFile returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         saveAtlasFile = settingsAtlasSaveFile;
         std::cout << (*p_settings) << std::endl;
@@ -161,13 +168,19 @@ System::System(const string                 &vocabularyFile_in,
         if (p_settings->thDepth(stereoDepthThreshold) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // thDepth cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: thDepth returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         double settingsB{};
         if (p_settings->b(settingsB) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // b cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: b returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
         }
         const double metricCloseDepth_m = settingsB * stereoDepthThreshold;
         std::cout << "Stereo.ThDepth=" << stereoDepthThreshold
@@ -230,12 +243,18 @@ System::System(const string                 &vocabularyFile_in,
     if (types::SystemParams::getParams(p_sysParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_sysParams->setParams(sysParamsFile_in) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // setParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     /* Parse the environment database, if provided */
@@ -295,7 +314,10 @@ System::System(const string                 &vocabularyFile_in,
         if (p_settings->thFarPoints(settingsThFarPoints) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // thFarPoints cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: thFarPoints returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         p_localMapper->farPointsThreshold = settingsThFarPoints;
     }

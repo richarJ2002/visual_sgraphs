@@ -31,6 +31,7 @@
 
 #include "../private_functions.h"
 #include "System.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -57,7 +58,10 @@ void Optimizer::bundleAdjustment(
     if (vs_graphs::core::types::SystemParams::getParams(p_systemParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     // Variables
@@ -354,13 +358,19 @@ void Optimizer::bundleAdjustment(
         if (marker->getGlobalPose(markerGlobalPose) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // getGlobalPose cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalPose returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         Sophus::SE3f markerGlobalPose2{};
         if (marker->getGlobalPose(markerGlobalPose2) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // getGlobalPose cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalPose returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         p_markerPoseVertex->setEstimate(
             g2o::SE3Quat(markerGlobalPose.unit_quaternion().cast<double>(),
@@ -374,7 +384,10 @@ void Optimizer::bundleAdjustment(
         if (marker->setOpIdG(globalOptimizationId) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // setOpIdG cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setOpIdG returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         /*!
@@ -395,7 +408,10 @@ void Optimizer::bundleAdjustment(
         if (plane->getPlaneType(planeType) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (planeType == geometric::Plane::PlaneVariant::UNDEFINED)
             continue;
@@ -407,7 +423,10 @@ void Optimizer::bundleAdjustment(
         if (plane->getGlobalEquation(planeGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         p_planeVertex->setEstimate(planeGetGlobalEquation);
         if (p_systemParams->optimization.shouldMarginalizePlanes)
@@ -419,7 +438,10 @@ void Optimizer::bundleAdjustment(
         if (plane->setOpIdG(globalOptimizationId) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setOpIdG cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setOpIdG returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         // Adding an edge between the plane and the keyframes
@@ -428,7 +450,10 @@ void Optimizer::bundleAdjustment(
         if (plane->getObservations(observations) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getObservations cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         for (map<KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>::const_iterator
@@ -449,7 +474,11 @@ void Optimizer::bundleAdjustment(
                 if (plane->eraseObservation(p_observingKeyFrame) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // eraseObservation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: eraseObservation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 continue;
             }
@@ -493,7 +522,11 @@ void Optimizer::bundleAdjustment(
                     if (plane->getPlaneType(planeType2) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getPlaneType cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPlaneType returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (utils::utils::Utils::getClassIdFromPlaneType(
                             planeType2,
@@ -568,7 +601,10 @@ void Optimizer::bundleAdjustment(
             if (room->getWalls(walls) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
 
             // No need to optimize if there are no walls
@@ -584,7 +620,10 @@ void Optimizer::bundleAdjustment(
             if (room->setOpIdG(globalOptimizationId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setOpIdG cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setOpIdG returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             roomCount++;
 
@@ -593,7 +632,10 @@ void Optimizer::bundleAdjustment(
             if (room->getCentroid(roomCentroid) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             p_roomPoseVertex->setEstimate(
                 g2o::SE3Quat(Eigen::Quaterniond::Identity(),
@@ -627,13 +669,21 @@ void Optimizer::bundleAdjustment(
                     if (p_firstWall->getId(firstWallGetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     int secondWallGetId{};
                     if (p_secondWall->getId(secondWallGetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (firstWallGetId == secondWallGetId)
                         continue;
@@ -646,7 +696,11 @@ void Optimizer::bundleAdjustment(
                             arePlanesParallel2) !=
                         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                     {
-                        // arePlanesParallel cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: arePlanesParallel returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (arePlanesParallel2)
                     {
@@ -670,14 +724,22 @@ void Optimizer::bundleAdjustment(
                                     firstWallOptimizationId) !=
                                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                             {
-                                // getOpIdG cannot fail; continue as before.
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: getOpIdG returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
                             }
                             int secondWallOptimizationId{};
                             if (p_secondWall->getOpIdG(
                                     secondWallOptimizationId) !=
                                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                             {
-                                // getOpIdG cannot fail; continue as before.
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: getOpIdG returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
                             }
 
                             if (optimizer.vertex(globalOptimizationId) &&
@@ -740,13 +802,21 @@ void Optimizer::bundleAdjustment(
                         if (p_firstWall->getOpIdG(firstWallOptimizationId) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                         {
-                            // getOpIdG cannot fail; continue as before.
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getOpIdG returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
                         }
                         int secondWallOptimizationId{};
                         if (p_secondWall->getOpIdG(secondWallOptimizationId) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                         {
-                            // getOpIdG cannot fail; continue as before.
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getOpIdG returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
                         }
 
                         if (optimizer.vertex(globalOptimizationId) &&
@@ -946,7 +1016,11 @@ void Optimizer::bundleAdjustment(
                         OptimizerEdgeLookupStatus::
                             OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS)
                     {
-                        // edgeSourceKeyFrame cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: edgeSourceKeyFrame returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
 
                     if (p_edgeSourceKeyFrame == nullptr ||
@@ -983,7 +1057,11 @@ void Optimizer::bundleAdjustment(
                         OptimizerEdgeLookupStatus::
                             OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS)
                     {
-                        // edgeSourceKeyFrame cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: edgeSourceKeyFrame returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
 
                     if (p_edgeSourceKeyFrame == nullptr ||
@@ -1052,7 +1130,10 @@ void Optimizer::bundleAdjustment(
             if (p_marker->getOpIdG(markerOpIdG) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // getOpIdG cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getOpIdG returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             g2o::VertexSE3Expmap *p_markerVertex =
                 static_cast<g2o::VertexSE3Expmap *>(
@@ -1071,7 +1152,10 @@ void Optimizer::bundleAdjustment(
                     markerPose_MarkerToWorld.translation().cast<float>())) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // setGlobalPose cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGlobalPose returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }
@@ -1083,7 +1167,10 @@ void Optimizer::bundleAdjustment(
         if (plane->getOpIdG(planeGetOpIdG) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getOpIdG cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getOpIdG returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (optimizer.vertex(planeGetOpIdG))
         {
@@ -1091,7 +1178,10 @@ void Optimizer::bundleAdjustment(
             if (plane->getOpIdG(planeGetOpIdG2) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getOpIdG cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getOpIdG returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             g2o::VertexPlane *p_planeVertex = static_cast<g2o::VertexPlane *>(
                 optimizer.vertex(planeGetOpIdG2));
@@ -1107,7 +1197,11 @@ void Optimizer::bundleAdjustment(
                 if (plane->alignGeometryToEquation(p_planeVertex->estimate()) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // alignGeometryToEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: alignGeometryToEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             else
@@ -1129,7 +1223,11 @@ void Optimizer::bundleAdjustment(
                 if (p_room->getOpIdG(roomOpIdG) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getOpIdG cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getOpIdG returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 g2o::VertexSE3Expmap *p_roomVertex =
                     static_cast<g2o::VertexSE3Expmap *>(
@@ -1141,7 +1239,11 @@ void Optimizer::bundleAdjustment(
                             p_roomVertex->estimate().translation()) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // setCentroid cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setCentroid returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                 }
             }

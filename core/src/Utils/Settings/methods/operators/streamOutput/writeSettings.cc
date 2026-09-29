@@ -33,6 +33,7 @@
 #include "Utils/Settings/objects/Settings.h"
 
 #include <iostream>
+#include <rclcpp/logging.hpp>
 
 #include "System.h"
 
@@ -68,7 +69,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // size cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: size returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     for (size_t originalCalibration1Index = 0;
          originalCalibration1Index < size2;
@@ -80,7 +84,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         output_inout << " " << parameter;
     }
@@ -114,7 +121,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // size cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: size returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (size_t originalCalibration1Index = 0;
              originalCalibration1Index < size3;
@@ -127,7 +137,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // getParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             output_inout << " " << parameter2;
         }
@@ -158,7 +171,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // size cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: size returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (size_t originalCalibration1Index = 0;
              originalCalibration1Index < size4;
@@ -170,7 +186,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // getParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             output_inout << " " << parameter3;
         }
@@ -184,7 +203,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // size cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: size returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             for (size_t originalCalibration1Index = 0;
                  originalCalibration1Index < size5;
@@ -196,7 +218,11 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                     camera_models::geometriccamera::GeometricCameraStatus::
                         GEOMETRIC_CAMERA_STATUS_SUCCESS)
                 {
-                    // getParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 output_inout << " " << parameter4;
             }
@@ -211,7 +237,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // size cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: size returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (size_t originalCalibration1Index = 0;
              originalCalibration1Index < size6;
@@ -223,7 +252,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // getParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             output_inout << " " << parameter5;
         }
@@ -239,7 +271,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // size cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: size returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             for (size_t originalCalibration1Index = 0;
                  originalCalibration1Index < size7;
@@ -251,7 +286,11 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                     camera_models::geometriccamera::GeometricCameraStatus::
                         GEOMETRIC_CAMERA_STATUS_SUCCESS)
                 {
-                    // getParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 output_inout << " " << parameter6;
             }

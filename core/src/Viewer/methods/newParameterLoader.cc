@@ -28,6 +28,7 @@
 #include <pangolin/pangolin.h>
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -42,7 +43,10 @@ void Viewer::newParameterLoader(utils::settings::Settings *p_settings_inout)
     if (p_settings_inout->getFramesPerSecond(framesPerSecondValue) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // getFramesPerSecond cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFramesPerSecond returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     float fps = static_cast<float>(framesPerSecondValue);
     if (fps < 1)
@@ -53,7 +57,10 @@ void Viewer::newParameterLoader(utils::settings::Settings *p_settings_inout)
     if (p_settings_inout->newImSize(imageSize) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // newImSize cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: newImSize returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     imageHeight = imageSize.height;
     imageWidth  = imageSize.width;
@@ -62,35 +69,50 @@ void Viewer::newParameterLoader(utils::settings::Settings *p_settings_inout)
     if (p_settings_inout->imageViewerScale(settingsImageViewerScale) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // imageViewerScale cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: imageViewerScale returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     imageViewerScale = settingsImageViewerScale;
     double settingsViewPointX{};
     if (p_settings_inout->viewPointX(settingsViewPointX) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // viewPointX cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: viewPointX returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewpointX = settingsViewPointX;
     double settingsViewPointY{};
     if (p_settings_inout->viewPointY(settingsViewPointY) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // viewPointY cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: viewPointY returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewpointY = settingsViewPointY;
     double settingsViewPointZ{};
     if (p_settings_inout->viewPointZ(settingsViewPointZ) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // viewPointZ cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: viewPointZ returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewpointZ = settingsViewPointZ;
     double settingsViewPointF{};
     if (p_settings_inout->viewPointF(settingsViewPointF) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // viewPointF cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: viewPointF returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     viewpointF = settingsViewPointF;
 }

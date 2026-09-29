@@ -117,6 +117,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -180,7 +181,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                                 mapSnapshots) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // countMapSnapshotsWithId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countMapSnapshotsWithId returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (mapSnapshots > 1U)
     {
@@ -202,7 +206,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // countRoomRecordsWithKey cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: countRoomRecordsWithKey returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (roomRecords > 1U)
         {
@@ -216,7 +224,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // countWallRecordsWithKey cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: countWallRecordsWithKey returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (wallRecords > 1U)
         {
@@ -232,7 +244,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // countPassageRecordsWithKey cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: countPassageRecordsWithKey returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (passageRecords > 1U)
         {
@@ -246,7 +262,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // countFloorRecordsWithKey cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: countFloorRecordsWithKey returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (floorRecords > 1U)
         {
@@ -272,14 +292,21 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateOneRoomBoundary cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateOneRoomBoundary returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
     }
     bool anyBoundaryFail{};
     if (anyFindingIs(boundaryFindings, AxiomResult::FAIL, anyBoundaryFail) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool anyBoundaryUnknown{};
     if (anyFindingIs(boundaryFindings,
@@ -287,7 +314,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                      anyBoundaryUnknown) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (result.completeRoomCount != result.confirmedRoomCount ||
         anyBoundaryFail)
@@ -300,7 +330,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // appendKeysFromFindings cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendKeysFromFindings returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -321,7 +354,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateOnePassageProvenance cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateOnePassageProvenance returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (evaluateOnePassageCardinality(passage,
                                           snapshot_in,
@@ -329,7 +366,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateOnePassageCardinality cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateOnePassageCardinality returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
     }
     bool anyPassageCardinalityFail{};
@@ -338,7 +379,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                      anyPassageCardinalityFail) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool anyPassageProvenanceFail{};
     if (anyFindingIs(passageProvenanceFindings,
@@ -346,7 +390,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                      anyPassageProvenanceFail) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     /* AX-PASS-03 (slot state) and AX-PASS-04 (map/floor agreement):
@@ -366,7 +413,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateOnePassageSlotState cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateOnePassageSlotState returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (evaluateOnePassageMapAndFloor(passage,
                                           snapshot_in,
@@ -374,7 +425,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateOnePassageMapAndFloor cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateOnePassageMapAndFloor returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
     }
     bool anyPassageSlotFail{};
@@ -383,7 +438,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                      anyPassageSlotFail) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool anyPassageMapFloorFail{};
     if (anyFindingIs(passageMapFloorFindings,
@@ -391,7 +449,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                      anyPassageMapFloorFail) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (anyPassageProvenanceFail || anyPassageCardinalityFail ||
@@ -405,7 +466,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // appendKeysFromFindings cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendKeysFromFindings returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (appendKeysFromFindings(passageCardinalityFindings,
                                    AxiomResult::FAIL,
@@ -413,7 +477,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // appendKeysFromFindings cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendKeysFromFindings returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (appendKeysFromFindings(passageSlotFindings,
                                    AxiomResult::FAIL,
@@ -421,7 +488,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // appendKeysFromFindings cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendKeysFromFindings returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (appendKeysFromFindings(passageMapFloorFindings,
                                    AxiomResult::FAIL,
@@ -429,7 +499,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // appendKeysFromFindings cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendKeysFromFindings returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -448,7 +521,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                      hasFinding) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (hasFinding)
     {
@@ -460,7 +536,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // appendKeysFromFindings cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendKeysFromFindings returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -476,38 +555,56 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateOneWall cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: evaluateOneWall returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (evaluateOneWallTwin(wall, snapshot_in, twinFindings) !=
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateOneWallTwin cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: evaluateOneWallTwin returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
     bool anyWallFail{};
     if (anyFindingIs(wallFindings, AxiomResult::FAIL, anyWallFail) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool anyWallUnknown{};
     if (anyFindingIs(wallFindings, AxiomResult::UNKNOWN, anyWallUnknown) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool anyTwinFail{};
     if (anyFindingIs(twinFindings, AxiomResult::FAIL, anyTwinFail) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool anyTwinUnknown{};
     if (anyFindingIs(twinFindings, AxiomResult::UNKNOWN, anyTwinUnknown) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (anyWallFail || anyTwinFail)
     {
@@ -518,7 +615,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // appendKeysFromFindings cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendKeysFromFindings returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (appendKeysFromFindings(twinFindings,
                                    AxiomResult::FAIL,
@@ -526,7 +626,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // appendKeysFromFindings cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendKeysFromFindings returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -544,7 +647,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateOneRoomFloorReciprocity cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateOneRoomFloorReciprocity returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
     }
     for (const PassageRecord &passage : mapSnapshot_in.passages)
@@ -559,20 +666,30 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateOnePassageFloorIdentity cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateOnePassageFloorIdentity returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
     }
     bool anyFloorFail{};
     if (anyFindingIs(floorFindings, AxiomResult::FAIL, anyFloorFail) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool anyFloorUnknown{};
     if (anyFindingIs(floorFindings, AxiomResult::UNKNOWN, anyFloorUnknown) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // anyFindingIs cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: anyFindingIs returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (anyFloorFail)
     {
@@ -583,7 +700,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // appendKeysFromFindings cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendKeysFromFindings returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -599,7 +719,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // appendKeysFromFindings cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: appendKeysFromFindings returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (appendKeysFromFindings(passageProvenanceFindings,
                                        AxiomResult::UNKNOWN,
@@ -607,7 +731,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // appendKeysFromFindings cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: appendKeysFromFindings returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
         if (anyBoundaryUnknown)
@@ -620,7 +748,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // appendKeysFromFindings cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: appendKeysFromFindings returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
         if (anyWallUnknown)
@@ -633,7 +765,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // appendKeysFromFindings cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: appendKeysFromFindings returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
         if (anyTwinUnknown)
@@ -646,7 +782,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // appendKeysFromFindings cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: appendKeysFromFindings returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
         if (anyFloorUnknown)
@@ -659,7 +799,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // appendKeysFromFindings cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: appendKeysFromFindings returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
         std::vector<Finding> roomProvenanceFindings;
@@ -689,7 +833,10 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // anyFindingIs cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: anyFindingIs returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (hasFinding2)
         {
@@ -701,7 +848,11 @@ SemanticAxiomEvaluatorStatus computeConservativeMapCompleteness(
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // appendKeysFromFindings cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: appendKeysFromFindings returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
     }

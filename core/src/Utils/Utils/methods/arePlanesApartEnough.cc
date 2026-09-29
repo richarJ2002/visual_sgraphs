@@ -26,6 +26,7 @@
 #include "Utils/Utils/objects/Utils.h"
 
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -52,14 +53,20 @@ UtilsStatus Utils::arePlanesApartEnough(
     if (p_plane1_in->getGlobalEquation(plane1GetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d equation1 = plane1GetGlobalEquation.coeffs();
     g2o::Plane3D    plane2GetGlobalEquation{};
     if (p_plane2_in->getGlobalEquation(plane2GetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d equation2 = plane2GetGlobalEquation.coeffs();
 

@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 #include "../private_functions.h"
@@ -42,21 +43,30 @@ SemanticVerifyStatus checkConsecutiveFloors(core::Map       *p_survivingMap_in,
                                        p_survivingFloor) !=
         FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // selectBestObservedFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: selectBestObservedFloor returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     Floor *p_absorbedFloor = nullptr;
     if (Floor::selectBestObservedFloor(p_absorbedMap_in->getAllFloors(),
                                        p_absorbedFloor) !=
         FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // selectBestObservedFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: selectBestObservedFloor returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     std::optional<Floor::PlaneIdentity> survivingFloorPlaneIdentity{};
     if ((p_survivingFloor != nullptr) &&
         p_survivingFloor->getPlaneIdentity(survivingFloorPlaneIdentity) !=
             FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneIdentity returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     const std::optional<Floor::PlaneIdentity> survivingIdentity =
         p_survivingFloor != nullptr ? survivingFloorPlaneIdentity
@@ -66,7 +76,10 @@ SemanticVerifyStatus checkConsecutiveFloors(core::Map       *p_survivingMap_in,
         p_absorbedFloor->getPlaneIdentity(absorbedFloorPlaneIdentity) !=
             FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneIdentity returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     const std::optional<Floor::PlaneIdentity> absorbedIdentity =
         p_absorbedFloor != nullptr ? absorbedFloorPlaneIdentity : std::nullopt;
@@ -82,7 +95,10 @@ SemanticVerifyStatus checkConsecutiveFloors(core::Map       *p_survivingMap_in,
                                       transformedIdentity) !=
         FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // transformPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: transformPlaneIdentity returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     double normalAngle_deg = std::numeric_limits<double>::infinity();
     double offset_m        = std::numeric_limits<double>::infinity();
@@ -97,7 +113,10 @@ SemanticVerifyStatus checkConsecutiveFloors(core::Map       *p_survivingMap_in,
                                     isMatch) !=
             FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // planeIdentitiesMatch cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: planeIdentitiesMatch returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     const bool floorsMatch = transformedIdentity.has_value() && isMatch;
     std::cout << "[ConsecutiveMerge] Floor check: "

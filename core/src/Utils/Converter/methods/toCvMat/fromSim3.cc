@@ -32,6 +32,7 @@
  */
 
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -53,7 +54,10 @@ ConverterStatus Converter::toCvMat(const g2o::Sim3 &similarity_in,
     if (toCvSE3(scale * eigenRotation, eigenTranslation, cvSE3) !=
         ConverterStatus::CONVERTER_STATUS_SUCCESS)
     {
-        // toCvSE3 cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: toCvSE3 returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     cvMat_out = cvSE3;
     return ConverterStatus::CONVERTER_STATUS_SUCCESS;

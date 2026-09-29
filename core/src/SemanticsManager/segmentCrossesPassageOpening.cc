@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include "private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -39,7 +40,10 @@ bool segmentCrossesPassageOpening(
         p_passage_in->isPassable(passage_inIsPassable) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // isPassable cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isPassable returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_passage_in == nullptr ||
         (requirePassable_in && !passage_inIsPassable))
@@ -51,25 +55,37 @@ bool segmentCrossesPassageOpening(
     if (p_passage_in->getGlobalEquation(passage_inGlobalEquation) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector3d passage_inCentroid{};
     if (p_passage_in->getCentroid(passage_inCentroid) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     double passage_inWidth{};
     if (p_passage_in->getWidth(passage_inWidth) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getWidth cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWidth returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     double passage_inHeight{};
     if (p_passage_in->getHeight(passage_inHeight) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getHeight cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getHeight returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     return segmentCrossesAperture(segmentStart_World_m_in,
                                   segmentEnd_World_m_in,

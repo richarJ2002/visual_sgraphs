@@ -22,6 +22,7 @@
 #include <cmath>
 
 #include <pcl/common/point_tests.h>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -67,7 +68,10 @@ UtilsStatus finiteWallExtentsAreCompatible(
                            tangentV_World,
                            firstBounds) != UtilsStatus::UTILS_STATUS_SUCCESS)
     {
-        // projectPlaneBounds cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: projectPlaneBounds returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     ProjectedPlaneBounds secondBounds{};
     if (projectPlaneBounds(p_secondCloud_in,
@@ -75,7 +79,10 @@ UtilsStatus finiteWallExtentsAreCompatible(
                            tangentV_World,
                            secondBounds) != UtilsStatus::UTILS_STATUS_SUCCESS)
     {
-        // projectPlaneBounds cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: projectPlaneBounds returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (!firstBounds.isValid || !secondBounds.isValid)

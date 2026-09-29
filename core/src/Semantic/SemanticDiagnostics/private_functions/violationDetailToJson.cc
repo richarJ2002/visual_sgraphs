@@ -25,6 +25,7 @@
 
 #include "Semantic/SemanticDiagnostics/private_functions.h"
 
+#include <rclcpp/logging.hpp>
 #include <string>
 
 #include "Semantic/SemanticAxiomEvaluator/EnumNames.h"
@@ -56,42 +57,60 @@ SemanticDiagnosticsStatus violationDetailToJson(const Finding  &finding_in,
     if (axiomCodeName(finding_in.axiomCode, axiomCodeName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomCodeName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomCodeName returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     json["axiomCode"] = axiomCodeName2;
     std::string axiomResultName2{};
     if (axiomResultName(finding_in.result, axiomResultName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomResultName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomResultName returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     json["result"] = axiomResultName2;
     std::string axiomClassName2{};
     if (axiomClassName(finding_in.classification, axiomClassName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomClassName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomClassName returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     json["severity"] = axiomClassName2;
     std::string reasonCodeName2{};
     if (reasonCodeName(finding_in.reasonCode, reasonCodeName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // reasonCodeName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: reasonCodeName returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     json["reasonCode"] = reasonCodeName2;
     nlohmann::json json2{};
     if (entityKeysToJson(finding_in.involvedKeys, json2) !=
         SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
     {
-        // entityKeysToJson cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: entityKeysToJson returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     json["involvedKeys"] = json2;
     nlohmann::json json3{};
     if (findingEvidenceToJson(finding_in.evidence, json3) !=
         SemanticDiagnosticsStatus::SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
     {
-        // findingEvidenceToJson cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: findingEvidenceToJson returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     json["evidence"] = json3;
     json_out         = json;

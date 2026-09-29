@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 #include "../private_functions.h"
@@ -69,14 +70,20 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
         if ((p_room != nullptr) &&
             p_room->isBad(roomIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         Room::RoomVariant roomVariant{};
         if ((p_room != nullptr && !roomIsBad) &&
             p_room->getRoomVariant(roomVariant) !=
                 RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room != nullptr && !roomIsBad &&
             roomVariant == Room::RoomVariant::ROOM)
@@ -85,7 +92,11 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
             if (copyMergeRoomEvidence(p_room, configuration_in, evidence) !=
                 SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
             {
-                // copyMergeRoomEvidence cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: copyMergeRoomEvidence returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             survivingRooms.push_back(evidence);
         }
@@ -97,14 +108,20 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
         if ((p_room != nullptr) &&
             p_room->isBad(roomIsBad2) != RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         Room::RoomVariant roomVariant2{};
         if ((p_room != nullptr && !roomIsBad2) &&
             p_room->getRoomVariant(roomVariant2) !=
                 RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room != nullptr && !roomIsBad2 &&
             roomVariant2 == Room::RoomVariant::ROOM)
@@ -113,7 +130,11 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
             if (copyMergeRoomEvidence(p_room, configuration_in, evidence2) !=
                 SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
             {
-                // copyMergeRoomEvidence cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: copyMergeRoomEvidence returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             absorbedRooms.push_back(evidence2);
         }
@@ -126,7 +147,10 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
                                configuration_in) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // evaluateMergeAlignment cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: evaluateMergeAlignment returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     result               = result2;
     result.floorDecision = "ACCEPTED";

@@ -17,6 +17,7 @@
  */
 
 #include "GeoSemHelpers.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -37,7 +38,10 @@ GeoSemHelpersStatus GeoSemHelpers::checkIfMarkerIsDoorway(
         if (room->getMetaMarkerId(roomMetaMarkerId) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getMetaMarkerId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMetaMarkerId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (roomMetaMarkerId == markerId_in)
         {
@@ -46,7 +50,10 @@ GeoSemHelpersStatus GeoSemHelpers::checkIfMarkerIsDoorway(
             if (room->getName(roomName) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getName returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             name = roomName;
             break; // No need to continue searching if found

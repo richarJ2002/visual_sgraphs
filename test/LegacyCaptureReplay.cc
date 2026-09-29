@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <exception>
 #include <fstream>
+#include <rclcpp/logging.hpp>
 
 #include "Semantic/SemanticAxiomEvaluator.h"
 #include "Semantic/SemanticAxiomEvaluator/EnumNames.h"
@@ -279,7 +280,10 @@ std::string legacyTopologyDigest(const LegacyCapture &capture_in)
     if (sha256HexDigest(topologyJson(capture_in).dump(), hexDigest) !=
         Sha256DigestStatus::SHA256_DIGEST_STATUS_SUCCESS)
     {
-        // sha256HexDigest cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: sha256HexDigest returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     return hexDigest;
 }
@@ -324,7 +328,10 @@ std::string legacyFullGeometryDigest(const LegacyCapture &capture_in)
     if (sha256HexDigest(json.dump(), hexDigest) !=
         Sha256DigestStatus::SHA256_DIGEST_STATUS_SUCCESS)
     {
-        // sha256HexDigest cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: sha256HexDigest returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     return hexDigest;
 }
@@ -357,7 +364,10 @@ std::vector<LegacyAxiomResultRecord>
     if (computeAxiomCapabilityTable(capabilityTable) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // computeAxiomCapabilityTable cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeAxiomCapabilityTable returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
     }
     std::vector<LegacyAxiomResultRecord> results;
     results.reserve(capabilityTable.size());
@@ -374,7 +384,10 @@ std::vector<LegacyAxiomResultRecord>
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // reasonCodeName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: reasonCodeName returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             record.reason = reasonCodeName2;
         }
@@ -508,14 +521,20 @@ LegacyReplayResult
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // axiomCodeName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: axiomCodeName returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             std::string axiomResultName2{};
             if (axiomResultName(axiomResult.result, axiomResultName2) !=
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // axiomResultName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: axiomResultName returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             axiomResultsJson.push_back({{"axiomCode", codeName},
                                         {"result", axiomResultName2},
@@ -526,7 +545,10 @@ LegacyReplayResult
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // axiomResultName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: axiomResultName returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (!perAxiomTotals.contains(codeName))
             {

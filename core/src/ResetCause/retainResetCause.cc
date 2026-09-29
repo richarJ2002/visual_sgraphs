@@ -7,6 +7,7 @@
 #include "ResetCause.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 #include <unordered_map>
 
 namespace vs_graphs
@@ -28,7 +29,10 @@ ResetCauseStatus retainResetCause(const void *const p_owner_in,
     if (resetCausesByOwner[p_owner_in].retain(cause_in) !=
         ResetCauseRetentionStatus::RESET_CAUSE_RETENTION_STATUS_SUCCESS)
     {
-        // retain cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: retain returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
 
     return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;

@@ -26,6 +26,7 @@
 #include "Utils/Utils/objects/Utils.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -54,43 +55,57 @@ UtilsStatus Utils::collectCorrespondingWalls(
     std::vector<semantic::Room *> roomsA = p_mapA_in->getAllRooms();
     std::vector<semantic::Room *> roomsB = p_mapB_in->getAllRooms();
 
-    std::sort(roomsA.begin(),
-              roomsA.end(),
-              [](const semantic::Room *p_first, const semantic::Room *p_second)
-              {
-                  int firstId{};
-                  if (p_first->getId(firstId) !=
-                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                  {
-                      // getId cannot fail; continue as before.
-                  }
-                  int secondId{};
-                  if (p_second->getId(secondId) !=
-                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                  {
-                      // getId cannot fail; continue as before.
-                  }
-                  return firstId < secondId;
-              });
+    std::sort(
+        roomsA.begin(),
+        roomsA.end(),
+        [](const semantic::Room *p_first, const semantic::Room *p_second)
+        {
+            int firstId{};
+            if (p_first->getId(firstId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            int secondId{};
+            if (p_second->getId(secondId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            return firstId < secondId;
+        });
 
-    std::sort(roomsB.begin(),
-              roomsB.end(),
-              [](const semantic::Room *p_first, const semantic::Room *p_second)
-              {
-                  int firstId{};
-                  if (p_first->getId(firstId) !=
-                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                  {
-                      // getId cannot fail; continue as before.
-                  }
-                  int secondId{};
-                  if (p_second->getId(secondId) !=
-                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                  {
-                      // getId cannot fail; continue as before.
-                  }
-                  return firstId < secondId;
-              });
+    std::sort(
+        roomsB.begin(),
+        roomsB.end(),
+        [](const semantic::Room *p_first, const semantic::Room *p_second)
+        {
+            int firstId{};
+            if (p_first->getId(firstId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            int secondId{};
+            if (p_second->getId(secondId) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            return firstId < secondId;
+        });
 
     for (semantic::Room *p_roomB : roomsB)
     {
@@ -99,14 +114,20 @@ UtilsStatus Utils::collectCorrespondingWalls(
             p_roomB->isBad(roomBIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         bool roomBHasRoomTag{};
         if (!(p_roomB == nullptr || roomBIsBad) &&
             p_roomB->hasRoomTag(roomBHasRoomTag) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // hasRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_roomB == nullptr || roomBIsBad || !roomBHasRoomTag)
         {
@@ -120,7 +141,10 @@ UtilsStatus Utils::collectCorrespondingWalls(
                 p_roomA->isBad(roomAIsBad) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_roomA == nullptr || roomAIsBad)
             {
@@ -131,13 +155,19 @@ UtilsStatus Utils::collectCorrespondingWalls(
             if (p_roomA->getRoomTag(roomARoomTag) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             std::string roomBRoomTag{};
             if (p_roomB->getRoomTag(roomBRoomTag) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (roomARoomTag != roomBRoomTag)
             {
@@ -154,7 +184,11 @@ UtilsStatus Utils::collectCorrespondingWalls(
                                        matchedWallCount) !=
                 UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // matchWallsBetweenRooms cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: matchWallsBetweenRooms returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             break;
         }

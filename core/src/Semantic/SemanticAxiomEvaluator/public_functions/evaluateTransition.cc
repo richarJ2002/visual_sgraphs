@@ -25,6 +25,7 @@
 
 #include "Semantic/SemanticAxiomEvaluator/public_functions.h"
 
+#include <rclcpp/logging.hpp>
 #include <utility>
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
@@ -58,7 +59,10 @@ SemanticAxiomEvaluatorStatus
     if (evaluateState(after_in, afterStateReport) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // evaluateState cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: evaluateState returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     std::vector<Finding> findings;
@@ -81,7 +85,10 @@ SemanticAxiomEvaluatorStatus
                     finding2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeFinding cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeFinding returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     findings.push_back(finding2);
     Finding finding3{};
@@ -92,14 +99,20 @@ SemanticAxiomEvaluatorStatus
                     finding3) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeFinding cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeFinding returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     findings.push_back(finding3);
 
     if (sortFindings(findings) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // sortFindings cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: sortFindings returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     AxiomEvaluationReport             report;
@@ -107,7 +120,10 @@ SemanticAxiomEvaluatorStatus
     if (aggregateFindings(findings, aggregateResults) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // aggregateFindings cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: aggregateFindings returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     report.aggregates = aggregateResults;
     report.findings   = std::move(findings);

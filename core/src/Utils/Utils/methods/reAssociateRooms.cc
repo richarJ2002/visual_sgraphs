@@ -24,6 +24,7 @@
  */
 
 #include "Utils/Utils/objects/Utils.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -54,7 +55,10 @@ UtilsStatus Utils::reAssociateRooms(Atlas *p_atlas_in)
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room == nullptr || roomIsBad)
         {
@@ -69,7 +73,10 @@ UtilsStatus Utils::reAssociateRooms(Atlas *p_atlas_in)
         if (p_room->getRoomVariant(roomVariant) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const bool isConfirmedRoom =
             roomVariant == vs_graphs::core::semantic::Room::RoomVariant::ROOM;
@@ -86,7 +93,10 @@ UtilsStatus Utils::reAssociateRooms(Atlas *p_atlas_in)
         if (p_room->getWalls(roomWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         for (vs_graphs::core::geometric::Plane *p_wall : roomWalls)
@@ -96,7 +106,10 @@ UtilsStatus Utils::reAssociateRooms(Atlas *p_atlas_in)
                 p_wall->isBad(wallIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_wall != nullptr && !wallIsBad)
             {
@@ -116,7 +129,11 @@ UtilsStatus Utils::reAssociateRooms(Atlas *p_atlas_in)
         if (Utils::consolidateProvisionalRooms(p_room, p_atlas_in) !=
             UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // consolidateProvisionalRooms cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: consolidateProvisionalRooms returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
     }
 

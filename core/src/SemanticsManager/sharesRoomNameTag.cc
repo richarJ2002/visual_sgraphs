@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include "private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,7 +52,10 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
         if (p_room->hasRoomTag(roomHasRoomTag) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // hasRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (roomHasRoomTag)
         {
@@ -59,7 +63,10 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
             if (p_room->getRoomTag(roomTag) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             firstMapRoomTags.insert(roomTag);
         }
@@ -70,7 +77,10 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
         if (p_room->hasRoomTag(roomHasRoomTag2) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // hasRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (roomHasRoomTag2)
         {
@@ -78,7 +88,10 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
             if (p_room->getRoomTag(roomTag2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             firstMapRoomTags.insert(roomTag2);
         }
@@ -102,13 +115,19 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
         if (p_room->hasRoomTag(roomHasRoomTag3) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // hasRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::string roomTag3{};
         if ((roomHasRoomTag3) && p_room->getRoomTag(roomTag3) !=
                                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (roomHasRoomTag3 && firstMapRoomTags.count(roomTag3) != 0U)
         {
@@ -116,7 +135,10 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
             if (p_room->getRoomTag(roomTag4) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout << "[SemMgr] sharesRoomNameTag: MATCH found tag "
                       << roomTag4 << " between maps " << p_firstMap_in->getId()
@@ -130,13 +152,19 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
         if (p_room->hasRoomTag(roomHasRoomTag4) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // hasRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::string roomTag5{};
         if ((roomHasRoomTag4) && p_room->getRoomTag(roomTag5) !=
                                      semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (roomHasRoomTag4 && firstMapRoomTags.count(roomTag5) != 0U)
         {
@@ -144,7 +172,10 @@ bool sharesRoomNameTag(Map *p_firstMap_in, Map *p_secondMap_in)
             if (p_room->getRoomTag(roomTag6) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout << "[SemMgr] sharesRoomNameTag: MATCH found tag "
                       << roomTag6 << " between maps " << p_firstMap_in->getId()

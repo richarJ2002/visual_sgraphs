@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 #include <sstream>
 
 namespace vs_graphs
@@ -41,7 +42,10 @@ RoomTrackerStatus
                  verification_in,
                  isAccepted) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // applyRow cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: applyRow returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     nextState_out = trackingState;
     return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;

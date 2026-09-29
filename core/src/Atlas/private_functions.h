@@ -17,6 +17,7 @@
 #include <atomic>
 #include <cstddef>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 #include <set>
 #include <string>
 #include <utility>
@@ -53,7 +54,10 @@ bool planImportedIds(const std::vector<Entity *>           &existingEntities_in,
         if (p_entity_in->getId(entityId) !=
             decltype(p_entity_in->getId(entityId)){})
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         return entityId;
     };

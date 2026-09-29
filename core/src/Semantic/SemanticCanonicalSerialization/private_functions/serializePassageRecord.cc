@@ -26,6 +26,7 @@
 #include "Semantic/SemanticCanonicalSerialization/private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 #include <utility>
 
 namespace vs_graphs
@@ -73,7 +74,10 @@ nlohmann::json serializePassageRecord(const PassageRecord &value_in,
                               unavailableReasonName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // unavailableReasonName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: unavailableReasonName returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     json["endpointSlotReasonName"] = unavailableReasonName2;
 

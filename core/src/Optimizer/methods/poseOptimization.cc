@@ -29,6 +29,7 @@
 #include "Utils/Utils/objects/Utils.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,7 +42,10 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
     if (types::SystemParams::getParams(p_sysParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     g2o::SparseOptimizer                    optimizer;
@@ -382,7 +386,11 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                     if (plane->getPlaneType(planeType) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getPlaneType cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPlaneType returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (planeType != geometric::Plane::PlaneVariant::UNDEFINED)
                     {
@@ -390,7 +398,11 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                         if (plane->getId(planeGetId) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                         {
-                            // getId cannot fail; continue as before.
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getId returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
                         }
                         if (planeCheck.find(planeGetId) == planeCheck.end())
                         {
@@ -399,7 +411,11 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                             if (plane->getId(planeGetId2) !=
                                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                             {
-                                // getId cannot fail; continue as before.
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: getId returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
                             }
                             planeCheck[planeGetId2] = true;
                         }
@@ -417,7 +433,11 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                 if (candidatePlane->getPlaneType(candidatePlanePlaneType) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getPlaneType cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPlaneType returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (candidatePlanePlaneType ==
                     geometric::Plane::PlaneVariant::UNDEFINED)
@@ -428,7 +448,11 @@ int Optimizer::poseOptimization(Frame *p_frame_inout)
                         candidatePlaneGetGlobalEquation) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 Eigen::Vector4d planeEq =
                     candidatePlaneGetGlobalEquation.coeffs();

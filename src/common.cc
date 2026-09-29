@@ -45,6 +45,7 @@
 #include <iomanip>
 #include <limits>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
@@ -563,7 +564,10 @@ void appendFloorMarkers(
         if (mappedFloor->getId(mappedFloorId) !=
             vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         const int floorMarkerId = static_cast<int>(mappedFloorId);
 
@@ -571,7 +575,10 @@ void appendFloorMarkers(
         if (mappedFloor->getRooms(associatedRooms) !=
             vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getRooms cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRooms returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Do not display floors without any associated rooms */
@@ -586,7 +593,10 @@ void appendFloorMarkers(
         if (mappedFloor->getCentroid(floorCentroid_world_m) !=
             vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (!floorCentroid_world_m.allFinite())
@@ -669,7 +679,10 @@ void appendFloorMarkers(
         if (mappedFloor->getName(mappedFloorName) !=
             vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getName returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         floorLabelMarker.text = mappedFloorName;
 
@@ -743,7 +756,10 @@ void appendFloorMarkers(
                 associatedRoom->isBad(associatedRoomIsBad) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (associatedRoom == nullptr || associatedRoomIsBad)
             {
@@ -754,7 +770,10 @@ void appendFloorMarkers(
             if (associatedRoom->getRoomVariant(roomType) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomVariant cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomVariant returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             const bool isConfirmedRoom =
@@ -848,7 +867,10 @@ void appendPassageMarkers(
         if (mappedPassage->getId(mappedPassageId) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         const int passageMarkerId = static_cast<int>(mappedPassageId);
 
@@ -861,7 +883,10 @@ void appendPassageMarkers(
         if (mappedPassage->isBad(mappedPassageIsBad) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (mappedPassageIsBad)
         {
@@ -877,19 +902,28 @@ void appendPassageMarkers(
         if (mappedPassage->getWidth(proxyWidth_m) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getWidth cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWidth returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         double proxyHeight_m{};
         if (mappedPassage->getHeight(proxyHeight_m) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getHeight cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getHeight returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         bool mappedPassageIsRecoveryProxy{};
         if (mappedPassage->isRecoveryProxy(mappedPassageIsRecoveryProxy) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isRecoveryProxy cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isRecoveryProxy returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (mappedPassageIsRecoveryProxy &&
             (!std::isfinite(proxyWidth_m) || !std::isfinite(proxyHeight_m) ||
@@ -921,7 +955,10 @@ void appendPassageMarkers(
         if (mappedPassage->isPassable(isPassageOpen) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isPassable cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPassable returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* ------------------------------------------------------------------ *
@@ -1038,7 +1075,10 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
     if (room_in->getWalls(walls) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getWalls cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWalls returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (walls.size() < 3)
@@ -1054,7 +1094,10 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
     if (room_in->getGroundPlane(p_groundPlane) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getGroundPlane cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGroundPlane returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     bool   hasFloorPlane = false;
@@ -1065,7 +1108,10 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
         p_groundPlane->isBad(groundPlaneIsBad) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_groundPlane != nullptr && !groundPlaneIsBad)
     {
@@ -1073,7 +1119,10 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
         if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const Eigen::Vector4d groundEquation_World =
             groundPlaneGetGlobalEquation.coeffs();
@@ -1100,7 +1149,10 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
     if (room_in->getCentroid(roomCentroid_World_m) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (!roomCentroid_World_m.allFinite())
@@ -1127,7 +1179,10 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
             p_wall->isBad(wallIsBad) !=
                 vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_wall == nullptr || wallIsBad)
         {
@@ -1138,7 +1193,10 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
         if (p_wall->getGlobalEquation(wallGetGlobalEquation) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const Eigen::Vector4d wallEquation_World =
             wallGetGlobalEquation.coeffs();
@@ -1168,7 +1226,10 @@ std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic:
         if (p_wall->getCentroid(wallCentroid2D_World_m) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (!wallCentroid2D_World_m.allFinite())
@@ -1316,14 +1377,20 @@ void appendRoomMarkers(
             p_room_in->isBad(room_inIsBad) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         vs_graphs::core::semantic::Room::RoomVariant room_inRoomVariant{};
         if (!(p_room_in == nullptr || room_inIsBad) &&
             p_room_in->getRoomVariant(room_inRoomVariant) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room_in == nullptr || room_inIsBad ||
             room_inRoomVariant !=
@@ -1340,7 +1407,10 @@ void appendRoomMarkers(
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             vs_graphs::core::semantic::Room *p_passageProspectiveRoom = nullptr;
             if ((p_passage != nullptr && !passageIsBad) &&
@@ -1348,7 +1418,10 @@ void appendRoomMarkers(
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
             {
-                // getProspectiveRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_passage != nullptr && !passageIsBad &&
                 p_passageProspectiveRoom == p_room_in)
@@ -1370,7 +1443,10 @@ void appendRoomMarkers(
                 p_otherRoom->isBad(otherRoomIsBad) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             vs_graphs::core::semantic::Room::RoomVariant otherRoomRoomVariant{};
             if (!(p_otherRoom == nullptr || p_otherRoom == p_room_in ||
@@ -1378,7 +1454,10 @@ void appendRoomMarkers(
                 p_otherRoom->getRoomVariant(otherRoomRoomVariant) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomVariant cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomVariant returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_otherRoom == nullptr || p_otherRoom == p_room_in ||
                 otherRoomIsBad ||
@@ -1391,13 +1470,19 @@ void appendRoomMarkers(
             if (p_otherRoom->getCentroid(otherRoomCentroid) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector3d room_inCentroid{};
             if (p_room_in->getCentroid(room_inCentroid) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if ((otherRoomCentroid.cast<double>() - room_inCentroid).norm() <
                 1.5)
@@ -1541,7 +1626,10 @@ void appendRoomMarkers(
         if (mappedRoom->getId(mappedRoomId) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         const int roomMarkerId = static_cast<int>(mappedRoomId);
 
@@ -1549,7 +1637,10 @@ void appendRoomMarkers(
         if (mappedRoom->getRoomVariant(roomType) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         const bool isConfirmedRoom =
@@ -1561,7 +1652,10 @@ void appendRoomMarkers(
         if (mappedRoom->isBad(mappedRoomIsBad) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (mappedRoomIsBad)
         {
@@ -1659,7 +1753,10 @@ void appendRoomMarkers(
         if (mappedRoom->getBoundaryStatus(mappedRoomBoundaryStatus) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getBoundaryStatus cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getBoundaryStatus returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         switch (mappedRoomBoundaryStatus)
         {
@@ -1687,14 +1784,20 @@ void appendRoomMarkers(
             mappedRoom->getName(mappedRoomName) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getName returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::string mappedRoomName2{};
         if (!(isConfirmedRoom) &&
             mappedRoom->getName(mappedRoomName2) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getName returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         roomLabelMarker.text = isConfirmedRoom
                                    ? mappedRoomName + boundaryStatusLabel
@@ -1735,14 +1838,21 @@ void appendRoomMarkers(
         if (mappedRoom->getBoundaryCorners_World_m(boundaryCorners_World_m) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getBoundaryCorners_World_m cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: getBoundaryCorners_World_m returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
 
         bool mappedRoomIsBoundaryComplete{};
         if (mappedRoom->isBoundaryComplete(mappedRoomIsBoundaryComplete) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBoundaryComplete cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBoundaryComplete returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (mappedRoomIsBoundaryComplete &&
             boundaryCorners_World_m.size() >= 3U)
@@ -1851,7 +1961,10 @@ void appendRoomMarkers(
         if (mappedRoom->getWalls(associatedWalls) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         roomWallAssociationMarker.points.reserve(associatedWalls.size() * 2);
@@ -1864,7 +1977,10 @@ void appendRoomMarkers(
                     vs_graphs::core::geometric::PlaneStatus::
                         PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (associatedWall == nullptr || associatedWallIsBad)
             {
@@ -1875,7 +1991,10 @@ void appendRoomMarkers(
             if (associatedWall->getCentroid(wallCentroid_BC_m) !=
                 vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if (!wallCentroid_BC_m.allFinite())
@@ -1966,7 +2085,10 @@ void appendRoomMarkers(
         if (mappedRoom->getPassages(associatedPassages) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getPassages cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPassages returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         roomPassageAssociationMarker.points.reserve(associatedPassages.size() *
@@ -1983,7 +2105,10 @@ void appendRoomMarkers(
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (associatedPassage == nullptr || associatedPassageIsBad)
             {
@@ -1999,14 +2124,20 @@ void appendRoomMarkers(
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // getWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             double proxyHeight_m{};
             if (associatedPassage->getHeight(proxyHeight_m) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // getHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             bool associatedPassageIsRecoveryProxy{};
             if (associatedPassage->isRecoveryProxy(
@@ -2014,7 +2145,10 @@ void appendRoomMarkers(
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // isRecoveryProxy cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isRecoveryProxy returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (associatedPassageIsRecoveryProxy &&
                 (!std::isfinite(proxyWidth_m) ||
@@ -2057,7 +2191,10 @@ void appendRoomMarkers(
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // isPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (associatedPassageIsPassable)
             {
@@ -2129,7 +2266,10 @@ std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>>
         if (markers[0]->getTime(time2) !=
             vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // getTime cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTime returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         double timeDifference = time2 - frameTimestamp_in;
 
@@ -2163,7 +2303,10 @@ bool getPassageDisplayPoints(
     if (passage_in->getCentroid(passageCentroid) !=
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (!passageCentroid.allFinite())
@@ -2252,7 +2395,10 @@ bool getRoomDisplayPoints(vs_graphs::core::semantic::Room                  *room
     if (room_in->getCentroid(roomCentroid) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (!roomCentroid.allFinite())
@@ -2558,7 +2704,10 @@ void publishAllMappedWalls(std::vector<vs_graphs::core::geometric::Plane *> wall
             wall->getPlaneType(wallPlaneType) !=
                 vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (!wall || wallPlaneType !=
                          vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
@@ -2572,7 +2721,10 @@ void publishAllMappedWalls(std::vector<vs_graphs::core::geometric::Plane *> wall
         if (wall->getMapClouds(wallCloud) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getMapClouds cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapClouds returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Calculate the length of the wall */
@@ -2602,49 +2754,70 @@ void publishAllMappedWalls(std::vector<vs_graphs::core::geometric::Plane *> wall
         if (wall->getId(wallGetId) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         wallData.id = wallGetId;
         Eigen::Vector3d wallGetCentroid{};
         if (wall->getCentroid(wallGetCentroid) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         wallData.centroid.x = wallGetCentroid.x();
         Eigen::Vector3d wallGetCentroid2{};
         if (wall->getCentroid(wallGetCentroid2) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         wallData.centroid.y = wallGetCentroid2.y();
         Eigen::Vector3d wallGetCentroid3{};
         if (wall->getCentroid(wallGetCentroid3) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         wallData.centroid.z = wallGetCentroid3.z();
         g2o::Plane3D wallGetGlobalEquation{};
         if (wall->getGlobalEquation(wallGetGlobalEquation) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         wallData.normal.x = wallGetGlobalEquation.normal().x();
         g2o::Plane3D wallGetGlobalEquation2{};
         if (wall->getGlobalEquation(wallGetGlobalEquation2) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         wallData.normal.y = wallGetGlobalEquation2.normal().y();
         g2o::Plane3D wallGetGlobalEquation3{};
         if (wall->getGlobalEquation(wallGetGlobalEquation3) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         wallData.normal.z = wallGetGlobalEquation3.normal().z();
 
@@ -2677,28 +2850,40 @@ void publishAllMappedRooms(std::vector<vs_graphs::core::semantic::Room *> roomsL
         if (room->getId(roomId) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         roomData.id = roomId;
         Eigen::Vector3d roomCentroid{};
         if (room->getCentroid(roomCentroid) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         roomData.centroid.x = roomCentroid.x();
         Eigen::Vector3d roomCentroid2{};
         if (room->getCentroid(roomCentroid2) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         roomData.centroid.y = roomCentroid2.y();
         Eigen::Vector3d roomCentroid3{};
         if (room->getCentroid(roomCentroid3) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         roomData.centroid.z = roomCentroid3.z();
 
@@ -2706,7 +2891,10 @@ void publishAllMappedRooms(std::vector<vs_graphs::core::semantic::Room *> roomsL
         if (room->getWalls(roomWalls) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (const auto &wall : roomWalls)
         {
@@ -2717,7 +2905,10 @@ void publishAllMappedRooms(std::vector<vs_graphs::core::semantic::Room *> roomsL
                     vs_graphs::core::geometric::PlaneStatus::
                         PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 roomData.wall_ids.push_back(wallGetId);
             }
@@ -2750,7 +2941,10 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
                                vs_graphs::core::semantic::PassageStatus::
                                    PASSAGE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (!passage || passageIsBad)
             continue;
@@ -2760,49 +2954,70 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
         if (passage->getId(passageId) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         passageData.id = passageId;
         bool passageIsPassable{};
         if (passage->isPassable(passageIsPassable) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isPassable cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPassable returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         passageData.passable = passageIsPassable;
         Eigen::Vector3d passageCentroid{};
         if (passage->getCentroid(passageCentroid) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         passageData.centroid.x = passageCentroid.x();
         Eigen::Vector3d passageCentroid2{};
         if (passage->getCentroid(passageCentroid2) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         passageData.centroid.y = passageCentroid2.y();
         Eigen::Vector3d passageCentroid3{};
         if (passage->getCentroid(passageCentroid3) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         passageData.centroid.z = passageCentroid3.z();
         double passageWidth{};
         if (passage->getWidth(passageWidth) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getWidth cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWidth returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         passageData.width = static_cast<float>(passageWidth);
         double passageHeight{};
         if (passage->getHeight(passageHeight) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getHeight cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getHeight returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         passageData.height = static_cast<float>(passageHeight);
 
@@ -2817,7 +3032,10 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
         if (passage->getAssociateWalls(associatedWalls) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getAssociateWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAssociateWalls returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         for (const auto &room : roomsList_in)
         {
@@ -2829,7 +3047,10 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
             if (room->getWalls(roomWalls) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             for (const auto &roomWall : roomWalls)
             {
@@ -2844,7 +3065,11 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
                             vs_graphs::core::geometric::PlaneStatus::
                                 PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     int roomWallGetId{};
                     if ((associatedWall) &&
@@ -2852,7 +3077,11 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
                             vs_graphs::core::geometric::PlaneStatus::
                                 PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (associatedWall && associatedWallGetId == roomWallGetId)
                     {
@@ -2871,7 +3100,10 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
                 if (room->getId(roomId) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 passageData.known_room_id = roomId;
                 break;
@@ -2882,7 +3114,10 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
         if (passage->getProspectiveRoomId(prospectiveRoomId) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getProspectiveRoomId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getProspectiveRoomId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         passageData.prospective_room_id =
             prospectiveRoomId.has_value() ? prospectiveRoomId.value() : -1;
@@ -2902,7 +3137,10 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
                     vs_graphs::core::geometric::PlaneStatus::
                         PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 passageData.associated_wall_ids.push_back(
                     static_cast<int>(associatedWallGetId2));
@@ -2938,7 +3176,10 @@ void publishAllMappedFloors(std::vector<vs_graphs::core::semantic::Floor *> floo
         if (floor->getId(floorId) !=
             vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         floorData.id = floorId;
 
@@ -2947,7 +3188,10 @@ void publishAllMappedFloors(std::vector<vs_graphs::core::semantic::Floor *> floo
         if (floor->getPlaneIdentity(planeIdentity) !=
             vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getPlaneIdentity cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneIdentity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         floorData.has_plane_identity = planeIdentity.has_value();
         if (planeIdentity.has_value())
@@ -3190,14 +3434,22 @@ void maybeArchiveSGraph(
                           vs_graphs::core::semantic::FloorStatus::
                               FLOOR_STATUS_SUCCESS)
                       {
-                          // getId cannot fail; continue as before.
+                          RCLCPP_ERROR(
+                              rclcpp::get_logger("vs_graphs"),
+                              "%s: getId returned a failure status although it "
+                              "cannot fail; continuing as before.",
+                              __func__);
                       }
                       int second_inId{};
                       if (second_in->getId(second_inId) !=
                           vs_graphs::core::semantic::FloorStatus::
                               FLOOR_STATUS_SUCCESS)
                       {
-                          // getId cannot fail; continue as before.
+                          RCLCPP_ERROR(
+                              rclcpp::get_logger("vs_graphs"),
+                              "%s: getId returned a failure status although it "
+                              "cannot fail; continuing as before.",
+                              __func__);
                       }
                       return first_inId < second_inId;
                   });
@@ -3210,7 +3462,10 @@ void maybeArchiveSGraph(
                 p_room->isBad(roomIsBad) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_room != nullptr && !roomIsBad)
             {
@@ -3227,13 +3482,19 @@ void maybeArchiveSGraph(
                 if (first_in->getId(first_inId) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int second_inId{};
                 if (second_in->getId(second_inId) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 return first_inId < second_inId;
             });
@@ -3247,7 +3508,10 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_passage != nullptr && !passageIsBad)
             {
@@ -3264,14 +3528,22 @@ void maybeArchiveSGraph(
                           vs_graphs::core::semantic::PassageStatus::
                               PASSAGE_STATUS_SUCCESS)
                       {
-                          // getId cannot fail; continue as before.
+                          RCLCPP_ERROR(
+                              rclcpp::get_logger("vs_graphs"),
+                              "%s: getId returned a failure status although it "
+                              "cannot fail; continuing as before.",
+                              __func__);
                       }
                       int second_inId{};
                       if (second_in->getId(second_inId) !=
                           vs_graphs::core::semantic::PassageStatus::
                               PASSAGE_STATUS_SUCCESS)
                       {
-                          // getId cannot fail; continue as before.
+                          RCLCPP_ERROR(
+                              rclcpp::get_logger("vs_graphs"),
+                              "%s: getId returned a failure status although it "
+                              "cannot fail; continuing as before.",
+                              __func__);
                       }
                       return first_inId < second_inId;
                   });
@@ -3290,7 +3562,10 @@ void maybeArchiveSGraph(
             if (floors[floorIndex]->getRooms(rooms2) !=
                 vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // getRooms cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRooms returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             for (vs_graphs::core::semantic::Room *p_room : rooms2)
             {
@@ -3300,7 +3575,10 @@ void maybeArchiveSGraph(
                         vs_graphs::core::semantic::RoomStatus::
                             ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_room == nullptr || roomIsBad2)
                 {
@@ -3327,7 +3605,11 @@ void maybeArchiveSGraph(
                 if (p_room->getFloor(p_floor) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getFloor cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getFloor returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 for (std::size_t candidate = 0U; candidate < floors.size();
                      ++candidate)
@@ -3371,7 +3653,10 @@ void maybeArchiveSGraph(
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // getAssociateWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAssociateWalls returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             for (vs_graphs::core::geometric::Plane *p_wall :
                  passageAssociateWalls)
@@ -3383,7 +3668,11 @@ void maybeArchiveSGraph(
                         vs_graphs::core::geometric::PlaneStatus::
                             PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     wallIds.push_back(wallGetId);
                 }
@@ -3395,14 +3684,21 @@ void maybeArchiveSGraph(
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // getProspectiveRoomId cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getProspectiveRoomId returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             vs_graphs::core::semantic::Room *p_prospectiveRoom = nullptr;
             if (p_passage->getProspectiveRoom(p_prospectiveRoom) !=
                 vs_graphs::core::semantic::PassageStatus::
                     PASSAGE_STATUS_SUCCESS)
             {
-                // getProspectiveRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             std::vector<std::size_t> votes(floorCount, 0U);
@@ -3413,7 +3709,11 @@ void maybeArchiveSGraph(
                 if (p_room->getWalls(roomWalls) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getWalls cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWalls returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 for (vs_graphs::core::geometric::Plane *p_wall : roomWalls)
                 {
@@ -3428,7 +3728,11 @@ void maybeArchiveSGraph(
                             vs_graphs::core::geometric::PlaneStatus::
                                 PLANE_STATUS_SUCCESS)
                         {
-                            // getId cannot fail; continue as before.
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getId returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
                         }
                         if (wallGetId2 == wallId)
                         {
@@ -3447,7 +3751,10 @@ void maybeArchiveSGraph(
                         vs_graphs::core::semantic::RoomStatus::
                             ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (!ownsAssociatedWall &&
                     ((prospectiveRoomId.has_value() &&
@@ -3515,7 +3822,10 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::FloorStatus::
                         FLOOR_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 floorJson["floor_id"] = floorId;
                 std::string floorName{};
@@ -3523,7 +3833,11 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::FloorStatus::
                         FLOOR_STATUS_SUCCESS)
                 {
-                    // getName cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getName returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 floorJson["floor_name"] = floorName;
                 Eigen::Vector3d floorCentroid{};
@@ -3531,7 +3845,11 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::FloorStatus::
                         FLOOR_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 floorJson["centroid"] = archiveVector3(floorCentroid);
                 std::optional<vs_graphs::core::semantic::Floor::PlaneIdentity>
@@ -3540,7 +3858,11 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::FloorStatus::
                         FLOOR_STATUS_SUCCESS)
                 {
-                    // getPlaneIdentity cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPlaneIdentity returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 floorJson["has_plane_identity"] = identity.has_value();
                 if (identity.has_value())
@@ -3574,35 +3896,54 @@ void maybeArchiveSGraph(
                 if (p_room->getId(roomId2) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 roomJson["room_id"] = roomId2;
                 std::string roomName{};
                 if (p_room->getName(roomName) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getName cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getName returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 roomJson["room_name"] = roomName;
                 vs_graphs::core::semantic::Room::RoomVariant roomVariant{};
                 if (p_room->getRoomVariant(roomVariant) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getRoomVariant cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomVariant returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 roomJson["room_variant"] = static_cast<int>(roomVariant);
                 bool roomHasPreviouslyVisited{};
                 if (p_room->hasPreviouslyVisited(roomHasPreviouslyVisited) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // hasPreviouslyVisited cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: hasPreviouslyVisited returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 roomJson["room_visited"] = roomHasPreviouslyVisited;
                 Eigen::Vector3d roomCentroid{};
                 if (p_room->getCentroid(roomCentroid) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 roomJson["centroid"] = archiveVector3(roomCentroid);
 
@@ -3611,7 +3952,11 @@ void maybeArchiveSGraph(
                 if (p_room->getWalls(roomWalls2) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getWalls cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWalls returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 for (vs_graphs::core::geometric::Plane *p_wall : roomWalls2)
                 {
@@ -3621,7 +3966,11 @@ void maybeArchiveSGraph(
                             vs_graphs::core::geometric::PlaneStatus::
                                 PLANE_STATUS_SUCCESS)
                     {
-                        // isBad cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (p_wall == nullptr || wallIsBad)
                     {
@@ -3633,7 +3982,11 @@ void maybeArchiveSGraph(
                         vs_graphs::core::geometric::PlaneStatus::
                             PLANE_STATUS_SUCCESS)
                     {
-                        // getPlaneType cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getPlaneType returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (wallPlaneType !=
                         vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
@@ -3652,14 +4005,22 @@ void maybeArchiveSGraph(
                                   vs_graphs::core::geometric::PlaneStatus::
                                       PLANE_STATUS_SUCCESS)
                               {
-                                  // getId cannot fail; continue as before.
+                                  RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                               "%s: getId returned a failure "
+                                               "status although it cannot "
+                                               "fail; continuing as before.",
+                                               __func__);
                               }
                               int secondGetId{};
                               if (second_in->getId(secondGetId) !=
                                   vs_graphs::core::geometric::PlaneStatus::
                                       PLANE_STATUS_SUCCESS)
                               {
-                                  // getId cannot fail; continue as before.
+                                  RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                               "%s: getId returned a failure "
+                                               "status although it cannot "
+                                               "fail; continuing as before.",
+                                               __func__);
                               }
                               return firstGetId < secondGetId;
                           });
@@ -3684,7 +4045,11 @@ void maybeArchiveSGraph(
                         vs_graphs::core::geometric::PlaneStatus::
                             PLANE_STATUS_SUCCESS)
                     {
-                        // getGlobalEquation cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getGlobalEquation returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     const Eigen::Vector3d normal_World_m(
                         equation_World.normal().x(),
@@ -3697,7 +4062,11 @@ void maybeArchiveSGraph(
                         vs_graphs::core::geometric::PlaneStatus::
                             PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     wallJson["wall_id"] = wallGetId3;
                     wallJson["wall_centroid"] =
@@ -3730,7 +4099,11 @@ void maybeArchiveSGraph(
                         vs_graphs::core::geometric::PlaneStatus::
                             PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     const auto wallPassages =
                         floorWallPassages[floorIndex].find(wallGetId4);
@@ -3763,14 +4136,22 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoomId cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoomId returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 vs_graphs::core::semantic::Room *p_prospectiveRoom = nullptr;
                 if (p_passage->getProspectiveRoom(p_prospectiveRoom) !=
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
 
                 Json passageJson;
@@ -3779,7 +4160,10 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 passageJson["passage_id"] = passageId;
                 Eigen::Vector3d passageCentroid{};
@@ -3787,7 +4171,11 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 passageJson["centroid"] = archiveVector3(passageCentroid);
                 double passageWidth{};
@@ -3795,7 +4183,11 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
                 {
-                    // getWidth cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWidth returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 passageJson["width_m"] = sanitiseArchiveDouble(passageWidth);
                 double passageHeight{};
@@ -3803,7 +4195,11 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
                 {
-                    // getHeight cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getHeight returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 passageJson["height_m"] = sanitiseArchiveDouble(passageHeight);
                 bool passageIsPassable{};
@@ -3811,7 +4207,11 @@ void maybeArchiveSGraph(
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
                 {
-                    // isPassable cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isPassable returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 passageJson["passable"] = passageIsPassable;
 
@@ -3829,7 +4229,11 @@ void maybeArchiveSGraph(
                         vs_graphs::core::semantic::RoomStatus::
                             ROOM_STATUS_SUCCESS)
                     {
-                        // getWalls cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getWalls returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
                     }
                     for (vs_graphs::core::geometric::Plane *p_wall : roomWalls3)
                     {
@@ -3844,7 +4248,11 @@ void maybeArchiveSGraph(
                                 vs_graphs::core::geometric::PlaneStatus::
                                     PLANE_STATUS_SUCCESS)
                             {
-                                // getId cannot fail; continue as before.
+                                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                             "%s: getId returned a failure "
+                                             "status although it cannot fail; "
+                                             "continuing as before.",
+                                             __func__);
                             }
                             if (wallGetId5 == wallId)
                             {
@@ -3863,7 +4271,11 @@ void maybeArchiveSGraph(
                             vs_graphs::core::semantic::RoomStatus::
                                 ROOM_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (!connected && ((prospectiveRoomId.has_value() &&
                                         roomId3 == prospectiveRoomId.value()) ||
@@ -4180,7 +4592,10 @@ void publishFiducialMarkers(
         if (fiducialMarker->getGlobalPose(T_world_fiducial_SE3f) !=
             vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // getGlobalPose cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalPose returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Skip invalid poses */
@@ -4213,7 +4628,10 @@ void publishFiducialMarkers(
         if (fiducialMarker->getId(fiducialMarkerId) !=
             vs_graphs::core::semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         fiducialMarkerMessage.id     = fiducialMarkerId;
         fiducialMarkerMessage.action = visualization_msgs::msg::Marker::ADD;
@@ -4753,14 +5171,20 @@ void publishPlanes(
             p_mappedPlane->isBad(mappedPlaneIsBad) !=
                 vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         vs_graphs::core::geometric::Plane::PlaneVariant mappedPlanePlaneType{};
         if (!(p_mappedPlane == nullptr || mappedPlaneIsBad) &&
             p_mappedPlane->getPlaneType(mappedPlanePlaneType) !=
                 vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_mappedPlane == nullptr || mappedPlaneIsBad ||
             mappedPlanePlaneType !=
@@ -4773,7 +5197,10 @@ void publishPlanes(
         if (p_mappedPlane->getMapClouds(mappedPlaneMapClouds) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getMapClouds cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapClouds returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_groundCloud_BC =
             mappedPlaneMapClouds;
@@ -4781,7 +5208,10 @@ void publishPlanes(
         if (p_mappedPlane->getGlobalEquation(mappedPlaneGetGlobalEquation) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const Eigen::Vector3d candidateGroundNormal_BC =
             mappedPlaneGetGlobalEquation.normal();
@@ -4817,7 +5247,10 @@ void publishPlanes(
             p_mappedRoom->isBad(mappedRoomIsBad) !=
                 vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_mappedRoom == nullptr || mappedRoomIsBad)
         {
@@ -4827,7 +5260,10 @@ void publishPlanes(
         if (p_mappedRoom->getWalls(mappedRoomWalls) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (vs_graphs::core::geometric::Plane *p_ownedWall : mappedRoomWalls)
         {
@@ -4837,7 +5273,10 @@ void publishPlanes(
                 if (p_mappedRoom->getId(mappedRoomId) !=
                     vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 owningRoomIdsByPlane[p_ownedWall].push_back(mappedRoomId);
             }
@@ -4853,7 +5292,10 @@ void publishPlanes(
             mappedPlane->isBad(mappedPlaneIsBad2) !=
                 vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (mappedPlane == nullptr || mappedPlaneIsBad2)
         {
@@ -4865,7 +5307,10 @@ void publishPlanes(
         if (mappedPlane->getPlaneType(planeType) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Skip planes that have not received a semantic type */
@@ -4879,7 +5324,10 @@ void publishPlanes(
         if (mappedPlane->getMapClouds(planePointCloud_BC) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getMapClouds cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapClouds returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Skip planes without any mapped points */
@@ -4893,7 +5341,10 @@ void publishPlanes(
         if (mappedPlane->getCentroid(planeCentroid_BC_m) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (!planeCentroid_BC_m.allFinite())
@@ -4906,7 +5357,10 @@ void publishPlanes(
         if (mappedPlane->getGlobalEquation(mappedPlaneGetGlobalEquation2) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector3d planeNormal_BC = mappedPlaneGetGlobalEquation2.normal();
 
@@ -5007,7 +5461,10 @@ void publishPlanes(
         if (mappedPlane->getColor(configuredColour) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getColor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getColor returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         std::array<std::uint8_t, 3> planeColour_rgb = {255, 255, 255};
@@ -5055,7 +5512,10 @@ void publishPlanes(
         if (mappedPlane->getId(mappedPlaneGetId) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         const int planeMarkerId = static_cast<int>(mappedPlaneGetId);
 
@@ -5081,7 +5541,10 @@ void publishPlanes(
         if (mappedPlane->getId(mappedPlaneGetId2) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         planeLabelText << "Plane#" << mappedPlaneGetId2;
 
@@ -5251,7 +5714,10 @@ void publishPlanes(
         if (mappedPlane->getTwinFace(p_twinFace) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getTwinFace cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTwinFace returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         bool twinFaceIsBad{};
@@ -5259,21 +5725,30 @@ void publishPlanes(
             p_twinFace->isBad(twinFaceIsBad) !=
                 vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         int mappedPlaneGetId3{};
         if ((p_twinFace != nullptr && !twinFaceIsBad) &&
             mappedPlane->getId(mappedPlaneGetId3) !=
                 vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         int twinFaceGetId{};
         if ((p_twinFace != nullptr && !twinFaceIsBad) &&
             p_twinFace->getId(twinFaceGetId) !=
                 vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_twinFace != nullptr && !twinFaceIsBad &&
             mappedPlaneGetId3 < twinFaceGetId)
@@ -5282,7 +5757,10 @@ void publishPlanes(
             if (p_twinFace->getCentroid(twinCentroid_BC_m) !=
                 vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if (twinCentroid_BC_m.allFinite())
@@ -7093,8 +7571,11 @@ static void getMissionHealthService(
             vs_graphs::core::MissionHealthTopologyJsonStatus::
                 MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS)
         {
-            // augmentMissionHealthTopologyJsonWithSemantics cannot fail;
-            // continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: augmentMissionHealthTopologyJsonWithSemantics returned a "
+                "failure status although it cannot fail; continuing as before.",
+                __func__);
         }
         topology = std::move(augmentedJson);
 
@@ -7216,7 +7697,10 @@ void setVoxbloxSkeletonCluster(
         vs_graphs::core::types::SystemParamsStatus::
             SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (systemParameters == nullptr)

@@ -21,6 +21,7 @@
 #include "../private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -68,20 +69,29 @@ void SemanticsManager::associateAllWallsToRooms(void)
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         core::Map *p_roomMap = nullptr;
         if ((p_room != nullptr && !roomIsBad) &&
             p_room->getMap(p_roomMap) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getMap cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMap returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         int roomId{};
         if ((p_room != nullptr && !roomIsBad && p_roomMap == p_activeMap) &&
             p_room->getId(roomId) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         semantic::Room::RoomVariant roomVariant{};
         if ((p_room != nullptr && !roomIsBad && p_roomMap == p_activeMap &&
@@ -89,7 +99,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
             p_room->getRoomVariant(roomVariant) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room != nullptr && !roomIsBad && p_roomMap == p_activeMap &&
             roomId == currentRoomIdSnapshot &&
@@ -110,7 +123,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
         p_groundPlaneForEvidence->isBad(groundPlaneForEvidenceIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_groundPlaneForEvidence != nullptr && !groundPlaneForEvidenceIsBad)
     {
@@ -119,7 +135,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
                 groundPlaneForEvidenceGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const Eigen::Vector4d groundEquation =
             groundPlaneForEvidenceGetGlobalEquation.coeffs();
@@ -147,7 +166,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
         if (room->getWalls(roomWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Check whether the requested wall is already present */
@@ -161,14 +183,20 @@ void SemanticsManager::associateAllWallsToRooms(void)
                     p_existingWall->getId(existingWallGetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int wallGetId{};
                 if ((p_existingWall != nullptr) &&
                     p_wall->getId(wallGetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 return p_existingWall != nullptr &&
                        existingWallGetId == wallGetId;
@@ -184,7 +212,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
             p_wall->isBad(wallIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_wall == nullptr || wallIsBad)
         {
@@ -202,14 +233,21 @@ void SemanticsManager::associateAllWallsToRooms(void)
             if (p_wall->getPlaneType(wallPlaneType) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getPlaneType cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPlaneType returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             geometric::Plane::PlaneVariant wallExpectedPlaneType{};
             if (!(wallPlaneType != geometric::Plane::PlaneVariant::WALL) &&
                 p_wall->getExpectedPlaneType(wallExpectedPlaneType) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getExpectedPlaneType cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getExpectedPlaneType returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             const std::string reason =
                 wallPlaneType != geometric::Plane::PlaneVariant::WALL ||
@@ -223,7 +261,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
             if (p_wall->getId(wallGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (loggedWallRejectionReasons[wallGetId] != reason)
             {
@@ -231,20 +272,30 @@ void SemanticsManager::associateAllWallsToRooms(void)
                 if (p_wall->getId(wallGetId2) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 loggedWallRejectionReasons[wallGetId2] = reason;
                 int wallGetId3{};
                 if (p_wall->getId(wallGetId3) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 geometric::Plane::PlaneVariant wallPlaneType2{};
                 if (p_wall->getPlaneType(wallPlaneType2) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getPlaneType cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPlaneType returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 std::cout << "SG_PIPELINE {\"event\":\"wall_rejection\","
                              "\"map_id\":"
@@ -268,7 +319,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
         if (p_wall->getId(wallGetId4) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         loggedWallRejectionReasons.erase(wallGetId4);
 
@@ -284,7 +338,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
                 room->isBad(roomIsBad2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (room == nullptr || roomIsBad2)
             {
@@ -315,7 +372,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
                 p_room->isBad(roomIsBad3) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_room != nullptr && !roomIsBad3 &&
                 roomContainsWall(p_room, p_wall))
@@ -331,7 +391,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
             if (p_wall->getId(wallGetId5) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_atlas->getRoomWallPlaneById(wallGetId5) == nullptr)
             {
@@ -341,27 +404,39 @@ void SemanticsManager::associateAllWallsToRooms(void)
             if (p_wall->getId(wallGetId6) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             undefendedWalls.erase(wallGetId6);
             int wallGetId7{};
             if (p_wall->getId(wallGetId7) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             loggedOrphanWallIds.erase(wallGetId7);
             int selectedOwnerId{};
             if (p_selectedOwner->getId(selectedOwnerId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int wallGetId8{};
             if (p_wall->getId(wallGetId8) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout << "SG_PIPELINE {\"event\":\"wall_admission\","
                          "\"map_id\":"
@@ -392,7 +467,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
         if (p_wall->getId(wallGetId9) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_atlas->getRoomWallPlaneById(wallGetId9) == nullptr)
         {
@@ -403,7 +481,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
         if (p_wall->getId(wallGetId10) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (loggedOrphanWallIds.insert(wallGetId10).second)
         {
@@ -411,7 +492,10 @@ void SemanticsManager::associateAllWallsToRooms(void)
             if (p_wall->getId(wallGetId11) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout << "SG_PIPELINE {\"event\":\"wall_pending\","
                          "\"map_id\":"

@@ -25,7 +25,6 @@ set(VS_GRAPHS_UTILS_UTILS_SOURCES
   core/src/Utils/Utils/methods/pointOnPlane.cc
   core/src/Utils/Utils/methods/pointcloudDistanceFilter.cc
   core/src/Utils/Utils/methods/pointcloudDownsample.cc
-  core/src/Utils/Utils/methods/pointcloudOutlierRemoval.cc
   core/src/Utils/Utils/methods/propagateSemanticPoseCorrections.cc
   core/src/Utils/Utils/methods/ransacPlaneFitting.cc
   core/src/Utils/Utils/methods/reAssociatePassages.cc

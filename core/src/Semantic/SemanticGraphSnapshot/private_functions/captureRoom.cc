@@ -26,6 +26,7 @@
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 #include "Map.h"
 
@@ -46,19 +47,28 @@ SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
     int        room_inId{};
     if (p_room_in->getId(room_inId) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     EntityKey key2{};
     if (makeKey(EntityKind::ROOM, mapId_in, room_inId, key2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
-        // makeKey cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeKey returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     record.key = key2;
     bool room_inIsBad{};
     if (p_room_in->isBad(room_inIsBad) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     record.isLive              = !room_inIsBad;
     record.isDetectedMember    = isDetectedMember_in;
@@ -67,7 +77,10 @@ SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
     core::Map *p_declaredMap = nullptr;
     if (p_room_in->getMap(p_declaredMap) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_declaredMap != nullptr)
     {
@@ -78,49 +91,70 @@ SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
     if (p_room_in->getRoomVariant(room_inRoomVariant) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getRoomVariant cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomVariant returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     record.variant = room_inRoomVariant;
     Eigen::Vector3d room_inCentroid{};
     if (p_room_in->getCentroid(room_inCentroid) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     record.centroid_World_m = room_inCentroid;
     Room::BoundaryStatus room_inBoundaryStatus{};
     if (p_room_in->getBoundaryStatus(room_inBoundaryStatus) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getBoundaryStatus cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBoundaryStatus returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     record.boundaryStatus = room_inBoundaryStatus;
     std::vector<Eigen::Vector3d> room_inBoundaryCorners_World_m{};
     if (p_room_in->getBoundaryCorners_World_m(room_inBoundaryCorners_World_m) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getBoundaryCorners_World_m cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBoundaryCorners_World_m returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     record.boundaryCorners_World_m = room_inBoundaryCorners_World_m;
     std::vector<Room::ObservationGap> room_inObservationGaps{};
     if (p_room_in->getObservationGaps(room_inObservationGaps) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getObservationGaps cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getObservationGaps returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     record.observationGaps = room_inObservationGaps;
 
     std::vector<geometric::Plane *> room_inWalls{};
     if (p_room_in->getWalls(room_inWalls) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getWalls cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWalls returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     for (geometric::Plane *p_wall : room_inWalls)
     {
         if (appendWallRef(p_wall, record.wallRefs) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
-            // appendWallRef cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendWallRef returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
     }
     /* Full value-based total order (see isRawPlaneRefLess()), not merely a
@@ -133,14 +167,20 @@ SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
     if (p_room_in->getPassages(room_inPassages) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getPassages cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPassages returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     for (Passage *p_passage : room_inPassages)
     {
         if (appendPassageRef(p_passage, record.passageRefs) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
-            // appendPassageRef cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendPassageRef returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
     std::sort(record.passageRefs.begin(),
@@ -150,26 +190,38 @@ SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
     Floor *p_room_inFloor = nullptr;
     if (p_room_in->getFloor(p_room_inFloor) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     EntityRef entityRef{};
     if (entityRefForFloor(p_room_inFloor, entityRef) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
-        // entityRefForFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: entityRefForFloor returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     record.floorRef                        = entityRef;
     geometric::Plane *p_room_inGroundPlane = nullptr;
     if (p_room_in->getGroundPlane(p_room_inGroundPlane) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getGroundPlane cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGroundPlane returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     RawPlaneRef rawPlaneRef2{};
     if (rawPlaneRef(p_room_inGroundPlane, rawPlaneRef2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
-        // rawPlaneRef cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rawPlaneRef returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     record.groundPlaneRef = rawPlaneRef2;
 

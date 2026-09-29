@@ -26,6 +26,7 @@
 #include "Semantic/SemanticCanonicalSerialization/private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 #include <utility>
 
 namespace vs_graphs
@@ -44,7 +45,10 @@ nlohmann::json serializeFinding(const Finding &value_in)
     if (axiomCodeName(value_in.axiomCode, axiomCodeName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomCodeName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomCodeName returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     json["axiomCodeName"] = axiomCodeName2;
     json["result"]        = static_cast<unsigned int>(value_in.result);
@@ -52,7 +56,10 @@ nlohmann::json serializeFinding(const Finding &value_in)
     if (axiomResultName(value_in.result, axiomResultName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomResultName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomResultName returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     json["resultName"]     = axiomResultName2;
     json["classification"] = static_cast<unsigned int>(value_in.classification);
@@ -60,7 +67,10 @@ nlohmann::json serializeFinding(const Finding &value_in)
     if (axiomClassName(value_in.classification, axiomClassName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomClassName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomClassName returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     json["classificationName"] = axiomClassName2;
     json["reasonCode"]         = static_cast<unsigned int>(value_in.reasonCode);
@@ -68,7 +78,10 @@ nlohmann::json serializeFinding(const Finding &value_in)
     if (reasonCodeName(value_in.reasonCode, reasonCodeName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // reasonCodeName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: reasonCodeName returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     json["reasonCodeName"] = reasonCodeName2;
 

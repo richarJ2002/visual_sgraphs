@@ -24,6 +24,7 @@
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -44,7 +45,10 @@ SemanticAxiomEvaluatorStatus
     if (axiomClassFor(axiomCode_in, axiomClass) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomClassFor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomClassFor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     entry.classification     = axiomClass;
     entry.capability         = capability_in;

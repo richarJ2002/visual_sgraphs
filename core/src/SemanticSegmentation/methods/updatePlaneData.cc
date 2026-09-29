@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cmath>
 #include <numeric>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -58,7 +59,10 @@ void SemanticSegmentation::updatePlaneData(
                     globalEquation) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // applyPoseToPlane cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: applyPoseToPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             /* Extract the point cloud assoicated with the plane */
@@ -121,7 +125,11 @@ void SemanticSegmentation::updatePlaneData(
                                                              semanticType) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // getPlaneTypeFromClassId cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getPlaneTypeFromClassId returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
 
             /*!
@@ -145,7 +153,10 @@ void SemanticSegmentation::updatePlaneData(
                     p_keyFrame_in->getCameraCenter().cast<double>()) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // associatePlanes cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: associatePlanes returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             /*!
@@ -333,7 +344,11 @@ void SemanticSegmentation::updatePlaneData(
                                                       confidence) !=
                         GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
                     {
-                        // createMapPlane cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: createMapPlane returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
 
                     /* Confirm that plane creation succeeded */
@@ -347,7 +362,11 @@ void SemanticSegmentation::updatePlaneData(
                     if (p_newMapPlane->getId(newMapPlaneGetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     updatePlaneSemantics(newMapPlaneGetId, clsId, confidence);
                 }
@@ -367,7 +386,11 @@ void SemanticSegmentation::updatePlaneData(
                                                       confidence) !=
                         GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
                     {
-                        // updateMapPlane cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: updateMapPlane returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                 }
                 else
@@ -391,7 +414,11 @@ void SemanticSegmentation::updatePlaneData(
                         p_matchedPlane->isBad(matchedPlaneIsBad) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // isBad cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (p_matchedPlane != nullptr && !matchedPlaneIsBad &&
                         !p_planeCloud->empty())
@@ -399,7 +426,11 @@ void SemanticSegmentation::updatePlaneData(
                         if (p_matchedPlane->setMapClouds(p_planeCloud) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                         {
-                            // setMapClouds cannot fail; continue as before.
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: setMapClouds returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
                         }
 
                         bool wasPlaneRefit{};

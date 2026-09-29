@@ -21,6 +21,7 @@
 #include "private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -70,7 +71,10 @@ bool segmentCrossesOpenPassageEvidence(
         p_evidenceSupportingWall_in->isBad(evidenceSupportingWallIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_evidenceSupportingWall_in == nullptr || evidenceSupportingWallIsBad ||
         evidenceOpeningRadius_m_in <= 0.0)
@@ -85,7 +89,10 @@ bool segmentCrossesOpenPassageEvidence(
             evidenceSupportingWallGetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     return segmentCrossesAperture(
         segmentStart_World_m_in,

@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -68,7 +69,10 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
         p_wall_in->isBad(wallIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_wall_in == nullptr || wallIsBad)
     {
@@ -79,7 +83,10 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
     if (p_wall_in->getGeometrySnapshot(wallGeometry) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGeometrySnapshot cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGeometrySnapshot returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
     const double    wallNormalNorm     = wallEquation_World.head<3>().norm();
@@ -159,7 +166,10 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
     if (p_wall_in->getCentroid(wallGetCentroid) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     const Eigen::Vector3d wallCentroid_World_m = wallGetCentroid.cast<double>();
 
@@ -189,7 +199,10 @@ bool buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
     if (p_wall_in->getObservationCount(wallGetObservationCount) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getObservationCount cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getObservationCount returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     segment_inout.supportScore =
         static_cast<double>(std::max<std::size_t>(

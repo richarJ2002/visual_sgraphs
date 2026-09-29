@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 #include "../private_functions.h"
@@ -134,7 +135,11 @@ SemanticVerifyStatus
                 if (fitRotationFromNormals(normalsA, normalsB, rotationFit) !=
                     SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
                 {
-                    // fitRotationFromNormals cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: fitRotationFromNormals returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (!rotationFit.valid)
                 {
@@ -165,7 +170,11 @@ SemanticVerifyStatus
                                    translationFit) !=
                     SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
                 {
-                    // fitTranslation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: fitTranslation returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (!translationFit.valid || translationFit.rank < 3U)
                 {
@@ -206,7 +215,11 @@ SemanticVerifyStatus
                                          normalAngle_rad) !=
                         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
                     {
-                        // angleBetween_rad cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: angleBetween_rad returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     const double offsetResidual_m =
                         std::abs(predictedOffset - wallB.d);
@@ -412,13 +425,19 @@ SemanticVerifyStatus
         if (findByWallId(wallsA_in, inlier.wallIdA, p_observationA) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // findByWallId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findByWallId returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         const VerifyWallObservation *p_observationB = nullptr;
         if (findByWallId(wallsB_in, inlier.wallIdB, p_observationB) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // findByWallId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findByWallId returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_observationA == nullptr || p_observationB == nullptr)
         {
@@ -469,13 +488,19 @@ SemanticVerifyStatus
         if (findByWallId(wallsA_in, inlier.wallIdA, p_observationA) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // findByWallId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findByWallId returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         const VerifyWallObservation *p_observationB = nullptr;
         if (findByWallId(wallsB_in, inlier.wallIdB, p_observationB) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // findByWallId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: findByWallId returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_observationA == nullptr || p_observationB == nullptr)
         {
@@ -499,7 +524,10 @@ SemanticVerifyStatus
                        refinedFit) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // fitTranslation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: fitTranslation returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     bool rotationObservable = false;

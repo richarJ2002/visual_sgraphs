@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -58,7 +59,10 @@ void Atlas::exportRoomContextFromCurrentMap()
         if (!(!p_room) && p_room->isBad(roomIsBad) !=
                               semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (!p_room || roomIsBad)
             continue;
@@ -67,35 +71,50 @@ void Atlas::exportRoomContextFromCurrentMap()
         int                           roomId2{};
         if (p_room->getId(roomId2) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         snap.roomId                  = roomId2;
         semantic::Floor *p_snapFloor = nullptr;
         if (p_room->getFloor(p_snapFloor) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getFloor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getFloor returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         int snapFloorId{};
         if ((p_snapFloor != nullptr) &&
             p_snapFloor->getId(snapFloorId) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         snap.floorId = p_snapFloor != nullptr ? snapFloorId : -1;
         Eigen::Vector3d roomCentroid{};
         if (p_room->getCentroid(roomCentroid) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         snap.centroid = roomCentroid;
         semantic::Room::RoomVariant roomVariant{};
         if (p_room->getRoomVariant(roomVariant) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         snap.wasConfirmedRoom =
             roomVariant == semantic::Room::RoomVariant::ROOM;
@@ -103,14 +122,20 @@ void Atlas::exportRoomContextFromCurrentMap()
         if (p_room->hasPreviouslyVisited(roomHasPreviouslyVisited) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // hasPreviouslyVisited cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasPreviouslyVisited returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         snap.wasPreviouslyVisited = roomHasPreviouslyVisited;
         semantic::Room::BoundaryStatus roomBoundaryStatus{};
         if (p_room->getBoundaryStatus(roomBoundaryStatus) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getBoundaryStatus cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getBoundaryStatus returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         snap.boundaryStatus = static_cast<int>(roomBoundaryStatus);
         snap.timestamp =
@@ -122,7 +147,10 @@ void Atlas::exportRoomContextFromCurrentMap()
         if (p_room->getWalls(roomWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (geometric::Plane *p_wall : roomWalls)
         {
@@ -131,7 +159,10 @@ void Atlas::exportRoomContextFromCurrentMap()
             if (!(!p_wall) && p_wall->isBad(wallIsBad) !=
                                   geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (!p_wall || wallIsBad)
             {
@@ -162,21 +193,31 @@ void Atlas::exportRoomContextFromCurrentMap()
             if (p_wall->getCentroid(wallGetCentroid) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             snap.wallCentroids.push_back(wallGetCentroid);
             g2o::Plane3D wallGetGlobalEquation{};
             if (p_wall->getGlobalEquation(wallGetGlobalEquation) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             snap.wallDistances.push_back(wallGetGlobalEquation.distance());
             geometric::Plane::GeometrySnapshot geometry{};
             if (p_wall->getGeometrySnapshot(geometry) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGeometrySnapshot cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getGeometrySnapshot returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             bounds.minU_m = geometry.minPlaneU_m;
             bounds.maxU_m = geometry.maxPlaneU_m;
@@ -193,7 +234,10 @@ void Atlas::exportRoomContextFromCurrentMap()
         if (p_room->getPassages(roomPassages) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getPassages cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPassages returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         for (semantic::Passage *p_passage : roomPassages)
         {
@@ -208,7 +252,10 @@ void Atlas::exportRoomContextFromCurrentMap()
             if (p_passage->getCentroid(passageCentroid) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             snap.passageCentroids.push_back(passageCentroid);
             semantic::PassageContext context;
@@ -216,14 +263,20 @@ void Atlas::exportRoomContextFromCurrentMap()
             if (p_passage->getId(passageId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             context.id = passageId;
             bool passageIsPassable{};
             if (p_passage->isPassable(passageIsPassable) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // isPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             context.isPassable = passageIsPassable;
             std::optional<int> roomIdOfPassageObservationConnection{};
@@ -231,7 +284,11 @@ void Atlas::exportRoomContextFromCurrentMap()
                     roomIdOfPassageObservationConnection) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getProspectiveRoomId cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getProspectiveRoomId returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             context.hasFarSideRoom =
                 roomIdOfPassageObservationConnection.has_value();
@@ -241,14 +298,20 @@ void Atlas::exportRoomContextFromCurrentMap()
             if (p_passage->getWidth(passageWidth) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             context.width_m = passageWidth;
             double passageHeight{};
             if (p_passage->getHeight(passageHeight) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             context.height_m        = passageHeight;
             context.isApertureValid = std::isfinite(context.width_m) &&
@@ -259,14 +322,21 @@ void Atlas::exportRoomContextFromCurrentMap()
             if (p_passage->getKnownSideProvenance(knownSide) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getKnownSideProvenance cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getKnownSideProvenance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             bool knownSideHasDirection{};
             if (knownSide.hasDirection(knownSideHasDirection) !=
                 semantic::KnownSideProvenanceStatus::
                     KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
             {
-                // hasDirection cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: hasDirection returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             context.hasKnownSideDirection = knownSideHasDirection;
             if (context.hasKnownSideDirection)
@@ -280,7 +350,10 @@ void Atlas::exportRoomContextFromCurrentMap()
                 if (knownSide.p_room->getId(id2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 context.knownSideRoomId = id2;
             }
@@ -289,7 +362,11 @@ void Atlas::exportRoomContextFromCurrentMap()
                     passageTraversalKnownToFarCount) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getTraversalKnownToFarCount cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getTraversalKnownToFarCount returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             context.traversalKnownToFarCount = passageTraversalKnownToFarCount;
             std::size_t passageTraversalFarToKnownCount{};
@@ -297,7 +374,11 @@ void Atlas::exportRoomContextFromCurrentMap()
                     passageTraversalFarToKnownCount) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getTraversalFarToKnownCount cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getTraversalFarToKnownCount returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             context.traversalFarToKnownCount = passageTraversalFarToKnownCount;
             std::size_t passageTraversalUnknownCount{};
@@ -305,7 +386,11 @@ void Atlas::exportRoomContextFromCurrentMap()
                     passageTraversalUnknownCount) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getTraversalUnknownCount cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getTraversalUnknownCount returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             context.traversalUnknownCount = passageTraversalUnknownCount;
             std::vector<vs_graphs::core::geometric::Plane *>
@@ -313,7 +398,10 @@ void Atlas::exportRoomContextFromCurrentMap()
             if (p_passage->getAssociateWalls(passageAssociateWalls) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getAssociateWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAssociateWalls returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             context.associatedWallCount = passageAssociateWalls.size();
             bool passageHasBidirectionalTraversalEvidence{};
@@ -335,7 +423,10 @@ void Atlas::exportRoomContextFromCurrentMap()
         int roomId3{};
         if (p_room->getId(roomId3) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         const std::string roomTag = "room_" + std::to_string(roomId3);
         snap.roomTag              = roomTag;
@@ -343,14 +434,20 @@ void Atlas::exportRoomContextFromCurrentMap()
         if (p_room->hasRoomTag(roomHasRoomTag) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // hasRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (!roomHasRoomTag)
         {
             if (p_room->setRoomTag(roomTag) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setRoomTag cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setRoomTag returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -375,14 +472,20 @@ void Atlas::exportRoomContextFromCurrentMap()
                 p_room->isBad(roomIsBad2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int roomId4{};
             if ((p_room != nullptr && !roomIsBad2) &&
                 p_room->getId(roomId4) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_room != nullptr && !roomIsBad2 && roomId4 == departureRoomId)
             {

@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <random>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 namespace vs_graphs
@@ -152,12 +153,18 @@ std::unique_ptr<SyntheticRoom> buildRoom(int                         roomId_in,
     if (room->room.setId(roomId_in) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (room->room.setCentroid(centroid_in) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     for (const RawWall &wall : walls_in)
     {

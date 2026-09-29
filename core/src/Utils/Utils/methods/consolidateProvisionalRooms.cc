@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 #include <unordered_set>
 
 namespace vs_graphs
@@ -48,7 +49,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         p_selectedRoom_inout->isBad(selectedRoom_inoutIsBad) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_selectedRoom_inout == nullptr || selectedRoom_inoutIsBad)
     {
@@ -60,7 +64,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
     if (p_selectedRoom_inout->getWalls(selectedWalls) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getWalls cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWalls returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     /* Create a set containing the selected wall IDs */
@@ -75,7 +82,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
             p_wall->isBad(wallIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_wall != nullptr && !wallIsBad)
         {
@@ -83,7 +93,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
             if (p_wall->getId(wallGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             selectedWallIds.insert(wallGetId);
         }
@@ -109,7 +122,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
             p_candidateRoom->isBad(candidateRoomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_candidateRoom == nullptr ||
             p_candidateRoom == p_selectedRoom_inout || candidateRoomIsBad)
@@ -130,7 +146,11 @@ UtilsStatus Utils::consolidateProvisionalRooms(
                     p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 return p_passage != nullptr &&
                        p_passageProspectiveRoom == p_candidateRoom;
@@ -149,7 +169,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         if (p_candidateRoom->getRoomVariant(candidateRoomRoomVariant) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (candidateRoomRoomVariant !=
             vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
@@ -162,7 +185,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         if (p_candidateRoom->getWalls(candidateWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         /*!
@@ -182,7 +208,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
                 p_candidateWall->isBad(candidateWallIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_candidateWall != nullptr && !candidateWallIsBad)
             {
@@ -205,7 +234,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         if (p_candidateWall->getId(candidateWallGetId) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (selectedWallIds.count(candidateWallGetId) == 0)
         {
@@ -222,7 +254,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
                 candidateWallGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector4d wallEquation = candidateWallGetGlobalEquation.coeffs();
 
@@ -239,7 +274,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         if (p_candidateRoom->getCentroid(candidateRoomCentroid) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         const double candidatePlaneDistance =
             std::abs(wallEquation.head<3>().dot(candidateRoomCentroid) +
@@ -257,7 +295,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         if (p_candidateRoom->getPassages(candidatePassages) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getPassages cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPassages returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         for (vs_graphs::core::semantic::Passage *p_candidatePassage :
@@ -275,7 +316,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
             if (p_selectedRoom_inout->getPassages(selectedPassages) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getPassages cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPassages returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             const bool alreadyPresent = std::any_of(
@@ -289,14 +333,22 @@ UtilsStatus Utils::consolidateProvisionalRooms(
                         p_existingPassage->getId(existingPassageId) !=
                             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     int candidatePassageId{};
                     if ((p_existingPassage != nullptr) &&
                         p_candidatePassage->getId(candidatePassageId) !=
                             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     return p_existingPassage != nullptr &&
                            existingPassageId == candidatePassageId;
@@ -308,7 +360,11 @@ UtilsStatus Utils::consolidateProvisionalRooms(
                 if (p_selectedRoom_inout->setDoorways(p_candidatePassage) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // setDoorways cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setDoorways returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
         }
@@ -325,8 +381,11 @@ UtilsStatus Utils::consolidateProvisionalRooms(
                                          floorWasRoomReplaced) !=
                     semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    floorWasRoomReplaced =
-                        false; // rejected input reads as before
+                    floorWasRoomReplaced = false;
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: replaceRoom rejected its input; "
+                                "continuing as before.",
+                                __func__);
                 }
             }
         }
@@ -335,7 +394,10 @@ UtilsStatus Utils::consolidateProvisionalRooms(
         if (p_candidateRoom->setBad() !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
 

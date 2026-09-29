@@ -26,6 +26,7 @@
 #include "Atlas.h"
 
 #include "private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -51,7 +52,10 @@ bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in)
         p_oldFinalRoom->hasRoomTag(oldFinalRoomHasRoomTag) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // hasRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool newStartRoomHasRoomTag{};
     if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
@@ -59,7 +63,10 @@ bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in)
         p_newStartRoom->hasRoomTag(newStartRoomHasRoomTag) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // hasRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     std::string oldFinalRoomRoomTag{};
     if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
@@ -67,7 +74,10 @@ bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in)
         p_oldFinalRoom->getRoomTag(oldFinalRoomRoomTag) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     std::string oldFinalRoomRoomTag2{};
     if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
@@ -76,7 +86,10 @@ bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in)
         p_oldFinalRoom->getRoomTag(oldFinalRoomRoomTag2) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     std::string newStartRoomRoomTag{};
     if ((p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
@@ -85,7 +98,10 @@ bool consecutiveSeedTagsMatch(Map *p_oldMap_in, Map *p_currentMap_in)
         p_newStartRoom->getRoomTag(newStartRoomRoomTag) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getRoomTag cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRoomTag returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     return p_oldFinalRoom != nullptr && p_newStartRoom != nullptr &&
            oldFinalRoomHasRoomTag && newStartRoomHasRoomTag &&

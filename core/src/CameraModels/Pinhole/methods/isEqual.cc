@@ -26,6 +26,7 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -42,7 +43,10 @@ PinholeStatus Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in,
     if (p_camera_in->getType(cameraType) !=
         geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // getType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getType returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (cameraType != geometriccamera::GeometricCamera::CAM_PINHOLE)
     {
@@ -56,13 +60,19 @@ PinholeStatus Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in,
     if (size(size2) !=
         geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // size cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: size returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     size_t otherPinholeSize{};
     if (p_otherPinhole->size(otherPinholeSize) !=
         geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // size cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: size returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (size2 != otherPinholeSize)
     {
@@ -75,7 +85,10 @@ PinholeStatus Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in,
     if (size(size3) !=
         geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // size cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: size returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     for (size_t parameterIndex = 0; parameterIndex < size3; ++parameterIndex)
     {
@@ -85,7 +98,10 @@ PinholeStatus Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in,
             geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (abs(parameters[parameterIndex] - otherPinholeParameter) > 1e-6)
         {

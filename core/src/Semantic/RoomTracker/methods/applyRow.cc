@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 #include <sstream>
 
 namespace vs_graphs
@@ -42,7 +43,10 @@ RoomTrackerStatus
         if (verification_in.isPass(verificationIsPass) !=
             VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
         {
-            // isPass cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPass returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (commit(source_in,
                    event_in,
@@ -52,7 +56,10 @@ RoomTrackerStatus
                    verificationIsPass) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else if (source_in == RoomTrackingState::CONFIRMED_ROOM &&
@@ -73,7 +80,10 @@ RoomTrackerStatus
                    guardSatisfied) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else if (source_in == RoomTrackingState::CROSSING_PASSAGE &&
@@ -86,7 +96,10 @@ RoomTrackerStatus
             verification_in.isPass(verificationIsPass2) !=
                 VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
         {
-            // isPass cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPass returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         const bool guardSatisfied =
             crossing_in.areBothSidesObserved &&
@@ -101,7 +114,10 @@ RoomTrackerStatus
                    guardSatisfied) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else if (source_in == RoomTrackingState::LOST_WITHOUT_ROOM &&
@@ -111,7 +127,10 @@ RoomTrackerStatus
         if (verification_in.isPass(verificationIsPass3) !=
             VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
         {
-            // isPass cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPass returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (commit(source_in,
                    event_in,
@@ -121,7 +140,10 @@ RoomTrackerStatus
                    verificationIsPass3) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else if (source_in == RoomTrackingState::LOST_WITH_LAST_ROOM &&
@@ -131,7 +153,10 @@ RoomTrackerStatus
         if (verification_in.isPass(verificationIsPass4) !=
             VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
         {
-            // isPass cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPass returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (commit(source_in,
                    event_in,
@@ -141,7 +166,10 @@ RoomTrackerStatus
                    verificationIsPass4) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else if (source_in == RoomTrackingState::REACQUIRING_IN_NEW_MAP &&
@@ -151,7 +179,10 @@ RoomTrackerStatus
         if (verification_in.isPass(verificationIsPass5) !=
             VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
         {
-            // isPass cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPass returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (commit(source_in,
                    event_in,
@@ -161,7 +192,10 @@ RoomTrackerStatus
                    verificationIsPass5) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     /* Unconditional rows: no guard checks, transition always fires. */
@@ -175,7 +209,10 @@ RoomTrackerStatus
                    verification_in,
                    true) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else if (source_in == RoomTrackingState::CROSSING_PASSAGE &&
@@ -188,7 +225,10 @@ RoomTrackerStatus
                    verification_in,
                    true) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else if (source_in == RoomTrackingState::LOST_WITH_LAST_ROOM &&
@@ -201,7 +241,10 @@ RoomTrackerStatus
                    verification_in,
                    true) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else if (source_in == RoomTrackingState::REACQUIRING_IN_NEW_MAP &&
@@ -214,7 +257,10 @@ RoomTrackerStatus
                    verification_in,
                    true) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else
@@ -227,7 +273,10 @@ RoomTrackerStatus
                    verification_in,
                    false) != RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // commit cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: commit returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
 

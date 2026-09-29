@@ -50,6 +50,7 @@
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
 
 #include <cstddef>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -76,7 +77,10 @@ SemanticAxiomEvaluatorStatus
                         finding) != SemanticAxiomEvaluatorStatus::
                                         SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding);
         return SemanticAxiomEvaluatorStatus::
@@ -95,7 +99,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding2);
         return SemanticAxiomEvaluatorStatus::
@@ -106,7 +113,10 @@ SemanticAxiomEvaluatorStatus
     if (countMapSnapshotsWithId(snapshot_in, room_in.key.mapId, mapSnapshots) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // countMapSnapshotsWithId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countMapSnapshotsWithId returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (mapSnapshots > 1U)
     {
@@ -126,7 +136,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding3);
         return SemanticAxiomEvaluatorStatus::
@@ -149,7 +162,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding4);
         return SemanticAxiomEvaluatorStatus::
@@ -180,7 +196,11 @@ SemanticAxiomEvaluatorStatus
                         SemanticAxiomEvaluatorStatus::
                             SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
                     {
-                        // makeFinding cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: makeFinding returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     findings_inout.push_back(finding5);
                     return SemanticAxiomEvaluatorStatus::
@@ -197,7 +217,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding6);
         return SemanticAxiomEvaluatorStatus::
@@ -215,7 +238,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding7);
         return SemanticAxiomEvaluatorStatus::
@@ -233,7 +259,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding8);
         return SemanticAxiomEvaluatorStatus::
@@ -246,7 +275,10 @@ SemanticAxiomEvaluatorStatus
                                  namedFloorMatchCount) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // countFloorRecordsWithKey cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: countFloorRecordsWithKey returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (namedFloorMatchCount > 1U)
     {
@@ -259,7 +291,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding9);
         return SemanticAxiomEvaluatorStatus::
@@ -279,7 +314,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding10);
         return SemanticAxiomEvaluatorStatus::
@@ -292,7 +330,10 @@ SemanticAxiomEvaluatorStatus
                         p_floor) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // findRecordByKey cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: findRecordByKey returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_floor == nullptr)
     {
@@ -310,7 +351,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding11);
         return SemanticAxiomEvaluatorStatus::
@@ -329,7 +373,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding12);
         return SemanticAxiomEvaluatorStatus::
@@ -375,7 +422,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding13);
         return SemanticAxiomEvaluatorStatus::
@@ -401,7 +451,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding14);
         return SemanticAxiomEvaluatorStatus::
@@ -418,7 +471,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding15);
         return SemanticAxiomEvaluatorStatus::
@@ -437,7 +493,10 @@ SemanticAxiomEvaluatorStatus
                 finding16) != SemanticAxiomEvaluatorStatus::
                                   SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding16);
         return SemanticAxiomEvaluatorStatus::
@@ -465,7 +524,11 @@ SemanticAxiomEvaluatorStatus
                     SemanticAxiomEvaluatorStatus::
                         SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
                 {
-                    // makeFinding cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: makeFinding returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 findings_inout.push_back(finding17);
                 return SemanticAxiomEvaluatorStatus::
@@ -482,7 +545,10 @@ SemanticAxiomEvaluatorStatus
                     finding18) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeFinding cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeFinding returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     findings_inout.push_back(finding18);
     if (!room_in.declaredMapId.has_value())
@@ -501,7 +567,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding19);
     }
@@ -521,7 +590,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // makeFinding cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: makeFinding returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         findings_inout.push_back(finding20);
     }

@@ -30,6 +30,7 @@
 #include "Utils/Utils/objects/Utils.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -548,7 +549,11 @@ void Optimizer::optimizeEssentialGraph(
                 transform_mergeWorldToCurrentWorld_in) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // propagateSemanticPoseCorrections cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: propagateSemanticPoseCorrections returned a failure "
+                "status although it cannot fail; continuing as before.",
+                __func__);
         }
     }
 

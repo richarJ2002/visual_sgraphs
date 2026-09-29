@@ -25,6 +25,7 @@
 #include <sstream>
 
 #include <Eigen/Eigenvalues>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,7 +42,10 @@ GeoSemHelpersStatus GeoSemHelpers::refitMappedPlaneFromCloud(
         p_plane_inout->isBad(planeIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_plane_inout == nullptr || planeIsBad)
     {
@@ -55,7 +59,10 @@ GeoSemHelpersStatus GeoSemHelpers::refitMappedPlaneFromCloud(
     if (p_plane_inout->beginMapCloudRefit(geometrySnapshot) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // beginMapCloudRefit cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: beginMapCloudRefit returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     /* Require sufficient points for a stable covariance estimate */
@@ -178,7 +185,10 @@ GeoSemHelpersStatus GeoSemHelpers::refitMappedPlaneFromCloud(
                                              planeWasRefitPublished) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // completeMapCloudRefit cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: completeMapCloudRefit returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     wasPlaneRefit_out = planeWasRefitPublished;
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;

@@ -26,6 +26,7 @@
 #include "Atlas.h"
 
 #include "private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -46,7 +47,10 @@ std::size_t countLiveFloors(Map *p_map_in)
             p_floor->hasPlaneIdentity(floorHasPlaneIdentity) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // hasPlaneIdentity cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasPlaneIdentity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_floor != nullptr && floorHasPlaneIdentity)
         {

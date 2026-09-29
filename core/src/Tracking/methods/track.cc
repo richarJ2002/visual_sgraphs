@@ -33,6 +33,7 @@
 #include <chrono>
 #include <iostream>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -80,7 +81,11 @@ void Tracking::track()
                     ResetAction::CREATE_MAP_EXECUTION) !=
                 ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
             {
-                // reportResetAttribution cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: reportResetAttribution returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             createMapInAtlas();
             return;
@@ -628,7 +633,11 @@ void Tracking::track()
                                        ResetAction::CREATE_MAP_EXECUTION) !=
                 ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
             {
-                // reportResetAttribution cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: reportResetAttribution returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             createMapInAtlas();
 

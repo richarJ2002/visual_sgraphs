@@ -24,6 +24,7 @@
  */
 
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,7 +42,10 @@ std::vector<MapPoint *> Tracking::findPointsCloseToMarker(
     if (p_currentMarker_in->getGlobalPose(currentMarker_inGlobalPose) !=
         semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
     {
-        // getGlobalPose cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalPose returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     std::vector<MapPoint *> closePoints =
         findPointsCloseToLocation(allmapPoints,

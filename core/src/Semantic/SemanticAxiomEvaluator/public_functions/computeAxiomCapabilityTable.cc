@@ -88,6 +88,7 @@
 #include "Semantic/SemanticAxiomEvaluator/public_functions.h"
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -106,7 +107,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry2{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_WALL_01,
@@ -115,7 +119,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry3{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_WALL_02,
@@ -124,7 +131,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry3) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry4{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_WALL_03,
@@ -133,7 +143,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry4) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry5{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_PASS_01,
@@ -142,7 +155,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry5) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry6{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_PASS_02,
@@ -151,7 +167,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry6) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry7{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_PASS_03,
@@ -160,7 +179,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry7) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry8{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_PASS_04,
@@ -169,7 +191,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry8) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry9{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_ROOM_01,
@@ -178,7 +203,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry9) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry10{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_ROOM_02,
@@ -187,7 +215,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry10) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry11{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_BOUND_01,
@@ -196,7 +227,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry11) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry12{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_FLOOR_01,
@@ -205,7 +239,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry12) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry13{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_LIFE_01,
@@ -214,7 +251,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry13) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry14{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_TXN_01,
@@ -223,7 +263,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry14) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry15{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_COMP_01,
@@ -232,7 +275,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry15) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     AxiomCapabilityEntry axiomCapabilityEntry16{};
     if (makeAxiomCapabilityEntry(AxiomCode::AX_MERGE_01,
@@ -241,7 +287,10 @@ SemanticAxiomEvaluatorStatus computeAxiomCapabilityTable(
                                  axiomCapabilityEntry16) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // makeAxiomCapabilityEntry cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeAxiomCapabilityEntry returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     axiomCapabilityTable_out = {axiomCapabilityEntry,
                                 axiomCapabilityEntry2,

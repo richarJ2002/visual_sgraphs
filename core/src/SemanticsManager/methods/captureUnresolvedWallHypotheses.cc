@@ -22,6 +22,7 @@
 #include "Semantic/ValueOrder.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,7 +42,10 @@ std::vector<semantic::UnresolvedWallHypothesisRecord>
             semantic::SemanticGraphSnapshotStatus::
                 SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
-            // rawPlaneRef cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: rawPlaneRef returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         record.wallRef          = rawPlaneRef2;
         record.unresolvedCycles = state.unresolvedCycles;

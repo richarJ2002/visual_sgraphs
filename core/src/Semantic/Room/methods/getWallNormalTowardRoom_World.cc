@@ -21,6 +21,7 @@
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -45,7 +46,10 @@ RoomStatus Room::getWallNormalTowardRoom_World(
     if (p_wall_in->getGlobalEquation(wallGetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d wallEquation_World = wallGetGlobalEquation.coeffs();
 

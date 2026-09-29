@@ -19,6 +19,7 @@
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -32,7 +33,10 @@ RoomStatus Room::isBoundaryComplete(bool &isBoundaryComplete_out) const
     Room::BoundaryStatus boundaryStatus{};
     if (getBoundaryStatus(boundaryStatus) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getBoundaryStatus cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getBoundaryStatus returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     isBoundaryComplete_out = boundaryStatus == BoundaryStatus::COMPLETE;
     return RoomStatus::ROOM_STATUS_SUCCESS;

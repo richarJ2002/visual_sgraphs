@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cmath>
 #include <numeric>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -49,7 +50,10 @@ void SemanticsManager::validateRoomBoundaries(void)
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_groundPlane == nullptr || groundPlaneIsBad)
     {
@@ -60,7 +64,10 @@ void SemanticsManager::validateRoomBoundaries(void)
     if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector4d groundEquation_World =
         groundPlaneGetGlobalEquation.coeffs();
@@ -92,14 +99,21 @@ void SemanticsManager::validateRoomBoundaries(void)
                     : std::vector<Eigen::Vector3d>{}) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setBoundaryCorners_World_m cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: setBoundaryCorners_World_m returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
 
         semantic::Room::BoundaryStatus previousBoundaryStatus{};
         if (p_room_in->getBoundaryStatus(previousBoundaryStatus) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getBoundaryStatus cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getBoundaryStatus returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (previousBoundaryStatus == boundaryStatus_in)
@@ -110,7 +124,10 @@ void SemanticsManager::validateRoomBoundaries(void)
         if (p_room_in->setBoundaryStatus(boundaryStatus_in) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setBoundaryStatus cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBoundaryStatus returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         const auto boundaryStatusName =
@@ -135,13 +152,19 @@ void SemanticsManager::validateRoomBoundaries(void)
         if (p_room_in->getId(room_inId) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::vector<geometric::Plane *> room_inWalls{};
         if (p_room_in->getWalls(room_inWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << "[SemMgr] semantic::Room#" << room_inId
                   << " boundary=" << boundaryStatusName(boundaryStatus_in)
@@ -155,7 +178,10 @@ void SemanticsManager::validateRoomBoundaries(void)
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room == nullptr || roomIsBad)
         {
@@ -176,7 +202,10 @@ void SemanticsManager::validateRoomBoundaries(void)
             if (p_room->getWalls(roomWalls2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             for (geometric::Plane *p_wall : roomWalls2)
             {
@@ -199,13 +228,19 @@ void SemanticsManager::validateRoomBoundaries(void)
             if (p_room->getId(roomId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::vector<geometric::Plane *> roomWalls3{};
             if (p_room->getWalls(roomWalls3) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout << "[SemMgr] semantic::Room#" << roomId
                       << " boundary check: roomWalls=" << roomWalls3.size()
@@ -289,8 +324,11 @@ void SemanticsManager::validateRoomBoundaries(void)
                                            roomWasWallRemoved) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        roomWasWallRemoved =
-                            false; // rejected input reads as before
+                        roomWasWallRemoved = false;
+                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                    "%s: removeWall rejected its input; "
+                                    "continuing as before.",
+                                    __func__);
                     }
                     if (roomWasWallRemoved)
                     {
@@ -300,19 +338,31 @@ void SemanticsManager::validateRoomBoundaries(void)
                         if (p_room->getId(roomId2) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                         {
-                            // getId cannot fail; continue as before.
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getId returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
                         }
                         int rejectedWallGetId{};
                         if (p_rejectedWall->getId(rejectedWallGetId) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                         {
-                            // getId cannot fail; continue as before.
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getId returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
                         }
                         int retainedWallGetId{};
                         if (p_retainedWall->getId(retainedWallGetId) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                         {
-                            // getId cannot fail; continue as before.
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getId returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
                         }
                         std::cout << "[SemMgr] Detached clashing Wall#"
                                   << rejectedWallGetId
@@ -339,7 +389,10 @@ void SemanticsManager::validateRoomBoundaries(void)
             if (p_room->getCentroid(gapCentroid_World_m) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (gapCentroid_World_m.allFinite())
             {
@@ -351,7 +404,11 @@ void SemanticsManager::validateRoomBoundaries(void)
                                                    gapCentroidGround_m)) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // setObservationGaps cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setObservationGaps returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             else
@@ -359,7 +416,11 @@ void SemanticsManager::validateRoomBoundaries(void)
                 if (p_room->setObservationGaps({}) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // setObservationGaps cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setObservationGaps returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
         }
@@ -382,7 +443,10 @@ void SemanticsManager::validateRoomBoundaries(void)
         if (p_room->getCentroid(roomCentroid_World_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (!roomCentroid_World_m.allFinite())
@@ -460,13 +524,21 @@ void SemanticsManager::validateRoomBoundaries(void)
                     if (p_room->getId(roomId3) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     int getId2{};
                     if (wallSegments[excludeIndex].p_wall->getId(getId2) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     std::cout
                         << "[SemMgr] semantic::Room#" << roomId3
@@ -551,7 +623,10 @@ void SemanticsManager::validateRoomBoundaries(void)
         int roomId4{};
         if (p_room->getId(roomId4) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << "[SemMgr] semantic::Room#" << roomId4
                   << " boundary validation: walls=" << wallSegments.size()
@@ -601,14 +676,22 @@ void SemanticsManager::validateRoomBoundaries(void)
                             currentCornerWallGetCentroid) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getCentroid cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCentroid returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     Eigen::Vector3d nextCornerWallGetCentroid{};
                     if (p_nextCornerWall->getCentroid(
                             nextCornerWallGetCentroid) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getCentroid cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCentroid returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     height_m =
                         0.5 * (currentCornerWallGetCentroid.cast<double>().dot(
@@ -651,14 +734,20 @@ void SemanticsManager::validateRoomBoundaries(void)
             if (p_room->getPassages(roomPassages) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getPassages cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPassages returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             std::vector<geometric::Plane *> roomWalls4{};
             if (p_room->getWalls(roomWalls4) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             for (geometric::Plane *p_ownedWall : roomWalls4)
             {
@@ -704,8 +793,11 @@ void SemanticsManager::validateRoomBoundaries(void)
                 if (p_room->removeWall(p_ownedWall, roomWasWallRemoved2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    roomWasWallRemoved2 =
-                        false; // rejected input reads as before
+                    roomWasWallRemoved2 = false;
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: removeWall rejected its input; continuing "
+                                "as before.",
+                                __func__);
                 }
                 if (roomWasWallRemoved2)
                 {
@@ -713,13 +805,21 @@ void SemanticsManager::validateRoomBoundaries(void)
                     if (p_room->getId(roomId5) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     int ownedWallGetId{};
                     if (p_ownedWall->getId(ownedWallGetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     std::cout << "[SemMgr] semantic::Room#" << roomId5
                               << "'s boundary is COMPLETE; detached Wall#"

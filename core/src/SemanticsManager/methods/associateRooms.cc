@@ -22,6 +22,7 @@
 
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 #include <unordered_set>
 
 namespace vs_graphs
@@ -65,7 +66,10 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
             p_room_World->isBad(room_WorldIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room_World == nullptr || room_WorldIsBad)
         {
@@ -77,7 +81,10 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
         if (p_room_World->getId(room_WorldId) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (excludedRoomIds_in.count(room_WorldId) > 0)
         {
@@ -89,7 +96,10 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
         if (p_room_World->getCentroid(roomCenter_World) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Find the distance from the cluster center to the room center */
@@ -107,7 +117,10 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
         if (p_room_World->getWalls(roomWallsList) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Init a list to track the room wall ids */
@@ -125,7 +138,10 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
                 p_roomWall->isBad(roomWallIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_roomWall != nullptr && !roomWallIsBad)
             {
@@ -133,7 +149,10 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
                 if (p_roomWall->getId(roomWallGetId) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 roomWallIds.insert(roomWallGetId);
             }
@@ -156,7 +175,10 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
                 p_candidateWall->isBad(candidateWallIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_candidateWall == nullptr || candidateWallIsBad)
             {
@@ -168,7 +190,10 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
             if (p_candidateWall->getId(candidateWallGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (roomWallIds.count(candidateWallGetId) == 0)
             {
@@ -184,7 +209,10 @@ vs_graphs::core::semantic::Room *SemanticsManager::associateRooms(
                     candidateWallGetGlobalEquation) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector4d candidateWallEquation =
                 candidateWallGetGlobalEquation.coeffs();

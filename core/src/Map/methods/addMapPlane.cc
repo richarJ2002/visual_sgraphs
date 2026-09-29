@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -53,7 +54,10 @@ void Map::addMapPlane(geometric::Plane *p_plane_inout)
             p_plane_inout->getId(planeGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         planeIterator = planeIterator->second == p_plane_inout &&
                                 planeIterator->first != planeGetId
@@ -65,7 +69,10 @@ void Map::addMapPlane(geometric::Plane *p_plane_inout)
     if (p_plane_inout->getId(planeGetId2) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     const auto existingPlaneIterator = planeIndex.find(planeGetId2);
 
@@ -73,7 +80,10 @@ void Map::addMapPlane(geometric::Plane *p_plane_inout)
     if (p_plane_inout->getId(planeGetId3) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (planeGetId3 < 0 || (existingPlaneIterator != planeIndex.end() &&
                             existingPlaneIterator->second != p_plane_inout))
@@ -89,7 +99,10 @@ void Map::addMapPlane(geometric::Plane *p_plane_inout)
         if (p_plane_inout->getId(planeGetId4) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cerr << "[Map] geometric::Plane ID collision for " << planeGetId4
                   << "; reassigned to " << replacementPlaneId << "."
@@ -98,7 +111,10 @@ void Map::addMapPlane(geometric::Plane *p_plane_inout)
         if (p_plane_inout->setId(replacementPlaneId) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // setId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else
@@ -107,7 +123,10 @@ void Map::addMapPlane(geometric::Plane *p_plane_inout)
         if (p_plane_inout->getId(planeGetId5) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         nextAvailablePlaneId = std::max(nextAvailablePlaneId, planeGetId5 + 1);
     }
@@ -117,7 +136,10 @@ void Map::addMapPlane(geometric::Plane *p_plane_inout)
     if (p_plane_inout->getId(planeGetId6) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     planeIndex.insert_or_assign(planeGetId6, p_plane_inout);
 }

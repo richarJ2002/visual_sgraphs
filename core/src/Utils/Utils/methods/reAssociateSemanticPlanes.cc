@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <tuple>
 
 #include "GeoSemHelpers.h"
@@ -53,7 +54,10 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
     if (types::SystemParams::getParams(p_systemParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     bool mergedPlaneInPass = true;
@@ -72,14 +76,20 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 p_candidatePlane->isBad(candidatePlaneIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             geometric::Plane::PlaneVariant candidatePlanePlaneType{};
             if (!(p_candidatePlane == nullptr || candidatePlaneIsBad) &&
                 p_candidatePlane->getPlaneType(candidatePlanePlaneType) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getPlaneType cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPlaneType returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_candidatePlane == nullptr || candidatePlaneIsBad ||
                 candidatePlanePlaneType ==
@@ -99,7 +109,10 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                     p_otherPlane->isBad(otherPlaneIsBad) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 geometric::Plane::PlaneVariant otherPlanePlaneType{};
                 if (!(p_otherPlane == nullptr ||
@@ -107,7 +120,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                     p_otherPlane->getPlaneType(otherPlanePlaneType) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getPlaneType cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPlaneType returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 geometric::Plane::PlaneVariant candidatePlanePlaneType2{};
                 if (!(p_otherPlane == nullptr ||
@@ -115,7 +132,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                     p_candidatePlane->getPlaneType(candidatePlanePlaneType2) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getPlaneType cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPlaneType returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_otherPlane == nullptr ||
                     p_otherPlane == p_candidatePlane || otherPlaneIsBad ||
@@ -134,7 +155,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 if (p_candidatePlane->getPlaneType(candidatePlanePlaneType3) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getPlaneType cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPlaneType returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (candidatePlanePlaneType3 ==
                     geometric::Plane::PlaneVariant::WALL)
@@ -144,13 +169,21 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                             candidateGeometry) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getGeometrySnapshot cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getGeometrySnapshot returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     geometric::Plane::GeometrySnapshot otherGeometry{};
                     if (p_otherPlane->getGeometrySnapshot(otherGeometry) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getGeometrySnapshot cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getGeometrySnapshot returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     Eigen::Vector4d candidateEquation_World =
                         candidateGeometry.equation_World;
@@ -182,8 +215,12 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                                 candidateObservationSide) !=
                             UtilsStatus::UTILS_STATUS_SUCCESS)
                         {
-                            // getMedianObservationSide_World_m cannot fail;
-                            // continue as before.
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getMedianObservationSide_World_m returned "
+                                "a failure status although it cannot fail; "
+                                "continuing as before.",
+                                __func__);
                         }
                         ObservationSideEvidence otherObservationSide{};
                         if (getMedianObservationSide_World_m(
@@ -192,8 +229,12 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                                 otherObservationSide) !=
                             UtilsStatus::UTILS_STATUS_SUCCESS)
                         {
-                            // getMedianObservationSide_World_m cannot fail;
-                            // continue as before.
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getMedianObservationSide_World_m returned "
+                                "a failure status although it cannot fail; "
+                                "continuing as before.",
+                                __func__);
                         }
 
                         if (candidateObservationSide.isAmbiguous ||
@@ -232,7 +273,10 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             if (p_candidatePlane->getPlaneType(candidatePlanePlaneType4) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getPlaneType cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPlaneType returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             const bool useWallExtensionDistance =
                 candidatePlanePlaneType4 ==
@@ -250,14 +294,21 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                     candidateAssociationGeometry) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGeometrySnapshot cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getGeometrySnapshot returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             int                            matchedPlaneId{};
             geometric::Plane::PlaneVariant candidatePlanePlaneType5{};
             if (p_candidatePlane->getPlaneType(candidatePlanePlaneType5) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getPlaneType cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPlaneType returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (associatePlanes(
                     compatiblePlanes,
@@ -270,7 +321,10 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                     maximumFiniteCloudDistance_m) !=
                 UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // associatePlanes cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: associatePlanes returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if (matchedPlaneId < 0)
@@ -288,7 +342,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                         p_plane->getId(planeGetId) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     return p_plane != nullptr && planeGetId == matchedPlaneId;
                 });
@@ -304,26 +362,41 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             if (p_candidatePlane->getGeometrySnapshot(candidateGeometry) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGeometrySnapshot cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getGeometrySnapshot returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             geometric::Plane::GeometrySnapshot matchedGeometry{};
             if (p_matchedPlane->getGeometrySnapshot(matchedGeometry) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGeometrySnapshot cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getGeometrySnapshot returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             std::size_t candidatePlaneGetObservationCount{};
             if (p_candidatePlane->getObservationCount(
                     candidatePlaneGetObservationCount) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getObservationCount cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getObservationCount returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             int candidatePlaneGetId{};
             if (p_candidatePlane->getId(candidatePlaneGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             const auto candidateEvidence =
                 std::make_tuple(candidatePlaneGetObservationCount,
@@ -337,13 +410,20 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                     matchedPlaneGetObservationCount) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getObservationCount cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getObservationCount returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             int matchedPlaneGetId{};
             if (p_matchedPlane->getId(matchedPlaneGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             const auto matchedEvidence =
                 std::make_tuple(matchedPlaneGetObservationCount,
@@ -364,7 +444,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             if (p_retiredPlane->getGeometrySnapshot(retiredGeometry) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGeometrySnapshot cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getGeometrySnapshot returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_retiredCloudCopy(
                 new pcl::PointCloud<pcl::PointXYZRGBA>);
@@ -374,7 +458,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 if (p_retainedPlane->setMapClouds(p_retiredCloudCopy) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // setMapClouds cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setMapClouds returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
@@ -382,7 +470,10 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             if (p_retiredPlane->getMapPoints(retiredPlaneMapPoints) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getMapPoints cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMapPoints returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             for (MapPoint *p_mapPoint : retiredPlaneMapPoints)
             {
@@ -391,7 +482,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                     if (p_retainedPlane->setMapPoints(p_mapPoint) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // setMapPoints cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setMapPoints returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                 }
             }
@@ -401,7 +496,10 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             if (p_retiredPlane->getObservations(retiredObservations) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getObservations cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getObservations returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             for (const auto &[p_keyFrame, observation] : retiredObservations)
@@ -415,7 +513,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                                                       observation) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // mergeObservation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: mergeObservation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
@@ -424,13 +526,20 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                                                          wasPlaneRefit) !=
                 GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
             {
-                // refitMappedPlaneFromCloud cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: refitMappedPlaneFromCloud returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             geometric::Plane::PlaneVariant retainedPlaneType{};
             if (p_retainedPlane->getPlaneType(retainedPlaneType) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getPlaneType cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPlaneType returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             for (semantic::Room *p_room : p_atlas_in->getAllRooms())
@@ -440,7 +549,10 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                     p_room->isBad(roomIsBad) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_room == nullptr || roomIsBad)
                 {
@@ -453,8 +565,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                                         roomWasWallReplaced) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    roomWasWallReplaced =
-                        false; // rejected input reads as before
+                    roomWasWallReplaced = false;
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: replaceWall rejected its input; "
+                                "continuing as before.",
+                                __func__);
                 }
                 bool roomWasGroundPlaneReplaced{};
                 if (p_room->replaceGroundPlane(p_retiredPlane,
@@ -462,8 +577,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                                                roomWasGroundPlaneReplaced) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    roomWasGroundPlaneReplaced =
-                        false; // rejected input reads as before
+                    roomWasGroundPlaneReplaced = false;
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: replaceGroundPlane rejected its input; "
+                                "continuing as before.",
+                                __func__);
                 }
             }
 
@@ -479,8 +597,11 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                             passageWasAssociationReplaced) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        passageWasAssociationReplaced =
-                            false; // rejected input reads as before
+                        passageWasAssociationReplaced = false;
+                        RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                    "%s: replacePlaneAssociation rejected its "
+                                    "input; continuing as before.",
+                                    __func__);
                     }
                 }
             }
@@ -514,7 +635,10 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             if (p_retiredPlane->setBad() !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // setBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
 
             if (p_currentMap != nullptr)
@@ -525,20 +649,29 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             if (p_retiredPlane->setMap(nullptr) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
 
             int retiredPlaneGetId{};
             if (p_retiredPlane->getId(retiredPlaneGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int retainedPlaneGetId{};
             if (p_retainedPlane->getId(retainedPlaneGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::cout << "[SemanticMerge] Fused geometric::Plane#"
                       << retiredPlaneGetId << " into geometric::Plane#"

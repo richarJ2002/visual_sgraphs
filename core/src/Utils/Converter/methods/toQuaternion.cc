@@ -31,6 +31,7 @@
  */
 
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -48,7 +49,10 @@ ConverterStatus Converter::toQuaternion(const cv::Mat      &rotationMatrix_in,
     if (toMatrix3d(rotationMatrix_in, eigenMatrix) !=
         ConverterStatus::CONVERTER_STATUS_SUCCESS)
     {
-        // toMatrix3d cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: toMatrix3d returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Quaterniond quaternion(eigenMatrix);
 

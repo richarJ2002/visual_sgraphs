@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -47,13 +48,19 @@ FloorStatus Floor::detachRoom(Room *p_room_inout)
     if (p_room_inout->getFloor(p_room_inoutFloor) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getFloor returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_room_inoutFloor == this)
     {
         if (p_room_inout->setFloor(nullptr) != RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setFloor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setFloor returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
 

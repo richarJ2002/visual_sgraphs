@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 #include <sstream>
 
 #include "../private_functions.h"
@@ -35,7 +36,10 @@ RoomTrackerStatus RoomTracker::stateToString(RoomTrackingState state_in,
     if (stateLiteral(state_in, p_stateLiteral) !=
         RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // stateLiteral cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: stateLiteral returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     text_out = p_stateLiteral;
     return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;

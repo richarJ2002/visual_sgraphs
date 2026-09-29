@@ -30,6 +30,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 namespace vs_graphs
@@ -185,7 +186,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             p_plane->isBad(planeIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_plane == nullptr || planeIsBad)
         {
@@ -196,7 +200,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_plane->getCentroid(planeCentroid_OldWorld_m) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         planeCentroids_OldWorld_m.insert_or_assign(p_plane,
@@ -215,7 +222,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             if (p_plane->getObservations(planeGetObservations) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getObservations cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getObservations returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             for (const auto &[p_observingKeyFrame, observation] :
                  planeGetObservations)
@@ -251,7 +261,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_plane->applyTransform(correction_oldWorldToNewWorld) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // applyTransform cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyTransform returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         planeCorrections_oldWorldToNewWorld.insert_or_assign(
             p_plane,
@@ -272,7 +285,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_marker->getGlobalPose(markerPose_MarkerToOldWorld) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // getGlobalPose cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalPose returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         const PoseCorrectionNode *p_selectedNode = nullptr;
@@ -283,7 +299,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_marker->getObservations(markerObservations) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // getObservations cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         for (const auto &[p_observingKeyFrame, markerPose_MarkerToCamera] :
              markerObservations)
@@ -327,7 +346,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_marker->applyTransform(markerCorrection_oldWorldToNewWorld) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
-            // applyTransform cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyTransform returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         markerCorrections_oldWorldToNewWorld.insert_or_assign(
             p_marker,
@@ -346,7 +368,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_passage->getCentroid(passageCentroid_OldWorld_m) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         const g2o::Sim3 *p_passageCorrection = nullptr;
@@ -355,7 +380,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_passage->getAssociateDoor(p_passageAssociateDoor) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getAssociateDoor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAssociateDoor returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (geometric::Plane *p_doorPlane = p_passageAssociateDoor;
             p_doorPlane != nullptr)
@@ -379,7 +407,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             if (p_passage->getAssociateWalls(passageAssociateWalls) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getAssociateWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAssociateWalls returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             for (geometric::Plane *p_wall : passageAssociateWalls)
             {
@@ -419,7 +450,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                     : selectCorrectionForPoint(passageCentroid_OldWorld_m)) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // applyTransform cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyTransform returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -438,7 +472,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room == nullptr || roomIsBad ||
             !correctedRooms.insert(p_room).second)
@@ -450,7 +487,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_room->getCentroid(roomCentroid_OldWorld_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         roomCentroids_OldWorld_m.insert_or_assign(p_room,
                                                   roomCentroid_OldWorld_m);
@@ -460,7 +500,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_room->getMetaMarker(p_metaMarker) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getMetaMarker cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMetaMarker returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (p_metaMarker != nullptr)
@@ -484,7 +527,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             if (p_room->getWalls(roomWalls) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             for (geometric::Plane *p_wall : roomWalls)
             {
@@ -520,7 +566,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_room->applyTransform(roomCorrection_oldWorldToNewWorld) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // applyTransform cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyTransform returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         roomCorrections_oldWorldToNewWorld.insert_or_assign(
             p_room,
@@ -538,7 +587,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_floor->getCentroid(floorCentroid_OldWorld_m) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         const g2o::Sim3 *p_floorCorrection = nullptr;
@@ -549,7 +601,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (p_floor->getRooms(floorRooms) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getRooms cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRooms returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (semantic::Room *p_room : floorRooms)
         {
@@ -558,14 +613,20 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                 p_room->isBad(roomIsBad2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             core::Map *p_roomMap = nullptr;
             if (!(p_room == nullptr || roomIsBad2) &&
                 p_room->getMap(p_roomMap) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_room == nullptr || roomIsBad2 || p_roomMap != p_map_inout)
             {
@@ -600,7 +661,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                     : selectCorrectionForPoint(floorCentroid_OldWorld_m)) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // applyTransform cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyTransform returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 

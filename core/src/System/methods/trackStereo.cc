@@ -28,6 +28,7 @@
 #include "Tracking.h"
 
 #include <opencv2/imgproc.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -56,14 +57,20 @@ Sophus::SE3f
         p_settings->needToRectify(settingsNeedToRectify) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // needToRectify cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: needToRectify returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool settingsNeedToResize{};
     if ((p_settings) &&
         p_settings->needToResize(settingsNeedToResize) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // needToResize cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: needToResize returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_settings && settingsNeedToRectify)
     {
@@ -71,25 +78,37 @@ Sophus::SE3f
         if (p_settings->M1l(M1l) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // M1l cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: M1l returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
         }
         cv::Mat M2l{};
         if (p_settings->M2l(M2l) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // M2l cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: M2l returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
         }
         cv::Mat M1r{};
         if (p_settings->M1r(M1r) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // M1r cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: M1r returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
         }
         cv::Mat M2r{};
         if (p_settings->M2r(M2r) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // M2r cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: M2r returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
         }
 
         cv::remap(imageLeft_in, imLeftToFeed, M1l, M2l, cv::INTER_LINEAR);
@@ -101,14 +120,20 @@ Sophus::SE3f
         if (p_settings->newImSize(settingsNewImSize) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // newImSize cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: newImSize returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         cv::resize(imageLeft_in, imLeftToFeed, settingsNewImSize);
         cv::Size settingsNewImSize2{};
         if (p_settings->newImSize(settingsNewImSize2) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // newImSize cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: newImSize returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         cv::resize(imageRight_in, imRightToFeed, settingsNewImSize2);
     }
@@ -150,7 +175,10 @@ Sophus::SE3f
             if (consumeResetCause(this, resetCause) !=
                 ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
             {
-                // consumeResetCause cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: consumeResetCause returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             p_tracker->reset();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
@@ -163,14 +191,21 @@ Sophus::SE3f
             if (consumeResetCause(this, resetCause2) !=
                 ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
             {
-                // consumeResetCause cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: consumeResetCause returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (reportResetAttribution(
                     resetCause2,
                     ResetAction::RESET_ACTIVE_MAP_EXECUTION) !=
                 ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
             {
-                // reportResetAttribution cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: reportResetAttribution returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             p_tracker->resetActiveMap();
             resetCount.fetch_add(1U, std::memory_order_relaxed);

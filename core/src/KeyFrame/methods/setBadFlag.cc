@@ -36,6 +36,7 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -78,7 +79,10 @@ void KeyFrame::setBadFlag()
             if (p_plane->eraseObservation(this) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // eraseObservation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseObservation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }
@@ -91,7 +95,10 @@ void KeyFrame::setBadFlag()
             if (p_marker->eraseObservation(this) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // eraseObservation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: eraseObservation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }

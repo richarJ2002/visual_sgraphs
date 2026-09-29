@@ -41,6 +41,7 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -95,14 +96,20 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
             p_plane->isBad(planeIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_plane != nullptr && !planeIsBad)
         {
             if (p_plane->applyTransform(transform_oldWorldToNewWorld) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // applyTransform cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: applyTransform returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }
@@ -114,7 +121,10 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
             if (p_marker->applyTransform(transform_oldWorldToNewWorld) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // applyTransform cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: applyTransform returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }
@@ -126,7 +136,10 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
             if (p_passage->applyTransform(transform_oldWorldToNewWorld) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // applyTransform cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: applyTransform returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }
@@ -138,14 +151,20 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room != nullptr && !roomIsBad)
         {
             if (p_room->applyTransform(transform_oldWorldToNewWorld) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // applyTransform cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: applyTransform returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }
@@ -157,14 +176,20 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
             p_room->isBad(roomIsBad2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room != nullptr && !roomIsBad2)
         {
             if (p_room->applyTransform(transform_oldWorldToNewWorld) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // applyTransform cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: applyTransform returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }
@@ -176,7 +201,10 @@ void Map::applyScaledRotation(const Sophus::SE3f &T_in,
             if (p_floor->applyTransform(transform_oldWorldToNewWorld) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // applyTransform cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: applyTransform returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }

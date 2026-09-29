@@ -23,6 +23,7 @@
 #include "Utils/Utils/objects/UtilsStatus.h"
 
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -58,7 +59,10 @@ void SemanticsManager::detectDoorsAndDoorways(
             p_plane->isBad(planeIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_plane == nullptr || planeIsBad)
         {
@@ -70,7 +74,10 @@ void SemanticsManager::detectDoorsAndDoorways(
         if (p_plane->getPlaneType(planeType) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
         {
@@ -83,7 +90,10 @@ void SemanticsManager::detectDoorsAndDoorways(
         if (p_plane->getPlaneType(planeType2) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (planeType2 == vs_graphs::core::geometric::Plane::PlaneVariant::DOOR)
         {
@@ -104,7 +114,10 @@ void SemanticsManager::detectDoorsAndDoorways(
             p_wall->isBad(wallIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_wall == nullptr || wallIsBad)
         {
@@ -116,7 +129,10 @@ void SemanticsManager::detectDoorsAndDoorways(
         if (p_wall->getObservationCount(wallGetObservationCount) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getObservationCount cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservationCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (wallGetObservationCount >=
             p_sysParams->roomSeg.minimumWallObservationCount)
@@ -129,13 +145,20 @@ void SemanticsManager::detectDoorsAndDoorways(
             if (p_wall->getId(wallGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::size_t wallGetObservationCount2{};
             if (p_wall->getObservationCount(wallGetObservationCount2) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getObservationCount cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getObservationCount returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             std::cout << "[SemMgr] Skipping wall " << wallGetId
                       << " for passage detection: insufficient observations ("
@@ -154,7 +177,10 @@ void SemanticsManager::detectDoorsAndDoorways(
             p_door->isBad(doorIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_door == nullptr || doorIsBad)
         {
@@ -169,7 +195,10 @@ void SemanticsManager::detectDoorsAndDoorways(
                 p_wall->isBad(wallIsBad2) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_wall == nullptr || wallIsBad2)
             {
@@ -183,7 +212,10 @@ void SemanticsManager::detectDoorsAndDoorways(
                                                        arePlanesParallel2) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // arePlanesParallel cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: arePlanesParallel returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (!arePlanesParallel2)
             {
@@ -199,7 +231,11 @@ void SemanticsManager::detectDoorsAndDoorways(
                     arePlanesApartEnough2) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // arePlanesApartEnough cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: arePlanesApartEnough returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (arePlanesApartEnough2)
             {
@@ -213,7 +249,10 @@ void SemanticsManager::detectDoorsAndDoorways(
                                                 false) !=
                 GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
             {
-                // createMapPassage cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: createMapPassage returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }

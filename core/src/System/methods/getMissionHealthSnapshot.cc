@@ -28,6 +28,7 @@
 #include "SemanticsManager.h"
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -83,7 +84,10 @@ System::MissionHealthSnapshot
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_params->general.modeOfOperation ==
         types::SystemParams::General::ModeOfOperation::GEO)
@@ -161,7 +165,10 @@ System::MissionHealthSnapshot
                     p_room->isBad(roomIsBad) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_room == nullptr || roomIsBad)
                 {
@@ -171,7 +178,11 @@ System::MissionHealthSnapshot
                 if (p_room->getRoomVariant(roomVariant) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getRoomVariant cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRoomVariant returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (roomVariant != semantic::Room::RoomVariant::ROOM)
                 {
@@ -185,7 +196,10 @@ System::MissionHealthSnapshot
                 if (p_room->getId(roomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 room.id = roomId;
                 std::vector<vs_graphs::core::semantic::Passage *>
@@ -193,7 +207,11 @@ System::MissionHealthSnapshot
                 if (p_room->getPassages(roomPassages) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getPassages cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPassages returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 for (semantic::Passage *p_passage : roomPassages)
                 {
@@ -203,7 +221,11 @@ System::MissionHealthSnapshot
                         if (p_passage->getId(passageId) !=
                             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                         {
-                            // getId cannot fail; continue as before.
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getId returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
                         }
                         room.passageIds.push_back(passageId);
                     }
@@ -223,14 +245,21 @@ System::MissionHealthSnapshot
                 if (p_floor->getId(floorId) !=
                     semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 floor.id = floorId;
                 std::vector<vs_graphs::core::semantic::Room *> floorRooms{};
                 if (p_floor->getRooms(floorRooms) !=
                     semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    // getRooms cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getRooms returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 for (semantic::Room *p_room : floorRooms)
                 {
@@ -239,14 +268,22 @@ System::MissionHealthSnapshot
                         p_room->isBad(roomIsBad2) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // isBad cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     semantic::Room::RoomVariant roomVariant2{};
                     if ((p_room != nullptr && !roomIsBad2) &&
                         p_room->getRoomVariant(roomVariant2) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // getRoomVariant cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getRoomVariant returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (p_room != nullptr && !roomIsBad2 &&
                         roomVariant2 == semantic::Room::RoomVariant::ROOM)
@@ -255,7 +292,11 @@ System::MissionHealthSnapshot
                         if (p_room->getId(roomId2) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                         {
-                            // getId cannot fail; continue as before.
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getId returned a failure status although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
                         }
                         floor.roomIds.push_back(roomId2);
                         ++snapshot.floorRoomLinkCount;
@@ -276,14 +317,21 @@ System::MissionHealthSnapshot
                 if (p_passage->getId(passageId2) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 passage.id = passageId2;
                 bool passageIsPassable{};
                 if (p_passage->isPassable(passageIsPassable) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // isPassable cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: isPassable returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 passage.isPassable = passageIsPassable;
                 semantic::Passage::KnownSideProvenance
@@ -292,7 +340,11 @@ System::MissionHealthSnapshot
                         passageKnownSideProvenance) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getKnownSideProvenance cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getKnownSideProvenance returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 semantic::Passage::KnownSideProvenance
                     passageKnownSideProvenance2{};
@@ -301,14 +353,21 @@ System::MissionHealthSnapshot
                         passageKnownSideProvenance2) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getKnownSideProvenance cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getKnownSideProvenance returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 int id2{};
                 if ((passageKnownSideProvenance.p_room) &&
                     passageKnownSideProvenance2.p_room->getId(id2) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 passage.primaryRoomId =
                     passageKnownSideProvenance.p_room ? id2 : -1;
@@ -317,7 +376,11 @@ System::MissionHealthSnapshot
                 if (p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 vs_graphs::core::semantic::Room *p_passageProspectiveRoom2 =
                     nullptr;
@@ -325,14 +388,21 @@ System::MissionHealthSnapshot
                     p_passage->getProspectiveRoom(p_passageProspectiveRoom2) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 int id3{};
                 if ((p_passageProspectiveRoom) &&
                     p_passageProspectiveRoom2->getId(id3) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 passage.secondaryRoomId = p_passageProspectiveRoom ? id3 : -1;
                 std::size_t passageTraversalKnownToFarCount{};
@@ -359,14 +429,22 @@ System::MissionHealthSnapshot
                         passageTraversalUnknownCount) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getTraversalUnknownCount cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getTraversalUnknownCount returned a failure "
+                        "status although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 passage.unknownCount = passageTraversalUnknownCount;
                 semantic::Passage::KnownSideProvenance knownSide{};
                 if (p_passage->getKnownSideProvenance(knownSide) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getKnownSideProvenance cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getKnownSideProvenance returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (knownSide.p_room != nullptr)
                 {
@@ -374,7 +452,11 @@ System::MissionHealthSnapshot
                     if (knownSide.p_room->getId(id4) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     passage.primaryRoomId = id4;
                 }
@@ -382,7 +464,11 @@ System::MissionHealthSnapshot
                 if (p_passage->getProspectiveRoom(p_farSideRoom) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_farSideRoom != nullptr)
                 {
@@ -390,7 +476,11 @@ System::MissionHealthSnapshot
                     if (p_farSideRoom->getId(farSideRoomId) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     passage.secondaryRoomId = farSideRoomId;
                 }

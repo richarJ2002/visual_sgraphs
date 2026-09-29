@@ -8,6 +8,7 @@
 #include "MissionHealthTopologyJson.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "Semantic/SemanticAxiomEvaluator.h"
@@ -26,7 +27,10 @@ MissionHealthTopologyJsonStatus
         semantic::SemanticAxiomEvaluatorStatus::
             SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // computeAxiomCapabilityTable cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeAxiomCapabilityTable returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
     }
     std::sort(table.begin(),
               table.end(),
@@ -42,14 +46,20 @@ MissionHealthTopologyJsonStatus
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // axiomCodeName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: axiomCodeName returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         std::string axiomClassName2{};
         if (semantic::axiomClassName(row.classification, axiomClassName2) !=
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // axiomClassName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: axiomClassName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::string capabilityLevelName2{};
         if (semantic::capabilityLevelName(row.capability,
@@ -57,7 +67,10 @@ MissionHealthTopologyJsonStatus
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // capabilityLevelName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: capabilityLevelName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::string missingProofOwnerName2{};
         if (semantic::missingProofOwnerName(row.owner,
@@ -65,7 +78,10 @@ MissionHealthTopologyJsonStatus
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // missingProofOwnerName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: missingProofOwnerName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         capabilitiesJson.push_back(
             {{"axiomCode", axiomCodeName2},

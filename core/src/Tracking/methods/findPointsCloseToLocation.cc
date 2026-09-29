@@ -26,6 +26,7 @@
 #include "Tracking.h"
 #include "Utils/Utils/objects/Utils.h"
 #include "Utils/Utils/objects/UtilsStatus.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -46,7 +47,11 @@ std::vector<MapPoint *> Tracking::findPointsCloseToLocation(
                 location_in,
                 distance) != utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // calculateEuclideanDistance cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: calculateEuclideanDistance returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (distance <= distanceThreshold_in)
         {

@@ -34,6 +34,7 @@
 
 #include <chrono>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -336,7 +337,10 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                     p_plane->isBad(planeIsBad) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_plane == nullptr || planeIsBad ||
                     p_plane->baGlobalKeyFrameId != loopKeyFrameCount_in)
@@ -347,7 +351,11 @@ void LoopClosing::runGlobalBundleAdjustment(Map          *p_activeMap_inout,
                 if (p_plane->alignGeometryToEquation(p_plane->planeGBA) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // alignGeometryToEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: alignGeometryToEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 

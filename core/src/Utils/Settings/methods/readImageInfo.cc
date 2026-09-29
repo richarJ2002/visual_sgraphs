@@ -33,6 +33,7 @@
 #include "Utils/Settings/objects/Settings.h"
 
 #include <opencv2/core/persistence.hpp>
+#include <rclcpp/logging.hpp>
 
 #include "System.h"
 
@@ -58,7 +59,10 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                            originalRows) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     int originalCols{};
     if (readParameter<int>(storage_inout,
@@ -67,7 +71,10 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                            originalCols) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     originalImageSize.width  = originalCols;
     originalImageSize.height = originalRows;
@@ -80,7 +87,10 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                            newHeigh,
                            false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (found)
     {
@@ -97,7 +107,10 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // getParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_calibration1->setParameter(calibration1Parameter *
                                                  scaleRowFactor,
@@ -105,14 +118,20 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // setParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             float calibration1Parameter2{};
             if (p_calibration1->getParameter(3, calibration1Parameter2) !=
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // getParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_calibration1->setParameter(calibration1Parameter2 *
                                                  scaleRowFactor,
@@ -120,7 +139,10 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // setParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if ((sensor == System::STEREO || sensor == System::IMU_STEREO) &&
@@ -131,7 +153,11 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                     camera_models::geometriccamera::GeometricCameraStatus::
                         GEOMETRIC_CAMERA_STATUS_SUCCESS)
                 {
-                    // getParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_calibration2->setParameter(calibration2Parameter *
                                                      scaleRowFactor,
@@ -139,14 +165,22 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                     camera_models::geometriccamera::GeometricCameraStatus::
                         GEOMETRIC_CAMERA_STATUS_SUCCESS)
                 {
-                    // setParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 float calibration2Parameter2{};
                 if (p_calibration2->getParameter(3, calibration2Parameter2) !=
                     camera_models::geometriccamera::GeometricCameraStatus::
                         GEOMETRIC_CAMERA_STATUS_SUCCESS)
                 {
-                    // getParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_calibration2->setParameter(calibration2Parameter2 *
                                                      scaleRowFactor,
@@ -154,7 +188,11 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                     camera_models::geometriccamera::GeometricCameraStatus::
                         GEOMETRIC_CAMERA_STATUS_SUCCESS)
                 {
-                    // setParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
         }
@@ -167,7 +205,10 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                            newWidth,
                            false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (found)
     {
@@ -184,7 +225,10 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // getParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_calibration1->setParameter(calibration1Parameter3 *
                                                  scaleColFactor,
@@ -192,14 +236,20 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // setParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             float calibration1Parameter4{};
             if (p_calibration1->getParameter(2, calibration1Parameter4) !=
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // getParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_calibration1->setParameter(calibration1Parameter4 *
                                                  scaleColFactor,
@@ -207,7 +257,10 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                 camera_models::geometriccamera::GeometricCameraStatus::
                     GEOMETRIC_CAMERA_STATUS_SUCCESS)
             {
-                // setParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if ((sensor == System::STEREO || sensor == System::IMU_STEREO) &&
@@ -218,7 +271,11 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                     camera_models::geometriccamera::GeometricCameraStatus::
                         GEOMETRIC_CAMERA_STATUS_SUCCESS)
                 {
-                    // getParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_calibration2->setParameter(calibration2Parameter3 *
                                                      scaleColFactor,
@@ -226,14 +283,22 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                     camera_models::geometriccamera::GeometricCameraStatus::
                         GEOMETRIC_CAMERA_STATUS_SUCCESS)
                 {
-                    // setParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 float calibration2Parameter4{};
                 if (p_calibration2->getParameter(2, calibration2Parameter4) !=
                     camera_models::geometriccamera::GeometricCameraStatus::
                         GEOMETRIC_CAMERA_STATUS_SUCCESS)
                 {
-                    // getParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_calibration2->setParameter(calibration2Parameter4 *
                                                      scaleColFactor,
@@ -241,7 +306,11 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                     camera_models::geometriccamera::GeometricCameraStatus::
                         GEOMETRIC_CAMERA_STATUS_SUCCESS)
                 {
-                    // setParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
 
                 if (cameraModel == CameraType::KANNALA_BRANDT)
@@ -272,14 +341,20 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
     if (readParameter<int>(storage_inout, "Camera.fps", found, parameter) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     framesPerSecond = parameter;
     int parameter2{};
     if (readParameter<int>(storage_inout, "Camera.RGB", found, parameter2) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     isRgbInputEnabled = (bool)parameter2;
 

@@ -22,6 +22,7 @@
 
 #include "Thirdparty/DBoW2/DUtils/Random.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 using namespace std;
@@ -94,7 +95,10 @@ int TwoViewReconstruction::checkRT(const Eigen::Matrix3f      &R_in,
                                         p3dC1) !=
             GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS)
         {
-            // Rejected input: ignored, as before.
+            RCLCPP_WARN(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: triangulate rejected its input; continuing as before.",
+                __func__);
         }
 
         if (!isfinite(p3dC1(0)) || !isfinite(p3dC1(1)) || !isfinite(p3dC1(2)))

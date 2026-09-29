@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <iterator>
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -49,14 +50,20 @@ geometric::Plane *Map::getBiggestGroundPlane()
             p_plane->isBad(planeIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         geometric::Plane::PlaneVariant planeType{};
         if (!(p_plane == nullptr || planeIsBad) &&
             p_plane->getPlaneType(planeType) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_plane == nullptr || planeIsBad ||
             planeType != geometric::Plane::PlaneVariant::GROUND)
@@ -68,7 +75,10 @@ geometric::Plane *Map::getBiggestGroundPlane()
         if (p_plane->getGeometrySnapshot(geometry) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGeometrySnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const double normalNorm = geometry.equation_World.head<3>().norm();
         if (!geometry.equation_World.allFinite() ||
@@ -88,7 +98,10 @@ geometric::Plane *Map::getBiggestGroundPlane()
         if (p_plane->getId(planeGetId) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         const auto evidence = std::make_tuple(geometry.finiteSupportCount,
                                               geometry.observationCount,

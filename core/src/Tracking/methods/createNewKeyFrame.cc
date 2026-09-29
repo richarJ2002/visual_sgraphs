@@ -26,6 +26,7 @@
 #include "LocalMapping.h"
 #include "System.h"
 #include "Tracking.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -198,20 +199,30 @@ void Tracking::createNewKeyFrame()
             if (p_currentFrameMaker->getId(currentFrameMakerId) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int currentMapMarkerId{};
             if (p_currentMapMarker->getId(currentMapMarkerId) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (currentFrameMakerId == currentMapMarkerId)
             {
                 if (p_currentFrameMaker->setMarkerInGMap(true) !=
                     semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
                 {
-                    // setMarkerInGMap cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setMarkerInGMap returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
         }

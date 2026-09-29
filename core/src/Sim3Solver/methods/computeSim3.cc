@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <opencv2/core/core.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 #include "KeyFrame.h"
@@ -108,13 +109,19 @@ void Sim3Solver::computeSim3(Eigen::Matrix3f &P1_inout,
         if (utils::converter::Converter::toCvMat(Pr1, cvMat) !=
             utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
         {
-            // toCvMat cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: toCvMat returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         cv::Mat cvMat2{};
         if (utils::converter::Converter::toCvMat(P3, cvMat2) !=
             utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
         {
-            // toCvMat cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: toCvMat returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         double cvnom = cvMat.dot(cvMat2);
         double nom   = (Pr1.array() * P3.array()).sum();

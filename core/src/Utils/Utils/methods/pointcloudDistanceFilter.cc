@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <rclcpp/logging.hpp>
 #include <utility>
 
 namespace vs_graphs
@@ -50,7 +51,10 @@ UtilsStatus Utils::pointcloudDistanceFilter(
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     const std::pair<float, float> thresholds =
         p_params->pointcloud.distanceThresh;

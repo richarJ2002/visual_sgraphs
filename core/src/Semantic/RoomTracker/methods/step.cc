@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 #include <sstream>
 
 namespace vs_graphs
@@ -52,7 +53,10 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                        nextState) !=
             RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
         {
-            // applyEvent cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: applyEvent returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
     }
     else
@@ -67,7 +71,10 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                     VerificationVerdictStatus::
                         VERIFICATION_VERDICT_STATUS_SUCCESS)
             {
-                // isPass cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPass returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (tracking_in.isNewMapCreated && verificationIsPass)
             {
@@ -80,7 +87,11 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                nextState2) !=
                     RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
                 {
-                    // applyEvent cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyEvent returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             else if (effectiveNow - lastEnterStateTime_s >=
@@ -95,7 +106,11 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                nextState3) !=
                     RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
                 {
-                    // applyEvent cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyEvent returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             break;
@@ -106,7 +121,10 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
             if (verification_in.isPass(verificationIsPass2) !=
                 VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
             {
-                // isPass cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPass returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (verificationIsPass2)
             {
@@ -119,7 +137,11 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                nextState4) !=
                     RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
                 {
-                    // applyEvent cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyEvent returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             else if (effectiveNow - lastEnterStateTime_s >=
@@ -134,7 +156,11 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                nextState5) !=
                     RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
                 {
-                    // applyEvent cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyEvent returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             else if (reacquireLastRetryTime_s < 0.0 ||
@@ -155,7 +181,11 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                    nextState6) !=
                         RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
                     {
-                        // applyEvent cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: applyEvent returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
                     }
                 }
             }
@@ -168,7 +198,10 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
             if (verification_in.isPass(verificationIsPass3) !=
                 VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
             {
-                // isPass cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPass returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (verificationIsPass3)
             {
@@ -180,7 +213,11 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                nextState7) !=
                     RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
                 {
-                    // applyEvent cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyEvent returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             break;
@@ -203,7 +240,10 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                 accumulatedDwell) !=
                 RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
             {
-                // accumulateDwell cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: accumulateDwell returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             updatedGuardValues.dwell_s = accumulatedDwell;
             if (updatedGuardValues.dwell_s >= config.crossing_dwell_s)
@@ -216,7 +256,11 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                nextState8) !=
                     RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
                 {
-                    // applyEvent cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyEvent returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             break;
@@ -234,7 +278,10 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                     VerificationVerdictStatus::
                         VERIFICATION_VERDICT_STATUS_SUCCESS)
             {
-                // isPass cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPass returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             const bool guardSatisfied =
                 hasObservedBothSides && verificationIsPass4;
@@ -246,7 +293,10 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                 accumulatedDwell2) !=
                 RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
             {
-                // accumulateDwell cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: accumulateDwell returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             updatedGuardValues.dwell_s              = accumulatedDwell2;
             updatedGuardValues.areBothSidesObserved = hasObservedBothSides;
@@ -260,7 +310,11 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                nextState9) !=
                     RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
                 {
-                    // applyEvent cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyEvent returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             break;
@@ -272,7 +326,10 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
             if (verification_in.isPass(verificationIsPass5) !=
                 VerificationVerdictStatus::VERIFICATION_VERDICT_STATUS_SUCCESS)
             {
-                // isPass cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPass returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (verificationIsPass5)
             {
@@ -284,7 +341,11 @@ RoomTrackerStatus RoomTracker::step(double                      now_s_in,
                                nextState10) !=
                     RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
                 {
-                    // applyEvent cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyEvent returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             break;

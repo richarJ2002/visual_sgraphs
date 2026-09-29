@@ -33,6 +33,7 @@
 #include "Utils/Settings/objects/Settings.h"
 
 #include <opencv2/core/persistence.hpp>
+#include <rclcpp/logging.hpp>
 
 #include "Utils/Converter/objects/Converter.h"
 
@@ -63,25 +64,37 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
         if (readParameter<float>(storage_inout, "Camera2.fx", found, fx) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         float fy{};
         if (readParameter<float>(storage_inout, "Camera2.fy", found, fy) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         float cx{};
         if (readParameter<float>(storage_inout, "Camera2.cx", found, cx) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         float cy{};
         if (readParameter<float>(storage_inout, "Camera2.cy", found, cy) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         calibrations = {fx, fy, cx, cy};
@@ -99,7 +112,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                  false) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (found)
         {
@@ -111,7 +127,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                      false) !=
                 SettingsStatus::SETTINGS_STATUS_SUCCESS)
             {
-                // readParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: readParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (found)
             {
@@ -123,7 +142,11 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                          parameter3) !=
                     SettingsStatus::SETTINGS_STATUS_SUCCESS)
                 {
-                    // readParameter cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: readParameter returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
                 pinholeDistortion2[4] = parameter3;
             }
@@ -138,7 +161,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                      parameter4) !=
                 SettingsStatus::SETTINGS_STATUS_SUCCESS)
             {
-                // readParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: readParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             pinholeDistortion2[0] = parameter4;
             float parameter5{};
@@ -148,7 +174,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                      parameter5) !=
                 SettingsStatus::SETTINGS_STATUS_SUCCESS)
             {
-                // readParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: readParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             pinholeDistortion2[1] = parameter5;
             float parameter6{};
@@ -158,7 +187,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                      parameter6) !=
                 SettingsStatus::SETTINGS_STATUS_SUCCESS)
             {
-                // readParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: readParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             pinholeDistortion2[2] = parameter6;
             float parameter7{};
@@ -168,7 +200,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                      parameter7) !=
                 SettingsStatus::SETTINGS_STATUS_SUCCESS)
             {
-                // readParameter cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: readParameter returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             pinholeDistortion2[3] = parameter7;
         }
@@ -180,50 +215,74 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
         if (readParameter<float>(storage_inout, "Camera2.fx", found, fx) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         float fy{};
         if (readParameter<float>(storage_inout, "Camera2.fy", found, fy) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         float cx{};
         if (readParameter<float>(storage_inout, "Camera2.cx", found, cx) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         float cy{};
         if (readParameter<float>(storage_inout, "Camera2.cy", found, cy) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         float k0{};
         if (readParameter<float>(storage_inout, "Camera2.k1", found, k0) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         float k1{};
         if (readParameter<float>(storage_inout, "Camera2.k2", found, k1) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         float k2{};
         if (readParameter<float>(storage_inout, "Camera2.k3", found, k2) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         float k3{};
         if (readParameter<float>(storage_inout, "Camera2.k4", found, k3) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         calibrations = {fx, fy, cx, cy, k0, k1, k2, k3};
@@ -240,7 +299,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                colBegin) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         int colEnd{};
         if (readParameter<int>(storage_inout,
@@ -249,7 +311,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                colEnd) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         vector<int> overlappings = {colBegin, colEnd};
 
@@ -268,7 +333,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                  parameter8) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         stereoBaseline = parameter8;
         float calibration1Parameter{};
@@ -276,7 +344,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         baselineFocal = stereoBaseline * calibration1Parameter;
     }
@@ -289,13 +360,19 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                                    cvTlr) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         Sophus::SE3<float> sophus{};
         if (converter::Converter::toSophus(cvTlr, sophus) !=
             converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
         {
-            // toSophus cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: toSophus returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         stereoTransform = sophus;
 
@@ -307,7 +384,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         baselineFocal = stereoBaseline * calibration1Parameter2;
     }
@@ -319,7 +399,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                              parameter9) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     depthThreshold = parameter9;
 

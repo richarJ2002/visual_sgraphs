@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -40,14 +41,20 @@ void Atlas::addCandidateMapRoom(semantic::Room *p_room_in)
     if (p_room_in->getId(room_inId) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     observeRoomIdentity(room_inId);
     Map *p_ownerMap = nullptr;
     if (p_room_in->getMap(p_ownerMap) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     p_ownerMap->addCandidateMapRoom(p_room_in);
 }

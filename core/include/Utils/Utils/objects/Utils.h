@@ -38,7 +38,6 @@
 #include <pcl/common/common.h>
 #include <pcl/common/pca.h>
 #include <pcl/filters/extract_indices.h>
-#include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -304,28 +303,6 @@ class Utils
     template <typename PointT>
     [[nodiscard]] static UtilsStatus pointcloudDistanceFilter(
         const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
-        typename pcl::PointCloud<PointT>::Ptr       &p_filteredCloud_out);
-
-    /*!
-     * @brief        Removes the points that are farther away from their
-     *               neighbors. PointT shall be a PCL point type.
-     *
-     * @param[in]    p_cloud_in
-     *               Pointcloud to be filtered.
-     * @param[in]    meanThreshold_in
-     *               Mean threshold for neighbor points.
-     * @param[in]    stdDevThreshold_in
-     *               Standard deviation threshold for neighbor points.
-     * @param[out]   p_filteredCloud_out
-     *               Owning pointer to the new filtered cloud.
-     *
-     * @return       UTILS_STATUS_SUCCESS.
-     */
-    template <typename PointT>
-    [[nodiscard]] static UtilsStatus pointcloudOutlierRemoval(
-        const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
-        const int                                    meanThreshold_in,
-        const float                                  stdDevThreshold_in,
         typename pcl::PointCloud<PointT>::Ptr       &p_filteredCloud_out);
 
     /*!

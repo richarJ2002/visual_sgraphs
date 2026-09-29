@@ -29,6 +29,7 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -59,7 +60,10 @@ void LoopClosing::searchAndFuse(const KeyFrameAndPose &correctedPosesMap_in,
         if (utils::converter::Converter::toSophus(g2oScw, Scw) !=
             utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
         {
-            // toSophus cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: toSophus returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         vector<MapPoint *> replacePoints(mapPoints_in.size(),

@@ -30,6 +30,7 @@
 #include "System.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -490,7 +491,10 @@ void Optimizer::loopClosureLocalBundleAdjustment(
                                    p_keyFrameEdge) !=
                 OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS)
             {
-                // edgeSourceKeyFrame cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: edgeSourceKeyFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if (p_keyFrameEdge == nullptr || p_adjustKeyFrame != p_keyFrameEdge)
@@ -525,7 +529,10 @@ void Optimizer::loopClosureLocalBundleAdjustment(
                                    p_keyFrameEdge) !=
                 OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS)
             {
-                // edgeSourceKeyFrame cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: edgeSourceKeyFrame returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if (p_keyFrameEdge == nullptr || p_adjustKeyFrame != p_keyFrameEdge)

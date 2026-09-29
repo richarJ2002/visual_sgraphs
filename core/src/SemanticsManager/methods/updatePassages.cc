@@ -21,6 +21,7 @@
 #include "Utils/Utils/objects/UtilsStatus.h"
 
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -47,7 +48,10 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             passage->isBad(passageIsBad) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (passage == nullptr || passageIsBad)
         {
@@ -60,7 +64,10 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
         if (passage->getAssociateDoor(p_doorPlane) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getAssociateDoor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAssociateDoor returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         // Blocked passages (closed doors) should be aligned with the ground
@@ -69,7 +76,10 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
         if (passage->isPassable(passageIsPassable) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isPassable cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPassable returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (!passageIsPassable)
         {
@@ -85,14 +95,22 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                     doorPlaneGetGeometrySnapshot) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGeometrySnapshot cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getGeometrySnapshot returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (utils::utils::Utils::computePlaneWidthHeight(
                     doorPlaneGetGeometrySnapshot.supportCloud,
                     widthHeight) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // computePlaneWidthHeight cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computePlaneWidthHeight returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
 
             /* Extract the measured height and width */
@@ -120,13 +138,19 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 if (passage->getId(passageId) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int doorPlaneGetId{};
                 if (p_doorPlane->getId(doorPlaneGetId) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 std::cout << "[SemanticsManager] Rejecting door plane "
                           << doorPlaneGetId << " for passage " << passageId
@@ -143,12 +167,18 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             if (p_doorPlane->getCentroid(doorPlaneGetCentroid) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setCentroid(doorPlaneGetCentroid) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             /* Get the plane global equation */
@@ -156,24 +186,36 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             if (p_doorPlane->getGlobalEquation(doorPlaneGetGlobalEquation) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setGlobalEquation(doorPlaneGetGlobalEquation) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             /* Set width & height of the passage */
             if (passage->setWidth(measuredWidth) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (passage->setHeight(measuredHeight) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
         }
         else
@@ -196,7 +238,10 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             if (passage->getAssociateWalls(supportingFaces) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getAssociateWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAssociateWalls returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             std::vector<Eigen::Vector4d> validFaceEquations;
@@ -210,7 +255,10 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                     p_candidateWall->isBad(candidateWallIsBad) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_candidateWall == nullptr || candidateWallIsBad)
                 {
@@ -222,7 +270,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                         candidateWallGetGlobalEquation) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 Eigen::Vector4d candidateWallEquation =
                     candidateWallGetGlobalEquation.coeffs();
@@ -253,7 +305,10 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             if (passage->getCentroid(passageCentroid_World_m) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if (validFaceEquations.size() == 2)
@@ -303,7 +358,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                         g2o::Plane3D(midPlaneEquation)) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // setGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
 
                 bool arePlanesPerpendicular2{};
@@ -313,7 +372,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                         arePlanesPerpendicular2) !=
                     utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                 {
-                    // arePlanesPerpendicular cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: arePlanesPerpendicular returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (arePlanesPerpendicular2)
                 {
@@ -321,7 +384,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                             g2o::Plane3D(midPlaneEquation)) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // setGlobalEquation cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setGlobalEquation returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                 }
                 else
@@ -342,13 +409,21 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                     if (passage->setCentroid(anchoredCentroid_World_m) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // setCentroid cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setCentroid returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (passage->setGlobalEquation(
                             g2o::Plane3D(referenceEquation)) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // setGlobalEquation cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setGlobalEquation returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                 }
             }
@@ -371,13 +446,21 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 if (passage->setCentroid(anchoredCentroid_World_m) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // setCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (passage->setGlobalEquation(
                         g2o::Plane3D(referenceEquation)) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // setGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
@@ -386,12 +469,18 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
             if (passage->getGlobalEquation(passageGlobalEquation) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (passagePlane.setGlobalEquation(passageGlobalEquation) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // setGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             bool arePlanesPerpendicular3{};
             if (utils::utils::Utils::arePlanesPerpendicular(
@@ -400,7 +489,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                     arePlanesPerpendicular3) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // arePlanesPerpendicular cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: arePlanesPerpendicular returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (!arePlanesPerpendicular3)
             {
@@ -411,7 +504,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                         groundPlaneGetGlobalEquation) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 const Eigen::Vector3d groundNormal =
                     groundPlaneGetGlobalEquation.coeffs()
@@ -421,7 +518,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 if (passage->getGlobalEquation(passageGlobalEquation2) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 Eigen::Vector4d globalEq      = passageGlobalEquation2.coeffs();
                 Eigen::Vector3d passageNormal = globalEq.head<3>().normalized();
@@ -439,7 +540,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 if (passage->getCentroid(passageCentroid) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 const Eigen::Vector3d centroid = passageCentroid.cast<double>();
                 const double          d        = -correctedNormal.dot(centroid);
@@ -451,7 +556,11 @@ void SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
                 if (passage->setGlobalEquation(g2o::Plane3D(correctedCoeffs)) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // setGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
         }

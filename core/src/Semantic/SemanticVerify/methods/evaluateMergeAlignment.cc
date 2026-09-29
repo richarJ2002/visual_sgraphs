@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 #include "../private_functions.h"
@@ -45,7 +46,10 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
         if (stableRoomIdentity(room.context, identity) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // stableRoomIdentity cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: stableRoomIdentity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         survivingById.emplace(identity, &room);
     }
@@ -57,7 +61,10 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
         if (stableRoomIdentity(absorbedRoom.context, identity2) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // stableRoomIdentity cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: stableRoomIdentity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const std::map<std::string,
                        const SemanticMergeRoomEvidence *>::const_iterator
@@ -78,7 +85,11 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
                                      wallCheck) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // checkFixedTransformWalls cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: checkFixedTransformWalls returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         result.matchedWallCount += matchedWalls;
         if (wallCheck == AlignmentCheck::CONTRADICTION)
@@ -107,7 +118,10 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
                                  topologyCheck) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // checkPassageTopology cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: checkPassageTopology returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         result.matchedPassageCount += matchedPassages;
         if (topologyCheck == AlignmentCheck::CONTRADICTION)

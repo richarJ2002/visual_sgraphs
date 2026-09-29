@@ -29,6 +29,7 @@
 #include "SemanticsManager.h"
 #include "System.h"
 #include "Viewer.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -74,7 +75,10 @@ System::~System()
     }
     if (clearResetCause(this) != ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
     {
-        // clearResetCause cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: clearResetCause returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
 
     delete p_localMappingThread;

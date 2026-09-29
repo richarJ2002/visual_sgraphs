@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -43,7 +44,10 @@ FloorStatus
                                    transformedIdentity) !=
             FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // transformPlaneIdentity cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: transformPlaneIdentity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (transformedIdentity.has_value())

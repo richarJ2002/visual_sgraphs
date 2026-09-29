@@ -26,6 +26,7 @@
 #include "Semantic/SemanticDiagnostics/public_functions.h"
 
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <string>
 
 #include "Semantic/SemanticAxiomEvaluator/EnumNames.h"
@@ -90,7 +91,11 @@ SemanticDiagnosticsStatus buildSemanticDiagnosticUpdate(
                     SemanticDiagnosticsStatus::
                         SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
                 {
-                    // violationDetailToJson cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: violationDetailToJson returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 violationDetails.push_back(json2);
             }
@@ -109,7 +114,11 @@ SemanticDiagnosticsStatus buildSemanticDiagnosticUpdate(
                     SemanticDiagnosticsStatus::
                         SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
                 {
-                    // violationDetailToJson cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: violationDetailToJson returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 violationDetails.push_back(json3);
             }
@@ -129,7 +138,11 @@ SemanticDiagnosticsStatus buildSemanticDiagnosticUpdate(
                     SemanticDiagnosticsStatus::
                         SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS)
                 {
-                    // violationDetailToJson cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: violationDetailToJson returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 violationDetails.push_back(json4);
             }
@@ -195,7 +208,10 @@ SemanticDiagnosticsStatus buildSemanticDiagnosticUpdate(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // axiomCodeName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: axiomCodeName returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         perCodeCounts[axiomCodeName2] =
             static_cast<unsigned int>(aggregate.contributingFindingCount);
@@ -211,7 +227,10 @@ SemanticDiagnosticsStatus buildSemanticDiagnosticUpdate(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // axiomResultName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: axiomResultName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         completenessJson.push_back({{"mapId", completeness.mapId},
                                     {"isComplete", completeness.isComplete},

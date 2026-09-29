@@ -17,6 +17,7 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -31,7 +32,10 @@ const std::vector<semantic::TransitionEvent> &
     if (roomTracker.getEventHistory(p_roomTrackerEventHistory) !=
         semantic::RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS)
     {
-        // getEventHistory cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getEventHistory returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     return (*p_roomTrackerEventHistory);
 }

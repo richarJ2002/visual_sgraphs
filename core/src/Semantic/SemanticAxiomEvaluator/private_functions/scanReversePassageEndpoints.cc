@@ -77,6 +77,7 @@
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 namespace vs_graphs
@@ -162,7 +163,11 @@ SemanticAxiomEvaluatorStatus
                     SemanticAxiomEvaluatorStatus::
                         SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
                 {
-                    // countRoomRecordsWithKey cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: countRoomRecordsWithKey returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (roomRecords > 1U)
                 {

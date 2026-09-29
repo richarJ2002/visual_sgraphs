@@ -26,6 +26,7 @@
 #include "Semantic/SemanticGraphSnapshot/private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 #include "Map.h"
 
@@ -44,20 +45,29 @@ SemanticGraphSnapshotStatus captureFloor(Floor            *p_floor_in,
     int         floor_inId{};
     if (p_floor_in->getId(floor_inId) != FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     EntityKey key2{};
     if (makeKey(EntityKind::FLOOR, mapId_in, floor_inId, key2) !=
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
     {
-        // makeKey cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: makeKey returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     record.key = key2;
 
     core::Map *p_declaredMap = nullptr;
     if (p_floor_in->getMap(p_declaredMap) != FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_declaredMap != nullptr)
     {
@@ -68,7 +78,10 @@ SemanticGraphSnapshotStatus captureFloor(Floor            *p_floor_in,
     if (p_floor_in->getCentroid(floor_inCentroid) !=
         FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     record.centroid_World_m = floor_inCentroid;
     /* A single getPlaneIdentity() read: calling hasPlaneIdentity() first
@@ -79,7 +92,10 @@ SemanticGraphSnapshotStatus captureFloor(Floor            *p_floor_in,
     if (p_floor_in->getPlaneIdentity(floor_inPlaneIdentity) !=
         FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getPlaneIdentity cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneIdentity returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     record.planeIdentity = floor_inPlaneIdentity;
 
@@ -87,14 +103,20 @@ SemanticGraphSnapshotStatus captureFloor(Floor            *p_floor_in,
     if (p_floor_in->getRooms(floor_inRooms) !=
         FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getRooms cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     for (Room *p_room : floor_inRooms)
     {
         if (appendRoomRef(p_room, record.roomRefs) !=
             SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
-            // appendRoomRef cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: appendRoomRef returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
     }
     std::sort(record.roomRefs.begin(), record.roomRefs.end(), &isEntityRefLess);

@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -104,7 +105,10 @@ void Frame::computeStereoFishEyeMatches()
                 camera_models::kannalabrandt8::KannalaBrandt8Status::
                     KANNALA_BRANDT8_STATUS_SUCCESS)
             {
-                // triangulateMatches cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: triangulateMatches returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (depth > 0.0001f)
             {

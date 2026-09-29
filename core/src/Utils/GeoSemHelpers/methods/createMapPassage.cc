@@ -24,6 +24,7 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 #include <sstream>
 
 namespace vs_graphs
@@ -71,7 +72,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     if (p_wallPlane_in->isBad(wallPlaneIsBad) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (wallPlaneIsBad)
     {
@@ -79,7 +83,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_wallPlane_in->getId(wallPlaneGetId) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cerr << "[GeoSemHelper] Cannot create passage: wall plane"
                   << wallPlaneGetId << " is bad." << std::endl;
@@ -96,7 +103,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     const size_t minimumObservation =
         p_params->roomSeg.minimumWallObservationCount;
@@ -104,7 +114,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     if (p_wallPlane_in->getObservationCount(wallPlaneGetObservationCount) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getObservationCount cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getObservationCount returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (wallPlaneGetObservationCount >= minimumObservation)
     {
@@ -117,14 +130,20 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_wallPlane_in->getId(wallPlaneGetId2) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::size_t wallPlaneGetObservationCount2{};
         if (p_wallPlane_in->getObservationCount(
                 wallPlaneGetObservationCount2) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getObservationCount cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservationCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::cerr << "[GeoSemHelper] Cannot create passage: wall plane "
                   << wallPlaneGetId2 << " has insufficient observations ("
@@ -146,14 +165,20 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     if (types::SystemParams::getParams(p_params2) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     double               width     = p_params2->semSeg.maxDoorWidth;
     types::SystemParams *p_params3 = nullptr;
     if (types::SystemParams::getParams(p_params3) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     double height = p_params3->semSeg.maxDoorHeight;
 
@@ -168,7 +193,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_doorPlane_in->isBad(doorPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (doorPlaneIsBad)
         {
@@ -176,7 +204,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
             if (p_doorPlane_in->getId(doorPlaneGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::cerr << "[GeoSemHelper] Cannot create passage: door plane "
                       << doorPlaneGetId << " is bad." << std::endl;
@@ -188,14 +219,20 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_doorPlane_in->getCentroid(doorPlaneGetCentroid) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         centroid = doorPlaneGetCentroid;
         g2o::Plane3D doorPlaneGetGlobalEquation{};
         if (p_doorPlane_in->getGlobalEquation(doorPlaneGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         passageEquation = doorPlaneGetGlobalEquation;
 
@@ -204,7 +241,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_doorPlane_in->getGeometrySnapshot(doorPlaneGetGeometrySnapshot) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGeometrySnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_doorCloud =
             doorPlaneGetGeometrySnapshot.supportCloud;
@@ -219,7 +259,11 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                     measuredDimensions) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // computePlaneWidthHeight cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: computePlaneWidthHeight returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
 
             /* Extract the dimensions of the door from the tuple */
@@ -233,7 +277,11 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                 if (types::SystemParams::getParams(p_params4) !=
                     types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
                 {
-                    // getParams cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getParams returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 width = std::min(
                     measuredWidth,
@@ -247,7 +295,11 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                 if (types::SystemParams::getParams(p_params5) !=
                     types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
                 {
-                    // getParams cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getParams returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 height = std::min(
                     measuredHeight,
@@ -268,7 +320,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_wallPlane_in->getGlobalEquation(wallPlaneGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector4d wallEquation = wallPlaneGetGlobalEquation.coeffs();
 
@@ -281,7 +336,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
             if (p_wallPlane_in->getId(wallPlaneGetId3) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             std::cerr << "[GeoSemHelper] Cannot create open passage: wall "
                       << wallPlaneGetId3 << " has an invalid plane equation."
@@ -319,7 +377,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     if (types::SystemParams::getParams(p_params6) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     const double duplicateDistanceThreshold =
         p_params6->semSeg.passageCentroidDistanceThresh;
@@ -357,7 +418,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_existingPassage->getCentroid(existingPassageCentroid) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector3d centroidDistanceVector =
             (centroid - existingPassageCentroid);
@@ -377,7 +441,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                 existingPassageGlobalEquation) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector4d existingEquation =
             existingPassageGlobalEquation.coeffs();
@@ -430,7 +497,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_existingPassage->getCentroid(existingPassageCentroid2) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         const double candidatePlaneResidual_m =
             std::abs(normalizedCandidateEquation.head<3>().dot(
@@ -470,7 +540,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_existingPassage->getAssociateWalls(existingSupportingWalls) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getAssociateWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAssociateWalls returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const bool isKnownSupportingFace =
             std::find(existingSupportingWalls.begin(),
@@ -482,12 +555,18 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
             if (p_existingPassage->setPassable(true) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_existingPassage->setCentroid(centroid) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             if (isKnownSupportingFace)
@@ -495,7 +574,11 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                 if (p_existingPassage->setGlobalEquation(passageEquation) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // setGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
         }
@@ -503,7 +586,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_existingPassage->addAssociateWall(p_wallPlane_in) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // addAssociateWall cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addAssociateWall returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         vs_graphs::core::geometric::Plane *p_existingPassageAssociateDoor =
@@ -513,7 +599,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                 p_existingPassageAssociateDoor) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getAssociateDoor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAssociateDoor returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_doorPlane_in != nullptr &&
             p_existingPassageAssociateDoor == nullptr)
@@ -521,7 +610,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
             if (p_existingPassage->setAssociateDoor(p_doorPlane_in) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setAssociateDoor cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setAssociateDoor returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -529,13 +621,19 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_existingPassage->getId(existingPassageId) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         bool existingPassageIsPassable{};
         if (p_existingPassage->isPassable(existingPassageIsPassable) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isPassable cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isPassable returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << "[GeoSemHelper] Updated existing semantic::Passage#"
                   << existingPassageId
@@ -562,45 +660,69 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     if (p_newMapPassage->setId(passageId) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapPassage->setMap(p_atlas_inout->getCurrentMap()) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
 
     if (p_newMapPassage->setCentroid(centroid) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapPassage->setGlobalEquation(passageEquation) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (p_newMapPassage->setWidth(width) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setWidth cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setWidth returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapPassage->setHeight(height) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setHeight cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setHeight returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_newMapPassage->setPassable(isOpenPassage_in) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setPassable cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPassable returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (p_newMapPassage->addAssociateWall(p_wallPlane_in) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // addAssociateWall cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addAssociateWall returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
 
     /*!
@@ -611,7 +733,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
             vs_graphs::core::semantic::Passage::PassageVariant::DOORWAY) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
-        // setPassageType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPassageType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (p_doorPlane_in != nullptr)
@@ -619,7 +744,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_newMapPassage->setAssociateDoor(p_doorPlane_in) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // setAssociateDoor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setAssociateDoor returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -637,7 +765,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     if (p_wallPlane_in->getId(wallPlaneGetId4) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     std::cout << "[GeoSemHelper] Creating semantic::Passage#" << passageId
               << " associated with wall " << wallPlaneGetId4;
@@ -648,7 +779,10 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         if (p_doorPlane_in->getId(doorPlaneGetId2) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << " and door plane " << doorPlaneGetId2;
     }

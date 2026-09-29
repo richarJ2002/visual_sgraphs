@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <chrono>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <thread>
 #include <unordered_set>
 
@@ -99,7 +100,11 @@ void SemanticsManager::run(void)
             if (utils::utils::Utils::reAssociateSemanticPlanes(p_atlas) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // reAssociateSemanticPlanes cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: reAssociateSemanticPlanes returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
 
@@ -146,7 +151,10 @@ void SemanticsManager::run(void)
         if (utils::utils::Utils::reAssociateRooms(p_atlas) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // reAssociateRooms cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: reAssociateRooms returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /*  Room-dependent passage steps: geometry was already refreshed
@@ -157,7 +165,11 @@ void SemanticsManager::run(void)
             if (utils::utils::Utils::reAssociatePassages(p_atlas) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // reAssociatePassages cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: reAssociatePassages returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             associatePassagesToRooms();
             detachWallsBeyondConfirmedPassages();
@@ -186,7 +198,10 @@ void SemanticsManager::run(void)
                 if (p_candidate->getId(roomId) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 const bool isTrackedProspective =
                     prospectiveRoomCycles.count(roomId) > 0U;
@@ -201,7 +216,11 @@ void SemanticsManager::run(void)
                         p_passage->isBad(passageIsBad) !=
                             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // isBad cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: isBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
                         nullptr;
@@ -210,7 +229,11 @@ void SemanticsManager::run(void)
                             p_passageProspectiveRoom) !=
                             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // getProspectiveRoom cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getProspectiveRoom returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (p_passage != nullptr && !passageIsBad &&
                         p_passageProspectiveRoom == p_candidate)
@@ -228,21 +251,32 @@ void SemanticsManager::run(void)
                 if (p_candidate->isBad(candidateIsBad) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 Eigen::Vector3d candidateCentroid{};
                 if ((!candidateIsBad) &&
                     p_candidate->getCentroid(candidateCentroid) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getCentroid cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getCentroid returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 core::Map *p_candidateMap2 = nullptr;
                 if ((!candidateIsBad && candidateCentroid.allFinite()) &&
                     p_candidate->getMap(p_candidateMap2) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getMap cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 core::Map *p_candidateMap3 = nullptr;
                 if ((!candidateIsBad && candidateCentroid.allFinite() &&
@@ -250,7 +284,11 @@ void SemanticsManager::run(void)
                     p_candidate->getMap(p_candidateMap3) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getMap cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 bool hasValidGeometry = !candidateIsBad &&
                                         candidateCentroid.allFinite() &&
@@ -264,7 +302,11 @@ void SemanticsManager::run(void)
                     if (p_passage->getGlobalEquation(passageGlobalEquation) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // getGlobalEquation cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getGlobalEquation returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     const Eigen::Vector4d passageEquation_World =
                         passageGlobalEquation.coeffs();
@@ -273,7 +315,11 @@ void SemanticsManager::run(void)
                     if (p_passage->getCentroid(passageCentroid) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // getCentroid cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getCentroid returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (!passageCentroid.allFinite() ||
                         !passageEquation_World.allFinite() ||
@@ -288,7 +334,10 @@ void SemanticsManager::run(void)
                 if (p_candidate->isBad(candidateIsBad2) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (!candidateIsBad2 && !referencingPassages.empty() &&
                     hasValidGeometry)
@@ -304,7 +353,11 @@ void SemanticsManager::run(void)
                     if (p_passage->setProspectiveRoom(nullptr) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // setProspectiveRoom cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setProspectiveRoom returned a failure status "
+                            "although it cannot fail; continuing as before.",
+                            __func__);
                     }
                 }
 
@@ -312,7 +365,10 @@ void SemanticsManager::run(void)
                 if (p_candidate->isBad(candidateIsBad3) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (!candidateIsBad3)
                 {
@@ -320,7 +376,11 @@ void SemanticsManager::run(void)
                     if (p_candidate->getMap(p_candidateMap) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // getMap cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getMap returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (p_candidateMap != nullptr)
                     {
@@ -329,7 +389,11 @@ void SemanticsManager::run(void)
                     if (p_candidate->setBad() !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // setBad cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setBad returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     if (loggedRoomCleanupIds.insert(roomId).second)
                     {
@@ -469,7 +533,10 @@ void SemanticsManager::run(void)
             semantic::SemanticCandidatesStatus::
                 SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // generate cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: generate returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << "[SemMgr] semantic_candidates count=" << candidates.size()
                   << std::endl;
@@ -514,7 +581,10 @@ void SemanticsManager::run(void)
             p_pipelineGround->isBad(pipelineGroundIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_pipelineGround != nullptr && !pipelineGroundIsBad)
         {
@@ -523,7 +593,10 @@ void SemanticsManager::run(void)
                     pipelineGroundGetGlobalEquation) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             const Eigen::Vector4d equation =
                 pipelineGroundGetGlobalEquation.coeffs();
@@ -539,14 +612,20 @@ void SemanticsManager::run(void)
                 p_plane->isBad(planeIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             geometric::Plane::PlaneVariant planeType{};
             if (!(p_plane == nullptr || planeIsBad) &&
                 p_plane->getPlaneType(planeType) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getPlaneType cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPlaneType returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_plane == nullptr || planeIsBad ||
                 planeType != geometric::Plane::PlaneVariant::WALL)
@@ -571,7 +650,10 @@ void SemanticsManager::run(void)
                 p_room->isBad(roomIsBad) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_room == nullptr || roomIsBad)
             {
@@ -581,7 +663,10 @@ void SemanticsManager::run(void)
             if (p_room->getRoomVariant(roomVariant) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getRoomVariant cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getRoomVariant returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (roomVariant == semantic::Room::RoomVariant::ROOM)
             {
@@ -595,7 +680,10 @@ void SemanticsManager::run(void)
             if (p_room->getWalls(roomWalls) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             for (geometric::Plane *p_wall : roomWalls)
             {
@@ -604,7 +692,10 @@ void SemanticsManager::run(void)
                     p_wall->isBad(wallIsBad) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_wall != nullptr && !wallIsBad)
                 {
@@ -612,7 +703,11 @@ void SemanticsManager::run(void)
                     if (p_wall->getId(wallGetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getId cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
                     }
                     ownedWallIds.insert(wallGetId);
                 }
@@ -640,7 +735,10 @@ void SemanticsManager::run(void)
                     p_passage->isBad(passageIsBad) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 return p_passage != nullptr && !passageIsBad;
             });
@@ -682,7 +780,11 @@ void SemanticsManager::run(void)
             semantic::SemanticGraphSnapshotStatus::
                 SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS)
         {
-            // captureSemanticGraphSnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: captureSemanticGraphSnapshot returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         snapshot.managerPrivateOpenPassageHypotheses =
             captureOpenPassageHypotheses();
@@ -720,14 +822,21 @@ void SemanticsManager::run(void)
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateState cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: evaluateState returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         std::vector<semantic::MapCompletenessResult> completenessResults{};
         if (semantic::evaluateMapCompleteness(snapshot, completenessResults) !=
             semantic::SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // evaluateMapCompleteness cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateMapCompleteness returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         std::string topologyDigest{};
         if (semantic::sha256HexDigest(
@@ -735,7 +844,10 @@ void SemanticsManager::run(void)
                 topologyDigest) !=
             semantic::Sha256DigestStatus::SHA256_DIGEST_STATUS_SUCCESS)
         {
-            // sha256HexDigest cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: sha256HexDigest returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::string fullGeometryDigest{};
         if (semantic::sha256HexDigest(
@@ -743,7 +855,10 @@ void SemanticsManager::run(void)
                 fullGeometryDigest) !=
             semantic::Sha256DigestStatus::SHA256_DIGEST_STATUS_SUCCESS)
         {
-            // sha256HexDigest cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: sha256HexDigest returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const std::chrono::milliseconds evaluationDuration =
             std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -761,7 +876,10 @@ void SemanticsManager::run(void)
             semantic::SemanticReportCacheStatus::
                 SEMANTIC_REPORT_CACHE_STATUS_SUCCESS)
         {
-            // update cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: update returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         semantic::SemanticReportCacheEntry semanticReportCacheGetLatest{};
@@ -769,7 +887,10 @@ void SemanticsManager::run(void)
             semantic::SemanticReportCacheStatus::
                 SEMANTIC_REPORT_CACHE_STATUS_SUCCESS)
         {
-            // getLatest cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getLatest returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         logSemanticDiagnostics(semanticReportCacheGetLatest);
 

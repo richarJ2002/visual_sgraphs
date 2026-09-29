@@ -33,6 +33,7 @@
 #include "Utils/Settings/objects/Settings.h"
 
 #include <opencv2/core/persistence.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -54,7 +55,10 @@ SettingsStatus Settings::readORB(cv::FileStorage &storage_inout)
                            parameter) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     featureCount = parameter;
     float parameter2{};
@@ -64,7 +68,10 @@ SettingsStatus Settings::readORB(cv::FileStorage &storage_inout)
                              parameter2) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     orbScaleFactor = parameter2;
     int parameter3{};
@@ -74,7 +81,10 @@ SettingsStatus Settings::readORB(cv::FileStorage &storage_inout)
                            parameter3) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     pyramidLevels = parameter3;
     int parameter4{};
@@ -84,7 +94,10 @@ SettingsStatus Settings::readORB(cv::FileStorage &storage_inout)
                            parameter4) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     initialFastThreshold = parameter4;
     int parameter5{};
@@ -94,7 +107,10 @@ SettingsStatus Settings::readORB(cv::FileStorage &storage_inout)
                            parameter5) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     minimumFastThreshold = parameter5;
 

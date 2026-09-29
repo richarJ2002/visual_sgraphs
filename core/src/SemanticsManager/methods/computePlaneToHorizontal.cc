@@ -17,6 +17,7 @@
  */
 
 #include "SemanticsManager.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -35,7 +36,10 @@ Eigen::Matrix4f SemanticsManager::computePlaneToHorizontal(
     if (p_plane_in->getGlobalEquation(planeGetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector3d planeNormal = planeGetGlobalEquation.coeffs().head<3>();
 

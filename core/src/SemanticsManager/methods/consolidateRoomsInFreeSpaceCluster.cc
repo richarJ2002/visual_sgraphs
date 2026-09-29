@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,7 +42,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         p_retainedRoom_inout->isBad(retainedRoom_inoutIsBad) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_retainedRoom_inout == nullptr || retainedRoom_inoutIsBad ||
         p_currentMap == nullptr || freeSpaceCluster_World_m_in.empty())
@@ -57,7 +61,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
     if (p_retainedRoom_inout->getCentroid(retainedCentroid_World_m) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     const auto distanceToCluster_m =
@@ -88,7 +95,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             p_duplicateRoom->isBad(duplicateRoomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_duplicateRoom == nullptr ||
             p_duplicateRoom == p_retainedRoom_inout || duplicateRoomIsBad)
@@ -109,7 +119,11 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                     p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 return p_passage != nullptr &&
                        p_passageProspectiveRoom == p_duplicateRoom;
@@ -124,13 +138,19 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         if (p_retainedRoom_inout->getRoomVariant(retainedType) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         semantic::Room::RoomVariant duplicateType{};
         if (p_duplicateRoom->getRoomVariant(duplicateType) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomVariant cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         if (retainedType != semantic::Room::RoomVariant::UNDEFINED &&
@@ -145,14 +165,20 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                 retainedRoom_inoutHasKnownLabel) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getHasKnownLabel cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getHasKnownLabel returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         bool duplicateRoomHasKnownLabel{};
         if ((retainedRoom_inoutHasKnownLabel) &&
             p_duplicateRoom->getHasKnownLabel(duplicateRoomHasKnownLabel) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getHasKnownLabel cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getHasKnownLabel returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         int retainedRoom_inoutMetaMarkerId{};
         if ((retainedRoom_inoutHasKnownLabel && duplicateRoomHasKnownLabel) &&
@@ -160,14 +186,20 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                 retainedRoom_inoutMetaMarkerId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getMetaMarkerId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMetaMarkerId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         int duplicateRoomMetaMarkerId{};
         if ((retainedRoom_inoutHasKnownLabel && duplicateRoomHasKnownLabel) &&
             p_duplicateRoom->getMetaMarkerId(duplicateRoomMetaMarkerId) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getMetaMarkerId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMetaMarkerId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (retainedRoom_inoutHasKnownLabel && duplicateRoomHasKnownLabel &&
             retainedRoom_inoutMetaMarkerId != duplicateRoomMetaMarkerId)
@@ -179,7 +211,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         if (p_duplicateRoom->getCentroid(duplicateCentroid_World_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         const double centroidDistance_m =
             (duplicateCentroid_World_m - retainedCentroid_World_m).norm();
@@ -206,13 +241,19 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         if (p_retainedRoom_inout->getPassages(retainedPassages) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getPassages cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPassages returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         std::vector<semantic::Passage *> duplicatePassages{};
         if (p_duplicateRoom->getPassages(duplicatePassages) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getPassages cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPassages returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
 
         bool              roomsSeparatedByConfirmedPassage = false;
@@ -223,7 +264,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             p_groundPlane->isBad(groundPlaneIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_groundPlane != nullptr && !groundPlaneIsBad)
         {
@@ -232,7 +276,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                     groundPlaneGetGlobalEquation) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector4d groundEquation_World =
                 groundPlaneGetGlobalEquation.coeffs();
@@ -301,7 +348,11 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                         sharedPassage_inGlobalEquation) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 Eigen::Vector4d passageEquation_World =
                     sharedPassage_inGlobalEquation.coeffs();
@@ -349,7 +400,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                 p_snapshotRoom->isBad(snapshotRoomIsBad) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_snapshotRoom != nullptr && !snapshotRoomIsBad)
             {
@@ -357,7 +411,11 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                 if (p_snapshotRoom->getWalls(snapshotRoomWalls) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getWalls cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getWalls returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 wallSnapshots.emplace_back(p_snapshotRoom, snapshotRoomWalls);
             }
@@ -369,7 +427,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         if (p_duplicateRoom->getWalls(duplicateRoomWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         for (geometric::Plane *p_wall : duplicateRoomWalls)
         {
@@ -392,14 +453,22 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                 if (p_snapshotRoom->clearWalls() !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // clearWalls cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: clearWalls returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 for (geometric::Plane *p_snapshotWall : snapshotWalls)
                 {
                     if (p_snapshotRoom->setWalls(p_snapshotWall) !=
                         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                     {
-                        // setWalls cannot fail; continue as before.
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: setWalls returned a failure status although "
+                            "it cannot fail; continuing as before.",
+                            __func__);
                     }
                 }
             }
@@ -411,7 +480,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             if (p_retainedRoom_inout->setDoorways(p_passage) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setDoorways cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setDoorways returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -420,7 +492,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                 p_retainedRoom_inoutGroundPlane) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getGroundPlane cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGroundPlane returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_retainedRoom_inoutGroundPlane == nullptr)
         {
@@ -428,13 +503,19 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             if (p_duplicateRoom->getGroundPlane(p_duplicateRoomGroundPlane) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getGroundPlane cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGroundPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_retainedRoom_inout->setGroundPlane(
                     p_duplicateRoomGroundPlane) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setGroundPlane cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGroundPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -443,56 +524,83 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                 retainedRoom_inoutHasKnownLabel2) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getHasKnownLabel cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getHasKnownLabel returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         bool duplicateRoomHasKnownLabel2{};
         if ((!retainedRoom_inoutHasKnownLabel2) &&
             p_duplicateRoom->getHasKnownLabel(duplicateRoomHasKnownLabel2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getHasKnownLabel cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getHasKnownLabel returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (!retainedRoom_inoutHasKnownLabel2 && duplicateRoomHasKnownLabel2)
         {
             if (p_retainedRoom_inout->setHasKnownLabel(true) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setHasKnownLabel cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setHasKnownLabel returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             semantic::Marker *p_duplicateRoomMetaMarker = nullptr;
             if (p_duplicateRoom->getMetaMarker(p_duplicateRoomMetaMarker) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getMetaMarker cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMetaMarker returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_retainedRoom_inout->setMetaMarker(
                     p_duplicateRoomMetaMarker) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setMetaMarker cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMetaMarker returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             int duplicateRoomMetaMarkerId2{};
             if (p_duplicateRoom->getMetaMarkerId(duplicateRoomMetaMarkerId2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getMetaMarkerId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMetaMarkerId returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_retainedRoom_inout->setMetaMarkerId(
                     duplicateRoomMetaMarkerId2) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setMetaMarkerId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMetaMarkerId returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             std::string duplicateRoomName{};
             if (p_duplicateRoom->getName(duplicateRoomName) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getName returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_retainedRoom_inout->setName(duplicateRoomName) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setName cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setName returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -502,7 +610,10 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             if (p_retainedRoom_inout->setRoomVariant(duplicateType) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setRoomVariant cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setRoomVariant returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
 
@@ -516,8 +627,11 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                                          floorWasRoomReplaced) !=
                     semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    floorWasRoomReplaced =
-                        false; // rejected input reads as before
+                    floorWasRoomReplaced = false;
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: replaceRoom rejected its input; "
+                                "continuing as before.",
+                                __func__);
                 }
             }
         }
@@ -527,30 +641,45 @@ void SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         if (p_duplicateRoom->clearWalls() !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // clearWalls cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: clearWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_duplicateRoom->clearPassages() !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // clearPassages cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: clearPassages returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_duplicateRoom->setBad() !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // setBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
 
         int duplicateRoomId{};
         if (p_duplicateRoom->getId(duplicateRoomId) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         int retainedRoom_inoutId{};
         if (p_retainedRoom_inout->getId(retainedRoom_inoutId) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << "[SemMgr] Fused semantic::Room#" << duplicateRoomId
                   << " into semantic::Room#" << retainedRoom_inoutId

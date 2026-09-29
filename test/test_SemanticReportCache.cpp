@@ -10,6 +10,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -294,7 +295,11 @@ TEST(SemanticReportCache, ConcurrentWriterAndReaderStayConsistent)
                     SemanticReportCacheStatus::
                         SEMANTIC_REPORT_CACHE_STATUS_SUCCESS)
                 {
-                    // update cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: update returned a failure status although it "
+                          "cannot fail; continuing as before.",
+                        __func__);
                 }
             }
         });

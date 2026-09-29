@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -215,7 +216,10 @@ void Frame::computeStereoMatches()
         StereoMatchOutlierRejectionStatus::
             STEREO_MATCH_OUTLIER_REJECTION_STATUS_SUCCESS)
     {
-        // rejectOutlierStereoMatches cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: rejectOutlierStereoMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 }
 

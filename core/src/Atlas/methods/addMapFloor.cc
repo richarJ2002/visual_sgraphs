@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -40,14 +41,20 @@ void Atlas::addMapFloor(semantic::Floor *p_floor_in)
     if (p_floor_in->getId(floor_inId) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     observeFloorIdentity(floor_inId);
     Map *p_ownerMap = nullptr;
     if (p_floor_in->getMap(p_ownerMap) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     p_ownerMap->addMapFloor(p_floor_in);
 }

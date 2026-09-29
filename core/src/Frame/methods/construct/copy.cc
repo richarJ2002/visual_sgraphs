@@ -36,6 +36,7 @@
 #include "StereoMatchOutlierRejection.h"
 #include "Utils/Converter/objects/Converter.h"
 
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -110,7 +111,10 @@ Frame::Frame(const Frame &frame_in) :
                                                 calibrationMatrixEigen) !=
         utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
     {
-        // toMatrix3f cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: toMatrix3f returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     for (int columnIndex = 0; columnIndex < FRAME_GRID_COLS; columnIndex++)

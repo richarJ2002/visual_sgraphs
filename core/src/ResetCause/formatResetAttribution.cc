@@ -5,6 +5,7 @@
  */
 
 #include "ResetCause.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -19,13 +20,19 @@ ResetCauseStatus formatResetAttribution(const ResetCause  cause_in,
     if (resetCauseToString(cause_in, p_text) !=
         ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
     {
-        // resetCauseToString cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: resetCauseToString returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     const char *p_text2 = nullptr;
     if (resetActionToString(action_in, p_text2) !=
         ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
     {
-        // resetActionToString cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: resetActionToString returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     resetAttribution_out = std::string("VSG_RESET_ATTRIBUTION cause=") +
                            p_text + " action=" + p_text2;

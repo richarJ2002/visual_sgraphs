@@ -33,6 +33,7 @@
 #include "Utils/Settings/objects/Settings.h"
 
 #include <opencv2/core/persistence.hpp>
+#include <rclcpp/logging.hpp>
 
 #include "Utils/Converter/objects/Converter.h"
 
@@ -52,7 +53,10 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
     if (readParameter<float>(storage_inout, "IMU.AccWalk", found, parameter) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     accelWalkNoise = parameter;
     float parameter2{};
@@ -62,7 +66,10 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
                              parameter2) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     accelNoise = parameter2;
     float parameter3{};
@@ -72,7 +79,10 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
                              parameter3) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     gyroWalkNoise = parameter3;
     float parameter4{};
@@ -82,7 +92,10 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
                              parameter4) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     gyroNoise = parameter4;
     float parameter5{};
@@ -92,7 +105,10 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
                              parameter5) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     imuErrorThreshold = parameter5;
     float parameter6{};
@@ -102,7 +118,10 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
                              parameter6) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     imuSampleRate = parameter6;
 
@@ -110,13 +129,19 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
     if (readParameter<cv::Mat>(storage_inout, "IMU.T_b_c1", found, cvTbc) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     Sophus::SE3<float> sophus{};
     if (converter::Converter::toSophus(cvTbc, sophus) !=
         converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
     {
-        // toSophus cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: toSophus returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bodyToCamera = sophus;
 
@@ -125,10 +150,12 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
                            "IMU.InsertKFsWhenLost",
                            found,
                            parameter7,
-                           false) !=
-        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+                           false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (found)
     {
@@ -140,7 +167,10 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
                                false) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // readParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: readParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         shouldInsertKeyFramesWhenLost = (bool)parameter8;
     }
@@ -154,10 +184,12 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
                            "IMU.FastInit",
                            found,
                            parameter9,
-                           false) !=
-        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+                           false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     isFastInitEnabled = parameter9 != 0;
 

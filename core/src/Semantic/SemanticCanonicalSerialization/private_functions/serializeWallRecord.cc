@@ -26,6 +26,7 @@
 #include "Semantic/SemanticCanonicalSerialization/private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 #include <utility>
 
 namespace vs_graphs
@@ -53,7 +54,10 @@ nlohmann::json serializeWallRecord(const WallRecord &value_in,
                               unavailableReasonName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // unavailableReasonName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: unavailableReasonName returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     json["observationSideConsensusReasonName"] = unavailableReasonName2;
     json["twinRef"] = serializeRawPlaneRef(value_in.twinRef);
@@ -74,7 +78,10 @@ nlohmann::json serializeWallRecord(const WallRecord &value_in,
                               unavailableReasonName3) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // unavailableReasonName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: unavailableReasonName returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     json["quarantineReasonName"] = unavailableReasonName3;
     json["observationRayEvidenceReason"] =
@@ -84,7 +91,10 @@ nlohmann::json serializeWallRecord(const WallRecord &value_in,
                               unavailableReasonName4) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // unavailableReasonName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: unavailableReasonName returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     json["observationRayEvidenceReasonName"] = unavailableReasonName4;
 

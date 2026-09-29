@@ -36,6 +36,7 @@
 #include "Utils/Utils/objects/UtilsStatus.h"
 
 #include <mutex>
+#include <rclcpp/logging.hpp>
 #include <thread>
 
 namespace vs_graphs
@@ -65,7 +66,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     p_sysParams = p_params;
 
@@ -156,7 +160,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
     if (semantic::SemanticVerify::configFromSystemParams(configuration2) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // configFromSystemParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: configFromSystemParams returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     semantic::SemanticMergeGateResult semanticMergeGate{};
     if (semantic::SemanticVerify::evaluateMapMergeGate(p_currentMap,
@@ -166,7 +173,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                                                        configuration2) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // evaluateMapMergeGate cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: evaluateMapMergeGate returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     const std::string floorVerificationResult = semanticMergeGate.floorDecision;
     const char       *p_name                  = nullptr;
@@ -174,14 +184,20 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                                                     p_name) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // mergeDecisionName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: mergeDecisionName returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     const char *p_name2 = nullptr;
     if (semantic::SemanticVerify::mergeReasonName(semanticMergeGate.reason,
                                                   p_name2) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // mergeReasonName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: mergeReasonName returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     std::cout << "[SemanticMergeGate] surviving_map=" << p_currentMap->getId()
               << " absorbed_map=" << p_mergeMap->getId()
@@ -1159,7 +1175,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 g2oSwCurrentWMerge) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // propagateSemanticPoseCorrections cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: propagateSemanticPoseCorrections returned a failure "
+                "status although it cannot fail; continuing as before.",
+                __func__);
         }
 
         semanticGeometryWasPropagated = true;
@@ -1226,7 +1246,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 if (p_existingPlane->getId(existingPlaneGetId) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 nextPlaneId = std::max(nextPlaneId, existingPlaneGetId + 1);
             }
@@ -1241,7 +1264,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 if (p_existingMarker->getId(existingMarkerId) !=
                     semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 nextMarkerId = std::max(nextMarkerId, existingMarkerId + 1);
             }
@@ -1293,7 +1319,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 p_plane->isBad(planeIsBad) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_plane == nullptr || planeIsBad)
             {
@@ -1309,7 +1338,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 if (p_plane->applyTransform(g2oSwCurrentWMerge) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // applyTransform cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyTransform returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
@@ -1317,7 +1350,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             if (p_plane->setMap(p_currentMap) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
 
             /*!
@@ -1327,7 +1363,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             if (p_plane->setId(nextPlaneId++) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // setId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
 
             /* Add the plane to the map new merged plane to the new map */
@@ -1349,19 +1388,29 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 if (p_marker->applyTransform(g2oSwCurrentWMerge) !=
                     semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
                 {
-                    // applyTransform cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyTransform returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
             if (p_marker->setMap(p_currentMap) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_marker->setId(nextMarkerId++) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
-                // setId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             p_currentMap->addMapMarker(p_marker);
             p_mergeMap->eraseMapMarker(p_marker);
@@ -1388,7 +1437,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 if (p_passage->applyTransform(g2oSwCurrentWMerge) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // applyTransform cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyTransform returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
@@ -1401,14 +1454,20 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                     p_existingPassage->getId(existingPassageId) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int passageId{};
                 if ((p_existingPassage != nullptr) &&
                     p_passage->getId(passageId) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_existingPassage != nullptr &&
                     existingPassageId == passageId)
@@ -1427,8 +1486,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                         retainedPassageWasGeometryReplaced) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    retainedPassageWasGeometryReplaced =
-                        false; // rejected input reads as before
+                    retainedPassageWasGeometryReplaced = false;
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: mergeFromDuplicate rejected its input; "
+                                "continuing as before.",
+                                __func__);
                 }
                 for (semantic::Room *p_room : currentDetectedMapRooms)
                 {
@@ -1441,8 +1503,12 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                                 roomWasAssociationReplaced) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                         {
-                            roomWasAssociationReplaced =
-                                false; // rejected input reads as before
+                            roomWasAssociationReplaced = false;
+                            RCLCPP_WARN(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: replacePassageAssociation rejected its "
+                                "input; continuing as before.",
+                                __func__);
                         }
                     }
                 }
@@ -1457,15 +1523,23 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                                 roomWasAssociationReplaced2) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                         {
-                            roomWasAssociationReplaced2 =
-                                false; // rejected input reads as before
+                            roomWasAssociationReplaced2 = false;
+                            RCLCPP_WARN(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: replacePassageAssociation rejected its "
+                                "input; continuing as before.",
+                                __func__);
                         }
                     }
                 }
                 if (p_passage->setBad() !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // setBad cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setBad returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 continue;
             }
@@ -1473,7 +1547,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             if (p_passage->setMap(p_currentMap) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             p_currentMap->addMapPassage(p_passage);
         }
@@ -1491,7 +1568,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 p_currentDetectedRoom->isBad(currentDetectedRoomIsBad) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_currentDetectedRoom == nullptr || currentDetectedRoomIsBad)
             {
@@ -1507,7 +1587,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 if (p_currentDetectedRoom->applyTransform(g2oSwCurrentWMerge) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // applyTransform cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyTransform returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
@@ -1515,7 +1599,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             if (p_currentDetectedRoom->setMap(p_currentMap) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
 
             /* Add the room to the current map */
@@ -1538,14 +1625,21 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 if (pRoom->applyTransform(g2oSwCurrentWMerge) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // applyTransform cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyTransform returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
             if (pRoom->setMap(p_currentMap) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             p_currentMap->addCandidateMapRoom(pRoom);
             p_mergeMap->eraseMarkerBasedMapRoom(pRoom);
@@ -1563,7 +1657,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 if (p_floor->applyTransform(g2oSwCurrentWMerge) !=
                     semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    // applyTransform cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: applyTransform returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             p_mergeMap->eraseMapFloor(p_floor);
@@ -1576,14 +1674,20 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                     p_existingFloor->getId(existingFloorId) !=
                         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int floorId{};
                 if ((p_existingFloor != nullptr) &&
                     p_floor->getId(floorId) !=
                         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_existingFloor != nullptr && existingFloorId == floorId)
                 {
@@ -1599,7 +1703,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             if (p_floor->setMap(p_currentMap) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // setMap cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             p_currentMap->addMapFloor(p_floor);
         }
@@ -1624,7 +1731,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                 p_room->isBad(roomIsBad) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_room == nullptr || roomIsBad)
             {
@@ -1635,7 +1745,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             if (p_room->getWalls(roomWalls) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWalls returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             for (geometric::Plane *p_wall : roomWalls)
             {
@@ -1644,7 +1757,10 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                     p_wall->isBad(wallIsBad) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 if (p_wall != nullptr && !wallIsBad)
                 {
@@ -1659,7 +1775,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             if (utils::utils::Utils::reAssociateSemanticPlanes(p_atlas) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // reAssociateSemanticPlanes cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: reAssociateSemanticPlanes returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
 
@@ -1674,7 +1794,11 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
                                                               importedRooms) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // fuseDuplicateRoomsAfterMerge cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: fuseDuplicateRoomsAfterMerge returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
 
         if (p_sysParams->semSeg.reassociate.enabled)
@@ -1682,12 +1806,19 @@ semantic::SemanticMergeDecision LoopClosing::mergeLocal()
             if (utils::utils::Utils::reAssociateRooms(p_atlas) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // reAssociateRooms cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: reAssociateRooms returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (utils::utils::Utils::reAssociatePassages(p_atlas) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // reAssociatePassages cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: reAssociatePassages returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
         }
     }

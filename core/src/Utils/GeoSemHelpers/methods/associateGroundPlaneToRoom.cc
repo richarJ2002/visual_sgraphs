@@ -17,6 +17,7 @@
  */
 
 #include "GeoSemHelpers.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -31,7 +32,10 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
     if (p_givenRoom_inout->getWalls(allWalls) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getWalls cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWalls returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     vs_graphs::core::geometric::Plane *p_associatedGroundPlane = nullptr;
     size_t                             maximumInliers          = 0;
@@ -44,7 +48,10 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
         if (plane->getPlaneType(planeType) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getPlaneType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneType returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (planeType ==
             vs_graphs::core::geometric::Plane::PlaneVariant::GROUND)
@@ -86,7 +93,10 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
             if (p_givenRoom_inout->setGroundPlane(p_associatedGroundPlane) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setGroundPlane cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGroundPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
         else
@@ -98,7 +108,10 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
                     p_atlas_in->getBiggestGroundPlane()) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // setGroundPlane cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setGroundPlane returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }

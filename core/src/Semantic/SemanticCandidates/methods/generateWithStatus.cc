@@ -6,6 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <rclcpp/logging.hpp>
 #include <set>
 #include <string>
 #include <tuple>
@@ -31,7 +32,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
     if (validateConfig(configuration_in, rejectionReason2) !=
         SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
     {
-        // validateConfig cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: validateConfig returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     result.rejectionReason = rejectionReason2;
     if (result.rejectionReason != SemanticCandidateConfigRejectionReason::NONE)
@@ -121,7 +125,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                            leftAngles) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // angleSignature cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: angleSignature returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::vector<double> rightAngles{};
         if (angleSignature(right,
@@ -130,7 +137,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                            rightAngles) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // angleSignature cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: angleSignature returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         double leftMedian{};
         if (medianExtent(left,
@@ -138,7 +148,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                          leftMedian) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // medianExtent cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: medianExtent returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         double rightMedian{};
         if (medianExtent(right,
@@ -146,7 +159,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                          rightMedian) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // medianExtent cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: medianExtent returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         std::vector<double> leftExtents{};
         if (extentSignature(left,
@@ -155,7 +171,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                             leftExtents) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // extentSignature cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: extentSignature returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::vector<double> rightExtents{};
         if (extentSignature(right,
@@ -164,7 +183,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                             rightExtents) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // extentSignature cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: extentSignature returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::vector<std::pair<double, double>> leftApertures{};
         if (apertureSignature(left,
@@ -173,7 +195,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                               leftApertures) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // apertureSignature cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: apertureSignature returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::vector<std::pair<double, double>> rightApertures{};
         if (apertureSignature(right,
@@ -182,7 +207,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                               rightApertures) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // apertureSignature cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: apertureSignature returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::vector<std::string> leftTopology{};
         if (topologySignature(left,
@@ -191,7 +219,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                               leftTopology) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // topologySignature cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: topologySignature returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::vector<std::string> rightTopology{};
         if (topologySignature(right,
@@ -200,7 +231,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                               rightTopology) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // topologySignature cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: topologySignature returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* Minimum evidence: "at least 2 walls with valid normals and bounds,
@@ -213,21 +247,30 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
         if (validWallEvidenceCount(left, validWallEvidenceCount2) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // validWallEvidenceCount cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: validWallEvidenceCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const bool  leftWallEvidence = validWallEvidenceCount2 >= 2U;
         std::size_t validWallEvidenceCount3{};
         if (validWallEvidenceCount(right, validWallEvidenceCount3) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // validWallEvidenceCount cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: validWallEvidenceCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const bool  rightWallEvidence = validWallEvidenceCount3 >= 2U;
         std::size_t validNormalCount2{};
         if (validNormalCount(left, validNormalCount2) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // validNormalCount cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: validNormalCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const bool leftMixedEvidence =
             validNormalCount2 >= 1U && !left.passageContexts.empty();
@@ -235,7 +278,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
         if (validNormalCount(right, validNormalCount3) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // validNormalCount cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: validNormalCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const bool rightMixedEvidence =
             validNormalCount3 >= 1U && !right.passageContexts.empty();
@@ -253,7 +299,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                          distance2) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // paddedMeanL1 cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: paddedMeanL1 returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         cues.angleDistance = distance2;
         if (cues.angleDistance <= configuration_in.angleTolerance_rad)
@@ -267,7 +316,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                          distance3) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // paddedMeanL1 cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: paddedMeanL1 returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         cues.extentDistance = distance3;
         double distance4{};
@@ -277,7 +329,11 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
                                     distance4) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // pairedManhattanDistance cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: pairedManhattanDistance returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         cues.apertureDistance = distance4;
         cues.isTopologyAvailable =
@@ -287,7 +343,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
             stringDistance(leftTopology, rightTopology, distance5) !=
                 SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // stringDistance cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: stringDistance returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         cues.topologyDistance    = cues.isTopologyAvailable ? distance5 : 0.0;
         const double angleWeight = !leftAngles.empty() && !rightAngles.empty()
@@ -327,21 +386,30 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
         if (validNormalCount(left, validNormalCount4) !=
             SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // validNormalCount cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: validNormalCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::size_t validNormalCount5{};
         if (!(validNormalCount4 < 2U) &&
             validNormalCount(right, validNormalCount5) !=
                 SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // validNormalCount cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: validNormalCount returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         double missingBoundsFraction2{};
         if (!(validNormalCount4 < 2U || validNormalCount5 < 2U) &&
             missingBoundsFraction(left, missingBoundsFraction2) !=
                 SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // missingBoundsFraction cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: missingBoundsFraction returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         double missingBoundsFraction3{};
         if (!(validNormalCount4 < 2U || validNormalCount5 < 2U ||
@@ -349,7 +417,10 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
             missingBoundsFraction(right, missingBoundsFraction3) !=
                 SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS)
         {
-            // missingBoundsFraction cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: missingBoundsFraction returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         candidate.hasLowConfidence =
             validNormalCount4 < 2U || validNormalCount5 < 2U ||

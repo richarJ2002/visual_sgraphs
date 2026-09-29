@@ -28,6 +28,7 @@
 #include <Eigen/Geometry>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
@@ -53,7 +54,10 @@ bool KannalaBrandt8::epipolarConstrain(
                                  parallax) !=
         KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS)
     {
-        // triangulateMatches cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: triangulateMatches returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     return parallax > 0.0001f;
 }

@@ -152,12 +152,6 @@ SystemParamsStatus
             config["geo_seg"]["pointcloud"]["downsample"]
                   ["min_points_per_voxel"]
                       .as<unsigned int>();
-        geoSeg.pointcloud.outlierRemoval.stdThreshold =
-            config["geo_seg"]["pointcloud"]["outlier_removal"]["std_threshold"]
-                .as<float>();
-        geoSeg.pointcloud.outlierRemoval.meanThreshold =
-            config["geo_seg"]["pointcloud"]["outlier_removal"]["mean_threshold"]
-                .as<unsigned int>();
 
         // Semantic Segmentation Parameters
         semSeg.minVotes      = config["sem_seg"]["min_votes"].as<float>();
@@ -235,12 +229,6 @@ SystemParamsStatus
             config["sem_seg"]["pointcloud"]["downsample"]
                   ["min_points_per_voxel"]
                       .as<unsigned int>();
-        semSeg.pointcloud.outlierRemoval.stdThreshold =
-            config["sem_seg"]["pointcloud"]["outlier_removal"]["std_threshold"]
-                .as<float>();
-        semSeg.pointcloud.outlierRemoval.meanThreshold =
-            config["sem_seg"]["pointcloud"]["outlier_removal"]["mean_threshold"]
-                .as<unsigned int>();
         semSeg.wallCreation.minimumPointCount =
             config["sem_seg"]["wall_creation"]["minimum_point_count"]
                 .as<unsigned int>();

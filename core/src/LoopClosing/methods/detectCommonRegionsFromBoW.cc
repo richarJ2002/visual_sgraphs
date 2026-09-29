@@ -31,6 +31,7 @@
 #include "System.h"
 #include "Tracking.h"
 #include "Utils/Converter/objects/Converter.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -275,7 +276,11 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                                                           correctedPose) !=
                     utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
                 {
-                    // toSophus cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: toSophus returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
 
                 vector<MapPoint *> bowMatchedMapPoints;
@@ -336,7 +341,11 @@ bool LoopClosing::detectCommonRegionsFromBoW(
                             utils::converter::ConverterStatus::
                                 CONVERTER_STATUS_SUCCESS)
                         {
-                            // toSophus cannot fail; continue as before.
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: toSophus returned a failure "
+                                         "status although it cannot fail; "
+                                         "continuing as before.",
+                                         __func__);
                         }
 
                         vector<MapPoint *> bowMatchedMapPoints;

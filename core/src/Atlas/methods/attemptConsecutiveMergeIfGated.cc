@@ -32,6 +32,7 @@
 #include "../private_functions.h"
 
 #include <algorithm>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -55,7 +56,10 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
-        // getParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     const unsigned int cooldown_s =
         p_params != nullptr ? p_params->mapMerge.mergeCooldown_s : 30U;
@@ -70,7 +74,10 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             mergeConfiguration) !=
         semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // mapMergeConfigFromSystemParams cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: mapMergeConfigFromSystemParams returned a failure "
+                     "status although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     for (Map *p_oldMap : getAllMaps())
@@ -141,14 +148,20 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
             p_oldFinalRoom->hasRoomTag(oldFinalRoomHasRoomTag) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // hasRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: hasRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         std::string oldFinalRoomRoomTag{};
         if ((p_oldFinalRoom != nullptr && oldFinalRoomHasRoomTag) &&
             p_oldFinalRoom->getRoomTag(oldFinalRoomRoomTag) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getRoomTag cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomTag returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         const bool isSeedAnchored = p_oldFinalRoom != nullptr &&
                                     oldFinalRoomHasRoomTag &&
@@ -179,7 +192,11 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
                 hasEnoughCorrespondences) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // collectCorrespondingWalls cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: collectCorrespondingWalls returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (!hasEnoughCorrespondences)
         {
@@ -202,7 +219,11 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
                 transformOldToCurrent) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
-            // computeMapTransform_Horn cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: computeMapTransform_Horn returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         if (!transformOldToCurrent.matrix().allFinite())
         {
@@ -228,7 +249,11 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
                 mergeConfiguration) !=
             semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // evaluateConsecutiveMergeGate cannot fail; continue as before.
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: evaluateConsecutiveMergeGate returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
         }
         recordAttempt();
         const char *p_name = nullptr;
@@ -236,14 +261,20 @@ void Atlas::attemptConsecutiveMergeIfGated(void)
                                                         p_name) !=
             semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // mergeDecisionName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: mergeDecisionName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const char *p_name2 = nullptr;
         if (semantic::SemanticVerify::mergeReasonName(gateResult.reason,
                                                       p_name2) !=
             semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // mergeReasonName cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: mergeReasonName returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         std::cout << "SG_PIPELINE {\"event\":\"consecutive_merge_attempt\","
                      "\"old_map_id\":"

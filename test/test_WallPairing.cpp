@@ -16,6 +16,7 @@
 #include <Eigen/Geometry>
 
 #include <memory>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -44,16 +45,25 @@ std::unique_ptr<geometric::Plane>
     auto wall = std::make_unique<geometric::Plane>();
     if (wall->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (wall->setMap(p_map_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (wall->setPlaneType(geometric::Plane::PlaneVariant::WALL) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setPlaneType cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPlaneType returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     const Eigen::Vector4d equation(normalXSign_in,
@@ -63,19 +73,28 @@ std::unique_ptr<geometric::Plane>
     if (wall->setGlobalEquation(g2o::Plane3D(equation)) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     if (wall->setCentroid(Eigen::Vector3d(planeX_m_in,
                                           (yMin_m_in + yMax_m_in) / 2.0,
                                           (zMin_m_in + zMax_m_in) / 2.0)) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (wall->setObservationOrigin_World(observationOrigin_World_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setObservationOrigin_World cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setObservationOrigin_World returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(
@@ -101,7 +120,10 @@ std::unique_ptr<geometric::Plane>
     if (wall->setMapClouds(cloud) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // setMapClouds cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMapClouds returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     return wall;
 }

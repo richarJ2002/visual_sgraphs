@@ -19,6 +19,7 @@
 #include "SemanticsManager.h"
 
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -33,7 +34,10 @@ void SemanticsManager::mergeOverlappingPassages(void)
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_groundPlane == nullptr || groundPlaneIsBad)
     {
@@ -43,7 +47,10 @@ void SemanticsManager::mergeOverlappingPassages(void)
     if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // getGlobalEquation cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getGlobalEquation returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     const Eigen::Vector4d groundEq   = groundPlaneGetGlobalEquation.coeffs();
     const double          groundNorm = groundEq.head<3>().norm();
@@ -65,7 +72,10 @@ void SemanticsManager::mergeOverlappingPassages(void)
             p_first->isBad(firstIsBad) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_first == nullptr || firstIsBad)
         {
@@ -82,7 +92,10 @@ void SemanticsManager::mergeOverlappingPassages(void)
                 p_second->isBad(secondIsBad) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_second == nullptr || secondIsBad)
             {
@@ -99,14 +112,20 @@ void SemanticsManager::mergeOverlappingPassages(void)
             if (p_first->getGlobalEquation(firstGlobalEquation) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector4d firstEquation_World = firstGlobalEquation.coeffs();
             g2o::Plane3D    secondGlobalEquation{};
             if (p_second->getGlobalEquation(secondGlobalEquation) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector4d secondEquation_World =
                 secondGlobalEquation.coeffs();
@@ -160,13 +179,19 @@ void SemanticsManager::mergeOverlappingPassages(void)
             if (p_first->getCentroid(firstCentroid_World) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector3d secondCentroid_World{};
             if (p_second->getCentroid(secondCentroid_World) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (!firstCentroid_World.allFinite() ||
                 !secondCentroid_World.allFinite())
@@ -183,26 +208,38 @@ void SemanticsManager::mergeOverlappingPassages(void)
             if (p_first->getWidth(firstWidth) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             double secondWidth{};
             if (p_second->getWidth(secondWidth) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             const double combinedHalfWidth_m = 0.5 * (firstWidth + secondWidth);
             double       firstHeight{};
             if (p_first->getHeight(firstHeight) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             double secondHeight{};
             if (p_second->getHeight(secondHeight) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             const double combinedHalfHeight_m =
                 0.5 * (firstHeight + secondHeight);
@@ -220,13 +257,19 @@ void SemanticsManager::mergeOverlappingPassages(void)
             if (p_first->getId(firstId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int secondId{};
             if (p_second->getId(secondId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             semantic::Passage *p_survivor =
                 (firstId <= secondId) ? p_first : p_second;
@@ -238,69 +281,103 @@ void SemanticsManager::mergeOverlappingPassages(void)
             if (p_absorbed->getAssociateWalls(absorbedAssociateWalls) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getAssociateWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAssociateWalls returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             for (geometric::Plane *p_wall : absorbedAssociateWalls)
             {
                 if (p_survivor->addAssociateWall(p_wall) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // addAssociateWall cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: addAssociateWall returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
             double survivorWidth{};
             if (p_survivor->getWidth(survivorWidth) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             double absorbedWidth{};
             if (p_absorbed->getWidth(absorbedWidth) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_survivor->setWidth(std::max(survivorWidth, absorbedWidth)) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             double survivorHeight{};
             if (p_survivor->getHeight(survivorHeight) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             double absorbedHeight{};
             if (p_absorbed->getHeight(absorbedHeight) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_survivor->setHeight(
                     std::max(survivorHeight, absorbedHeight)) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             bool survivorIsPassable{};
             if (p_survivor->isPassable(survivorIsPassable) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // isPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             bool absorbedIsPassable{};
             if (!(survivorIsPassable) &&
                 p_absorbed->isPassable(absorbedIsPassable) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // isPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_survivor->setPassable(survivorIsPassable ||
                                         absorbedIsPassable) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             semantic::Passage::KnownSideProvenance
                 absorbedKnownSideProvenance{};
@@ -308,26 +385,40 @@ void SemanticsManager::mergeOverlappingPassages(void)
                     absorbedKnownSideProvenance) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getKnownSideProvenance cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: getKnownSideProvenance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             if (p_survivor->mergeKnownSideProvenance(
                     absorbedKnownSideProvenance) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // mergeKnownSideProvenance cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: mergeKnownSideProvenance returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             bool survivorHasProspectiveRoom{};
             if (p_survivor->hasProspectiveRoom(survivorHasProspectiveRoom) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // hasProspectiveRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: hasProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             bool absorbedHasProspectiveRoom{};
             if ((!survivorHasProspectiveRoom) &&
                 p_absorbed->hasProspectiveRoom(absorbedHasProspectiveRoom) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // hasProspectiveRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: hasProspectiveRoom returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (!survivorHasProspectiveRoom && absorbedHasProspectiveRoom)
             {
@@ -336,12 +427,20 @@ void SemanticsManager::mergeOverlappingPassages(void)
                 if (p_absorbed->getProspectiveRoom(p_absorbedProspectiveRoom) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_survivor->setProspectiveRoom(p_absorbedProspectiveRoom) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // setProspectiveRoom cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
@@ -349,13 +448,19 @@ void SemanticsManager::mergeOverlappingPassages(void)
             if (p_survivor->getId(survivorId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             int absorbedId{};
             if (p_absorbed->getId(absorbedId) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getId cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (loggedPassageMergeIds.insert({survivorId, absorbedId}).second)
             {
@@ -363,19 +468,28 @@ void SemanticsManager::mergeOverlappingPassages(void)
                 if (p_absorbed->getId(absorbedId2) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int survivorId2{};
                 if (p_survivor->getId(survivorId2) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 int survivorId3{};
                 if (p_survivor->getId(survivorId3) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getId cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getId returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 std::cout << "[SemMgr] semantic::Passage#" << absorbedId2
                           << " overlaps semantic::Passage#" << survivorId2

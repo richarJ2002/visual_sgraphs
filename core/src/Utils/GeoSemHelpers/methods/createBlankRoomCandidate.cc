@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -84,14 +85,20 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
                 p_passage->isBad(passageIsBad) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             bool passageIsPassable{};
             if ((p_passage != nullptr && !passageIsBad) &&
                 p_passage->isPassable(passageIsPassable) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // isPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             return p_passage != nullptr && !passageIsBad && passageIsPassable;
         });
@@ -130,43 +137,64 @@ GeoSemHelpersStatus GeoSemHelpers::createBlankRoomCandidate(
 
     if (p_newRoom->setId(roomId) != semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_newRoom->setCentroid(centroid_in) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_newRoom->setMap(p_atlas_inout->getCurrentMap()) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setMap cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
 
     if (p_newRoom->setName("SE#" + std::to_string(roomId)) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setName returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
 
     if (p_newRoom->setRoomVariant(
             vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // setRoomVariant cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setRoomVariant returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 
     int newRoomId{};
     if (p_newRoom->getId(newRoomId) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getId returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     Eigen::Vector3d newRoomCentroid{};
     if (p_newRoom->getCentroid(newRoomCentroid) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     std::cout << "[GeoSemHelper] Created provisional SE#" << newRoomId << " at "
               << newRoomCentroid.transpose() << "." << std::endl;

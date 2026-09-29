@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <rclcpp/logging.hpp>
 #include <set>
 
 #include "../private_functions.h"
@@ -46,13 +47,19 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
     if (p_room_in->getCentroid(roomCentroid_World) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool isFiniteVector2{};
     if (isFiniteVector(roomCentroid_World, isFiniteVector2) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
-        // isFiniteVector cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isFiniteVector returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (!isFiniteVector2)
     {
@@ -63,7 +70,10 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
     std::vector<geometric::Plane *> room_inWalls{};
     if (p_room_in->getWalls(room_inWalls) != RoomStatus::ROOM_STATUS_SUCCESS)
     {
-        // getWalls cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWalls returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     for (geometric::Plane *p_wall : room_inWalls)
     {
@@ -76,7 +86,10 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
             p_wall->isBad(wallIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_wall == nullptr || wallIsBad)
         {
@@ -92,7 +105,10 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
         if (p_wall->getGlobalEquation(wallGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector4d coeffs     = wallGetGlobalEquation.coeffs();
         const double    normalNorm = coeffs.head<3>().norm();
@@ -121,7 +137,10 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
         if (p_wall->getId(wallGetId) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getId cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         observation.wallId       = wallGetId;
         observation.normal_World = coeffs.head<3>();
@@ -130,14 +149,20 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
         if (p_wall->getCentroid(wallGetCentroid) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         observation.centroid_World = wallGetCentroid;
         bool isFiniteVector3{};
         if (isFiniteVector(observation.centroid_World, isFiniteVector3) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
-            // isFiniteVector cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isFiniteVector returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (!isFiniteVector3)
         {
@@ -148,7 +173,10 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
         if (p_wall->getGeometrySnapshot(snapshot) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGeometrySnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (snapshot.supportCloud && !snapshot.supportCloud->empty())
         {

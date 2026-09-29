@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -61,7 +62,10 @@ void SemanticsManager::getUpdatedFloors(void)
         if (GeoSemHelpers::createMapFloor(p_atlas, recoveredFloorId) !=
             GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
-            // createMapFloor cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: createMapFloor returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -72,7 +76,10 @@ void SemanticsManager::getUpdatedFloors(void)
     if (semantic::Floor::selectBestObservedFloor(floors, p_keeperFloor) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // selectBestObservedFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: selectBestObservedFloor returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_keeperFloor == nullptr)
     {
@@ -87,7 +94,10 @@ void SemanticsManager::getUpdatedFloors(void)
         if (p_duplicateFloor->setRooms({}) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // setRooms cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setRooms returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         p_currentMap->eraseMapFloor(p_duplicateFloor);
     }
@@ -101,7 +111,10 @@ void SemanticsManager::getUpdatedFloors(void)
         if (p_groundPlane->getGeometrySnapshot(groundGeometry) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGeometrySnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const double groundNormalNorm =
             groundGeometry.equation_World.head<3>().norm();
@@ -125,7 +138,10 @@ void SemanticsManager::getUpdatedFloors(void)
         if (p_keeperFloor->clearPlaneIdentity() !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // clearPlaneIdentity cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: clearPlaneIdentity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
     }
 
@@ -136,19 +152,23 @@ void SemanticsManager::getUpdatedFloors(void)
 
     /* Remove all invalid rooms */
     confirmedRooms.erase(
-        std::remove_if(confirmedRooms.begin(),
-                       confirmedRooms.end(),
-                       [](vs_graphs::core::semantic::Room *p_room)
-                       {
-                           bool roomIsBad{};
-                           if (!(p_room == nullptr) &&
-                               p_room->isBad(roomIsBad) !=
-                                   semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                           {
-                               // isBad cannot fail; continue as before.
-                           }
-                           return p_room == nullptr || roomIsBad;
-                       }),
+        std::remove_if(
+            confirmedRooms.begin(),
+            confirmedRooms.end(),
+            [](vs_graphs::core::semantic::Room *p_room)
+            {
+                bool roomIsBad{};
+                if (!(p_room == nullptr) &&
+                    p_room->isBad(roomIsBad) !=
+                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                return p_room == nullptr || roomIsBad;
+            }),
         confirmedRooms.end());
 
     /* Keep hierarchy backlinks current even when no valid rooms remain. */
@@ -157,7 +177,10 @@ void SemanticsManager::getUpdatedFloors(void)
         if (p_keeperFloor->setRooms({}) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // setRooms cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setRooms returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         return;
     }
@@ -173,7 +196,10 @@ void SemanticsManager::getUpdatedFloors(void)
         if (p_room->getCentroid(roomCentroid) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         roomCentroids.push_back(roomCentroid);
     }
@@ -184,18 +210,27 @@ void SemanticsManager::getUpdatedFloors(void)
                                                        floorCentroid) !=
         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
     {
-        // computeCentroidFromPoints cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeCentroidFromPoints returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     if (p_keeperFloor->setRooms(confirmedRooms) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setRooms cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_keeperFloor->setCentroid(floorCentroid) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // setCentroid cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setCentroid returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
 }
 

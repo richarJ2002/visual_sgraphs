@@ -48,6 +48,7 @@
 #include "MLPnPsolver.h"
 
 #include <Eigen/Sparse>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -111,14 +112,20 @@ bool MLPnPsolver::refine()
         if (utils::converter::Converter::toMatrix3f(Rcw, matrix3f) !=
             utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
         {
-            // toMatrix3f cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: toMatrix3f returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         mRefinedTcw.block<3, 3>(0, 0) = matrix3f;
         Eigen::Matrix<float, 3, 1> vector3f{};
         if (utils::converter::Converter::toVector3f(tcw, vector3f) !=
             utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
         {
-            // toVector3f cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: toVector3f returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         mRefinedTcw.block<3, 1>(0, 3) = vector3f;
 

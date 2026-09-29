@@ -29,6 +29,7 @@
 #include "Tracking.h"
 
 #include <opencv2/imgproc.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -61,7 +62,10 @@ Sophus::SE3f System::trackRGBD(
         p_settings->needToResize(settingsNeedToResize) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // needToResize cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: needToResize returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_settings && settingsNeedToResize)
     {
@@ -70,7 +74,10 @@ Sophus::SE3f System::trackRGBD(
         if (p_settings->newImSize(settingsNewImSize) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // newImSize cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: newImSize returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         cv::resize(colorImage_in, resizedImage, settingsNewImSize);
         imToFeed = resizedImage;
@@ -78,7 +85,10 @@ Sophus::SE3f System::trackRGBD(
         if (p_settings->newImSize(settingsNewImSize2) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
-            // newImSize cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: newImSize returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         cv::resize(depthmap_in, imDepthToFeed, settingsNewImSize2);
     }
@@ -112,7 +122,10 @@ Sophus::SE3f System::trackRGBD(
             if (consumeResetCause(this, resetCause) !=
                 ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
             {
-                // consumeResetCause cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: consumeResetCause returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             p_tracker->reset();
             resetCount.fetch_add(1U, std::memory_order_relaxed);
@@ -125,14 +138,21 @@ Sophus::SE3f System::trackRGBD(
             if (consumeResetCause(this, resetCause2) !=
                 ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
             {
-                // consumeResetCause cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: consumeResetCause returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (reportResetAttribution(
                     resetCause2,
                     ResetAction::RESET_ACTIVE_MAP_EXECUTION) !=
                 ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
             {
-                // reportResetAttribution cannot fail; continue as before.
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: reportResetAttribution returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
             }
             p_tracker->resetActiveMap();
             resetCount.fetch_add(1U, std::memory_order_relaxed);

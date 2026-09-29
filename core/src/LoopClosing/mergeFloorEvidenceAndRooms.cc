@@ -24,6 +24,7 @@
  */
 
 #include "LoopClosing.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -44,7 +45,10 @@ void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
             {p_retainedFloor_inout, p_duplicateFloor_in},
             p_bestFloor) != semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // selectBestObservedFloor cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: selectBestObservedFloor returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     if (p_bestFloor == p_duplicateFloor_in)
     {
@@ -52,7 +56,10 @@ void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
         if (p_duplicateFloor_in->getPlaneIdentity(betterIdentity) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getPlaneIdentity cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPlaneIdentity returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         if (betterIdentity.has_value())
         {
@@ -62,21 +69,30 @@ void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
                     betterIdentity->observationCount) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // Rejected input: ignored, as before.
+                RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                            "%s: setPlaneIdentity rejected its input; "
+                            "continuing as before.",
+                            __func__);
             }
         }
         Eigen::Vector3d betterCentroid{};
         if (p_duplicateFloor_in->getCentroid(betterCentroid) !=
             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
         {
-            // getCentroid cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         if (betterCentroid.allFinite())
         {
             if (p_retainedFloor_inout->setCentroid(betterCentroid) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // setCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }
@@ -85,7 +101,10 @@ void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
     if (p_duplicateFloor_in->getRooms(duplicateFloor_inRooms) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
-        // getRooms cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     for (semantic::Room *p_room : duplicateFloor_inRooms)
     {
@@ -94,14 +113,20 @@ void mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
             p_room->isBad(roomIsBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_room != nullptr && !roomIsBad)
         {
             if (p_retainedFloor_inout->addRoom(p_room) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
-                // addRoom cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addRoom returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
         }
     }

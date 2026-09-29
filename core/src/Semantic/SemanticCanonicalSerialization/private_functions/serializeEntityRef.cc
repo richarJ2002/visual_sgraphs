@@ -24,6 +24,7 @@
  */
 
 #include "Semantic/SemanticCanonicalSerialization/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -44,7 +45,10 @@ nlohmann::json serializeEntityRef(const EntityRef &value_in)
     if (unavailableReasonName(value_in.reason, unavailableReasonName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // unavailableReasonName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: unavailableReasonName returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     json["reasonName"] = unavailableReasonName2;
     if (value_in.localId.has_value())
@@ -62,7 +66,10 @@ nlohmann::json serializeEntityRef(const EntityRef &value_in)
                               unavailableReasonName3) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // unavailableReasonName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: unavailableReasonName returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
     json["livenessUnavailableReasonName"] = unavailableReasonName3;
     return json;

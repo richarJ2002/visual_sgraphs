@@ -24,6 +24,7 @@
  */
 
 #include "Semantic/SemanticCanonicalSerialization/private_functions.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -41,7 +42,10 @@ nlohmann::json
     if (axiomCodeName(value_in.axiomCode, axiomCodeName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomCodeName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomCodeName returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     json["axiomCodeName"] = axiomCodeName2;
     json["result"]        = static_cast<unsigned int>(value_in.result);
@@ -49,7 +53,10 @@ nlohmann::json
     if (axiomResultName(value_in.result, axiomResultName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomResultName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomResultName returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
     json["resultName"]     = axiomResultName2;
     json["classification"] = static_cast<unsigned int>(value_in.classification);
@@ -57,7 +64,10 @@ nlohmann::json
     if (axiomClassName(value_in.classification, axiomClassName2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // axiomClassName cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: axiomClassName returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     json["classificationName"]       = axiomClassName2;
     json["contributingFindingCount"] = value_in.contributingFindingCount;

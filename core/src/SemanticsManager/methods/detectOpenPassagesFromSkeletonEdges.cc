@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -150,7 +151,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         p_groundPlane->isBad(groundPlaneIsBad) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // isBad cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     if (p_groundPlane != nullptr && !groundPlaneIsBad)
     {
@@ -158,7 +162,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         if (p_groundPlane->getGlobalEquation(groundPlaneGetGlobalEquation) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         groundEquation = groundPlaneGetGlobalEquation.coeffs();
 
@@ -237,7 +244,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             p_wall->isBad(wallIsBad) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (p_wall == nullptr || wallIsBad)
         {
@@ -248,7 +258,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         if (p_wall->getGeometrySnapshot(wallGeometry) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGeometrySnapshot cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGeometrySnapshot returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallCloud =
             wallGeometry.supportCloud;
@@ -729,7 +742,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 evidence.p_supportingWall->isBad(isBad2) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // isBad cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
             }
             if (evidence.p_supportingWall == nullptr || isBad2)
             {
@@ -758,14 +774,20 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                     getGlobalEquation2) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector3d evidenceWallNormal = getGlobalEquation2.normal();
             g2o::Plane3D    getGlobalEquation3{};
             if (candidate.p_wall->getGlobalEquation(getGlobalEquation3) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector3d candidateWallNormal = getGlobalEquation3.normal();
 
@@ -790,7 +812,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             if (candidate.p_wall->getGlobalEquation(getGlobalEquation4) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector4d candidateWallEquation = getGlobalEquation4.coeffs();
             const double    candidateWallNormalNorm =
@@ -866,7 +891,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         if (candidate.p_wall->getGlobalEquation(getGlobalEquation5) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector4d supportingWallEquation = getGlobalEquation5.coeffs();
         const double    supportingWallNormalNorm =
@@ -897,7 +925,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                     evidence.p_supportingWall->isBad(isBad2) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // isBad cannot fail; continue as before.
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
                 }
                 return evidence.p_supportingWall == nullptr || isBad2 ||
                        evidence.missedUpdateCount > maximumMissedUpdateCount;
@@ -928,7 +959,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             candidate.p_wall->isBad(isBad3) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // isBad cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (candidate.p_wall == nullptr || isBad3)
         {
@@ -939,7 +973,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         if (candidate.p_wall->getGlobalEquation(getGlobalEquation6) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector3d candidateNormal = getGlobalEquation6.normal();
 
@@ -957,7 +994,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         if (candidate.p_wall->getGlobalEquation(getGlobalEquation7) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
-            // getGlobalEquation cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
         Eigen::Vector4d candidateWallEquation = getGlobalEquation7.coeffs();
         const double    candidateWallNormalNorm =
@@ -986,7 +1026,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             if (p_existingPassage->getCentroid(existingPassageCentroid) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             const Eigen::Vector3d existingCentroid =
                 existingPassageCentroid.cast<double>();
@@ -1018,7 +1061,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                     existingPassageGlobalEquation) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getGlobalEquation cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getGlobalEquation returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             Eigen::Vector3d existingNormal =
                 existingPassageGlobalEquation.normal();
@@ -1071,12 +1117,18 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             if (p_matchingPassage->setPassable(true) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setPassable cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setPassable returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_matchingPassage->setCentroid(candidate.crossingPoint) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             /*
@@ -1092,7 +1144,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             if (p_matchingPassage->getAssociateWalls(matchingSupportingWalls) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getAssociateWalls cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAssociateWalls returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             const bool isKnownSupportingFace =
                 std::find(matchingSupportingWalls.begin(),
@@ -1105,19 +1160,30 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 if (candidate.p_wall->getGlobalEquation(getGlobalEquation8) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
                 if (p_matchingPassage->setGlobalEquation(getGlobalEquation8) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // setGlobalEquation cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setGlobalEquation returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
                 }
             }
 
             if (p_matchingPassage->addAssociateWall(candidate.p_wall) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // addAssociateWall cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addAssociateWall returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
 
             /* Open passages previously carried no size estimate at all
@@ -1132,14 +1198,20 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             if (p_matchingPassage->setWidth(2.0 * candidate.openingRadius) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_matchingPassage->setHeight(
                     std::max(candidate.heightSpan_m,
                              defaultOpenPassageHeight_m)) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
 
             continue;
@@ -1183,7 +1255,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                                             candidate.crossingPoint) !=
             GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
         {
-            // createMapPassage cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: createMapPassage returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
 
         /* createMapPassage() returns void; find the passage it just
@@ -1198,7 +1273,10 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 p_created->getCentroid(createdCentroid) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // getCentroid cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getCentroid returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_created == nullptr ||
                 !createdCentroid.isApprox(candidate.crossingPoint, 1e-6))
@@ -1209,13 +1287,19 @@ void SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             if (p_created->setWidth(2.0 * candidate.openingRadius) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setWidth cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setWidth returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (p_created->setHeight(std::max(candidate.heightSpan_m,
                                               defaultOpenPassageHeight_m)) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // setHeight cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: setHeight returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             break;
         }

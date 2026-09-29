@@ -24,6 +24,7 @@
  */
 
 #include "OptimizableTypes.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -43,7 +44,10 @@ bool VertexSim3Expmap::write(std::ostream &outputStream_inout) const
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // size cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: size returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     for (size_t parameterIndex = 0; parameterIndex < firstCameraSize;
          parameterIndex++)
@@ -53,7 +57,10 @@ bool VertexSim3Expmap::write(std::ostream &outputStream_inout) const
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         outputStream_inout << firstCameraParameter << " ";
     }
@@ -63,7 +70,10 @@ bool VertexSim3Expmap::write(std::ostream &outputStream_inout) const
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
-        // size cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: size returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
     }
     for (size_t parameterIndex = 0; parameterIndex < secondCameraSize;
          parameterIndex++)
@@ -74,7 +84,10 @@ bool VertexSim3Expmap::write(std::ostream &outputStream_inout) const
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         outputStream_inout << secondCameraParameter << " ";
     }

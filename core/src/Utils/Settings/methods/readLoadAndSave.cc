@@ -35,6 +35,7 @@
 #include <string>
 
 #include <opencv2/core/persistence.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -56,10 +57,12 @@ SettingsStatus Settings::readLoadAndSave(cv::FileStorage &storage_inout)
                               "System.LoadAtlasFromFile",
                               found,
                               stringParameter,
-                              false) !=
-        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+                              false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     atlasLoadPath = stringParameter;
     string stringParameter2{};
@@ -67,10 +70,12 @@ SettingsStatus Settings::readLoadAndSave(cv::FileStorage &storage_inout)
                               "System.SaveAtlasToFile",
                               found,
                               stringParameter2,
-                              false) !=
-        SettingsStatus::SETTINGS_STATUS_SUCCESS)
+                              false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
-        // readParameter cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: readParameter returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     atlasSavePath = stringParameter2;
 

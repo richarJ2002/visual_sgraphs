@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -36,14 +37,20 @@ PassageStatus
     if (knownSideProvenance.hasDirection(knownSideProvenanceHasDirection) !=
         KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
     {
-        // hasDirection cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasDirection returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     bool provenanceHasDirection{};
     if ((!knownSideProvenanceHasDirection) &&
         provenance_in.hasDirection(provenanceHasDirection) !=
             KnownSideProvenanceStatus::KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
     {
-        // hasDirection cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: hasDirection returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
     }
     if (!knownSideProvenanceHasDirection && provenanceHasDirection)
     {

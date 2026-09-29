@@ -32,6 +32,7 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <iostream>
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -596,7 +597,11 @@ bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
                 if (utils::converter::Converter::toSophus(cvTlr, sophus) !=
                     utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
                 {
-                    // toSophus cannot fail; continue as before.
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: toSophus returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
                 }
                 poseTlr = sophus;
 
@@ -689,7 +694,10 @@ bool Tracking::parseCamParamFile(cv::FileStorage &settings_in)
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getParameter cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParameter returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
         }
         cv::FileNode node = settings_in["ThDepth"];
         if (!node.empty() && node.isReal())

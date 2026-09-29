@@ -24,6 +24,7 @@
  */
 
 #include "Atlas.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -49,14 +50,20 @@ camera_models::geometriccamera::GeometricCamera *Atlas::addCamera(
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getType returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         unsigned int existingCameraType{};
         if (p_existingCamera->getType(existingCameraType) !=
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getType returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (cameraType != existingCameraType)
             continue;
@@ -66,7 +73,10 @@ camera_models::geometriccamera::GeometricCamera *Atlas::addCamera(
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
-            // getType cannot fail; continue as before.
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getType returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
         }
         if (cameraType2 ==
             camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE)
@@ -76,7 +86,10 @@ camera_models::geometriccamera::GeometricCamera *Atlas::addCamera(
                     ->isEqual(p_camera_in, isEqual2) !=
                 camera_models::pinhole::PinholeStatus::PINHOLE_STATUS_SUCCESS)
             {
-                // isEqual cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isEqual returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (isEqual2)
             {
@@ -94,7 +107,10 @@ camera_models::geometriccamera::GeometricCamera *Atlas::addCamera(
                 camera_models::kannalabrandt8::KannalaBrandt8Status::
                     KANNALA_BRANDT8_STATUS_SUCCESS)
             {
-                // isEqual cannot fail; continue as before.
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isEqual returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
             }
             if (isEqual3)
             {

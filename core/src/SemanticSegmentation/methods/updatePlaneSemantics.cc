@@ -19,6 +19,7 @@
 #include "SemanticSegmentation.h"
 #include "Utils/Utils/objects/Utils.h"
 #include "Utils/Utils/objects/UtilsStatus.h"
+#include <rclcpp/logging.hpp>
 
 namespace vs_graphs
 {
@@ -37,14 +38,20 @@ void SemanticSegmentation::updatePlaneSemantics(int    planeId_in,
     if (utils::utils::Utils::getPlaneTypeFromClassId(clsId_in, planeType) !=
         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
     {
-        // getPlaneTypeFromClassId cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPlaneTypeFromClassId returned a failure status "
+                     "although it cannot fail; continuing as before.",
+                     __func__);
     }
 
     // cast a vote for the plane semantics
     if (p_matchedPlane->castWeightedVote(planeType, confidence_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
-        // castWeightedVote cannot fail; continue as before.
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: castWeightedVote returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
     }
 }
 
