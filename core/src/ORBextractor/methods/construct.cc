@@ -68,7 +68,9 @@ namespace vs_graphs
 namespace core
 {
 
-static int orbBitPattern31[256 * 4] = {
+/* BRIEF test pattern: 256 tests, each two sampling points stored as
+ * (x, y) integer pairs in pixels relative to the keypoint. */
+static const int orbBitPattern31[256 * 4] = {
     8,   -3,  9,   5 /*mean (0), correlation (0)*/,
     4,   2,   7,   -12 /*mean (1.12461e-05), correlation (0.0437584)*/,
     -11, 9,   -8,  2 /*mean (3.37382e-05), correlation (0.0617409)*/,
@@ -375,11 +377,14 @@ ORBextractor::ORBextractor(int   featureCount_in,
     }
     featuresPerLevel[levelCount - 1] = std::max(featureCount - sumFeatures, 0);
 
-    const int    npoints    = 512;
-    const Point *p_pattern0 = (const Point *)orbBitPattern31;
-    std::copy(p_pattern0,
-              p_pattern0 + npoints,
-              std::back_inserter(briefPattern));
+    /* 512 sampling points, read from the table's (x, y) pairs. */
+    const int pointCount = 512;
+    briefPattern.reserve(briefPattern.size() + pointCount);
+    for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
+    {
+        briefPattern.emplace_back(orbBitPattern31[2 * pointIndex],
+                                  orbBitPattern31[2 * pointIndex + 1]);
+    }
 
     // This is for orientation
     //  pre-compute the end of a row in a circular patch
