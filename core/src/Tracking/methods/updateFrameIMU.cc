@@ -165,8 +165,8 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector3f velocity{};
-        if (lastFrame.p_lastKeyFrame->getVelocity(velocity) !=
+        Eigen::Vector3f lastKeyFrameVelocity{};
+        if (lastFrame.p_lastKeyFrame->getVelocity(lastKeyFrameVelocity) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -174,7 +174,9 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (lastFrame.setImuPoseVelocity(imuRotation, imuPosition, velocity) !=
+        if (lastFrame.setImuPoseVelocity(imuRotation,
+                                         imuPosition,
+                                         lastKeyFrameVelocity) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

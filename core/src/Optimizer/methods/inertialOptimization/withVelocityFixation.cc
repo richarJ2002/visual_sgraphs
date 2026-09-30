@@ -216,26 +216,27 @@ OptimizerStatus Optimizer::inertialOptimization(
                 optimizer.vertex(p_keyFrame->id);
             g2o::HyperGraph::Vertex *p_secondVelocityVertex =
                 optimizer.vertex(maximumKeyFrameId + (p_keyFrame->id) + 1);
-            g2o::HyperGraph::Vertex *p_gyroBiasVertex =
+            g2o::HyperGraph::Vertex *p_gyroBiasGraphVertex =
                 optimizer.vertex(maximumKeyFrameId * 2 + 2);
-            g2o::HyperGraph::Vertex *p_accelerometerBiasVertex =
+            g2o::HyperGraph::Vertex *p_accelerometerBiasGraphVertex =
                 optimizer.vertex(maximumKeyFrameId * 2 + 3);
-            g2o::HyperGraph::Vertex *p_gravityDirectionVertex =
+            g2o::HyperGraph::Vertex *p_gravityDirectionGraphVertex =
                 optimizer.vertex(maximumKeyFrameId * 2 + 4);
-            g2o::HyperGraph::Vertex *p_scaleVertex =
+            g2o::HyperGraph::Vertex *p_scaleGraphVertex =
                 optimizer.vertex(maximumKeyFrameId * 2 + 5);
             if (!p_firstPoseVertex || !p_firstVelocityVertex ||
-                !p_gyroBiasVertex || !p_accelerometerBiasVertex ||
+                !p_gyroBiasGraphVertex || !p_accelerometerBiasGraphVertex ||
                 !p_secondPoseVertex || !p_secondVelocityVertex ||
-                !p_gravityDirectionVertex || !p_scaleVertex)
+                !p_gravityDirectionGraphVertex || !p_scaleGraphVertex)
             {
                 std::cout << "Error" << p_firstPoseVertex << ", "
-                          << p_firstVelocityVertex << ", " << p_gyroBiasVertex
-                          << ", " << p_accelerometerBiasVertex << ", "
+                          << p_firstVelocityVertex << ", "
+                          << p_gyroBiasGraphVertex << ", "
+                          << p_accelerometerBiasGraphVertex << ", "
                           << p_secondPoseVertex << ", "
                           << p_secondVelocityVertex << ", "
-                          << p_gravityDirectionVertex << ", " << p_scaleVertex
-                          << std::endl;
+                          << p_gravityDirectionGraphVertex << ", "
+                          << p_scaleGraphVertex << std::endl;
 
                 continue;
             }
@@ -249,10 +250,10 @@ OptimizerStatus Optimizer::inertialOptimization(
                               p_firstVelocityVertex));
             ei->setVertex(2,
                           dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                              p_gyroBiasVertex));
+                              p_gyroBiasGraphVertex));
             ei->setVertex(3,
                           dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                              p_accelerometerBiasVertex));
+                              p_accelerometerBiasGraphVertex));
             ei->setVertex(4,
                           dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                               p_secondPoseVertex));
@@ -261,10 +262,10 @@ OptimizerStatus Optimizer::inertialOptimization(
                               p_secondVelocityVertex));
             ei->setVertex(6,
                           dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                              p_gravityDirectionVertex));
-            ei->setVertex(
-                7,
-                dynamic_cast<g2o::OptimizableGraph::Vertex *>(p_scaleVertex));
+                              p_gravityDirectionGraphVertex));
+            ei->setVertex(7,
+                          dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                              p_scaleGraphVertex));
 
             vpei.push_back(ei);
 

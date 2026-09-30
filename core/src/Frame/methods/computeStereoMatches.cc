@@ -144,11 +144,13 @@ FrameStatus Frame::computeStereoMatches()
         if (bestDistance < thresholdOrbDistance)
         {
             // coordinates in image pyramid at keypoint scale
-            const float bestRightU  = keyPointsRight[bestIndexR].pt.x;
-            const float scaleFactor = invScaleFactors[keyPointL.octave];
-            const float scaleduL    = std::round(keyPointL.pt.x * scaleFactor);
-            const float scaledvL    = std::round(keyPointL.pt.y * scaleFactor);
-            const float scaleduR0   = std::round(bestRightU * scaleFactor);
+            const float bestRightU         = keyPointsRight[bestIndexR].pt.x;
+            const float inverseScaleFactor = invScaleFactors[keyPointL.octave];
+            const float scaleduL =
+                std::round(keyPointL.pt.x * inverseScaleFactor);
+            const float scaledvL =
+                std::round(keyPointL.pt.y * inverseScaleFactor);
+            const float scaleduR0 = std::round(bestRightU * inverseScaleFactor);
 
             // sliding window search
             const int w  = 5;
@@ -156,9 +158,9 @@ FrameStatus Frame::computeStereoMatches()
                              .rowRange(scaledvL - w, scaledvL + w + 1)
                              .colRange(scaleduL - w, scaleduL + w + 1);
 
-            int                bestDistance = INT_MAX;
-            int                bestincR     = 0;
-            const int          L            = 5;
+            int                bestPatchDistance = INT_MAX;
+            int                bestincR          = 0;
+            const int          L                 = 5;
             std::vector<float> dists;
             dists.resize(2 * L + 1);
 
@@ -177,10 +179,10 @@ FrameStatus Frame::computeStereoMatches()
                                            scaleduR0 + incR + w + 1);
 
                 float distance = cv::norm(IL, IR, cv::NORM_L1);
-                if (distance < bestDistance)
+                if (distance < bestPatchDistance)
                 {
-                    bestDistance = distance;
-                    bestincR     = incR;
+                    bestPatchDistance = distance;
+                    bestincR          = incR;
                 }
 
                 dists[L + incR] = distance;
@@ -217,7 +219,7 @@ FrameStatus Frame::computeStereoMatches()
                 depths[iL] = mbf / disparity;
                 uRight[iL] = bestuR;
                 distanceIndices.push_back(
-                    std::pair<int, int>(bestDistance, iL));
+                    std::pair<int, int>(bestPatchDistance, iL));
             }
         }
     }

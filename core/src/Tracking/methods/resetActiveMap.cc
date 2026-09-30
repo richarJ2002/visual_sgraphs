@@ -216,10 +216,10 @@ TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    for (Map *p_map : atlasAllMaps)
+    for (Map *p_atlasMap : atlasAllMaps)
     {
         std::vector<KeyFrame *> mapAllKeyFrames{};
-        if (p_map->getAllKeyFrames(mapAllKeyFrames) !=
+        if (p_atlasMap->getAllKeyFrames(mapAllKeyFrames) !=
             MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -230,7 +230,7 @@ TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
         if (mapAllKeyFrames.size() > 0)
         {
             unsigned int mapLowerKeyFrameId{};
-            if (p_map->getLowerKeyFrameId(mapLowerKeyFrameId) !=
+            if (p_atlasMap->getLowerKeyFrameId(mapLowerKeyFrameId) !=
                 MapStatus::MAP_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -241,7 +241,7 @@ TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
             if (index > mapLowerKeyFrameId)
             {
                 unsigned int mapLowerKeyFrameId2{};
-                if (p_map->getLowerKeyFrameId(mapLowerKeyFrameId2) !=
+                if (p_atlasMap->getLowerKeyFrameId(mapLowerKeyFrameId2) !=
                     MapStatus::MAP_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(

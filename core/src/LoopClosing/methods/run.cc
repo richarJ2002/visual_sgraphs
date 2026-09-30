@@ -965,8 +965,8 @@ void LoopClosing::run(void)
                          __func__);
         }
 
-        bool isFinishRequested{};
-        if (checkFinish(isFinishRequested) !=
+        bool shouldFinish{};
+        if (checkFinish(shouldFinish) !=
             LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -974,7 +974,7 @@ void LoopClosing::run(void)
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (isFinishRequested)
+        if (shouldFinish)
         {
             break;
         }

@@ -346,8 +346,8 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
             if (p_map == p_activeMap)
                 continue;
 
-            std::vector<KeyFrame *> keyFrames{};
-            if (p_map->getAllKeyFrames(keyFrames) !=
+            std::vector<KeyFrame *> mapKeyFrames{};
+            if (p_map->getAllKeyFrames(mapKeyFrames) !=
                 MapStatus::MAP_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -356,10 +356,10 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                              __func__);
             }
 
-            for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
+            for (size_t keyFrameIndex = 0; keyFrameIndex < mapKeyFrames.size();
                  keyFrameIndex++)
             {
-                KeyFrame    *p_keyFrame = keyFrames[keyFrameIndex];
+                KeyFrame    *p_keyFrame = mapKeyFrames[keyFrameIndex];
                 Sophus::SE3f keyFramePoseInverse2{};
                 if (p_keyFrame->getPoseInverse(keyFramePoseInverse2) !=
                     KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -378,7 +378,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                 glMultMatrixf(Twc.data());
 
                 KeyFrame *p_parent2 = nullptr;
-                if (keyFrames[keyFrameIndex]->getParent(p_parent2) !=
+                if (mapKeyFrames[keyFrameIndex]->getParent(p_parent2) !=
                     KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(

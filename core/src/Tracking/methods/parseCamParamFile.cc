@@ -414,10 +414,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
         {
             // Right camera
             // Camera calibration parameters
-            cv::FileNode node = settings_in["Camera2.fx"];
-            if (!node.empty() && node.isReal())
+            cv::FileNode camera2Node = settings_in["Camera2.fx"];
+            if (!camera2Node.empty() && camera2Node.isReal())
             {
-                fx = node.real();
+                fx = camera2Node.real();
             }
             else
             {
@@ -426,10 +426,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                           << std::endl;
                 isParameterMissing = true;
             }
-            node = settings_in["Camera2.fy"];
-            if (!node.empty() && node.isReal())
+            camera2Node = settings_in["Camera2.fy"];
+            if (!camera2Node.empty() && camera2Node.isReal())
             {
-                fy = node.real();
+                fy = camera2Node.real();
             }
             else
             {
@@ -439,10 +439,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                 isParameterMissing = true;
             }
 
-            node = settings_in["Camera2.cx"];
-            if (!node.empty() && node.isReal())
+            camera2Node = settings_in["Camera2.cx"];
+            if (!camera2Node.empty() && camera2Node.isReal())
             {
-                cx = node.real();
+                cx = camera2Node.real();
             }
             else
             {
@@ -452,10 +452,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                 isParameterMissing = true;
             }
 
-            node = settings_in["Camera2.cy"];
-            if (!node.empty() && node.isReal())
+            camera2Node = settings_in["Camera2.cy"];
+            if (!camera2Node.empty() && camera2Node.isReal())
             {
-                cy = node.real();
+                cy = camera2Node.real();
             }
             else
             {
@@ -466,10 +466,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
             }
 
             // Distortion parameters
-            node = settings_in["Camera2.k1"];
-            if (!node.empty() && node.isReal())
+            camera2Node = settings_in["Camera2.k1"];
+            if (!camera2Node.empty() && camera2Node.isReal())
             {
-                k1 = node.real();
+                k1 = camera2Node.real();
             }
             else
             {
@@ -478,10 +478,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                           << std::endl;
                 isParameterMissing = true;
             }
-            node = settings_in["Camera2.k2"];
-            if (!node.empty() && node.isReal())
+            camera2Node = settings_in["Camera2.k2"];
+            if (!camera2Node.empty() && camera2Node.isReal())
             {
-                k2 = node.real();
+                k2 = camera2Node.real();
             }
             else
             {
@@ -491,10 +491,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                 isParameterMissing = true;
             }
 
-            node = settings_in["Camera2.k3"];
-            if (!node.empty() && node.isReal())
+            camera2Node = settings_in["Camera2.k3"];
+            if (!camera2Node.empty() && camera2Node.isReal())
             {
-                k3 = node.real();
+                k3 = camera2Node.real();
             }
             else
             {
@@ -504,10 +504,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                 isParameterMissing = true;
             }
 
-            node = settings_in["Camera2.k4"];
-            if (!node.empty() && node.isReal())
+            camera2Node = settings_in["Camera2.k4"];
+            if (!camera2Node.empty() && camera2Node.isReal())
             {
-                k4 = node.real();
+                k4 = camera2Node.real();
             }
             else
             {
@@ -523,10 +523,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
             int rightLappingBegin = -1;
             int rightLappingEnd   = -1;
 
-            node = settings_in["Camera.lappingBegin"];
-            if (!node.empty() && node.isInt())
+            camera2Node = settings_in["Camera.lappingBegin"];
+            if (!camera2Node.empty() && camera2Node.isInt())
             {
-                leftLappingBegin = node.operator int();
+                leftLappingBegin = camera2Node.operator int();
             }
             else
             {
@@ -534,20 +534,20 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                     << "WARNING: Camera.lappingBegin not correctly defined"
                     << std::endl;
             }
-            node = settings_in["Camera.lappingEnd"];
-            if (!node.empty() && node.isInt())
+            camera2Node = settings_in["Camera.lappingEnd"];
+            if (!camera2Node.empty() && camera2Node.isInt())
             {
-                leftLappingEnd = node.operator int();
+                leftLappingEnd = camera2Node.operator int();
             }
             else
             {
                 std::cout << "WARNING: Camera.lappingEnd not correctly defined"
                           << std::endl;
             }
-            node = settings_in["Camera2.lappingBegin"];
-            if (!node.empty() && node.isInt())
+            camera2Node = settings_in["Camera2.lappingBegin"];
+            if (!camera2Node.empty() && camera2Node.isInt())
             {
-                rightLappingBegin = node.operator int();
+                rightLappingBegin = camera2Node.operator int();
             }
             else
             {
@@ -555,10 +555,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                     << "WARNING: Camera2.lappingBegin not correctly defined"
                     << std::endl;
             }
-            node = settings_in["Camera2.lappingEnd"];
-            if (!node.empty() && node.isInt())
+            camera2Node = settings_in["Camera2.lappingEnd"];
+            if (!camera2Node.empty() && camera2Node.isInt())
             {
-                rightLappingEnd = node.operator int();
+                rightLappingEnd = camera2Node.operator int();
             }
             else
             {
@@ -566,11 +566,11 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                           << std::endl;
             }
 
-            node = settings_in["Tlr"];
+            camera2Node = settings_in["Tlr"];
             cv::Mat cvTlr;
-            if (!node.empty())
+            if (!camera2Node.empty())
             {
-                cvTlr = node.mat();
+                cvTlr = camera2Node.mat();
                 if (cvTlr.rows != 3 || cvTlr.cols != 4)
                 {
                     std::cerr

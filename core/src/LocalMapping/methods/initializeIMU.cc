@@ -589,9 +589,9 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
 
     while (!keyFramesToCorrect.empty())
     {
-        KeyFrame            *p_walkKeyFrame = keyFramesToCorrect.front();
+        KeyFrame            *p_correctionKeyFrame = keyFramesToCorrect.front();
         std::set<KeyFrame *> childKeyFrames{};
-        if (p_walkKeyFrame->getChilds(childKeyFrames) !=
+        if (p_correctionKeyFrame->getChilds(childKeyFrames) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -600,7 +600,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                          __func__);
         }
         Sophus::SE3f Twc{};
-        if (p_walkKeyFrame->getPoseInverse(Twc) !=
+        if (p_correctionKeyFrame->getPoseInverse(Twc) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -639,8 +639,9 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Sophus::SE3f Tchildc    = childKeyFramePose * Twc;
-                p_childKeyFrame->tcwGBA = Tchildc * p_walkKeyFrame->tcwGBA;
+                Sophus::SE3f Tchildc = childKeyFramePose * Twc;
+                p_childKeyFrame->tcwGBA =
+                    Tchildc * p_correctionKeyFrame->tcwGBA;
 
                 Sophus::SE3f childKeyFramePose2{};
                 if (p_childKeyFrame->getPose(childKeyFramePose2) !=
@@ -710,7 +711,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         }
 
         Sophus::SE3f walkKeyFramePose{};
-        if (p_walkKeyFrame->getPose(walkKeyFramePose) !=
+        if (p_correctionKeyFrame->getPose(walkKeyFramePose) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -718,8 +719,8 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_walkKeyFrame->tcwBefGBA = walkKeyFramePose;
-        if (p_walkKeyFrame->setPose(p_walkKeyFrame->tcwGBA) !=
+        p_correctionKeyFrame->tcwBefGBA = walkKeyFramePose;
+        if (p_correctionKeyFrame->setPose(p_correctionKeyFrame->tcwGBA) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -728,10 +729,10 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                          __func__);
         }
 
-        if (p_walkKeyFrame->isImu)
+        if (p_correctionKeyFrame->isImu)
         {
             Eigen::Vector3f walkKeyFrameVelocity{};
-            if (p_walkKeyFrame->getVelocity(walkKeyFrameVelocity) !=
+            if (p_correctionKeyFrame->getVelocity(walkKeyFrameVelocity) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -739,8 +740,9 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            p_walkKeyFrame->vwbBefGBA = walkKeyFrameVelocity;
-            if (p_walkKeyFrame->setVelocity(p_walkKeyFrame->vwbGBA) !=
+            p_correctionKeyFrame->vwbBefGBA = walkKeyFrameVelocity;
+            if (p_correctionKeyFrame->setVelocity(
+                    p_correctionKeyFrame->vwbGBA) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -748,7 +750,8 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (p_walkKeyFrame->setNewBias(p_walkKeyFrame->biasGBA) !=
+            if (p_correctionKeyFrame->setNewBias(
+                    p_correctionKeyFrame->biasGBA) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -759,7 +762,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         }
         else
         {
-            std::cout << "KF " << p_walkKeyFrame->id
+            std::cout << "KF " << p_correctionKeyFrame->id
                       << " not set to inertial!! \n";
         }
 

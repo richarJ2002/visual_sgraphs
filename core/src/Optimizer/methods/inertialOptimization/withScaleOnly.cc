@@ -147,14 +147,14 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
             g2o::HyperGraph::Vertex *p_accelerometerBiasVertex =
                 optimizer.vertex(3 * (maximumKeyFrameId + 1) +
                                  p_keyFrame->p_prevKF->id);
-            g2o::HyperGraph::Vertex *p_gravityDirectionVertex =
+            g2o::HyperGraph::Vertex *p_gravityDirectionGraphVertex =
                 optimizer.vertex(4 * (maximumKeyFrameId + 1));
-            g2o::HyperGraph::Vertex *p_scaleVertex =
+            g2o::HyperGraph::Vertex *p_scaleGraphVertex =
                 optimizer.vertex(4 * (maximumKeyFrameId + 1) + 1);
             if (!p_firstPoseVertex || !p_firstVelocityVertex ||
                 !p_gyroBiasVertex || !p_accelerometerBiasVertex ||
                 !p_secondPoseVertex || !p_secondVelocityVertex ||
-                !p_gravityDirectionVertex || !p_scaleVertex)
+                !p_gravityDirectionGraphVertex || !p_scaleGraphVertex)
             {
                 if (Verbose::printMess(
                         "Error" + std::to_string(p_firstPoseVertex->id()) +
@@ -166,8 +166,9 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                             ", " +
                             std::to_string(p_secondVelocityVertex->id()) +
                             ", " +
-                            std::to_string(p_gravityDirectionVertex->id()) +
-                            ", " + std::to_string(p_scaleVertex->id()),
+                            std::to_string(
+                                p_gravityDirectionGraphVertex->id()) +
+                            ", " + std::to_string(p_scaleGraphVertex->id()),
                         Verbose::VERBOSITY_NORMAL) !=
                     VerboseStatus::VERBOSE_STATUS_SUCCESS)
                 {
@@ -203,10 +204,10 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                               p_secondVelocityVertex));
             ei->setVertex(6,
                           dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                              p_gravityDirectionVertex));
-            ei->setVertex(
-                7,
-                dynamic_cast<g2o::OptimizableGraph::Vertex *>(p_scaleVertex));
+                              p_gravityDirectionGraphVertex));
+            ei->setVertex(7,
+                          dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                              p_scaleGraphVertex));
             g2o::RobustKernelHuber *p_robustKernel = new g2o::RobustKernelHuber;
             ei->setRobustKernel(p_robustKernel);
             p_robustKernel->setDelta(1.f);

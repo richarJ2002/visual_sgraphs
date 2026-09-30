@@ -332,11 +332,11 @@ ORBextractorStatus ORBextractor::distributeOctTree(
     // Retain the best point in each node
     std::vector<cv::KeyPoint> resultKeys;
     resultKeys.reserve(featureCount);
-    for (std::list<ExtractorNode>::iterator nodeIterator = nodes.begin();
-         nodeIterator != nodes.end();
-         nodeIterator++)
+    for (std::list<ExtractorNode>::iterator finalNodeIterator = nodes.begin();
+         finalNodeIterator != nodes.end();
+         finalNodeIterator++)
     {
-        std::vector<cv::KeyPoint> &nodeKeys        = nodeIterator->keys;
+        std::vector<cv::KeyPoint> &nodeKeys        = finalNodeIterator->keys;
         cv::KeyPoint              *p_keyPoint      = &nodeKeys[0];
         float                      maximumResponse = p_keyPoint->response;
 

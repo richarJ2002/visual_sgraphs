@@ -231,10 +231,10 @@ Tracking::Tracking(System                    *p_sys_in,
     }
     std::cout << "\n[Tracking] Found " << cams.size() << " camera(s) in Atlas!"
               << std::endl;
-    for (camera_models::geometriccamera::GeometricCamera *p_camera : cams)
+    for (camera_models::geometriccamera::GeometricCamera *p_atlasCamera : cams)
     {
         unsigned int cameraId{};
-        if (p_camera->getId(cameraId) !=
+        if (p_atlasCamera->getId(cameraId) !=
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {
@@ -245,7 +245,7 @@ Tracking::Tracking(System                    *p_sys_in,
         }
         std::cout << "- Camera " << cameraId;
         unsigned int cameraType{};
-        if (p_camera->getType(cameraType) !=
+        if (p_atlasCamera->getType(cameraType) !=
             camera_models::geometriccamera::GeometricCameraStatus::
                 GEOMETRIC_CAMERA_STATUS_SUCCESS)
         {

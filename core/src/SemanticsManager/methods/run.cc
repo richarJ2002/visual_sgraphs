@@ -47,8 +47,8 @@ void SemanticsManager::run(void)
     while (true)
     {
         /* Graceful shutdown on System::Shutdown() */
-        bool isFinishRequested{};
-        if (checkFinish(isFinishRequested) !=
+        bool shouldFinish{};
+        if (checkFinish(shouldFinish) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -56,7 +56,7 @@ void SemanticsManager::run(void)
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (isFinishRequested)
+        if (shouldFinish)
         {
             break;
         }

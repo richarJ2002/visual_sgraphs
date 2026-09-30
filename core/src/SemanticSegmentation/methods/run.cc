@@ -35,8 +35,8 @@ void SemanticSegmentation::run()
     while (true)
     {
         /* Graceful shutdown on System::Shutdown() */
-        bool isFinishRequested{};
-        if (checkFinish(isFinishRequested) !=
+        bool shouldFinish{};
+        if (checkFinish(shouldFinish) !=
             SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -44,7 +44,7 @@ void SemanticSegmentation::run()
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (isFinishRequested)
+        if (shouldFinish)
         {
             break;
         }

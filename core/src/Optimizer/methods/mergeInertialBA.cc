@@ -206,11 +206,11 @@ OptimizerStatus
 
     // Fixed Keyframes. Keyframes that see Local MapPoints but that are not
     // Local Keyframes
-    int i = 0;
+    int processedPairCount = 0;
     for (std::vector<std::pair<MapPoint *, int>>::iterator lit  = pairs.begin(),
                                                            lend = pairs.end();
          lit != lend;
-         lit++, i++)
+         lit++, processedPairCount++)
     {
         std::map<KeyFrame *, std::tuple<int, int>> observations{};
         if (lit->first->getObservations(observations) !=
@@ -221,7 +221,7 @@ OptimizerStatus
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        if (i >= maximumCovisibleKeyFrameCount)
+        if (processedPairCount >= maximumCovisibleKeyFrameCount)
             break;
         for (std::map<KeyFrame *, std::tuple<int, int>>::iterator
                  mit  = observations.begin(),

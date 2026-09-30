@@ -190,26 +190,27 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                 optimizer.vertex(p_keyFrame->id);
             g2o::HyperGraph::Vertex *p_currentVelocityVertex =
                 optimizer.vertex(maxKeyFrameId + (p_keyFrame->id) + 1);
-            g2o::HyperGraph::Vertex *p_gyroBiasVertex =
+            g2o::HyperGraph::Vertex *p_gyroBiasGraphVertex =
                 optimizer.vertex(maxKeyFrameId * 2 + 2);
-            g2o::HyperGraph::Vertex *p_accelBiasVertex =
+            g2o::HyperGraph::Vertex *p_accelBiasGraphVertex =
                 optimizer.vertex(maxKeyFrameId * 2 + 3);
-            g2o::HyperGraph::Vertex *p_gravityDirectionVertex =
+            g2o::HyperGraph::Vertex *p_gravityDirectionGraphVertex =
                 optimizer.vertex(maxKeyFrameId * 2 + 4);
-            g2o::HyperGraph::Vertex *p_scaleVertex =
+            g2o::HyperGraph::Vertex *p_scaleGraphVertex =
                 optimizer.vertex(maxKeyFrameId * 2 + 5);
             if (!p_previousPoseVertex || !p_previousVelocityVertex ||
-                !p_gyroBiasVertex || !p_accelBiasVertex ||
+                !p_gyroBiasGraphVertex || !p_accelBiasGraphVertex ||
                 !p_currentPoseVertex || !p_currentVelocityVertex ||
-                !p_gravityDirectionVertex || !p_scaleVertex)
+                !p_gravityDirectionGraphVertex || !p_scaleGraphVertex)
             {
                 std::cout << "Error" << p_previousPoseVertex << ", "
                           << p_previousVelocityVertex << ", "
-                          << p_gyroBiasVertex << ", " << p_accelBiasVertex
-                          << ", " << p_currentPoseVertex << ", "
+                          << p_gyroBiasGraphVertex << ", "
+                          << p_accelBiasGraphVertex << ", "
+                          << p_currentPoseVertex << ", "
                           << p_currentVelocityVertex << ", "
-                          << p_gravityDirectionVertex << ", " << p_scaleVertex
-                          << std::endl;
+                          << p_gravityDirectionGraphVertex << ", "
+                          << p_scaleGraphVertex << std::endl;
 
                 continue;
             }
@@ -226,11 +227,11 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
             p_inertialEdge->setVertex(
                 2,
                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                    p_gyroBiasVertex));
+                    p_gyroBiasGraphVertex));
             p_inertialEdge->setVertex(
                 3,
                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                    p_accelBiasVertex));
+                    p_accelBiasGraphVertex));
             p_inertialEdge->setVertex(
                 4,
                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
@@ -242,10 +243,11 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
             p_inertialEdge->setVertex(
                 6,
                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
-                    p_gravityDirectionVertex));
+                    p_gravityDirectionGraphVertex));
             p_inertialEdge->setVertex(
                 7,
-                dynamic_cast<g2o::OptimizableGraph::Vertex *>(p_scaleVertex));
+                dynamic_cast<g2o::OptimizableGraph::Vertex *>(
+                    p_scaleGraphVertex));
 
             inertialEdges.push_back(p_inertialEdge);
 

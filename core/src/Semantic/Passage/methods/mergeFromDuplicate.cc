@@ -42,9 +42,9 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
                      "fail; continuing as before.",
                      __func__);
     }
-    int id{};
+    int duplicateId{};
     if (!(p_duplicate_inout == nullptr || p_duplicate_inout == this) &&
-        getId(id) != PassageStatus::PASSAGE_STATUS_SUCCESS)
+        getId(duplicateId) != PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getId returned a failure status although it cannot "
@@ -52,7 +52,7 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
                      __func__);
     }
     if (p_duplicate_inout == nullptr || p_duplicate_inout == this ||
-        duplicate_inoutId != id)
+        duplicate_inoutId != duplicateId)
     {
         return PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT;
     }

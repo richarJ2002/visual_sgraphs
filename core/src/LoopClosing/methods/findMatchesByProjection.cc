@@ -139,8 +139,8 @@ LoopClosingStatus LoopClosing::findMatchesByProjection(
         }
     }
 
-    Sophus::Sim3f correctedPose{};
-    if (utils::converter::Converter::toSophus(g2oScw_in, correctedPose) !=
+    Sophus::Sim3f correctedSim3{};
+    if (utils::converter::Converter::toSophus(g2oScw_in, correctedSim3) !=
         utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -164,7 +164,7 @@ LoopClosingStatus LoopClosing::findMatchesByProjection(
                                 static_cast<MapPoint *>(nullptr));
     int matchCount{};
     if (matcher.searchByProjection(p_currentKeyFrame_in,
-                                   correctedPose,
+                                   correctedSim3,
                                    mapPoints_out,
                                    matchedMapPoints_out,
                                    3,

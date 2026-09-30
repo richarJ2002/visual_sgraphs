@@ -30,15 +30,16 @@ namespace semantic
 
 RoomStatus Room::isBoundaryComplete(bool &isBoundaryComplete_out) const
 {
-    Room::BoundaryStatus boundaryStatus{};
-    if (getBoundaryStatus(boundaryStatus) != RoomStatus::ROOM_STATUS_SUCCESS)
+    Room::BoundaryStatus currentBoundaryStatus{};
+    if (getBoundaryStatus(currentBoundaryStatus) !=
+        RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getBoundaryStatus returned a failure status although "
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    isBoundaryComplete_out = boundaryStatus == BoundaryStatus::COMPLETE;
+    isBoundaryComplete_out = currentBoundaryStatus == BoundaryStatus::COMPLETE;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 

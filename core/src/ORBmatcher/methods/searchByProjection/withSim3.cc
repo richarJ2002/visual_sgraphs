@@ -204,10 +204,10 @@ ORBmatcherStatus
             const cv::Mat &keyFrameDescriptor =
                 pKF->descriptors.row(featureIndex);
 
-            int distance{};
+            int descriptorDistance{};
             if (computeDescriptorDistance(mapPointDescriptor,
                                           keyFrameDescriptor,
-                                          distance) !=
+                                          descriptorDistance) !=
                 ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
@@ -217,9 +217,9 @@ ORBmatcherStatus
                     __func__);
             }
 
-            if (distance < bestDistance)
+            if (descriptorDistance < bestDistance)
             {
-                bestDistance = distance;
+                bestDistance = descriptorDistance;
                 bestIndex    = featureIndex;
             }
         }

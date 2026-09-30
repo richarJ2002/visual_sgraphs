@@ -178,9 +178,9 @@ void LocalMapping::run()
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            bool isStopRequested{};
+            bool shouldStop{};
             if ((!hasNewKeyFrames3) &&
-                stopRequested(isStopRequested) !=
+                stopRequested(shouldStop) !=
                     LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -188,7 +188,7 @@ void LocalMapping::run()
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (!hasNewKeyFrames3 && !isStopRequested)
+            if (!hasNewKeyFrames3 && !shouldStop)
             {
                 unsigned long atlasKeyFrameCount{};
                 if (p_atlas->getKeyFrameCount(atlasKeyFrameCount) !=
@@ -810,9 +810,9 @@ void LocalMapping::run()
                             "it cannot fail; continuing as before.",
                             __func__);
                     }
-                    bool isFinishRequested{};
+                    bool shouldFinish{};
                     if ((isStopped3) &&
-                        checkFinish(isFinishRequested) !=
+                        checkFinish(shouldFinish) !=
                             LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -821,7 +821,7 @@ void LocalMapping::run()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    if (!(isStopped3 && !isFinishRequested))
+                    if (!(isStopped3 && !shouldFinish))
                     {
                         break;
                     }

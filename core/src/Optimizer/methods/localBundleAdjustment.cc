@@ -569,9 +569,9 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          __func__);
         }
         for (std::vector<vs_graphs::core::MapPoint *>::iterator
-                 vit  = vpMPs.begin(),
-                 vend = vpMPs.end();
-             vit != vend;
+                 vit          = vpMPs.begin(),
+                 mapPointsEnd = vpMPs.end();
+             vit != mapPointsEnd;
              vit++)
         {
             vs_graphs::core::MapPoint *p_mapPoint = *vit;
@@ -1201,9 +1201,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            for (std::set<MapPoint *>::iterator lit  = mapPoints.begin(),
-                                                lend = mapPoints.end();
-                 lit != lend;
+            for (std::set<MapPoint *>::iterator
+                     lit             = mapPoints.begin(),
+                     mapPointListEnd = mapPoints.end();
+                 lit != mapPointListEnd;
                  lit++)
             {
                 MapPoint *p_mapPoint = *lit;

@@ -273,7 +273,7 @@ LoopClosingStatus
             }
 
             // Get Map Mutex
-            std::unique_lock<std::mutex> lock(
+            std::unique_lock<std::mutex> mapUpdateLock(
                 p_activeMap_inout->mapUpdateMutex);
 
             KeyFrameAndPose keyFramePosesBefore_WorldToCamera;

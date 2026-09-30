@@ -209,7 +209,7 @@ LocalMappingStatus LocalMapping::keyFrameCulling()
                                          "fail; continuing as before.",
                                          __func__);
                         }
-                        int observationCount = 0;
+                        int similarScaleObservationCount = 0;
                         for (std::map<KeyFrame *,
                                       std::tuple<int, int>>::const_iterator
                                  observationIt  = pointObservations.begin(),
@@ -259,12 +259,13 @@ LocalMappingStatus LocalMapping::keyFrameCulling()
 
                             if (observerScaleLevel <= scaleLevel + 1)
                             {
-                                observationCount++;
-                                if (observationCount > observationThreshold)
+                                similarScaleObservationCount++;
+                                if (similarScaleObservationCount >
+                                    observationThreshold)
                                     break;
                             }
                         }
-                        if (observationCount > observationThreshold)
+                        if (similarScaleObservationCount > observationThreshold)
                         {
                             redundantObservationCount++;
                         }

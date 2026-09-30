@@ -1206,9 +1206,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         &knownSide,
                                         knownSideSign](semantic::Room *p_room)
         {
-            bool knownSideHasDirection{};
+            bool isKnownSideDirectional{};
             if (!(p_room == nullptr) &&
-                knownSide.hasDirection(knownSideHasDirection) !=
+                knownSide.hasDirection(isKnownSideDirectional) !=
                     semantic::KnownSideProvenanceStatus::
                         KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS)
             {
@@ -1217,7 +1217,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (p_room == nullptr || !knownSideHasDirection ||
+            if (p_room == nullptr || !isKnownSideDirectional ||
                 std::abs(knownSideSign) < 1e-8)
             {
                 return false;

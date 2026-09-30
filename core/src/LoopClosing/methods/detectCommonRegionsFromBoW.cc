@@ -458,9 +458,10 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                1.0);
                 g2o::Sim3 gScw = gScm * gSmw; // Similarity matrix of current
                                               // from the world position
-                Sophus::Sim3f correctedPose{};
-                if (utils::converter::Converter::toSophus(gScw,
-                                                          correctedPose) !=
+                Sophus::Sim3f candidateCorrectedPose{};
+                if (utils::converter::Converter::toSophus(
+                        gScw,
+                        candidateCorrectedPose) !=
                     utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -500,7 +501,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                         static_cast<KeyFrame *>(nullptr));
                 int numProjMatches{};
                 if (matcher.searchByProjection(p_currentKF,
-                                               correctedPose,
+                                               candidateCorrectedPose,
                                                candidateMapPoints,
                                                keyFrames,
                                                bowMatchedMapPoints,
@@ -567,17 +568,17 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                          "fail; continuing as before.",
                                          __func__);
                         }
-                        g2o::Sim3 gSmw(
+                        g2o::Sim3 gSmw2(
                             mostBowMatchesKeyFrameRotation2.cast<double>(),
                             mostBowMatchesKeyFrameTranslation2.cast<double>(),
                             1.0);
-                        g2o::Sim3 gScw =
-                            gScm * gSmw; // Similarity matrix of current from
-                                         // the world position
-                        Sophus::Sim3f correctedPose{};
+                        g2o::Sim3 gScw2 =
+                            gScm * gSmw2; // Similarity matrix of current from
+                                          // the world position
+                        Sophus::Sim3f refinedCorrectedPose{};
                         if (utils::converter::Converter::toSophus(
-                                gScw,
-                                correctedPose) !=
+                                gScw2,
+                                refinedCorrectedPose) !=
                             utils::converter::ConverterStatus::
                                 CONVERTER_STATUS_SUCCESS)
                         {
@@ -588,7 +589,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                          __func__);
                         }
 
-                        std::vector<MapPoint *> bowMatchedMapPoints;
+                        std::vector<MapPoint *> bowMatchedMapPoints2;
                         std::vector<MapPoint *> currentKFMapPointMatches5{};
                         if (p_currentKF->getMapPointMatches(
                                 currentKFMapPointMatches5) !=
@@ -600,15 +601,15 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                          "fail; continuing as before.",
                                          __func__);
                         }
-                        bowMatchedMapPoints.resize(
+                        bowMatchedMapPoints2.resize(
                             currentKFMapPointMatches5.size(),
                             static_cast<MapPoint *>(nullptr));
                         int optimizedProjectionMatchCount{};
                         if (matcher.searchByProjection(
                                 p_currentKF,
-                                correctedPose,
+                                refinedCorrectedPose,
                                 candidateMapPoints,
-                                bowMatchedMapPoints,
+                                bowMatchedMapPoints2,
                                 5,
                                 optimizedProjectionMatchCount,
                                 1.0) !=
@@ -626,7 +627,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                         {
                             int maximumX = -1, minimumX = 1000000;
                             int maximumY = -1, minimumY = 1000000;
-                            for (MapPoint *p_mapPoint : bowMatchedMapPoints)
+                            for (MapPoint *p_mapPoint : bowMatchedMapPoints2)
                             {
                                 bool mapPointIsBad{};
                                 if (!(!p_mapPoint) &&
@@ -661,12 +662,13 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                 }
                                 std::tuple<size_t, size_t> indexes =
                                     mapPointIndexInKeyFrame;
-                                int index = std::get<0>(indexes);
-                                if (index >= 0)
+                                int keyPointIndex = std::get<0>(indexes);
+                                if (keyPointIndex >= 0)
                                 {
-                                    int coordinateX =
-                                        p_keyFrame->keyPointsUndistorted[index]
-                                            .pt.x;
+                                    int coordinateX = p_keyFrame
+                                                          ->keyPointsUndistorted
+                                                              [keyPointIndex]
+                                                          .pt.x;
                                     if (coordinateX < minimumX)
                                     {
                                         minimumX = coordinateX;
@@ -675,9 +677,10 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                     {
                                         maximumX = coordinateX;
                                     }
-                                    int coordinateY =
-                                        p_keyFrame->keyPointsUndistorted[index]
-                                            .pt.y;
+                                    int coordinateY = p_keyFrame
+                                                          ->keyPointsUndistorted
+                                                              [keyPointIndex]
+                                                          .pt.y;
                                     if (coordinateY < minimumY)
                                     {
                                         minimumY = coordinateY;
@@ -747,7 +750,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                 g2o::Sim3 gSjc(mTjc.unit_quaternion(),
                                                mTjc.translation(),
                                                1.0);
-                                g2o::Sim3 gSjw = gSjc * gScw;
+                                g2o::Sim3 gSjw = gSjc * gScw2;
                                 int       covisibleProjectionMatchCount = 0;
                                 std::vector<MapPoint *>
                                      covisibleMatchedMapPoints;
@@ -792,9 +795,9 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                 bestCountCoindicendeCount = countKeyFrameCount;
                                 p_bestMatchedKeyFrame =
                                     p_mostBowMatchesKeyFrame;
-                                g2oBestScw           = gScw;
+                                g2oBestScw           = gScw2;
                                 bestMapPoints        = candidateMapPoints;
-                                bestMatchedMapPoints = bowMatchedMapPoints;
+                                bestMatchedMapPoints = bowMatchedMapPoints2;
                             }
                         }
                     }

@@ -519,16 +519,15 @@ void Viewer::run()
             }
         }
 
-        bool isFinishRequested{};
-        if (checkFinish(isFinishRequested) !=
-            ViewerStatus::VIEWER_STATUS_SUCCESS)
+        bool shouldFinish{};
+        if (checkFinish(shouldFinish) != ViewerStatus::VIEWER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: checkFinish returned a failure status although "
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (isFinishRequested)
+        if (shouldFinish)
             break;
     }
 

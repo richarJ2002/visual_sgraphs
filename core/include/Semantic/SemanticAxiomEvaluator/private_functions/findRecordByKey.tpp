@@ -47,11 +47,12 @@ SemanticAxiomEvaluatorStatus
      * resolved by simply returning that first candidate, which is
      * deterministic given records_in's own fixed sort order. */
     const typename std::vector<RecordT>::const_iterator foundIt =
-        std::lower_bound(records_in.begin(),
-                         records_in.end(),
-                         key_in,
-                         [](const RecordT &record_in, const EntityKey &key_in)
-                         { return record_in.key < key_in; });
+        std::lower_bound(
+            records_in.begin(),
+            records_in.end(),
+            key_in,
+            [](const RecordT &record_in, const EntityKey &targetKey_in)
+            { return record_in.key < targetKey_in; });
     if (foundIt == records_in.end() || foundIt->key != key_in)
     {
         p_record_out = nullptr;

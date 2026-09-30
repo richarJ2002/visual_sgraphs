@@ -226,10 +226,10 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in)
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD)
         {
-            Sophus::SE3f Twb =
+            Sophus::SE3f keyFrameTwb =
                 (p_keyFrame->imuCalibration.mTbc * (*lit) * Trw).inverse();
-            Eigen::Quaternionf q   = Twb.unit_quaternion();
-            Eigen::Vector3f    twb = Twb.translation();
+            Eigen::Quaternionf q   = keyFrameTwb.unit_quaternion();
+            Eigen::Vector3f    twb = keyFrameTwb.translation();
             f << std::setprecision(6) << 1e9 * (*lT) << " "
               << std::setprecision(9) << twb(0) << " " << twb(1) << " "
               << twb(2) << " " << q.x() << " " << q.y() << " " << q.z() << " "
