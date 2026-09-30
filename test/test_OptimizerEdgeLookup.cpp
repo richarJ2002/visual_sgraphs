@@ -22,12 +22,14 @@ TEST(OptimizerEdgeLookup, ReturnsThePointerAtAnInBoundsIndex)
     std::vector<int *> edgeKeyFrames = {&a, &b, &c};
 
     int *p_keyFrame = nullptr;
-    ASSERT_EQ(edgeSourceKeyFrame(
-                  edgeKeyFrames, static_cast<std::size_t>(0), p_keyFrame),
+    ASSERT_EQ(edgeSourceKeyFrame(edgeKeyFrames,
+                                 static_cast<std::size_t>(0),
+                                 p_keyFrame),
               OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS);
     EXPECT_EQ(p_keyFrame, &a);
-    ASSERT_EQ(edgeSourceKeyFrame(
-                  edgeKeyFrames, static_cast<std::size_t>(2), p_keyFrame),
+    ASSERT_EQ(edgeSourceKeyFrame(edgeKeyFrames,
+                                 static_cast<std::size_t>(2),
+                                 p_keyFrame),
               OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS);
     EXPECT_EQ(p_keyFrame, &c);
 }
@@ -42,15 +44,16 @@ TEST(OptimizerEdgeLookup, ReturnsNullptrForAnOutOfBoundsIndex)
     std::vector<int *> shortEdgeKeyFrames = {&a};
 
     int *p_keyFrame = &a;
-    ASSERT_EQ(edgeSourceKeyFrame(
-                  shortEdgeKeyFrames, static_cast<std::size_t>(1), p_keyFrame),
+    ASSERT_EQ(edgeSourceKeyFrame(shortEdgeKeyFrames,
+                                 static_cast<std::size_t>(1),
+                                 p_keyFrame),
               OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS);
     EXPECT_EQ(p_keyFrame, nullptr);
     p_keyFrame = &a;
-    ASSERT_EQ(
-        edgeSourceKeyFrame(
-            shortEdgeKeyFrames, static_cast<std::size_t>(100), p_keyFrame),
-        OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS);
+    ASSERT_EQ(edgeSourceKeyFrame(shortEdgeKeyFrames,
+                                 static_cast<std::size_t>(100),
+                                 p_keyFrame),
+              OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS);
     EXPECT_EQ(p_keyFrame, nullptr);
 }
 
@@ -60,8 +63,9 @@ TEST(OptimizerEdgeLookup, ReturnsNullptrForAnEmptyVector)
 
     int  a          = 1;
     int *p_keyFrame = &a;
-    ASSERT_EQ(edgeSourceKeyFrame(
-                  emptyEdgeKeyFrames, static_cast<std::size_t>(0), p_keyFrame),
+    ASSERT_EQ(edgeSourceKeyFrame(emptyEdgeKeyFrames,
+                                 static_cast<std::size_t>(0),
+                                 p_keyFrame),
               OptimizerEdgeLookupStatus::OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS);
     EXPECT_EQ(p_keyFrame, nullptr);
 }

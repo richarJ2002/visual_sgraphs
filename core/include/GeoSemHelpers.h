@@ -27,8 +27,8 @@
 #ifndef GEOSEMHELPERS_H
 #define GEOSEMHELPERS_H
 
-#include "GeoSemHelpersStatus.h"
 #include "Atlas.h"
+#include "GeoSemHelpersStatus.h"
 
 #include <Eigen/Core>
 #include <iomanip>
@@ -65,14 +65,15 @@ class GeoSemHelpers
      * @param       confidence_in
      *              The confidence of the plane observation
      */
-    [[nodiscard]] static GeoSemHelpersStatus 
-        createMapPlane(Atlas               *p_atlas_inout,
-                       vs_graphs::core::KeyFrame *p_keyFrame_inout,
-                       const g2o::Plane3D   estimatedPlane_in,
-                       const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud_in,
-                       vs_graphs::core::geometric::Plane * &p_mapPlane_out, vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in =
-                           vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED,
-                       double confidence_in = 1.0);
+    [[nodiscard]] static GeoSemHelpersStatus createMapPlane(
+        Atlas                                          *p_atlas_inout,
+        vs_graphs::core::KeyFrame                      *p_keyFrame_inout,
+        const g2o::Plane3D                              estimatedPlane_in,
+        const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr   p_planeCloud_in,
+        vs_graphs::core::geometric::Plane             *&p_mapPlane_out,
+        vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in =
+            vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED,
+        double confidence_in = 1.0);
 
     /*!
      * @brief       Updates the map plane
@@ -98,15 +99,15 @@ class GeoSemHelpers
      * @param       confidence_in
      *              The confidence of the plane observation
      */
-    [[nodiscard]] static GeoSemHelpersStatus 
-        updateMapPlane(Atlas                                  *p_atlas_in,
-                       vs_graphs::core::KeyFrame                    *p_keyFrame_inout,
-                       const g2o::Plane3D                      estimatedPlane_in,
-                       pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_planeCloud_in,
-                       int                                     planeId_in,
-                       vs_graphs::core::geometric::Plane::PlaneVariant          semanticType_in =
-                           vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED,
-                       double confidence_in = 1.0);
+    [[nodiscard]] static GeoSemHelpersStatus updateMapPlane(
+        Atlas                                          *p_atlas_in,
+        vs_graphs::core::KeyFrame                      *p_keyFrame_inout,
+        const g2o::Plane3D                              estimatedPlane_in,
+        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr         p_planeCloud_in,
+        int                                             planeId_in,
+        vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in =
+            vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED,
+        double confidence_in = 1.0);
 
     /*!
      * @brief       Checks to see if the marker is attached to a doorway or not
@@ -125,9 +126,10 @@ class GeoSemHelpers
      *
      * @return      GEO_SEM_HELPERS_STATUS_SUCCESS
      */
-    [[nodiscard]] static GeoSemHelpersStatus 
-        checkIfMarkerIsDoorway(const int                     &markerId_in,
-                               std::vector<vs_graphs::core::semantic::Room *> envRooms_in, std::pair<bool, std::string> &doorwayMatch_out);
+    [[nodiscard]] static GeoSemHelpersStatus checkIfMarkerIsDoorway(
+        const int                                     &markerId_in,
+        std::vector<vs_graphs::core::semantic::Room *> envRooms_in,
+        std::pair<bool, std::string>                  &doorwayMatch_out);
 
     /*!
      * @brief       Uses the detected markers to detect and map semantic
@@ -142,9 +144,10 @@ class GeoSemHelpers
      * @param       envRooms_in
      *              The list of rooms in the environment
      */
-    [[nodiscard]] static GeoSemHelpersStatus  markerSemanticAnalysis(Atlas                         *p_atlas_in,
-                                       vs_graphs::core::KeyFrame           *p_keyFrame_in,
-                                       std::vector<vs_graphs::core::semantic::Room *> envRooms_in);
+    [[nodiscard]] static GeoSemHelpersStatus markerSemanticAnalysis(
+        Atlas                                         *p_atlas_in,
+        vs_graphs::core::KeyFrame                     *p_keyFrame_in,
+        std::vector<vs_graphs::core::semantic::Room *> envRooms_in);
 
     /*!
      * @brief       Creates a new marker object to be added to the map
@@ -158,9 +161,11 @@ class GeoSemHelpers
      * @param       p_visitedMarker_in
      *              The address of the visited marker
      */
-    [[nodiscard]] static GeoSemHelpersStatus createMapMarker(Atlas        *p_atlas_inout,
-                                   KeyFrame     *p_keyFrame_inout,
-                                   const semantic::Marker *p_visitedMarker_in, semantic::Marker * &p_mapMarker_out);
+    [[nodiscard]] static GeoSemHelpersStatus
+        createMapMarker(Atlas                  *p_atlas_inout,
+                        KeyFrame               *p_keyFrame_inout,
+                        const semantic::Marker *p_visitedMarker_in,
+                        semantic::Marker      *&p_mapMarker_out);
 
     /*!
      * @brief       Creates a new passage object to be added to the map
@@ -181,12 +186,12 @@ class GeoSemHelpers
      * @param[in]   passageCentroid_World_m_in
      *              Open-passage centroid in the active map frame, in metres.
      */
-    [[nodiscard]] static GeoSemHelpersStatus  createMapPassage(
-        vs_graphs::core::Atlas *p_atlas_inout,
+    [[nodiscard]] static GeoSemHelpersStatus createMapPassage(
+        vs_graphs::core::Atlas            *p_atlas_inout,
         vs_graphs::core::geometric::Plane *p_doorPlane_in,
         vs_graphs::core::geometric::Plane *p_wallPlane_in,
-        bool              isOpenPassage_in           = false,
-        Eigen::Vector3d   passageCentroid_World_m_in = Eigen::Vector3d::Zero());
+        bool                               isOpenPassage_in = false,
+        Eigen::Vector3d passageCentroid_World_m_in = Eigen::Vector3d::Zero());
 
     /*!
      * @brief       Creates a blank room object (undefined variant) to be added
@@ -199,9 +204,10 @@ class GeoSemHelpers
      *              The centroid of the room (optional)
      */
     [[nodiscard]] static GeoSemHelpersStatus createBlankRoomCandidate(
-        Atlas             *p_atlas_inout,
-        vs_graphs::core::semantic::Room * &p_blankRoomCandidate_out, Eigen::Vector3d    centroid_in        = Eigen::Vector3d::Zero(),
-        std::optional<int> stableRoomId_in = std::nullopt);
+        Atlas                            *p_atlas_inout,
+        vs_graphs::core::semantic::Room *&p_blankRoomCandidate_out,
+        Eigen::Vector3d                   centroid_in = Eigen::Vector3d::Zero(),
+        std::optional<int>                stableRoomId_in = std::nullopt);
 
     /*!
      * @brief       Chooses a ground plane from the Atlas to be associated with
@@ -213,8 +219,9 @@ class GeoSemHelpers
      * @param       p_givenRoom_inout
      *              The address of the detected room
      */
-    [[nodiscard]] static GeoSemHelpersStatus  associateGroundPlaneToRoom(Atlas           *p_atlas_in,
-                                           vs_graphs::core::semantic::Room *p_givenRoom_inout);
+    [[nodiscard]] static GeoSemHelpersStatus associateGroundPlaneToRoom(
+        Atlas                           *p_atlas_in,
+        vs_graphs::core::semantic::Room *p_givenRoom_inout);
 
     /*!
      * @brief       Counts the number of points in the ground plane that are
@@ -226,9 +233,10 @@ class GeoSemHelpers
      * @param       p_groundPlane_in
      *              The ground plane associated with the room
      */
-    [[nodiscard]] static GeoSemHelpersStatus  countGroundPlanePointsWithinWalls(
+    [[nodiscard]] static GeoSemHelpersStatus countGroundPlanePointsWithinWalls(
         std::vector<vs_graphs::core::geometric::Plane *> &roomWalls_in,
-        vs_graphs::core::geometric::Plane                *p_groundPlane_in, size_t &groundPlanePoints_out);
+        vs_graphs::core::geometric::Plane                *p_groundPlane_in,
+        size_t &groundPlanePoints_out);
 
     /*!
      * @brief       Creates a new floor object to be added to the map
@@ -236,9 +244,9 @@ class GeoSemHelpers
      * @param[in,out] p_atlas_inout
      *              The current map in Atlas
      */
-    [[nodiscard]] static GeoSemHelpersStatus 
-        createMapFloor(vs_graphs::core::Atlas  *p_atlas_inout,
-                       std::optional<int> stableFloorId_in = std::nullopt);
+    [[nodiscard]] static GeoSemHelpersStatus
+        createMapFloor(vs_graphs::core::Atlas *p_atlas_inout,
+                       std::optional<int>      stableFloorId_in = std::nullopt);
 
     /*!
      * @brief       Refits a mapped plane equation from its accumulated global
@@ -247,7 +255,9 @@ class GeoSemHelpers
      * @param[in,out] p_plane_inout
      *              Mapped plane which will be refitted.
      */
-    [[nodiscard]] static GeoSemHelpersStatus  refitMappedPlaneFromCloud(vs_graphs::core::geometric::Plane *p_plane_inout, bool &wasPlaneRefit_out);
+    [[nodiscard]] static GeoSemHelpersStatus refitMappedPlaneFromCloud(
+        vs_graphs::core::geometric::Plane *p_plane_inout,
+        bool                              &wasPlaneRefit_out);
 };
 } // namespace core
 } // namespace vs_graphs

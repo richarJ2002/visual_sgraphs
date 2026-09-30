@@ -65,7 +65,8 @@
 
 vs_graphs::core::System *p_slamSystem = nullptr;
 
-vs_graphs::core::System::SensorType sensorType = vs_graphs::core::System::NOT_SET;
+vs_graphs::core::System::SensorType sensorType =
+    vs_graphs::core::System::NOT_SET;
 
 /* -------------------------------------------------------------------------- *
  * COMMON CONFIGURATION
@@ -534,7 +535,8 @@ namespace
 {
 const char *sensorModeName()
 {
-    return sensorType == vs_graphs::core::System::IMU_RGBD ? "rgbd_inertial" : "rgbd";
+    return sensorType == vs_graphs::core::System::IMU_RGBD ? "rgbd_inertial"
+                                                           : "rgbd";
 }
 } // namespace
 
@@ -544,8 +546,8 @@ const char *sensorModeName()
 
 void appendFloorMarkers(
     const std::vector<vs_graphs::core::semantic::Floor *> &mappedFloors_in,
-    const rclcpp::Time                    &msgTime_s_in,
-    visualization_msgs::msg::MarkerArray  &structuralElementMarkerArray_out)
+    const rclcpp::Time                                    &msgTime_s_in,
+    visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out)
 {
     constexpr double floorDisplayOffset_m = -1.0;
 
@@ -870,8 +872,8 @@ void appendFloorMarkers(
 void appendPassageMarkers(
     const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
     const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
-    const rclcpp::Time                      &msgTime_s_in,
-    visualization_msgs::msg::MarkerArray    &structuralElementMarkerArray_out)
+    const rclcpp::Time                                      &msgTime_s_in,
+    visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out)
 {
     constexpr double textOffset_m = -0.5;
 
@@ -1109,7 +1111,8 @@ void appendPassageMarkers(
  *         The loop is empty when the room, its ground plane, or the wall set is
  *         degenerate, or when any consecutive wall pair is parallel.
  */
-std::vector<Eigen::Vector3d> computeRoomCorners(const vs_graphs::core::semantic::Room *room_in)
+std::vector<Eigen::Vector3d>
+    computeRoomCorners(const vs_graphs::core::semantic::Room *room_in)
 {
     std::vector<Eigen::Vector3d> corners_World_m;
 
@@ -1403,8 +1406,8 @@ void appendRoomMarkers(
     const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
     const std::vector<vs_graphs::core::semantic::Floor *>   &mappedFloors_in,
     const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
-    const rclcpp::Time                      &msgTime_s_in,
-    visualization_msgs::msg::MarkerArray    &structuralElementMarkerArray_out)
+    const rclcpp::Time                                      &msgTime_s_in,
+    visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out)
 {
     /* Room-to-floor green lines were removed (operator: passages are the
      * only room links); the floor list is kept for signature stability. */
@@ -2016,7 +2019,8 @@ void appendRoomMarkers(
 
         roomWallAssociationMarker.points.reserve(associatedWalls.size() * 2);
 
-        for (vs_graphs::core::geometric::Plane *associatedWall : associatedWalls)
+        for (vs_graphs::core::geometric::Plane *associatedWall :
+             associatedWalls)
         {
             bool associatedWallIsBad{};
             if (!(associatedWall == nullptr) &&
@@ -2144,7 +2148,8 @@ void appendRoomMarkers(
         roomPassageAssociationMarker.colors.reserve(associatedPassages.size() *
                                                     2);
 
-        for (vs_graphs::core::semantic::Passage *associatedPassage : associatedPassages)
+        for (vs_graphs::core::semantic::Passage *associatedPassage :
+             associatedPassages)
         {
             bool associatedPassageIsBad{};
             if (!(associatedPassage == nullptr) &&
@@ -2273,7 +2278,8 @@ void appendRoomMarkers(
     }
 }
 
-void clearKFClsClouds(std::vector<vs_graphs::core::KeyFrame *> keyframeVector_in)
+void clearKFClsClouds(
+    std::vector<vs_graphs::core::KeyFrame *> keyframeVector_in)
 {
     /* Iterate through keyframes and clear the cls point clouds */
     for (vs_graphs::core::KeyFrame *&keyframe : keyframeVector_in)
@@ -2341,11 +2347,11 @@ std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>>
 }
 
 bool getPassageDisplayPoints(
-    vs_graphs::core::semantic::Passage               *passage_in,
-    const rclcpp::Time               &msgTime_in,
-    const double                      verticalOffset_in,
-    geometry_msgs::msg::PointStamped &passagePointSE_out,
-    geometry_msgs::msg::PointStamped &passagePointWorld_out)
+    vs_graphs::core::semantic::Passage *passage_in,
+    const rclcpp::Time                 &msgTime_in,
+    const double                        verticalOffset_in,
+    geometry_msgs::msg::PointStamped   &passagePointSE_out,
+    geometry_msgs::msg::PointStamped   &passagePointWorld_out)
 {
     /* Confirm that the passage and TF buffer are valid */
     if (passage_in == nullptr || tfBuffer_ == nullptr)
@@ -2434,7 +2440,7 @@ bool getPassageDisplayPoints(
     return true;
 }
 
-bool getRoomDisplayPoints(vs_graphs::core::semantic::Room                  *room_in,
+bool getRoomDisplayPoints(vs_graphs::core::semantic::Room  *room_in,
                           const rclcpp::Time               &msgTime_in,
                           geometry_msgs::msg::PointStamped &roomPointSE_out,
                           geometry_msgs::msg::PointStamped &roomPointWorld_out)
@@ -2678,7 +2684,7 @@ bool getSkeletonMarkerWorldTransform(
 
 sensor_msgs::msg::PointCloud2
     mapPointToPointcloud(std::vector<vs_graphs::core::MapPoint *> mapPoints_in,
-                         rclcpp::Time                       msgTime_in)
+                         rclcpp::Time                             msgTime_in)
 {
     const int                     numChannels = 3;
     sensor_msgs::msg::PointCloud2 cloud;
@@ -2733,8 +2739,8 @@ sensor_msgs::msg::PointCloud2
                              __func__);
             }
             Eigen::Vector3d P3Dw = worldPos.cast<double>();
-            tf2::Vector3 pointTranslation(P3Dw.x(), P3Dw.y(), P3Dw.z());
-            float        dataArray[numChannels] = {
+            tf2::Vector3    pointTranslation(P3Dw.x(), P3Dw.y(), P3Dw.z());
+            float           dataArray[numChannels] = {
                 static_cast<float>(pointTranslation.x()),
                 static_cast<float>(pointTranslation.y()),
                 static_cast<float>(pointTranslation.z())};
@@ -2759,8 +2765,9 @@ sensor_msgs::msg::PointCloud2
     return cloud;
 }
 
-void publishAllMappedWalls(std::vector<vs_graphs::core::geometric::Plane *> wallsList_in,
-                           rclcpp::Time                    msgTime_s_in)
+void publishAllMappedWalls(
+    std::vector<vs_graphs::core::geometric::Plane *> wallsList_in,
+    rclcpp::Time                                     msgTime_s_in)
 {
     /* Variables */
     vs_graphs::msg::VSGraphsAllWallsData wallDataMsg;
@@ -2822,7 +2829,7 @@ void publishAllMappedWalls(std::vector<vs_graphs::core::geometric::Plane *> wall
 
         /* Fill the wall data */
         vs_graphs::msg::VSGraphsWallData wallData;
-        wallData.length     = length;
+        wallData.length = length;
         int wallGetId{};
         if (wall->getId(wallGetId) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -2902,8 +2909,9 @@ void publishAllMappedWalls(std::vector<vs_graphs::core::geometric::Plane *> wall
     pubAllWalls_new->publish(wallDataMsg);
 }
 
-void publishAllMappedRooms(std::vector<vs_graphs::core::semantic::Room *> roomsList_in,
-                           rclcpp::Time                   msgTime_s_in)
+void publishAllMappedRooms(
+    std::vector<vs_graphs::core::semantic::Room *> roomsList_in,
+    rclcpp::Time                                   msgTime_s_in)
 {
     /* Variables */
     vs_graphs::msg::VSGraphsAllDetectdetRooms roomDataMsg;
@@ -2995,9 +3003,10 @@ void publishAllMappedRooms(std::vector<vs_graphs::core::semantic::Room *> roomsL
     pubAllRooms->publish(roomDataMsg);
 }
 
-void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> passagesList_in,
-                              std::vector<vs_graphs::core::semantic::Room *>    roomsList_in,
-                              rclcpp::Time                      msgTime_s_in)
+void publishAllMappedPassages(
+    std::vector<vs_graphs::core::semantic::Passage *> passagesList_in,
+    std::vector<vs_graphs::core::semantic::Room *>    roomsList_in,
+    rclcpp::Time                                      msgTime_s_in)
 {
     /* Variables */
     vs_graphs::msg::VSGraphsAllPassagesData passageDataMsg;
@@ -3100,7 +3109,7 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
          * direct room back-pointer); -1 if none of the currently mapped
          * rooms claim any of them.
          */
-        passageData.known_room_id  = -1;
+        passageData.known_room_id = -1;
         std::vector<vs_graphs::core::geometric::Plane *> associatedWalls{};
         if (passage->getAssociateWalls(associatedWalls) !=
             vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -3230,8 +3239,9 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
     pubAllPassages->publish(passageDataMsg);
 }
 
-void publishAllMappedFloors(std::vector<vs_graphs::core::semantic::Floor *> floorsList_in,
-                            rclcpp::Time                    msgTime_s_in)
+void publishAllMappedFloors(
+    std::vector<vs_graphs::core::semantic::Floor *> floorsList_in,
+    rclcpp::Time                                    msgTime_s_in)
 {
     /* Variables */
     vs_graphs::msg::VSGraphsAllFloorsData floorDataMsg;
@@ -3384,7 +3394,7 @@ void maybeArchiveSGraph(
     const std::vector<vs_graphs::core::semantic::Floor *>   &mappedFloors_in,
     const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
     const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
-    const rclcpp::Time                      &msgTime_s_in)
+    const rclcpp::Time                                      &msgTime_s_in)
 {
     static double        lastArchiveTime_s = -1.0e100;
     static std::uint64_t captureCycle      = 0U;
@@ -3434,9 +3444,9 @@ void maybeArchiveSGraph(
      * current-map snapshot when the Atlas is unavailable. */
     struct SgraphMapInput
     {
-        long                              mapId{-1};
-        bool                              isActive{true};
-        std::uint64_t                     worldFrameEpoch{0U};
+        long                                              mapId{-1};
+        bool                                              isActive{true};
+        std::uint64_t                                     worldFrameEpoch{0U};
         std::vector<vs_graphs::core::semantic::Floor *>   floorsRaw;
         std::vector<vs_graphs::core::semantic::Room *>    roomsRaw;
         std::vector<vs_graphs::core::semantic::Passage *> passagesRaw;
@@ -3456,7 +3466,7 @@ void maybeArchiveSGraph(
         (p_slamSystem != nullptr) ? p_slamSystemAtlas : nullptr;
     if (p_atlas != nullptr)
     {
-        std::optional<long unsigned int> currentMapId;
+        std::optional<long unsigned int>       currentMapId;
         vs_graphs::core::AtlasCurrentMapStatus mapStatus;
         std::vector<vs_graphs::core::Map *>    atlasMaps{};
         if (p_atlas->getCoherentMapView(currentMapId, mapStatus, atlasMaps) !=
@@ -3678,7 +3688,8 @@ void maybeArchiveSGraph(
             });
 
         std::vector<vs_graphs::core::semantic::Passage *> passages;
-        for (vs_graphs::core::semantic::Passage *p_passage : mapInput.passagesRaw)
+        for (vs_graphs::core::semantic::Passage *p_passage :
+             mapInput.passagesRaw)
         {
             bool passageIsBad{};
             if ((p_passage != nullptr) &&
@@ -3730,8 +3741,10 @@ void maybeArchiveSGraph(
          * rooms and passages are still archived early in a run. */
         const bool        hasFloors  = !floors.empty();
         const std::size_t floorCount = hasFloors ? floors.size() : 1U;
-        std::vector<std::vector<vs_graphs::core::semantic::Room *>> floorRooms(floorCount);
-        std::unordered_map<const vs_graphs::core::semantic::Room *, std::size_t> roomFloorIndex;
+        std::vector<std::vector<vs_graphs::core::semantic::Room *>> floorRooms(
+            floorCount);
+        std::unordered_map<const vs_graphs::core::semantic::Room *, std::size_t>
+            roomFloorIndex;
 
         for (std::size_t floorIndex = 0U; floorIndex < floors.size();
              ++floorIndex)
@@ -3771,7 +3784,7 @@ void maybeArchiveSGraph(
 
         for (vs_graphs::core::semantic::Room *p_room : rooms)
         {
-            std::size_t floorIndex = 0U;
+            std::size_t                                     floorIndex = 0U;
             const std::unordered_map<const vs_graphs::core::semantic::Room *,
                                      std::size_t>::iterator claimed =
                 roomFloorIndex.find(p_room);
@@ -3806,8 +3819,10 @@ void maybeArchiveSGraph(
         }
 
         /* Zero-based room keys are scoped to their floor. */
-        std::unordered_map<const vs_graphs::core::semantic::Room *, std::string> roomKeys;
-        for (std::vector<vs_graphs::core::semantic::Room *> &floorRoomList : floorRooms)
+        std::unordered_map<const vs_graphs::core::semantic::Room *, std::string>
+            roomKeys;
+        for (std::vector<vs_graphs::core::semantic::Room *> &floorRoomList :
+             floorRooms)
         {
             for (std::size_t roomOrdinal = 0U;
                  roomOrdinal < floorRoomList.size();
@@ -3820,9 +3835,10 @@ void maybeArchiveSGraph(
 
         /* Assign each passage to the floor holding most of its rooms; passages
          * without any room evidence fall back to the first floor. */
-        std::vector<std::vector<vs_graphs::core::semantic::Passage *>> floorPassages(
-            floorCount);
-        std::unordered_map<const vs_graphs::core::semantic::Passage *, std::vector<int>>
+        std::vector<std::vector<vs_graphs::core::semantic::Passage *>>
+            floorPassages(floorCount);
+        std::unordered_map<const vs_graphs::core::semantic::Passage *,
+                           std::vector<int>>
             passageWallIds;
         for (vs_graphs::core::semantic::Passage *p_passage : passages)
         {
@@ -3965,7 +3981,9 @@ void maybeArchiveSGraph(
         /* Index passage keys per floor so walls can list their passages. */
         std::vector<std::unordered_map<int, std::vector<std::string>>>
             floorWallPassages(floorCount);
-        std::vector<std::unordered_map<const vs_graphs::core::semantic::Passage *, std::string>>
+        std::vector<
+            std::unordered_map<const vs_graphs::core::semantic::Passage *,
+                               std::string>>
             floorPassageKeys(floorCount);
         for (std::size_t floorIndex = 0U; floorIndex < floorCount; ++floorIndex)
         {
@@ -3992,7 +4010,7 @@ void maybeArchiveSGraph(
 
         for (std::size_t floorIndex = 0U; floorIndex < floorCount; ++floorIndex)
         {
-            Json              floorJson;
+            Json                              floorJson;
             vs_graphs::core::semantic::Floor *p_floor =
                 hasFloors ? floors[floorIndex] : nullptr;
             if (p_floor != nullptr)
@@ -4067,7 +4085,8 @@ void maybeArchiveSGraph(
                  roomOrdinal < floorRooms[floorIndex].size();
                  ++roomOrdinal)
             {
-                vs_graphs::core::semantic::Room  *p_room = floorRooms[floorIndex][roomOrdinal];
+                vs_graphs::core::semantic::Room *p_room =
+                    floorRooms[floorIndex][roomOrdinal];
                 const std::string roomKey =
                     "room" + std::to_string(roomOrdinal);
 
@@ -4208,7 +4227,8 @@ void maybeArchiveSGraph(
                 for (std::size_t wallOrdinal = 0U; wallOrdinal < walls.size();
                      ++wallOrdinal)
                 {
-                    vs_graphs::core::geometric::Plane *p_wall = walls[wallOrdinal];
+                    vs_graphs::core::geometric::Plane *p_wall =
+                        walls[wallOrdinal];
                     const std::string wallKey =
                         "wall" + std::to_string(wallOrdinal);
                     vs_graphs::core::geometric::PlaneGeometryMetadataSnapshot
@@ -4273,8 +4293,8 @@ void maybeArchiveSGraph(
                         geometry.maxPlaneV_m - geometry.minPlaneV_m);
                     wallJson["parent_room"] = roomKey;
 
-                    Json       passageList = Json::array();
-                    int        wallGetId4{};
+                    Json passageList = Json::array();
+                    int  wallGetId4{};
                     if (p_wall->getId(wallGetId4) !=
                         vs_graphs::core::geometric::PlaneStatus::
                             PLANE_STATUS_SUCCESS)
@@ -4312,8 +4332,8 @@ void maybeArchiveSGraph(
                     floorPassages[floorIndex][passageOrdinal];
                 const std::string passageKey =
                     "passage" + std::to_string(passageOrdinal);
-                const std::vector<int>  &wallIds = passageWallIds[p_passage];
-                std::optional<int>       prospectiveRoomId{};
+                const std::vector<int> &wallIds = passageWallIds[p_passage];
+                std::optional<int>      prospectiveRoomId{};
                 if (p_passage->getProspectiveRoomId(prospectiveRoomId) !=
                     vs_graphs::core::semantic::PassageStatus::
                         PASSAGE_STATUS_SUCCESS)
@@ -4583,7 +4603,7 @@ void maybeArchiveSGraph(
 }
 
 void publishAllPoints(std::vector<vs_graphs::core::MapPoint *> allMapPoints_in,
-                      rclcpp::Time                       msgTime_s_in)
+                      rclcpp::Time                             msgTime_s_in)
 {
     /* Map point cloud */
     sensor_msgs::msg::PointCloud2 cloud =
@@ -4731,7 +4751,7 @@ void publishCameraPose(const Sophus::SE3f &cameraPose_World_in,
 
 void publishFiducialMarkers(
     const std::vector<vs_graphs::core::semantic::Marker *> &fiducialMarkers_in,
-    const rclcpp::Time                     &msgTime_s_in)
+    const rclcpp::Time                                     &msgTime_s_in)
 {
     /* Confirm that the marker publisher has been initialised */
     if (pubFiducialMarker == nullptr)
@@ -5043,7 +5063,7 @@ void publishFreeSpaceClusters(
 
 void publishKeyFrameImages(
     const std::vector<vs_graphs::core::KeyFrame *> &keyFrames_in,
-    const rclcpp::Time                       &msgTime_s_in)
+    const rclcpp::Time                             &msgTime_s_in)
 {
     /* Confirm that the keyframe-image publisher has been initialised */
     if (pubKFImage == nullptr)
@@ -5135,7 +5155,7 @@ void publishKeyFrameImages(
 
 void publishKeyFrameMarkers(
     const std::vector<vs_graphs::core::KeyFrame *> &keyFrames_in,
-    const rclcpp::Time                       &messageTimestamp_in)
+    const rclcpp::Time                             &messageTimestamp_in)
 {
     /* Return when neither output publisher has been initialised */
     if (pubKeyFrameMarker == nullptr && pubKeyFrameList == nullptr)
@@ -5305,23 +5325,24 @@ void publishKeyFrameMarkers(
 }
 
 void publishPlanes(
-    const std::vector<vs_graphs::core::geometric::Plane *>             &mappedPlanes_in,
-    const std::vector<vs_graphs::core::semantic::Room *>              &mappedRooms_in,
-    const rclcpp::Time                                &msgTime_s_in,
-    vs_graphs::observability::PublishTopicsTimingSink *p_timingSink_in);
+    const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
+    const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
+    const rclcpp::Time                                     &msgTime_s_in,
+    vs_graphs::observability::PublishTopicsTimingSink      *p_timingSink_in);
 
-void publishPlanes(const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
-                   const std::vector<vs_graphs::core::semantic::Room *>  &mappedRooms_in,
-                   const rclcpp::Time                    &msgTime_s_in)
+void publishPlanes(
+    const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
+    const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
+    const rclcpp::Time                                     &msgTime_s_in)
 {
     publishPlanes(mappedPlanes_in, mappedRooms_in, msgTime_s_in, nullptr);
 }
 
 void publishPlanes(
-    const std::vector<vs_graphs::core::geometric::Plane *>             &mappedPlanes_in,
-    const std::vector<vs_graphs::core::semantic::Room *>              &mappedRooms_in,
-    const rclcpp::Time                                &msgTime_s_in,
-    vs_graphs::observability::PublishTopicsTimingSink *p_timingSink_in)
+    const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
+    const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
+    const rclcpp::Time                                     &msgTime_s_in,
+    vs_graphs::observability::PublishTopicsTimingSink      *p_timingSink_in)
 {
     /* Return when neither required publisher has been initialised */
     if (pubBuildingComponents == nullptr && pubPlaneLabel == nullptr)
@@ -5521,7 +5542,8 @@ void publishPlanes(
         }
 
         /* Skip planes that have not received a semantic type */
-        if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED)
+        if (planeType ==
+            vs_graphs::core::geometric::Plane::PlaneVariant::UNDEFINED)
         {
             continue;
         }
@@ -5591,7 +5613,8 @@ void publishPlanes(
 
         bool validWallDimensions = false;
 
-        if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL &&
+        if (planeType ==
+                vs_graphs::core::geometric::Plane::PlaneVariant::WALL &&
             groundNormal_BC.norm() >= normalVectorTolerance)
         {
             Eigen::Vector3d wallWidthAxis_BC =
@@ -5769,11 +5792,13 @@ void publishPlanes(
         {
             semanticClass = "WALL";
         }
-        else if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::GROUND)
+        else if (planeType ==
+                 vs_graphs::core::geometric::Plane::PlaneVariant::GROUND)
         {
             semanticClass = "GROUND";
         }
-        else if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::DOOR)
+        else if (planeType ==
+                 vs_graphs::core::geometric::Plane::PlaneVariant::DOOR)
         {
             semanticClass = "DOOR";
         }
@@ -5783,7 +5808,8 @@ void publishPlanes(
                                      std::vector<int>>::iterator ownerIt =
                 owningRoomIdsByPlane.find(mappedPlane);
             planeLabelText << '\n' << "class=" << semanticClass;
-            if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
+            if (planeType ==
+                vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
             {
                 planeLabelText << " lifecycle="
                                << (ownerIt == owningRoomIdsByPlane.end() ||
@@ -5795,10 +5821,10 @@ void publishPlanes(
             if (ownerIt == owningRoomIdsByPlane.end() ||
                 ownerIt->second.empty())
             {
-                planeLabelText
-                    << (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL
-                            ? "PENDING"
-                            : "NONE");
+                planeLabelText << (planeType == vs_graphs::core::geometric::
+                                                    Plane::PlaneVariant::WALL
+                                       ? "PENDING"
+                                       : "NONE");
             }
             else
             {
@@ -6382,7 +6408,7 @@ void publishStructuralElements(
     const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
     const std::vector<vs_graphs::core::semantic::Floor *>   &mappedFloors_in,
     const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
-    const rclcpp::Time                      &msgTime_s_in)
+    const rclcpp::Time                                      &msgTime_s_in)
 {
     if (pubStructuralElements == nullptr)
     {
@@ -7082,7 +7108,7 @@ void publishTopics(
 
 void publishTrackedPoints(
     const std::vector<vs_graphs::core::MapPoint *> &trackedMapPoints_in,
-    const rclcpp::Time                       &msgTime_s_in)
+    const rclcpp::Time                             &msgTime_s_in)
 {
     /* Confirm that the tracked-map-point publisher is available */
     if (pubTrackedMappoints == nullptr)
@@ -7932,7 +7958,8 @@ static void getMissionHealthService(
         topology["floors"].push_back(
             {{"id", floor.id}, {"room_ids", floor.roomIds}});
     }
-    for (const vs_graphs::core::System::PassageHealth &passage : snapshot.passages)
+    for (const vs_graphs::core::System::PassageHealth &passage :
+         snapshot.passages)
     {
         const bool traversed = passage.primaryTraversalCount > 0U ||
                                passage.secondaryTraversalCount > 0U ||

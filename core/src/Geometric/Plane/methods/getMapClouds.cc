@@ -39,7 +39,8 @@ namespace core
 namespace geometric
 {
 
-PlaneStatus Plane::getMapClouds(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &mapClouds_out)
+PlaneStatus
+    Plane::getMapClouds(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &mapClouds_out)
 {
     /*!
      * Publishers retain this result after the lock is released, so return a

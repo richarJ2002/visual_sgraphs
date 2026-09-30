@@ -32,7 +32,8 @@ namespace core
 namespace geometric
 {
 
-PlaneStatus Plane::getGeometryMetadataSnapshot(PlaneGeometryMetadataSnapshot &getGeometryMetadataSnapshot_out) const
+PlaneStatus Plane::getGeometryMetadataSnapshot(
+    PlaneGeometryMetadataSnapshot &getGeometryMetadataSnapshot_out) const
 {
     std::scoped_lock              lock(positionMutex, featuresMutex);
     PlaneGeometryMetadataSnapshot snapshot;

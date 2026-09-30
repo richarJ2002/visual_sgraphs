@@ -39,7 +39,8 @@ namespace core
 namespace geometric
 {
 
-PlaneStatus Plane::beginMapCloudRefit(std::optional<Plane::GeometrySnapshot> &geometrySnapshot_out)
+PlaneStatus Plane::beginMapCloudRefit(
+    std::optional<Plane::GeometrySnapshot> &geometrySnapshot_out)
 {
     std::scoped_lock lock(positionMutex, featuresMutex);
 

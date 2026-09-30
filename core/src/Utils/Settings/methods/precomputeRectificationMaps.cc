@@ -50,7 +50,7 @@ namespace utils
 namespace settings
 {
 
-SettingsStatus  Settings::precomputeRectificationMaps()
+SettingsStatus Settings::precomputeRectificationMaps()
 {
     // Precompute rectification maps, new calibrations, ...
     cv::Mat K1 =
@@ -71,7 +71,8 @@ SettingsStatus  Settings::precomputeRectificationMaps()
     cv::Mat P1, P2, Q;
 
     cv::Mat camera1DistortionCoef2{};
-    if (camera1DistortionCoef(camera1DistortionCoef2) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    if (camera1DistortionCoef(camera1DistortionCoef2) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: camera1DistortionCoef returned a failure status "
@@ -79,7 +80,8 @@ SettingsStatus  Settings::precomputeRectificationMaps()
                      __func__);
     }
     cv::Mat camera2DistortionCoef2{};
-    if (camera2DistortionCoef(camera2DistortionCoef2) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    if (camera2DistortionCoef(camera2DistortionCoef2) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: camera2DistortionCoef returned a failure status "
@@ -102,7 +104,8 @@ SettingsStatus  Settings::precomputeRectificationMaps()
                       -1,
                       newImageSize);
     cv::Mat camera1DistortionCoef3{};
-    if (camera1DistortionCoef(camera1DistortionCoef3) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    if (camera1DistortionCoef(camera1DistortionCoef3) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: camera1DistortionCoef returned a failure status "
@@ -118,7 +121,8 @@ SettingsStatus  Settings::precomputeRectificationMaps()
                                 rectifyMap1Left,
                                 rectifyMap2Left);
     cv::Mat camera2DistortionCoef3{};
-    if (camera2DistortionCoef(camera2DistortionCoef3) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    if (camera2DistortionCoef(camera2DistortionCoef3) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: camera2DistortionCoef returned a failure status "
@@ -135,28 +139,36 @@ SettingsStatus  Settings::precomputeRectificationMaps()
                                 rectifyMap2Right);
 
     // Update calibration
-    if (p_calibration1->setParameter(P1.at<double>(0, 0), 0) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    if (p_calibration1->setParameter(P1.at<double>(0, 0), 0) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: setParameter returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (p_calibration1->setParameter(P1.at<double>(1, 1), 1) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    if (p_calibration1->setParameter(P1.at<double>(1, 1), 1) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: setParameter returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (p_calibration1->setParameter(P1.at<double>(0, 2), 2) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    if (p_calibration1->setParameter(P1.at<double>(0, 2), 2) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: setParameter returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (p_calibration1->setParameter(P1.at<double>(1, 2), 3) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    if (p_calibration1->setParameter(P1.at<double>(1, 2), 3) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: setParameter returned a failure status although it "
@@ -164,28 +176,36 @@ SettingsStatus  Settings::precomputeRectificationMaps()
                      __func__);
     }
 
-    if (p_calibration2->setParameter(P2.at<double>(0, 0), 0) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    if (p_calibration2->setParameter(P2.at<double>(0, 0), 0) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: setParameter returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (p_calibration2->setParameter(P2.at<double>(1, 1), 1) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    if (p_calibration2->setParameter(P2.at<double>(1, 1), 1) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: setParameter returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (p_calibration2->setParameter(P2.at<double>(0, 2), 2) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    if (p_calibration2->setParameter(P2.at<double>(0, 2), 2) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: setParameter returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (p_calibration2->setParameter(P2.at<double>(1, 2), 3) != camera_models::geometriccamera::GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS)
+    if (p_calibration2->setParameter(P2.at<double>(1, 2), 3) !=
+        camera_models::geometriccamera::GeometricCameraStatus::
+            GEOMETRIC_CAMERA_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: setParameter returned a failure status although it "

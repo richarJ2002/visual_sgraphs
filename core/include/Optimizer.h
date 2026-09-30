@@ -126,7 +126,7 @@ class Optimizer
         bool                   *p_pbStopFlag_in);
 
     [[nodiscard]] static OptimizerStatus poseOptimization(Frame *p_frame_inout,
-                                                   int   &inlierCount_out);
+                                                          int &inlierCount_out);
     [[nodiscard]] static OptimizerStatus poseInertialOptimizationLastKeyFrame(
         Frame *p_frame_inout,
         int   &inlierCount_out,
