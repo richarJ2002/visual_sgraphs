@@ -37,8 +37,8 @@ Sim3SolverStatus Sim3Solver::project(
     Eigen::Matrix4f                                  Tcw_in,
     camera_models::geometriccamera::GeometricCamera *p_camera_inout)
 {
-    Eigen::Matrix3f Rcw = Tcw_in.block<3, 3>(0, 0);
-    Eigen::Vector3f tcw = Tcw_in.block<3, 1>(0, 3);
+    Eigen::Matrix3f rotationWorldToCamera    = Tcw_in.block<3, 3>(0, 0);
+    Eigen::Vector3f translationWorldToCamera = Tcw_in.block<3, 1>(0, 3);
 
     points2D_out.clear();
     points2D_out.reserve(vP3Dw_in.size());
@@ -46,7 +46,8 @@ Sim3SolverStatus Sim3Solver::project(
     for (size_t pointIndex = 0, iend = vP3Dw_in.size(); pointIndex < iend;
          pointIndex++)
     {
-        Eigen::Vector3f P3Dc    = Rcw * vP3Dw_in[pointIndex] + tcw;
+        Eigen::Vector3f P3Dc = rotationWorldToCamera * vP3Dw_in[pointIndex] +
+                               translationWorldToCamera;
         Eigen::Vector2f point2d = p_camera_inout->project(P3Dc);
         points2D_out.push_back(point2d);
     }

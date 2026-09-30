@@ -65,16 +65,18 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
 
     // Set Frame vertex
     g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
-    Sophus::SE3<float>    Tcw{};
-    if (p_frame_inout->getPose(Tcw) != FrameStatus::FRAME_STATUS_SUCCESS)
+    Sophus::SE3<float>    poseWorldToCamera{};
+    if (p_frame_inout->getPose(poseWorldToCamera) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getPose returned a failure status although it cannot "
                      "fail; continuing as before.",
                      __func__);
     }
-    p_se3Vertex->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                                          Tcw.translation().cast<double>()));
+    p_se3Vertex->setEstimate(
+        g2o::SE3Quat(poseWorldToCamera.unit_quaternion().cast<double>(),
+                     poseWorldToCamera.translation().cast<double>()));
     p_se3Vertex->setId(0);
     p_se3Vertex->setFixed(false);
     optimizer.addVertex(p_se3Vertex);
@@ -445,10 +447,10 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Tcw = frameGetPose;
+        poseWorldToCamera = frameGetPose;
         p_se3Vertex->setEstimate(
-            g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                         Tcw.translation().cast<double>()));
+            g2o::SE3Quat(poseWorldToCamera.unit_quaternion().cast<double>(),
+                         poseWorldToCamera.translation().cast<double>()));
 
         optimizer.initializeOptimization(0);
         optimizer.optimize(its[iterationIndex]);

@@ -54,7 +54,8 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                      "fail; continuing as before.",
                      __func__);
     }
-    const Eigen::Vector3f twc = Tcw.inverse().translation();
+    const Eigen::Vector3f translationCameraToWorld =
+        Tcw.inverse().translation();
 
     Sophus::SE3f Tlw{};
     if (LastFrame.getPose(Tlw) != FrameStatus::FRAME_STATUS_SUCCESS)
@@ -64,7 +65,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                      "fail; continuing as before.",
                      __func__);
     }
-    const Eigen::Vector3f tlc = Tlw * twc;
+    const Eigen::Vector3f tlc = Tlw * translationCameraToWorld;
 
     const bool isMovingForward  = tlc(2) > CurrentFrame.mb && !bMono;
     const bool isMovingBackward = -tlc(2) > CurrentFrame.mb && !bMono;

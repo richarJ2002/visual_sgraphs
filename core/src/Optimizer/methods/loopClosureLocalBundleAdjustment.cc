@@ -121,8 +121,8 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
 
         // Create a new vertex for the KeyFrame
         g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>    Tcw{};
-        if (p_adjustKeyFrame->getPose(Tcw) !=
+        Sophus::SE3<float>    poseWorldToCamera{};
+        if (p_adjustKeyFrame->getPose(poseWorldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -131,8 +131,8 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                          __func__);
         }
         p_se3Vertex->setEstimate(
-            g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                         Tcw.translation().cast<double>()));
+            g2o::SE3Quat(poseWorldToCamera.unit_quaternion().cast<double>(),
+                         poseWorldToCamera.translation().cast<double>()));
         p_se3Vertex->setId(p_adjustKeyFrame->id);
         p_se3Vertex->setFixed(true);
         optimizer.addVertex(p_se3Vertex);
@@ -221,8 +221,8 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         p_adjustKeyFrame->baLocalMergeId = p_mainKeyFrame_in->id;
 
         g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>    Tcw{};
-        if (p_adjustKeyFrame->getPose(Tcw) !=
+        Sophus::SE3<float>    poseWorldToCamera{};
+        if (p_adjustKeyFrame->getPose(poseWorldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -231,8 +231,8 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                          __func__);
         }
         p_se3Vertex->setEstimate(
-            g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                         Tcw.translation().cast<double>()));
+            g2o::SE3Quat(poseWorldToCamera.unit_quaternion().cast<double>(),
+                         poseWorldToCamera.translation().cast<double>()));
         p_se3Vertex->setId(p_adjustKeyFrame->id);
         optimizer.addVertex(p_se3Vertex);
         if (p_adjustKeyFrame->id > maximumKeyFrameId)

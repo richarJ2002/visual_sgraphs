@@ -105,14 +105,14 @@ TrackingStatus Tracking::monocularInitialization()
             return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
 
-        Sophus::SE3f Tcw;
+        Sophus::SE3f poseWorldToCamera;
         std::vector<bool>
             triangulatedFlags; // Triangulated Correspondences (mvIniMatches)
 
         if (p_camera->reconstructWithTwoViews(initialFrame.keyPointsUndistorted,
                                               currentFrame.keyPointsUndistorted,
                                               iniMatches,
-                                              Tcw,
+                                              poseWorldToCamera,
                                               iniP3D,
                                               triangulatedFlags))
         {
@@ -138,7 +138,7 @@ TrackingStatus Tracking::monocularInitialization()
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            if (currentFrame.setPose(Tcw * poseTc0w) !=
+            if (currentFrame.setPose(poseWorldToCamera * poseTc0w) !=
                 FrameStatus::FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

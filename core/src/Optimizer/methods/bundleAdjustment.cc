@@ -151,8 +151,8 @@ OptimizerStatus Optimizer::bundleAdjustment(
         if (keyFrameIsBad)
             continue;
         g2o::VertexSE3Expmap *p_keyFramePoseVertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>    Tcw{};
-        if (p_keyFrame->getPose(Tcw) !=
+        Sophus::SE3<float>    poseWorldToCamera{};
+        if (p_keyFrame->getPose(poseWorldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -161,8 +161,8 @@ OptimizerStatus Optimizer::bundleAdjustment(
                          __func__);
         }
         p_keyFramePoseVertex->setEstimate(
-            g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                         Tcw.translation().cast<double>()));
+            g2o::SE3Quat(poseWorldToCamera.unit_quaternion().cast<double>(),
+                         poseWorldToCamera.translation().cast<double>()));
         p_keyFramePoseVertex->setId(p_keyFrame->id);
         unsigned long mapInitKeyFrameId{};
         if (p_map->getInitKeyFrameId(mapInitKeyFrameId) !=

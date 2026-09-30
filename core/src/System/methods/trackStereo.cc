@@ -171,14 +171,14 @@ SystemStatus
         }
     }
 
-    Sophus::SE3f Tcw{};
+    Sophus::SE3f poseWorldToCamera{};
     if (p_tracker->grabImageStereo(imLeftToFeed,
                                    imRightToFeed,
                                    timestamp_in,
                                    filename_in,
                                    markers_in,
                                    envRooms,
-                                   Tcw) !=
+                                   poseWorldToCamera) !=
         TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -202,13 +202,13 @@ SystemStatus
     lastFrameTimestamp      = timestamp_in;
     trackedMapPoints        = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn      = p_tracker->currentFrame.keyPointsUndistorted;
-    currentCameraPose_World = Tcw.inverse();
+    currentCameraPose_World = poseWorldToCamera.inverse();
     isCurrentCameraPoseValid =
         trackingState == Tracking::OK &&
         currentCameraPose_World.translation().allFinite() &&
         currentCameraPose_World.rotationMatrix().allFinite();
 
-    cameraPose_out = Tcw;
+    cameraPose_out = poseWorldToCamera;
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 

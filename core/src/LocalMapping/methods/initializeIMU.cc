@@ -599,8 +599,8 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3f Twc{};
-        if (p_correctionKeyFrame->getPoseInverse(Twc) !=
+        Sophus::SE3f poseCameraToWorld{};
+        if (p_correctionKeyFrame->getPoseInverse(poseCameraToWorld) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -639,7 +639,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Sophus::SE3f Tchildc = childKeyFramePose * Twc;
+                Sophus::SE3f Tchildc = childKeyFramePose * poseCameraToWorld;
                 p_childKeyFrame->tcwGBA =
                     Tchildc * p_correctionKeyFrame->tcwGBA;
 

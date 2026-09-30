@@ -117,8 +117,8 @@ LoopClosingStatus LoopClosing::correctLoop()
 
     KeyFrameAndPose CorrectedSim3, NonCorrectedSim3;
     CorrectedSim3[p_currentKF] = mg2oLoopScw;
-    Sophus::SE3f Twc{};
-    if (p_currentKF->getPoseInverse(Twc) !=
+    Sophus::SE3f poseCameraToWorld{};
+    if (p_currentKF->getPoseInverse(poseCameraToWorld) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -126,16 +126,17 @@ LoopClosingStatus LoopClosing::correctLoop()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    Sophus::SE3f Tcw{};
-    if (p_currentKF->getPose(Tcw) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    Sophus::SE3f poseWorldToCamera{};
+    if (p_currentKF->getPose(poseWorldToCamera) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getPose returned a failure status although it cannot "
                      "fail; continuing as before.",
                      __func__);
     }
-    g2o::Sim3 g2oScw(Tcw.unit_quaternion().cast<double>(),
-                     Tcw.translation().cast<double>(),
+    g2o::Sim3 g2oScw(poseWorldToCamera.unit_quaternion().cast<double>(),
+                     poseWorldToCamera.translation().cast<double>(),
                      1.0);
     NonCorrectedSim3[p_currentKF] = g2oScw;
 
@@ -201,7 +202,7 @@ LoopClosingStatus LoopClosing::correctLoop()
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Sophus::SE3d Tic = (Tiw * Twc).cast<double>();
+                Sophus::SE3d Tic = (Tiw * poseCameraToWorld).cast<double>();
                 g2o::Sim3 g2oSic(Tic.unit_quaternion(), Tic.translation(), 1.0);
                 g2o::Sim3 g2oCorrectedSiw = g2oSic * mg2oLoopScw;
                 // Pose corrected with the Sim3 of the loop closure

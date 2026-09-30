@@ -85,11 +85,11 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Matrix4f Twc = keyFramePoseInverse.matrix();
+            Eigen::Matrix4f poseCameraToWorld = keyFramePoseInverse.matrix();
 
             glPushMatrix();
 
-            glMultMatrixf(Twc.data());
+            glMultMatrixf(poseCameraToWorld.data());
 
             KeyFrame *p_keyFrameParent = nullptr;
             if (p_keyFrame->getParent(p_keyFrameParent) !=
@@ -184,8 +184,8 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            Eigen::Vector3f Ow{};
-            if (keyFrames[keyFrameIndex]->getCameraCenter(Ow) !=
+            Eigen::Vector3f cameraCenter_World{};
+            if (keyFrames[keyFrameIndex]->getCameraCenter(cameraCenter_World) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -203,8 +203,8 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                 {
                     if ((*vit)->id < keyFrames[keyFrameIndex]->id)
                         continue;
-                    Eigen::Vector3f Ow2{};
-                    if ((*vit)->getCameraCenter(Ow2) !=
+                    Eigen::Vector3f cameraCenter2_World{};
+                    if ((*vit)->getCameraCenter(cameraCenter2_World) !=
                         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -213,8 +213,12 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    glVertex3f(Ow(0), Ow(1), Ow(2));
-                    glVertex3f(Ow2(0), Ow2(1), Ow2(2));
+                    glVertex3f(cameraCenter_World(0),
+                               cameraCenter_World(1),
+                               cameraCenter_World(2));
+                    glVertex3f(cameraCenter2_World(0),
+                               cameraCenter2_World(1),
+                               cameraCenter2_World(2));
                 }
             }
 
@@ -240,7 +244,9 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                glVertex3f(Ow(0), Ow(1), Ow(2));
+                glVertex3f(cameraCenter_World(0),
+                           cameraCenter_World(1),
+                           cameraCenter_World(2));
                 glVertex3f(Owp(0), Owp(1), Owp(2));
             }
 
@@ -271,7 +277,9 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                glVertex3f(Ow(0), Ow(1), Ow(2));
+                glVertex3f(cameraCenter_World(0),
+                           cameraCenter_World(1),
+                           cameraCenter_World(2));
                 glVertex3f(Owl(0), Owl(1), Owl(2));
             }
         }
@@ -300,8 +308,8 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
              keyFrameIndex++)
         {
             KeyFrame       *p_drawnKeyFrame = keyFrames[keyFrameIndex];
-            Eigen::Vector3f Ow{};
-            if (p_drawnKeyFrame->getCameraCenter(Ow) !=
+            Eigen::Vector3f cameraCenter_World{};
+            if (p_drawnKeyFrame->getCameraCenter(cameraCenter_World) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -322,7 +330,9 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                glVertex3f(Ow(0), Ow(1), Ow(2));
+                glVertex3f(cameraCenter_World(0),
+                           cameraCenter_World(1),
+                           cameraCenter_World(2));
                 glVertex3f(Owp(0), Owp(1), Owp(2));
             }
         }
@@ -370,12 +380,13 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Matrix4f Twc        = keyFramePoseInverse2.matrix();
-                unsigned int    indexColor = p_keyFrame->originMapId;
+                Eigen::Matrix4f poseCameraToWorld =
+                    keyFramePoseInverse2.matrix();
+                unsigned int indexColor = p_keyFrame->originMapId;
 
                 glPushMatrix();
 
-                glMultMatrixf(Twc.data());
+                glMultMatrixf(poseCameraToWorld.data());
 
                 KeyFrame *p_parent2 = nullptr;
                 if (mapKeyFrames[keyFrameIndex]->getParent(p_parent2) !=

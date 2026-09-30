@@ -297,8 +297,8 @@ LoopClosingStatus
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Sophus::SE3f Twc{};
-                if (p_keyFrame->getPoseInverse(Twc) !=
+                Sophus::SE3f poseCameraToWorld{};
+                if (p_keyFrame->getPoseInverse(poseCameraToWorld) !=
                     KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -338,7 +338,7 @@ LoopClosingStatus
                                          "continuing as before.",
                                          __func__);
                         }
-                        Sophus::SE3f tchildc = childPose * Twc;
+                        Sophus::SE3f tchildc = childPose * poseCameraToWorld;
                         p_child->tcwGBA =
                             tchildc * p_keyFrame->tcwGBA; //*Tcorc*pKF->mTcwGBA;
 

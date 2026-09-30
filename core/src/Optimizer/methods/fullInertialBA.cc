@@ -632,9 +632,10 @@ OptimizerStatus Optimizer::fullInertialBA(
             static_cast<VertexPose *>(optimizer.vertex(p_keyFrame->id));
         if (loopKeyFrameId_in == 0)
         {
-            Sophus::SE3f Tcw(p_poseVertex->estimate().Rcw[0].cast<float>(),
-                             p_poseVertex->estimate().tcw[0].cast<float>());
-            if (p_keyFrame->setPose(Tcw) !=
+            Sophus::SE3f poseWorldToCamera(
+                p_poseVertex->estimate().Rcw[0].cast<float>(),
+                p_poseVertex->estimate().tcw[0].cast<float>());
+            if (p_keyFrame->setPose(poseWorldToCamera) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

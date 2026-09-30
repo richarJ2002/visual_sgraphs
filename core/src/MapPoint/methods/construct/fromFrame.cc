@@ -81,7 +81,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
                      __func__);
     }
 
-    Eigen::Vector3f Ow;
+    Eigen::Vector3f cameraCenter_World;
     if (p_frame_inout->leftKeyPointCount == -1 ||
         indexF_in < p_frame_inout->leftKeyPointCount)
     {
@@ -94,7 +94,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Ow = frameGetCameraCenter;
+        cameraCenter_World = frameGetCameraCenter;
     }
     else
     {
@@ -127,12 +127,12 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
                          __func__);
         }
 
-        Ow = Rwl * tlr + twl;
+        cameraCenter_World = Rwl * tlr + twl;
     }
-    normalVector = worldPos - Ow;
+    normalVector = worldPos - cameraCenter_World;
     normalVector = normalVector / normalVector.norm();
 
-    Eigen::Vector3f PC       = worldPos - Ow;
+    Eigen::Vector3f PC       = worldPos - cameraCenter_World;
     const float     distance = PC.norm();
     const int       level =
         (p_frame_inout->leftKeyPointCount == -1)

@@ -35,10 +35,10 @@ namespace core
 
 bool VertexPose::read(std::istream &inputStream_inout)
 {
-    std::vector<Eigen::Matrix<double, 3, 3>> Rcw;
-    std::vector<Eigen::Matrix<double, 3, 1>> tcw;
-    std::vector<Eigen::Matrix<double, 3, 3>> Rbc;
-    std::vector<Eigen::Matrix<double, 3, 1>> tbc;
+    std::vector<Eigen::Matrix<double, 3, 3>> rotationWorldToCamera;
+    std::vector<Eigen::Matrix<double, 3, 1>> translationWorldToCamera;
+    std::vector<Eigen::Matrix<double, 3, 3>> rotationCameraToBody;
+    std::vector<Eigen::Matrix<double, 3, 1>> translationCameraToBody;
 
     const int cameraCount = _estimate.Rbc.size();
     for (int cameraIndex = 0; cameraIndex < cameraCount; cameraIndex++)
@@ -47,22 +47,26 @@ bool VertexPose::read(std::istream &inputStream_inout)
         {
             for (int columnIndex = 0; columnIndex < 3; columnIndex++)
                 inputStream_inout >>
-                    Rcw[cameraIndex](componentIndex, columnIndex);
+                    rotationWorldToCamera[cameraIndex](componentIndex,
+                                                       columnIndex);
         }
         for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
-            inputStream_inout >> tcw[cameraIndex](componentIndex);
+            inputStream_inout >>
+                translationWorldToCamera[cameraIndex](componentIndex);
         }
 
         for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
             for (int columnIndex = 0; columnIndex < 3; columnIndex++)
                 inputStream_inout >>
-                    Rbc[cameraIndex](componentIndex, columnIndex);
+                    rotationCameraToBody[cameraIndex](componentIndex,
+                                                      columnIndex);
         }
         for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
-            inputStream_inout >> tbc[cameraIndex](componentIndex);
+            inputStream_inout >>
+                translationCameraToBody[cameraIndex](componentIndex);
         }
 
         float  nextParam;
@@ -95,7 +99,11 @@ bool VertexPose::read(std::istream &inputStream_inout)
 
     double baselineFocalProduct;
     inputStream_inout >> baselineFocalProduct;
-    if (_estimate.setParam(Rcw, tcw, Rbc, tbc, baselineFocalProduct) !=
+    if (_estimate.setParam(rotationWorldToCamera,
+                           translationWorldToCamera,
+                           rotationCameraToBody,
+                           translationCameraToBody,
+                           baselineFocalProduct) !=
         ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

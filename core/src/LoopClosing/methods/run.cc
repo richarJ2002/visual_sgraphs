@@ -713,15 +713,16 @@ void LoopClosing::run(void)
                                          "fail; continuing as before.",
                                          __func__);
                         }
-                        Sophus::SE3d Twc = currentKFPoseInverse.cast<double>();
+                        Sophus::SE3d poseCameraToWorld =
+                            currentKFPoseInverse.cast<double>();
 
                         /*!
                          * Convert the current camera pose from SE3 into a Sim3
                          * representation so that it can be combined with the
                          * loop correction estimate.
                          */
-                        g2o::Sim3 g2oTwc(Twc.unit_quaternion(),
-                                         Twc.translation(),
+                        g2o::Sim3 g2oTwc(poseCameraToWorld.unit_quaternion(),
+                                         poseCameraToWorld.translation(),
                                          1.0);
 
                         /*!

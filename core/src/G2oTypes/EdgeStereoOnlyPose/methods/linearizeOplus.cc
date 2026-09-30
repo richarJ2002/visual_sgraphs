@@ -37,14 +37,18 @@ void EdgeStereoOnlyPose::linearizeOplus()
     const VertexPose *p_poseVertex =
         static_cast<const VertexPose *>(_vertices[0]);
 
-    const Eigen::Matrix3d &Rcw = p_poseVertex->estimate().Rcw[cam_idx];
-    const Eigen::Vector3d &tcw = p_poseVertex->estimate().tcw[cam_idx];
-    const Eigen::Vector3d  Xc  = Rcw * Xw + tcw;
-    const Eigen::Vector3d  Xb  = p_poseVertex->estimate().Rbc[cam_idx] * Xc +
+    const Eigen::Matrix3d &rotationWorldToCamera =
+        p_poseVertex->estimate().Rcw[cam_idx];
+    const Eigen::Vector3d &translationWorldToCamera =
+        p_poseVertex->estimate().tcw[cam_idx];
+    const Eigen::Vector3d Xc =
+        rotationWorldToCamera * Xw + translationWorldToCamera;
+    const Eigen::Vector3d Xb = p_poseVertex->estimate().Rbc[cam_idx] * Xc +
                                p_poseVertex->estimate().tbc[cam_idx];
-    const Eigen::Matrix3d &Rcb = p_poseVertex->estimate().Rcb[cam_idx];
-    const double           baselineFocalProduct = p_poseVertex->estimate().bf;
-    const double           inverseDepthSquared  = 1.0 / (Xc(2) * Xc(2));
+    const Eigen::Matrix3d &rotationBodyToCamera =
+        p_poseVertex->estimate().Rcb[cam_idx];
+    const double baselineFocalProduct = p_poseVertex->estimate().bf;
+    const double inverseDepthSquared  = 1.0 / (Xc(2) * Xc(2));
 
     Eigen::Matrix<double, 3, 3> projectionJacobian;
     projectionJacobian.block<2, 3>(0, 0) =
@@ -60,7 +64,8 @@ void EdgeStereoOnlyPose::linearizeOplus()
     se3Derivative << 0.0, bodyPointZ, -bodyPointY, 1.0, 0.0, 0.0, -bodyPointZ,
         0.0, bodyPointX, 0.0, 1.0, 0.0, bodyPointY, -bodyPointX, 0.0, 0.0, 0.0,
         1.0;
-    _jacobianOplusXi = projectionJacobian * Rcb * se3Derivative;
+    _jacobianOplusXi =
+        projectionJacobian * rotationBodyToCamera * se3Derivative;
 }
 
 } // namespace core

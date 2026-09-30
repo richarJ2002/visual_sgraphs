@@ -85,13 +85,15 @@ TrackingStatus Tracking::stereoInitialization()
         // Set Frame pose to the origin
         if (sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
         {
-            Eigen::Matrix3f Rwb0 =
+            Eigen::Matrix3f rotationBodyToWorld0 =
                 currentFrame.imuCalibration.mTcb.rotationMatrix();
-            Eigen::Vector3f twb0 =
+            Eigen::Vector3f translationBodyToWorld0 =
                 currentFrame.imuCalibration.mTcb.translation();
             Eigen::Vector3f Vwb0;
             Vwb0.setZero();
-            if (currentFrame.setImuPoseVelocity(Rwb0, twb0, Vwb0) !=
+            if (currentFrame.setImuPoseVelocity(rotationBodyToWorld0,
+                                                translationBodyToWorld0,
+                                                Vwb0) !=
                 FrameStatus::FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

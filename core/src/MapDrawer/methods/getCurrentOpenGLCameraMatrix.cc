@@ -38,24 +38,24 @@ MapDrawerStatus
     MapDrawer::getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M_in,
                                             pangolin::OpenGlMatrix &MOw_inout)
 {
-    Eigen::Matrix4f Twc;
+    Eigen::Matrix4f poseCameraToWorld;
     {
         std::unique_lock<std::mutex> lock(cameraMutex);
-        Twc = cameraPose.matrix();
+        poseCameraToWorld = cameraPose.matrix();
     }
 
     for (int i = 0; i < 4; i++)
     {
-        M_in.m[4 * i]     = Twc(0, i);
-        M_in.m[4 * i + 1] = Twc(1, i);
-        M_in.m[4 * i + 2] = Twc(2, i);
-        M_in.m[4 * i + 3] = Twc(3, i);
+        M_in.m[4 * i]     = poseCameraToWorld(0, i);
+        M_in.m[4 * i + 1] = poseCameraToWorld(1, i);
+        M_in.m[4 * i + 2] = poseCameraToWorld(2, i);
+        M_in.m[4 * i + 3] = poseCameraToWorld(3, i);
     }
 
     MOw_inout.SetIdentity();
-    MOw_inout.m[12] = Twc(0, 3);
-    MOw_inout.m[13] = Twc(1, 3);
-    MOw_inout.m[14] = Twc(2, 3);
+    MOw_inout.m[12] = poseCameraToWorld(0, 3);
+    MOw_inout.m[13] = poseCameraToWorld(1, 3);
+    MOw_inout.m[14] = poseCameraToWorld(2, 3);
 
     return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 }

@@ -115,14 +115,15 @@ MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
 
     if (inlierCount > ransacMinInliers)
     {
-        cv::Mat Rcw(3, 3, CV_64F, mRi);
+        cv::Mat rotationWorldToCamera(3, 3, CV_64F, mRi);
         cv::Mat tcw(3, 1, CV_64F, mti);
-        Rcw.convertTo(Rcw, CV_32F);
+        rotationWorldToCamera.convertTo(rotationWorldToCamera, CV_32F);
         tcw.convertTo(tcw, CV_32F);
         mRefinedTcw.setIdentity();
 
         Eigen::Matrix<float, 3, 3> matrix3f{};
-        if (utils::converter::Converter::toMatrix3f(Rcw, matrix3f) !=
+        if (utils::converter::Converter::toMatrix3f(rotationWorldToCamera,
+                                                    matrix3f) !=
             utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -142,8 +143,9 @@ MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
         }
         mRefinedTcw.block<3, 1>(0, 3) = vector3f;
 
-        Eigen::Matrix<double, 3, 3, Eigen::RowMajor> eigRcw(mRi[0]);
-        Eigen::Vector3d                              eigtcw(mti);
+        Eigen::Matrix<double, 3, 3, Eigen::RowMajor> rotationWorldToCameraEigen(
+            mRi[0]);
+        Eigen::Vector3d translationWorldToCamera(mti);
 
         isRefined_out = true;
         return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;

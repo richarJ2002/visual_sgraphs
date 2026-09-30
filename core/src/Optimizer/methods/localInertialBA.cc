@@ -911,9 +911,10 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
 
         VertexPose *p_poseVertex =
             static_cast<VertexPose *>(optimizer.vertex(p_keyFrame->id));
-        Sophus::SE3f Tcw(p_poseVertex->estimate().Rcw[0].cast<float>(),
-                         p_poseVertex->estimate().tcw[0].cast<float>());
-        if (p_keyFrame->setPose(Tcw) !=
+        Sophus::SE3f poseWorldToCamera(
+            p_poseVertex->estimate().Rcw[0].cast<float>(),
+            p_poseVertex->estimate().tcw[0].cast<float>());
+        if (p_keyFrame->setPose(poseWorldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -966,9 +967,10 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         KeyFrame   *p_keyFrame = *optimizedVisualKeyFrameIt;
         VertexPose *p_poseVertex =
             static_cast<VertexPose *>(optimizer.vertex(p_keyFrame->id));
-        Sophus::SE3f Tcw(p_poseVertex->estimate().Rcw[0].cast<float>(),
-                         p_poseVertex->estimate().tcw[0].cast<float>());
-        if (p_keyFrame->setPose(Tcw) !=
+        Sophus::SE3f poseWorldToCamera(
+            p_poseVertex->estimate().Rcw[0].cast<float>(),
+            p_poseVertex->estimate().tcw[0].cast<float>());
+        if (p_keyFrame->setPose(poseWorldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

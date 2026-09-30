@@ -64,9 +64,9 @@ SystemStatus
         if (keyFrameIsBad)
             continue;
 
-        // Twb can be world frame to cam0 frame (without IMU) or body in world
-        // frame (with IMU)
-        Sophus::SE3f Twb;
+        // The "body" is the IMU when the sensor has one, otherwise the first
+        // camera (cam0).
+        Sophus::SE3f poseBodyToWorld;
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD) // with IMU
         {
@@ -79,7 +79,7 @@ SystemStatus
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Twb = imuPose;
+            poseBodyToWorld = imuPose;
         }
         else // without IMU
         {
@@ -92,10 +92,10 @@ SystemStatus
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Twb = poseInverse;
+            poseBodyToWorld = poseInverse;
         }
 
-        keyFramePoses.push_back(Twb);
+        keyFramePoses.push_back(poseBodyToWorld);
     }
 
     allKeyframePoses_out = keyFramePoses;

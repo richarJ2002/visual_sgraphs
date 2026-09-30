@@ -87,12 +87,14 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                      "fail; continuing as before.",
                      __func__);
     }
-    Eigen::Matrix<float, 3, 4> eigTcw1 = sophTcw1.matrix3x4();
-    Eigen::Matrix<float, 3, 3> Rcw1    = eigTcw1.block<3, 3>(0, 0);
-    Eigen::Matrix<float, 3, 3> Rwc1    = Rcw1.transpose();
-    Eigen::Vector3f            tcw1    = sophTcw1.translation();
-    Eigen::Vector3f            Ow1{};
-    if (p_currentKeyFrame->getCameraCenter(Ow1) !=
+    Eigen::Matrix<float, 3, 4> poseWorldToCamera1 = sophTcw1.matrix3x4();
+    Eigen::Matrix<float, 3, 3> rotationWorldToCamera1 =
+        poseWorldToCamera1.block<3, 3>(0, 0);
+    Eigen::Matrix<float, 3, 3> rotationCameraToWorld1 =
+        rotationWorldToCamera1.transpose();
+    Eigen::Vector3f translationWorldToCamera1 = sophTcw1.translation();
+    Eigen::Vector3f cameraCenter1_World{};
+    if (p_currentKeyFrame->getCameraCenter(cameraCenter1_World) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -136,8 +138,8 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             *p_camera2 = p_neighborKeyFrame->p_camera;
 
         // Check first that baseline is not too short
-        Eigen::Vector3f Ow2{};
-        if (p_neighborKeyFrame->getCameraCenter(Ow2) !=
+        Eigen::Vector3f cameraCenter2_World{};
+        if (p_neighborKeyFrame->getCameraCenter(cameraCenter2_World) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -145,8 +147,9 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector3f baselineVector = Ow2 - Ow1;
-        const float     baseline       = baselineVector.norm();
+        Eigen::Vector3f baselineVector =
+            cameraCenter2_World - cameraCenter1_World;
+        const float baseline = baselineVector.norm();
 
         if (!isMonocular)
         {
@@ -223,10 +226,12 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Matrix<float, 3, 4> eigTcw2 = sophTcw2.matrix3x4();
-        Eigen::Matrix<float, 3, 3> Rcw2    = eigTcw2.block<3, 3>(0, 0);
-        Eigen::Matrix<float, 3, 3> Rwc2    = Rcw2.transpose();
-        Eigen::Vector3f            tcw2    = sophTcw2.translation();
+        Eigen::Matrix<float, 3, 4> poseWorldToCamera2 = sophTcw2.matrix3x4();
+        Eigen::Matrix<float, 3, 3> rotationWorldToCamera2 =
+            poseWorldToCamera2.block<3, 3>(0, 0);
+        Eigen::Matrix<float, 3, 3> rotationCameraToWorld2 =
+            rotationWorldToCamera2.transpose();
+        Eigen::Vector3f translationWorldToCamera2 = sophTcw2.translation();
 
         const float &focalLengthX2    = p_neighborKeyFrame->fx;
         const float &focalLengthY2    = p_neighborKeyFrame->fy;
@@ -306,7 +311,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                                      "continuing as before.",
                                      __func__);
                     }
-                    Ow1 = currentKeyFrameRightCameraCenter;
+                    cameraCenter1_World = currentKeyFrameRightCameraCenter;
 
                     Sophus::SE3<float> neighborKeyFrameRightPose{};
                     if (p_neighborKeyFrame->getRightPose(
@@ -331,7 +336,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                                      "continuing as before.",
                                      __func__);
                     }
-                    Ow2 = neighborKeyFrameRightCameraCenter;
+                    cameraCenter2_World = neighborKeyFrameRightCameraCenter;
 
                     p_camera1 = p_currentKeyFrame->p_camera2;
                     p_camera2 = p_neighborKeyFrame->p_camera2;
@@ -362,7 +367,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                                      "continuing as before.",
                                      __func__);
                     }
-                    Ow1 = currentKeyFrameRightCameraCenter2;
+                    cameraCenter1_World = currentKeyFrameRightCameraCenter2;
 
                     Sophus::SE3f neighborKeyFramePose{};
                     if (p_neighborKeyFrame->getPose(neighborKeyFramePose) !=
@@ -386,7 +391,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    Ow2 = neighborKeyFrameCameraCenter;
+                    cameraCenter2_World = neighborKeyFrameCameraCenter;
 
                     p_camera1 = p_currentKeyFrame->p_camera2;
                     p_camera2 = p_neighborKeyFrame->p_camera;
@@ -416,7 +421,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    Ow1 = currentKeyFrameCameraCenter;
+                    cameraCenter1_World = currentKeyFrameCameraCenter;
 
                     Sophus::SE3<float> neighborKeyFrameRightPose2{};
                     if (p_neighborKeyFrame->getRightPose(
@@ -441,7 +446,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                                      "continuing as before.",
                                      __func__);
                     }
-                    Ow2 = neighborKeyFrameRightCameraCenter2;
+                    cameraCenter2_World = neighborKeyFrameRightCameraCenter2;
 
                     p_camera1 = p_currentKeyFrame->p_camera;
                     p_camera2 = p_neighborKeyFrame->p_camera2;
@@ -470,7 +475,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    Ow1 = currentKeyFrameCameraCenter2;
+                    cameraCenter1_World = currentKeyFrameCameraCenter2;
 
                     Sophus::SE3f neighborKeyFramePose2{};
                     if (p_neighborKeyFrame->getPose(neighborKeyFramePose2) !=
@@ -494,20 +499,20 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    Ow2 = neighborKeyFrameCameraCenter2;
+                    cameraCenter2_World = neighborKeyFrameCameraCenter2;
 
                     p_camera1 = p_currentKeyFrame->p_camera;
                     p_camera2 = p_neighborKeyFrame->p_camera;
                 }
-                eigTcw1 = sophTcw1.matrix3x4();
-                Rcw1    = eigTcw1.block<3, 3>(0, 0);
-                Rwc1    = Rcw1.transpose();
-                tcw1    = sophTcw1.translation();
+                poseWorldToCamera1     = sophTcw1.matrix3x4();
+                rotationWorldToCamera1 = poseWorldToCamera1.block<3, 3>(0, 0);
+                rotationCameraToWorld1 = rotationWorldToCamera1.transpose();
+                translationWorldToCamera1 = sophTcw1.translation();
 
-                eigTcw2 = sophTcw2.matrix3x4();
-                Rcw2    = eigTcw2.block<3, 3>(0, 0);
-                Rwc2    = Rcw2.transpose();
-                tcw2    = sophTcw2.translation();
+                poseWorldToCamera2     = sophTcw2.matrix3x4();
+                rotationWorldToCamera2 = poseWorldToCamera2.block<3, 3>(0, 0);
+                rotationCameraToWorld2 = rotationWorldToCamera2.transpose();
+                translationWorldToCamera2 = sophTcw2.translation();
             }
 
             // Check parallax between rays
@@ -516,9 +521,11 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             Eigen::Vector3f unprojectedRay2 =
                 p_camera2->unprojectEig(keyPoint2.pt);
 
-            Eigen::Vector3f worldViewingRay1 = Rwc1 * unprojectedRay1;
-            Eigen::Vector3f worldViewingRay2 = Rwc2 * unprojectedRay2;
-            const float     cosParallaxRays =
+            Eigen::Vector3f worldViewingRay1 =
+                rotationCameraToWorld1 * unprojectedRay1;
+            Eigen::Vector3f worldViewingRay2 =
+                rotationCameraToWorld2 * unprojectedRay2;
+            const float cosParallaxRays =
                 worldViewingRay1.dot(worldViewingRay2) /
                 (worldViewingRay1.norm() * worldViewingRay2.norm());
 
@@ -553,8 +560,8 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                 wasTriangulationSuccessful =
                     (GeometricTools::triangulate(unprojectedRay1,
                                                  unprojectedRay2,
-                                                 eigTcw1,
-                                                 eigTcw2,
+                                                 poseWorldToCamera1,
+                                                 poseWorldToCamera2,
                                                  triangulatedPoint) ==
                      GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS);
                 if (!wasTriangulationSuccessful)
@@ -610,11 +617,15 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                 continue;
 
             // Check triangulation in front of cameras
-            float cameraFrameZ1 = Rcw1.row(2).dot(triangulatedPoint) + tcw1(2);
+            float cameraFrameZ1 =
+                rotationWorldToCamera1.row(2).dot(triangulatedPoint) +
+                translationWorldToCamera1(2);
             if (cameraFrameZ1 <= 0)
                 continue;
 
-            float cameraFrameZ2 = Rcw2.row(2).dot(triangulatedPoint) + tcw2(2);
+            float cameraFrameZ2 =
+                rotationWorldToCamera2.row(2).dot(triangulatedPoint) +
+                translationWorldToCamera2(2);
             if (cameraFrameZ2 <= 0)
                 continue;
 
@@ -622,9 +633,11 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             const float &levelSigmaSquared1 =
                 p_currentKeyFrame->levelSigmaSquared[keyPoint1.octave];
             const float cameraFrameX1 =
-                Rcw1.row(0).dot(triangulatedPoint) + tcw1(0);
+                rotationWorldToCamera1.row(0).dot(triangulatedPoint) +
+                translationWorldToCamera1(0);
             const float cameraFrameY1 =
-                Rcw1.row(1).dot(triangulatedPoint) + tcw1(1);
+                rotationWorldToCamera1.row(1).dot(triangulatedPoint) +
+                translationWorldToCamera1(1);
             const float inverseDepth1 = 1.0 / cameraFrameZ1;
 
             if (!hasStereoMatch1)
@@ -661,9 +674,11 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             const float levelSigmaSquared2 =
                 p_neighborKeyFrame->levelSigmaSquared[keyPoint2.octave];
             const float cameraFrameX2 =
-                Rcw2.row(0).dot(triangulatedPoint) + tcw2(0);
+                rotationWorldToCamera2.row(0).dot(triangulatedPoint) +
+                translationWorldToCamera2(0);
             const float cameraFrameY2 =
-                Rcw2.row(1).dot(triangulatedPoint) + tcw2(1);
+                rotationWorldToCamera2.row(1).dot(triangulatedPoint) +
+                translationWorldToCamera2(1);
             const float inverseDepth2 = 1.0 / cameraFrameZ2;
             if (!hasStereoMatch2)
             {
@@ -695,11 +710,13 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             }
 
             // Check scale consistency
-            Eigen::Vector3f pointViewVector1 = triangulatedPoint - Ow1;
-            float           pointDistance1   = pointViewVector1.norm();
+            Eigen::Vector3f pointViewVector1 =
+                triangulatedPoint - cameraCenter1_World;
+            float pointDistance1 = pointViewVector1.norm();
 
-            Eigen::Vector3f pointViewVector2 = triangulatedPoint - Ow2;
-            float           pointDistance2   = pointViewVector2.norm();
+            Eigen::Vector3f pointViewVector2 =
+                triangulatedPoint - cameraCenter2_World;
+            float pointDistance2 = pointViewVector2.norm();
 
             if (pointDistance1 == 0 || pointDistance2 == 0)
                 continue;

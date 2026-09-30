@@ -70,10 +70,13 @@ void EdgeInertialGS::linearizeOplus()
     Eigen::Vector3d deltaGyroBias;
     deltaGyroBias << deltaBias.bwx, deltaBias.bwy, deltaBias.bwz;
 
-    const Eigen::Matrix3d Rwb1 = p_previousPoseVertex->estimate().Rwb;
-    const Eigen::Matrix3d Rbw1 = Rwb1.transpose();
-    const Eigen::Matrix3d Rwb2 = p_currentPoseVertex->estimate().Rwb;
-    const Eigen::Matrix3d Rwg  = p_gravityDirectionVertex->estimate().Rwg;
+    const Eigen::Matrix3d rotationBodyToWorld1 =
+        p_previousPoseVertex->estimate().Rwb;
+    const Eigen::Matrix3d rotationWorldToBody1 =
+        rotationBodyToWorld1.transpose();
+    const Eigen::Matrix3d rotationBodyToWorld2 =
+        p_currentPoseVertex->estimate().Rwb;
+    const Eigen::Matrix3d Rwg = p_gravityDirectionVertex->estimate().Rwg;
     Eigen::MatrixXd       gravityBasisMatrix = Eigen::MatrixXd::Zero(3, 2);
     gravityBasisMatrix(0, 1)                 = -IMU::GRAVITY_VALUE;
     gravityBasisMatrix(1, 0)                 = IMU::GRAVITY_VALUE;
@@ -92,7 +95,7 @@ void EdgeInertialGS::linearizeOplus()
     const Eigen::Matrix3d deltaRotation =
         preintegratedDeltaRotation.cast<double>();
     const Eigen::Matrix3d rotationErrorMatrix =
-        deltaRotation.transpose() * Rbw1 * Rwb2;
+        deltaRotation.transpose() * rotationWorldToBody1 * rotationBodyToWorld2;
     Eigen::Vector3d rotationError{};
     if (logSO3(rotationErrorMatrix, rotationError) !=
         G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
@@ -115,17 +118,20 @@ void EdgeInertialGS::linearizeOplus()
     // Jacobians wrt Pose 1
     _jacobianOplus[0].setZero();
     // rotation
-    _jacobianOplus[0].block<3, 3>(0, 0) =
-        -inverseRightJacobian * Rwb2.transpose() * Rwb1;
+    _jacobianOplus[0].block<3, 3>(0, 0) = -inverseRightJacobian *
+                                          rotationBodyToWorld2.transpose() *
+                                          rotationBodyToWorld1;
     _jacobianOplus[0].block<3, 3>(3, 0) = Sophus::SO3d::hat(
-        Rbw1 * (scaleEstimate * (p_currentVelocityVertex->estimate() -
-                                 p_previousVelocityVertex->estimate()) -
-                g * dt));
+        rotationWorldToBody1 *
+        (scaleEstimate * (p_currentVelocityVertex->estimate() -
+                          p_previousVelocityVertex->estimate()) -
+         g * dt));
     _jacobianOplus[0].block<3, 3>(6, 0) = Sophus::SO3d::hat(
-        Rbw1 * (scaleEstimate * (p_currentPoseVertex->estimate().twb -
-                                 p_previousPoseVertex->estimate().twb -
-                                 p_previousVelocityVertex->estimate() * dt) -
-                0.5 * g * dt * dt));
+        rotationWorldToBody1 *
+        (scaleEstimate * (p_currentPoseVertex->estimate().twb -
+                          p_previousPoseVertex->estimate().twb -
+                          p_previousVelocityVertex->estimate() * dt) -
+         0.5 * g * dt * dt));
     // translation
     _jacobianOplus[0].block<3, 3>(6, 3) =
         Eigen::DiagonalMatrix<double, 3>(-scaleEstimate,
@@ -134,8 +140,9 @@ void EdgeInertialGS::linearizeOplus()
 
     // Jacobians wrt Velocity 1
     _jacobianOplus[1].setZero();
-    _jacobianOplus[1].block<3, 3>(3, 0) = -scaleEstimate * Rbw1;
-    _jacobianOplus[1].block<3, 3>(6, 0) = -scaleEstimate * Rbw1 * dt;
+    _jacobianOplus[1].block<3, 3>(3, 0) = -scaleEstimate * rotationWorldToBody1;
+    _jacobianOplus[1].block<3, 3>(6, 0) =
+        -scaleEstimate * rotationWorldToBody1 * dt;
 
     // Jacobians wrt Gyro bias
     _jacobianOplus[2].setZero();
@@ -164,27 +171,29 @@ void EdgeInertialGS::linearizeOplus()
     // rotation
     _jacobianOplus[4].block<3, 3>(0, 0) = inverseRightJacobian;
     // translation
-    _jacobianOplus[4].block<3, 3>(6, 3) = scaleEstimate * Rbw1 * Rwb2;
+    _jacobianOplus[4].block<3, 3>(6, 3) =
+        scaleEstimate * rotationWorldToBody1 * rotationBodyToWorld2;
 
     // Jacobians wrt Velocity 2
     _jacobianOplus[5].setZero();
-    _jacobianOplus[5].block<3, 3>(3, 0) = scaleEstimate * Rbw1;
+    _jacobianOplus[5].block<3, 3>(3, 0) = scaleEstimate * rotationWorldToBody1;
 
     // Jacobians wrt Gravity direction
     _jacobianOplus[6].setZero();
-    _jacobianOplus[6].block<3, 2>(3, 0) = -Rbw1 * gravityDirectionJacobian * dt;
+    _jacobianOplus[6].block<3, 2>(3, 0) =
+        -rotationWorldToBody1 * gravityDirectionJacobian * dt;
     _jacobianOplus[6].block<3, 2>(6, 0) =
-        -0.5 * Rbw1 * gravityDirectionJacobian * dt * dt;
+        -0.5 * rotationWorldToBody1 * gravityDirectionJacobian * dt * dt;
 
     // Jacobians wrt scale factor
     _jacobianOplus[7].setZero();
     _jacobianOplus[7].block<3, 1>(3, 0) =
-        Rbw1 * (p_currentVelocityVertex->estimate() -
-                p_previousVelocityVertex->estimate());
+        rotationWorldToBody1 * (p_currentVelocityVertex->estimate() -
+                                p_previousVelocityVertex->estimate());
     _jacobianOplus[7].block<3, 1>(6, 0) =
-        Rbw1 * (p_currentPoseVertex->estimate().twb -
-                p_previousPoseVertex->estimate().twb -
-                p_previousVelocityVertex->estimate() * dt);
+        rotationWorldToBody1 * (p_currentPoseVertex->estimate().twb -
+                                p_previousPoseVertex->estimate().twb -
+                                p_previousVelocityVertex->estimate() * dt);
 }
 
 } // namespace core

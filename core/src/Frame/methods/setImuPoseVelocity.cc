@@ -51,10 +51,10 @@ FrameStatus Frame::setImuPoseVelocity(const Eigen::Matrix3f &Rwb_in,
     velocityVw          = Vwb_in;
     isVelocityAvailable = true;
 
-    Sophus::SE3f Twb(Rwb_in, twb_in);
-    Sophus::SE3f Tbw = Twb.inverse();
+    Sophus::SE3f poseBodyToWorld(Rwb_in, twb_in);
+    Sophus::SE3f poseWorldToBody = poseBodyToWorld.inverse();
 
-    poseTcw = imuCalibration.mTcb * Tbw;
+    poseTcw = imuCalibration.mTcb * poseWorldToBody;
 
     if (updatePoseMatrices() != FrameStatus::FRAME_STATUS_SUCCESS)
     {

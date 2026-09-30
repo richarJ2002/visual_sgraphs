@@ -52,8 +52,8 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
 
     if (isMapUpdated && p_lastKeyFrame)
     {
-        Eigen::Vector3f twb1{};
-        if (p_lastKeyFrame->getImuPosition(twb1) !=
+        Eigen::Vector3f translationBodyToWorld1{};
+        if (p_lastKeyFrame->getImuPosition(translationBodyToWorld1) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -61,8 +61,8 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Matrix3f Rwb1{};
-        if (p_lastKeyFrame->getImuRotation(Rwb1) !=
+        Eigen::Matrix3f rotationBodyToWorld1{};
+        if (p_lastKeyFrame->getImuRotation(rotationBodyToWorld1) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -103,10 +103,11 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Matrix3f Rwb2{};
-        if (IMU::normalizeRotation(
-                Rwb1 * imuPreintegratedFromLastKFDeltaRotation,
-                Rwb2) != IMU::ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
+        Eigen::Matrix3f rotationBodyToWorld2{};
+        if (IMU::normalizeRotation(rotationBodyToWorld1 *
+                                       imuPreintegratedFromLastKFDeltaRotation,
+                                   rotationBodyToWorld2) !=
+            IMU::ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: normalizeRotation returned a failure status "
@@ -133,8 +134,9 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
-                               Rwb1 * imuPreintegratedFromLastKFDeltaPosition;
+        Eigen::Vector3f translationBodyToWorld2 =
+            translationBodyToWorld1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
+            rotationBodyToWorld1 * imuPreintegratedFromLastKFDeltaPosition;
         IMU::Bias lastKeyFrameImuBias3{};
         if (p_lastKeyFrame->getImuBias(lastKeyFrameImuBias3) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -156,8 +158,11 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
                          __func__);
         }
         Eigen::Vector3f Vwb2 =
-            Vwb1 + t12 * Gz + Rwb1 * imuPreintegratedFromLastKFDeltaVelocity;
-        if (currentFrame.setImuPoseVelocity(Rwb2, twb2, Vwb2) !=
+            Vwb1 + t12 * Gz +
+            rotationBodyToWorld1 * imuPreintegratedFromLastKFDeltaVelocity;
+        if (currentFrame.setImuPoseVelocity(rotationBodyToWorld2,
+                                            translationBodyToWorld2,
+                                            Vwb2) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -182,16 +187,18 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
     }
     else if (!isMapUpdated)
     {
-        Eigen::Vector3f twb1{};
-        if (lastFrame.getImuPosition(twb1) != FrameStatus::FRAME_STATUS_SUCCESS)
+        Eigen::Vector3f translationBodyToWorld1{};
+        if (lastFrame.getImuPosition(translationBodyToWorld1) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getImuPosition returned a failure status "
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Matrix3f Rwb1{};
-        if (lastFrame.getImuRotation(Rwb1) != FrameStatus::FRAME_STATUS_SUCCESS)
+        Eigen::Matrix3f rotationBodyToWorld1{};
+        if (lastFrame.getImuRotation(rotationBodyToWorld1) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getImuRotation returned a failure status "
@@ -220,8 +227,9 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Matrix3f Rwb2{};
-        if (IMU::normalizeRotation(Rwb1 * deltaRotation, Rwb2) !=
+        Eigen::Matrix3f rotationBodyToWorld2{};
+        if (IMU::normalizeRotation(rotationBodyToWorld1 * deltaRotation,
+                                   rotationBodyToWorld2) !=
             IMU::ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -240,8 +248,9 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector3f twb2 =
-            twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * deltaPosition;
+        Eigen::Vector3f translationBodyToWorld2 =
+            translationBodyToWorld1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
+            rotationBodyToWorld1 * deltaPosition;
         Eigen::Vector3f deltaVelocity{};
         if (currentFrame.p_imuPreintegratedFrame->getDeltaVelocity(
                 lastFrame.imuBias,
@@ -253,9 +262,12 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * deltaVelocity;
+        Eigen::Vector3f Vwb2 =
+            Vwb1 + t12 * Gz + rotationBodyToWorld1 * deltaVelocity;
 
-        if (currentFrame.setImuPoseVelocity(Rwb2, twb2, Vwb2) !=
+        if (currentFrame.setImuPoseVelocity(rotationBodyToWorld2,
+                                            translationBodyToWorld2,
+                                            Vwb2) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

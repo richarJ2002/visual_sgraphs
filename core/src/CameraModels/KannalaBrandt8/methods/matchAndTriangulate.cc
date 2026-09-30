@@ -45,12 +45,14 @@ bool KannalaBrandt8::matchAndTriangulate(
     Eigen::Vector3f                  &point3d_inout)
 {
     /* Declare and init local variables */
-    Eigen::Matrix<float, 3, 4> eigTcw1 = pose1_in.matrix3x4();
-    Eigen::Matrix3f            Rcw1    = eigTcw1.block<3, 3>(0, 0);
-    Eigen::Matrix3f            Rwc1    = Rcw1.transpose();
-    Eigen::Matrix<float, 3, 4> eigTcw2 = pose2_in.matrix3x4();
-    Eigen::Matrix3f            Rcw2    = eigTcw2.block<3, 3>(0, 0);
-    Eigen::Matrix3f            Rwc2    = Rcw2.transpose();
+    Eigen::Matrix<float, 3, 4> poseWorldToCamera1 = pose1_in.matrix3x4();
+    Eigen::Matrix3f            rotationWorldToCamera1 =
+        poseWorldToCamera1.block<3, 3>(0, 0);
+    Eigen::Matrix3f rotationCameraToWorld1 = rotationWorldToCamera1.transpose();
+    Eigen::Matrix<float, 3, 4> poseWorldToCamera2 = pose2_in.matrix3x4();
+    Eigen::Matrix3f            rotationWorldToCamera2 =
+        poseWorldToCamera2.block<3, 3>(0, 0);
+    Eigen::Matrix3f rotationCameraToWorld2 = rotationWorldToCamera2.transpose();
 
     cv::Point3f unprojectedPoint1 = this->unproject(keypoint1_in.pt);
     cv::Point3f unprojectedPoint2 =
@@ -64,8 +66,8 @@ bool KannalaBrandt8::matchAndTriangulate(
                                unprojectedPoint2.z);
 
     /* Check parallax between rays */
-    Eigen::Vector3f worldRay1 = Rwc1 * cameraRay1;
-    Eigen::Vector3f worldRay2 = Rwc2 * cameraRay2;
+    Eigen::Vector3f worldRay1 = rotationCameraToWorld1 * cameraRay1;
+    Eigen::Vector3f worldRay2 = rotationCameraToWorld2 * cameraRay2;
 
     const float parallaxCosine =
         worldRay1.dot(worldRay2) / (worldRay1.norm() * worldRay2.norm());
@@ -89,8 +91,8 @@ bool KannalaBrandt8::matchAndTriangulate(
 
     if (triangulate(imagePoint1,
                     imagePoint2,
-                    eigTcw1,
-                    eigTcw2,
+                    poseWorldToCamera1,
+                    poseWorldToCamera2,
                     triangulatedPoint3D) !=
         KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS)
     {
@@ -102,7 +104,8 @@ bool KannalaBrandt8::matchAndTriangulate(
 
     /* Check triangulation in front of cameras */
     float cameraDepth1 =
-        Rcw1.row(2).dot(triangulatedPoint3D) + pose1_in.translation()(2);
+        rotationWorldToCamera1.row(2).dot(triangulatedPoint3D) +
+        pose1_in.translation()(2);
     if (cameraDepth1 <= 0)
     {
         /* Point is not in front of the first camera */
@@ -110,7 +113,8 @@ bool KannalaBrandt8::matchAndTriangulate(
     }
 
     float cameraDepth2 =
-        Rcw2.row(2).dot(triangulatedPoint3D) + pose2_in.translation()(2);
+        rotationWorldToCamera2.row(2).dot(triangulatedPoint3D) +
+        pose2_in.translation()(2);
     if (cameraDepth2 <= 0)
     {
         /* Point is not in front of the first camera */
@@ -122,7 +126,7 @@ bool KannalaBrandt8::matchAndTriangulate(
      * reference system.
      */
     Eigen::Vector3f pointInCamera1 =
-        Rcw1 * triangulatedPoint3D + pose1_in.translation();
+        rotationWorldToCamera1 * triangulatedPoint3D + pose1_in.translation();
     Eigen::Vector2f projectedPoint1 = this->project(pointInCamera1);
 
     float reprojectionErrorX1 = projectedPoint1(0) - keypoint1_in.pt.x;
@@ -140,7 +144,7 @@ bool KannalaBrandt8::matchAndTriangulate(
      * reference system.
      */
     Eigen::Vector3f pointInCamera2 =
-        Rcw2 * triangulatedPoint3D + pose2_in.translation();
+        rotationWorldToCamera2 * triangulatedPoint3D + pose2_in.translation();
     Eigen::Vector2f projectedPoint2 =
         p_otherCamera_inout->project(pointInCamera2);
 

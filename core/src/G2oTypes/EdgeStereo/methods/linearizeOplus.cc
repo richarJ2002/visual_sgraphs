@@ -39,14 +39,19 @@ void EdgeStereo::linearizeOplus()
     const g2o::VertexSBAPointXYZ *p_mapPointVertex =
         static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
 
-    const Eigen::Matrix3d &Rcw = p_poseVertex->estimate().Rcw[cam_idx];
-    const Eigen::Vector3d &tcw = p_poseVertex->estimate().tcw[cam_idx];
-    const Eigen::Vector3d  Xc  = Rcw * p_mapPointVertex->estimate() + tcw;
-    const Eigen::Vector3d  Xb  = p_poseVertex->estimate().Rbc[cam_idx] * Xc +
+    const Eigen::Matrix3d &rotationWorldToCamera =
+        p_poseVertex->estimate().Rcw[cam_idx];
+    const Eigen::Vector3d &translationWorldToCamera =
+        p_poseVertex->estimate().tcw[cam_idx];
+    const Eigen::Vector3d Xc =
+        rotationWorldToCamera * p_mapPointVertex->estimate() +
+        translationWorldToCamera;
+    const Eigen::Vector3d Xb = p_poseVertex->estimate().Rbc[cam_idx] * Xc +
                                p_poseVertex->estimate().tbc[cam_idx];
-    const Eigen::Matrix3d &Rcb = p_poseVertex->estimate().Rcb[cam_idx];
-    const double           baselineFocalProduct = p_poseVertex->estimate().bf;
-    const double           inverseDepthSquared  = 1.0 / (Xc(2) * Xc(2));
+    const Eigen::Matrix3d &rotationBodyToCamera =
+        p_poseVertex->estimate().Rcb[cam_idx];
+    const double baselineFocalProduct = p_poseVertex->estimate().bf;
+    const double inverseDepthSquared  = 1.0 / (Xc(2) * Xc(2));
 
     Eigen::Matrix<double, 3, 3> projectionJacobian;
     projectionJacobian.block<2, 3>(0, 0) =
@@ -55,7 +60,7 @@ void EdgeStereo::linearizeOplus()
     projectionJacobian.block<1, 3>(2, 0) = projectionJacobian.block<1, 3>(0, 0);
     projectionJacobian(2, 2) += baselineFocalProduct * inverseDepthSquared;
 
-    _jacobianOplusXi = -projectionJacobian * Rcw;
+    _jacobianOplusXi = -projectionJacobian * rotationWorldToCamera;
 
     Eigen::Matrix<double, 3, 6> se3Derivative;
     double                      bodyPointX = Xb(0);
@@ -66,7 +71,8 @@ void EdgeStereo::linearizeOplus()
         0.0, bodyPointX, 0.0, 1.0, 0.0, bodyPointY, -bodyPointX, 0.0, 0.0, 0.0,
         1.0;
 
-    _jacobianOplusXj = projectionJacobian * Rcb * se3Derivative;
+    _jacobianOplusXj =
+        projectionJacobian * rotationBodyToCamera * se3Derivative;
 }
 
 } // namespace core
