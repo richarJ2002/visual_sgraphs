@@ -38,8 +38,8 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                                   const bool                     bRight)
 {
     camera_models::geometriccamera::GeometricCamera *p_camera;
-    Sophus::SE3f                                     Tcw;
-    Eigen::Vector3f                                  Ow;
+    Sophus::SE3f                                     poseWorldToCamera;
+    Eigen::Vector3f                                  cameraCenter_World;
 
     if (bRight)
     {
@@ -52,7 +52,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        Tcw = keyframeRightPose;
+        poseWorldToCamera = keyframeRightPose;
         Eigen::Vector3f keyframeRightCameraCenter{};
         if (p_keyframe_inout->getRightCameraCenter(keyframeRightCameraCenter) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -62,8 +62,8 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Ow       = keyframeRightCameraCenter;
-        p_camera = p_keyframe_inout->p_camera2;
+        cameraCenter_World = keyframeRightCameraCenter;
+        p_camera           = p_keyframe_inout->p_camera2;
     }
     else
     {
@@ -76,7 +76,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Tcw = keyframePose;
+        poseWorldToCamera = keyframePose;
         Eigen::Vector3f keyframeCameraCenter{};
         if (p_keyframe_inout->getCameraCenter(keyframeCameraCenter) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -86,8 +86,8 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Ow       = keyframeCameraCenter;
-        p_camera = p_keyframe_inout->p_camera;
+        cameraCenter_World = keyframeCameraCenter;
+        p_camera           = p_keyframe_inout->p_camera;
     }
 
     int          fusedCount    = 0;
@@ -150,7 +150,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector3f p3Dc = Tcw * p3Dw;
+        Eigen::Vector3f p3Dc = poseWorldToCamera * p3Dw;
 
         // Depth must be positive
         if (p3Dc(2) < 0.0f)
@@ -201,7 +201,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        Eigen::Vector3f PO         = p3Dw - Ow;
+        Eigen::Vector3f PO         = p3Dw - cameraCenter_World;
         const float     distance3d = PO.norm();
 
         // Depth must be inside the scale pyramid of the image

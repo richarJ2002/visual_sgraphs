@@ -48,9 +48,10 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
     const float &cx = pKF->cx;
     const float &cy = pKF->cy;
 
-    Sophus::SE3f Tcw =
+    Sophus::SE3f poseWorldToCamera =
         Sophus::SE3f(Scw.rotationMatrix(), Scw.translation() / Scw.scale());
-    Eigen::Vector3f Ow = Tcw.inverse().translation();
+    Eigen::Vector3f cameraCenter_World =
+        poseWorldToCamera.inverse().translation();
 
     // Set of MapPoints already found in the KeyFrame
     std::set<MapPoint *> alreadyFounds(matched_inout.begin(),
@@ -92,7 +93,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         }
 
         // Transform into Camera Coords.
-        Eigen::Vector3f p3Dc = Tcw * p3Dw;
+        Eigen::Vector3f p3Dc = poseWorldToCamera * p3Dw;
 
         // Depth must be positive
         if (p3Dc(2) < 0.0)
@@ -140,7 +141,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        Eigen::Vector3f PO       = p3Dw - Ow;
+        Eigen::Vector3f PO       = p3Dw - cameraCenter_World;
         const float     distance = PO.norm();
 
         if (distance < minimumDistance || distance > maximumDistance)

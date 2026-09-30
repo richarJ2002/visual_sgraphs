@@ -46,8 +46,9 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
         rotHist[histogramBinIndex].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
-    Sophus::SE3f Tcw{};
-    if (CurrentFrame.getPose(Tcw) != FrameStatus::FRAME_STATUS_SUCCESS)
+    Sophus::SE3f poseWorldToCamera{};
+    if (CurrentFrame.getPose(poseWorldToCamera) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getPose returned a failure status although it cannot "
@@ -55,7 +56,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                      __func__);
     }
     const Eigen::Vector3f translationCameraToWorld =
-        Tcw.inverse().translation();
+        poseWorldToCamera.inverse().translation();
 
     Sophus::SE3f Tlw{};
     if (LastFrame.getPose(Tlw) != FrameStatus::FRAME_STATUS_SUCCESS)
@@ -89,7 +90,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Vector3f x3Dc = Tcw * x3Dw;
+                Eigen::Vector3f x3Dc = poseWorldToCamera * x3Dw;
 
                 const float invzc = 1.0 / x3Dc(2);
 

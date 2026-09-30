@@ -41,15 +41,17 @@ ORBmatcherStatus
 {
     int nmatches = 0;
 
-    Sophus::SE3f Tcw{};
-    if (CurrentFrame.getPose(Tcw) != FrameStatus::FRAME_STATUS_SUCCESS)
+    Sophus::SE3f poseWorldToCamera{};
+    if (CurrentFrame.getPose(poseWorldToCamera) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getPose returned a failure status although it cannot "
                      "fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector3f Ow = Tcw.inverse().translation();
+    Eigen::Vector3f cameraCenter_World =
+        poseWorldToCamera.inverse().translation();
 
     // Rotation Histogram (to check rotation consistency)
     std::vector<int> rotHist[HISTO_LENGTH];
@@ -98,7 +100,7 @@ ORBmatcherStatus
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Vector3f x3Dc = Tcw * x3Dw;
+                Eigen::Vector3f x3Dc = poseWorldToCamera * x3Dw;
 
                 const Eigen::Vector2f uv = CurrentFrame.p_camera->project(x3Dc);
 
@@ -110,7 +112,7 @@ ORBmatcherStatus
                     continue;
 
                 // Compute predicted scale level
-                Eigen::Vector3f PO         = x3Dw - Ow;
+                Eigen::Vector3f PO         = x3Dw - cameraCenter_World;
                 float           distance3d = PO.norm();
 
                 float maximumDistance{};

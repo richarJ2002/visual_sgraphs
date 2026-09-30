@@ -140,8 +140,10 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            Sophus::SE3d Tcw = keyFramePose.cast<double>();
-            g2o::Sim3    Siw(Tcw.unit_quaternion(), Tcw.translation(), 1.0);
+            Sophus::SE3d poseWorldToCamera = keyFramePose.cast<double>();
+            g2o::Sim3    Siw(poseWorldToCamera.unit_quaternion(),
+                          poseWorldToCamera.translation(),
+                          1.0);
             vScw[idCount] = Siw;
             p_sim3Vertex->setEstimate(Siw);
         }

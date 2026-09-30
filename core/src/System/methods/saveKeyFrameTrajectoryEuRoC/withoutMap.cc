@@ -118,8 +118,8 @@ SystemStatus System::saveKeyFrameTrajectoryEuRoC(const std::string &filename_in)
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD)
         {
-            Sophus::SE3f Twb{};
-            if (p_keyFrame->getImuPose(Twb) !=
+            Sophus::SE3f poseBodyToWorld{};
+            if (p_keyFrame->getImuPose(poseBodyToWorld) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -127,17 +127,19 @@ SystemStatus System::saveKeyFrameTrajectoryEuRoC(const std::string &filename_in)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Quaternionf q   = Twb.unit_quaternion();
-            Eigen::Vector3f    twb = Twb.translation();
+            Eigen::Quaternionf q = poseBodyToWorld.unit_quaternion();
+            Eigen::Vector3f    translationBodyToWorld =
+                poseBodyToWorld.translation();
             f << std::setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
-              << std::setprecision(9) << twb(0) << " " << twb(1) << " "
-              << twb(2) << " " << q.x() << " " << q.y() << " " << q.z() << " "
-              << q.w() << std::endl;
+              << std::setprecision(9) << translationBodyToWorld(0) << " "
+              << translationBodyToWorld(1) << " " << translationBodyToWorld(2)
+              << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()
+              << std::endl;
         }
         else
         {
-            Sophus::SE3f Twc{};
-            if (p_keyFrame->getPoseInverse(Twc) !=
+            Sophus::SE3f poseCameraToWorld{};
+            if (p_keyFrame->getPoseInverse(poseCameraToWorld) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -145,8 +147,8 @@ SystemStatus System::saveKeyFrameTrajectoryEuRoC(const std::string &filename_in)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Quaternionf q = Twc.unit_quaternion();
-            Eigen::Vector3f    t = Twc.translation();
+            Eigen::Quaternionf q = poseCameraToWorld.unit_quaternion();
+            Eigen::Vector3f    t = poseCameraToWorld.translation();
             f << std::setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
               << std::setprecision(9) << t(0) << " " << t(1) << " " << t(2)
               << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()
