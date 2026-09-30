@@ -2681,7 +2681,7 @@ sensor_msgs::msg::PointCloud2
     cloud.height          = 1;
     cloud.is_dense        = false;
     cloud.is_bigendian    = false;
-    cloud.width           = mapPoints_in.size();
+    cloud.width           = static_cast<uint32_t>(mapPoints_in.size());
     cloud.point_step      = numChannels * sizeof(float);
     cloud.row_step        = cloud.point_step * cloud.width;
     cloud.fields.resize(numChannels);
@@ -2691,7 +2691,7 @@ sensor_msgs::msg::PointCloud2
     {
         cloud.fields[idx].count    = 1;
         cloud.fields[idx].name     = channelId[idx];
-        cloud.fields[idx].offset   = idx * sizeof(float);
+        cloud.fields[idx].offset   = static_cast<uint32_t>(idx * sizeof(float));
         cloud.fields[idx].datatype = sensor_msgs::msg::PointField::FLOAT32;
     }
 
@@ -4697,7 +4697,7 @@ void publishCameraPose(const Sophus::SE3f &cameraPose_World_in,
     cameraMarker.scale.y = 0.5;
     cameraMarker.scale.z = 0.5;
 
-    cameraMarker.color.a = 0.7;
+    cameraMarker.color.a = 0.7f;
 
     cameraMarker.lifetime = rclcpp::Duration::from_seconds(0);
 

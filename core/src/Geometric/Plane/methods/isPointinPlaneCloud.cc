@@ -55,9 +55,9 @@ PlaneStatus Plane::isPointinPlaneCloud(const Eigen::Vector3d &queryPoint_in,
 
     std::unique_lock<std::mutex> lock(featuresMutex);
     pcl::PointXYZRGBA            queryPointPcl;
-    queryPointPcl.x = queryPoint_in(0);
-    queryPointPcl.y = queryPoint_in(1);
-    queryPointPcl.z = queryPoint_in(2);
+    queryPointPcl.x = static_cast<float>(queryPoint_in(0));
+    queryPointPcl.y = static_cast<float>(queryPoint_in(1));
+    queryPointPcl.z = static_cast<float>(queryPoint_in(2));
 
     types::SystemParams *p_systemParams = nullptr;
     if (types::SystemParams::getParams(p_systemParams) !=

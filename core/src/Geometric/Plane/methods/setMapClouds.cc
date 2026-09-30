@@ -52,7 +52,7 @@ PlaneStatus Plane::setMapClouds(
      * metadata. Mapped planes accumulate observations over time, so retaining
      * the first observation's width eventually makes every later copy or
      * transform report an invalid width/size combination. */
-    planeCloud->width  = planeCloud->size();
+    planeCloud->width  = static_cast<uint32_t>(planeCloud->size());
     planeCloud->height = 1;
 
     /* Update the octree */

@@ -569,7 +569,7 @@ TEST(SemanticCanonicalSerialization,
     EXPECT_EQ(axiomClassName3, "UNKNOWN_AXIOM_CLASS");
     std::string reasonCodeName3{};
     ASSERT_EQ(
-        (reasonCodeName(static_cast<ReasonCode>(0xFFFF), reasonCodeName3)),
+        (reasonCodeName(static_cast<ReasonCode>(0xFF), reasonCodeName3)),
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS);
     EXPECT_EQ(reasonCodeName3, "UNKNOWN_REASON_CODE");
     std::string entityKindName3{};

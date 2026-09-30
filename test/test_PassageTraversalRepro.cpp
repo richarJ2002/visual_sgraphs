@@ -229,9 +229,10 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     apertureKeyFrame.id = 1U;
     ASSERT_EQ((apertureKeyFrame.setPose(
                   Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                               Eigen::Vector3f(-APERTURE_CAMERA_CENTER_X,
+                               Eigen::Vector3d(-APERTURE_CAMERA_CENTER_X,
                                                -APERTURE_CAMERA_CENTER_Y,
-                                               -APERTURE_CAMERA_CENTER_Z)))),
+                                               -APERTURE_CAMERA_CENTER_Z)
+                                   .cast<float>()))),
               KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
     ASSERT_EQ((p_map->addKeyFrame(&apertureKeyFrame)),
               MapStatus::MAP_STATUS_SUCCESS);

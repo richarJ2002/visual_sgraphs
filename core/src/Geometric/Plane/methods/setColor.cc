@@ -36,9 +36,9 @@ PlaneStatus Plane::setColor(void)
 {
     if (color.size() == 0)
     {
-        color.push_back(rand() % 256);
-        color.push_back(rand() % 256);
-        color.push_back(rand() % 256);
+        color.push_back(static_cast<unsigned char>(rand() % 256));
+        color.push_back(static_cast<unsigned char>(rand() % 256));
+        color.push_back(static_cast<unsigned char>(rand() % 256));
     }
 
     return PlaneStatus::PLANE_STATUS_SUCCESS;

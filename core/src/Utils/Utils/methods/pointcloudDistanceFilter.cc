@@ -86,7 +86,7 @@ UtilsStatus Utils::pointcloudDistanceFilter(
     p_filteredCloud->height   = 1;
     p_filteredCloud->is_dense = false;
     p_filteredCloud->header   = p_cloud_in->header;
-    p_filteredCloud->width    = p_filteredCloud->size();
+    p_filteredCloud->width    = static_cast<uint32_t>(p_filteredCloud->size());
 
     p_filteredCloud_out = p_filteredCloud;
     return UtilsStatus::UTILS_STATUS_SUCCESS;

@@ -134,9 +134,9 @@ PlaneStatus Plane::alignGeometryToEquation(
         point_NewWorld_m = rotationMatrix * point_NewWorld_m +
                            translation_oldPlaneToOptimizedPlane_m;
 
-        point.x = point_NewWorld_m.x();
-        point.y = point_NewWorld_m.y();
-        point.z = point_NewWorld_m.z();
+        point.x = static_cast<float>(point_NewWorld_m.x());
+        point.y = static_cast<float>(point_NewWorld_m.y());
+        point.z = static_cast<float>(point_NewWorld_m.z());
     }
 
     globalEquation = g2o::Plane3D(targetCoefficients);

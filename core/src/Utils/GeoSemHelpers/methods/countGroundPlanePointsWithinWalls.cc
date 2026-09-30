@@ -74,8 +74,8 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
 
             // substitute the point into the wall equation to get the signed
             // distance
-            float signedDistance =
-                wallEquation.head<3>().dot(pointVector) + wallEquation(3);
+            float signedDistance = static_cast<float>(
+                wallEquation.head<3>().dot(pointVector) + wallEquation(3));
 
             // if the point is outside the wall, break the loop
             if (signedDistance < 0)

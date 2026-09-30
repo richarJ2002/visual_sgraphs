@@ -46,9 +46,9 @@ PlaneStatus
 
         pointVector = transform_oldWorldToNewWorld_in.map(pointVector);
 
-        point.x = pointVector.x();
-        point.y = pointVector.y();
-        point.z = pointVector.z();
+        point.x = static_cast<float>(pointVector.x());
+        point.y = static_cast<float>(pointVector.y());
+        point.z = static_cast<float>(pointVector.z());
     }
 
     g2o::Plane3D transformedEquation{};

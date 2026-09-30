@@ -252,13 +252,19 @@ void ImageGrabber::SyncWithImu()
                                              lastConsumedImuTimestamp_seconds);
                         }
                         const cv::Point3f acceleration_body_mPerSec2(
-                            p_imuMessage->linear_acceleration.x,
-                            p_imuMessage->linear_acceleration.y,
-                            p_imuMessage->linear_acceleration.z);
+                            static_cast<float>(
+                                p_imuMessage->linear_acceleration.x),
+                            static_cast<float>(
+                                p_imuMessage->linear_acceleration.y),
+                            static_cast<float>(
+                                p_imuMessage->linear_acceleration.z));
                         const cv::Point3f angularVelocity_body_radPerSecCv(
-                            p_imuMessage->angular_velocity.x,
-                            p_imuMessage->angular_velocity.y,
-                            p_imuMessage->angular_velocity.z);
+                            static_cast<float>(
+                                p_imuMessage->angular_velocity.x),
+                            static_cast<float>(
+                                p_imuMessage->angular_velocity.y),
+                            static_cast<float>(
+                                p_imuMessage->angular_velocity.z));
 
                         constexpr std::size_t maximumPendingImuSamples = 2500U;
                         if (pendingImuMeasurements.size() >=
@@ -273,10 +279,12 @@ void ImageGrabber::SyncWithImu()
                             acceleration_body_mPerSec2,
                             angularVelocity_body_radPerSecCv,
                             imuTimestamp_seconds);
-                        angularVelocity_body_radPerSec
-                            << p_imuMessage->angular_velocity.x,
-                            p_imuMessage->angular_velocity.y,
-                            p_imuMessage->angular_velocity.z;
+                        angularVelocity_body_radPerSec << static_cast<float>(
+                            p_imuMessage->angular_velocity.x),
+                            static_cast<float>(
+                                p_imuMessage->angular_velocity.y),
+                            static_cast<float>(
+                                p_imuMessage->angular_velocity.z);
                         mpImuGb->imuBuf.pop();
                         lastConsumedImuTimestamp_seconds = imuTimestamp_seconds;
                         hasConsumedImuSample             = true;
@@ -934,7 +942,8 @@ void ImageGrabber::GrabRGBD(
             5000,
             "RGB-D processing exceeded the %.1f-second latency budget; "
             "discarding new packets while the estimator catches up.",
-            maximumBufferedRgbdPackets * minimumTrackingInterval_seconds);
+            static_cast<double>(maximumBufferedRgbdPackets) *
+                minimumTrackingInterval_seconds);
         return;
     }
 

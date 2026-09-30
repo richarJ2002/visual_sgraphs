@@ -30,9 +30,10 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_thisKeyFramePointCloud_in)
 {
     /* Extract parameters on thresholds */
-    const uint8_t confidenceThreshold = p_sysParams->semSeg.confThresh * 255;
-    const float   probThreshold       = p_sysParams->semSeg.probThresh;
-    const float   distanceThresholdNear =
+    const uint8_t confidenceThreshold =
+        static_cast<uint8_t>(p_sysParams->semSeg.confThresh * 255);
+    const float probThreshold = p_sysParams->semSeg.probThresh;
+    const float distanceThresholdNear =
         p_sysParams->pointcloud.distanceThresh.first;
     const float distanceThresholdFar =
         p_sysParams->pointcloud.distanceThresh.second;
@@ -97,13 +98,13 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
                 /* Initialize point to be filtered into class point cloud */
                 pcl::PointXYZRGBA point;
 
-                /* Find the pixel index of the point in the image */
-                point.y = static_cast<int>(classIndex / width);
-                point.x = classIndex % width;
+                /* Find the pixel of the point in the image */
+                const int pixelRow    = classIndex / width;
+                const int pixelColumn = classIndex % width;
 
                 /* Extract the original point from the keyframe point cloud */
                 const pcl::PointXYZRGB origPoint =
-                    p_thisKeyFramePointCloud_in->at(point.x, point.y);
+                    p_thisKeyFramePointCloud_in->at(pixelColumn, pixelRow);
 
                 /* If the original point has invalid data, skip data point */
                 if (!pcl::isFinite(origPoint))
@@ -113,15 +114,17 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
 
                 /* Extract the rgb uncertainty from the image */
                 cv::Vec3b vector =
-                    segImageUncertainity_in.at<cv::Vec3b>(point.y, point.x);
+                    segImageUncertainity_in.at<cv::Vec3b>(pixelRow,
+                                                          pixelColumn);
 
                 /*!
                  * Convert the rgb uncertainty of the pixel to a single value
                  * and store in the alpha channel.
                  */
-                point.a = 255 - static_cast<int>(0.299 * vector[2] +
-                                                 0.587 * vector[1] +
-                                                 0.114 * vector[0]);
+                point.a = static_cast<uint8_t>(
+                    255 -
+                    static_cast<int>(0.299 * vector[2] + 0.587 * vector[1] +
+                                     0.114 * vector[0]));
 
                 /*!
                  * Exclude the points with low confidence that segmentation was
@@ -155,12 +158,12 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
                 }
                 else
                 {
-                    point.a =
+                    point.a = static_cast<uint8_t>(
                         255 -
                         static_cast<int>(
                             210 * std::sqrt((point.z - distanceThresholdNear) /
                                             (distanceThresholdFar -
-                                             distanceThresholdNear)));
+                                             distanceThresholdNear))));
                 }
 
                 /* Add the point to the respective class specific point cloud */
@@ -173,7 +176,7 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
     for (int classIndex = 0; classIndex < classCount; classIndex++)
     {
         p_clsCloudPtrs_out[classIndex]->width =
-            p_clsCloudPtrs_out[classIndex]->size();
+            static_cast<uint32_t>(p_clsCloudPtrs_out[classIndex]->size());
         p_clsCloudPtrs_out[classIndex]->header = p_pclPc2SegPrb_in->header;
     }
 

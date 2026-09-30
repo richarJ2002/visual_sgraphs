@@ -90,7 +90,7 @@ SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
          * retaining the input image width makes PCL infer an invalid height
          * and emits a warning on every semantic update.
          */
-        p_filteredCloud->width  = p_filteredCloud->size();
+        p_filteredCloud->width = static_cast<uint32_t>(p_filteredCloud->size());
         p_filteredCloud->height = 1;
 
         /* Skip point clouds which are empty or have incalid width/height */

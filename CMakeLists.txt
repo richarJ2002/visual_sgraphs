@@ -471,6 +471,10 @@ if(VS_GRAPHS_UNITY_BUILD)
   endforeach()
 endif()
 
+# The core library declares no name that hides another (a local hiding a
+# local, parameter or member); keep it that way.
+target_compile_options(${PROJECT_NAME}_lib PRIVATE -Wshadow)
+
 target_link_libraries(${PROJECT_NAME}_lib
   ${OpenCV_LIBS}
   ${EIGEN3_LIBS}

@@ -157,8 +157,9 @@ UtilsStatus Utils::ransacPlaneFitting(
             typename pcl::PointCloud<PointT>::Ptr p_remainingCloud(
                 new pcl::PointCloud<PointT>);
             extract.filter(*p_remainingCloud);
-            p_remainingCloud->header   = cloud_inout->header;
-            p_remainingCloud->width    = p_remainingCloud->size();
+            p_remainingCloud->header = cloud_inout->header;
+            p_remainingCloud->width =
+                static_cast<uint32_t>(p_remainingCloud->size());
             p_remainingCloud->height   = 1;
             p_remainingCloud->is_dense = cloud_inout->is_dense;
             cloud_inout                = std::move(p_remainingCloud);

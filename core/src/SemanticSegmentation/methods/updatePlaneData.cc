@@ -114,7 +114,7 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                 confidence = std::accumulate(confidences.begin(),
                                              confidences.end(),
                                              0.0) /
-                             confidences.size();
+                             static_cast<double>(confidences.size());
             }
 
             /* Initialize a temporary global point cloud which is empty */
@@ -141,8 +141,9 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
 
             /* Get the semantic type of the observation */
             vs_graphs::core::geometric::Plane::PlaneVariant semanticType{};
-            if (utils::utils::Utils::getPlaneTypeFromClassId(clsId,
-                                                             semanticType) !=
+            if (utils::utils::Utils::getPlaneTypeFromClassId(
+                    static_cast<int>(clsId),
+                    semanticType) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
@@ -420,7 +421,7 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                             __func__);
                     }
                     if (updatePlaneSemantics(newMapPlaneGetId,
-                                             clsId,
+                                             static_cast<int>(clsId),
                                              confidence) !=
                         SemanticSegmentationStatus::
                             SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
@@ -529,7 +530,9 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                  * Cast the current semantic observation vote for the matched
                  * plane.
                  */
-                if (updatePlaneSemantics(matchedPlaneId, clsId, confidence) !=
+                if (updatePlaneSemantics(matchedPlaneId,
+                                         static_cast<int>(clsId),
+                                         confidence) !=
                     SemanticSegmentationStatus::
                         SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
                 {

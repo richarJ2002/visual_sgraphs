@@ -522,7 +522,7 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
     for (std::size_t index = 0; index < params.size(); ++index)
     {
         float parameter{};
-        ASSERT_EQ((loaded.getParameter(index, parameter)),
+        ASSERT_EQ((loaded.getParameter(static_cast<int>(index), parameter)),
                   camera_models::geometriccamera::GeometricCameraStatus::
                       GEOMETRIC_CAMERA_STATUS_SUCCESS);
         EXPECT_FLOAT_EQ(params[index], parameter);
