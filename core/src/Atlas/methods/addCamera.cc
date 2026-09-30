@@ -83,7 +83,8 @@ AtlasStatus Atlas::addCamera(
             camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE)
         {
             bool isEqual2{};
-            if (((camera_models::pinhole::Pinhole *)p_existingCamera)
+            // the camera type check above makes this downcast exact
+            if (static_cast<camera_models::pinhole::Pinhole *>(p_existingCamera)
                     ->isEqual(p_camera_in, isEqual2) !=
                 camera_models::pinhole::PinholeStatus::PINHOLE_STATUS_SUCCESS)
             {
@@ -102,8 +103,9 @@ AtlasStatus Atlas::addCamera(
                  camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE)
         {
             bool isEqual3{};
-            if (((camera_models::kannalabrandt8::KannalaBrandt8 *)
-                     p_existingCamera)
+            // the camera type check above makes this downcast exact
+            if (static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
+                    p_existingCamera)
                     ->isEqual(p_camera_in, isEqual3) !=
                 camera_models::kannalabrandt8::KannalaBrandt8Status::
                     KANNALA_BRANDT8_STATUS_SUCCESS)

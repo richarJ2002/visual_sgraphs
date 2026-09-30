@@ -81,7 +81,7 @@ ORBextractorStatus
         momentX += u * p_center[u];
 
     // Go line by line in the circuI853lar patch
-    int step = (int)image_in.step1();
+    int step = static_cast<int>(image_in.step1());
     for (int v = 1; v <= HALF_PATCH_SIZE; ++v)
     {
         // Proceed over the two lines
@@ -97,7 +97,8 @@ ORBextractorStatus
         momentY += v * sum;
     }
 
-    intensityCentroidAngle_out = cv::fastAtan2((float)momentY, (float)momentX);
+    intensityCentroidAngle_out =
+        cv::fastAtan2(static_cast<float>(momentY), static_cast<float>(momentX));
     return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 

@@ -44,7 +44,7 @@ Sim3SolverStatus Sim3Solver::setRansacParameters(double probability_in,
     inlierFlags.resize(correspondenceCount);
 
     // Adjust Parameters according to number of correspondences
-    float epsilon = (float)ransacMinInliers / correspondenceCount;
+    float epsilon = static_cast<float>(ransacMinInliers) / correspondenceCount;
 
     // Set RANSAC iterations according to probability, epsilon, and max
     // iterations

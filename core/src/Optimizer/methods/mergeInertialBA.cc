@@ -368,9 +368,9 @@ OptimizerStatus
     }
 
     // Create intertial constraints
-    std::vector<EdgeInertial *> vei(N, (EdgeInertial *)nullptr);
-    std::vector<EdgeGyroRW *>   vegr(N, (EdgeGyroRW *)nullptr);
-    std::vector<EdgeAccRW *>    vear(N, (EdgeAccRW *)nullptr);
+    std::vector<EdgeInertial *> vei(N, nullptr);
+    std::vector<EdgeGyroRW *>   vegr(N, nullptr);
+    std::vector<EdgeAccRW *>    vear(N, nullptr);
     for (int i = 0; i < N; i++)
     {
         // cout << "inserting inertial edge " << i << endl;

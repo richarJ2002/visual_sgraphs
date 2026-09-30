@@ -77,8 +77,8 @@ MapPoint::MapPoint(const double invDepth_in,
     originMapId = mapId;
 
     inverseDepth = invDepth_in;
-    initU        = (double)initialPixel_in.x;
-    initV        = (double)initialPixel_in.y;
+    initU        = static_cast<double>(initialPixel_in.x);
+    initV        = static_cast<double>(initialPixel_in.y);
     p_hostKF     = p_hostKeyFrame_in;
 
     normalVector.setZero();

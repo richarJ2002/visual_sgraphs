@@ -71,7 +71,7 @@ TrackingStatus Tracking::parseIMUParamFile(cv::FileStorage &settings_in,
     shouldInsertKeyFramesWhenLost = true;
     if (!node.empty() && node.isInt())
     {
-        shouldInsertKeyFramesWhenLost = (bool)node.operator int();
+        shouldInsertKeyFramesWhenLost = static_cast<bool>(node.operator int());
     }
 
     if (!shouldInsertKeyFramesWhenLost)

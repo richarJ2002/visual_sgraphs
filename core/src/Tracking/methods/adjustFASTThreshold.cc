@@ -48,8 +48,8 @@ TrackingStatus Tracking::adjustFASTThreshold()
     }
 
     // Check if feature count dropped significantly
-    float featureRatio =
-        (float)currentFeatureCount / (float)std::max(1, lastFrameFeatures);
+    float featureRatio = static_cast<float>(currentFeatureCount) /
+                         static_cast<float>(std::max(1, lastFrameFeatures));
 
     // If features dropped below 50% of previous (more sensitive), or absolute
     // count is very low

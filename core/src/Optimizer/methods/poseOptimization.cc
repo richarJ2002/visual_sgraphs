@@ -366,7 +366,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
         {
             MapPoint *p_mapPoint = p_frame_inout->mapPoints[keyPointIndex];
             if (p_mapPoint && !p_frame_inout->outlierFlags[keyPointIndex] &&
-                keyPointIndex < (int)p_frame_inout->depths.size())
+                keyPointIndex < static_cast<int>(p_frame_inout->depths.size()))
             {
                 float depth = p_frame_inout->depths[keyPointIndex];
                 if (depth > 0 &&

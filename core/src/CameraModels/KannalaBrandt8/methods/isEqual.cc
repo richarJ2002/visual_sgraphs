@@ -49,7 +49,9 @@ KannalaBrandt8Status
         return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
 
-    KannalaBrandt8 *p_kannalaCamera = (KannalaBrandt8 *)p_camera_in;
+    // getType() above confirmed the camera is a KannalaBrandt8
+    KannalaBrandt8 *p_kannalaCamera =
+        static_cast<KannalaBrandt8 *>(p_camera_in);
 
     float kannalaCameraPrecision{};
     if (p_kannalaCamera->getPrecision(kannalaCameraPrecision) !=

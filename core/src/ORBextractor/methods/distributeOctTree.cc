@@ -229,12 +229,13 @@ ORBextractorStatus ORBextractor::distributeOctTree(
 
         // Finish if there are more nodes than required features
         // or all nodes contain just one point
-        if ((int)nodes.size() >= featureCount_in ||
-            (int)nodes.size() == previousSize)
+        if (static_cast<int>(nodes.size()) >= featureCount_in ||
+            static_cast<int>(nodes.size()) == previousSize)
         {
             isFinished = true;
         }
-        else if (((int)nodes.size() + toExpandCount * 3) > featureCount_in)
+        else if ((static_cast<int>(nodes.size()) + toExpandCount * 3) >
+                 featureCount_in)
         {
 
             while (!isFinished)
@@ -317,12 +318,12 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                     nodes.erase(vPrevSizeAndPointerToNode[nodeIndex]
                                     .second->nodeIterator);
 
-                    if ((int)nodes.size() >= featureCount_in)
+                    if (static_cast<int>(nodes.size()) >= featureCount_in)
                         break;
                 }
 
-                if ((int)nodes.size() >= featureCount_in ||
-                    (int)nodes.size() == previousSize)
+                if (static_cast<int>(nodes.size()) >= featureCount_in ||
+                    static_cast<int>(nodes.size()) == previousSize)
                     isFinished = true;
             }
         }

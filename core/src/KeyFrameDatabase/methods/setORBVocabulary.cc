@@ -30,9 +30,7 @@ namespace core
 KeyFrameDatabaseStatus
     KeyFrameDatabase::setORBVocabulary(ORBVocabulary *p_orbVocabulary_in)
 {
-    ORBVocabulary **p_vocabularySlot;
-    p_vocabularySlot  = (ORBVocabulary **)(&p_vocabulary);
-    *p_vocabularySlot = p_orbVocabulary_in;
+    p_vocabulary = p_orbVocabulary_in;
 
     invertedFile.clear();
     invertedFile.resize(p_vocabulary->size());

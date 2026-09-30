@@ -71,8 +71,8 @@ ORBextractorStatus ORBextractor::computePyramid(cv::Mat image_in)
     for (int level = 0; level < levelCount; ++level)
     {
         float    scale = inverseScaleFactors[level];
-        cv::Size size(cvRound((float)image_in.cols * scale),
-                      cvRound((float)image_in.rows * scale));
+        cv::Size size(cvRound(static_cast<float>(image_in.cols) * scale),
+                      cvRound(static_cast<float>(image_in.rows) * scale));
         cv::Size wholeSize(size.width + EDGE_THRESHOLD * 2,
                            size.height + EDGE_THRESHOLD * 2);
         cv::Mat  temp(wholeSize, image_in.type()), masktemp;

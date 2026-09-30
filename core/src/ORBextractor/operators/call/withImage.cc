@@ -105,7 +105,7 @@ int ORBextractor::operator()(cv::InputArray                  image_in,
 
     int nkeypoints = 0;
     for (int level = 0; level < levelCount; ++level)
-        nkeypoints += (int)allKeypoints[level].size();
+        nkeypoints += static_cast<int>(allKeypoints[level].size());
     if (nkeypoints == 0)
         descriptors_in.release();
     else
@@ -123,8 +123,8 @@ int ORBextractor::operator()(cv::InputArray                  image_in,
     int monoIndex = 0, stereoIndex = nkeypoints - 1;
     for (int level = 0; level < levelCount; ++level)
     {
-        std::vector<cv::KeyPoint> &keypoints       = allKeypoints[level];
-        int                        nkeypointsLevel = (int)keypoints.size();
+        std::vector<cv::KeyPoint> &keypoints = allKeypoints[level];
+        int nkeypointsLevel = static_cast<int>(keypoints.size());
 
         if (nkeypointsLevel == 0)
             continue;

@@ -54,7 +54,8 @@ PinholeStatus Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in,
         return PinholeStatus::PINHOLE_STATUS_SUCCESS;
     }
 
-    Pinhole *p_otherPinhole = (Pinhole *)p_camera_in;
+    // getType() above confirmed the camera is a Pinhole
+    Pinhole *p_otherPinhole = static_cast<Pinhole *>(p_camera_in);
 
     size_t size2{};
     if (size(size2) !=

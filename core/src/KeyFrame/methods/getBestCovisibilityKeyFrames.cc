@@ -40,7 +40,7 @@ KeyFrameStatus KeyFrame::getBestCovisibilityKeyFrames(
     std::vector<KeyFrame *> &bestCovisibilityKeyFrames_out)
 {
     std::unique_lock<std::mutex> lock(connectionsMutex);
-    if ((int)orderedConnectedKeyFrames.size() < N_in)
+    if (static_cast<int>(orderedConnectedKeyFrames.size()) < N_in)
     {
         bestCovisibilityKeyFrames_out = orderedConnectedKeyFrames;
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

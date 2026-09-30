@@ -90,7 +90,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
 
             glPushMatrix();
 
-            glMultMatrixf((GLfloat *)Twc.data());
+            glMultMatrixf(Twc.data());
 
             KeyFrame *p_keyFrameParent = nullptr;
             if (p_keyFrame->getParent(p_keyFrameParent) !=
@@ -376,7 +376,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
 
                 glPushMatrix();
 
-                glMultMatrixf((GLfloat *)Twc.data());
+                glMultMatrixf(Twc.data());
 
                 KeyFrame *p_parent2 = nullptr;
                 if (keyFrames[keyFrameIndex]->getParent(p_parent2) !=

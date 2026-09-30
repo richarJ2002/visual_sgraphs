@@ -57,18 +57,20 @@ FrameStatus Frame::getFeaturesInArea(const float         &x_in,
     float factorX = r_in;
     float factorY = r_in;
 
-    const int minimumCellXCount = std::max(
-        0,
-        (int)std::floor((x_in - gridMinX - factorX) * gridElementWidthInverse));
+    const int minimumCellXCount =
+        std::max(0,
+                 static_cast<int>(std::floor((x_in - gridMinX - factorX) *
+                                             gridElementWidthInverse)));
     if (minimumCellXCount >= FRAME_GRID_COLS)
     {
         featuresInArea_out = indices;
         return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
-    const int maximumCellXCount = std::min(
-        (int)FRAME_GRID_COLS - 1,
-        (int)std::ceil((x_in - gridMinX + factorX) * gridElementWidthInverse));
+    const int maximumCellXCount =
+        std::min(FRAME_GRID_COLS - 1,
+                 static_cast<int>(std::ceil((x_in - gridMinX + factorX) *
+                                            gridElementWidthInverse)));
     if (maximumCellXCount < 0)
     {
         featuresInArea_out = indices;
@@ -77,17 +79,18 @@ FrameStatus Frame::getFeaturesInArea(const float         &x_in,
 
     const int minimumCellYCount =
         std::max(0,
-                 (int)std::floor((y_in - gridMinY - factorY) *
-                                 gridElementHeightInverse));
+                 static_cast<int>(std::floor((y_in - gridMinY - factorY) *
+                                             gridElementHeightInverse)));
     if (minimumCellYCount >= FRAME_GRID_ROWS)
     {
         featuresInArea_out = indices;
         return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
-    const int maximumCellYCount = std::min(
-        (int)FRAME_GRID_ROWS - 1,
-        (int)std::ceil((y_in - gridMinY + factorY) * gridElementHeightInverse));
+    const int maximumCellYCount =
+        std::min(FRAME_GRID_ROWS - 1,
+                 static_cast<int>(std::ceil((y_in - gridMinY + factorY) *
+                                            gridElementHeightInverse)));
     if (maximumCellYCount < 0)
     {
         featuresInArea_out = indices;

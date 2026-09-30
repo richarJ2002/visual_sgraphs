@@ -71,7 +71,8 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    const int Nd = std::min((int)currentMapKeyFrameCount - 2, maximumOpt);
+    const int Nd =
+        std::min(static_cast<int>(currentMapKeyFrameCount) - 2, maximumOpt);
     const unsigned long maximumKeyFrameId = p_keyFrame_inout->id;
 
     std::vector<KeyFrame *> optimizableKeyFrames;
@@ -394,9 +395,9 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
     }
 
     // Create intertial constraints
-    std::vector<EdgeInertial *> vei(N, (EdgeInertial *)nullptr);
-    std::vector<EdgeGyroRW *>   vegr(N, (EdgeGyroRW *)nullptr);
-    std::vector<EdgeAccRW *>    vear(N, (EdgeAccRW *)nullptr);
+    std::vector<EdgeInertial *> vei(N, nullptr);
+    std::vector<EdgeGyroRW *>   vegr(N, nullptr);
+    std::vector<EdgeAccRW *>    vear(N, nullptr);
 
     for (int neighborIndex = 0; neighborIndex < N; neighborIndex++)
     {
@@ -731,7 +732,8 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                     int rightIndex = std::get<1>(mit->second);
 
                     if (rightIndex != -1 &&
-                        rightIndex < (int)p_keyFrame->keyPointsRight.size())
+                        rightIndex <
+                            static_cast<int>(p_keyFrame->keyPointsRight.size()))
                     {
                         rightIndex -= p_keyFrame->leftKeyPointCount;
                         visibleEdgeCounts[p_keyFrame->id]++;

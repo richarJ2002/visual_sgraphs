@@ -33,7 +33,8 @@ namespace semantic
 {
 
 template <typename RecordT>
-SemanticGraphSnapshotStatus sortByKey(std::vector<RecordT> &records_inout)
+[[nodiscard]] SemanticGraphSnapshotStatus
+    sortByKey(std::vector<RecordT> &records_inout)
 {
     /* Primary order is always by key. For the anomalous case this snapshot
      * deliberately never erases -- two distinct source objects captured

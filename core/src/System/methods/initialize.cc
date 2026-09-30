@@ -149,11 +149,11 @@ SystemStatus System::initialize(const std::string &vocabularyFile_in,
         p_settings        = nullptr;
         cv::FileNode node = fsSettings["System.LoadAtlasFromFile"];
         if (!node.empty() && node.isString())
-            loadAtlasFile = (std::string)node;
+            loadAtlasFile = std::string(node);
 
         node = fsSettings["System.SaveAtlasToFile"];
         if (!node.empty() && node.isString())
-            saveAtlasFile = (std::string)node;
+            saveAtlasFile = std::string(node);
     }
 
     if ((sensor_in == RGBD || sensor_in == IMU_RGBD) && p_settings != nullptr)

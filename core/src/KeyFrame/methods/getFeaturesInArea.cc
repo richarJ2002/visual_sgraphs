@@ -48,18 +48,20 @@ KeyFrameStatus
     float factorX = r_in;
     float factorY = r_in;
 
-    const int minimumCellXCount = std::max(
-        0,
-        (int)std::floor((x_in - gridMinX - factorX) * gridElementWidthInverse));
+    const int minimumCellXCount =
+        std::max(0,
+                 static_cast<int>(std::floor((x_in - gridMinX - factorX) *
+                                             gridElementWidthInverse)));
     if (minimumCellXCount >= gridCols)
     {
         featuresInArea_out = indices;
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
-    const int maximumCellXCount = std::min(
-        (int)gridCols - 1,
-        (int)std::ceil((x_in - gridMinX + factorX) * gridElementWidthInverse));
+    const int maximumCellXCount =
+        std::min(gridCols - 1,
+                 static_cast<int>(std::ceil((x_in - gridMinX + factorX) *
+                                            gridElementWidthInverse)));
     if (maximumCellXCount < 0)
     {
         featuresInArea_out = indices;
@@ -68,17 +70,18 @@ KeyFrameStatus
 
     const int minimumCellYCount =
         std::max(0,
-                 (int)std::floor((y_in - gridMinY - factorY) *
-                                 gridElementHeightInverse));
+                 static_cast<int>(std::floor((y_in - gridMinY - factorY) *
+                                             gridElementHeightInverse)));
     if (minimumCellYCount >= gridRows)
     {
         featuresInArea_out = indices;
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
-    const int maximumCellYCount = std::min(
-        (int)gridRows - 1,
-        (int)std::ceil((y_in - gridMinY + factorY) * gridElementHeightInverse));
+    const int maximumCellYCount =
+        std::min(gridRows - 1,
+                 static_cast<int>(std::ceil((y_in - gridMinY + factorY) *
+                                            gridElementHeightInverse)));
     if (maximumCellYCount < 0)
     {
         featuresInArea_out = indices;

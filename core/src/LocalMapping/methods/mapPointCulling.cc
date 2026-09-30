@@ -91,8 +91,8 @@ LocalMappingStatus LocalMapping::mapPointCulling()
             else
             {
                 int mapPointObservationCount{};
-                if ((((int)currentKeyFrameId -
-                      (int)p_mapPoint->firstKeyFrameId) >= 2) &&
+                if (((static_cast<int>(currentKeyFrameId) -
+                      static_cast<int>(p_mapPoint->firstKeyFrameId)) >= 2) &&
                     p_mapPoint->getObservationCount(mapPointObservationCount) !=
                         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
                 {
@@ -102,8 +102,8 @@ LocalMappingStatus LocalMapping::mapPointCulling()
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                if (((int)currentKeyFrameId -
-                     (int)p_mapPoint->firstKeyFrameId) >= 2 &&
+                if ((static_cast<int>(currentKeyFrameId) -
+                     static_cast<int>(p_mapPoint->firstKeyFrameId)) >= 2 &&
                     mapPointObservationCount <= observationThreshold)
                 {
                     if (p_mapPoint->setBadFlag() !=
@@ -118,8 +118,8 @@ LocalMappingStatus LocalMapping::mapPointCulling()
                     recentMapPointIt =
                         recentAddedMapPoints.erase(recentMapPointIt);
                 }
-                else if (((int)currentKeyFrameId -
-                          (int)p_mapPoint->firstKeyFrameId) >= 3)
+                else if ((static_cast<int>(currentKeyFrameId) -
+                          static_cast<int>(p_mapPoint->firstKeyFrameId)) >= 3)
                 {
                     recentMapPointIt =
                         recentAddedMapPoints.erase(recentMapPointIt);

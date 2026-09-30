@@ -437,7 +437,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                 }
                 g2o::Sim3       gScm(solverEstimatedRotation.cast<double>(),
                                solverEstimatedTranslation.cast<double>(),
-                               (double)solverEstimatedScale);
+                               static_cast<double>(solverEstimatedScale));
                 Eigen::Matrix3f mostBowMatchesKeyFrameRotation{};
                 if (p_mostBowMatchesKeyFrame->getRotation(
                         mostBowMatchesKeyFrameRotation) !=

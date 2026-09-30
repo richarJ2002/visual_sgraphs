@@ -100,8 +100,8 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
         if (!isRectificationNeeded)
         {
             // Update calibration
-            float scaleRowFactor =
-                (float)newImageSize.height / (float)originalImageSize.height;
+            float scaleRowFactor = static_cast<float>(newImageSize.height) /
+                                   static_cast<float>(originalImageSize.height);
             float calibration1Parameter{};
             if (p_calibration1->getParameter(1, calibration1Parameter) !=
                 camera_models::geometriccamera::GeometricCameraStatus::
@@ -218,8 +218,8 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
         if (!isRectificationNeeded)
         {
             // Update calibration
-            float scaleColFactor =
-                (float)newImageSize.width / (float)originalImageSize.width;
+            float scaleColFactor = static_cast<float>(newImageSize.width) /
+                                   static_cast<float>(originalImageSize.width);
             float calibration1Parameter3{};
             if (p_calibration1->getParameter(0, calibration1Parameter3) !=
                 camera_models::geometriccamera::GeometricCameraStatus::
@@ -356,7 +356,7 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    isRgbInputEnabled = (bool)parameter2;
+    isRgbInputEnabled = static_cast<bool>(parameter2);
 
     return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }

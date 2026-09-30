@@ -23,7 +23,7 @@
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
-#include <stdint-gcc.h>
+#include <cstdint>
 
 namespace vs_graphs
 {
@@ -67,12 +67,12 @@ ORBmatcherStatus
         }
     }
 
-    if (maximum2 < 0.1f * (float)maximum1)
+    if (maximum2 < 0.1f * static_cast<float>(maximum1))
     {
         maximum2_inout = -1;
         maximum3_out   = -1;
     }
-    else if (maximum3 < 0.1f * (float)maximum1)
+    else if (maximum3 < 0.1f * static_cast<float>(maximum1))
     {
         maximum3_out = -1;
     }

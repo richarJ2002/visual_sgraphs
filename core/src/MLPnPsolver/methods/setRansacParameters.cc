@@ -79,8 +79,10 @@ MLPnPsolverStatus MLPnPsolver::setRansacParameters(double probability_in,
         minimumInlierCount = minimumSet_in;
     ransacMinInliers = minimumInlierCount;
 
-    if (ransacEpsilon < (float)ransacMinInliers / correspondenceCount)
-        ransacEpsilon = (float)ransacMinInliers / correspondenceCount;
+    if (ransacEpsilon <
+        static_cast<float>(ransacMinInliers) / correspondenceCount)
+        ransacEpsilon =
+            static_cast<float>(ransacMinInliers) / correspondenceCount;
 
     // Set RANSAC iterations according to probability, epsilon, and max
     // iterations

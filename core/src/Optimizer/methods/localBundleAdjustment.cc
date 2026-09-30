@@ -1023,7 +1023,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                     int rightIndex = std::get<1>(mit->second);
 
                     if (rightIndex != -1 &&
-                        rightIndex < (int)p_keyFrame->keyPointsRight.size())
+                        rightIndex <
+                            static_cast<int>(p_keyFrame->keyPointsRight.size()))
                     {
                         rightIndex -= p_keyFrame->leftKeyPointCount;
 

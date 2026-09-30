@@ -169,7 +169,8 @@ TwoViewReconstructionStatus
     {
         std::sort(cosParallaxes.begin(), cosParallaxes.end());
 
-        size_t parallaxIndex = std::min(50, int(cosParallaxes.size() - 1));
+        size_t parallaxIndex =
+            std::min(50, static_cast<int>(cosParallaxes.size() - 1));
         parallax_out = std::acos(cosParallaxes[parallaxIndex]) * 180 / CV_PI;
     }
     else

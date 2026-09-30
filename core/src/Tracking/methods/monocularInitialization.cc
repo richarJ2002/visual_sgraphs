@@ -72,7 +72,7 @@ TrackingStatus Tracking::monocularInitialization()
     }
     else
     {
-        if (((int)currentFrame.keyPoints.size() <= 100) ||
+        if ((static_cast<int>(currentFrame.keyPoints.size()) <= 100) ||
             ((sensor == System::IMU_MONOCULAR) &&
              (lastFrame.timeStamp - initialFrame.timeStamp > 1.0)))
         {

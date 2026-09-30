@@ -133,7 +133,7 @@ void serializeMatrix(Archive           &ar,
     if (Archive::is_loading::value)
     {
         cv::Mat *p_matrixWriteback;
-        p_matrixWriteback  = (cv::Mat *)(&mat);
+        p_matrixWriteback  = const_cast<cv::Mat *>(&mat);
         *p_matrixWriteback = mutableMatrixCopy;
     }
 }
@@ -181,7 +181,7 @@ void serializeVectorKeyPoints(Archive                            &ar,
     if (Archive::is_loading::value)
     {
         std::vector<cv::KeyPoint> *p_keyPointsWriteback;
-        p_keyPointsWriteback  = (std::vector<cv::KeyPoint> *)(&vKP);
+        p_keyPointsWriteback  = const_cast<std::vector<cv::KeyPoint> *>(&vKP);
         *p_keyPointsWriteback = keyPointsCopy;
     }
 }

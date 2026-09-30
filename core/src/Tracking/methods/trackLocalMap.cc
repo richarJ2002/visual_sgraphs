@@ -227,7 +227,8 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
                 if ((sensor == System::RGBD || sensor == System::IMU_RGBD ||
                      sensor == System::STEREO ||
                      sensor == System::IMU_STEREO) &&
-                    keyPointIndex < (int)currentFrame.depths.size() &&
+                    keyPointIndex <
+                        static_cast<int>(currentFrame.depths.size()) &&
                     currentFrame.depths[keyPointIndex] > 0)
                 {
                     if (currentFrame.depths[keyPointIndex] < depthThreshold)

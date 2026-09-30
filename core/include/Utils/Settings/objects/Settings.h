@@ -727,7 +727,7 @@ class Settings
         else
         {
             found_out     = true;
-            parameter_out = (T)node;
+            parameter_out = static_cast<T>(node);
             return SettingsStatus::SETTINGS_STATUS_SUCCESS;
         }
     }

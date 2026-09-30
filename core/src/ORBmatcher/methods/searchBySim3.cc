@@ -23,8 +23,8 @@
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
+#include <cstdint>
 #include <rclcpp/logging.hpp>
-#include <stdint-gcc.h>
 
 namespace vs_graphs
 {

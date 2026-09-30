@@ -59,7 +59,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 
-const float factorPI = (float)(CV_PI / 180.f);
+const float factorPI = static_cast<float>(CV_PI / 180.f);
 
 namespace vs_graphs
 {
@@ -71,12 +71,12 @@ ORBextractorStatus computeOrbDescriptor(const cv::KeyPoint &kpt_in,
                                         const cv::Point    *p_briefPattern_in,
                                         uchar              *p_descriptor_inout)
 {
-    float angle = (float)kpt_in.angle * factorPI;
-    float a = (float)std::cos(angle), b = (float)std::sin(angle);
+    float angle = kpt_in.angle * factorPI;
+    float a = std::cos(angle), b = std::sin(angle);
 
     const uchar *p_center =
         &image_in.at<uchar>(cvRound(kpt_in.pt.y), cvRound(kpt_in.pt.x));
-    const int step = (int)image_in.step;
+    const int step = static_cast<int>(image_in.step);
 
 #define GET_VALUE(idx)                                                         \
     p_center[cvRound(p_briefPattern_in[idx].x * b +                            \
@@ -114,7 +114,7 @@ ORBextractorStatus computeOrbDescriptor(const cv::KeyPoint &kpt_in,
         t1 = GET_VALUE(15);
         value |= (t0 < t1) << 7;
 
-        p_descriptor_inout[descriptorByteIndex] = (uchar)value;
+        p_descriptor_inout[descriptorByteIndex] = static_cast<uchar>(value);
     }
 
 #undef GET_VALUE

@@ -73,15 +73,17 @@ ORBextractorStatus
                        cv::Mat                      &descriptors_out,
                        const std::vector<cv::Point> &briefPattern_in)
 {
-    descriptors_out = cv::Mat::zeros((int)keypoints_in.size(), 32, CV_8UC1);
+    descriptors_out =
+        cv::Mat::zeros(static_cast<int>(keypoints_in.size()), 32, CV_8UC1);
 
     for (size_t keypointIndex = 0; keypointIndex < keypoints_in.size();
          keypointIndex++)
     {
-        if (computeOrbDescriptor(keypoints_in[keypointIndex],
-                                 image_in,
-                                 &briefPattern_in[0],
-                                 descriptors_out.ptr((int)keypointIndex)) !=
+        if (computeOrbDescriptor(
+                keypoints_in[keypointIndex],
+                image_in,
+                &briefPattern_in[0],
+                descriptors_out.ptr(static_cast<int>(keypointIndex))) !=
             ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -42,7 +42,7 @@ class Passage;
 } // namespace semantic
 
 template <typename Entity>
-AtlasStatus
+[[nodiscard]] AtlasStatus
     planImportedIds(const std::vector<Entity *>           &existingEntities_in,
                     const std::vector<Entity *>           &importedEntities_in,
                     const char                            *entityName_in,

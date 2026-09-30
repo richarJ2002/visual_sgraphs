@@ -65,7 +65,7 @@ TrackingStatus Tracking::createInitialMapMonocular()
         new KeyFrame(currentFrame, p_atlasCurrentMap2, p_keyFrameDatabase);
 
     if (sensor == System::IMU_MONOCULAR)
-        p_keyFrameInitial->p_imuPreintegrated = (IMU::Preintegrated *)(nullptr);
+        p_keyFrameInitial->p_imuPreintegrated = nullptr;
 
     if (p_keyFrameInitial->computeBagOfWords() !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)

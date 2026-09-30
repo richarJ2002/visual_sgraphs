@@ -172,7 +172,7 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        shouldInsertKeyFramesWhenLost = (bool)parameter8;
+        shouldInsertKeyFramesWhenLost = static_cast<bool>(parameter8);
     }
     else
     {

@@ -115,8 +115,9 @@ typedef Eigen::Matrix<double, 9, 9>   Matrix9d;
                             Eigen::Matrix3d &inverseRightJacobian_out);
 
 template <typename T = double>
-G2oTypesStatus normalizeRotation(const Eigen::Matrix<T, 3, 3> &R,
-                                 Eigen::Matrix<T, 3, 3>       &rotation_out)
+[[nodiscard]] G2oTypesStatus
+    normalizeRotation(const Eigen::Matrix<T, 3, 3> &R,
+                      Eigen::Matrix<T, 3, 3>       &rotation_out)
 {
     Eigen::JacobiSVD<Eigen::Matrix<T, 3, 3>> svd(R,
                                                  Eigen::ComputeFullU |

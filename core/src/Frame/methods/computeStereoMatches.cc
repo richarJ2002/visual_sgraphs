@@ -203,7 +203,7 @@ FrameStatus Frame::computeStereoMatches()
 
             // Re-scaled coordinate
             float bestuR = scaleFactors[keyPointL.octave] *
-                           ((float)scaleduR0 + (float)bestincR + deltaR);
+                           (scaleduR0 + static_cast<float>(bestincR) + deltaR);
 
             float disparity = (uL - bestuR);
 

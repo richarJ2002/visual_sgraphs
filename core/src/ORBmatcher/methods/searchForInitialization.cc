@@ -23,8 +23,8 @@
 
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
 
+#include <cstdint>
 #include <rclcpp/logging.hpp>
-#include <stdint-gcc.h>
 
 namespace vs_graphs
 {
@@ -118,7 +118,8 @@ ORBmatcherStatus ORBmatcher::searchForInitialization(
 
         if (bestDistance <= TH_LOW)
         {
-            if (bestDistance < (float)bestDistance2 * nearestNeighborRatio)
+            if (bestDistance <
+                static_cast<float>(bestDistance2) * nearestNeighborRatio)
             {
                 if (matchIndices21[bestIndex2] >= 0)
                 {

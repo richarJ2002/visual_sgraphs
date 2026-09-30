@@ -72,14 +72,15 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
 {
     keypointsPerLevel_inout.resize(levelCount);
 
-    float imageRatio = (float)imagePyramid[0].cols / imagePyramid[0].rows;
+    float imageRatio =
+        static_cast<float>(imagePyramid[0].cols) / imagePyramid[0].rows;
 
     for (int level = 0; level < levelCount; ++level)
     {
         const int desiredFeatureCount = featuresPerLevel[level];
 
-        const int levelCols =
-            std::sqrt((float)desiredFeatureCount / (5 * imageRatio));
+        const int levelCols = std::sqrt(
+            static_cast<float>(desiredFeatureCount) / (5 * imageRatio));
         const int levelRows = imageRatio * levelCols;
 
         const int minimumBorderX = EDGE_THRESHOLD;
@@ -89,12 +90,12 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
 
         const int W     = maximumBorderX - minimumBorderX;
         const int H     = maximumBorderY - minimumBorderY;
-        const int cellW = std::ceil((float)W / levelCols);
-        const int cellH = std::ceil((float)H / levelRows);
+        const int cellW = std::ceil(static_cast<float>(W) / levelCols);
+        const int cellH = std::ceil(static_cast<float>(H) / levelRows);
 
         const int cellCount = levelRows * levelCols;
         const int nfeaturesCell =
-            std::ceil((float)desiredFeatureCount / cellCount);
+            std::ceil(static_cast<float>(desiredFeatureCount) / cellCount);
 
         std::vector<std::vector<std::vector<cv::KeyPoint>>> cellKeyPoints(
             levelRows,
@@ -197,7 +198,8 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
         {
             int newFeaturesCellCount =
                 nfeaturesCell +
-                std::ceil((float)toDistributeCount / (cellCount - noMoreCount));
+                std::ceil(static_cast<float>(toDistributeCount) /
+                          (cellCount - noMoreCount));
             toDistributeCount = 0;
 
             for (int rowIndex = 0; rowIndex < levelRows; rowIndex++)
@@ -244,7 +246,8 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
                 cv::KeyPointsFilter::retainBest(
                     keysCell,
                     toRetainCount[rowIndex][columnIndex]);
-                if ((int)keysCell.size() > toRetainCount[rowIndex][columnIndex])
+                if (static_cast<int>(keysCell.size()) >
+                    toRetainCount[rowIndex][columnIndex])
                     keysCell.resize(toRetainCount[rowIndex][columnIndex]);
 
                 for (size_t cellKeyPointIndex = 0, kend = keysCell.size();
@@ -261,7 +264,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
             }
         }
 
-        if ((int)keypoints.size() > desiredFeatureCount)
+        if (static_cast<int>(keypoints.size()) > desiredFeatureCount)
         {
             cv::KeyPointsFilter::retainBest(keypoints, desiredFeatureCount);
             keypoints.resize(desiredFeatureCount);

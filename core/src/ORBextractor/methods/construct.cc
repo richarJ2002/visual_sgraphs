@@ -363,7 +363,8 @@ ORBextractor::ORBextractor(int   featureCount_in,
     float factor = 1.0f / scaleFactor;
     float desiredFeaturesPerScaleCount =
         featureCount * (1 - factor) /
-        (1 - (float)pow((double)factor, (double)levelCount));
+        (1 - static_cast<float>(pow(static_cast<double>(factor),
+                                    static_cast<double>(levelCount))));
 
     int sumFeatures = 0;
     for (int level = 0; level < levelCount - 1; level++)
