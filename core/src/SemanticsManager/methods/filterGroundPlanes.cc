@@ -75,7 +75,7 @@ SemanticsManagerStatus
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    for (const auto &plane : atlasAllPlanes)
+    for (geometric::Plane *const &plane : atlasAllPlanes)
     {
         /* Skip planes not classed as ground, or are the main ground plane */
         geometric::Plane::PlaneVariant planeExpectedPlaneType{};

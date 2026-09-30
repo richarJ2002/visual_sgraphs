@@ -1049,7 +1049,8 @@ LoopClosingStatus
      * ---------------------------------------------------------------------- */
 
     /* Iterate through all the mapped points in the merge map */
-    for (auto itMapPoint = mapPointMerges.begin();
+    for (std::set<MapPoint *>::const_iterator itMapPoint =
+             mapPointMerges.begin();
          itMapPoint != mapPointMerges.end();)
     {
         /* Copy the map points */
@@ -2181,7 +2182,8 @@ LoopClosingStatus
              */
             double poseAfterScale = 1.0;
 
-            const auto correctedPoseIterator = vCorrectedSim3.find(p_keyFrame);
+            const KeyFrameAndPose::iterator correctedPoseIterator =
+                vCorrectedSim3.find(p_keyFrame);
 
             if (correctedPoseIterator != vCorrectedSim3.end() &&
                 std::isfinite(correctedPoseIterator->second.scale()) &&

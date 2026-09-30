@@ -1673,44 +1673,47 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                              __func__);
             }
 
-            const auto existingOwnerIterator = std::find_if(
-                mappedRooms.begin(),
-                mappedRooms.end(),
-                [p_room, wall](vs_graphs::core::semantic::Room *p_otherRoom)
-                {
-                    bool otherRoomIsBad{};
-                    if (!(p_otherRoom == nullptr || p_otherRoom == p_room) &&
-                        p_otherRoom->isBad(otherRoomIsBad) !=
+            const std::vector<semantic::Room *>::iterator
+                existingOwnerIterator = std::find_if(
+                    mappedRooms.begin(),
+                    mappedRooms.end(),
+                    [p_room, wall](vs_graphs::core::semantic::Room *p_otherRoom)
+                    {
+                        bool otherRoomIsBad{};
+                        if (!(p_otherRoom == nullptr ||
+                              p_otherRoom == p_room) &&
+                            p_otherRoom->isBad(otherRoomIsBad) !=
+                                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: isBad returned a failure status "
+                                         "although it "
+                                         "cannot fail; continuing as before.",
+                                         __func__);
+                        }
+                        if (p_otherRoom == nullptr || p_otherRoom == p_room ||
+                            otherRoomIsBad)
+                        {
+                            return false;
+                        }
+
+                        std::vector<vs_graphs::core::geometric::Plane *>
+                            otherRoomWalls{};
+                        if (p_otherRoom->getWalls(otherRoomWalls) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: isBad returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    if (p_otherRoom == nullptr || p_otherRoom == p_room ||
-                        otherRoomIsBad)
-                    {
-                        return false;
-                    }
+                        {
+                            RCLCPP_ERROR(
+                                rclcpp::get_logger("vs_graphs"),
+                                "%s: getWalls returned a failure status "
+                                "although "
+                                "it cannot fail; continuing as before.",
+                                __func__);
+                        }
 
-                    std::vector<vs_graphs::core::geometric::Plane *>
-                        otherRoomWalls{};
-                    if (p_otherRoom->getWalls(otherRoomWalls) !=
-                        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getWalls returned a failure status although "
-                            "it cannot fail; continuing as before.",
-                            __func__);
-                    }
-
-                    return std::find(otherRoomWalls.begin(),
-                                     otherRoomWalls.end(),
-                                     wall) != otherRoomWalls.end();
-                });
+                        return std::find(otherRoomWalls.begin(),
+                                         otherRoomWalls.end(),
+                                         wall) != otherRoomWalls.end();
+                    });
 
             semantic::Room *p_existingWallOwner =
                 existingOwnerIterator != mappedRooms.end()

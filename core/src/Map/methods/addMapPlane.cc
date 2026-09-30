@@ -46,7 +46,8 @@ MapStatus Map::addMapPlane(geometric::Plane *p_plane_inout)
 
     std::unique_lock<std::mutex> lock(mapMutex);
 
-    for (auto planeIterator = planeIndex.begin();
+    for (std::unordered_map<int, geometric::Plane *>::iterator planeIterator =
+             planeIndex.begin();
          planeIterator != planeIndex.end();)
     {
         int planeGetId{};
@@ -74,7 +75,8 @@ MapStatus Map::addMapPlane(geometric::Plane *p_plane_inout)
                      "fail; continuing as before.",
                      __func__);
     }
-    const auto existingPlaneIterator = planeIndex.find(planeGetId2);
+    const std::unordered_map<int, geometric::Plane *>::iterator
+        existingPlaneIterator = planeIndex.find(planeGetId2);
 
     int planeGetId3{};
     if (p_plane_inout->getId(planeGetId3) !=

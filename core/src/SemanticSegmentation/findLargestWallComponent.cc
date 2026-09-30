@@ -107,13 +107,14 @@ SemanticSegmentationStatus findLargestWallComponent(
         return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
     }
 
-    const auto largestComponentIterator = std::max_element(
-        connectedComponents.begin(),
-        connectedComponents.end(),
-        [](const pcl::PointIndices &leftComponent,
-           const pcl::PointIndices &rightComponent) {
-            return leftComponent.indices.size() < rightComponent.indices.size();
-        });
+    const std::vector<pcl::PointIndices>::iterator largestComponentIterator =
+        std::max_element(connectedComponents.begin(),
+                         connectedComponents.end(),
+                         [](const pcl::PointIndices &leftComponent,
+                            const pcl::PointIndices &rightComponent) {
+                             return leftComponent.indices.size() <
+                                    rightComponent.indices.size();
+                         });
 
     support.pointIndices.reserve(largestComponentIterator->indices.size());
 

@@ -428,7 +428,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     }
 
     // [GBA] Markers
-    for (const auto &marker : markers_in)
+    for (semantic::Marker *const &marker : markers_in)
     {
         // Adding a vertex for each marker
         g2o::VertexSE3Expmap *p_markerPoseVertex = new g2o::VertexSE3Expmap();
@@ -479,7 +479,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     maxGlobalOptimizationId += markerCount;
 
     // [GBA] Planes
-    for (const auto &plane : planes_in)
+    for (geometric::Plane *const &plane : planes_in)
     {
         // Skip undefined planes (if not wall for now)
         geometric::Plane::PlaneVariant planeType{};
@@ -680,7 +680,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     maxGlobalOptimizationId += planeCount;
 
     // [GBA] Rooms
-    for (const auto &room : rooms_in)
+    for (semantic::Room *const &room : rooms_in)
     {
         try
         {
@@ -1362,7 +1362,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     }
 
     // [GBA] Globally optimized planes
-    for (auto &plane : planes_in)
+    for (geometric::Plane *const &plane : planes_in)
     {
         int planeGetOpIdG{};
         if (plane->getOpIdG(planeGetOpIdG) !=

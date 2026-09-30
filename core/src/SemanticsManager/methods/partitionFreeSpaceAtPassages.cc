@@ -198,7 +198,8 @@ SemanticsManagerStatus SemanticsManager::partitionFreeSpaceAtPassages(
             return nearestVertexIndex;
         };
 
-        for (const auto &skeletonEdge_World_m : skeletonEdges_World_m)
+        for (const std::pair<Eigen::Vector3d, Eigen::Vector3d>
+                 &skeletonEdge_World_m : skeletonEdges_World_m)
         {
             const std::size_t startVertexIndex =
                 findNearestClusterVertex(skeletonEdge_World_m.first);

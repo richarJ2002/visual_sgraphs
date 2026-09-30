@@ -281,7 +281,8 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
         }
     }
 
-    for (auto &skeletonEdge_world : skeletonEdges)
+    for (std::pair<Eigen::Vector3d, Eigen::Vector3d> &skeletonEdge_world :
+         skeletonEdges)
     {
         skeletonEdge_world.first =
             transform_oldWorldToNewWorld.map(skeletonEdge_world.first);

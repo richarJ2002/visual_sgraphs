@@ -39,10 +39,11 @@ MapStatus
                         vs_graphs::core::semantic::Passage *&p_passageById_out)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
-    const auto passageIterator = passageIndex.find(passageId_in);
-    p_passageById_out          = passageIterator != passageIndex.end()
-                                     ? passageIterator->second
-                                     : nullptr;
+    const std::unordered_map<int, semantic::Passage *>::iterator
+        passageIterator = passageIndex.find(passageId_in);
+    p_passageById_out   = passageIterator != passageIndex.end()
+                              ? passageIterator->second
+                              : nullptr;
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 

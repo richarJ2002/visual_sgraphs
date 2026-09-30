@@ -62,7 +62,8 @@ SemanticVerifyStatus
         survivingPassages.size() != absorbedPassages.size();
     const Eigen::Matrix3d rotation =
         transform_in.rotation().toRotationMatrix().cast<double>();
-    for (const auto &entry : absorbedPassages)
+    for (const std::pair<const int, const PassageContext *> &entry :
+         absorbedPassages)
     {
         const std::map<int, const PassageContext *>::const_iterator match =
             survivingPassages.find(entry.first);

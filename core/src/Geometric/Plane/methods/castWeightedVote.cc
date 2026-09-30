@@ -52,7 +52,8 @@ PlaneStatus Plane::castWeightedVote(Plane::PlaneVariant semanticType_in,
     // find the semantic type with the maximum votes
     double       maximumVotes = 0;
     PlaneVariant maximumType  = PlaneVariant::UNDEFINED;
-    for (const auto &vote : semanticVotes)
+    for (const std::pair<const Plane::PlaneVariant, double> &vote :
+         semanticVotes)
     {
         if (vote.second > maximumVotes)
         {

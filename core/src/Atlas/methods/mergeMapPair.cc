@@ -1080,7 +1080,7 @@ AtlasStatus Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                const auto markerIdIterator =
+                const std::unordered_map<int, int>::iterator markerIdIterator =
                     importedMarkerIdRemap.find(roomMetaMarkerId);
                 if (markerIdIterator != importedMarkerIdRemap.end())
                 {

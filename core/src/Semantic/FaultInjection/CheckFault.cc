@@ -10,7 +10,8 @@ namespace testing
 bool checkFault(const std::string &name_in)
 {
 #ifdef VS_GRAPHS_ENABLE_FAULT_INJECTION
-    const auto foundIt = getFaultRegistry().find(name_in);
+    const std::unordered_map<std::string, std::function<bool()>>::const_iterator
+        foundIt = getFaultRegistry().find(name_in);
     if (foundIt == getFaultRegistry().end())
     {
         return false;

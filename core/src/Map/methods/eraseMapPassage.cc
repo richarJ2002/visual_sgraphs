@@ -39,7 +39,8 @@ MapStatus Map::eraseMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
     std::unique_lock<std::mutex> lock(mapMutex);
     passages.erase(p_passage_in);
 
-    for (auto passageIterator = passageIndex.begin();
+    for (std::unordered_map<int, semantic::Passage *>::iterator
+             passageIterator = passageIndex.begin();
          passageIterator != passageIndex.end();)
     {
         passageIterator = passageIterator->second == p_passage_in

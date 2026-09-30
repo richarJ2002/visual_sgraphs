@@ -92,7 +92,8 @@ struct SyntheticRoomFixture
 
     void addWall(const RawWall &wall_in)
     {
-        auto wall = std::make_unique<geometric::Plane>();
+        std::unique_ptr<geometric::Plane> wall =
+            std::make_unique<geometric::Plane>();
         ASSERT_EQ((wall->setId(wall_in.id)),
                   geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
         ASSERT_EQ((wall->setPlaneType(geometric::Plane::PlaneVariant::WALL)),
@@ -119,7 +120,8 @@ std::unique_ptr<SyntheticRoomFixture>
               const Eigen::Vector4d      &floorEquation_World_in,
               int                         floorId_in)
 {
-    auto fixture = std::make_unique<SyntheticRoomFixture>();
+    std::unique_ptr<SyntheticRoomFixture> fixture =
+        std::make_unique<SyntheticRoomFixture>();
     if (fixture->room.setId(roomId_in) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {

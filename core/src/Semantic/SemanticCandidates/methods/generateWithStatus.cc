@@ -47,19 +47,21 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
     const std::size_t roomCap = configuration_in.candidatePairCap;
     std::vector<std::tuple<long unsigned int, int, std::size_t>> roomRefs;
     roomRefs.reserve(roomCap);
-    for (const auto &mapEntry : history_in)
+    for (const std::pair<const unsigned long, std::vector<RoomContextSnapshot>>
+             &mapEntry : history_in)
     {
         for (std::size_t index = 0U; index < mapEntry.second.size(); ++index)
         {
             const RoomContextSnapshot &snapshot = mapEntry.second[index];
-            const auto                 key =
+            const std::tuple<unsigned long, int, unsigned long> key =
                 std::make_tuple(mapEntry.first, snapshot.roomId, index);
-            auto insertion =
-                std::lower_bound(roomRefs.begin(),
-                                 roomRefs.end(),
-                                 key,
-                                 [](const auto &left, const auto &right)
-                                 { return left < right; });
+            std::vector<std::tuple<unsigned long, int, unsigned long>>::iterator
+                insertion =
+                    std::lower_bound(roomRefs.begin(),
+                                     roomRefs.end(),
+                                     key,
+                                     [](const auto &left, const auto &right)
+                                     { return left < right; });
             if (roomRefs.size() < roomCap)
             {
                 roomRefs.insert(insertion, key);
@@ -73,9 +75,12 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
     }
     std::vector<std::pair<long unsigned int, RoomContextSnapshot>> rooms;
     rooms.reserve(roomRefs.size());
-    for (const auto &reference : roomRefs)
+    for (const std::tuple<unsigned long, int, unsigned long> &reference :
+         roomRefs)
     {
-        const auto mapIt = history_in.find(std::get<0>(reference));
+        const std::map<unsigned long,
+                       std::vector<RoomContextSnapshot>>::const_iterator mapIt =
+            history_in.find(std::get<0>(reference));
         rooms.emplace_back(std::get<0>(reference),
                            mapIt->second[std::get<2>(reference)]);
     }
@@ -91,7 +96,8 @@ SemanticCandidatesStatus SemanticCandidates::generateWithStatus(
     std::set<int> priorityRoomIds;
     if (anchorRoomId_in.has_value())
     {
-        const auto anchorIt =
+        const std::vector<
+            std::pair<unsigned long, RoomContextSnapshot>>::iterator anchorIt =
             std::find_if(rooms.begin(),
                          rooms.end(),
                          [anchor = *anchorRoomId_in](const auto &room_in)

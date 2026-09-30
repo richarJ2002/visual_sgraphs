@@ -606,7 +606,7 @@ TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
 
     bool sawVisited   = false;
     bool sawUnvisited = false;
-    for (const auto &snapshot : history.at(oldMapId))
+    for (const semantic::RoomContextSnapshot &snapshot : history.at(oldMapId))
     {
         if (snapshot.roomId == 5)
         {
@@ -758,7 +758,9 @@ TEST(RoomContextPersist,
                               "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                for (const auto &entry : history)
+                for (const std::pair<const unsigned long,
+                                           std::vector<semantic::RoomContextSnapshot>>
+                         &entry : history)
                 {
                     for (const semantic::RoomContextSnapshot &snap :
                          entry.second)
@@ -788,12 +790,14 @@ TEST(RoomContextPersist,
         ASSERT_EQ((atlas.getCurrentMap(p_map)),
                   AtlasStatus::ATLAS_STATUS_SUCCESS);
 
-        auto p_wall = std::make_unique<geometric::Plane>();
+        std::unique_ptr<geometric::Plane> p_wall =
+            std::make_unique<geometric::Plane>();
         makeRefitWallPlane(*p_wall, static_cast<int>(iteration) + 1, p_map);
         ASSERT_EQ((p_map->addMapPlane(p_wall.get())),
                   MapStatus::MAP_STATUS_SUCCESS);
 
-        auto p_room = std::make_unique<semantic::Room>();
+        std::unique_ptr<semantic::Room> p_room =
+            std::make_unique<semantic::Room>();
         ASSERT_EQ((p_room->setId(static_cast<int>(iteration))),
                   vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
         ASSERT_EQ((p_room->setMap(p_map)),

@@ -37,7 +37,8 @@ RoomStatus Room::removeWall(geometric::Plane *p_wall_in,
 
     std::lock_guard<std::mutex> lock(wallsMutex);
 
-    const auto wallIt = std::remove(walls.begin(), walls.end(), p_wall_in);
+    const std::vector<geometric::Plane *>::iterator wallIt =
+        std::remove(walls.begin(), walls.end(), p_wall_in);
     const bool wasWallRemoved = wallIt != walls.end();
     walls.erase(wallIt, walls.end());
 

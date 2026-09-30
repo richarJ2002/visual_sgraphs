@@ -40,7 +40,7 @@ PlaneStatus
 
     centroid = transform_oldWorldToNewWorld_in.map(centroid);
 
-    for (auto &point : planeCloud->points)
+    for (pcl::PointXYZRGBA &point : planeCloud->points)
     {
         Eigen::Vector3d pointVector(point.x, point.y, point.z);
 

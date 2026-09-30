@@ -155,7 +155,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     if (p_params->optimization.planePoint.enabled)
     {
         /* Iterate through points in point cloud */
-        for (auto &point : p_planeCloud_in->points)
+        for (pcl::PointXYZRGBA &point : p_planeCloud_in->points)
         {
             /* Create the homogeneous coordinate point vector object */
             Eigen::Vector4d pointVector;
@@ -312,7 +312,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        for (const auto &mapPoint : keyFrameMapPoints)
+        for (MapPoint *const &mapPoint : keyFrameMapPoints)
         {
             /* If the orb feature is within the plane, set as map point */
             bool            newMapPlaneIsPointinPlaneCloud{};

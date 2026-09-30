@@ -240,7 +240,8 @@ void ImageGrabber::SyncWithImu()
                            rclcpp::Time(mpImuGb->imuBuf.front()->header.stamp)
                                    .seconds() <= imageTimestamp_seconds)
                     {
-                        const auto  &p_imuMessage = mpImuGb->imuBuf.front();
+                        const std::shared_ptr<const sensor_msgs::msg::Imu>
+                                    &p_imuMessage = mpImuGb->imuBuf.front();
                         const double imuTimestamp_seconds =
                             rclcpp::Time(p_imuMessage->header.stamp).seconds();
                         if (hasConsumedImuSample)
@@ -385,8 +386,9 @@ void ImageGrabber::SyncWithImu()
                 continue;
             }
 
-            processingStage    = "marker association";
-            auto nearestMarker = findNearestMarker(imageTimestamp_seconds);
+            processingStage = "marker association";
+            std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>>
+                nearestMarker = findNearestMarker(imageTimestamp_seconds);
             const double markerTimeDifference_seconds = nearestMarker.first;
             std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers =
                 std::move(nearestMarker.second);
@@ -481,7 +483,8 @@ void ImageGrabber::SyncWithImu()
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<rclcpp::Node>("vs_graphs");
+    std::shared_ptr<rclcpp::Node> node =
+        std::make_shared<rclcpp::Node>("vs_graphs");
 
     if (argc > 1)
         RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
@@ -590,12 +593,14 @@ int main(int argc, char **argv)
 
     // Initializing system threads and getting ready to process frames
     const bool useSimTime = node->get_parameter("use_sim_time").as_bool();
-    auto       imugb      = std::make_shared<ImuGrabber>(useSimTime);
-    auto       igb        = std::make_shared<ImageGrabber>(imugb,
-                                              useSimTime,
-                                              maximumTrackingRate_hz,
-                                              maximumSensorBuffer_seconds,
-                                              directGazeboFluCloud);
+    std::shared_ptr<ImuGrabber> imugb =
+        std::make_shared<ImuGrabber>(useSimTime);
+    std::shared_ptr<ImageGrabber> igb =
+        std::make_shared<ImageGrabber>(imugb,
+                                       useSimTime,
+                                       maximumTrackingRate_hz,
+                                       maximumSensorBuffer_seconds,
+                                       directGazeboFluCloud);
 
     sensorType   = vs_graphs::core::System::IMU_RGBD;
     p_slamSystem = new vs_graphs::core::System();
@@ -637,14 +642,18 @@ int main(int argc, char **argv)
      * A single mutually-exclusive callback group allowed point-cloud and
      * segmentation work to starve RGB-D and IMU delivery, which is fatal to
      * inertial preintegration even when every source topic is healthy. */
-    const auto imuCallbackGroup = node->create_callback_group(
-        rclcpp::CallbackGroupType::MutuallyExclusive);
-    const auto visualCallbackGroup = node->create_callback_group(
-        rclcpp::CallbackGroupType::MutuallyExclusive);
-    const auto semanticCallbackGroup = node->create_callback_group(
-        rclcpp::CallbackGroupType::MutuallyExclusive);
-    const auto skeletonCallbackGroup = node->create_callback_group(
-        rclcpp::CallbackGroupType::MutuallyExclusive);
+    const rclcpp::CallbackGroup::SharedPtr imuCallbackGroup =
+        node->create_callback_group(
+            rclcpp::CallbackGroupType::MutuallyExclusive);
+    const rclcpp::CallbackGroup::SharedPtr visualCallbackGroup =
+        node->create_callback_group(
+            rclcpp::CallbackGroupType::MutuallyExclusive);
+    const rclcpp::CallbackGroup::SharedPtr semanticCallbackGroup =
+        node->create_callback_group(
+            rclcpp::CallbackGroupType::MutuallyExclusive);
+    const rclcpp::CallbackGroup::SharedPtr skeletonCallbackGroup =
+        node->create_callback_group(
+            rclcpp::CallbackGroupType::MutuallyExclusive);
 
     rclcpp::SubscriptionOptions imuSubscriptionOptions;
     imuSubscriptionOptions.callback_group = imuCallbackGroup;
@@ -655,34 +664,41 @@ int main(int argc, char **argv)
     rclcpp::SubscriptionOptions skeletonSubscriptionOptions;
     skeletonSubscriptionOptions.callback_group = skeletonCallbackGroup;
 
-    auto subImu = node->create_subscription<Imu>(
-        "/imu",
-        imu_qos,
-        [imugb](const Imu::ConstSharedPtr msg) { imugb->GrabImu(msg); },
-        imuSubscriptionOptions);
+    std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::Imu>> subImu =
+        node->create_subscription<Imu>(
+            "/imu",
+            imu_qos,
+            [imugb](const Imu::ConstSharedPtr msg) { imugb->GrabImu(msg); },
+            imuSubscriptionOptions);
 
-    auto subImgRGB =
-        std::make_shared<Subscriber<Image>>(node.get(),
-                                            "/camera/rgb/image_raw",
-                                            rmw_qos_profile_sensor_data,
-                                            visualSubscriptionOptions);
-    auto subImgDepth = std::make_shared<Subscriber<Image>>(
-        node.get(),
-        "/camera/depth_registered/image_raw",
-        rmw_qos_profile_sensor_data,
-        visualSubscriptionOptions);
+    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>>
+        subImgRGB =
+            std::make_shared<Subscriber<Image>>(node.get(),
+                                                "/camera/rgb/image_raw",
+                                                rmw_qos_profile_sensor_data,
+                                                visualSubscriptionOptions);
+    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>>
+        subImgDepth = std::make_shared<Subscriber<Image>>(
+            node.get(),
+            "/camera/depth_registered/image_raw",
+            rmw_qos_profile_sensor_data,
+            visualSubscriptionOptions);
 
-    auto subPointcloud = node->create_subscription<PointCloud2>(
-        "/camera/depth/points",
-        rclcpp::SensorDataQoS(),
-        [igb](const PointCloud2::ConstSharedPtr msg)
-        { igb->GrabPointCloud(msg); },
-        visualSubscriptionOptions);
+    std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>>
+        subPointcloud = node->create_subscription<PointCloud2>(
+            "/camera/depth/points",
+            rclcpp::SensorDataQoS(),
+            [igb](const PointCloud2::ConstSharedPtr msg)
+            { igb->GrabPointCloud(msg); },
+            visualSubscriptionOptions);
 
     typedef ApproximateTime<Image, Image> syncPolicy;
-    auto sync = std::make_shared<Synchronizer<syncPolicy>>(syncPolicy(10),
-                                                           *subImgRGB,
-                                                           *subImgDepth);
+    std::shared_ptr<message_filters::Synchronizer<
+        message_filters::sync_policies::
+            ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image>>>
+        sync = std::make_shared<Synchronizer<syncPolicy>>(syncPolicy(10),
+                                                          *subImgRGB,
+                                                          *subImgDepth);
     sync->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.010));
     sync->registerCallback(std::bind(&ImageGrabber::GrabRGBD,
                                      igb.get(),
@@ -690,37 +706,40 @@ int main(int argc, char **argv)
                                      std::placeholders::_2));
 
     // Subscriber to get segmentation results from the SemanticSegmenter module
-    auto subSegmentedImage =
-        node->create_subscription<segmenter_ros::msg::SegmenterDataMsg>(
-            "/camera/color/image_segment",
-            rclcpp::QoS(rclcpp::KeepLast(50)).reliable().transient_local(),
-            [igb](const segmenter_ros::msg::SegmenterDataMsg::SharedPtr msg)
-            { addSegmentationToSystem(*msg, igb->get_logger()); },
-            semanticSubscriptionOptions);
+    std::shared_ptr<rclcpp::Subscription<segmenter_ros::msg::SegmenterDataMsg>>
+        subSegmentedImage =
+            node->create_subscription<segmenter_ros::msg::SegmenterDataMsg>(
+                "/camera/color/image_segment",
+                rclcpp::QoS(rclcpp::KeepLast(50)).reliable().transient_local(),
+                [igb](const segmenter_ros::msg::SegmenterDataMsg::SharedPtr msg)
+                { addSegmentationToSystem(*msg, igb->get_logger()); },
+                semanticSubscriptionOptions);
 
     // Subsriber to get skeletonized graph from the `voxblox` module
     // Match the skeletonizer transient-local publisher so the latest usable
     // graph is received even when this node joins after publication.
-    auto subVoxbloxSkeletonMesh =
-        node->create_subscription<visualization_msgs::msg::MarkerArray>(
-            "/voxblox_skeletonizer/sparse_graph",
-            rclcpp::QoS(1).transient_local(),
-            [igb](const visualization_msgs::msg::MarkerArray::SharedPtr msg)
-            {
-                igb->GrabVoxbloxSkeletonGraph(*msg);
-                observeVoxbloxSparseGraphPublication(*msg);
-            },
-            skeletonSubscriptionOptions);
+    std::shared_ptr<rclcpp::Subscription<visualization_msgs::msg::MarkerArray>>
+        subVoxbloxSkeletonMesh =
+            node->create_subscription<visualization_msgs::msg::MarkerArray>(
+                "/voxblox_skeletonizer/sparse_graph",
+                rclcpp::QoS(1).transient_local(),
+                [igb](const visualization_msgs::msg::MarkerArray::SharedPtr msg)
+                {
+                    igb->GrabVoxbloxSkeletonGraph(*msg);
+                    observeVoxbloxSparseGraphPublication(*msg);
+                },
+                skeletonSubscriptionOptions);
 
     // Match the skeletonizer transient-local publisher so the latest usable
     // cloud is received even when this node joins after publication.
-    auto subVoxbloxSkeleton =
-        node->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/voxblox_skeletonizer/skeleton",
-            rclcpp::QoS(1).transient_local(),
-            [](const sensor_msgs::msg::PointCloud2::SharedPtr msg)
-            { observeVoxbloxSkeletonPublication(*msg); },
-            skeletonSubscriptionOptions);
+    std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>>
+        subVoxbloxSkeleton =
+            node->create_subscription<sensor_msgs::msg::PointCloud2>(
+                "/voxblox_skeletonizer/skeleton",
+                rclcpp::QoS(1).transient_local(),
+                [](const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+                { observeVoxbloxSkeletonPublication(*msg); },
+                skeletonSubscriptionOptions);
 
     static std::shared_ptr<image_transport::ImageTransport> image_transport =
         std::make_shared<image_transport::ImageTransport>(node);
@@ -790,7 +809,8 @@ void ImageGrabber::GrabRGBD(
         return;
     }
 
-    const auto p_pointCloudMessage = p_latestPointCloudMessage;
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr p_pointCloudMessage =
+        p_latestPointCloudMessage;
 
     if (discardInputUntilBufferDrained)
     {

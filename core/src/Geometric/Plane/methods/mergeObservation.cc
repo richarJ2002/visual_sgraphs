@@ -65,7 +65,8 @@ PlaneStatus Plane::mergeObservation(core::KeyFrame    *p_keyFrame_inout,
         return evidence;
     };
 
-    const auto observationIt = observations.find(p_keyFrame_inout);
+    const std::map<KeyFrame *, Observation>::iterator observationIt =
+        observations.find(p_keyFrame_inout);
     if (observationIt == observations.end())
     {
         Observation mergedObservation = observation_in;

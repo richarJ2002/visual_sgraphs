@@ -38,7 +38,7 @@ RoomStatus Room::removePassageAssociation(
 
     std::lock_guard<std::mutex> lock(mapMutex);
 
-    const auto passageIt =
+    const std::vector<Passage *>::iterator passageIt =
         std::find(doorways.begin(), doorways.end(), p_removedPassage_in);
 
     if (passageIt == doorways.end())

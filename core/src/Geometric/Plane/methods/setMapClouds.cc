@@ -43,7 +43,7 @@ PlaneStatus Plane::setMapClouds(
     std::lock_guard<std::mutex> lock(featuresMutex);
 
     /* Add the new points to the plane cloud */
-    for (const auto &point : p_additionalCloud_in->points)
+    for (const pcl::PointXYZRGBA &point : p_additionalCloud_in->points)
     {
         planeCloud->points.push_back(point);
     }

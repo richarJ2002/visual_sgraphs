@@ -50,7 +50,8 @@ struct SyntheticRoom
 
     void addWall(const RawWall &wall_in)
     {
-        auto wall = std::make_unique<geometric::Plane>();
+        std::unique_ptr<geometric::Plane> wall =
+            std::make_unique<geometric::Plane>();
         ASSERT_EQ((wall->setId(wall_in.id)),
                   geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
         ASSERT_EQ((wall->setPlaneType(geometric::Plane::PlaneVariant::WALL)),
@@ -149,7 +150,7 @@ std::unique_ptr<SyntheticRoom> buildRoom(int                         roomId_in,
                                          const std::vector<RawWall> &walls_in,
                                          const Eigen::Vector3d &centroid_in)
 {
-    auto room = std::make_unique<SyntheticRoom>();
+    std::unique_ptr<SyntheticRoom> room = std::make_unique<SyntheticRoom>();
     if (room->room.setId(roomId_in) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
@@ -941,8 +942,9 @@ TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
     types::SystemParams *params = nullptr;
     ASSERT_EQ((types::SystemParams::getParams(params)),
               types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS);
-    const auto savedVerification = params->verification;
-    const auto savedFactor       = params->factor;
+    const types::SystemParams::Verification savedVerification =
+        params->verification;
+    const types::SystemParams::Factor savedFactor = params->factor;
 
     params->verification.maxNormalAngle_deg      = 17.5F;
     params->verification.maxOffset_m             = 0.42F;

@@ -39,7 +39,8 @@ MapStatus Map::eraseMapFloor(vs_graphs::core::semantic::Floor *p_floor_in)
     std::unique_lock<std::mutex> lock(mapMutex);
     floors.erase(p_floor_in);
 
-    for (auto floorIterator = floorIndex.begin();
+    for (std::unordered_map<int, semantic::Floor *>::iterator floorIterator =
+             floorIndex.begin();
          floorIterator != floorIndex.end();)
     {
         floorIterator = floorIterator->second == p_floor_in

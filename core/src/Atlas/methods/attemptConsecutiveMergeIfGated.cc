@@ -228,7 +228,8 @@ AtlasStatus Atlas::attemptConsecutiveMergeIfGated(void)
         MergeAttemptState attemptState;
         {
             std::unique_lock<std::mutex> atlasLock(atlasMutex);
-            const auto storedState = consecutiveMergeState.find(oldMapId);
+            const std::map<unsigned long, MergeAttemptState>::iterator
+                storedState = consecutiveMergeState.find(oldMapId);
             if (storedState != consecutiveMergeState.end())
             {
                 attemptState = storedState->second;

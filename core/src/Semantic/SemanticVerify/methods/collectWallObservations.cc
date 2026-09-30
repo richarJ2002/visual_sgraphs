@@ -189,7 +189,8 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
                                       configuration_in.maxSupportSamplePerWall;
                  index += stride)
             {
-                const auto &point = snapshot.supportCloud->points[index];
+                const pcl::PointXYZRGBA &point =
+                    snapshot.supportCloud->points[index];
                 if (!pcl::isFinite(point))
                 {
                     continue;

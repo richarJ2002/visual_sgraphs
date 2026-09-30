@@ -61,7 +61,9 @@ TEST(MissionHealthTopologyJson, PreservesEverySchema1FieldAndType)
               MissionHealthTopologyJsonStatus::
                   MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS);
 
-    for (auto it = original.begin(); it != original.end(); ++it)
+    for (nlohmann::json::const_iterator it = original.begin();
+         it != original.end();
+         ++it)
     {
         if (it.key() == "schema")
         {

@@ -45,12 +45,12 @@ struct WallRecord
 std::vector<RoomRecord> parseRooms(const nlohmann::json &sgraph_in)
 {
     std::vector<RoomRecord> rooms;
-    for (const auto &room : sgraph_in.at("rooms"))
+    for (const nlohmann::json &room : sgraph_in.at("rooms"))
     {
         RoomRecord record;
-        record.id            = room.at("id").get<int>();
-        const auto &centroid = room.at("centroid_xy");
-        record.centroidXy    = Eigen::Vector2d(centroid.at(0).get<double>(),
+        record.id                      = room.at("id").get<int>();
+        const nlohmann::json &centroid = room.at("centroid_xy");
+        record.centroidXy = Eigen::Vector2d(centroid.at(0).get<double>(),
                                             centroid.at(1).get<double>());
         rooms.push_back(record);
     }
@@ -60,15 +60,15 @@ std::vector<RoomRecord> parseRooms(const nlohmann::json &sgraph_in)
 std::vector<WallRecord> parseWalls(const nlohmann::json &sgraph_in)
 {
     std::vector<WallRecord> walls;
-    for (const auto &wall : sgraph_in.at("walls"))
+    for (const nlohmann::json &wall : sgraph_in.at("walls"))
     {
         WallRecord record;
-        record.roomId      = wall.at("room_id").get<int>();
-        const auto &normal = wall.at("normal");
-        record.normal      = Eigen::Vector3d(normal.at(0).get<double>(),
+        record.roomId                = wall.at("room_id").get<int>();
+        const nlohmann::json &normal = wall.at("normal");
+        record.normal  = Eigen::Vector3d(normal.at(0).get<double>(),
                                         normal.at(1).get<double>(),
                                         normal.at(2).get<double>());
-        record.offsetD     = wall.at("offset_d").get<double>();
+        record.offsetD = wall.at("offset_d").get<double>();
         walls.push_back(record);
     }
     return walls;
@@ -323,7 +323,8 @@ WallPrfResult computeGlobalWallMetrics(const nlohmann::json &truth_in,
     const std::vector<WallRecord> truthWalls = parseWalls(truth_in);
     const std::vector<WallRecord> genWalls   = parseWalls(generated_in);
 
-    const auto roomPairs = matchRoomsOptimal(truthRooms, genRooms);
+    const std::vector<std::pair<std::size_t, std::size_t>> roomPairs =
+        matchRoomsOptimal(truthRooms, genRooms);
 
     std::set<std::size_t> matchedTruthWallIndices;
     std::set<std::size_t> matchedGenWallIndices;

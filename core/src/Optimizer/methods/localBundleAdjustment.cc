@@ -410,7 +410,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     }
 
     // [LBA] Among all rooms, filter only the ones with a wall in LBA
-    for (const auto &room : allRooms)
+    for (semantic::Room *const &room : allRooms)
     {
         // Get the walls of the room
         std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
@@ -424,7 +424,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
         // Add the room to the local map if any of the walls are in the local
         // map
-        for (const auto &wall : roomWalls)
+        for (geometric::Plane *const &wall : roomWalls)
         {
             int wallGetId{};
             if (wall->getId(wallGetId) !=
@@ -460,7 +460,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        for (const auto &roomWall : roomWalls)
+        for (geometric::Plane *const &roomWall : roomWalls)
         {
             int roomWallGetId{};
             if (roomWall->getId(roomWallGetId) !=

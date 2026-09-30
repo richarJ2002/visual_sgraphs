@@ -46,7 +46,8 @@ MapStatus Map::addMapFloor(semantic::Floor *p_floor_inout)
 
     std::unique_lock<std::mutex> lock(mapMutex);
 
-    for (auto floorIterator = floorIndex.begin();
+    for (std::unordered_map<int, semantic::Floor *>::iterator floorIterator =
+             floorIndex.begin();
          floorIterator != floorIndex.end();)
     {
         int floor_inoutId{};
@@ -74,7 +75,8 @@ MapStatus Map::addMapFloor(semantic::Floor *p_floor_inout)
                      "fail; continuing as before.",
                      __func__);
     }
-    const auto existingFloorIterator = floorIndex.find(floor_inoutId2);
+    const std::unordered_map<int, semantic::Floor *>::iterator
+        existingFloorIterator = floorIndex.find(floor_inoutId2);
 
     int floor_inoutId3{};
     if (p_floor_inout->getId(floor_inoutId3) !=

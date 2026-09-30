@@ -86,14 +86,18 @@ bool isMapSnapshotLessTotalOrder(const MapSnapshot &lhs_in,
                static_cast<int>(rhs_in.isCurrentMap);
     }
 
-    auto p_roomLess    = includeGeometry_in ? &isRoomRecordLessFullGeometry
-                                            : &isRoomRecordLessTopologyOnly;
-    auto p_wallLess    = includeGeometry_in ? &isWallRecordLessFullGeometry
-                                            : &isWallRecordLessTopologyOnly;
-    auto p_passageLess = includeGeometry_in ? &isPassageRecordLessFullGeometry
-                                            : &isPassageRecordLessTopologyOnly;
-    auto p_floorLess   = includeGeometry_in ? &isFloorRecordLessFullGeometry
-                                            : &isFloorRecordLessTopologyOnly;
+    bool (*p_roomLess)(const RoomRecord &, const RoomRecord &) =
+        includeGeometry_in ? &isRoomRecordLessFullGeometry
+                           : &isRoomRecordLessTopologyOnly;
+    bool (*p_wallLess)(const WallRecord &, const WallRecord &) =
+        includeGeometry_in ? &isWallRecordLessFullGeometry
+                           : &isWallRecordLessTopologyOnly;
+    bool (*p_passageLess)(const PassageRecord &, const PassageRecord &) =
+        includeGeometry_in ? &isPassageRecordLessFullGeometry
+                           : &isPassageRecordLessTopologyOnly;
+    bool (*p_floorLess)(const FloorRecord &, const FloorRecord &) =
+        includeGeometry_in ? &isFloorRecordLessFullGeometry
+                           : &isFloorRecordLessTopologyOnly;
 
     if (!isRecordVectorEqual(lhs_in.rooms, rhs_in.rooms, p_roomLess))
     {

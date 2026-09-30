@@ -932,7 +932,7 @@ class EdgeVertexNPlaneProjectSE3Room
 
         // Compute representative position from all walls enclosing the cluster
         Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-        for (const auto &wall : walls)
+        for (const Eigen::Vector4d &wall : walls)
         {
             // Each wall equation ax+by+cz+d=0 → normal = (a,b,c), offset = d
             Eigen::Vector3d normal = wall.head<3>();
@@ -1001,7 +1001,7 @@ class EdgeVertexNSE3RoomProjectSE3Floor
 
         // Compute representative position from all rooms in the floor
         Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-        for (const auto &room : rooms)
+        for (const Eigen::Vector3d &room : rooms)
             centroid += room;
 
         if (!rooms.empty())

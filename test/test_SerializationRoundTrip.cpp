@@ -162,8 +162,9 @@ void ExpectMapsEqualSorted(const std::map<Key, Value> &expected_in,
                            const std::map<Key, Value> &actual_in)
 {
     ASSERT_EQ(expected_in.size(), actual_in.size());
-    auto expected_it = expected_in.begin();
-    auto actual_it   = actual_in.begin();
+    typename std::map<Key, Value>::const_iterator expected_it =
+        expected_in.begin();
+    typename std::map<Key, Value>::const_iterator actual_it = actual_in.begin();
     while (expected_it != expected_in.end())
     {
         EXPECT_EQ(expected_it->first, actual_it->first);
@@ -178,8 +179,8 @@ void ExpectSetsEqualSorted(const std::set<Value> &expected_in,
                            const std::set<Value> &actual_in)
 {
     ASSERT_EQ(expected_in.size(), actual_in.size());
-    auto expected_it = expected_in.begin();
-    auto actual_it   = actual_in.begin();
+    typename std::set<Value>::const_iterator expected_it = expected_in.begin();
+    typename std::set<Value>::const_iterator actual_it   = actual_in.begin();
     while (expected_it != expected_in.end())
     {
         EXPECT_EQ(*expected_it, *actual_it);

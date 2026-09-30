@@ -43,7 +43,9 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
     for (size_t clsId = 0; clsId < p_clsPlanes_in.size(); clsId++)
     {
         /* Iterate through each plane in the semantic group */
-        for (const auto &p_planePoint : p_clsPlanes_in[clsId])
+        for (const std::pair<
+                 std::shared_ptr<pcl::PointCloud<pcl::PointXYZRGBA>>,
+                 Eigen::Vector4d> &p_planePoint : p_clsPlanes_in[clsId])
         {
             /* Get the plane equation of the plane */
             Eigen::Vector4d estimatedPlane = p_planePoint.second;

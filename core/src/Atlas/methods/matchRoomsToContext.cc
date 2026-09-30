@@ -96,8 +96,10 @@ AtlasStatus Atlas::matchRoomsToContext(Map *p_newMap_in)
         return AtlasStatus::ATLAS_STATUS_SUCCESS;
 
     std::vector<semantic::RoomContextSnapshot> allContext;
-    for (const auto &entry : roomContextHistory)
-        for (const auto &snap : entry.second)
+    for (const std::pair<const unsigned long,
+                         std::vector<semantic::RoomContextSnapshot>> &entry :
+         roomContextHistory)
+        for (const semantic::RoomContextSnapshot &snap : entry.second)
             allContext.push_back(snap);
 
     if (allContext.empty())
@@ -250,9 +252,11 @@ AtlasStatus Atlas::matchRoomsToContext(Map *p_newMap_in)
 
             /* Locate the snapshot pointer in the stored history so the
              * room can hold a non-owning reference for WP3. */
-            for (auto &entry : roomContextHistory)
+            for (std::pair<const unsigned long,
+                           std::vector<semantic::RoomContextSnapshot>> &entry :
+                 roomContextHistory)
             {
-                for (auto &storedSnap : entry.second)
+                for (semantic::RoomContextSnapshot &storedSnap : entry.second)
                 {
                     if (storedSnap.roomId == p_bestMatch->roomId &&
                         storedSnap.centroid.isApprox(p_bestMatch->centroid))

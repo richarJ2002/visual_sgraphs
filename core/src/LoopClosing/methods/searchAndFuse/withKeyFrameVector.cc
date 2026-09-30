@@ -46,8 +46,9 @@ LoopClosingStatus LoopClosing::searchAndFuse(
     // cout << "FUSE-POSE: Initially there are " << vpMapPoints.size() << " MPs"
     // << endl; cout << "FUSE-POSE: Intially there are " << vConectedKFs.size()
     // << " KFs" << endl;
-    for (auto mit  = conectedKeyFrames_in.begin(),
-              mend = conectedKeyFrames_in.end();
+    for (std::vector<KeyFrame *>::const_iterator
+             mit  = conectedKeyFrames_in.begin(),
+             mend = conectedKeyFrames_in.end();
          mit != mend;
          mit++)
     {

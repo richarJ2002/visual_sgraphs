@@ -121,7 +121,8 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         skeletonFingerprint *= 1099511628211ULL;
     };
 
-    for (const auto &skeletonEdge : skeletonEdges)
+    for (const std::pair<Eigen::Vector3d, Eigen::Vector3d> &skeletonEdge :
+         skeletonEdges)
     {
         appendFingerprintCoordinate(skeletonEdge.first.x());
         appendFingerprintCoordinate(skeletonEdge.first.y());
@@ -386,7 +387,8 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         acceptedCrossings.reserve(skeletonEdges.size());
 
         /* Test every skeleton edge against the current wall */
-        for (const auto &skeletonEdge : skeletonEdges)
+        for (const std::pair<Eigen::Vector3d, Eigen::Vector3d> &skeletonEdge :
+             skeletonEdges)
         {
             const Eigen::Vector3d &edgeStart = skeletonEdge.first;
 

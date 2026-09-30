@@ -339,24 +339,26 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                 continue;
             }
 
-            const auto matchedPlaneIterator = std::find_if(
-                compatiblePlanes.begin(),
-                compatiblePlanes.end(),
-                [matchedPlaneId](const geometric::Plane *p_plane)
-                {
-                    int planeGetId{};
-                    if ((p_plane != nullptr) &&
-                        p_plane->getId(planeGetId) !=
-                            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            const std::vector<geometric::Plane *>::iterator
+                matchedPlaneIterator = std::find_if(
+                    compatiblePlanes.begin(),
+                    compatiblePlanes.end(),
+                    [matchedPlaneId](const geometric::Plane *p_plane)
                     {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getId returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    return p_plane != nullptr && planeGetId == matchedPlaneId;
-                });
+                        int planeGetId{};
+                        if ((p_plane != nullptr) &&
+                            p_plane->getId(planeGetId) !=
+                                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                        {
+                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                         "%s: getId returned a failure status "
+                                         "although it "
+                                         "cannot fail; continuing as before.",
+                                         __func__);
+                        }
+                        return p_plane != nullptr &&
+                               planeGetId == matchedPlaneId;
+                    });
 
             if (matchedPlaneIterator == compatiblePlanes.end())
             {
@@ -405,12 +407,13 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            const auto candidateEvidence =
-                std::make_tuple(candidatePlaneGetObservationCount,
-                                candidateGeometry.supportCloud != nullptr
-                                    ? candidateGeometry.supportCloud->size()
-                                    : 0U,
-                                -candidatePlaneGetId);
+            const std::tuple<unsigned long, unsigned long, int>
+                candidateEvidence =
+                    std::make_tuple(candidatePlaneGetObservationCount,
+                                    candidateGeometry.supportCloud != nullptr
+                                        ? candidateGeometry.supportCloud->size()
+                                        : 0U,
+                                    -candidatePlaneGetId);
 
             std::size_t matchedPlaneGetObservationCount{};
             if (p_matchedPlane->getObservationCount(
@@ -432,12 +435,13 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            const auto matchedEvidence =
-                std::make_tuple(matchedPlaneGetObservationCount,
-                                matchedGeometry.supportCloud != nullptr
-                                    ? matchedGeometry.supportCloud->size()
-                                    : 0U,
-                                -matchedPlaneGetId);
+            const std::tuple<unsigned long, unsigned long, int>
+                matchedEvidence =
+                    std::make_tuple(matchedPlaneGetObservationCount,
+                                    matchedGeometry.supportCloud != nullptr
+                                        ? matchedGeometry.supportCloud->size()
+                                        : 0U,
+                                    -matchedPlaneGetId);
 
             geometric::Plane *p_retainedPlane =
                 candidateEvidence >= matchedEvidence ? p_candidatePlane

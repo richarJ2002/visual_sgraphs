@@ -38,7 +38,9 @@ AtlasStatus
     /* Compatibility API: callers requiring synchronization must use the copy
      * API. The historical reference lifetime cannot be made lock-safe. */
     static const std::vector<semantic::RoomContextSnapshot> empty;
-    auto roomContextIt = roomContextHistory.find(mapId_in);
+    std::map<unsigned long,
+             std::vector<semantic::RoomContextSnapshot>>::const_iterator
+        roomContextIt = roomContextHistory.find(mapId_in);
     if (roomContextIt == roomContextHistory.end())
     {
         p_roomContextForMap_out = &(empty);

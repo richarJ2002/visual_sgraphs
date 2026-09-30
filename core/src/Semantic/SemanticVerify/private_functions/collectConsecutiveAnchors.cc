@@ -50,7 +50,8 @@ SemanticVerifyStatus collectConsecutiveAnchors(
         {
             continue;
         }
-        const auto match = survivingByTag.find(room.context.roomTag);
+        const std::map<std::string, const SemanticMergeRoomEvidence *>::iterator
+            match = survivingByTag.find(room.context.roomTag);
         if (match != survivingByTag.end())
         {
             ConsecutiveAnchorPair pair;

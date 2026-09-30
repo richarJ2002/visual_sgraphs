@@ -476,7 +476,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                     __func__);
             }
             referenceCovisibleKeyFrames.push_back(p_referenceKeyFrame);
-            for (const auto &keyFrame : referenceCovisibleKeyFrames)
+            for (KeyFrame *const &keyFrame : referenceCovisibleKeyFrames)
             {
                 std::vector<geometric::Plane *> keyFrameMapPlanes{};
                 if (keyFrame->getMapPlanes(keyFrameMapPlanes) !=
@@ -488,7 +488,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
-                for (const auto &plane : keyFrameMapPlanes)
+                for (geometric::Plane *const &plane : keyFrameMapPlanes)
                 {
                     if (!plane)
                         continue;
@@ -537,7 +537,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                 static_cast<g2o::VertexSE3Expmap *>(optimizer.vertex(0));
             Eigen::Isometry3d framePose    = p_recoveredPoseVertex->estimate();
             Eigen::Vector3d   cameraCenter = framePose.inverse().translation();
-            for (const auto &candidatePlane : planes)
+            for (geometric::Plane *const &candidatePlane : planes)
             {
                 geometric::Plane::PlaneVariant candidatePlanePlaneType{};
                 if (candidatePlane->getPlaneType(candidatePlanePlaneType) !=

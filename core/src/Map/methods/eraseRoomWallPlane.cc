@@ -38,7 +38,8 @@ MapStatus Map::eraseRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
 
-    for (auto wallIterator = roomWallPlaneIndex.begin();
+    for (std::unordered_map<int, geometric::Plane *>::iterator wallIterator =
+             roomWallPlaneIndex.begin();
          wallIterator != roomWallPlaneIndex.end();)
     {
         wallIterator = wallIterator->second == p_plane_in

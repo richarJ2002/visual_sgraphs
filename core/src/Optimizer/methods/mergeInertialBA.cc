@@ -197,7 +197,8 @@ OptimizerStatus
 
     std::vector<std::pair<MapPoint *, int>> pairs;
     pairs.reserve(localObservationCounts.size());
-    for (auto itr = localObservationCounts.begin();
+    for (std::map<MapPoint *, int>::iterator itr =
+             localObservationCounts.begin();
          itr != localObservationCounts.end();
          ++itr)
         pairs.push_back(*itr);

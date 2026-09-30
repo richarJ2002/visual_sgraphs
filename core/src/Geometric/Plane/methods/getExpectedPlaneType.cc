@@ -41,7 +41,8 @@ PlaneStatus
     // get the maximum vote
     double       maximumVotes = 0;
     PlaneVariant maximumType  = PlaneVariant::UNDEFINED;
-    for (const auto &vote : semanticVotes)
+    for (const std::pair<const Plane::PlaneVariant, double> &vote :
+         semanticVotes)
     {
         if (vote.second > maximumVotes)
         {

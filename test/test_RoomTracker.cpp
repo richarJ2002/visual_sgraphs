@@ -936,7 +936,8 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
              {"VERIFIED_MATCH_TO_LAST_ROOM", "REACQUIRE_TIMEOUT"}},
         };
 
-    for (const auto &entry : definedRows)
+    for (const std::pair<semantic::RoomTrackingState, std::vector<std::string>>
+             &entry : definedRows)
     {
         const semantic::RoomTrackingState sourceState = entry.first;
         for (semantic::RoomTrackingEvent event : allEvents)

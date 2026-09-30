@@ -1015,8 +1015,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         __func__);
                 }
 
-                const auto previousPassagesIterator =
-                    previousPassageIdsByRoom.find(p_room_inout);
+                const std::unordered_map<semantic::Room *,
+                                         std::unordered_set<int>>::iterator
+                    previousPassagesIterator =
+                        previousPassageIdsByRoom.find(p_room_inout);
 
                 int passageId{};
                 if ((previousPassagesIterator !=

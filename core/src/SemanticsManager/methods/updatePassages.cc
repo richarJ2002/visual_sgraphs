@@ -56,7 +56,7 @@ SemanticsManagerStatus
                      __func__);
     }
 
-    for (const auto &passage : allPassages)
+    for (semantic::Passage *const &passage : allPassages)
     {
         bool passageIsBad{};
         if (!(passage == nullptr) &&

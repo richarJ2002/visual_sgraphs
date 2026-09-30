@@ -112,9 +112,10 @@ MapStatus
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        const auto evidence = std::make_tuple(geometry.finiteSupportCount,
-                                              geometry.observationCount,
-                                              -planeGetId);
+        const std::tuple<unsigned long, unsigned long, int> evidence =
+            std::make_tuple(geometry.finiteSupportCount,
+                            geometry.observationCount,
+                            -planeGetId);
         if (!hasBestEvidence || evidence > bestEvidence)
         {
             bestEvidence      = evidence;

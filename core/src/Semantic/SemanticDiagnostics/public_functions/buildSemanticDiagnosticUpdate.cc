@@ -78,7 +78,8 @@ SemanticDiagnosticsStatus buildSemanticDiagnosticUpdate(
     std::size_t                 totalTransitions = 0U;
     for (const auto &[id, p_currentFinding] : currentFailuresById)
     {
-        const auto previousIterator = previousFailuresById.find(id);
+        const std::map<std::string, const Finding *>::iterator
+            previousIterator = previousFailuresById.find(id);
         if (previousIterator == previousFailuresById.end())
         {
             ++totalTransitions;

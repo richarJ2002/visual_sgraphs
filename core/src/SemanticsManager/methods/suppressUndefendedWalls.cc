@@ -379,7 +379,8 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const auto        p_cloud = wallGetGeometrySnapshot.supportCloud;
+        const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_cloud =
+            wallGetGeometrySnapshot.supportCloud;
         const std::size_t cloudPointCount =
             p_cloud != nullptr ? p_cloud->size() : 0U;
         std::size_t observationCount{};
@@ -572,7 +573,8 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
         }
     }
 
-    for (auto stateIterator = undefendedWalls.begin();
+    for (std::unordered_map<int, UndefendedWallState>::iterator stateIterator =
+             undefendedWalls.begin();
          stateIterator != undefendedWalls.end();)
     {
         stateIterator = mappedWallIds.count(stateIterator->first) == 0U

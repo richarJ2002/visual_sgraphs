@@ -61,8 +61,9 @@ PlaneStatus Plane::addObservation(core::KeyFrame    *p_keyFrame_inout,
      * Insert the observation only when the keyframe has not previously
      * observed this plane.
      */
-    const auto insertionResult =
-        observations.insert({p_keyFrame_inout, observation_in});
+    const std::pair<std::map<KeyFrame *, Observation>::iterator, bool>
+        insertionResult =
+            observations.insert({p_keyFrame_inout, observation_in});
 
     /* Increment the observation count after a successful insertion */
     if (insertionResult.second)

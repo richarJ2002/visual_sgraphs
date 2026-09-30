@@ -330,7 +330,7 @@ SemanticVerifyStatus
     {
         const std::vector<std::pair<int, int>> candidateSignature =
             signatureOf(candidate);
-        const auto existing =
+        const std::vector<Hypothesis>::iterator existing =
             std::find_if(distinctHypotheses.begin(),
                          distinctHypotheses.end(),
                          [&](const Hypothesis &entry_in) {

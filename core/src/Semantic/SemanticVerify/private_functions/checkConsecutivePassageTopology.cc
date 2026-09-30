@@ -65,7 +65,8 @@ SemanticVerifyStatus checkConsecutivePassageTopology(
         {
             return std::string();
         }
-        const auto tagMatch = idToTag_in.find(roomId_in);
+        const std::map<int, std::string>::const_iterator tagMatch =
+            idToTag_in.find(roomId_in);
         if (tagMatch != idToTag_in.end() && !tagMatch->second.empty())
         {
             return std::string("t:") + tagMatch->second;
@@ -108,7 +109,8 @@ SemanticVerifyStatus checkConsecutivePassageTopology(
              * even without geometry, and content re-derives at fusion.
              * A both-real same-ID pair still runs the full endpoint and
              * geometry checks below. */
-            const auto lineageMatch = survivingById.find(absorbedPassage.id);
+            const std::map<int, const PassageContext *>::iterator lineageMatch =
+                survivingById.find(absorbedPassage.id);
             if (lineageMatch != survivingById.end() &&
                 (absorbedPassage.isRecoveryProxy ||
                  lineageMatch->second->isRecoveryProxy))

@@ -379,10 +379,10 @@ TrackingStatus Tracking::createNewKeyFrame()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    for (const auto p_currentMapMarker : atlasAllMarkers)
+    for (semantic::Marker *const p_currentMapMarker : atlasAllMarkers)
     {
         // Check if the marker is already in the Global map
-        for (auto p_currentFrameMaker : currentFrame.mapMarkers)
+        for (semantic::Marker *p_currentFrameMaker : currentFrame.mapMarkers)
         {
             int currentFrameMakerId{};
             if (p_currentFrameMaker->getId(currentFrameMakerId) !=

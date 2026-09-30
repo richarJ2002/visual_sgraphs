@@ -35,7 +35,8 @@ std::unique_ptr<geometric::Plane>
                          double      height_m_in,
                          std::size_t pointCount_in)
 {
-    auto ground = std::make_unique<geometric::Plane>();
+    std::unique_ptr<geometric::Plane> ground =
+        std::make_unique<geometric::Plane>();
     if (ground->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -35,6 +35,8 @@ DBParserStatus DBParser::getEnvironmentRooms(
     // Check if the JSON file contains rooms
     if (environmentData_in["rooms"].size() != 0)
     {
+        // items() yields a library-internal proxy type with no public name
+        // (docs/design/auto_policy.md, section 5), so it is deduced here.
         for (const auto &environmentDatum : environmentData_in["rooms"].items())
         {
             // Initialization

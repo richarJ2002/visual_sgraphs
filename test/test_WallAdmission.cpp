@@ -274,7 +274,7 @@ std::unique_ptr<KeyFrame>
      * getCameraCenter() (== Twc.translation()) works out to -Tcw.translation.
      * Negate here so the resulting camera centre is the position callers
      * actually asked for. */
-    auto keyFrame = std::make_unique<KeyFrame>();
+    std::unique_ptr<KeyFrame> keyFrame = std::make_unique<KeyFrame>();
     if (keyFrame->setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
                                        -cameraCenter_World_in.cast<float>())) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -301,7 +301,8 @@ geometric::Plane::Observation makeMinimalObservation()
 std::unique_ptr<geometric::Plane> makeAdmissibleWallAtOrigin(int  id_in,
                                                              Map *p_map_in)
 {
-    auto wall = std::make_unique<geometric::Plane>();
+    std::unique_ptr<geometric::Plane> wall =
+        std::make_unique<geometric::Plane>();
     makeWallWithGridCloud(*wall,
                           id_in,
                           p_map_in,
@@ -609,7 +610,8 @@ namespace
 std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
                                                                Map *p_map_in)
 {
-    auto ground = std::make_unique<geometric::Plane>();
+    std::unique_ptr<geometric::Plane> ground =
+        std::make_unique<geometric::Plane>();
     if (ground->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -687,7 +689,8 @@ std::unique_ptr<geometric::Plane>
                               const Eigen::Vector3d &normal_World_in,
                               const Eigen::Vector3d &axisAlong_World_in)
 {
-    auto wall = std::make_unique<geometric::Plane>();
+    std::unique_ptr<geometric::Plane> wall =
+        std::make_unique<geometric::Plane>();
     if (wall->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -56,8 +56,9 @@ MapStatus vs_graphs::core::Map::addMapPassage(
                      "fail; continuing as before.",
                      __func__);
     }
-    const auto existingPassage = passageIndex.find(passage_inoutId);
-    int        passage_inoutId2{};
+    const std::unordered_map<int, semantic::Passage *>::iterator
+        existingPassage = passageIndex.find(passage_inoutId);
+    int passage_inoutId2{};
     if (p_passage_inout->getId(passage_inoutId2) !=
         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {

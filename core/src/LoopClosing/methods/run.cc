@@ -980,7 +980,8 @@ void LoopClosing::run(void)
         }
 
         /* Find the time after it took to run the loop */
-        const auto end = std::chrono::high_resolution_clock::now();
+        const std::chrono::system_clock::time_point end =
+            std::chrono::high_resolution_clock::now();
 
         /* Calculate the elapsed time */
         const std::chrono::duration<double> elapsed = end - start;

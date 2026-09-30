@@ -48,7 +48,7 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
 
     // store the wall equations
     std::vector<Eigen::Vector4d> wallEquations;
-    for (const auto &wall : roomWalls_in)
+    for (geometric::Plane *const &wall : roomWalls_in)
     {
         g2o::Plane3D wallGetGlobalEquation{};
         if (wall->getGlobalEquation(wallGetGlobalEquation) !=
@@ -63,10 +63,10 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
     }
 
     // for each point in the ground plane, check if it is within the walls
-    for (const auto &point : p_groundCloud->points)
+    for (const pcl::PointXYZRGBA &point : p_groundCloud->points)
     {
         bool isWithinWalls = true;
-        for (const auto &wallEquation : wallEquations)
+        for (const Eigen::Vector4d &wallEquation : wallEquations)
         {
             // convert the point to Eigen vector
             Eigen::Vector3d pointVector =

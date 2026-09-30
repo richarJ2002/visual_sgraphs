@@ -49,7 +49,7 @@ UtilsStatus Utils::computeCentroidFromPoints(
     Eigen::Vector3d sum(0.0, 0.0, 0.0);
 
     // Calculate the sum of the points_in
-    for (const auto &point : points_in)
+    for (const Eigen::Vector3d &point : points_in)
         sum += point;
 
     // Return the centroid of the cluster

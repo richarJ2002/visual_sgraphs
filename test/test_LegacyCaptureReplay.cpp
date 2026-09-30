@@ -226,10 +226,11 @@ TEST(LegacyCaptureReplay, DirectoryReplayIsDeterministicAndReportsRealCounts)
     EXPECT_EQ(first.okFiles, 1U);
     EXPECT_EQ(first.malformedFiles, 1U);
     /* No fake zero-count SUCCESS: the one OK file has real nonzero counts. */
-    const auto okIterator = std::find_if(first.fileResults.begin(),
-                                         first.fileResults.end(),
-                                         [](const LegacyFileReplayResult &r)
-                                         { return !r.malformed; });
+    const std::vector<LegacyFileReplayResult>::const_iterator okIterator =
+        std::find_if(first.fileResults.begin(),
+                     first.fileResults.end(),
+                     [](const LegacyFileReplayResult &r)
+                     { return !r.malformed; });
     ASSERT_NE(okIterator, first.fileResults.end());
     EXPECT_GT(okIterator->roomCount, 0U);
     EXPECT_GT(okIterator->wallCount, 0U);

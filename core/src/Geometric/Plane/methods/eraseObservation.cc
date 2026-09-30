@@ -46,7 +46,8 @@ PlaneStatus Plane::eraseObservation(core::KeyFrame *p_keyFrame_in)
         /* Lock observations and semantics for one consistent vote rebuild. */
         std::scoped_lock lock(featuresMutex, typeMutex);
 
-        const auto observationIt = observations.find(p_keyFrame_in);
+        const std::map<KeyFrame *, Observation>::iterator observationIt =
+            observations.find(p_keyFrame_in);
 
         /* Return when the keyframe has no observation */
         if (observationIt == observations.end())

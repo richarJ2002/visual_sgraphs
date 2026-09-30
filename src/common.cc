@@ -2267,7 +2267,7 @@ void appendRoomMarkers(
 void clearKFClsClouds(std::vector<vs_graphs::core::KeyFrame *> keyframeVector_in)
 {
     /* Iterate through keyframes and clear the cls point clouds */
-    for (auto &keyframe : keyframeVector_in)
+    for (vs_graphs::core::KeyFrame *&keyframe : keyframeVector_in)
     {
         if (keyframe->clearClsClouds() !=
             vs_graphs::core::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -2304,7 +2304,8 @@ std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>>
     std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers;
 
     /* Loop through the markersBuffer */
-    for (const auto &markers : markersBuffer)
+    for (const std::vector<vs_graphs::core::semantic::Marker *> &markers :
+         markersBuffer)
     {
         /* Find the time difference */
         double time2{};
@@ -2760,7 +2761,7 @@ void publishAllMappedWalls(std::vector<vs_graphs::core::geometric::Plane *> wall
     wallDataMsg.header.frame_id = frameWorld;
 
     /* Fill in the walls data for each wall in vector */
-    for (const auto &wall : wallsList_in)
+    for (vs_graphs::core::geometric::Plane *const &wall : wallsList_in)
     {
         vs_graphs::core::geometric::Plane::PlaneVariant wallPlaneType{};
         if (!(!wall) &&
@@ -2903,7 +2904,7 @@ void publishAllMappedRooms(std::vector<vs_graphs::core::semantic::Room *> roomsL
     roomDataMsg.header.frame_id = frameWorld;
 
     /* Fill in the room data for each room in vector */
-    for (const auto &room : roomsList_in)
+    for (vs_graphs::core::semantic::Room *const &room : roomsList_in)
     {
         if (!room)
             continue;
@@ -2959,7 +2960,7 @@ void publishAllMappedRooms(std::vector<vs_graphs::core::semantic::Room *> roomsL
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        for (const auto &wall : roomWalls)
+        for (vs_graphs::core::geometric::Plane *const &wall : roomWalls)
         {
             if (wall)
             {
@@ -2997,7 +2998,7 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
     passageDataMsg.header.frame_id = frameWorld;
 
     /* Fill in the passage data for each passage in vector */
-    for (const auto &passage : passagesList_in)
+    for (vs_graphs::core::semantic::Passage *const &passage : passagesList_in)
     {
         bool passageIsBad{};
         if (!(!passage) && passage->isBad(passageIsBad) !=
@@ -3100,7 +3101,7 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        for (const auto &room : roomsList_in)
+        for (vs_graphs::core::semantic::Room *const &room : roomsList_in)
         {
             if (!room)
                 continue;
@@ -3115,12 +3116,13 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            for (const auto &roomWall : roomWalls)
+            for (vs_graphs::core::geometric::Plane *const &roomWall : roomWalls)
             {
                 if (!roomWall)
                     continue;
 
-                for (const auto &associatedWall : associatedWalls)
+                for (vs_graphs::core::geometric::Plane *const &associatedWall :
+                     associatedWalls)
                 {
                     int associatedWallGetId{};
                     if ((associatedWall) &&
@@ -3191,7 +3193,8 @@ void publishAllMappedPassages(std::vector<vs_graphs::core::semantic::Passage *> 
          * which walls each passage belongs to.
          */
         passageData.associated_wall_ids.clear();
-        for (const auto &associatedWall : associatedWalls)
+        for (vs_graphs::core::geometric::Plane *const &associatedWall :
+             associatedWalls)
         {
             if (associatedWall)
             {
@@ -3229,7 +3232,7 @@ void publishAllMappedFloors(std::vector<vs_graphs::core::semantic::Floor *> floo
     floorDataMsg.header.frame_id = frameWorld;
 
     /* Fill in the floor data for each floor in vector */
-    for (const auto &floor : floorsList_in)
+    for (vs_graphs::core::semantic::Floor *const &floor : floorsList_in)
     {
         if (!floor)
             continue;
@@ -3322,7 +3325,7 @@ void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
 {
     std::error_code          error;
     std::vector<std::string> fileNames;
-    for (const auto &entry :
+    for (const std::filesystem::directory_entry &entry :
          std::filesystem::directory_iterator(archiveDir_in, error))
     {
         if (error)
@@ -3760,7 +3763,9 @@ void maybeArchiveSGraph(
         for (vs_graphs::core::semantic::Room *p_room : rooms)
         {
             std::size_t floorIndex = 0U;
-            const auto  claimed    = roomFloorIndex.find(p_room);
+            const std::unordered_map<const vs_graphs::core::semantic::Room *,
+                                     std::size_t>::iterator claimed =
+                roomFloorIndex.find(p_room);
             if (claimed != roomFloorIndex.end())
             {
                 floorIndex = claimed->second;
@@ -4271,8 +4276,10 @@ void maybeArchiveSGraph(
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    const auto wallPassages =
-                        floorWallPassages[floorIndex].find(wallGetId4);
+                    const std::unordered_map<int,
+                                             std::vector<std::string>>::iterator
+                        wallPassages =
+                            floorWallPassages[floorIndex].find(wallGetId4);
                     if (wallPassages != floorWallPassages[floorIndex].end())
                     {
                         for (const std::string &passageKey :
@@ -5763,7 +5770,9 @@ void publishPlanes(
         }
 
         {
-            const auto ownerIt = owningRoomIdsByPlane.find(mappedPlane);
+            const std::unordered_map<vs_graphs::core::geometric::Plane *,
+                                     std::vector<int>>::iterator ownerIt =
+                owningRoomIdsByPlane.find(mappedPlane);
             planeLabelText << '\n' << "class=" << semanticClass;
             if (planeType == vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
             {
@@ -6500,7 +6509,7 @@ bool preparePointCloudForTracking(
         return false;
     }
 
-    auto pointCloud_source =
+    std::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB>> pointCloud_source =
         std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
     try
     {
@@ -6527,7 +6536,7 @@ bool preparePointCloudForTracking(
             point.z             = sourceX;
         }
 
-        auto convertedMessage =
+        std::shared_ptr<sensor_msgs::msg::PointCloud2> convertedMessage =
             std::make_shared<sensor_msgs::msg::PointCloud2>();
         pcl::toROSMsg(*pointCloud_camera_out, *convertedMessage);
         convertedMessage->header          = pointCloudMessage_in->header;
@@ -6578,7 +6587,7 @@ bool preparePointCloudForTracking(
         pcl::transformPointCloud(*pointCloud_source,
                                  *pointCloud_camera_out,
                                  transformMatrix);
-        auto transformedMessage =
+        std::shared_ptr<sensor_msgs::msg::PointCloud2> transformedMessage =
             std::make_shared<sensor_msgs::msg::PointCloud2>();
         pcl::toROSMsg(*pointCloud_camera_out, *transformedMessage);
         transformedMessage->header          = pointCloudMessage_in->header;

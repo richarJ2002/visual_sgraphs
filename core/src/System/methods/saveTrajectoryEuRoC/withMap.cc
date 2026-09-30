@@ -107,8 +107,9 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in,
     std::list<double>::iterator lT  = p_tracker->frameTimes.begin();
     std::list<bool>::iterator   lbL = p_tracker->lostFlags.begin();
 
-    for (auto lit  = p_tracker->relativeFramePoses.begin(),
-              lend = p_tracker->relativeFramePoses.end();
+    for (std::list<Sophus::SE3f>::iterator
+             lit  = p_tracker->relativeFramePoses.begin(),
+             lend = p_tracker->relativeFramePoses.end();
          lit != lend;
          lit++, rits++, lT++, lbL++)
     {

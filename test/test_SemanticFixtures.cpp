@@ -28,8 +28,10 @@ TEST(SemanticFixtures, GridCloudIsDeterministicAndOnPlane)
     const Eigen::Vector3d axisU(0.0, 1.0, 0.0);
     const Eigen::Vector3d axisV(0.0, 0.0, 1.0);
 
-    auto cloudA = makeGridCloud(centroid, axisU, axisV, 0.5, 0.75, 6);
-    auto cloudB = makeGridCloud(centroid, axisU, axisV, 0.5, 0.75, 6);
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloudA =
+        makeGridCloud(centroid, axisU, axisV, 0.5, 0.75, 6);
+    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloudB =
+        makeGridCloud(centroid, axisU, axisV, 0.5, 0.75, 6);
 
     ASSERT_EQ(cloudA->size(), cloudB->size());
     ASSERT_EQ(cloudA->size(), static_cast<std::size_t>(6 * 6));

@@ -117,7 +117,7 @@ UtilsStatus Utils::ransacPlaneFitting(
 
             /* Create a point cloud_inout containing the points within the plane
              */
-            for (const auto &inlierIndex : p_inliers->indices)
+            for (const int &inlierIndex : p_inliers->indices)
             {
                 /* Fill the point cloud_inout with indices */
                 PointT inPoint;

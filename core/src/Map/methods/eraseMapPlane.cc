@@ -39,7 +39,8 @@ MapStatus Map::eraseMapPlane(geometric::Plane *p_plane_in)
     std::unique_lock<std::mutex> lock(mapMutex);
     planes.erase(p_plane_in);
 
-    for (auto planeIterator = planeIndex.begin();
+    for (std::unordered_map<int, geometric::Plane *>::iterator planeIterator =
+             planeIndex.begin();
          planeIterator != planeIndex.end();)
     {
         planeIterator = planeIterator->second == p_plane_in

@@ -309,11 +309,11 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
 
         if (s_in.cameraModel == Settings::CameraType::KANNALA_BRANDT)
         {
-            auto overlapping1 =
+            std::vector<int> overlapping1 =
                 static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
                     s_in.p_calibration1)
                     ->lappingArea;
-            auto overlapping2 =
+            std::vector<int> overlapping2 =
                 static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
                     s_in.p_calibration2)
                     ->lappingArea;

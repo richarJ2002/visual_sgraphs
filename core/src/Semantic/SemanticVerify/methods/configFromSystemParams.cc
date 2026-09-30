@@ -41,8 +41,9 @@ SemanticVerifyStatus SemanticVerify::configFromSystemParams(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    const auto          &loadedVerification = p_params->verification;
-    types::SystemParams *p_params2          = nullptr;
+    const types::SystemParams::Verification &loadedVerification =
+        p_params->verification;
+    types::SystemParams *p_params2 = nullptr;
     if (types::SystemParams::getParams(p_params2) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
     {
@@ -51,7 +52,7 @@ SemanticVerifyStatus SemanticVerify::configFromSystemParams(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    const auto &loadedFactor = p_params2->factor;
+    const types::SystemParams::Factor &loadedFactor = p_params2->factor;
 
     SemanticVerifyConfig configuration;
     configuration.maxNormalAngle_deg =

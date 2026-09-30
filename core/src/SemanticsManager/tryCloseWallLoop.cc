@@ -140,14 +140,15 @@ SemanticsManagerStatus tryCloseWallLoop(
                  {currentWall.end_World_m, nextWall.start_World_m},
                  {currentWall.end_World_m, nextWall.end_World_m}}};
 
-        auto p_nearestEndpointPair = std::min_element(
-            endpointPairs.begin(),
-            endpointPairs.end(),
-            [](const auto &firstPair, const auto &secondPair)
-            {
-                return (firstPair.first - firstPair.second).squaredNorm() <
-                       (secondPair.first - secondPair.second).squaredNorm();
-            });
+        const std::pair<Eigen::Vector2d, Eigen::Vector2d>
+            *p_nearestEndpointPair = std::min_element(
+                endpointPairs.begin(),
+                endpointPairs.end(),
+                [](const auto &firstPair, const auto &secondPair)
+                {
+                    return (firstPair.first - firstPair.second).squaredNorm() <
+                           (secondPair.first - secondPair.second).squaredNorm();
+                });
 
         if ((p_nearestEndpointPair->first - p_nearestEndpointPair->second)
                 .norm() <= topologyParameters_in.maximumCornerGap_m)

@@ -38,10 +38,11 @@ MapStatus Map::getKeyFrameById(long unsigned int idCount_in,
                                KeyFrame        *&p_keyFrameById_out)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
-    const auto keyFrameIterator = keyFrameIndex.find(idCount_in);
-    p_keyFrameById_out          = keyFrameIterator != keyFrameIndex.end()
-                                      ? keyFrameIterator->second
-                                      : nullptr;
+    const std::unordered_map<unsigned long, KeyFrame *>::iterator
+        keyFrameIterator = keyFrameIndex.find(idCount_in);
+    p_keyFrameById_out   = keyFrameIterator != keyFrameIndex.end()
+                               ? keyFrameIterator->second
+                               : nullptr;
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 

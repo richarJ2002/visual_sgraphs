@@ -47,7 +47,7 @@ SemanticsManagerStatus SemanticsManager::computeGroundPlaneHeight(
     /* Not a median: partial_sort with std::greater keeps the lower half in
        descending order, so [numPoint-1] is the upper edge of that half. */
     std::vector<float> yValues;
-    for (const auto &point : p_transformedCloud->points)
+    for (const pcl::PointXYZRGBA &point : p_transformedCloud->points)
     {
         yValues.push_back(point.y);
     }

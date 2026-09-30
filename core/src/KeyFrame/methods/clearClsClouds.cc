@@ -37,7 +37,8 @@ namespace core
 
 KeyFrameStatus KeyFrame::clearClsClouds()
 {
-    for (auto &p_clsCloud : currentClsCloudPtrs)
+    for (std::shared_ptr<pcl::PointCloud<pcl::PointXYZRGBA>> &p_clsCloud :
+         currentClsCloudPtrs)
     {
         p_clsCloud->clear();
         p_clsCloud = nullptr;

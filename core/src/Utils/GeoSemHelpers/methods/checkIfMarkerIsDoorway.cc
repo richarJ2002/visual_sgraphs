@@ -32,7 +32,7 @@ GeoSemHelpersStatus GeoSemHelpers::checkIfMarkerIsDoorway(
     bool        isDoorway = true;
     std::string name      = "";
     // Loop over all markers attached to doorways
-    for (const auto &room : envRooms_in)
+    for (semantic::Room *const &room : envRooms_in)
     {
         int roomMetaMarkerId{};
         if (room->getMetaMarkerId(roomMetaMarkerId) !=

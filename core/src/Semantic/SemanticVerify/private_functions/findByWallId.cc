@@ -35,7 +35,7 @@ SemanticVerifyStatus
                  const int                                 wallId_in,
                  const VerifyWallObservation             *&p_byWallId_out)
 {
-    const auto wallIt =
+    const std::vector<VerifyWallObservation>::const_iterator wallIt =
         std::find_if(walls_in.begin(),
                      walls_in.end(),
                      [wallId_in](const VerifyWallObservation &wall_in)

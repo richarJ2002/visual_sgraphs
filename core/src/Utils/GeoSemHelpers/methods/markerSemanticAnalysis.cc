@@ -173,7 +173,7 @@ GeoSemHelpersStatus GeoSemHelpers::markerSemanticAnalysis(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            for (auto p_mappedMarker : atlasAllMarkers)
+            for (semantic::Marker *p_mappedMarker : atlasAllMarkers)
             {
                 int mappedMarkerId{};
                 if (p_mappedMarker->getId(mappedMarkerId) !=

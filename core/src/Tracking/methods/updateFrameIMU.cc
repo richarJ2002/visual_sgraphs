@@ -47,7 +47,8 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
     std::list<vs_graphs::core::KeyFrame *>::iterator rits =
         referenceKeyFrames.begin();
     std::list<bool>::iterator lbL = lostFlags.begin();
-    for (auto lit = relativeFramePoses.begin(), lend = relativeFramePoses.end();
+    for (std::list<Sophus::SE3f>::iterator lit  = relativeFramePoses.begin(),
+                                           lend = relativeFramePoses.end();
          lit != lend;
          lit++, rits++, lbL++)
     {

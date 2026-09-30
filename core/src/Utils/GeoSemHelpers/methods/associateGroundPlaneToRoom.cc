@@ -51,7 +51,7 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    for (const auto &plane : atlasAllPlanes)
+    for (geometric::Plane *const &plane : atlasAllPlanes)
     {
         geometric::Plane::PlaneVariant planeType{};
         if (plane->getPlaneType(planeType) !=
@@ -77,7 +77,7 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
     else
     {
         // check which ground plane has the most points within the walls
-        for (const auto &plane : groundPlanes)
+        for (geometric::Plane *const &plane : groundPlanes)
         {
             // count inliers of the plane
             size_t inliers{};

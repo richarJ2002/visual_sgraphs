@@ -92,7 +92,7 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             continue;
         }
 
-        const auto poseAfterIterator =
+        const KeyFramePoseMap::const_iterator poseAfterIterator =
             keyFramePosesAfter_WorldToCamera_in.find(p_keyFrame);
 
         if (poseAfterIterator == keyFramePosesAfter_WorldToCamera_in.end() ||
@@ -136,7 +136,7 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             return nullptr;
         }
 
-        const auto nodeIterator =
+        const std::vector<PoseCorrectionNode>::iterator nodeIterator =
             std::find_if(correctionNodes.begin(),
                          correctionNodes.end(),
                          [p_keyFrame_in](const PoseCorrectionNode &node_in)
@@ -424,8 +424,9 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         if (geometric::Plane *p_doorPlane = p_passageAssociateDoor;
             p_doorPlane != nullptr)
         {
-            const auto correctionIterator =
-                planeCorrections_oldWorldToNewWorld.find(p_doorPlane);
+            const std::map<geometric::Plane *, g2o::Sim3>::iterator
+                correctionIterator =
+                    planeCorrections_oldWorldToNewWorld.find(p_doorPlane);
 
             if (correctionIterator != planeCorrections_oldWorldToNewWorld.end())
             {
@@ -450,8 +451,9 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             }
             for (geometric::Plane *p_wall : passageAssociateWalls)
             {
-                const auto correctionIterator =
-                    planeCorrections_oldWorldToNewWorld.find(p_wall);
+                const std::map<geometric::Plane *, g2o::Sim3>::iterator
+                    correctionIterator =
+                        planeCorrections_oldWorldToNewWorld.find(p_wall);
 
                 if (p_wall == nullptr ||
                     correctionIterator ==
@@ -460,8 +462,8 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                     continue;
                 }
 
-                const auto centroidIterator =
-                    planeCentroids_OldWorld_m.find(p_wall);
+                const std::map<geometric::Plane *, Eigen::Vector3d>::iterator
+                    centroidIterator = planeCentroids_OldWorld_m.find(p_wall);
 
                 if (centroidIterator == planeCentroids_OldWorld_m.end())
                 {
@@ -559,8 +561,9 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
 
         if (p_metaMarker != nullptr)
         {
-            const auto markerCorrectionIterator =
-                markerCorrections_oldWorldToNewWorld.find(p_metaMarker);
+            const std::map<semantic::Marker *, g2o::Sim3>::iterator
+                markerCorrectionIterator =
+                    markerCorrections_oldWorldToNewWorld.find(p_metaMarker);
 
             if (markerCorrectionIterator !=
                 markerCorrections_oldWorldToNewWorld.end())
@@ -585,10 +588,11 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             }
             for (geometric::Plane *p_wall : roomWalls)
             {
-                const auto correctionIterator =
-                    planeCorrections_oldWorldToNewWorld.find(p_wall);
-                const auto centroidIterator =
-                    planeCentroids_OldWorld_m.find(p_wall);
+                const std::map<geometric::Plane *, g2o::Sim3>::iterator
+                    correctionIterator =
+                        planeCorrections_oldWorldToNewWorld.find(p_wall);
+                const std::map<geometric::Plane *, Eigen::Vector3d>::iterator
+                    centroidIterator = planeCentroids_OldWorld_m.find(p_wall);
 
                 if (correctionIterator ==
                         planeCorrections_oldWorldToNewWorld.end() ||
@@ -693,9 +697,11 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                 continue;
             }
 
-            const auto correctionIterator =
-                roomCorrections_oldWorldToNewWorld.find(p_room);
-            const auto centroidIterator = roomCentroids_OldWorld_m.find(p_room);
+            const std::map<semantic::Room *, g2o::Sim3>::iterator
+                correctionIterator =
+                    roomCorrections_oldWorldToNewWorld.find(p_room);
+            const std::map<semantic::Room *, Eigen::Vector3d>::iterator
+                centroidIterator = roomCentroids_OldWorld_m.find(p_room);
 
             if (correctionIterator ==
                     roomCorrections_oldWorldToNewWorld.end() ||
@@ -784,7 +790,8 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                      __func__);
     }
 
-    for (auto &edge_OldWorld_m : skeletonEdges_OldWorld_m)
+    for (std::pair<Eigen::Vector3d, Eigen::Vector3d> &edge_OldWorld_m :
+         skeletonEdges_OldWorld_m)
     {
         const Eigen::Vector3d firstEndpoint_OldWorld_m = edge_OldWorld_m.first;
         const Eigen::Vector3d secondEndpoint_OldWorld_m =

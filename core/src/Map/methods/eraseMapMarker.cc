@@ -39,7 +39,8 @@ MapStatus Map::eraseMapMarker(semantic::Marker *p_marker_in)
     std::unique_lock<std::mutex> lock(mapMutex);
     markers.erase(p_marker_in);
 
-    for (auto markerIterator = markerIndex.begin();
+    for (std::unordered_map<int, semantic::Marker *>::iterator markerIterator =
+             markerIndex.begin();
          markerIterator != markerIndex.end();)
     {
         markerIterator = markerIterator->second == p_marker_in

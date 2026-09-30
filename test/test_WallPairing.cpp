@@ -42,7 +42,8 @@ std::unique_ptr<geometric::Plane>
                  double                 zMin_m_in,
                  double                 zMax_m_in)
 {
-    auto wall = std::make_unique<geometric::Plane>();
+    std::unique_ptr<geometric::Plane> wall =
+        std::make_unique<geometric::Plane>();
     if (wall->setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

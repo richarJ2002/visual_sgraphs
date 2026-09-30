@@ -36,7 +36,7 @@ SemanticsManagerStatus SemanticsManager::filterWallPlanes(void)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    for (const auto &plane : atlasAllPlanes)
+    for (geometric::Plane *const &plane : atlasAllPlanes)
     {
         /* Skip planes which are not classed as walls */
         geometric::Plane::PlaneVariant planeExpectedPlaneType{};

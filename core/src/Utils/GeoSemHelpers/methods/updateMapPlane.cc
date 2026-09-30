@@ -67,7 +67,7 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
     }
     if (p_params->optimization.planePoint.enabled)
     {
-        for (auto &point : p_planeCloud_in->points)
+        for (pcl::PointXYZRGBA &point : p_planeCloud_in->points)
         {
             Eigen::Vector4d pointVector;
             pointVector << point.x, point.y, point.z, 1;
@@ -167,7 +167,7 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        for (const auto &mapPoint : keyFrameMapPoints)
+        for (MapPoint *const &mapPoint : keyFrameMapPoints)
         {
             bool            currentPlaneIsPointinPlaneCloud{};
             Eigen::Vector3f mapPointWorldPos{};
