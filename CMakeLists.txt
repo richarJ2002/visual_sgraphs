@@ -129,6 +129,16 @@ add_definitions(${PCL_DEFINITIONS})
 include(${PROJECT_SOURCE_DIR}/core/Thirdparty/DBoW2/CMakeLists.txt)
 include(${PROJECT_SOURCE_DIR}/core/Thirdparty/g2o/CMakeLists.txt)
 
+# The vendored files above write their libraries into the source tree, which
+# the Debug, Release and sanitizer build trees would then share and overwrite.
+# Every library of this package is built into its own build tree instead.
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+set_target_properties(DBoW2 g2o PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 # Types module sources (objects/methods layout)
 include(${PROJECT_SOURCE_DIR}/cmake/auto_sources_Types_Types.cmake)
 
@@ -226,9 +236,6 @@ include(${PROJECT_SOURCE_DIR}/core/src/OptimizableTypes/CMakeLists.txt)
 
 # Viewer object sources (single Viewer object, §4.5)
 include(${PROJECT_SOURCE_DIR}/core/src/Viewer/CMakeLists.txt)
-
-# Set library output directory
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/core/lib)
 
 # Create the main library
 add_library(${PROJECT_NAME}_lib SHARED
@@ -480,8 +487,8 @@ target_link_libraries(${PROJECT_NAME}_lib
   ${EIGEN3_LIBS}
   ${Pangolin_LIBRARIES}
   ${PCL_LIBRARIES}
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/DBoW2/lib/libDBoW2.so
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/g2o/lib/libg2o.so
+  DBoW2
+  g2o
   -lboost_system
   -lboost_serialization
   -lcrypto
@@ -619,16 +626,9 @@ install(TARGETS ${PROJECT_NAME}_lib
 )
 
 # Install third-party shared libraries needed at runtime
-install(DIRECTORY
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/DBoW2/lib/
-  DESTINATION lib
-  FILES_MATCHING PATTERN "libDBoW2.so*"
-)
-
-install(DIRECTORY
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/g2o/lib/
-  DESTINATION lib
-  FILES_MATCHING PATTERN "libg2o.so*"
+install(TARGETS DBoW2 g2o
+  EXPORT export_${PROJECT_NAME}
+  LIBRARY DESTINATION lib
 )
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
