@@ -59,12 +59,16 @@ TEST(MissionHealthTopologyJson, PreservesEverySchema1FieldAndType)
                                      {"passages", nlohmann::json::array()}};
     const nlohmann::json original = schema1;
 
+    /* An available cache always has an update instant; the default
+     * (time_point::min()) would make the age computation overflow. */
+    semantic::SemanticReportCacheEntry updatedEntry{};
+    updatedEntry.updateInstant = std::chrono::steady_clock::now();
+
     nlohmann::json result{};
-    ASSERT_EQ((augmentMissionHealthTopologyJsonWithSemantics(
-                  schema1,
-                  semantic::SemanticReportCacheEntry(),
-                  true,
-                  result)),
+    ASSERT_EQ((augmentMissionHealthTopologyJsonWithSemantics(schema1,
+                                                             updatedEntry,
+                                                             true,
+                                                             result)),
               MissionHealthTopologyJsonStatus::
                   MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS);
 
@@ -241,6 +245,8 @@ TEST(MissionHealthTopologyJson,
         semantic::EntityKey{semantic::EntityKind::WALL, 1U, 9},
         semantic::EntityKey{semantic::EntityKind::WALL, 1U, 3}};
     entry.completenessResults.push_back(completeness);
+    /* An available cache always has an update instant (see above). */
+    entry.updateInstant = std::chrono::steady_clock::now();
 
     nlohmann::json result{};
     ASSERT_EQ((augmentMissionHealthTopologyJsonWithSemantics({{"schema", 1}},
