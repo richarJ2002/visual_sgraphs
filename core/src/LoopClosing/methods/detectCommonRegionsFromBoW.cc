@@ -124,7 +124,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
         }
 
         bool isAbortedByNearKeyFrame = false;
-        for (int covisibleKeyFrameIndex = 0;
+        for (std::size_t covisibleKeyFrameIndex = 0;
              covisibleKeyFrameIndex < covisibleKeyFrames.size();
              ++covisibleKeyFrameIndex)
         {
@@ -151,7 +151,6 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
         int                  numBoWMatches = 0;
 
         KeyFrame *p_mostBowMatchesKeyFrame = p_keyFrame;
-        int       mostBowCountMatchCount   = 0;
 
         std::vector<MapPoint *> currentKFMapPointMatches{};
         if (p_currentKF->getMapPointMatches(currentKFMapPointMatches) !=
@@ -178,8 +177,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
             std::vector<KeyFrame *>(currentKFMapPointMatches2.size(),
                                     static_cast<KeyFrame *>(nullptr));
 
-        int indexMostBowMatchesKeyFrameCount = 0;
-        for (int covisibleKeyFrameIndex = 0;
+        for (std::size_t covisibleKeyFrameIndex = 0;
              covisibleKeyFrameIndex < covisibleKeyFrames.size();
              ++covisibleKeyFrameIndex)
         {
@@ -208,18 +206,13 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (count > mostBowCountMatchCount)
-            {
-                mostBowCountMatchCount           = count;
-                indexMostBowMatchesKeyFrameCount = covisibleKeyFrameIndex;
-            }
         }
 
-        for (int covisibleKeyFrameIndex = 0;
+        for (std::size_t covisibleKeyFrameIndex = 0;
              covisibleKeyFrameIndex < covisibleKeyFrames.size();
              ++covisibleKeyFrameIndex)
         {
-            for (int matchIndex = 0;
+            for (std::size_t matchIndex = 0;
                  matchIndex <
                  vvpMatchedMapPoints[covisibleKeyFrameIndex].size();
                  ++matchIndex)
@@ -531,33 +524,6 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                     // Optimize Sim3 transformation with every matches
                     Eigen::Matrix<double, 7, 7> hessian7x7;
 
-                    bool isFixedScale    = isScaleFixed;
-                    Map *p_currentKFMap2 = nullptr;
-                    if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
-                        p_currentKF->getMap(p_currentKFMap2) !=
-                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getMap returned a failure status although it "
-                            "cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    bool inertialBA22{};
-                    if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
-                        p_currentKFMap2->getInertialBA2(inertialBA22) !=
-                            MapStatus::MAP_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getInertialBA2 returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    if (p_tracker->sensor == System::IMU_MONOCULAR &&
-                        !inertialBA22)
-                        isFixedScale = false;
-
                     int optMatchCount{};
                     if (Optimizer::optimizeSim3(p_currentKF,
                                                 p_keyFrame,
@@ -742,7 +708,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                     __func__);
                             }
 
-                            int covisibleKeyFrameIndex = 0;
+                            std::size_t covisibleKeyFrameIndex = 0;
                             while (countKeyFrameCount < 3 &&
                                    covisibleKeyFrameIndex <
                                        currentCovisibleKeyFrames.size())
@@ -807,34 +773,6 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
 
                                 if (isValid)
                                 {
-                                    Sophus::SE3f Tc_w{};
-                                    if (p_currentKF->getPose(Tc_w) !=
-                                        KeyFrameStatus::
-                                            KEY_FRAME_STATUS_SUCCESS)
-                                    {
-                                        RCLCPP_ERROR(
-                                            rclcpp::get_logger("vs_graphs"),
-                                            "%s: getPose returned a failure "
-                                            "status although it cannot fail; "
-                                            "continuing as before.",
-                                            __func__);
-                                    }
-                                    Sophus::SE3f Tw_cj{};
-                                    if (p_currentCovisibleKeyFrame
-                                            ->getPoseInverse(Tw_cj) !=
-                                        KeyFrameStatus::
-                                            KEY_FRAME_STATUS_SUCCESS)
-                                    {
-                                        RCLCPP_ERROR(
-                                            rclcpp::get_logger("vs_graphs"),
-                                            "%s: getPoseInverse returned a "
-                                            "failure status although it cannot "
-                                            "fail; continuing as before.",
-                                            __func__);
-                                    }
-                                    Sophus::SE3f    Tc_cj = Tc_w * Tw_cj;
-                                    Eigen::Vector3f vectorDistance =
-                                        Tc_cj.translation();
                                     countKeyFrameCount++;
                                 }
                                 covisibleKeyFrameIndex++;
@@ -889,14 +827,13 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
     else
     {
         int maximumStage = -1;
-        int maximumMatched;
-        for (int stageCountIndex = 0; stageCountIndex < stageCounts.size();
+        for (std::size_t stageCountIndex = 0;
+             stageCountIndex < stageCounts.size();
              ++stageCountIndex)
         {
             if (stageCounts[stageCountIndex] > maximumStage)
             {
-                maximumStage   = stageCounts[stageCountIndex];
-                maximumMatched = matchStageCounts[stageCountIndex];
+                maximumStage = stageCounts[stageCountIndex];
             }
         }
     }

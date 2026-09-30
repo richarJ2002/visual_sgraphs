@@ -1,6 +1,5 @@
 # ORBmatcher object sources: exactly this object's translation units.
 set(VS_GRAPHS_ORBMATCHER_SOURCES
-  core/src/ORBmatcher/methods/static_members.cc
   core/src/ORBmatcher/methods/searchByProjection/fromMapPoints.cc
   core/src/ORBmatcher/methods/radiusByViewingCos.cc
   core/src/ORBmatcher/methods/searchByBoW/withFrame.cc

@@ -46,10 +46,8 @@ MapPointStatus MapPoint::printObservations()
          mit != mend;
          mit++)
     {
-        KeyFrame            *p_keyFrame = mit->first;
-        std::tuple<int, int> indexes    = mit->second;
-        int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
-        Map *p_keyFrameMap = nullptr;
+        KeyFrame *p_keyFrame    = mit->first;
+        Map      *p_keyFrameMap = nullptr;
         if (p_keyFrame->getMap(p_keyFrameMap) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {

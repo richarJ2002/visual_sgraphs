@@ -147,8 +147,6 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
         return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
-    int temporalKeyFrameCount = 11; // [TODO] Set by parameter
-
     // Relationship to rebuild the essential graph, it is used two times, first
     // in the local window and later in the rest of the map
     KeyFrame *p_newChild;
@@ -406,8 +404,6 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                          __func__);
         }
 
-        std::chrono::steady_clock::time_point t2 =
-            std::chrono::steady_clock::now();
         bool shouldScaleVelocity = false;
         if (s_on != 1)
             shouldScaleVelocity = true;
@@ -449,9 +445,6 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-
-        std::chrono::steady_clock::time_point t3 =
-            std::chrono::steady_clock::now();
     }
 
     unsigned long keyFrameNewCountValue{};

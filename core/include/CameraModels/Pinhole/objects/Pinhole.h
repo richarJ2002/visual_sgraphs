@@ -104,7 +104,7 @@ class Pinhole : public geometriccamera::GeometricCamera
     /*!
      * @brief        Destroys the camera and its two-view helper.
      */
-    ~Pinhole()
+    ~Pinhole() override
     {
         if (p_twoViewReconstruction)
             delete p_twoViewReconstruction;

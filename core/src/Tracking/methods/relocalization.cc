@@ -240,20 +240,6 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
     // This helps in repetitive corridors where visual appearance is similar
     if (!roomCentroids.empty() && !candidateKeyFrames.empty())
     {
-        // Get current frame's estimated position from IMU prediction or motion
-        // model
-        Sophus::SE3<float> currentFrameGetPose{};
-        if (currentFrame.getPose(currentFrameGetPose) !=
-            FrameStatus::FRAME_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getPose returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        Eigen::Vector3f currentPosition =
-            currentFrameGetPose.translation().head<3>();
-
         // Score candidates by: visual matches + proximity to known room
         // centroids
         std::vector<float> candidateScores(keyFrameCount, 0.0f);

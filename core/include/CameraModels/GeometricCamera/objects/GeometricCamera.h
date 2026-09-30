@@ -85,9 +85,10 @@ class GeometricCamera
         parameters(parameters_in)
     {}
     /*!
-     * @brief        Destroys the camera.
+     * @brief        Destroys the camera; virtual so that deleting a camera
+     *               through this base type runs the derived destructor.
      */
-    ~GeometricCamera() {}
+    virtual ~GeometricCamera() {}
 
     /*!
      * @brief        Projects a camera-frame point into the image.

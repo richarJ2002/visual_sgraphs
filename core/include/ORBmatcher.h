@@ -418,15 +418,15 @@ class ORBmatcher
     /*!
      * @brief        Low Hamming distance acceptance threshold.
      */
-    static const int TH_LOW;
+    static constexpr int TH_LOW = 50;
     /*!
      * @brief        High Hamming distance acceptance threshold.
      */
-    static const int TH_HIGH;
+    static constexpr int TH_HIGH = 100;
     /*!
      * @brief        Orientation histogram length.
      */
-    static const int HISTO_LENGTH;
+    static constexpr int HISTO_LENGTH = 30;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   protected:

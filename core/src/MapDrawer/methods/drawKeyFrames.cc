@@ -85,8 +85,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Matrix4f Twc        = keyFramePoseInverse.matrix();
-            unsigned int    indexColor = p_keyFrame->originMapId;
+            Eigen::Matrix4f Twc = keyFramePoseInverse.matrix();
 
             glPushMatrix();
 

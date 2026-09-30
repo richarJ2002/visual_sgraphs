@@ -179,7 +179,6 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
     // Check the last candidates with geometric validation
     //  Loop candidates
     bool isLoopDetectedInKeyFrame = false;
-    bool shouldCheckSpatial       = false;
 
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_StartEstSim3_1 =
@@ -187,7 +186,6 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
 #endif
     if (loopNumCoincidences > 0)
     {
-        shouldCheckSpatial = true;
         // Find from the last KF candidates
         Sophus::SE3f currentKFPose{};
         if (p_currentKF->getPose(currentKFPose) !=

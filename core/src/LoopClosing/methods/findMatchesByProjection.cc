@@ -84,8 +84,8 @@ LoopClosingStatus LoopClosing::findMatchesByProjection(
                     "status although it cannot fail; continuing as before.",
                     __func__);
             }
-            int insertedCount = 0;
-            int j             = 0;
+            int         insertedCount = 0;
+            std::size_t j             = 0;
             while (j < keyFrames.size() && insertedCount < countCovisibleCount)
             {
                 if (checkKeyFrames.find(keyFrames[j]) == checkKeyFrames.end() &&

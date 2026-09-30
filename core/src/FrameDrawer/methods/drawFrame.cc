@@ -33,7 +33,6 @@ FrameDrawerStatus FrameDrawer::drawFrame(cv::Mat &frameImage_out,
     std::vector<std::pair<cv::Point2f, cv::Point2f>> initialTracks;
     int                drawState; // Tracking state
     std::vector<float> currentDepthValues;
-    float              depthCutoff;
 
     Frame                                    drawnFrame;
     std::vector<MapPoint *>                  localMapPoints;
@@ -79,7 +78,6 @@ FrameDrawerStatus FrameDrawer::drawFrame(cv::Mat &frameImage_out,
             matchedInImageMap = matchedInImage;
 
             currentDepthValues = currentDepths;
-            depthCutoff        = depthThreshold;
         }
         else if (state == Tracking::LOST)
         {
