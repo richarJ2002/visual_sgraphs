@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getRoomVariant.cc
+ *
+ * @brief           Implements Room::getRoomVariant(), declared in
+ *                  Semantic/Room.h.
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

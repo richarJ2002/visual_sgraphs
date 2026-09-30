@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            checkIfMarkerIsDoorway.cc
+ *
+ * @brief           Implements GeoSemHelpers::checkIfMarkerIsDoorway(), declared
+ *                  in GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include <rclcpp/logging.hpp>
 

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            updateMap.cc
+ *
+ * @brief           Implements MapPoint::updateMap(), declared in MapPoint.h.
+ */
+
 #include "MapPoint.h"
 
 #include "ORBmatcher.h"

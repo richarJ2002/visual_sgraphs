@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setTime.cc
+ *
+ * @brief           Implements Marker::setTime(), declared in Semantic/Marker.h.
+ */
+
 #include "Semantic/Marker.h"
 
 namespace vs_graphs

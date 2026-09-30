@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            reconcileRoomGroundPlanes.cc
+ *
+ * @brief           Implements SemanticsManager::reconcileRoomGroundPlanes(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include <cmath>

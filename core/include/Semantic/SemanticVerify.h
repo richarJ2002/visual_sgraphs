@@ -1,4 +1,11 @@
 /*!
+ * @file            SemanticVerify.h
+ *
+ * @brief           Declares semantic verification: the checks and evidence used
+ *                  to accept or reject room merges and wall observations.
+ */
+
+/*!
  * @brief        Declares the deterministic, plane-gated geometric
  *               verifier.
  *

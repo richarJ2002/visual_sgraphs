@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getAllRooms.cc
+ *
+ * @brief           Implements Atlas::getAllRooms(), declared in Atlas.h.
+ */
+
 #include "Atlas.h"
 #include <rclcpp/logging.hpp>
 

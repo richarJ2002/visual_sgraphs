@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            Marker.h
+ *
+ * @brief           Declares Marker, a fiducial marker seen by the camera and
+ *                  placed in the map.
+ */
+
 #ifndef MARKER_H
 #define MARKER_H
 

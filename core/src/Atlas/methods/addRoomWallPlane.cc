@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addRoomWallPlane.cc
+ *
+ * @brief           Implements Atlas::addRoomWallPlane(), declared in Atlas.h.
+ */
+
 #include "Atlas.h"
 #include <rclcpp/logging.hpp>
 

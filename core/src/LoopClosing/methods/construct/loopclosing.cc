@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            loopclosing.cc
+ *
+ * @brief           Implements the LoopClosing constructor, declared in
+ *                  LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 namespace vs_graphs

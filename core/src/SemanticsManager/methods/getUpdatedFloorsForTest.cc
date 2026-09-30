@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getUpdatedFloorsForTest.cc
+ *
+ * @brief           Implements SemanticsManager::getUpdatedFloorsForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

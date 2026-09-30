@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            searchBySim3.cc
+ *
+ * @brief           Implements ORBmatcher::searchBySim3(), declared in
+ *                  ORBmatcher.h.
+ */
+
 #include "ORBmatcher.h"
 
 #include <limits.h>

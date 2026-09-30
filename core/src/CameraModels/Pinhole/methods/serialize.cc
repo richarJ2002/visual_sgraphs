@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            serialize.cc
+ *
+ * @brief           Implements Pinhole::serialize(), declared in
+ *                  CameraModels/Pinhole/objects/Pinhole.h.
+ */
+
 #include "CameraModels/Pinhole/objects/Pinhole.h"
 
 #include <boost/archive/binary_iarchive.hpp>

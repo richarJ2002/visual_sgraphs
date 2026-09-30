@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getCamTwc.cc
+ *
+ * @brief           Implements System::getCamTwc(), declared in System.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 #include <rclcpp/logging.hpp>

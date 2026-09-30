@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getDeltaRotation.cc
+ *
+ * @brief           Implements Preintegrated::getDeltaRotation(), declared in
+ *                  ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include <mutex>

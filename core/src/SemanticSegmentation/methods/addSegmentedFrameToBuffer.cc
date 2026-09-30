@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            addSegmentedFrameToBuffer.cc
+ *
+ * @brief           Implements
+ *                  SemanticSegmentation::addSegmentedFrameToBuffer(), declared
+ *                  in SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 #include <limits>

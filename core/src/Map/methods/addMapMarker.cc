@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addMapMarker.cc
+ *
+ * @brief           Implements Map::addMapMarker(), declared in Map.h.
+ */
+
 #include "Map.h"
 #include "Semantic/Marker.h"
 #include "Semantic/MarkerStatus.h"

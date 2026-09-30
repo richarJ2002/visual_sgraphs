@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setKeyFrameDatabase.cc
+ *
+ * @brief           Implements KeyFrame::setKeyFrameDatabase(), declared in
+ *                  KeyFrame.h.
+ */
+
 #include "KeyFrame.h"
 
 #include "ImuTypes.h"

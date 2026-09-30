@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            projectPointDistort.cc
+ *
+ * @brief           Implements Frame::projectPointDistort(), declared in
+ *                  Frame.h.
+ */
+
 #include "Frame.h"
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"

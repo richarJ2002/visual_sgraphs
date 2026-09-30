@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getPlaneById.cc
+ *
+ * @brief           Implements Map::getPlaneById(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

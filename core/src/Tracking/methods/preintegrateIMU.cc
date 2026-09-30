@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            preintegrateIMU.cc
+ *
+ * @brief           Implements Tracking::preintegrateIMU(), declared in
+ *                  Tracking.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 

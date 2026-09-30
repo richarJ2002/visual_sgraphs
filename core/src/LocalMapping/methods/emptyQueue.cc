@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            emptyQueue.cc
+ *
+ * @brief           Implements LocalMapping::emptyQueue(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 #include <rclcpp/logging.hpp>
 

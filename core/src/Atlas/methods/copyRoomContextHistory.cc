@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            copyRoomContextHistory.cc
+ *
+ * @brief           Implements Atlas::copyRoomContextHistory(), declared in
+ *                  Atlas.h.
+ */
+
 #include "Atlas.h"
 
 namespace vs_graphs

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withKeyFrame.cc
+ *
+ * @brief           Implements MapPoint::predictScale() (withKeyFrame), declared
+ *                  in MapPoint.h.
+ */
+
 #include "MapPoint.h"
 
 #include "ORBmatcher.h"

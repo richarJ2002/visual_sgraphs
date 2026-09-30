@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            saveTrajectoryKITTI.cc
+ *
+ * @brief           Implements System::saveTrajectoryKITTI(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            loopClosureLocalBundleAdjustment.cc
+ *
+ * @brief           Implements Optimizer::loopClosureLocalBundleAdjustment(),
+ *                  declared in Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "OptimizableTypes.h"

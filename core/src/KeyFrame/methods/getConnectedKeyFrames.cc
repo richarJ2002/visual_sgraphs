@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getConnectedKeyFrames.cc
+ *
+ * @brief           Implements KeyFrame::getConnectedKeyFrames(), declared in
+ *                  KeyFrame.h.
+ */
+
 #include "KeyFrame.h"
 
 #include "ImuTypes.h"

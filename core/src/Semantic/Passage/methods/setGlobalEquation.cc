@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setGlobalEquation.cc
+ *
+ * @brief           Implements Passage::setGlobalEquation(), declared in
+ *                  Semantic/Passage.h.
+ */
+
 #include "Semantic/Passage.h"
 #include <algorithm>
 #include <cmath>

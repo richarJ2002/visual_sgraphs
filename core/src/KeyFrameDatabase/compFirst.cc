@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            compFirst.cc
+ *
+ * @brief           Implements compFirst(), declared in
+ *                  KeyFrameDatabase/private_functions.h.
+ */
+
 #include "KeyFrameDatabase.h"
 
 #include "KeyFrame.h"

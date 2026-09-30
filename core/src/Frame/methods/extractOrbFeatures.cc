@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            extractOrbFeatures.cc
+ *
+ * @brief           Implements Frame::extractOrbFeatures(), declared in Frame.h.
+ */
+
 #include "Frame.h"
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"

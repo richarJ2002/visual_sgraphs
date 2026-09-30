@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            checkFundamental.cc
+ *
+ * @brief           Implements TwoViewReconstruction::checkFundamental(),
+ *                  declared in TwoViewReconstruction.h.
+ */
+
 #include "TwoViewReconstruction.h"
 
 #include "GeometricTools.h"

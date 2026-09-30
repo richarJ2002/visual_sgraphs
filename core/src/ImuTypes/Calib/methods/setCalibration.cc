@@ -15,6 +15,12 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setCalibration.cc
+ *
+ * @brief           Implements Calib::setCalibration(), declared in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 namespace vs_graphs

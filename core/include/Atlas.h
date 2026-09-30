@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            Atlas.h
+ *
+ * @brief           Declares Atlas, the set of maps built during a session,
+ *                  including the bookkeeping for merging and retiring maps.
+ */
+
 #ifndef ATLAS_H
 #define ATLAS_H
 

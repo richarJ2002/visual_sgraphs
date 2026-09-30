@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            resetIfRequested.cc
+ *
+ * @brief           Implements LocalMapping::resetIfRequested(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 #include <mutex>

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addChild.cc
+ *
+ * @brief           Implements KeyFrame::addChild(), declared in KeyFrame.h.
+ */
+
 #include "KeyFrame.h"
 
 #include "ImuTypes.h"

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setGroundPlane.cc
+ *
+ * @brief           Implements Room::setGroundPlane(), declared in
+ *                  Semantic/Room.h.
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

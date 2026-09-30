@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            consumeNewMapCreatedEvent.cc
+ *
+ * @brief           Implements Atlas::consumeNewMapCreatedEvent(), declared in
+ *                  Atlas.h.
+ */
+
 #include "Atlas.h"
 
 namespace vs_graphs

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            withObservationIds.cc
+ *
+ * @brief           Implements Passage::addTraversalObservation()
+ *                  (withObservationIds), declared in Semantic/Passage.h.
+ */
+
 #include "Semantic/Passage.h"
 #include <algorithm>
 #include <cmath>

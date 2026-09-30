@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setTracker.cc
+ *
+ * @brief           Implements LoopClosing::setTracker(), declared in
+ *                  LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 namespace vs_graphs

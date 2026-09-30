@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            common.hpp
+ *
+ * @brief           Declares the helpers and types shared by the RGB-D ROS 2
+ *                  nodes: publishing, visualisation and estimator health.
+ */
+
 #ifndef VS_GRAPHS_COMMON_H
 #define VS_GRAPHS_COMMON_H
 
@@ -830,12 +837,11 @@ extern void appendFloorMarkers(
  * @brief       Appends passage and passage-label markers to a structural
  *              marker array with situational awareness coloring.
  *
- * @param[in]   mappedRooms_in
- *              Collection of mapped room elements (to count room-passage
- * links).
- *
  * @param[in]   mappedPassages_in
  *              Collection of mapped passage elements to process.
+ *
+ * @param[in]   mappedRooms_in
+ *              Collection of mapped room elements; not used at present.
  *
  * @param[in]   msgTime_s_in
  *              ROS timestamp assigned to the generated markers.
@@ -846,6 +852,7 @@ extern void appendFloorMarkers(
  */
 extern void appendPassageMarkers(
     const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
+    const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
     const rclcpp::Time                                      &msgTime_s_in,
     visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out);
 
@@ -1117,7 +1124,7 @@ extern void maybeArchiveSGraph(
  * @param[in]   allMapPoints_in
  *              Vector of mapped points
  *
- * @param[in]   msgTime_s_in
+ * @param[in]   msgTime_in
  *              Ros time msg
  */
 extern void
@@ -1381,7 +1388,7 @@ extern void publishStaticTFTransform(const std::string  &parentFrameId_in,
  *              Collection of mapped passage elements to publish. Null passage
  *              pointers are ignored.
  *
- * @param[in]   messageTimestamp_in
+ * @param[in]   msgTime_s_in
  *              ROS timestamp assigned to all generated structural-element
  *              markers.
  */

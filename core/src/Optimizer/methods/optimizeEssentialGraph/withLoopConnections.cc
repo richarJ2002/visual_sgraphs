@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withLoopConnections.cc
+ *
+ * @brief           Implements Optimizer::optimizeEssentialGraph()
+ *                  (withLoopConnections), declared in Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "OptimizableTypes.h"

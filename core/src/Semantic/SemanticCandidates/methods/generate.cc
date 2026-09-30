@@ -1,4 +1,8 @@
-
+/*!
+ * @file            generate.cc
+ *
+ * @brief           Implements SemanticCandidates::generate().
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

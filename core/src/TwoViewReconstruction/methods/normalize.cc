@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            normalize.cc
+ *
+ * @brief           Implements TwoViewReconstruction::normalize(), declared in
+ *                  TwoViewReconstruction.h.
+ */
+
 #include "TwoViewReconstruction.h"
 
 #include "GeometricTools.h"

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setHasKnownLabel.cc
+ *
+ * @brief           Implements Room::setHasKnownLabel(), declared in
+ *                  Semantic/Room.h.
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

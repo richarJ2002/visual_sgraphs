@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            computeF12.cc
+ *
+ * @brief           Implements GeometricTools::computeF12(), declared in
+ *                  GeometricTools.h.
+ */
+
 #include "GeometricTools.h"
 
 #include "KeyFrame.h"

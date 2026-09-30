@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            eraseMarkerBasedMapRoom.cc
+ *
+ * @brief           Implements Map::eraseMarkerBasedMapRoom(), declared in
+ *                  Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

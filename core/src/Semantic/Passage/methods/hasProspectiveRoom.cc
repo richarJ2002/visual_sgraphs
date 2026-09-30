@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            hasProspectiveRoom.cc
+ *
+ * @brief           Implements Passage::hasProspectiveRoom(), declared in
+ *                  Semantic/Passage.h.
+ */
+
 #include "Semantic/Passage.h"
 #include <algorithm>
 #include <cmath>

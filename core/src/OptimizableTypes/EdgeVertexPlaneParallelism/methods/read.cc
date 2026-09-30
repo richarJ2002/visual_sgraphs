@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            read.cc
+ *
+ * @brief           Implements EdgeVertexPlaneParallelism::read(), declared in
+ *                  OptimizableTypes.h.
+ */
+
 #include "OptimizableTypes.h"
 
 namespace vs_graphs

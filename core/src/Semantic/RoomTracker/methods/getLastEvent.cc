@@ -13,6 +13,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getLastEvent.cc
+ *
+ * @brief           Implements RoomTracker::getLastEvent(), declared in
+ *                  Semantic/RoomTracker.h.
+ */
+
 #include "Semantic/RoomTracker.h"
 
 #include <cmath>

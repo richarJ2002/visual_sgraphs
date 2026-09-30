@@ -1,4 +1,9 @@
-
+/*!
+ * @file            collectWallObservations.cc
+ *
+ * @brief           Implements SemanticVerify::collectWallObservations(),
+ *                  declared in Semantic/SemanticVerify.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

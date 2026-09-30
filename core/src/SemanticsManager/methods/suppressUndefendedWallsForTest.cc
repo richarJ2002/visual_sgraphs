@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            suppressUndefendedWallsForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::suppressUndefendedWallsForTest(), declared
+ *                  in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

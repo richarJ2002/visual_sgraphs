@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            FrameDrawer.h
+ *
+ * @brief           Declares FrameDrawer, which draws the current image with its
+ *                  tracked features for the viewer.
+ */
+
 #ifndef FRAMEDRAWER_H
 #define FRAMEDRAWER_H
 

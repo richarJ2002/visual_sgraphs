@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            detachWallsBeyondConfirmedPassages.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::detachWallsBeyondConfirmedPassages(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

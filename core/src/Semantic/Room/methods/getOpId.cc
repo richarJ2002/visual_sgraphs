@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getOpId.cc
+ *
+ * @brief           Implements Room::getOpId(), declared in Semantic/Room.h.
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

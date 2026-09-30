@@ -23,6 +23,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            Map.h
+ *
+ * @brief           Declares Map, one map of the atlas: its key frames, map
+ *                  points and the semantic entities (planes, walls, rooms,
+ *                  floors, passages, markers) built on them.
+ */
+
 #ifndef MAP_H
 #define MAP_H
 

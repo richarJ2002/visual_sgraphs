@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addPoseOnlyObservationEdges.cc
+ *
+ * @brief           Implements addPoseOnlyObservationEdges(), declared in
+ *                  Optimizer/private_functions.h.
+ */
+
 #include "Frame.h"
 #include "G2oTypes.h"
 #include "MapPoint.h"

@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setMap.cc
+ *
+ * @brief           Implements Plane::setMap(), declared in Geometric/Plane.h.
+ */
+
 #include "Geometric/Plane.h"
 #include <algorithm>
 #include <boost/make_shared.hpp>

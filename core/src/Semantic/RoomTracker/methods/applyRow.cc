@@ -13,6 +13,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            applyRow.cc
+ *
+ * @brief           Implements RoomTracker::applyRow(), declared in
+ *                  Semantic/RoomTracker.h.
+ */
+
 #include "Semantic/RoomTracker.h"
 
 #include <cmath>

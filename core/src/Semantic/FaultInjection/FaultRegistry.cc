@@ -1,3 +1,10 @@
+/*!
+ * @file            FaultRegistry.cc
+ *
+ * @brief           Implements getFaultRegistry(), declared in
+ *                  Semantic/FaultInjection.h.
+ */
+
 /* Matching Declaration Include */
 
 #include "Semantic/FaultInjection.h"

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            associateGroundPlaneToRoom.cc
+ *
+ * @brief           Implements GeoSemHelpers::associateGroundPlaneToRoom(),
+ *                  declared in GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include <rclcpp/logging.hpp>
 

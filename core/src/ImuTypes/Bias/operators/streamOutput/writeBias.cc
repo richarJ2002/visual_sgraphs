@@ -15,6 +15,12 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            writeBias.cc
+ *
+ * @brief           Implements operator<<(), declared in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include <iostream>

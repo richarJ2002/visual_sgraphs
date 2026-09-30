@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            ensureActiveMapBootstrapHierarchyForTest.cc
+ *
+ * @brief           Implements SemanticsManager::ensureActiveMapBootstrapHierarc
+ *                  hyForTest(), declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

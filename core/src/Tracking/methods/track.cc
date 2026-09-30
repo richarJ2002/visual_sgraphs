@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            track.cc
+ *
+ * @brief           Implements Tracking::track(), declared in Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include "FrameDrawer.h"

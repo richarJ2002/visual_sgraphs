@@ -13,6 +13,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            formatDouble.cc
+ *
+ * @brief           Implements formatDouble(), declared in
+ *                  Semantic/RoomTracker/private_functions.h.
+ */
+
 #include "Semantic/RoomTracker.h"
 
 #include <cmath>

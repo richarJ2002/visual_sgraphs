@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setSkeletonEdges.cc
+ *
+ * @brief           Implements System::setSkeletonEdges(), declared in System.h.
+ */
+
 #include "System.h"
 #include <rclcpp/logging.hpp>
 

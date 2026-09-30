@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getAllPassages.cc
+ *
+ * @brief           Implements Map::getAllPassages(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

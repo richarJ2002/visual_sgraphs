@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            Optimizer.h
+ *
+ * @brief           Declares Optimizer, the bundle-adjustment and pose-graph
+ *                  optimisations built on g2o.
+ */
+
 #ifndef OPTIMIZER_H
 #define OPTIMIZER_H
 

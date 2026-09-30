@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            assignFeaturesToGrid.cc
+ *
+ * @brief           Implements Frame::assignFeaturesToGrid(), declared in
+ *                  Frame.h.
+ */
+
 #include "Frame.h"
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"

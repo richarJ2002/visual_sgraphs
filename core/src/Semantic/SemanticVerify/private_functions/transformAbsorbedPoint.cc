@@ -1,4 +1,9 @@
-
+/*!
+ * @file            transformAbsorbedPoint.cc
+ *
+ * @brief           Implements transformAbsorbedPoint(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

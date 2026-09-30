@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            isSemanticReportCacheAvailable.cc
+ *
+ * @brief           Implements System::isSemanticReportCacheAvailable(),
+ *                  declared in System.h.
+ */
+
 #include "SemanticsManager.h"
 #include "System.h"
 #include <rclcpp/logging.hpp>

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addSegmentedImage.cc
+ *
+ * @brief           Implements System::addSegmentedImage(), declared in
+ *                  System.h.
+ */
+
 #include "SemanticSegmentation.h"
 #include "System.h"
 #include <rclcpp/logging.hpp>

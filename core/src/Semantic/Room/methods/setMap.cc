@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setMap.cc
+ *
+ * @brief           Implements Room::setMap(), declared in Semantic/Room.h.
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

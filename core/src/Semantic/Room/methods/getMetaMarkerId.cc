@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getMetaMarkerId.cc
+ *
+ * @brief           Implements Room::getMetaMarkerId(), declared in
+ *                  Semantic/Room.h.
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

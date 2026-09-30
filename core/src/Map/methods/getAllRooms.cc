@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getAllRooms.cc
+ *
+ * @brief           Implements Map::getAllRooms(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

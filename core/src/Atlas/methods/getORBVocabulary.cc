@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getORBVocabulary.cc
+ *
+ * @brief           Implements Atlas::getORBVocabulary(), declared in Atlas.h.
+ */
+
 #include "Atlas.h"
 
 namespace vs_graphs

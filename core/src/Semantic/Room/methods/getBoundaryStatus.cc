@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getBoundaryStatus.cc
+ *
+ * @brief           Implements Room::getBoundaryStatus(), declared in
+ *                  Semantic/Room.h.
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

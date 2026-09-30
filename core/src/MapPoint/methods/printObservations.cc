@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            printObservations.cc
+ *
+ * @brief           Implements MapPoint::printObservations(), declared in
+ *                  MapPoint.h.
+ */
+
 #include "MapPoint.h"
 
 #include "Map.h"

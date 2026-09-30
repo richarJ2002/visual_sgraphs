@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            validateRoomBoundaries.cc
+ *
+ * @brief           Implements SemanticsManager::validateRoomBoundaries(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            localBundleAdjustment.cc
+ *
+ * @brief           Implements Optimizer::localBundleAdjustment(), declared in
+ *                  Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "OptimizableTypes.h"

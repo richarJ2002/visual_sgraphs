@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            poseInertialOptimizationLastFrame.cc
+ *
+ * @brief           Implements Optimizer::poseInertialOptimizationLastFrame(),
+ *                  declared in Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "../private_functions.h"

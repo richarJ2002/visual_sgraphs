@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            ORBVocabulary.h
+ *
+ * @brief           Declares ORBVocabulary, the DBoW2 vocabulary type for ORB
+ *                  descriptors.
+ */
+
 #ifndef ORBVOCABULARY_H
 #define ORBVOCABULARY_H
 

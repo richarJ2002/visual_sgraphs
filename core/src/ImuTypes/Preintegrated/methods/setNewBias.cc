@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setNewBias.cc
+ *
+ * @brief           Implements Preintegrated::setNewBias(), declared in
+ *                  ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include <mutex>

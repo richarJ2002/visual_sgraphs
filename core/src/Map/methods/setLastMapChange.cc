@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setLastMapChange.cc
+ *
+ * @brief           Implements Map::setLastMapChange(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

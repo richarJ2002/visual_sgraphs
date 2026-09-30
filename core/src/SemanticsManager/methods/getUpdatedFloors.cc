@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getUpdatedFloors.cc
+ *
+ * @brief           Implements SemanticsManager::getUpdatedFloors(), declared in
+ *                  SemanticsManager.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include "GeoSemHelpersStatus.h"
 #include "SemanticsManager.h"

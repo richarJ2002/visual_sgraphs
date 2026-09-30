@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getCentroid.cc
+ *
+ * @brief           Implements Passage::getCentroid(), declared in
+ *                  Semantic/Passage.h.
+ */
+
 #include "Semantic/Passage.h"
 #include <algorithm>
 #include <cmath>

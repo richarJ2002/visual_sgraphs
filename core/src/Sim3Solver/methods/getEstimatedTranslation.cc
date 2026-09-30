@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getEstimatedTranslation.cc
+ *
+ * @brief           Implements Sim3Solver::getEstimatedTranslation(), declared
+ *                  in Sim3Solver.h.
+ */
+
 #include "Sim3Solver.h"
 
 #include <cmath>

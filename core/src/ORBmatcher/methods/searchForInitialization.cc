@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            searchForInitialization.cc
+ *
+ * @brief           Implements ORBmatcher::searchForInitialization(), declared
+ *                  in ORBmatcher.h.
+ */
+
 #include "ORBmatcher.h"
 
 #include <limits.h>

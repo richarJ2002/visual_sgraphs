@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            transformPlaneIdentity.cc
+ *
+ * @brief           Implements Floor::transformPlaneIdentity(), declared in
+ *                  Semantic/Floor.h.
+ */
+
 #include "Semantic/Floor.h"
 #include <algorithm>
 #include <cmath>

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            saveMapPointsAsPCD.cc
+ *
+ * @brief           Implements System::saveMapPointsAsPCD(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 #include <rclcpp/logging.hpp>
 

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getGlobalPose.cc
+ *
+ * @brief           Implements Marker::getGlobalPose(), declared in
+ *                  Semantic/Marker.h.
+ */
+
 #include "Semantic/Marker.h"
 
 namespace vs_graphs

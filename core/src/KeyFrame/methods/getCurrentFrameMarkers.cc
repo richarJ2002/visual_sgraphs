@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getCurrentFrameMarkers.cc
+ *
+ * @brief           Implements KeyFrame::getCurrentFrameMarkers(), declared in
+ *                  KeyFrame.h.
+ */
+
 #include "KeyFrame.h"
 
 #include "ImuTypes.h"

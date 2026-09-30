@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setMap.cc
+ *
+ * @brief           Implements Marker::setMap(), declared in Semantic/Marker.h.
+ */
+
 #include "Semantic/Marker.h"
 #include <mutex>
 

@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            detectOpenPassagesFromSkeletonEdges.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::detectOpenPassagesFromSkeletonEdges(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include "GeoSemHelpersStatus.h"
 #include "SemanticsManager.h"

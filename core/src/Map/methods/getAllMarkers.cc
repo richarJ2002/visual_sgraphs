@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getAllMarkers.cc
+ *
+ * @brief           Implements Map::getAllMarkers(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setCentroid.cc
+ *
+ * @brief           Implements Floor::setCentroid(), declared in
+ *                  Semantic/Floor.h.
+ */
+
 #include "Semantic/Floor.h"
 #include <algorithm>
 #include <cmath>

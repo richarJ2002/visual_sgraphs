@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            triangulate.cc
+ *
+ * @brief           Implements GeometricTools::triangulate(), declared in
+ *                  GeometricTools.h.
+ */
+
 #include "GeometricTools.h"
 
 #include "KeyFrame.h"

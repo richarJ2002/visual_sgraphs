@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            add.cc
+ *
+ * @brief           Implements KeyFrameDatabase::add(), declared in
+ *                  KeyFrameDatabase.h.
+ */
+
 #include "KeyFrameDatabase.h"
 
 #include "KeyFrame.h"

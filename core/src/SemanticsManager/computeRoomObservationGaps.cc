@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            computeRoomObservationGaps.cc
+ *
+ * @brief           Implements computeRoomObservationGaps(), declared in
+ *                  SemanticsManager/private_functions.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "private_functions.h"
@@ -29,10 +36,7 @@ namespace core
 {
 
 /*!
- * @brief Computes the unsigned area of an ordered horizontal polygon.
- */
-/*!
- * @brief Finds the angular sectors (from roomCentroid_Ground_m_in) with no
+ * @brief Finds the angular sectors (from roomCentroidGround_m_in) with no
  *        wall evidence -- the "where is this room still unobserved" signal
  *        (user rule: track and expose incomplete-room state, not just a
  *        pass/fail boundary status).
@@ -44,6 +48,16 @@ namespace core
  *        for a computation that stays meaningful at any wall count,
  *        including 0 or 1 -- the boundary-loop algorithm's own machinery
  *        only starts producing useful output once minimumWallCount is met.
+ *
+ * @param[in]  wallSegments_in          Finite wall segments of the room.
+ * @param[in]  roomCentroidGround_m_in  Room centroid on the ground plane, in
+ *                                      metres.
+ * @param[out] roomObservationGaps_out  Sectors wider than the threshold that
+ *                                      no wall covers.
+ * @param[in]  gapThreshold_rad_in      Smallest angle between neighbouring
+ *                                      wall midpoints reported as a gap, in
+ *                                      radians.
+ * @return SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus computeRoomObservationGaps(
     const std::vector<FiniteWallSegment2d>      &wallSegments_in,

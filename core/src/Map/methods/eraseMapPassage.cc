@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            eraseMapPassage.cc
+ *
+ * @brief           Implements Map::eraseMapPassage(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

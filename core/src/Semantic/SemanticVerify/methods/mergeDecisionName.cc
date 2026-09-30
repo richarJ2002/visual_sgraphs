@@ -1,4 +1,8 @@
-
+/*!
+ * @file            mergeDecisionName.cc
+ *
+ * @brief           Implements SemanticVerify::mergeDecisionName().
+ */
 
 #include "Semantic/SemanticVerify.h"
 

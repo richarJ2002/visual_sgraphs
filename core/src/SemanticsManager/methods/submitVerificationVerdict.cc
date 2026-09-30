@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            submitVerificationVerdict.cc
+ *
+ * @brief           Implements SemanticsManager::submitVerificationVerdict(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 namespace vs_graphs

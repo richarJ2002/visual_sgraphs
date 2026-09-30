@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            read.cc
+ *
+ * @brief           Implements EdgeSE3ProjectSE3::read(), declared in
+ *                  OptimizableTypes.h.
+ */
+
 #include "OptimizableTypes.h"
 
 namespace vs_graphs

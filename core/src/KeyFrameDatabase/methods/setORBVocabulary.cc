@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setORBVocabulary.cc
+ *
+ * @brief           Implements KeyFrameDatabase::setORBVocabulary(), declared in
+ *                  KeyFrameDatabase.h.
+ */
+
 #include "KeyFrameDatabase.h"
 
 #include "KeyFrame.h"

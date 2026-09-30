@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            trackStereo.cc
+ *
+ * @brief           Implements System::trackStereo(), declared in System.h.
+ */
+
 #include "LocalMapping.h"
 #include "System.h"
 #include "Tracking.h"

@@ -1,4 +1,9 @@
-
+/*!
+ * @file            validateConfig.cc
+ *
+ * @brief           Implements SemanticCandidates::validateConfig(), declared in
+ *                  Semantic/SemanticCandidates.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

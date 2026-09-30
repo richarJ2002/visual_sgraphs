@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            marginalize.cc
+ *
+ * @brief           Implements Optimizer::marginalize(), declared in
+ *                  Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 namespace vs_graphs

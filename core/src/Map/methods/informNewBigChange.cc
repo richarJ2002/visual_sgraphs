@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            informNewBigChange.cc
+ *
+ * @brief           Implements Map::informNewBigChange(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

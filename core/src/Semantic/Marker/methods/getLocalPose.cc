@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getLocalPose.cc
+ *
+ * @brief           Implements Marker::getLocalPose(), declared in
+ *                  Semantic/Marker.h.
+ */
+
 #include "Semantic/Marker.h"
 
 namespace vs_graphs

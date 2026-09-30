@@ -1,4 +1,9 @@
-
+/*!
+ * @file            fitTranslation.cc
+ *
+ * @brief           Implements fitTranslation(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            resetActiveMap.cc
+ *
+ * @brief           Implements Tracking::resetActiveMap(), declared in
+ *                  Tracking.h.
+ */
+
 #include "KeyFrameDatabase.h"
 #include "LocalMapping.h"
 #include "LoopClosing.h"

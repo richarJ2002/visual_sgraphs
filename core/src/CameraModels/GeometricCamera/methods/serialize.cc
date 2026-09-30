@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            serialize.cc
+ *
+ * @brief           Implements GeometricCamera::serialize(), declared in
+ *                  CameraModels/GeometricCamera/objects/GeometricCamera.h.
+ */
+
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 
 #include <boost/archive/binary_iarchive.hpp>

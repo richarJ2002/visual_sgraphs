@@ -1,4 +1,9 @@
-
+/*!
+ * @file            verify.cc
+ *
+ * @brief           Implements SemanticVerify::verify(), declared in
+ *                  Semantic/SemanticVerify.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

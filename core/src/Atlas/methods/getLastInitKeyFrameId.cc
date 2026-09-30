@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getLastInitKeyFrameId.cc
+ *
+ * @brief           Implements Atlas::getLastInitKeyFrameId(), declared in
+ *                  Atlas.h.
+ */
+
 #include "Atlas.h"
 
 namespace vs_graphs

@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setRansacParameters.cc
+ *
+ * @brief           Implements MLPnPsolver::setRansacParameters(), declared in
+ *                  MLPnPsolver.h.
+ */
+
 /*!****************************************************************************
  * Author:   Steffen Urban                                              *
  * Contact:  urbste@gmail.com                                          *

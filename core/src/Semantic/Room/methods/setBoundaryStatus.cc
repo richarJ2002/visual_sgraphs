@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setBoundaryStatus.cc
+ *
+ * @brief           Implements Room::setBoundaryStatus().
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

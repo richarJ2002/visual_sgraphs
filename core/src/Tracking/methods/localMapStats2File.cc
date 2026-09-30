@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            localMapStats2File.cc
+ *
+ * @brief           Implements Tracking::localMapStats2File(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include "LocalMapping.h"

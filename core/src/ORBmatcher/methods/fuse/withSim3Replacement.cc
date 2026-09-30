@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            withSim3Replacement.cc
+ *
+ * @brief           Implements ORBmatcher::fuse() (withSim3Replacement),
+ *                  declared in ORBmatcher.h.
+ */
+
 #include "ORBmatcher.h"
 
 #include <limits.h>

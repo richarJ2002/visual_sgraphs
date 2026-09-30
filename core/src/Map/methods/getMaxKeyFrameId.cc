@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getMaxKeyFrameId.cc
+ *
+ * @brief           Implements Map::getMaxKeyFrameId(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

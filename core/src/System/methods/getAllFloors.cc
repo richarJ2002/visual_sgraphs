@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getAllFloors.cc
+ *
+ * @brief           Implements System::getAllFloors(), declared in System.h.
+ */
+
 #include "System.h"
 #include <rclcpp/logging.hpp>
 

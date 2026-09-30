@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getMarkerCount.cc
+ *
+ * @brief           Implements Map::getMarkerCount(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

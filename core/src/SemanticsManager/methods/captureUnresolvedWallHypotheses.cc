@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            captureUnresolvedWallHypotheses.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::captureUnresolvedWallHypotheses(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "Semantic/SemanticGraphSnapshot.h"

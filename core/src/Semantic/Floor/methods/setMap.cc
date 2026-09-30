@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setMap.cc
+ *
+ * @brief           Implements Floor::setMap(), declared in Semantic/Floor.h.
+ */
+
 #include "Semantic/Floor.h"
 #include <algorithm>
 #include <cmath>

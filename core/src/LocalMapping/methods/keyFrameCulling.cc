@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            keyFrameCulling.cc
+ *
+ * @brief           Implements LocalMapping::keyFrameCulling(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 #include <rclcpp/logging.hpp>
 

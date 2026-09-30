@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getCurrentOpenGLCameraMatrix.cc
+ *
+ * @brief           Implements MapDrawer::getCurrentOpenGLCameraMatrix(),
+ *                  declared in MapDrawer.h.
+ */
+
 #include "KeyFrame.h"
 #include "MapDrawer.h"
 #include "MapPoint.h"

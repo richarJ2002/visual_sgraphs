@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            checkRT.cc
+ *
+ * @brief           Implements TwoViewReconstruction::checkRT(), declared in
+ *                  TwoViewReconstruction.h.
+ */
+
 #include "TwoViewReconstruction.h"
 
 #include "GeometricTools.h"

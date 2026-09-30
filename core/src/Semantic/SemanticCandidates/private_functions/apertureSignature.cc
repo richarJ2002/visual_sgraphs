@@ -1,4 +1,9 @@
-
+/*!
+ * @file            apertureSignature.cc
+ *
+ * @brief           Implements apertureSignature(), declared in
+ *                  Semantic/SemanticCandidates/private_functions.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

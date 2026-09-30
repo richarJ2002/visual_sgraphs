@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getAllPassages.cc
+ *
+ * @brief           Implements System::getAllPassages(), declared in System.h.
+ */
+
 #include "System.h"
 #include <rclcpp/logging.hpp>
 

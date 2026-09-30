@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            tryCloseWallLoop.cc
+ *
+ * @brief           Implements tryCloseWallLoop(), declared in
+ *                  SemanticsManager/private_functions.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "private_functions.h"

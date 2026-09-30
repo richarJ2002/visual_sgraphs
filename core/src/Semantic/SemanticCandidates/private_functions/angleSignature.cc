@@ -1,4 +1,9 @@
-
+/*!
+ * @file            angleSignature.cc
+ *
+ * @brief           Implements angleSignature(), declared in
+ *                  Semantic/SemanticCandidates/private_functions.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

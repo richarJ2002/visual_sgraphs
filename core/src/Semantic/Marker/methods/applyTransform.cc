@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            applyTransform.cc
+ *
+ * @brief           Implements Marker::applyTransform(), declared in
+ *                  Semantic/Marker.h.
+ */
+
 #include "Semantic/Marker.h"
 
 namespace vs_graphs

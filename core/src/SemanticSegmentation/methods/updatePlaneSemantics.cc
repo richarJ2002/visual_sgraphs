@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            updatePlaneSemantics.cc
+ *
+ * @brief           Implements SemanticSegmentation::updatePlaneSemantics(),
+ *                  declared in SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 #include "Utils/Utils/objects/Utils.h"
 #include "Utils/Utils/objects/UtilsStatus.h"

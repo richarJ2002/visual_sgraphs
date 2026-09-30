@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            requestFinish.cc
+ *
+ * @brief           Implements SemanticSegmentation::requestFinish(), declared
+ *                  in SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 namespace vs_graphs

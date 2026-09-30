@@ -1,4 +1,9 @@
-
+/*!
+ * @file            evaluateMergeAlignment.cc
+ *
+ * @brief           Implements SemanticVerify::evaluateMergeAlignment(),
+ *                  declared in Semantic/SemanticVerify.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

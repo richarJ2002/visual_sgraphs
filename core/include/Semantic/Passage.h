@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            Passage.h
+ *
+ * @brief           Declares Passage, a doorway or opening between rooms, with
+ *                  the evidence of which rooms it joins.
+ */
+
 #ifndef PASSAGE_H
 #define PASSAGE_H
 

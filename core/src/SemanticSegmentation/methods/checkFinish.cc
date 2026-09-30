@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            checkFinish.cc
+ *
+ * @brief           Implements SemanticSegmentation::checkFinish(), declared in
+ *                  SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 namespace vs_graphs

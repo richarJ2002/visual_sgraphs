@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            PreSave.cc
+ *
+ * @brief           Implements Atlas::preSave(), declared in Atlas.h, with
+ *                  CompFunctor::operator()().
+ */
+
 #include "Atlas.h"
 #include <rclcpp/logging.hpp>
 

@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getMap.cc
+ *
+ * @brief           Implements Floor::getMap(), declared in Semantic/Floor.h.
+ */
+
 #include "Semantic/Floor.h"
 #include <algorithm>
 #include <cmath>

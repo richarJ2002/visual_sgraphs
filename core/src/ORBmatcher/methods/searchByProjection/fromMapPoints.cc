@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            fromMapPoints.cc
+ *
+ * @brief           Implements ORBmatcher::searchByProjection() (fromMapPoints),
+ *                  declared in ORBmatcher.h.
+ */
+
 #include "ORBmatcher.h"
 
 #include <limits.h>

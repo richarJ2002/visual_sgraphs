@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            createMapPassage.cc
+ *
+ * @brief           Implements GeoSemHelpers::createMapPassage(), declared in
+ *                  GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include "Utils/Utils/objects/Utils.h"
 #include "Utils/Utils/objects/UtilsStatus.h"

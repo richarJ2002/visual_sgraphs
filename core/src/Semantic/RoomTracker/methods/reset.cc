@@ -13,6 +13,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            reset.cc
+ *
+ * @brief           Implements RoomTracker::reset(), declared in
+ *                  Semantic/RoomTracker.h.
+ */
+
 #include "Semantic/RoomTracker.h"
 
 #include <cmath>

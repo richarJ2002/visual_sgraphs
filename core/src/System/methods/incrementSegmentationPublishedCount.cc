@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            incrementSegmentationPublishedCount.cc
+ *
+ * @brief           Implements System::incrementSegmentationPublishedCount(),
+ *                  declared in System.h.
+ */
+
 #include "System.h"
 
 namespace vs_graphs

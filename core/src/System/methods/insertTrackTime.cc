@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            insertTrackTime.cc
+ *
+ * @brief           Implements System::insertTrackTime(), declared in System.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 

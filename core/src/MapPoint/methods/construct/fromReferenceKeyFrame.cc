@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            fromReferenceKeyFrame.cc
+ *
+ * @brief           Implements the MapPoint constructor (fromReferenceKeyFrame),
+ *                  declared in MapPoint.h.
+ */
+
 #include "MapPoint.h"
 
 #include "Map.h"

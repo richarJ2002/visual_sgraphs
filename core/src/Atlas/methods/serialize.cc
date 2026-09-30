@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            serialize.cc
+ *
+ * @brief           Implements Atlas::serialize(), declared in Atlas.h.
+ */
+
 #include "Atlas.h"
 #include "Frame.h"
 

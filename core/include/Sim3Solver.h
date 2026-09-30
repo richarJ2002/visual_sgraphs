@@ -15,6 +15,14 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            Sim3Solver.h
+ *
+ * @brief           Declares Sim3Solver, which estimates the similarity
+ *                  transform (rotation, translation and scale) between two key
+ *                  frames with RANSAC, for loop closing and map merging.
+ */
+
 #ifndef SIM3SOLVER_H
 #define SIM3SOLVER_H
 

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            SemanticSegmentation.h
+ *
+ * @brief           Declares SemanticSegmentation, the worker thread that
+ *                  applies image-segmentation labels to the mapped planes.
+ */
+
 #ifndef SEMANTICSEG_H
 #define SEMANTICSEG_H
 
@@ -174,9 +181,6 @@ class SemanticSegmentation
      * @param[in]   p_clsCloudPtrs_in
      *              the class specific point clouds
      *
-     * @param[in]   minCloudSize
-     *              the minimum size of the point cloud to be segmented
-     *
      * @param[out] planesFromClassClouds_out A vector of extracted planes
      * @return SEMANTIC_SEGMENTATION_STATUS_SUCCESS.
      */
@@ -190,11 +194,13 @@ class SemanticSegmentation
     /*!
      * @brief       Adds the planes to the Atlas
      *
+     * @param       p_keyFrame_in
+     *              the key frame the planes were observed in
+     *
      * @param       p_clsPlanes_in
      *              the planes to be added
      *
-     * @param       clsConfs
-     *              the confidence of the class predictions
+     * @return      SEMANTIC_SEGMENTATION_STATUS_SUCCESS
      */
     [[nodiscard]] SemanticSegmentationStatus updatePlaneData(
         KeyFrame *p_keyFrame_in,

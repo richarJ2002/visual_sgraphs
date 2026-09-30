@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            evaluateWallAdmissionEvidence.cc
+ *
+ * @brief           Implements evaluateWallAdmissionEvidence(), declared in
+ *                  SemanticsManager/private_functions.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "private_functions.h"
@@ -31,18 +38,25 @@ namespace core
 {
 
 /*!
- * @brief           TODO
+ * @brief           Decides whether a wall has enough evidence to join a room,
+ *                  and records the evidence behind that decision.
  *
  * @param[in]       p_wall_in
- *                  TODO
+ *                  Wall to judge; a null or bad wall gets no evidence.
  *
  * @param[in]       p_systemParams_in
- *                  TODO
+ *                  Thresholds for the fit, the extent and the observation
+ *                  count; shall be non-null.
  *
  * @param[in]       groundNormal_World_in
- *                  TODO
+ *                  Ground normal in the world frame, used to measure the wall's
+ *                  width and height along the ground; a zero vector falls back
+ *                  to arbitrary in-plane axes.
  *
- * @return          TODO
+ * @param[out]      admissionEvidence_out
+ *                  The evidence and the decision (isAdmissible).
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus
     evaluateWallAdmissionEvidence(geometric::Plane          *p_wall_in,

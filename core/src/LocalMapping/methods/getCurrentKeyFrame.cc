@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getCurrentKeyFrame.cc
+ *
+ * @brief           Implements LocalMapping::getCurrentKeyFrame(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 namespace vs_graphs

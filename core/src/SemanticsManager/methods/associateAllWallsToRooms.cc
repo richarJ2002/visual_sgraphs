@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            associateAllWallsToRooms.cc
+ *
+ * @brief           Implements SemanticsManager::associateAllWallsToRooms(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

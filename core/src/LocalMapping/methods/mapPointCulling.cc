@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            mapPointCulling.cc
+ *
+ * @brief           Implements LocalMapping::mapPointCulling(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 #include <rclcpp/logging.hpp>
 

@@ -1,4 +1,9 @@
-
+/*!
+ * @file            topologySignature.cc
+ *
+ * @brief           Implements topologySignature(), declared in
+ *                  Semantic/SemanticCandidates/private_functions.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

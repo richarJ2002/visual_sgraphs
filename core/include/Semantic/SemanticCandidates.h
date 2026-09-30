@@ -1,3 +1,11 @@
+/*!
+ * @file            SemanticCandidates.h
+ *
+ * @brief           Declares the semantic candidate generator: its
+ *                  configuration, the candidates it proposes and the cues
+ *                  behind each one.
+ */
+
 /*! Declares deterministic, pre-verification semantic room candidates. */
 #ifndef SEMANTIC_CANDIDATES_H
 #define SEMANTIC_CANDIDATES_H

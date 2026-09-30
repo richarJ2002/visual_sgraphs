@@ -15,6 +15,12 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            copyFrom.cc
+ *
+ * @brief           Implements Bias::copyFrom(), declared in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 namespace vs_graphs

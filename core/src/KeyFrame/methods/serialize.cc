@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            serialize.cc
+ *
+ * @brief           Implements KeyFrame::serialize(), declared in KeyFrame.h.
+ */
+
 #include "KeyFrame.h"
 
 #include "SerializationUtils.h"

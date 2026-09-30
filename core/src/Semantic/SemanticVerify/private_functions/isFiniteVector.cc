@@ -1,4 +1,9 @@
-
+/*!
+ * @file            isFiniteVector.cc
+ *
+ * @brief           Implements isFiniteVector(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

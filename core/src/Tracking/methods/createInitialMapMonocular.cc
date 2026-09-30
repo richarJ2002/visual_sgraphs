@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            createInitialMapMonocular.cc
+ *
+ * @brief           Implements Tracking::createInitialMapMonocular(), declared
+ *                  in Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include "LocalMapping.h"

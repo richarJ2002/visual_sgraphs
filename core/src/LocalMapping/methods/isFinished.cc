@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            isFinished.cc
+ *
+ * @brief           Implements LocalMapping::isFinished(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 #include <mutex>

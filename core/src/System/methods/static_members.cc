@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            static_members.cc
+ *
+ * @brief           Defines the static data members of System, declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 
 namespace vs_graphs

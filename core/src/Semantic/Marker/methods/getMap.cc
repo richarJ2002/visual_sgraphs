@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getMap.cc
+ *
+ * @brief           Implements Marker::getMap(), declared in Semantic/Marker.h.
+ */
+
 #include "Semantic/Marker.h"
 #include <mutex>
 

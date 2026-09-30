@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            requestResetActiveMap.cc
+ *
+ * @brief           Implements LoopClosing::requestResetActiveMap(), declared in
+ *                  LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include <mutex>

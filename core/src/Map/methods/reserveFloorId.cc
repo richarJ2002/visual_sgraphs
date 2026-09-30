@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            reserveFloorId.cc
+ *
+ * @brief           Implements Map::reserveFloorId(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

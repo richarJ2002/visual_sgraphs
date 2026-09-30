@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            preSave.cc
+ *
+ * @brief           Implements Map::preSave(), declared in Map.h.
+ */
+
 #include "KeyFrame.h"
 #include "Map.h"
 #include "MapPoint.h"

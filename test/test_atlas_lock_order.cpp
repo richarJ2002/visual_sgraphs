@@ -8,6 +8,14 @@
  * version.
  */
 
+/*!
+ * @file            test_atlas_lock_order.cpp
+ *
+ * @brief           Tests the order in which Atlas takes its locks
+ *                  (AtlasLockOrder), through the test hook in
+ *                  Atlas::matchRoomsToContext().
+ */
+
 #include "Atlas.h"
 #include "Map.h"
 #include "Semantic/Room.h"

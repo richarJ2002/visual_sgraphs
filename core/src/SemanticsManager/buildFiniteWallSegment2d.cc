@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            buildFiniteWallSegment2d.cc
+ *
+ * @brief           Implements buildFiniteWallSegment2d(), declared in
+ *                  SemanticsManager/private_functions.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "private_functions.h"
@@ -51,10 +58,14 @@ namespace core
  * @param[in]       minimumWallLength_m_in
  *                  Minimum accepted horizontal length.
  *
- * @param[out]      segment_out
- *                  Resulting finite horizontal segment.
+ * @param[in,out]   segment_inout
+ *                  Resulting finite horizontal segment; written only when the
+ *                  wall is usable.
  *
- * @return          True when the wall provides a valid finite segment.
+ * @param[out]      isBuilt_out
+ *                  True when the wall provides a valid finite segment.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus
     buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,

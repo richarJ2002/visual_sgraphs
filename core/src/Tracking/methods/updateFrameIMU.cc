@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            updateFrameIMU.cc
+ *
+ * @brief           Implements Tracking::updateFrameIMU(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 #include <rclcpp/logging.hpp>
 

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getPose.cc
+ *
+ * @brief           Implements Frame::getPose(), declared in Frame.h.
+ */
+
 #include "Frame.h"
 
 namespace vs_graphs

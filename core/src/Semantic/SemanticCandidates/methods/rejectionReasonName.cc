@@ -1,4 +1,8 @@
-
+/*!
+ * @file            rejectionReasonName.cc
+ *
+ * @brief           Implements SemanticCandidates::rejectionReasonName().
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

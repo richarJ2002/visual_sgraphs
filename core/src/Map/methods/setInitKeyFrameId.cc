@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setInitKeyFrameId.cc
+ *
+ * @brief           Implements Map::setInitKeyFrameId(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            associatePassagesToRoomsForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::associatePassagesToRoomsForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

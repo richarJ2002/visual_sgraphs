@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            newParameterLoader.cc
+ *
+ * @brief           Implements Tracking::newParameterLoader(), declared in
+ *                  Tracking.h.
+ */
+
 #include "FrameDrawer.h"
 #include "System.h"
 #include "Tracking.h"

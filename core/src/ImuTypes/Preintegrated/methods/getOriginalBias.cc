@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getOriginalBias.cc
+ *
+ * @brief           Implements Preintegrated::getOriginalBias(), declared in
+ *                  ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include <mutex>

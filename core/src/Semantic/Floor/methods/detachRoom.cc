@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            detachRoom.cc
+ *
+ * @brief           Implements Floor::detachRoom(), declared in
+ *                  Semantic/Floor.h.
+ */
+
 #include "Semantic/Floor.h"
 #include "Semantic/Room.h"
 #include "Semantic/RoomStatus.h"

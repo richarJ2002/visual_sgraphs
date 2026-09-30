@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getLowerKeyFrameId.cc
+ *
+ * @brief           Implements Map::getLowerKeyFrameId(), declared in Map.h.
+ */
+
 #include "KeyFrame.h"
 #include "Map.h"
 

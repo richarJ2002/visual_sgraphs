@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getInitKeyFrameId.cc
+ *
+ * @brief           Implements Map::getInitKeyFrameId(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

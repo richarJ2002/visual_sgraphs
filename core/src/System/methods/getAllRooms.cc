@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getAllRooms.cc
+ *
+ * @brief           Implements System::getAllRooms(), declared in System.h.
+ */
+
 #include "System.h"
 #include <rclcpp/logging.hpp>
 

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            applyTransform.cc
+ *
+ * @brief           Implements Plane::applyTransform(), declared in
+ *                  Geometric/Plane.h.
+ */
+
 #include "Geometric/Plane.h"
 #include <algorithm>
 #include <boost/make_shared.hpp>

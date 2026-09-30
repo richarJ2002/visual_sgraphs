@@ -1,4 +1,8 @@
-
+/*!
+ * @file            mergeReasonName.cc
+ *
+ * @brief           Implements SemanticVerify::mergeReasonName().
+ */
 
 #include "Semantic/SemanticVerify.h"
 

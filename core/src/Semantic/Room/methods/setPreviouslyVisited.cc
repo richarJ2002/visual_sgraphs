@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setPreviouslyVisited.cc
+ *
+ * @brief           Implements Room::setPreviouslyVisited().
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

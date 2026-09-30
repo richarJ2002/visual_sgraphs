@@ -1,4 +1,9 @@
-
+/*!
+ * @file            stringDistance.cc
+ *
+ * @brief           Implements stringDistance(), declared in
+ *                  Semantic/SemanticCandidates/private_functions.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

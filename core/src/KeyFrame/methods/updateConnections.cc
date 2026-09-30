@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            updateConnections.cc
+ *
+ * @brief           Implements KeyFrame::updateConnections(), declared in
+ *                  KeyFrame.h.
+ */
+
 #include "KeyFrame.h"
 
 #include "Geometric/Plane.h"

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            stopRequested.cc
+ *
+ * @brief           Implements LocalMapping::stopRequested(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 #include <mutex>

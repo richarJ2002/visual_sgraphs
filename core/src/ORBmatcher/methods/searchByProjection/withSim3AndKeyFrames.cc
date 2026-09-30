@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            withSim3AndKeyFrames.cc
+ *
+ * @brief           Implements ORBmatcher::searchByProjection()
+ *                  (withSim3AndKeyFrames), declared in ORBmatcher.h.
+ */
+
 #include "ORBmatcher.h"
 
 #include <limits.h>

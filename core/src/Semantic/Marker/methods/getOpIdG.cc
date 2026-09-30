@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getOpIdG.cc
+ *
+ * @brief           Implements Marker::getOpIdG(), declared in
+ *                  Semantic/Marker.h.
+ */
+
 #include "Semantic/Marker.h"
 
 namespace vs_graphs

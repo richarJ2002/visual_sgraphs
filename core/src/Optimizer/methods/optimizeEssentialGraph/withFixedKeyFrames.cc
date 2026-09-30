@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withFixedKeyFrames.cc
+ *
+ * @brief           Implements Optimizer::optimizeEssentialGraph()
+ *                  (withFixedKeyFrames), declared in Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "OptimizableTypes.h"

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            admitWallToRoom.cc
+ *
+ * @brief           Implements SemanticsManager::admitWallToRoom(), declared in
+ *                  SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

@@ -16,6 +16,13 @@
  */
 
 /*!
+ * @file            compareNodes.cc
+ *
+ * @brief           Implements compareNodes(), declared in
+ *                  ORBextractor/private_functions.h.
+ */
+
+/*!
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2009, Willow Garage, Inc.

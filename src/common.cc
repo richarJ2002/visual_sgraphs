@@ -30,6 +30,15 @@
  *
  */
 
+/*!
+ * @file            common.cc
+ *
+ * @brief           Implements the helpers shared by the RGB-D ROS 2 nodes,
+ *                  declared in common.hpp: publishing and clearing
+ *                  visualisation topics, estimator health bookkeeping and
+ *                  sensor set-up.
+ */
+
 #include "common.hpp"
 
 #include "MissionHealthTopologyJson.h"

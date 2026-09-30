@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            release.cc
+ *
+ * @brief           Implements Tracking::release(), declared in Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include <mutex>

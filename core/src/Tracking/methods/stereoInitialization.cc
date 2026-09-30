@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            stereoInitialization.cc
+ *
+ * @brief           Implements Tracking::stereoInitialization(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include "LocalMapping.h"

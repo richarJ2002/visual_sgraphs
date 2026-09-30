@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            evaluateWallAdmissionEvidenceAdmissibleForTest.cc
+ *
+ * @brief           Implements SemanticsManager::evaluateWallAdmissionEvidenceAd
+ *                  missibleForTest(), declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

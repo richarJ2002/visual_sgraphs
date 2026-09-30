@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getCurrentFramePointCloud.cc
+ *
+ * @brief           Implements KeyFrame::getCurrentFramePointCloud(), declared
+ *                  in KeyFrame.h.
+ */
+
 #include "KeyFrame.h"
 
 #include "ImuTypes.h"

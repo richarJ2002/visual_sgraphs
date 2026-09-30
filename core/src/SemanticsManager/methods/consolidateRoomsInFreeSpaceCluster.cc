@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            consolidateRoomsInFreeSpaceCluster.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::consolidateRoomsInFreeSpaceCluster(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

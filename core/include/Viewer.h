@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            Viewer.h
+ *
+ * @brief           Declares Viewer, the window that draws the map, the camera
+ *                  and the current frame.
+ */
+
 #ifndef VIEWER_H
 #define VIEWER_H
 

@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            GeoSemHelpers.h
+ *
+ * @brief           Declares GeoSemHelpers, helper functions that create and
+ *                  update semantic map entities (markers, passages, rooms,
+ *                  ground planes) from geometry.
+ */
+
 #ifndef GEOSEMHELPERS_H
 #define GEOSEMHELPERS_H
 
@@ -108,8 +116,14 @@ class GeoSemHelpers
      * @param       markerId_in
      *              The id of the marker
      *
-     * @param       envDoorways
-     *              The list of doorways in the environment
+     * @param       envRooms_in
+     *              Rooms of the environment; each room's meta-marker id is
+     *              compared with the marker
+     *
+     * @param       doorwayMatch_out
+     *              Whether a match was found, and the name of the matched room
+     *
+     * @return      GEO_SEM_HELPERS_STATUS_SUCCESS
      */
     [[nodiscard]] static GeoSemHelpersStatus 
         checkIfMarkerIsDoorway(const int                     &markerId_in,

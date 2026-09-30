@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            mlpnpJacs.cc
+ *
+ * @brief           Implements MLPnPsolver::mlpnpJacs(), declared in
+ *                  MLPnPsolver.h.
+ */
+
 /*!****************************************************************************
  * Author:   Steffen Urban                                              *
  * Contact:  urbste@gmail.com                                          *

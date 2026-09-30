@@ -1,4 +1,11 @@
 /*!
+ * @file            test_SemanticCanonicalSerialization.cpp
+ *
+ * @brief           Unit tests for the canonical serialization of semantic
+ *                  snapshots (SemanticCanonicalSerialization).
+ */
+
+/*!
  * Focused, ROS/Gazebo-free tests for versioned canonical JSON
  * serialization of SemanticGraphSnapshot, AxiomEvaluationReport, and
  * MapCompletenessResult.

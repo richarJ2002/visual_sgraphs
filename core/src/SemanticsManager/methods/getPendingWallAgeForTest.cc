@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getPendingWallAgeForTest.cc
+ *
+ * @brief           Implements SemanticsManager::getPendingWallAgeForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include <unordered_map>

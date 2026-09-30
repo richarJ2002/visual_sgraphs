@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            insertKeyFrame.cc
+ *
+ * @brief           Implements LoopClosing::insertKeyFrame(), declared in
+ *                  LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include <mutex>

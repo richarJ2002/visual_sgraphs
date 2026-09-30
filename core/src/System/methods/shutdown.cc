@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            shutdown.cc
+ *
+ * @brief           Implements System::shutdown(), declared in System.h.
+ */
+
 #include "LocalMapping.h"
 #include "LoopClosing.h"
 #include "SemanticSegmentation.h"

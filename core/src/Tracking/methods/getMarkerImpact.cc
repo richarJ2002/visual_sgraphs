@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getMarkerImpact.cc
+ *
+ * @brief           Implements Tracking::getMarkerImpact(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 namespace vs_graphs

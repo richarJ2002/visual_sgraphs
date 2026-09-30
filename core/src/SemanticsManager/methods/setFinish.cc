@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setFinish.cc
+ *
+ * @brief           Implements SemanticsManager::setFinish(), declared in
+ *                  SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 namespace vs_graphs

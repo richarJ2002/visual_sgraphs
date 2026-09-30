@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addMapPlane.cc
+ *
+ * @brief           Implements Map::addMapPlane(), declared in Map.h.
+ */
+
 #include "Geometric/Plane.h"
 #include "Geometric/PlaneStatus.h"
 #include "Map.h"

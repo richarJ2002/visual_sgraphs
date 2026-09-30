@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            reintegrate.cc
+ *
+ * @brief           Implements Preintegrated::reintegrate(), declared in
+ *                  ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include <mutex>

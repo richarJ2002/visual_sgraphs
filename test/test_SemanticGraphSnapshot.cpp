@@ -1,4 +1,11 @@
 /*!
+ * @file            test_SemanticGraphSnapshot.cpp
+ *
+ * @brief           Unit tests for semantic graph snapshots
+ *                  (SemanticGraphSnapshot).
+ */
+
+/*!
  * Focused, ROS/Gazebo-free tests for the value-only SemanticGraphSnapshot
  * capture contract. These
  * exercise the genuine production capture entry point

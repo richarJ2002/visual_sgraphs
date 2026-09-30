@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getMissionHealthSnapshot.cc
+ *
+ * @brief           Implements System::getMissionHealthSnapshot(), declared in
+ *                  System.h.
+ */
+
 #include "LoopClosing.h"
 #include "SemanticSegmentation.h"
 #include "SemanticsManager.h"

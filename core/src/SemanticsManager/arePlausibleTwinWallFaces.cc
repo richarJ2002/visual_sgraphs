@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            arePlausibleTwinWallFaces.cc
+ *
+ * @brief           Implements arePlausibleTwinWallFaces(), declared in
+ *                  SemanticsManager/private_functions.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "Utils/Utils/objects/Utils.h"

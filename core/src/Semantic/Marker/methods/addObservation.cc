@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            addObservation.cc
+ *
+ * @brief           Implements Marker::addObservation(), declared in
+ *                  Semantic/Marker.h.
+ */
+
 #include "KeyFrame.h"
 #include "Semantic/Marker.h"
 #include <rclcpp/logging.hpp>

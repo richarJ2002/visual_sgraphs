@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            run.cc
+ *
+ * @brief           Implements SemanticSegmentation::run(), declared in
+ *                  SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 #include <rclcpp/logging.hpp>

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            stop.cc
+ *
+ * @brief           Implements Tracking::stop(), declared in Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include <iostream>

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            promoteCandidateMapRoom.cc
+ *
+ * @brief           Implements Map::promoteCandidateMapRoom(), declared in
+ *                  Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

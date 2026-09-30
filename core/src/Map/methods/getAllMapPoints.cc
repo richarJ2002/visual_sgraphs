@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getAllMapPoints.cc
+ *
+ * @brief           Implements Map::getAllMapPoints(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            intoKeyFrame.cc
+ *
+ * @brief           Implements ORBmatcher::fuse() (intoKeyFrame), declared in
+ *                  ORBmatcher.h.
+ */
+
 #include "ORBmatcher.h"
 
 #include <limits.h>

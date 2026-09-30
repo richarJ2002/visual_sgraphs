@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getFloorById.cc
+ *
+ * @brief           Implements Map::getFloorById(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

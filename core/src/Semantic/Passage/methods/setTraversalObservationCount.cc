@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setTraversalObservationCount.cc
+ *
+ * @brief           Implements Passage::setTraversalObservationCount(), declared
+ *                  in Semantic/Passage.h.
+ */
+
 #include "Semantic/Passage.h"
 #include <algorithm>
 #include <cmath>

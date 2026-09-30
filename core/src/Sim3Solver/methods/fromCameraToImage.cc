@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            fromCameraToImage.cc
+ *
+ * @brief           Implements Sim3Solver::fromCameraToImage(), declared in
+ *                  Sim3Solver.h.
+ */
+
 #include "Sim3Solver.h"
 
 #include <cmath>

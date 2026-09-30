@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setCurrentSemanticRoomIdentity.cc
+ *
+ * @brief           Implements Atlas::setCurrentSemanticRoomIdentity().
+ */
+
 #include "Atlas.h"
 #include <rclcpp/logging.hpp>
 

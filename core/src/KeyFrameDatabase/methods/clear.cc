@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            clear.cc
+ *
+ * @brief           Implements KeyFrameDatabase::clear(), declared in
+ *                  KeyFrameDatabase.h.
+ */
+
 #include "KeyFrameDatabase.h"
 
 #include "KeyFrame.h"

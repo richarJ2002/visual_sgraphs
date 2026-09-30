@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            removeInvalidWalls.cc
+ *
+ * @brief           Implements Room::removeInvalidWalls(), declared in
+ *                  Semantic/Room.h.
+ */
+
 #include "Geometric/Plane.h"
 #include "Geometric/PlaneStatus.h"
 #include "Semantic/Room.h"

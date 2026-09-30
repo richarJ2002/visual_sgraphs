@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            fromVector.cc
+ *
+ * @brief           Implements rightJacobianSO3() (fromVector), declared in
+ *                  G2oTypes.h.
+ */
+
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"

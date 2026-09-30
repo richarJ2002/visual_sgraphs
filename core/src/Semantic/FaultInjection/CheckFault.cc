@@ -1,3 +1,10 @@
+/*!
+ * @file            CheckFault.cc
+ *
+ * @brief           Implements checkFault(), declared in
+ *                  Semantic/FaultInjection.h.
+ */
+
 /* Matching Declaration Include */
 
 #include "Semantic/FaultInjection.h"

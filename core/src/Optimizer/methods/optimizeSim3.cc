@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            optimizeSim3.cc
+ *
+ * @brief           Implements Optimizer::optimizeSim3(), declared in
+ *                  Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "OptimizableTypes.h"

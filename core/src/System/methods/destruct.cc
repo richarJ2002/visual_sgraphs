@@ -23,6 +23,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            destruct.cc
+ *
+ * @brief           Implements the System destructor, declared in System.h:
+ *                  stops and joins the worker threads, then frees what the
+ *                  system owns.
+ */
+
 #include "KeyFrameDatabase.h"
 #include "LocalMapping.h"
 #include "LoopClosing.h"

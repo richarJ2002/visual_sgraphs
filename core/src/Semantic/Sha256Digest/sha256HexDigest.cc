@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            sha256HexDigest.cc
+ *
+ * @brief           Implements sha256HexDigest(), declared in
+ *                  Semantic/Sha256Digest.h.
+ */
+
 #include "Semantic/Sha256Digest.h"
 
 #include <array>

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            detectDoorsAndDoorways.cc
+ *
+ * @brief           Implements SemanticsManager::detectDoorsAndDoorways(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include "GeoSemHelpersStatus.h"
 #include "SemanticsManager.h"

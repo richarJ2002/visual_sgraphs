@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            isSemanticReportCacheAvailable.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::isSemanticReportCacheAvailable(), declared
+ *                  in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

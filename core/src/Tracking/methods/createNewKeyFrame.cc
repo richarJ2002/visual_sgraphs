@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            createNewKeyFrame.cc
+ *
+ * @brief           Implements Tracking::createNewKeyFrame(), declared in
+ *                  Tracking.h.
+ */
+
 #include "LocalMapping.h"
 #include "System.h"
 #include "Tracking.h"

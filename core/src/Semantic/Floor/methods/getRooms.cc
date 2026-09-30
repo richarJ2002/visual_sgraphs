@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getRooms.cc
+ *
+ * @brief           Implements Floor::getRooms(), declared in Semantic/Floor.h.
+ */
+
 #include "Semantic/Floor.h"
 #include <algorithm>
 #include <cmath>

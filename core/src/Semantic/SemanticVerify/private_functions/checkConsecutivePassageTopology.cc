@@ -1,4 +1,9 @@
-
+/*!
+ * @file            checkConsecutivePassageTopology.cc
+ *
+ * @brief           Implements checkConsecutivePassageTopology(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

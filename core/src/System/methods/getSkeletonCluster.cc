@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getSkeletonCluster.cc
+ *
+ * @brief           Implements System::getSkeletonCluster(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 #include <rclcpp/logging.hpp>
 

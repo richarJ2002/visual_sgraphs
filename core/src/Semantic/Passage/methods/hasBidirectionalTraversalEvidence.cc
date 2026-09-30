@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            hasBidirectionalTraversalEvidence.cc
+ *
+ * @brief           Implements Passage::hasBidirectionalTraversalEvidence(),
+ *                  declared in Semantic/Passage.h.
+ */
+
 #include "Semantic/Passage.h"
 #include <algorithm>
 #include <cmath>

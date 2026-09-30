@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            completeMapCloudRefit.cc
+ *
+ * @brief           Implements Plane::completeMapCloudRefit().
+ */
+
 #include "Geometric/Plane.h"
 #include <algorithm>
 #include <boost/make_shared.hpp>

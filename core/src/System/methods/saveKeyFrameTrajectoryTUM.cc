@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            saveKeyFrameTrajectoryTUM.cc
+ *
+ * @brief           Implements System::saveKeyFrameTrajectoryTUM(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 
 #include <iomanip>

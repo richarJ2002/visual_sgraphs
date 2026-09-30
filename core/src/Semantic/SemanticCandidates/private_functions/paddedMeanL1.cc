@@ -1,4 +1,9 @@
-
+/*!
+ * @file            paddedMeanL1.cc
+ *
+ * @brief           Implements paddedMeanL1(), declared in
+ *                  Semantic/SemanticCandidates/private_functions.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

@@ -18,6 +18,13 @@
  * before the transition oracle tests (test_RoomTracker).
  */
 
+/*!
+ * @file            test_unit_skeleton.cpp
+ *
+ * @brief           Skeleton unit tests for the room tracker
+ *                  (RoomTrackerSkeleton).
+ */
+
 #include "Semantic/RoomTracker.h"
 
 #include <gtest/gtest.h>

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            eraseMapMarker.cc
+ *
+ * @brief           Implements Map::eraseMapMarker(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

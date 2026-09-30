@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            captureOpenPassageHypotheses.cc
+ *
+ * @brief           Implements SemanticsManager::captureOpenPassageHypotheses(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "Semantic/SemanticGraphSnapshot.h"

@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setRoomTrackerPendingPublishHookForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::setRoomTrackerPendingPublishHookForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 namespace vs_graphs

@@ -23,6 +23,13 @@
  * access, no call) and `VS_GRAPHS_FAULT_CHECK` folds to `false`.
  */
 
+/*!
+ * @file            FaultInjection.h
+ *
+ * @brief           Declares the fault-injection probes that tests use to force
+ *                  failure paths; ScopedFault arms one probe for a scope.
+ */
+
 #ifndef VS_GRAPHS_CORE_SEMANTIC_FAULT_INJECTION_H
 #define VS_GRAPHS_CORE_SEMANTIC_FAULT_INJECTION_H
 

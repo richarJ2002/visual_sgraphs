@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            withConvergence.cc
+ *
+ * @brief           Implements Sim3Solver::iterate() (withConvergence), declared
+ *                  in Sim3Solver.h.
+ */
+
 #include "Sim3Solver.h"
 
 #include <cmath>

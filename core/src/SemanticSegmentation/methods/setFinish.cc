@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setFinish.cc
+ *
+ * @brief           Implements SemanticSegmentation::setFinish(), declared in
+ *                  SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 namespace vs_graphs

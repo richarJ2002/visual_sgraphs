@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getUpdatedBias.cc
+ *
+ * @brief           Implements Preintegrated::getUpdatedBias(), declared in
+ *                  ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include <mutex>

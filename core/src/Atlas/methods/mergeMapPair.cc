@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            mergeMapPair.cc
+ *
+ * @brief           Implements Atlas::mergeMapPair(), declared in Atlas.h.
+ */
+
 #include "Atlas.h"
 
 #include "Utils/Utils/objects/Utils.h"

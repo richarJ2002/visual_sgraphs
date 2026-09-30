@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            adjustFASTThreshold.cc
+ *
+ * @brief           Implements Tracking::adjustFASTThreshold(), declared in
+ *                  Tracking.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 #include <rclcpp/logging.hpp>

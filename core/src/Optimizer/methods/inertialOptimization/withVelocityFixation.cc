@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withVelocityFixation.cc
+ *
+ * @brief           Implements Optimizer::inertialOptimization()
+ *                  (withVelocityFixation), declared in Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "G2oTypes.h"

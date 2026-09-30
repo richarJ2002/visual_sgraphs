@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            consecutiveContentHash.cc
+ *
+ * @brief           Implements consecutiveContentHash(), declared in
+ *                  Atlas/private_functions.h.
+ */
+
 #include "Atlas.h"
 
 #include "private_functions.h"

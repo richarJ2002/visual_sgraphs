@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            pointToSegmentDistance_m.cc
+ *
+ * @brief           Implements pointToSegmentDistance_m(), declared in
+ *                  SemanticsManager/private_functions.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "private_functions.h"

@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setPlaneIdentity.cc
+ *
+ * @brief           Implements Floor::setPlaneIdentity().
+ */
+
 #include "Semantic/Floor.h"
 #include <algorithm>
 #include <cmath>

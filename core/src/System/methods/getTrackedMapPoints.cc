@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getTrackedMapPoints.cc
+ *
+ * @brief           Implements System::getTrackedMapPoints(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 
 namespace vs_graphs

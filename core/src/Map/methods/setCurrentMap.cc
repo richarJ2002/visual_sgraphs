@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setCurrentMap.cc
+ *
+ * @brief           Implements Map::setCurrentMap(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            increaseVisible.cc
+ *
+ * @brief           Implements MapPoint::increaseVisible(), declared in
+ *                  MapPoint.h.
+ */
+
 #include "MapPoint.h"
 
 #include "ORBmatcher.h"

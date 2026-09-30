@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            fromStereoPairWithSecondCamera.cc
+ *
+ * @brief           Implements the Frame constructor
+ *                  (fromStereoPairWithSecondCamera), declared in Frame.h.
+ */
+
 #include "Frame.h"
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"

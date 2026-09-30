@@ -1,4 +1,11 @@
 /*!
+ * @file            test_MissionHealthTopologyJson.cpp
+ *
+ * @brief           Unit tests for the mission-health topology JSON
+ *                  (MissionHealthTopologyJson).
+ */
+
+/*!
  * Focused, ROS/Gazebo-free tests for
  * augmentMissionHealthTopologyJsonWithSemantics(), the pure
  * function extending /vs_graphs/get_mission_health's schema-1 topology_json

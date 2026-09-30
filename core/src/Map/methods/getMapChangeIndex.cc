@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getMapChangeIndex.cc
+ *
+ * @brief           Implements Map::getMapChangeIndex(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

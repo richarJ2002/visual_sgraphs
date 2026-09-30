@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            computeF21.cc
+ *
+ * @brief           Implements TwoViewReconstruction::computeF21(), declared in
+ *                  TwoViewReconstruction.h.
+ */
+
 #include "TwoViewReconstruction.h"
 
 #include "GeometricTools.h"

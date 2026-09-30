@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            OptimizableTypes.h
+ *
+ * @brief           Declares the g2o vertex and edge types for camera poses, map
+ *                  points, similarity transforms and planes.
+ */
+
 #ifndef VS_GRAPHS_CORE_OPTIMIZABLETYPES_H
 #define VS_GRAPHS_CORE_OPTIMIZABLETYPES_H
 

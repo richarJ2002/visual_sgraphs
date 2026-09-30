@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            rodrigues2rot.cc
+ *
+ * @brief           Implements MLPnPsolver::rodrigues2rot(), declared in
+ *                  MLPnPsolver.h.
+ */
+
 /*!****************************************************************************
  * Author:   Steffen Urban                                              *
  * Contact:  urbste@gmail.com                                          *

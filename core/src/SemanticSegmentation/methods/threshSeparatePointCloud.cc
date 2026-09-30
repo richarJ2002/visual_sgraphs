@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            threshSeparatePointCloud.cc
+ *
+ * @brief           Implements SemanticSegmentation::threshSeparatePointCloud(),
+ *                  declared in SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 namespace vs_graphs

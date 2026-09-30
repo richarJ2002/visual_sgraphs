@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            findLargestWallComponent.cc
+ *
+ * @brief           Implements findLargestWallComponent(), declared in
+ *                  SemanticSegmentation/private_functions.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 #include "private_functions.h"

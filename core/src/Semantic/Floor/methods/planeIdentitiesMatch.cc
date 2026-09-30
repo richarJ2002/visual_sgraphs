@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            planeIdentitiesMatch.cc
+ *
+ * @brief           Implements Floor::planeIdentitiesMatch().
+ */
+
 #include "Semantic/Floor.h"
 #include <algorithm>
 #include <cmath>

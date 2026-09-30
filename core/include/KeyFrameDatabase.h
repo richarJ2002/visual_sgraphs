@@ -23,6 +23,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            KeyFrameDatabase.h
+ *
+ * @brief           Declares KeyFrameDatabase, the bag-of-words index of key
+ *                  frames used for relocalisation, loop detection and map
+ *                  merging.
+ */
+
 #ifndef KEYFRAMEDATABASE_H
 #define KEYFRAMEDATABASE_H
 

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            collapseMergedFloors.cc
+ *
+ * @brief           Implements collapseMergedFloors(), declared in
+ *                  LoopClosing/private_functions.h.
+ */
+
 #include "LoopClosing.h"
 #include <rclcpp/logging.hpp>
 

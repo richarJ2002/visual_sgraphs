@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            removeBadMaps.cc
+ *
+ * @brief           Implements Atlas::removeBadMaps(), declared in Atlas.h.
+ */
+
 #include "Atlas.h"
 
 namespace vs_graphs

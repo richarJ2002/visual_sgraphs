@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            LocalMapping.h
+ *
+ * @brief           Declares LocalMapping, the thread that inserts new key
+ *                  frames, creates map points and runs local bundle adjustment.
+ */
+
 #ifndef LOCALMAPPING_H
 #define LOCALMAPPING_H
 

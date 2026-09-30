@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            Frame.h
+ *
+ * @brief           Declares Frame, one camera image with its extracted
+ *                  features, camera model and estimated pose.
+ */
+
 #ifndef FRAME_H
 #define FRAME_H
 

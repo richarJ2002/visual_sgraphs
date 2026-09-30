@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setBadFlag.cc
+ *
+ * @brief           Implements KeyFrame::setBadFlag(), declared in KeyFrame.h.
+ */
+
 #include "KeyFrame.h"
 
 #include "Geometric/Plane.h"

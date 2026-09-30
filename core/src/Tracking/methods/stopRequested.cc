@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            stopRequested.cc
+ *
+ * @brief           Implements Tracking::stopRequested(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include <mutex>

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            globalBundleAdjustment.cc
+ *
+ * @brief           Implements Optimizer::globalBundleAdjustment(), declared in
+ *                  Optimizer.h.
+ */
+
 #include "Optimizer.h"
 #include <rclcpp/logging.hpp>
 

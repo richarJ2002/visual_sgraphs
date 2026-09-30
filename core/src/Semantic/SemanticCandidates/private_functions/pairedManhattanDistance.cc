@@ -1,4 +1,9 @@
-
+/*!
+ * @file            pairedManhattanDistance.cc
+ *
+ * @brief           Implements pairedManhattanDistance(), declared in
+ *                  Semantic/SemanticCandidates/private_functions.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

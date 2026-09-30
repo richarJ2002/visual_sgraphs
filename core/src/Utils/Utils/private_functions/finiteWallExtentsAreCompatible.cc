@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            finiteWallExtentsAreCompatible.cc
+ *
+ * @brief           Implements finiteWallExtentsAreCompatible(), declared in
+ *                  Utils/Utils/private_functions.h.
+ */
+
 #include "Utils/Utils/private_functions.h"
 
 #include <algorithm>

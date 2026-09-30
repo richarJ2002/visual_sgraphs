@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getImuTwb.cc
+ *
+ * @brief           Implements Tracking::getImuTwb(), declared in Tracking.h.
+ */
+
 #include "Tracking.h"
 #include <rclcpp/logging.hpp>
 

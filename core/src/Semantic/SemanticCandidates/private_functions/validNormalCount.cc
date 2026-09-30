@@ -1,4 +1,9 @@
-
+/*!
+ * @file            validNormalCount.cc
+ *
+ * @brief           Implements validNormalCount(), declared in
+ *                  Semantic/SemanticCandidates/private_functions.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            applyPendingModeAndResetRequests.cc
+ *
+ * @brief           Implements System::applyPendingModeAndResetRequests(),
+ *                  declared in System.h.
+ */
+
 #include "LocalMapping.h"
 #include "System.h"
 #include "Tracking.h"

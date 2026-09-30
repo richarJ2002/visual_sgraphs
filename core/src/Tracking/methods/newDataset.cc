@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            newDataset.cc
+ *
+ * @brief           Implements Tracking::newDataset(), declared in Tracking.h.
+ */
+
 #include "Tracking.h"
 
 namespace vs_graphs

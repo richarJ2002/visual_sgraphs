@@ -13,6 +13,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getState.cc
+ *
+ * @brief           Implements RoomTracker::getState(), declared in
+ *                  Semantic/RoomTracker.h.
+ */
+
 #include "Semantic/RoomTracker.h"
 
 #include <cmath>

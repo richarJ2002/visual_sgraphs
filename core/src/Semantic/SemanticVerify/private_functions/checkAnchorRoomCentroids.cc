@@ -1,4 +1,9 @@
-
+/*!
+ * @file            checkAnchorRoomCentroids.cc
+ *
+ * @brief           Implements checkAnchorRoomCentroids(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getRoomTrackerEventHistoryForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::getRoomTrackerEventHistoryForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

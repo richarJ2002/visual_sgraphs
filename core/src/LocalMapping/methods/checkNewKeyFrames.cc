@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            checkNewKeyFrames.cc
+ *
+ * @brief           Implements LocalMapping::checkNewKeyFrames(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 #include <mutex>

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getMarkerById.cc
+ *
+ * @brief           Implements Map::getMarkerById(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

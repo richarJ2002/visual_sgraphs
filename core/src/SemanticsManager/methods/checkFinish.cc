@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            checkFinish.cc
+ *
+ * @brief           Implements SemanticsManager::checkFinish(), declared in
+ *                  SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 namespace vs_graphs

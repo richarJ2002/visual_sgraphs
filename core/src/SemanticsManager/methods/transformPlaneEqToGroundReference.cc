@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            transformPlaneEqToGroundReference.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::transformPlaneEqToGroundReference(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 namespace vs_graphs

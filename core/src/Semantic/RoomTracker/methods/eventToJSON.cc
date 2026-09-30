@@ -13,6 +13,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            eventToJSON.cc
+ *
+ * @brief           Implements RoomTracker::eventToJSON(), declared in
+ *                  Semantic/RoomTracker.h.
+ */
+
 #include "Semantic/RoomTracker.h"
 
 #include <cmath>

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            logSO3.cc
+ *
+ * @brief           Implements logSO3(), declared in G2oTypes.h.
+ */
+
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"

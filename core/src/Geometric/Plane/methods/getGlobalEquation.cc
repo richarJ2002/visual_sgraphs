@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getGlobalEquation.cc
+ *
+ * @brief           Implements Plane::getGlobalEquation(), declared in
+ *                  Geometric/Plane.h.
+ */
+
 #include "Geometric/Plane.h"
 #include <algorithm>
 #include <boost/make_shared.hpp>

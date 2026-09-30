@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            computeH21.cc
+ *
+ * @brief           Implements TwoViewReconstruction::computeH21(), declared in
+ *                  TwoViewReconstruction.h.
+ */
+
 #include "TwoViewReconstruction.h"
 
 #include "GeometricTools.h"

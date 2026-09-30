@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            rebuildSemanticVotesWithoutLock.cc
+ *
+ * @brief           Implements Plane::rebuildSemanticVotesWithoutLock(),
+ *                  declared in Geometric/Plane.h.
+ */
+
 #include "Geometric/Plane.h"
 #include <algorithm>
 #include <boost/make_shared.hpp>

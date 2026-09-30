@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            associateAllWallsToRoomsForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::associateAllWallsToRoomsForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

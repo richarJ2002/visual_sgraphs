@@ -1,3 +1,10 @@
+/*!
+ * @file            RoomContextSnapshot.h
+ *
+ * @brief           Declares RoomContextSnapshot, a saved description of a room
+ *                  (wall bounds and passages) used to recognise the room again.
+ */
+
 #ifndef ROOM_CONTEXT_SNAPSHOT_H
 #define ROOM_CONTEXT_SNAPSHOT_H
 

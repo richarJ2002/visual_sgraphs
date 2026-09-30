@@ -15,6 +15,14 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            TwoViewReconstruction.h
+ *
+ * @brief           Declares TwoViewReconstruction, which recovers the relative
+ *                  camera pose and the first 3-D points from two views
+ *                  (monocular initialisation).
+ */
+
 #ifndef TwoViewReconstruction_H
 #define TwoViewReconstruction_H
 

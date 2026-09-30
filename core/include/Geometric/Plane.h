@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            Plane.h
+ *
+ * @brief           Declares Plane, a mapped planar surface (wall, ground or
+ *                  other) with its equation in the world frame, its point cloud
+ *                  and the key frames that observe it.
+ */
+
 #ifndef PLANE_H
 #define PLANE_H
 
@@ -201,7 +209,7 @@ class Plane
      *              to plane.
      *
      * @frame       Plane tangental
-     * @unit        meters
+     * @units       meters
      */
     double maxPlaneU;
 
@@ -210,7 +218,7 @@ class Plane
      *              to plane.
      *
      * @frame       Plane tangental
-     * @unit        meters
+     * @units       meters
      */
     double minPlaneU;
 
@@ -219,7 +227,7 @@ class Plane
      *              to plane.
      *
      * @frame       Plane tangental
-     * @unit        meters
+     * @units       meters
      */
     double maxPlaneV;
 
@@ -228,7 +236,7 @@ class Plane
      *              to plane.
      *
      * @frame       Plane tangental
-     * @unit        meters
+     * @units       meters
      */
     double minPlaneV;
 

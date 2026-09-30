@@ -1,3 +1,9 @@
+/*!
+ * @file            test_CandidateGen.cpp
+ *
+ * @brief           Unit tests for semantic candidate generation (CandidateGen).
+ */
+
 #include "Semantic/SemanticCandidates.h"
 
 #include <gtest/gtest.h>

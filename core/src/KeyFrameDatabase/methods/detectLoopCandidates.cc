@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            detectLoopCandidates.cc
+ *
+ * @brief           Implements KeyFrameDatabase::detectLoopCandidates(),
+ *                  declared in KeyFrameDatabase.h.
+ */
+
 #include "KeyFrameDatabase.h"
 
 #include "KeyFrame.h"

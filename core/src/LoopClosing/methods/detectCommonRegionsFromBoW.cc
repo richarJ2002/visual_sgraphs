@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            detectCommonRegionsFromBoW.cc
+ *
+ * @brief           Implements LoopClosing::detectCommonRegionsFromBoW(),
+ *                  declared in LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include "ORBmatcher.h"

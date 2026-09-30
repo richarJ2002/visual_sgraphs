@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getSemanticReportCacheEntry.cc
+ *
+ * @brief           Implements System::getSemanticReportCacheEntry(), declared
+ *                  in System.h.
+ */
+
 #include "SemanticsManager.h"
 #include "System.h"
 #include <rclcpp/logging.hpp>

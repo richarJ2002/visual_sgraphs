@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withInitKFid.cc
+ *
+ * @brief           Implements the Atlas constructor (withInitKFid), declared in
+ *                  Atlas.h.
+ */
+
 #include "Atlas.h"
 #include <rclcpp/logging.hpp>
 

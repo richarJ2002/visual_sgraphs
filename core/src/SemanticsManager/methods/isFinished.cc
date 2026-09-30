@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            isFinished.cc
+ *
+ * @brief           Implements SemanticsManager::isFinished(), declared in
+ *                  SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 namespace vs_graphs

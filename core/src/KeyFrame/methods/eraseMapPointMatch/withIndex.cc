@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withIndex.cc
+ *
+ * @brief           Implements KeyFrame::eraseMapPointMatch() (withIndex),
+ *                  declared in KeyFrame.h.
+ */
+
 #include "KeyFrame.h"
 
 #include "ImuTypes.h"

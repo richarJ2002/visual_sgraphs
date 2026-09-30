@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getWallNormalTowardRoom_World.cc
+ *
+ * @brief           Implements Room::getWallNormalTowardRoom_World(), declared
+ *                  in Semantic/Room.h.
+ */
+
 #include "Geometric/Plane.h"
 #include "Geometric/PlaneStatus.h"
 #include "Semantic/Room.h"

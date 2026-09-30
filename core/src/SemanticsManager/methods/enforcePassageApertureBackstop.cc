@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            enforcePassageApertureBackstop.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::enforcePassageApertureBackstop(), declared
+ *                  in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            reconcileWallFacePairsForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::reconcileWallFacePairsForTest(), declared
+ *                  in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

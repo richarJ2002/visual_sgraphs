@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            computeCentroid.cc
+ *
+ * @brief           Implements Sim3Solver::computeCentroid(), declared in
+ *                  Sim3Solver.h.
+ */
+
 #include "Sim3Solver.h"
 
 #include <cmath>

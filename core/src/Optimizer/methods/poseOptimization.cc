@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            poseOptimization.cc
+ *
+ * @brief           Implements Optimizer::poseOptimization(), declared in
+ *                  Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "OptimizableTypes.h"

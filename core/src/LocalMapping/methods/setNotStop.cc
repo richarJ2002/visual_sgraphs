@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setNotStop.cc
+ *
+ * @brief           Implements LocalMapping::setNotStop(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 #include <mutex>

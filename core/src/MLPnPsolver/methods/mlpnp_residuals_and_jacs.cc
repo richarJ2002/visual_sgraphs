@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            mlpnp_residuals_and_jacs.cc
+ *
+ * @brief           Implements MLPnPsolver::mlpnp_residuals_and_jacs(), declared
+ *                  in MLPnPsolver.h.
+ */
+
 /*!****************************************************************************
  * Author:   Steffen Urban                                              *
  * Contact:  urbste@gmail.com                                          *

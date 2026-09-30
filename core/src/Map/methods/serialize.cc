@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            serialize.cc
+ *
+ * @brief           Implements Map::serialize(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include "KeyFrame.h"

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            findPointsCloseToLocation.cc
+ *
+ * @brief           Implements Tracking::findPointsCloseToLocation(), declared
+ *                  in Tracking.h.
+ */
+
 #include "Tracking.h"
 #include "Utils/Utils/objects/Utils.h"
 #include "Utils/Utils/objects/UtilsStatus.h"

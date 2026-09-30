@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            seedCurrentRoomFromActiveMapForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::seedCurrentRoomFromActiveMapForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

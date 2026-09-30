@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            attemptConsecutiveMergeIfGated.cc
+ *
+ * @brief           Implements Atlas::attemptConsecutiveMergeIfGated(), declared
+ *                  in Atlas.h.
+ */
+
 #include "Atlas.h"
 
 #include "Semantic/SemanticVerify.h"

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            isStopped.cc
+ *
+ * @brief           Implements Viewer::isStopped(), declared in Viewer.h.
+ */
+
 #include "ResetCause.h"
 #include "Viewer.h"
 #include <pangolin/pangolin.h>

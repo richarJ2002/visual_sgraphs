@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addKeyFrame.cc
+ *
+ * @brief           Implements Map::addKeyFrame(), declared in Map.h.
+ */
+
 #include "KeyFrame.h"
 #include "Map.h"
 

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            run.cc
+ *
+ * @brief           Implements SemanticsManager::run(), declared in
+ *                  SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "Semantic/SemanticAxiomEvaluator.h"

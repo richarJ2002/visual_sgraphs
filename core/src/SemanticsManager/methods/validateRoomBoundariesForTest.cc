@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            validateRoomBoundariesForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::validateRoomBoundariesForTest(), declared
+ *                  in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

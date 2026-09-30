@@ -1,4 +1,9 @@
-
+/*!
+ * @file            evaluateMapMergeGate.cc
+ *
+ * @brief           Implements SemanticVerify::evaluateMapMergeGate(), declared
+ *                  in Semantic/SemanticVerify.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

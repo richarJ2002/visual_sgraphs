@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            semanticsmanager.cc
+ *
+ * @brief           Implements the SemanticsManager constructor, declared in
+ *                  SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

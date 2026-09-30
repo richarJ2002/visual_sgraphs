@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            semanticsegmentation.cc
+ *
+ * @brief           Implements the SemanticSegmentation constructor, declared in
+ *                  SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 #include <rclcpp/logging.hpp>
 

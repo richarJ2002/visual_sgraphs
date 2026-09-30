@@ -1,4 +1,9 @@
-
+/*!
+ * @file            wallSamplesSpanInterval.cc
+ *
+ * @brief           Implements wallSamplesSpanInterval(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

@@ -1,4 +1,9 @@
-
+/*!
+ * @file            stableRoomIdentity.cc
+ *
+ * @brief           Implements stableRoomIdentity(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

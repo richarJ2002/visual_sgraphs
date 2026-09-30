@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            createBlankRoomCandidate.cc
+ *
+ * @brief           Implements GeoSemHelpers::createBlankRoomCandidate(),
+ *                  declared in GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 
 #include <algorithm>

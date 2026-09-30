@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            mergeLocalInertial.cc
+ *
+ * @brief           Implements LoopClosing::mergeLocalInertial(), declared in
+ *                  LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include "Optimizer.h"

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getDoorById.cc
+ *
+ * @brief           Implements Map::getDoorById(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

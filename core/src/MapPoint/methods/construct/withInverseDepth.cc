@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withInverseDepth.cc
+ *
+ * @brief           Implements the MapPoint constructor (withInverseDepth),
+ *                  declared in MapPoint.h.
+ */
+
 #include "MapPoint.h"
 
 #include "Map.h"

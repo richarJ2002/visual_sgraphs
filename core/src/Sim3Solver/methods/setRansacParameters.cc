@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setRansacParameters.cc
+ *
+ * @brief           Implements Sim3Solver::setRansacParameters(), declared in
+ *                  Sim3Solver.h.
+ */
+
 #include "Sim3Solver.h"
 
 #include <cmath>

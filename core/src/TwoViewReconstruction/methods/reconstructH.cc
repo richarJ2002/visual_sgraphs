@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            reconstructH.cc
+ *
+ * @brief           Implements TwoViewReconstruction::reconstructH(), declared
+ *                  in TwoViewReconstruction.h.
+ */
+
 #include "TwoViewReconstruction.h"
 
 #include "GeometricTools.h"

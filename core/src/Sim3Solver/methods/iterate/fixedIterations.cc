@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            fixedIterations.cc
+ *
+ * @brief           Implements Sim3Solver::iterate() (fixedIterations), declared
+ *                  in Sim3Solver.h.
+ */
+
 #include "Sim3Solver.h"
 
 #include <cmath>

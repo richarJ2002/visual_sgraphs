@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getLastBigChangeIndex.cc
+ *
+ * @brief           Implements Atlas::getLastBigChangeIndex(), declared in
+ *                  Atlas.h.
+ */
+
 #include "Atlas.h"
 #include <rclcpp/logging.hpp>
 

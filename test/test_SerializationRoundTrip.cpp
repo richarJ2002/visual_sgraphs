@@ -1,4 +1,11 @@
 /*!
+ * @file            test_SerializationRoundTrip.cpp
+ *
+ * @brief           Save-and-load round-trip tests for the atlas, maps, key
+ *                  frames, map points, cameras and IMU types (Serialization*).
+ */
+
+/*!
  * Boost serialization round-trip self-consistency (gated).
  *
  * Covers all Boost sites: Map, MapPoint, Atlas, ImuTypes (Bias/Calib/

@@ -1,4 +1,9 @@
-
+/*!
+ * @file            evaluateConsecutiveMergeGate.cc
+ *
+ * @brief           Implements SemanticVerify::evaluateConsecutiveMergeGate(),
+ *                  declared in Semantic/SemanticVerify.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

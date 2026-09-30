@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            grabImageRGBD.cc
+ *
+ * @brief           Implements Tracking::grabImageRGBD(), declared in
+ *                  Tracking.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 #include <rclcpp/logging.hpp>

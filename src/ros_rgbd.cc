@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            ros_rgbd.cc
+ *
+ * @brief           The RGB-D ROS 2 node: receives camera images, feeds them to
+ *                  the SLAM system and publishes its results.
+ */
+
 #include "RgbdObservability.h"
 #include "common.hpp"
 
@@ -86,7 +93,7 @@ class ImageGrabber : public rclcpp::Node
      * @brief       Callback function to get the skeleton graph from the
      *              `voxblox` module
      *
-     * @param       msgSkeletonGraphs_in
+     * @param       msgSkeletonGraph
      *              The skeleton graph from the `voxblox` module
      */
     void GrabVoxbloxSkeletonGraph(

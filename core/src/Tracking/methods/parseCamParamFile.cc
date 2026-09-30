@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            parseCamParamFile.cc
+ *
+ * @brief           Implements Tracking::parseCamParamFile(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"

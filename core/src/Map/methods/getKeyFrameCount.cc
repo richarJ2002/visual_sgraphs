@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getKeyFrameCount.cc
+ *
+ * @brief           Implements Map::getKeyFrameCount(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

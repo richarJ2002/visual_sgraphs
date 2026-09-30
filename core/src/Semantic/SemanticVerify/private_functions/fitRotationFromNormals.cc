@@ -1,4 +1,9 @@
-
+/*!
+ * @file            fitRotationFromNormals.cc
+ *
+ * @brief           Implements fitRotationFromNormals(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

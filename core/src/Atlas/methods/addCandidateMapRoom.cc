@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addCandidateMapRoom.cc
+ *
+ * @brief           Implements Atlas::addCandidateMapRoom(), declared in
+ *                  Atlas.h.
+ */
+
 #include "Atlas.h"
 #include <rclcpp/logging.hpp>
 

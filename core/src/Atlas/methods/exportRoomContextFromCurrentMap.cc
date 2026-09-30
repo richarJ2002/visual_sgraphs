@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            exportRoomContextFromCurrentMap.cc
+ *
+ * @brief           Implements Atlas::exportRoomContextFromCurrentMap(),
+ *                  declared in Atlas.h.
+ */
+
 #include "Atlas.h"
 #include <rclcpp/logging.hpp>
 

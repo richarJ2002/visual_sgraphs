@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            destruct.cc
+ *
+ * @brief           Implements the Map destructor, declared in Map.h: frees the
+ *                  thumbnail image only; the map elements are owned elsewhere.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

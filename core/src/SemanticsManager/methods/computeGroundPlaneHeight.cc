@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            computeGroundPlaneHeight.cc
+ *
+ * @brief           Implements SemanticsManager::computeGroundPlaneHeight(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

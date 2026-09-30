@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            monocularInitialization.cc
+ *
+ * @brief           Implements Tracking::monocularInitialization(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include "ORBmatcher.h"

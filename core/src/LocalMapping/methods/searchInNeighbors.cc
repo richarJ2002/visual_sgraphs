@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            searchInNeighbors.cc
+ *
+ * @brief           Implements LocalMapping::searchInNeighbors(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 #include "ORBmatcher.h"

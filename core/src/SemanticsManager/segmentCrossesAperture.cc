@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            segmentCrossesAperture.cc
+ *
+ * @brief           Implements segmentCrossesAperture(), declared in
+ *                  SemanticsManager/private_functions.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "private_functions.h"
@@ -28,27 +35,27 @@ namespace core
 {
 
 /*!
- * @brief Tests whether a segment crosses a passage aperture.
- *
- * @param[in] segmentStart_World_m_in First endpoint in the active map frame.
- * @param[in] segmentEnd_World_m_in Second endpoint in the active map frame.
- * @param[in] p_passage_in Passage defining the finite aperture.
- * @param[in] groundNormal_World_in Unit ground normal in the active map frame.
- * @param[in] openingMargin_m_in Aperture expansion used for noisy geometry.
- * @param[in] minimumSideDistance_m_in Required endpoint distance from plane.
- * @param[in] requirePassable_in True when the passage must already be passable
- *              before the geometric test may fire. Far-side wall routing may
- *              pass false so the aperture geometry alone drives the decision
- *              even while the passage is still being confirmed.
- * @return True when the segment crosses inside the finite opening.
- */
-/*!
  * @brief       Core aperture-crossing math shared by both a confirmed
  *              Passage and a still-unconfirmed OpenPassageEvidence
  *              hypothesis (see segmentCrossesOpenPassageEvidence below) --
  *              the two differ only in where the plane equation, centroid,
  *              and opening size come from, never in how the crossing test
  *              itself works.
+ *
+ * @param[in]   segmentStart_World_m_in     First endpoint, in metres.
+ * @param[in]   segmentEnd_World_m_in       Second endpoint, in metres.
+ * @param[in]   apertureEquation_World_in   Plane of the aperture.
+ * @param[in]   apertureCentroid_World_m_in Centre of the aperture, in metres.
+ * @param[in]   apertureWidth_m_in          Width of the opening, in metres.
+ * @param[in]   apertureHeight_m_in         Height of the opening, in metres.
+ * @param[in]   groundNormal_World_in       Unit ground normal.
+ * @param[in]   openingMargin_m_in          Aperture expansion used for noisy
+ *                                          geometry, in metres.
+ * @param[in]   minimumSideDistance_m_in    Required endpoint distance from the
+ *                                          plane, in metres.
+ * @param[out]  crossesAperture_out         True when the segment crosses
+ *                                          inside the opening.
+ * @return      SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus
     segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,

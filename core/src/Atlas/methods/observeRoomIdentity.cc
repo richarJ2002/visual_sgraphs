@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            observeRoomIdentity.cc
+ *
+ * @brief           Implements Atlas::observeRoomIdentity().
+ */
+
 #include "Atlas.h"
 
 #include "../private_functions.h"

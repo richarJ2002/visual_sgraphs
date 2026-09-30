@@ -1,4 +1,11 @@
 /*!
+ * @file            test_RoomContextPersist.cpp
+ *
+ * @brief           Unit tests for saving and restoring room context
+ *                  (RoomContextPersist).
+ */
+
+/*!
  * Focused tests: persistence of the last-confirmed room context
  * (semantic::RoomContextSnapshot, WallBounds, semantic::PassageContext) across
  * the real Atlas::CreateNewMap() tracking-loss/new-map lifecycle boundary.

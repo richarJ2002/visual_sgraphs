@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            withDirection.cc
+ *
+ * @brief           Implements Passage::addTraversalObservation()
+ *                  (withDirection), declared in Semantic/Passage.h.
+ */
+
 #include "Semantic/Passage.h"
 #include <algorithm>
 #include <cmath>

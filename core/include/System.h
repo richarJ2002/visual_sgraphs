@@ -23,6 +23,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            System.h
+ *
+ * @brief           Declares System, the entry point of the SLAM core: it starts
+ *                  the tracking, mapping, loop-closing and semantic threads and
+ *                  receives the sensor data.
+ */
+
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
@@ -346,7 +354,7 @@ class System
          * @brief       ID of the passage semantic element.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         int id{-1};
 
@@ -355,7 +363,7 @@ class System
          *              `true` then the passage is considered to be passable.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         bool isPassable{false};
 
@@ -374,7 +382,7 @@ class System
          *                      (Room connecting to the observed passage)
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         int primaryRoomId{-1};
 
@@ -393,7 +401,7 @@ class System
          *                      (Room connecting to the observed passage)
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         int secondaryRoomId{-1};
 
@@ -402,7 +410,7 @@ class System
          *              into the secondary/far side.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t primaryTraversalCount{0U};
 
@@ -411,7 +419,7 @@ class System
          *              back to the primary/observing side.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t secondaryTraversalCount{0U};
 
@@ -419,7 +427,7 @@ class System
          * @brief       Number of untraversed/unknown observations.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t unknownCount{0U};
     };
@@ -429,7 +437,7 @@ class System
      *              listing associated passage IDs.
      *
      * @frame       N/A
-     * @unit        N/A
+     * @units       N/A
      */
     struct RoomHealth
     {
@@ -438,7 +446,7 @@ class System
          * @brief       ID of the room semantic element.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         int id{-1};
 
@@ -446,7 +454,7 @@ class System
          * @brief       Vector of passage IDs associated with this room.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::vector<int> passageIds;
     };
@@ -456,7 +464,7 @@ class System
      *              listing associated room IDs.
      *
      * @frame       N/A
-     * @unit        N/A
+     * @units       N/A
      */
     struct FloorHealth
     {
@@ -465,7 +473,7 @@ class System
          * @brief       ID of the floor semantic element.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         int id{-1};
 
@@ -473,7 +481,7 @@ class System
          * @brief       Vector of room IDs located on this floor.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::vector<int> roomIds;
     };
@@ -491,7 +499,7 @@ class System
      * evaluation cycle has completed yet.
      *
      * @frame       N/A
-     * @unit        N/A
+     * @units       N/A
      */
     struct MissionHealthSnapshot
     {
@@ -500,7 +508,7 @@ class System
          * @brief       Timestamp of the frame at which this snapshot was taken.
          *
          * @frame       N/A
-         * @unit        seconds
+         * @units       seconds
          */
         double frameTimestamp{0.0};
 
@@ -509,7 +517,7 @@ class System
          *              state machine status (e.g. INITIALIZED, TRACKING, LOST).
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         int trackingState{-1};
 
@@ -518,7 +526,7 @@ class System
          *              Higher values indicate more reliable tracking.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         int trackingInliers{0};
 
@@ -527,7 +535,7 @@ class System
          * data is being used for pose estimation.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         bool isInertial{false};
 
@@ -537,7 +545,7 @@ class System
          *              stationary operation.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         bool isInertialInitialized{false};
 
@@ -546,7 +554,7 @@ class System
          * the pose should not be relied upon for navigation or planning.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         bool isPoseValid{false};
 
@@ -555,7 +563,7 @@ class System
          *              estimated position and orientation of the camera.
          *
          * @frame       World
-         * @unit        meters / radians (Sophus SE3f convention)
+         * @units       meters / radians (Sophus SE3f convention)
          */
         Sophus::SE3f cameraPose_World;
 
@@ -564,7 +572,7 @@ class System
          * Incremented on map restarts or when a new map is loaded.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t mapId{0U};
 
@@ -573,7 +581,7 @@ class System
          *              occurred since the system started.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint32_t mapCount{0U};
 
@@ -581,7 +589,7 @@ class System
          * @brief       Total number of keyframes currently in the map.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint32_t keyFrameCount{0U};
 
@@ -592,7 +600,7 @@ class System
          * "RequestResetActiveMapWithCause().
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t resetCount{0U};
 
@@ -619,7 +627,7 @@ class System
          * @ref lastReturnedKeyFrameId.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t segmentationPublishedCount{0U};
 
@@ -630,7 +638,7 @@ class System
          * indicates how many keyframes remain in-flight.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t segmentationReturnedCount{0U};
 
@@ -640,7 +648,7 @@ class System
          * still in-flight or pending.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t lastReturnedKeyFrameId{0U};
 
@@ -683,7 +691,7 @@ class System
          * decisions.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         bool isLatestKeyFramePoseValid{false};
 
@@ -692,7 +700,7 @@ class System
          * processed.
          *
          * @frame       N/A
-         * @unit        seconds
+         * @units       seconds
          */
         double latestKeyFrameTimestamp{0.0};
 
@@ -702,7 +710,7 @@ class System
          * that keyframe's capture.
          *
          * @frame       World
-         * @unit        meters / radians (Sophus SE3f convention)
+         * @units       meters / radians (Sophus SE3f convention)
          */
         Sophus::SE3f latestKeyFramePose_World;
 
@@ -712,7 +720,7 @@ class System
          *              recently observed by the system.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         int currentRoomId{-1};
 
@@ -722,7 +730,7 @@ class System
          *              across map restarts.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         int lastKnownRoomId{-1};
 
@@ -732,7 +740,7 @@ class System
          *              persistent map).
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint32_t confirmedRoomCount{0U};
 
@@ -742,7 +750,7 @@ class System
          *              are still being mapped.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint32_t unresolvedRoomCount{0U};
 
@@ -752,7 +760,7 @@ class System
          *              floor in the semantic map.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint32_t floorRoomLinkCount{0U};
 
@@ -761,7 +769,7 @@ class System
          *              passages associated with a room and its traversal stats.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::vector<RoomHealth> rooms;
 
@@ -770,7 +778,7 @@ class System
          *              that exist on that floor.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::vector<FloorHealth> floors;
 
@@ -779,7 +787,7 @@ class System
          *              traversal counts and room connections for a passage.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::vector<PassageHealth> passages;
 
@@ -788,7 +796,7 @@ class System
          *              Incremented each time a loop is closed.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t loopSequence{0U};
 
@@ -797,7 +805,7 @@ class System
          *              their pose graph optimization converged successfully).
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint32_t acceptedLoopCount{0U};
 
@@ -807,7 +815,7 @@ class System
          *              inconsistent).
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint32_t rejectedLoopCount{0U};
 
@@ -816,7 +824,7 @@ class System
          * snapshot. A loop closure was detected and processed.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         bool hasLoopEvent{false};
 
@@ -825,7 +833,7 @@ class System
          * (`true`) or rejected (`false`).
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         bool wasLastLoopAccepted{false};
 
@@ -834,7 +842,7 @@ class System
          * event.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t lastLoopMapId{0U};
 
@@ -843,7 +851,7 @@ class System
          *              loop was initiated.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t lastLoopCurrentKeyFrameId{0U};
 
@@ -852,7 +860,7 @@ class System
          *              during the most recent loop closure search.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::uint64_t lastLoopMatchedKeyFrameId{0U};
 
@@ -861,7 +869,7 @@ class System
          *              closure was initiated.
          *
          * @frame       N/A
-         * @unit        seconds
+         * @units       seconds
          */
         double lastLoopCurrentTimestamp{0.0};
 
@@ -870,7 +878,7 @@ class System
          *              corresponding to the matched keyframe's timestamp.
          *
          * @frame       N/A
-         * @unit        seconds
+         * @units       seconds
          */
         double lastLoopMatchedTimestamp{0.0};
 
@@ -880,7 +888,7 @@ class System
          *              rejected, or provide details about the loop detection.
          *
          * @frame       N/A
-         * @unit        N/A
+         * @units       N/A
          */
         std::string lastLoopReason;
     };
@@ -1729,7 +1737,7 @@ class System
      * otherwise.
      *
      * @frame       N/A
-     * @unit        N/A
+     * @units       N/A
      */
     [[nodiscard]] SystemStatus saveAtlas(int type_in, bool &isSaved_out);
 
@@ -1747,7 +1755,7 @@ class System
      * otherwise.
      *
      * @frame       N/A
-     * @unit        N/A
+     * @units       N/A
      */
     [[nodiscard]] SystemStatus loadAtlas(int type_in, bool &isLoaded_out);
 
@@ -1768,7 +1776,7 @@ class System
      * @return SYSTEM_STATUS_SUCCESS.
      *
      * @frame       N/A
-     * @unit        N/A
+     * @units       N/A
      */
     [[nodiscard]] SystemStatus calculateCheckSum(std::string  filename_in,
                                                  int          type_in,

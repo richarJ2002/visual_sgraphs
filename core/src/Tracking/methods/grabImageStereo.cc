@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            grabImageStereo.cc
+ *
+ * @brief           Implements Tracking::grabImageStereo(), declared in
+ *                  Tracking.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 #include <rclcpp/logging.hpp>

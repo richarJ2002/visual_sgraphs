@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            SemanticsManager.h
+ *
+ * @brief           Declares SemanticsManager, the worker thread that builds and
+ *                  maintains the walls, rooms, floors and passages of the map.
+ */
+
 #ifndef SEMANTICSMANAGER_H
 #define SEMANTICSMANAGER_H
 
@@ -633,7 +640,7 @@ class SemanticsManager
      * @brief       Constructor which stores the pointer to the map in the
      *              member p_atlas and gets the systems parameter.
      *
-     * @param[in]   pAtlas
+     * @param[in]   p_atlas_in
      *              Pointer to map.
      */
     explicit SemanticsManager(Atlas *p_atlas_in);

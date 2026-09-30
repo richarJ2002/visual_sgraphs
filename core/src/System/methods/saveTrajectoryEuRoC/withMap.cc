@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withMap.cc
+ *
+ * @brief           Implements System::saveTrajectoryEuRoC() (withMap), declared
+ *                  in System.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 

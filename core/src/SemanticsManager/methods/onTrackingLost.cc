@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            onTrackingLost.cc
+ *
+ * @brief           Implements SemanticsManager::onTrackingLost(), declared in
+ *                  SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

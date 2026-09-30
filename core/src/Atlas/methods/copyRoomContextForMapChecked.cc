@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            copyRoomContextForMapChecked.cc
+ *
+ * @brief           Implements Atlas::copyRoomContextForMapChecked().
+ */
+
 #include "Atlas.h"
 #include <rclcpp/logging.hpp>
 

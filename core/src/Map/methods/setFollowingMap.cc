@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setFollowingMap.cc
+ *
+ * @brief           Implements Map::setFollowingMap(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

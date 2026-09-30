@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            projectPlaneBounds.cc
+ *
+ * @brief           Implements projectPlaneBounds(), declared in
+ *                  Utils/Utils/private_functions.h.
+ */
+
 #include "Utils/Utils/private_functions.h"
 
 #include <algorithm>

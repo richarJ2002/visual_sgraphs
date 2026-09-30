@@ -16,6 +16,13 @@
  */
 
 /*!
+ * @file            computeKeyPointsOld.cc
+ *
+ * @brief           Implements ORBextractor::computeKeyPointsOld(), declared in
+ *                  ORBextractor.h.
+ */
+
+/*!
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2009, Willow Garage, Inc.

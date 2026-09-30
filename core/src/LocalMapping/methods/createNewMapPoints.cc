@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            createNewMapPoints.cc
+ *
+ * @brief           Implements LocalMapping::createNewMapPoints(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 #include "GeometricTools.h"

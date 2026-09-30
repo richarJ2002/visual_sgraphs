@@ -1,4 +1,9 @@
-
+/*!
+ * @file            validWallEvidenceCount.cc
+ *
+ * @brief           Implements validWallEvidenceCount(), declared in
+ *                  Semantic/SemanticCandidates/private_functions.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

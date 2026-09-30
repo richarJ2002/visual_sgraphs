@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            saveDebugData.cc
+ *
+ * @brief           Implements System::saveDebugData(), declared in System.h.
+ */
+
 #include "LocalMapping.h"
 #include "System.h"
 

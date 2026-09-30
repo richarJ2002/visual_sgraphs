@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            recordTerminalOutcome.cc
+ *
+ * @brief           Implements SemanticSegmentation::recordTerminalOutcome(),
+ *                  declared in SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 namespace vs_graphs

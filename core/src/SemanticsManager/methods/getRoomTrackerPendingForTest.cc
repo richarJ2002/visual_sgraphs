@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getRoomTrackerPendingForTest.cc
+ *
+ * @brief           Implements SemanticsManager::getRoomTrackerPendingForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 namespace vs_graphs

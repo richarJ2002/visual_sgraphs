@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            projectPlaneFootprintOntoSharedAxes.cc
+ *
+ * @brief           Implements projectPlaneFootprintOntoSharedAxes(), declared
+ *                  in SemanticsManager/private_functions.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "private_functions.h"

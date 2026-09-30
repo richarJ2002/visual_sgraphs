@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getSkeletonClusterPoints.cc
+ *
+ * @brief           Implements Map::getSkeletonClusterPoints(), declared in
+ *                  Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            trackStats2File.cc
+ *
+ * @brief           Implements Tracking::trackStats2File(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include <iomanip>

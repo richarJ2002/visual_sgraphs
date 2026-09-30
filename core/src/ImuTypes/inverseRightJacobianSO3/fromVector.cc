@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            fromVector.cc
+ *
+ * @brief           Implements inverseRightJacobianSO3() (fromVector), declared
+ *                  in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 #include <rclcpp/logging.hpp>
 

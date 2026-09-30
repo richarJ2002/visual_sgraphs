@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            MLPnPsolver.h
+ *
+ * @brief           Declares MLPnPsolver, which estimates a camera pose from 2-D
+ *                  to 3-D matches with MLPnP inside RANSAC, for relocalisation.
+ */
+
 /*!****************************************************************************
  * Author:   Steffen Urban                                              *
  * Contact:  urbste@gmail.com                                          *
@@ -269,8 +276,9 @@ class MLPnPsolver
     /*!
      * \brief Compute a rotation matrix from Rodrigues axis angle.
      *
-     * \param[in] omega The Rodrigues-parameters of a rotation.
-     * \return The 3x3 rotation matrix.
+     * \param[in] omega_in The Rodrigues-parameters of a rotation.
+     * \param[out] rotation_out The 3x3 rotation matrix.
+     * \return MLPN_PSOLVER_STATUS_SUCCESS.
      */
     [[nodiscard]] MLPnPsolverStatus
         rodrigues2rot(const Eigen::Vector3d &omega_in,
@@ -279,8 +287,9 @@ class MLPnPsolver
     /*!
      * \brief Compute the Rodrigues-parameters of a rotation matrix.
      *
-     * \param[in] R The 3x3 rotation matrix.
-     * \return The Rodrigues-parameters.
+     * \param[in] R_in The 3x3 rotation matrix.
+     * \param[out] rodrigues_out The Rodrigues-parameters.
+     * \return MLPN_PSOLVER_STATUS_SUCCESS.
      */
     [[nodiscard]] MLPnPsolverStatus
         rot2rodrigues(const Eigen::Matrix3d &R_in,

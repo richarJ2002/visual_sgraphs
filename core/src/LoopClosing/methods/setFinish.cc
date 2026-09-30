@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setFinish.cc
+ *
+ * @brief           Implements LoopClosing::setFinish(), declared in
+ *                  LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include <mutex>

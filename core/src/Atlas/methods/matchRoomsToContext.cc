@@ -23,6 +23,15 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            matchRoomsToContext.cc
+ *
+ * @brief           Implements Atlas::matchRoomsToContext(), declared in
+ *                  Atlas.h. Calls the optional
+ *                  vsGraphsAtlasLockOrderBeforeMapSnapshot() test hook when a
+ *                  test defines it.
+ */
+
 #include "Atlas.h"
 #include <rclcpp/logging.hpp>
 

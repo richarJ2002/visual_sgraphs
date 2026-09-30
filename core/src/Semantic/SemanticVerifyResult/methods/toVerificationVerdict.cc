@@ -1,4 +1,9 @@
-
+/*!
+ * @file            toVerificationVerdict.cc
+ *
+ * @brief           Implements SemanticVerifyResult::toVerificationVerdict(),
+ *                  declared in Semantic/SemanticVerify.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

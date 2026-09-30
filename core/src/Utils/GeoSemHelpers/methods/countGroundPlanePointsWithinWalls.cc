@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            countGroundPlanePointsWithinWalls.cc
+ *
+ * @brief           Implements
+ *                  GeoSemHelpers::countGroundPlanePointsWithinWalls(), declared
+ *                  in GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include <rclcpp/logging.hpp>
 

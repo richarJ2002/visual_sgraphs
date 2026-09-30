@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            clearMap.cc
+ *
+ * @brief           Implements KeyFrameDatabase::clearMap(), declared in
+ *                  KeyFrameDatabase.h.
+ */
+
 #include "KeyFrameDatabase.h"
 
 #include "KeyFrame.h"

@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            integrateNewMeasurement.cc
+ *
+ * @brief           Implements Preintegrated::integrateNewMeasurement(),
+ *                  declared in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 #include <rclcpp/logging.hpp>
 

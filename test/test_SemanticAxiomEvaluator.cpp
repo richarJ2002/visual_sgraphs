@@ -1,4 +1,11 @@
 /*!
+ * @file            test_SemanticAxiomEvaluator.cpp
+ *
+ * @brief           Unit tests for the semantic axiom evaluator
+ *                  (SemanticAxiomEvaluator).
+ */
+
+/*!
  * Focused, ROS/Gazebo-free tests for the pure SemanticAxiomEvaluator module
  * (evaluateState(), evaluateTransition(), evaluateMapCompleteness(),
  * computeAxiomCapabilityTable()).

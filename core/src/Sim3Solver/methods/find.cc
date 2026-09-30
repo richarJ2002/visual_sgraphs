@@ -15,6 +15,12 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            find.cc
+ *
+ * @brief           Implements Sim3Solver::find(), declared in Sim3Solver.h.
+ */
+
 #include "Sim3Solver.h"
 
 #include <cmath>

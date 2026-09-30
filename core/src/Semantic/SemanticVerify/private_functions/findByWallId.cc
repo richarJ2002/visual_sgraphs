@@ -1,4 +1,9 @@
-
+/*!
+ * @file            findByWallId.cc
+ *
+ * @brief           Implements findByWallId(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

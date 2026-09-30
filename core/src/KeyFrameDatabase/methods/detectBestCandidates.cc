@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            detectBestCandidates.cc
+ *
+ * @brief           Implements KeyFrameDatabase::detectBestCandidates(),
+ *                  declared in KeyFrameDatabase.h.
+ */
+
 #include "KeyFrameDatabase.h"
 
 #include "KeyFrame.h"

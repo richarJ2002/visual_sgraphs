@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getSkeletonEdges.cc
+ *
+ * @brief           Implements Map::getSkeletonEdges(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

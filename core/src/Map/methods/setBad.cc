@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setBad.cc
+ *
+ * @brief           Implements Map::setBad(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

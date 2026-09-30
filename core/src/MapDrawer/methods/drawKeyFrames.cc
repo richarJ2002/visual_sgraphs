@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            drawKeyFrames.cc
+ *
+ * @brief           Implements MapDrawer::drawKeyFrames(), declared in
+ *                  MapDrawer.h.
+ */
+
 #include "KeyFrame.h"
 #include "MapDrawer.h"
 #include "MapPoint.h"

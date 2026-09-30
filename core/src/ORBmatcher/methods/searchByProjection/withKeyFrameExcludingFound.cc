@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            withKeyFrameExcludingFound.cc
+ *
+ * @brief           Implements ORBmatcher::searchByProjection()
+ *                  (withKeyFrameExcludingFound), declared in ORBmatcher.h.
+ */
+
 #include "ORBmatcher.h"
 
 #include <limits.h>

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            ros_rgbd_inertial.cc
+ *
+ * @brief           The RGB-D and IMU ROS 2 node: pairs images with IMU samples,
+ *                  feeds them to the SLAM system and publishes its results.
+ */
+
 #include "ResetCause.h"
 #include "common.hpp"
 #include <rclcpp/logging.hpp>
@@ -180,10 +187,9 @@ cv::Mat ImageGrabber::GetImage(
 }
 
 /*!
- * @brief Callback function to get scene segmentation results from the
- * SemanticSegmenter module
- *
- * @param msgSegImage The segmentation results from the SemanticSegmenter
+ * @brief Loop of the synchronisation thread: pairs each RGB-D packet with the
+ * IMU samples up to its time stamp and feeds them to the SLAM system, until
+ * asked to stop.
  */
 void ImageGrabber::SyncWithImu()
 {

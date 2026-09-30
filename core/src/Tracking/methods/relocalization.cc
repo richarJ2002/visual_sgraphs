@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            relocalization.cc
+ *
+ * @brief           Implements Tracking::relocalization(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include "KeyFrameDatabase.h"

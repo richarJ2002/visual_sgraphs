@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            enforcePassageSideInvariantForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::enforcePassageSideInvariantForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

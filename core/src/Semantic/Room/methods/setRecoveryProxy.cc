@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setRecoveryProxy.cc
+ *
+ * @brief           Implements Room::setRecoveryProxy().
+ */
+
 #include "Semantic/Room.h"
 #include <algorithm>
 #include <cmath>

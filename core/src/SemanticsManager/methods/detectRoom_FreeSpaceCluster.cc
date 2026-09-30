@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            detectRoom_FreeSpaceCluster.cc
+ *
+ * @brief           Implements SemanticsManager::detectRoom_FreeSpaceCluster(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

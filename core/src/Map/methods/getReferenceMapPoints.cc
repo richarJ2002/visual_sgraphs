@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getReferenceMapPoints.cc
+ *
+ * @brief           Implements Map::getReferenceMapPoints(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

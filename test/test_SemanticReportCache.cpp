@@ -1,4 +1,11 @@
 /*!
+ * @file            test_SemanticReportCache.cpp
+ *
+ * @brief           Unit tests for the semantic report cache
+ *                  (SemanticReportCache).
+ */
+
+/*!
  * Focused, ROS/Gazebo-free tests for the copied-value SemanticReportCache
  * contract.
  */

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getOriginKeyFrame.cc
+ *
+ * @brief           Implements Map::getOriginKeyFrame(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

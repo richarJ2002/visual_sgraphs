@@ -1,4 +1,9 @@
-
+/*!
+ * @file            symmetricSupportDistance.cc
+ *
+ * @brief           Implements symmetricSupportDistance(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

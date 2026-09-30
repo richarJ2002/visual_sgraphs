@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            updatePlaneData.cc
+ *
+ * @brief           Implements SemanticSegmentation::updatePlaneData(), declared
+ *                  in SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 #include "../private_functions.h"

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            findPointsCloseToMarker.cc
+ *
+ * @brief           Implements Tracking::findPointsCloseToMarker(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 #include <rclcpp/logging.hpp>
 

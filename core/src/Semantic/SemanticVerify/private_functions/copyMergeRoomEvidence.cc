@@ -1,4 +1,9 @@
-
+/*!
+ * @file            copyMergeRoomEvidence.cc
+ *
+ * @brief           Implements copyMergeRoomEvidence(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

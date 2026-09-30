@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getEstimatedTransformation.cc
+ *
+ * @brief           Implements Sim3Solver::getEstimatedTransformation(),
+ *                  declared in Sim3Solver.h.
+ */
+
 #include "Sim3Solver.h"
 
 #include <cmath>

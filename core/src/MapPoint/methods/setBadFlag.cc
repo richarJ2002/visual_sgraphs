@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setBadFlag.cc
+ *
+ * @brief           Implements MapPoint::setBadFlag(), declared in MapPoint.h.
+ */
+
 #include "MapPoint.h"
 
 #include "Map.h"

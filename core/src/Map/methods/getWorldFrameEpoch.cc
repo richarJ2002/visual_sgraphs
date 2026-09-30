@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getWorldFrameEpoch.cc
+ *
+ * @brief           Implements Map::getWorldFrameEpoch(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

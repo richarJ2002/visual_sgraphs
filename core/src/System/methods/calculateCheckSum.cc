@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            calculateCheckSum.cc
+ *
+ * @brief           Implements System::calculateCheckSum(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 
 #include <iomanip>

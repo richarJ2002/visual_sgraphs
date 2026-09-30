@@ -1,4 +1,9 @@
-
+/*!
+ * @file            checkFixedTransformWalls.cc
+ *
+ * @brief           Implements checkFixedTransformWalls(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

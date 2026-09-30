@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            recordLoopCorrectionEvent.cc
+ *
+ * @brief           Implements LoopClosing::recordLoopCorrectionEvent(),
+ *                  declared in LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include <mutex>

@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            fromComponents.cc
+ *
+ * @brief           Implements rightJacobianSO3() (fromComponents), declared in
+ *                  ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 namespace vs_graphs

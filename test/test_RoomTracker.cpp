@@ -20,6 +20,13 @@
  * Each trajectory is replayed several times with jittered timestamps.
  */
 
+/*!
+ * @file            test_RoomTracker.cpp
+ *
+ * @brief           Unit tests for the room tracker's step and transition logic
+ *                  (RoomTrackerStep, RoomTrackerTransitions).
+ */
+
 #include "Semantic/RoomTracker.h"
 
 #include <gtest/gtest.h>

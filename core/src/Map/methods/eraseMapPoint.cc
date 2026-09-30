@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            eraseMapPoint.cc
+ *
+ * @brief           Implements Map::eraseMapPoint(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

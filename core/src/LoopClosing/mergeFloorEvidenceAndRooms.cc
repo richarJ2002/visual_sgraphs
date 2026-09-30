@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            mergeFloorEvidenceAndRooms.cc
+ *
+ * @brief           Implements mergeFloorEvidenceAndRooms(), declared in
+ *                  LoopClosing/private_functions.h.
+ */
+
 #include "LoopClosing.h"
 #include <rclcpp/logging.hpp>
 

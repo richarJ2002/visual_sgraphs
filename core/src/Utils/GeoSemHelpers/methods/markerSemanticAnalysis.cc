@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            markerSemanticAnalysis.cc
+ *
+ * @brief           Implements GeoSemHelpers::markerSemanticAnalysis(), declared
+ *                  in GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include <rclcpp/logging.hpp>
 

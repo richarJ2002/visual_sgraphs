@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            interruptBA.cc
+ *
+ * @brief           Implements LocalMapping::interruptBA(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 namespace vs_graphs

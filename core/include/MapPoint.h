@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            MapPoint.h
+ *
+ * @brief           Declares MapPoint, a 3-D landmark in the world frame with
+ *                  its descriptor and the key frames that observe it.
+ */
+
 #ifndef MAPPOINT_H
 #define MAPPOINT_H
 

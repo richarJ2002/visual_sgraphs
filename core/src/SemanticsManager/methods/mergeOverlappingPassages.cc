@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            mergeOverlappingPassages.cc
+ *
+ * @brief           Implements SemanticsManager::mergeOverlappingPassages(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include <cmath>

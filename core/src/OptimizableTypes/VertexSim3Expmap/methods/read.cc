@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            read.cc
+ *
+ * @brief           Implements VertexSim3Expmap::read(), declared in
+ *                  OptimizableTypes.h.
+ */
+
 #include "OptimizableTypes.h"
 #include <rclcpp/logging.hpp>
 

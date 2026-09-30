@@ -1,4 +1,9 @@
-
+/*!
+ * @file            passageGeometryIsUsable.cc
+ *
+ * @brief           Implements passageGeometryIsUsable(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

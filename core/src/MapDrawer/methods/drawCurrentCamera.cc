@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            drawCurrentCamera.cc
+ *
+ * @brief           Implements MapDrawer::drawCurrentCamera(), declared in
+ *                  MapDrawer.h.
+ */
+
 #include "KeyFrame.h"
 #include "MapDrawer.h"
 #include "MapPoint.h"

@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setLocalMapper.cc
+ *
+ * @brief           Implements Tracking::setLocalMapper(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 namespace vs_graphs

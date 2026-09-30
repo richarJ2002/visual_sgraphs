@@ -13,6 +13,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            eventLiteral.cc
+ *
+ * @brief           Implements eventLiteral(), declared in
+ *                  Semantic/RoomTracker/private_functions.h.
+ */
+
 #include "Semantic/RoomTracker.h"
 
 #include <cmath>

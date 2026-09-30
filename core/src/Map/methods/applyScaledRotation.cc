@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            applyScaledRotation.cc
+ *
+ * @brief           Implements Map::applyScaledRotation(), declared in Map.h.
+ */
+
 #include "Geometric/Plane.h"
 #include "Geometric/PlaneStatus.h"
 #include "KeyFrame.h"

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            saveAtlas.cc
+ *
+ * @brief           Implements System::saveAtlas(), declared in System.h.
+ */
+
 #include "System.h"
 
 #include <boost/archive/binary_oarchive.hpp>

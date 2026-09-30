@@ -1,4 +1,8 @@
-
+/*!
+ * @file            generateWithStatus.cc
+ *
+ * @brief           Implements SemanticCandidates::generateWithStatus().
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

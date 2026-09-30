@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            write.cc
+ *
+ * @brief           Implements EdgeVertexNSE3RoomProjectSE3Floor::write(),
+ *                  declared in OptimizableTypes.h.
+ */
+
 #include "OptimizableTypes.h"
 
 namespace vs_graphs

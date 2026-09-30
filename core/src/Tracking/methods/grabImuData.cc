@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            grabImuData.cc
+ *
+ * @brief           Implements Tracking::grabImuData(), declared in Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include <mutex>

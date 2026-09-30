@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setDoorways.cc
+ *
+ * @brief           Implements Room::setDoorways(), declared in Semantic/Room.h.
+ */
+
 #include "Semantic/Passage.h"
 #include "Semantic/PassageStatus.h"
 #include "Semantic/Room.h"

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getStartingRoom.cc
+ *
+ * @brief           Implements Map::getStartingRoom(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

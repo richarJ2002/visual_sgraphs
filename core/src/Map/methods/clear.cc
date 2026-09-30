@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            clear.cc
+ *
+ * @brief           Implements Map::clear(), declared in Map.h.
+ */
+
 #include "KeyFrame.h"
 #include "Map.h"
 

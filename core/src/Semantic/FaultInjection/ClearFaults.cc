@@ -1,3 +1,10 @@
+/*!
+ * @file            ClearFaults.cc
+ *
+ * @brief           Implements clearFaults(), declared in
+ *                  Semantic/FaultInjection.h.
+ */
+
 /* Matching Declaration Include */
 
 #include "Semantic/FaultInjection.h"

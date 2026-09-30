@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setRecoveryProxy.cc
+ *
+ * @brief           Implements Passage::setRecoveryProxy().
+ */
+
 #include "Semantic/Passage.h"
 #include <algorithm>
 #include <cmath>

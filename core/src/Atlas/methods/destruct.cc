@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            destruct.cc
+ *
+ * @brief           Implements the Atlas destructor, declared in Atlas.h:
+ *                  deletes every map the atlas still holds, each exactly once.
+ */
+
 #include "Atlas.h"
 
 namespace vs_graphs

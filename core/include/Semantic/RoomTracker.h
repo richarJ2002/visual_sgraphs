@@ -13,6 +13,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            RoomTracker.h
+ *
+ * @brief           Declares the room tracker: which room the camera is in, the
+ *                  events that move it between rooms and their verification
+ *                  verdicts.
+ */
+
 #ifndef ROOMTRACKER_H
 #define ROOMTRACKER_H
 #include "Semantic/RoomTrackerStatus.h"
@@ -72,35 +80,39 @@ enum class RoomTrackingEvent
 
 /*!
  * @brief        Guard values describing one transition attempt.
- *
- * @param[in]    dwell_s
- *               Continuous seconds the guard has been satisfied.
- *               The caller (RoomTracker::step in production, tests
- *               in unit test runs) supplies this;
- *               RoomTracker::step accumulates it across the dwell
- *               timers.
- *
- * @param[in]    confidence
- *               Traversal/verification confidence in [0, 1].
- *
- * @param[in]    isPassageDetected
- *               A trajectory segment crossed a passable passage
- *               aperture (segmentCrossesPassageOpening()).
- *
- * @param[in]    passable
- *               The crossed passage is passable
- *               (Passage::isPassable()).
- *
- * @param[in]    areBothSidesObserved
- *               Both sides of the passage have been observed.
  */
 struct TraversalGuardValues
 {
-    double dwell_s              = 0.0;
-    double confidence           = 0.0;
-    bool   isPassageDetected    = false;
-    bool   isPassable           = false;
-    bool   areBothSidesObserved = false;
+    /*!
+     * @brief    Continuous time the guard has been satisfied. The caller
+     *           (RoomTracker::step in production, the tests in unit tests)
+     *           supplies it; RoomTracker::step accumulates it across the
+     *           dwell timers.
+     *
+     * @units    seconds
+     */
+    double dwell_s = 0.0;
+
+    /*!
+     * @brief    Traversal/verification confidence in [0, 1].
+     */
+    double confidence = 0.0;
+
+    /*!
+     * @brief    A trajectory segment crossed a passable passage aperture
+     *           (segmentCrossesPassageOpening()).
+     */
+    bool isPassageDetected = false;
+
+    /*!
+     * @brief    The crossed passage is passable (Passage::isPassable()).
+     */
+    bool isPassable = false;
+
+    /*!
+     * @brief    Both sides of the passage have been observed.
+     */
+    bool areBothSidesObserved = false;
 };
 
 /*!
@@ -146,15 +158,17 @@ struct VerificationVerdict
 
 /*!
  * @brief           Tracking and map-lifecycle signals fed to RoomTracker::step.
- *
- * @param lost
- *                  Tracking was declared lost for the current cycle.
- * @param isNewMapCreated
- *                  A new map was created while tracking was lost.
  */
 struct TrackingStatusInput
 {
-    bool isLost          = false;
+    /*!
+     * @brief       Tracking was declared lost for the current cycle.
+     */
+    bool isLost = false;
+
+    /*!
+     * @brief       A new map was created while tracking was lost.
+     */
     bool isNewMapCreated = false;
 };
 

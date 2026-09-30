@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            trackReferenceKeyFrame.cc
+ *
+ * @brief           Implements Tracking::trackReferenceKeyFrame(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include "ORBmatcher.h"

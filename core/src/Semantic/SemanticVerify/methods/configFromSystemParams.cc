@@ -1,4 +1,9 @@
-
+/*!
+ * @file            configFromSystemParams.cc
+ *
+ * @brief           Implements SemanticVerify::configFromSystemParams(),
+ *                  declared in Semantic/SemanticVerify.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

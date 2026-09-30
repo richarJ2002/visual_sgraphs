@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getRotationRwc.cc
+ *
+ * @brief           Implements Frame::getRotationRwc(), declared in Frame.h.
+ */
+
 #include "Frame.h"
 
 namespace vs_graphs

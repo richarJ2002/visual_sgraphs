@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            copyLatestRoomContext.cc
+ *
+ * @brief           Implements Atlas::copyLatestRoomContext().
+ */
+
 #include "Atlas.h"
 
 namespace vs_graphs

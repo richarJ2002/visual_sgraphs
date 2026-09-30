@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getAllFloors.cc
+ *
+ * @brief           Implements Map::getAllFloors(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

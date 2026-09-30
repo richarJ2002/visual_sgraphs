@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            createMapFloor.cc
+ *
+ * @brief           Implements GeoSemHelpers::createMapFloor(), declared in
+ *                  GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 
 #include <iostream>

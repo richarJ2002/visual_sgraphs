@@ -1,3 +1,11 @@
+/*!
+ * @file            RgbdAllPointsCadence.cc
+ *
+ * @brief           Implements AllPointsCadence, declared in
+ *                  RgbdAllPointsCadence.h: decides, in simulated time, when to
+ *                  publish all map points.
+ */
+
 #include "RgbdAllPointsCadence.h"
 
 namespace vs_graphs::rgbd

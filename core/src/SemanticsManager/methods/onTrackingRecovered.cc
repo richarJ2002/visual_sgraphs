@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            onTrackingRecovered.cc
+ *
+ * @brief           Implements SemanticsManager::onTrackingRecovered(), declared
+ *                  in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 namespace vs_graphs

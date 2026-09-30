@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            KeyFrame.h
+ *
+ * @brief           Declares KeyFrame, a frame kept in the map: its pose,
+ *                  features, observed map points and links to other key frames.
+ */
+
 #ifndef KEYFRAME_H
 #define KEYFRAME_H
 

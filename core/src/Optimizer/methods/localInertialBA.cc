@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            localInertialBA.cc
+ *
+ * @brief           Implements Optimizer::localInertialBA(), declared in
+ *                  Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "G2oTypes.h"

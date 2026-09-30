@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getPlaneIdentity.cc
+ *
+ * @brief           Implements Floor::getPlaneIdentity(), declared in
+ *                  Semantic/Floor.h.
+ */
+
 #include "Semantic/Floor.h"
 #include <algorithm>
 #include <cmath>

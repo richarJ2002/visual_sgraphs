@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            addObservation.cc
+ *
+ * @brief           Implements Plane::addObservation(), declared in
+ *                  Geometric/Plane.h.
+ */
+
 #include "Geometric/Plane.h"
 #include "KeyFrame.h"
 #include <algorithm>

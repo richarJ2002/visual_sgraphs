@@ -1,4 +1,9 @@
-
+/*!
+ * @file            checkConsecutiveWallEdgeOverlap.cc
+ *
+ * @brief           Implements checkConsecutiveWallEdgeOverlap(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

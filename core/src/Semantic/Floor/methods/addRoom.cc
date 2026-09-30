@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            addRoom.cc
+ *
+ * @brief           Implements Floor::addRoom(), declared in Semantic/Floor.h.
+ */
+
 #include "Semantic/Floor.h"
 #include "Semantic/Room.h"
 #include "Semantic/RoomStatus.h"

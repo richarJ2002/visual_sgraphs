@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            Floor.h
+ *
+ * @brief           Declares Floor, one storey of the building and the rooms on
+ *                  it.
+ */
+
 #ifndef FLOOR_H
 #define FLOOR_H
 

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            createMapMarker.cc
+ *
+ * @brief           Implements GeoSemHelpers::createMapMarker(), declared in
+ *                  GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include <rclcpp/logging.hpp>
 

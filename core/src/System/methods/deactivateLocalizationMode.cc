@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            deactivateLocalizationMode.cc
+ *
+ * @brief           Implements System::deactivateLocalizationMode(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 
 namespace vs_graphs

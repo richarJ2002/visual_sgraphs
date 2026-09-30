@@ -23,6 +23,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            linearizeOplus.cc
+ *
+ * @brief           Implements
+ *                  EdgeSE3ProjectXYZOnlyPoseToBody::linearizeOplus(), declared
+ *                  in OptimizableTypes.h.
+ */
+
 #include "OptimizableTypes.h"
 
 namespace vs_graphs

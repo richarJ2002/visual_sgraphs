@@ -13,6 +13,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            stateLiteral.cc
+ *
+ * @brief           Implements stateLiteral(), declared in
+ *                  Semantic/RoomTracker/private_functions.h.
+ */
+
 #include "Semantic/RoomTracker.h"
 
 #include <cmath>

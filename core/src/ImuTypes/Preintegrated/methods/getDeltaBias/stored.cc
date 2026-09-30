@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            stored.cc
+ *
+ * @brief           Implements Preintegrated::getDeltaBias() (stored), declared
+ *                  in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include <mutex>

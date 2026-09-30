@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            parseJsonDatabase.cc
+ *
+ * @brief           Implements System::parseJsonDatabase(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 #include <rclcpp/logging.hpp>
 

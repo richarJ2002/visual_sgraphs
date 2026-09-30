@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withKeyFrameAndPose.cc
+ *
+ * @brief           Implements LoopClosing::searchAndFuse()
+ *                  (withKeyFrameAndPose), declared in LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include "ORBmatcher.h"

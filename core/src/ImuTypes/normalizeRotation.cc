@@ -15,6 +15,12 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            normalizeRotation.cc
+ *
+ * @brief           Implements normalizeRotation(), declared in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 namespace vs_graphs

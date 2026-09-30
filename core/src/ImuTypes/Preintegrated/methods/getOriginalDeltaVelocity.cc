@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getOriginalDeltaVelocity.cc
+ *
+ * @brief           Implements Preintegrated::getOriginalDeltaVelocity(),
+ *                  declared in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include <mutex>

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            enforcePassageSideInvariant.cc
+ *
+ * @brief           Implements SemanticsManager::enforcePassageSideInvariant(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

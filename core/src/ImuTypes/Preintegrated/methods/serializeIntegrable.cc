@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            serializeIntegrable.cc
+ *
+ * @brief           Implements Integrable::serialize(), declared in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include "SerializationUtils.h"

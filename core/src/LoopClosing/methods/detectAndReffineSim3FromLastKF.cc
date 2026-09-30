@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            detectAndReffineSim3FromLastKF.cc
+ *
+ * @brief           Implements LoopClosing::detectAndReffineSim3FromLastKF(),
+ *                  declared in LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include "Optimizer.h"

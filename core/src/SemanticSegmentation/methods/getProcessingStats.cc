@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getProcessingStats.cc
+ *
+ * @brief           Implements SemanticSegmentation::getProcessingStats(),
+ *                  declared in SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 namespace vs_graphs

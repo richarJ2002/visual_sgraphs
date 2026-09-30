@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            computeSim3.cc
+ *
+ * @brief           Implements Sim3Solver::computeSim3(), declared in
+ *                  Sim3Solver.h.
+ */
+
 #include "Sim3Solver.h"
 
 #include <cmath>

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            isStopped.cc
+ *
+ * @brief           Implements Tracking::isStopped(), declared in Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include <mutex>

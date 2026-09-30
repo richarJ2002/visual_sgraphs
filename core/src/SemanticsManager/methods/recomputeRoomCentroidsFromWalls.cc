@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            recomputeRoomCentroidsFromWalls.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::recomputeRoomCentroidsFromWalls(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

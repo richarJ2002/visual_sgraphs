@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getEnvironmentRooms.cc
+ *
+ * @brief           Implements DBParser::getEnvironmentRooms(), declared in
+ *                  DatabaseParser.h.
+ */
+
 #include "DatabaseParser.h"
 
 #include "System.h"

@@ -1,4 +1,9 @@
-
+/*!
+ * @file            mapMergeConfigFromSystemParams.cc
+ *
+ * @brief           Implements SemanticVerify::mapMergeConfigFromSystemParams(),
+ *                  declared in Semantic/SemanticVerify.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

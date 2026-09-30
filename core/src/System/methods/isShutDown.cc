@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            isShutDown.cc
+ *
+ * @brief           Implements System::isShutDown(), declared in System.h.
+ */
+
 #include "System.h"
 
 namespace vs_graphs

@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            checkHomography.cc
+ *
+ * @brief           Implements TwoViewReconstruction::checkHomography(),
+ *                  declared in TwoViewReconstruction.h.
+ */
+
 #include "TwoViewReconstruction.h"
 
 #include "GeometricTools.h"

@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            reconstructF.cc
+ *
+ * @brief           Implements TwoViewReconstruction::reconstructF(), declared
+ *                  in TwoViewReconstruction.h.
+ */
+
 #include "TwoViewReconstruction.h"
 
 #include "GeometricTools.h"

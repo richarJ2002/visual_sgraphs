@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            tryLockRoomTrackerPendingMutexForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::tryLockRoomTrackerPendingMutexForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 namespace vs_graphs

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            observePassageIdentity.cc
+ *
+ * @brief           Implements Atlas::observePassageIdentity().
+ */
+
 #include "Atlas.h"
 
 #include "../private_functions.h"

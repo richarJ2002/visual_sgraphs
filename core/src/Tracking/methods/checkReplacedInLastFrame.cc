@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            checkReplacedInLastFrame.cc
+ *
+ * @brief           Implements Tracking::checkReplacedInLastFrame(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 #include <rclcpp/logging.hpp>
 

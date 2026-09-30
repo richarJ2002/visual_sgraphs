@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getId.cc
+ *
+ * @brief           Implements Map::getId(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

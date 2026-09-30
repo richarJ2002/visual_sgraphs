@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addMapDoor.cc
+ *
+ * @brief           Implements Map::addMapDoor(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

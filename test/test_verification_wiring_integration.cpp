@@ -1,4 +1,11 @@
 /*!
+ * @file            test_verification_wiring_integration.cpp
+ *
+ * @brief           Integration tests for how verification is wired into the
+ *                  pipeline (VerificationWiringIntegration).
+ */
+
+/*!
  * Focused test: proves SemanticsManager::Run()'s new
  * candidate-verification wiring (evaluateTopCandidateVerification) actually
  * drives real Atlas/Map/semantic::Room/geometric::Plane/semantic::Floor objects

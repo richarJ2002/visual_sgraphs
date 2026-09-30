@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getPlanesFromClassClouds.cc
+ *
+ * @brief           Implements SemanticSegmentation::getPlanesFromClassClouds(),
+ *                  declared in SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 #include "Utils/Utils/objects/Utils.h"
 #include "Utils/Utils/objects/UtilsStatus.h"

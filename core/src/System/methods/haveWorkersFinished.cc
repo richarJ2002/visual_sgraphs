@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            haveWorkersFinished.cc
+ *
+ * @brief           Implements System::haveWorkersFinished(), declared in
+ *                  System.h.
+ */
+
 #include "LocalMapping.h"
 #include "LoopClosing.h"
 #include "SemanticSegmentation.h"

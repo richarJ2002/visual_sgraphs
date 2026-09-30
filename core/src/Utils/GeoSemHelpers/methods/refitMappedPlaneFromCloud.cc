@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            refitMappedPlaneFromCloud.cc
+ *
+ * @brief           Implements GeoSemHelpers::refitMappedPlaneFromCloud(),
+ *                  declared in GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include "Utils/Utils/objects/Utils.h"
 

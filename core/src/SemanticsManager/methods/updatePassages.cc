@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            updatePassages.cc
+ *
+ * @brief           Implements SemanticsManager::updatePassages(), declared in
+ *                  SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include "Utils/Utils/objects/Utils.h"
 #include "Utils/Utils/objects/UtilsStatus.h"

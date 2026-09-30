@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            peekNewMapCreatedEvent.cc
+ *
+ * @brief           Implements Atlas::peekNewMapCreatedEvent(), declared in
+ *                  Atlas.h.
+ */
+
 #include "Atlas.h"
 
 namespace vs_graphs

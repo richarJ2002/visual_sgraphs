@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            clearTransferredEntityIndexes.cc
+ *
+ * @brief           Implements Map::clearTransferredEntityIndexes(), declared in
+ *                  Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

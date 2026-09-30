@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            mergeInertialBA.cc
+ *
+ * @brief           Implements Optimizer::mergeInertialBA(), declared in
+ *                  Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "G2oTypes.h"

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            default.cc
+ *
+ * @brief           Implements the Map constructor (default), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

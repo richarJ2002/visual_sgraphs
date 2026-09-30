@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            observeFloorIdentity.cc
+ *
+ * @brief           Implements Atlas::observeFloorIdentity().
+ */
+
 #include "Atlas.h"
 
 #include "../private_functions.h"

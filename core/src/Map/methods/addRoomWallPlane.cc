@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addRoomWallPlane.cc
+ *
+ * @brief           Implements Map::addRoomWallPlane(), declared in Map.h.
+ */
+
 #include "Geometric/Plane.h"
 #include "Geometric/PlaneStatus.h"
 #include "Map.h"

@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            ensureActiveMapBootstrapHierarchy.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::ensureActiveMapBootstrapHierarchy(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include "GeoSemHelpersStatus.h"
 #include "SemanticsManager.h"

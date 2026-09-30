@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            LoopClosing.h
+ *
+ * @brief           Declares LoopClosing, the thread that recognises revisited
+ *                  places, closes loops and merges maps.
+ */
+
 #ifndef LOOPCLOSING_H
 #define LOOPCLOSING_H
 
@@ -148,22 +155,27 @@ class LoopClosing
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief       TODO
+     * @brief       Creates the loop closer. Connect it with setTracker() and
+     *              setLocalMapper() before starting run() on its own thread.
      *
-     * @param[in]   pAtlas
-     *              TODO
+     * @param[in]   p_atlas_in
+     *              Atlas holding every map; non-owning, shall outlive the loop
+     *              closer.
      *
-     * @param[in]   pDB
-     *              TODO
+     * @param[in]   p_database_in
+     *              Key-frame database used for place recognition; non-owning,
+     *              shall outlive the loop closer.
      *
-     * @param[in]   pVoc
-     *              TODO
+     * @param[in]   p_vocabulary_in
+     *              ORB vocabulary; non-owning, shall outlive the loop closer.
      *
-     * @param[in]   bFixScale
-     *              TODO
+     * @param[in]   isScaleFixed_in
+     *              True when the map scale is known (stereo, RGB-D or
+     *              inertial), so optimisations keep the scale fixed.
      *
-     * @param[in]   bActiveLC
-     *              TODO
+     * @param[in]   isActiveLc_in
+     *              False switches loop closing off: key frames are queued but
+     *              no loop or merge is detected.
      */
     LoopClosing(Atlas            *p_atlas_in,
                 KeyFrameDatabase *p_database_in,
@@ -172,69 +184,79 @@ class LoopClosing
                 const bool        isActiveLc_in);
 
     /*!
-     * @brief       TODO
+     * @brief       Connects the tracking thread, which is told about loop
+     *              corrections.
      *
      * @param[in]   p_tracker_in
-     *              TODO
+     *              Tracking thread; non-owning, shall outlive the loop closer.
      */
     [[nodiscard]] LoopClosingStatus setTracker(Tracking *p_tracker_in);
 
     /*!
-     * @brief       TODO
+     * @brief       Connects the local-mapping thread, which is paused while a
+     *              loop or merge is corrected.
      *
      * @param[in]   p_localMapper_in
-     *              TODO
+     *              Local-mapping thread; non-owning, shall outlive the loop
+     *              closer.
      */
     [[nodiscard]] LoopClosingStatus
         setLocalMapper(LocalMapping *p_localMapper_in);
 
     /*!
-     * @brief       TODO
+     * @brief       Marks whether a map merge is in progress.
      *
      * @param[in]   mergeStatus_in
-     *              TODO
+     *              True while a merge is being carried out.
      */
     [[nodiscard]] LoopClosingStatus setMergeStatus(bool mergeStatus_in);
 
     /*!
-     * @brief       TODO
+     * @brief       Main loop of the loop-closing thread: takes queued key
+     *              frames, looks for loops and map merges, and corrects them,
+     *              until requestFinish() is called.
      */
     void run(void);
 
     /*!
-     * @brief       TODO
+     * @brief       Queues a key frame to be checked for loops and merges. The
+     *              very first key frame (id 0) is ignored.
      *
      * @param[in]   p_keyFrame_in
-     *              TODO
+     *              Key frame to check; non-owning.
      */
     [[nodiscard]] LoopClosingStatus insertKeyFrame(KeyFrame *p_keyFrame_in);
 
     /*!
-     * @brief       TODO
+     * @brief       Asks the thread to reset and waits, polling every 5 ms,
+     *              until it has done so.
      */
     [[nodiscard]] LoopClosingStatus requestReset();
 
     /*!
-     * @brief       TODO
+     * @brief       Asks the thread to reset its state for one map.
      *
      * @param[in]   p_map_in
-     *              TODO
+     *              Map being reset; non-owning.
      */
     [[nodiscard]] LoopClosingStatus requestResetActiveMap(Map *p_map_in);
 
     /*!
-     * @brief       TODO
+     * @brief       Optimises the whole map after a loop closure, then applies
+     *              the correction to every key frame and map point.
      *
-     * @note        This function will run in a separate thread
+     * @note        Runs on its own thread (p_threadGBA).
      *
      * @param[in,out] p_activeMap_inout
-     *              TODO
+     *              Map to optimise; updated in place.
      *
      * @param[in]   loopKeyFrameCount_in
-     *              TODO
+     *              Id of the key frame that closed the loop.
      *
      * @param[in]   generation_in
-     *              TODO
+     *              Value of fullBundleAdjustmentIndex when the run was
+     *              started; the run gives up once a newer run has been
+     *              requested.
      */
     [[nodiscard]] LoopClosingStatus
         runGlobalBundleAdjustment(Map          *p_activeMap_inout,
@@ -242,7 +264,10 @@ class LoopClosing
                                   unsigned int  generation_in);
 
     /*!
-     * @brief       TODO
+     * @brief       Tells whether a global bundle adjustment is running.
+     *
+     * @param[out]  isRunningGBA_out
+     *              True while one runs.
      */
     [[nodiscard]] LoopClosingStatus isRunningGBA(bool &isRunningGBA_out)
     {
@@ -255,7 +280,11 @@ class LoopClosing
     }
 
     /*!
-     * @brief       TODO
+     * @brief       Tells whether the last global bundle adjustment has
+     *              finished.
+     *
+     * @param[out]  isFinishedGBA_out
+     *              True once it has finished.
      */
     [[nodiscard]] LoopClosingStatus isFinishedGBA(bool &isFinishedGBA_out)
     {
@@ -268,23 +297,33 @@ class LoopClosing
     }
 
     /*!
-     * @brief       TODO
+     * @brief       Asks the thread to stop after its current iteration.
      */
     [[nodiscard]] LoopClosingStatus requestFinish(void);
 
     /*!
-     * @brief       TODO
+     * @brief       Tells whether the thread has stopped.
+     *
+     * @param[out]  isFinished_out
+     *              True once it has stopped.
      */
     [[nodiscard]] LoopClosingStatus isFinished(bool &isFinished_out);
 
     /*!
-     * @brief       TODO
+     * @brief       Tells whether a map merge is being carried out.
+     *
+     * @param[out]  isMergeInProgress_out
+     *              True while a merge runs.
      */
     [[nodiscard]] LoopClosingStatus
         isMergeInProgress(bool &isMergeInProgress_out);
 
     /*!
-     * @brief       TODO
+     * @brief       Copies the loop-correction counters and the last outcome,
+     *              for health reporting.
+     *
+     * @param[out]  getLoopCorrectionStatus_out
+     *              Copy of the status.
      */
     [[nodiscard]] LoopClosingStatus getLoopCorrectionStatus(
         LoopClosing::LoopCorrectionStatus &getLoopCorrectionStatus_out) const;
@@ -329,72 +368,78 @@ class LoopClosing
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief      TODO
+     * @brief       True while a full reset is requested; guarded by
+     *              resetMutex.
      */
     bool isResetRequested;
 
     /*!
-     * @brief      TODO
+     * @brief       True while a reset of one map is requested; guarded by
+     *              resetMutex.
      */
     bool isResetActiveMapRequested;
 
     /*!
-     * @brief      TODO
+     * @brief       Map whose reset is requested; non-owning, guarded by
+     *              resetMutex.
      */
     Map *p_mapToReset;
 
     /*!
-     * @brief      TODO
+     * @brief       Guards the reset requests and p_mapToReset.
      */
     std::mutex resetMutex;
 
     /*!
-     * @brief      TODO
+     * @brief       True once the thread has been asked to stop; guarded by
+     *              finishMutex.
      */
     bool isFinishRequested;
 
     /*!
-     * @brief      TODO
+     * @brief       True once the thread has stopped; guarded by finishMutex.
      */
     bool hasFinished;
 
     /*!
-     * @brief      TODO
+     * @brief       Guards isFinishRequested and hasFinished.
      */
     std::mutex finishMutex;
 
     /*!
-     * @brief      TODO
+     * @brief       Atlas holding every map; non-owning.
      */
     Atlas *p_atlas;
 
     /*!
-     * @brief      TODO
+     * @brief       Tracking thread, told about loop corrections; non-owning.
      */
     Tracking *p_tracker;
 
     /*!
-     * @brief      TODO
+     * @brief       Key-frame database used for place recognition; non-owning.
      */
     KeyFrameDatabase *p_keyFrameDatabase;
 
     /*!
-     * @brief      TODO
+     * @brief       ORB vocabulary; non-owning.
      */
     ORBVocabulary *p_orbVocabulary;
 
     /*!
-     * @brief      TODO
+     * @brief       Local-mapping thread, paused during corrections; non-
+     *              owning.
      */
     LocalMapping *p_localMapper;
 
     /*!
-     * @brief      TODO
+     * @brief       Key frames waiting to be checked; guarded by
+     *              loopQueueMutex.
      */
     std::list<KeyFrame *> loopKeyFrameQueue;
 
     /*!
-     * @brief      TODO
+     * @brief       Guards loopKeyFrameQueue.
      */
     std::mutex loopQueueMutex;
 
@@ -404,268 +449,310 @@ class LoopClosing
     float covisibilityConsistencyThreshold;
 
     /*!
-     * @brief      TODO
+     * @brief       Key frame being checked now.
      */
     KeyFrame *p_currentKF;
 
     /*!
-     * @brief      TODO
+     * @brief       Key frame checked in the previous iteration.
      */
     KeyFrame *p_lastCurrentKF;
 
     /*!
-     * @brief      TODO
+     * @brief       Only initialised, never read (kept from ORB-SLAM3).
      */
     KeyFrame *p_matchedKF;
 
     /*!
-     * @brief      TODO
+     * @brief       Not used (kept from ORB-SLAM2).
      */
     std::vector<ConsistentGroup> consistentGroups;
 
     /*!
-     * @brief      TODO
+     * @brief       Not used (kept from ORB-SLAM2).
      */
     std::vector<KeyFrame *> enoughConsistentCandidates;
 
     /*!
-     * @brief      TODO
+     * @brief       Key frames connected to the current key frame in the
+     *              covisibility graph.
      */
     std::vector<KeyFrame *> currentConnectedKFs;
 
     /*!
-     * @brief      TODO
+     * @brief       Not used (kept from ORB-SLAM2).
      */
     std::vector<MapPoint *> currentMatchedPoints;
 
     /*!
-     * @brief      TODO
+     * @brief       Map points around the loop candidate, fused into the map
+     *              when the loop is corrected.
      */
     std::vector<MapPoint *> loopMapPoints;
 
     /*!
-     * @brief      TODO
+     * @brief       Not used (kept from ORB-SLAM2).
      */
     cv::Mat correctedPose;
 
     /*!
-     * @brief      TODO
+     * @brief       Not used (kept from ORB-SLAM2).
      */
     g2o::Sim3 mg2oScw;
 
     /*!
-     * @brief      TODO
+     * @brief       Map that the previously checked key frame belonged to.
      */
     Map *p_lastMap;
 
     /*!
-     * @brief      TODO
+     * @brief       True when a loop is confirmed and waits to be corrected.
      */
     bool isLoopDetected;
 
     /*!
-     * @brief      TODO
+     * @brief       Consecutive key frames that confirmed the current loop
+     *              candidate.
      */
     int loopNumCoincidences;
 
     /*!
-     * @brief      TODO
+     * @brief       Consecutive key frames that failed to confirm the current
+     *              loop candidate.
      */
     int loopNumNotFound;
 
     /*!
-     * @brief      TODO
+     * @brief       Last key frame that confirmed the loop candidate.
      */
     KeyFrame *p_loopLastCurrentKF;
 
     /*!
-     * @brief      TODO
+     * @brief       Similarity transform estimated against the loop candidate
+     *              for p_loopLastCurrentKF.
+     *
+     * @frame       World to the camera of p_loopLastCurrentKF.
      */
     g2o::Sim3 mg2oLoopSlw;
 
     /*!
-     * @brief      TODO
+     * @brief       Similarity transform used to close the loop.
+     *
+     * @frame       World to current key-frame camera (similarity: rotation,
+     *              translation, scale).
      */
     g2o::Sim3 mg2oLoopScw;
 
     /*!
-     * @brief      TODO
+     * @brief       Earlier key frame recognised as the same place (the loop
+     *              candidate).
      */
     KeyFrame *p_loopMatchedKF;
 
     /*!
-     * @brief      TODO
+     * @brief       Map points around the loop candidate.
      */
     std::vector<MapPoint *> loopMPs;
 
     /*!
-     * @brief      TODO
+     * @brief       Matched loop map point for each key point of the current
+     *              key frame, or null.
      */
     std::vector<MapPoint *> loopMatchedMPs;
 
     /*!
-     * @brief      TODO
+     * @brief       True when a map merge is confirmed and waits to be carried
+     *              out.
      */
     bool isMergeDetected;
 
     /*!
-     * @brief      TODO
+     * @brief       True while a map merge is being carried out; read by other
+     *              threads.
      */
     std::atomic_bool hasMergeInProgress;
 
     /*!
-     * @brief      TODO
+     * @brief       Consecutive key frames that confirmed the current merge
+     *              candidate.
      */
     int mergeNumCoincidences;
 
     /*!
-     * @brief      TODO
+     * @brief       Consecutive key frames that failed to confirm the current
+     *              merge candidate.
      */
     int mergeNumNotFound;
 
     /*!
-     * @brief      TODO
+     * @brief       Last key frame that confirmed the merge candidate.
      */
     KeyFrame *p_mergeLastCurrentKF;
 
     /*!
-     * @brief      TODO
+     * @brief       Similarity transform estimated against the merge candidate
+     *              for p_mergeLastCurrentKF.
+     *
+     * @frame       World to the camera of p_mergeLastCurrentKF.
      */
     g2o::Sim3 mg2oMergeSlw;
 
     /*!
-     * @brief      TODO
+     * @brief       Set when a merge is confirmed but never read (kept from
+     *              ORB-SLAM3).
      */
     g2o::Sim3 mg2oMergeSmw;
 
     /*!
-     * @brief      TODO
+     * @brief       Similarity transform used to carry out the merge.
+     *
+     * @frame       World to current key-frame camera (similarity: rotation,
+     *              translation, scale).
      */
     g2o::Sim3 mg2oMergeScw;
 
     /*!
-     * @brief      TODO
+     * @brief       Set when a merge is confirmed but never read (kept from
+     *              ORB-SLAM3).
      */
     g2o::Sim3 mg2oMergeSw1w2;
 
     /*!
-     * @brief      TODO
-     */
-
-    /*!
-     * @brief      TODO
+     * @brief       Key frame of another map recognised as the same place (the
+     *              merge candidate).
      */
     KeyFrame *p_mergeMatchedKF;
 
     /*!
-     * @brief      TODO
+     * @brief       Map points around the merge candidate.
      */
     std::vector<MapPoint *> mergeMPs;
 
     /*!
-     * @brief      TODO
+     * @brief       Matched merge map point for each key point of the current
+     *              key frame, or null.
      */
     std::vector<MapPoint *> mergeMatchedMPs;
 
     /*!
-     * @brief      TODO
+     * @brief       Key frames connected to the merge candidate in the
+     *              covisibility graph.
      */
     std::vector<KeyFrame *> mergeConnectedKFs;
 
     /*!
-     * @brief      TODO
+     * @brief       Similarity transform between the two maps of a confirmed
+     *              merge.
+     *
+     * @frame       Current map's world to the matched map's world.
      */
     g2o::Sim3 oldCorrectedPose;
 
     /*!
-     * @brief      TODO
+     * @brief       Id of the key frame at which the last loop was closed.
      */
     long unsigned int lastLoopKeyFrameId;
 
     /*!
-     * @brief      TODO
+     * @brief       True while a global bundle adjustment runs; guarded by
+     *              gbaMutex.
      */
     bool isGbaRunning;
 
     /*!
-     * @brief      TODO
+     * @brief       True once the last global bundle adjustment has finished;
+     *              guarded by gbaMutex.
      */
     bool hasGbaFinished;
 
     /*!
-     * @brief      TODO
+     * @brief       Guards the global bundle-adjustment flags and p_threadGBA.
      */
     std::mutex gbaMutex;
 
     /*!
-     * @brief      TODO
+     * @brief       Thread running the global bundle adjustment; owned, joined
+     *              by stopGlobalBundleAdjustment().
      */
     std::thread *p_threadGBA;
 
     /*!
-     * @brief      TODO
+     * @brief       Asks the running global bundle adjustment to stop early.
      */
     std::atomic_bool isGlobalBundleAdjustmentStopRequested{false};
 
     /*!
-     * @brief      TODO
+     * @brief       True when the map scale is known, so optimisations keep it
+     *              fixed.
      *
      * @note        Fix scale in the stereo/RGB-D case
      */
     bool isScaleFixed;
 
     /*!
-     * @brief      TODO
+     * @brief       Generation of the global bundle adjustment; raised when a
+     *              run is stopped, so a superseded run can tell and give up.
      */
     unsigned int fullBundleAdjustmentIndex;
 
     /*!
-     * @brief      TODO
+     * @brief       Time stamp of the current key frame at each recognised
+     *              place.
+     *
+     * @units       seconds
      */
     std::vector<double> placeRecognitionCurrentTimes;
 
     /*!
-     * @brief      TODO
+     * @brief       Time stamp of the matched key frame at each recognised
+     *              place.
+     *
+     * @units       seconds
      */
     std::vector<double> placeRecognitionMatchedTimes;
 
     /*!
-     * @brief      TODO
+     * @brief       Kind of each recognised place: 0 = loop closure, 1 = map
+     *              merge.
      */
     std::vector<int> placeRecognitionTypes;
 
     /*!
-     * @brief      TODO
+     * @brief       Set in the constructor but never read (kept from ORB-
+     *              SLAM3).
      */
     std::string mstrFolderSubTraj;
 
     /*!
-     * @brief      TODO
+     * @brief       Number of loop corrections so far.
      */
     int numCorrection;
 
     /*!
-     * @brief      TODO
+     * @brief       Value of numCorrection when the last global bundle
+     *              adjustment started.
      */
     int correctionGBA;
 
     /*!
-     * @brief      TODO
+     * @brief       Guards loopCorrectionStatus.
      */
     mutable std::mutex loopCorrectionStatusMutex;
 
     /*!
-     * @brief      TODO
+     * @brief       Counters and last outcome of the loop-correction attempts,
+     *              for health reporting; guarded by loopCorrectionStatusMutex.
      */
     LoopCorrectionStatus loopCorrectionStatus;
 
     /*!
-     * @brief      TODO
+     * @brief       False when loop closing is switched off; the thread then
+     *              detects nothing.
      */
     bool isLoopClosingActive = true;
 
     /*!
-     * @brief      TODO
+     * @brief       System parameters; non-owning.
      */
     types::SystemParams *p_sysParams;
 
@@ -674,37 +761,51 @@ class LoopClosing
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief       TODO
+     * @brief       Tells whether key frames are waiting in the queue.
+     *
+     * @param[out]  hasNewKeyFrames_out
+     *              True when at least one is waiting.
      */
     [[nodiscard]] LoopClosingStatus
         checkNewKeyFrames(bool &hasNewKeyFrames_out);
 
     /*!
-     * @brief       TODO
+     * @brief       Looks for a loop or merge for the current key frame: first
+     *              re-checks the last candidate, then searches the key-frame
+     *              database by bag of words.
+     *
+     * @param[out]  isDetected_out
+     *              True when a loop or merge has been confirmed.
      */
     [[nodiscard]] LoopClosingStatus
         newDetectCommonRegions(bool &isDetected_out);
 
     /*!
-     * @brief       TODO
+     * @brief       Refines the similarity transform to a candidate key frame
+     *              and counts the map points that match by projection.
      *
      * @param[in]   p_currentKeyFrame_in
-     *              TODO
+     *              Key frame being checked.
      *
      * @param[in]   p_matchedKeyFrame_in
-     *              TODO
+     *              Candidate key frame.
      *
      * @param[in,out] gScw_inout
-     *              TODO
+     *              World to current key-frame camera (similarity: rotation,
+     *              translation, scale). Refined in place.
      *
      * @param[out]  countProjectionMatchCount_out
-     *              TODO
+     *              Number of map points matched by projection.
      *
      * @param[in,out] mapPoints_inout
-     *              TODO
+     *              Map points around the candidate.
      *
      * @param[in,out] matchedMapPoints_inout
-     *              TODO
+     *              Matched map point for each key point of the current key
+     *              frame, or null.
+     *
+     * @param[out]  isDetected_out
+     *              True when enough map points match.
      */
     [[nodiscard]] LoopClosingStatus detectAndReffineSim3FromLastKF(
         KeyFrame                *p_currentKeyFrame_in,
@@ -716,31 +817,35 @@ class LoopClosing
         bool                    &isDetected_out);
 
     /*!
-     * @brief       TODO
+     * @brief       Searches the bag-of-words candidates for a place the
+     *              current key frame has seen before and estimates the
+     *              similarity transform to it.
      *
      * @param[in]   bowCandidates_in
-     *              TODO
+     *              Candidate key frames from the key-frame database.
      *
      * @param[out]  matchedKeyFrame_out
-     *              TODO
+     *              Best candidate key frame.
      *
      * @param[out]  lastCurrentKeyFrame_out
-     *              TODO
-     *
-     * @param[in]   nNumProjMatches
-     *              TODO
+     *              Key frame that confirmed the candidate.
      *
      * @param[out]  g2oScw_out
-     *              TODO
+     *              World to current key-frame camera (similarity: rotation,
+     *              translation, scale).
      *
      * @param[out]  countCoincidenceCount_out
-     *              TODO
+     *              Number of key frames that confirmed the candidate.
      *
      * @param[out]  mapPoints_out
-     *              TODO
+     *              Map points around the candidate.
      *
      * @param[out]  matchedMapPoints_out
-     *              TODO
+     *              Matched map point for each key point of the current key
+     *              frame, or null.
+     *
+     * @param[out]  isDetected_out
+     *              True when a candidate was found.
      */
     [[nodiscard]] LoopClosingStatus detectCommonRegionsFromBoW(
         std::vector<KeyFrame *> &bowCandidates_in,
@@ -753,25 +858,31 @@ class LoopClosing
         bool                    &isDetected_out);
 
     /*!
-     * @brief       TODO
+     * @brief       Checks whether the current key frame still matches the last
+     *              loop or merge candidate.
      *
      * @param[in]   p_currentKeyFrame_in
-     *              TODO
+     *              Key frame being checked.
      *
      * @param[in]   p_matchedKeyFrame_in
-     *              TODO
+     *              Last candidate key frame.
      *
      * @param[in,out] gScw_inout
-     *              TODO
+     *              World to current key-frame camera (similarity: rotation,
+     *              translation, scale). Refined in place.
      *
      * @param[out]  countProjectionMatchCount_out
-     *              TODO
+     *              Number of map points matched by projection.
      *
      * @param[in,out] mapPoints_inout
-     *              TODO
+     *              Map points around the candidate.
      *
      * @param[in,out] matchedMapPoints_inout
-     *              TODO
+     *              Matched map point for each key point of the current key
+     *              frame, or null.
+     *
+     * @param[out]  isDetected_out
+     *              True when the candidate is confirmed again.
      */
     [[nodiscard]] LoopClosingStatus detectCommonRegionsFromLastKF(
         KeyFrame                *p_currentKeyFrame_in,
@@ -783,25 +894,31 @@ class LoopClosing
         bool                    &isDetected_out);
 
     /*!
-     * @brief       TODO
+     * @brief       Projects the map points around a candidate key frame into
+     *              the current key frame and matches them.
      *
      * @param[in]   p_currentKeyFrame_in
-     *              TODO
+     *              Key frame being checked.
      *
-     * @param[in]   pMatchedKF
-     *              TODO
+     * @param[in]   p_matchedKFw_in
+     *              Candidate key frame.
      *
      * @param[in]   g2oScw_in
-     *              TODO
+     *              World to current key-frame camera (similarity: rotation,
+     *              translation, scale).
      *
      * @param[in]   matchedMPinOrigins_in
-     *              TODO
+     *              Not used (kept from ORB-SLAM3).
      *
      * @param[out]  mapPoints_out
-     *              TODO
+     *              Map points around the candidate.
      *
      * @param[out]  matchedMapPoints_out
-     *              TODO
+     *              Matched map point for each key point of the current key
+     *              frame, or null.
+     *
+     * @param[out]  matches_out
+     *              Number of matches.
      */
     [[nodiscard]] LoopClosingStatus
         findMatchesByProjection(KeyFrame                *p_currentKeyFrame_in,
@@ -813,33 +930,38 @@ class LoopClosing
                                 int                     &matches_out);
 
     /*!
-     * @brief       TODO
+     * @brief       Projects map points into each corrected key frame and fuses
+     *              the duplicates.
      *
      * @param[in]   correctedPosesMap_in
-     *              TODO
+     *              Corrected similarity transform (world to camera) of each
+     *              key frame.
      *
      * @param[in]   mapPoints_in
-     *              TODO
+     *              Map points to fuse.
      */
     [[nodiscard]] LoopClosingStatus
         searchAndFuse(const KeyFrameAndPose   &correctedPosesMap_in,
                       std::vector<MapPoint *> &mapPoints_in);
 
     /*!
-     * @brief       TODO
+     * @brief       Projects map points into the given key frames and fuses the
+     *              duplicates (used by map merges).
      *
      * @param[in]   conectedKeyFrames_in
-     *              TODO
+     *              Key frames to fuse into.
      *
      * @param[in]   mapPoints_in
-     *              TODO
+     *              Map points to fuse.
      */
     [[nodiscard]] LoopClosingStatus
         searchAndFuse(const std::vector<KeyFrame *> &conectedKeyFrames_in,
                       std::vector<MapPoint *>       &mapPoints_in);
 
     /*!
-     * @brief       TODO
+     * @brief       Closes the confirmed loop: corrects the poses around the
+     *              current key frame, fuses duplicate map points, optimises
+     *              the essential graph and starts a global bundle adjustment.
      */
     [[nodiscard]] LoopClosingStatus correctLoop(void);
 
@@ -855,33 +977,28 @@ class LoopClosing
         stopGlobalBundleAdjustment(bool &wasRunning_out);
 
     /*!
-     * @brief       TODO
+     * @brief       Records the outcome of one loop-correction attempt in
+     *              loopCorrectionStatus.
      *
      * @param[in]   accepted_in
-     *              TODO
+     *              True when the correction was applied.
      *
      * @param[in]   reason_in
-     *              TODO
+     *              Why it was accepted or rejected.
      */
     [[nodiscard]] LoopClosingStatus
         recordLoopCorrectionEvent(bool               accepted_in,
                                   const std::string &reason_in);
     /*!
-     * @brief       Starts a replacement GBA worker after an interrupted merge
-     *              attempt.
+     * @brief       Starts a replacement global bundle adjustment after an
+     *              interrupted merge attempt.
      *
-     * @param[in]   accepted_in
-     *              TODO
-     *
-     * @param[in]   reason_in
-     *              TODO
+     * @param[in,out] p_activeMap_inout
+     *              Map to optimise.
      */
     [[nodiscard]] LoopClosingStatus
         relaunchGlobalBundleAdjustment(Map *p_activeMap_inout);
 
-    /*!
-     * @brief       TODO
-     */
     /*!
      * @brief       Attempts a visual map merge after all preconditions pass.
      *
@@ -894,9 +1011,6 @@ class LoopClosing
         mergeLocal(semantic::SemanticMergeDecision &local_out);
 
     /*!
-     * @brief       TODO
-     */
-    /*!
      * @brief       Attempts an inertial map merge after all preconditions pass.
      *
      * @param[out] localInertial_out ACCEPT only after the merge is committed,
@@ -908,30 +1022,34 @@ class LoopClosing
         mergeLocalInertial(semantic::SemanticMergeDecision &localInertial_out);
 
     /*!
-     * @brief       TODO
+     * @brief       Counts the map points that the key frames of the first set
+     *              share with the second set, as a merge-debugging aid.
      *
      * @param[in]   keyFramesMap1_in
-     *              TODO
+     *              Key frames of the first map.
      *
      * @param[in]   keyFramesMap2_in
-     *              TODO
+     *              Key frames of the second map.
      */
     [[nodiscard]] LoopClosingStatus
         checkObservations(std::set<KeyFrame *> &keyFramesMap1_in,
                           std::set<KeyFrame *> &keyFramesMap2_in);
 
     /*!
-     * @brief       TODO
+     * @brief       Carries out a pending reset request, if any.
      */
     [[nodiscard]] LoopClosingStatus resetIfRequested(void);
 
     /*!
-     * @brief      TODO
+     * @brief       Tells whether the thread has been asked to stop.
+     *
+     * @param[out]  isFinishRequested_out
+     *              True once requestFinish() was called.
      */
     [[nodiscard]] LoopClosingStatus checkFinish(bool &isFinishRequested_out);
 
     /*!
-     * @brief      TODO
+     * @brief       Marks the thread as stopped.
      */
     [[nodiscard]] LoopClosingStatus setFinish(void);
 #ifdef REGISTER_LOOP

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setInertialBA2.cc
+ *
+ * @brief           Implements Map::setInertialBA2(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

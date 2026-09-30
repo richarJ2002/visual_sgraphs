@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            run.cc
+ *
+ * @brief           Implements Viewer::run(), declared in Viewer.h.
+ */
+
 #include "FrameDrawer.h"
 #include "ResetCause.h"
 #include "System.h"

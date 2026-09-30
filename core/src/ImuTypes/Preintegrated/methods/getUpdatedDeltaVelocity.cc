@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getUpdatedDeltaVelocity.cc
+ *
+ * @brief           Implements Preintegrated::getUpdatedDeltaVelocity(),
+ *                  declared in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include <mutex>

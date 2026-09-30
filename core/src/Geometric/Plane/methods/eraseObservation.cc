@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            eraseObservation.cc
+ *
+ * @brief           Implements Plane::eraseObservation(), declared in
+ *                  Geometric/Plane.h.
+ */
+
 #include "Geometric/Plane.h"
 #include "KeyFrame.h"
 #include <algorithm>

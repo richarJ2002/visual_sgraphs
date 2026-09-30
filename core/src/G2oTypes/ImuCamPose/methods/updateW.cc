@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            updateW.cc
+ *
+ * @brief           Implements ImuCamPose::updateW(), declared in G2oTypes.h.
+ */
+
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Utils/Converter/objects/Converter.h"

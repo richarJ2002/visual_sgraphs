@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            evaluateTopCandidateVerification.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::evaluateTopCandidateVerification(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "Semantic/SemanticCandidates.h"

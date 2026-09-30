@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withMap.cc
+ *
+ * @brief           Implements Tracking::saveSubTrajectory() (withMap), declared
+ *                  in Tracking.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 #include <rclcpp/logging.hpp>

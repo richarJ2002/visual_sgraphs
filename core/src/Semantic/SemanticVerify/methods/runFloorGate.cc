@@ -1,4 +1,9 @@
-
+/*!
+ * @file            runFloorGate.cc
+ *
+ * @brief           Implements SemanticVerify::runFloorGate(), declared in
+ *                  Semantic/SemanticVerify.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

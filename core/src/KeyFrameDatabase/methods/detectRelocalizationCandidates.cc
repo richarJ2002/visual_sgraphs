@@ -15,6 +15,14 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            detectRelocalizationCandidates.cc
+ *
+ * @brief           Implements
+ *                  KeyFrameDatabase::detectRelocalizationCandidates(), declared
+ *                  in KeyFrameDatabase.h.
+ */
+
 #include "KeyFrameDatabase.h"
 
 #include "Frame.h"

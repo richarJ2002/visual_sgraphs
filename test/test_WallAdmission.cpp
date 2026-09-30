@@ -1,4 +1,10 @@
 /*!
+ * @file            test_WallAdmission.cpp
+ *
+ * @brief           Unit tests for admitting planes as walls (WallAdmission).
+ */
+
+/*!
  * Focused tests for two wall-admission fixes reported directly against a
  * live sim run (office_clean):
  *

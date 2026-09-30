@@ -23,6 +23,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            Tracking.h
+ *
+ * @brief           Declares Tracking, the front end that estimates the camera
+ *                  pose of every new frame and decides when to create key
+ *                  frames.
+ */
+
 #ifndef TRACKING_H
 #define TRACKING_H
 

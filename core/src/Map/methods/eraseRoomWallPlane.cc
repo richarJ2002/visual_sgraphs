@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            eraseRoomWallPlane.cc
+ *
+ * @brief           Implements Map::eraseRoomWallPlane(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

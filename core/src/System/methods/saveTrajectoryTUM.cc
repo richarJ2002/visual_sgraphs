@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            saveTrajectoryTUM.cc
+ *
+ * @brief           Implements System::saveTrajectoryTUM(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 

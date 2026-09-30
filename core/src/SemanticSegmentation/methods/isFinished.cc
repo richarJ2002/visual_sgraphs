@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            isFinished.cc
+ *
+ * @brief           Implements SemanticSegmentation::isFinished(), declared in
+ *                  SemanticSegmentation.h.
+ */
+
 #include "SemanticSegmentation.h"
 
 namespace vs_graphs

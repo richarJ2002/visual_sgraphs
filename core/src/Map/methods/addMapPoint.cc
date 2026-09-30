@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addMapPoint.cc
+ *
+ * @brief           Implements Map::addMapPoint(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

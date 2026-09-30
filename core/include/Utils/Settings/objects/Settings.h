@@ -95,7 +95,7 @@ class Settings
      *              Terminates the process when the file cannot be
      *              opened.
      *
-     * @param[in]    configFilePath_in
+     * @param[in]    configurationFilePath_in
      *               Path of the configuration file to load.
      * @param[in]    sensor_in
      *               Sensor type; selects stereo-only sections.

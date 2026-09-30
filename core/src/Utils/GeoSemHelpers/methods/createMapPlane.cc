@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            createMapPlane.cc
+ *
+ * @brief           Implements GeoSemHelpers::createMapPlane(), declared in
+ *                  GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include "Utils/Utils/objects/Utils.h"
 

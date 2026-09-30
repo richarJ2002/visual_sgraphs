@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            runGlobalBundleAdjustment.cc
+ *
+ * @brief           Implements LoopClosing::runGlobalBundleAdjustment(),
+ *                  declared in LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include "LocalMapping.h"

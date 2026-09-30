@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            run.cc
+ *
+ * @brief           Implements LoopClosing::run(), declared in LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include "G2oTypes.h"

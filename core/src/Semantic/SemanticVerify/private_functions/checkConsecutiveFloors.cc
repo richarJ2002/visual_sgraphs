@@ -1,4 +1,9 @@
-
+/*!
+ * @file            checkConsecutiveFloors.cc
+ *
+ * @brief           Implements checkConsecutiveFloors(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

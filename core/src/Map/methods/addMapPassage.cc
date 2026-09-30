@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addMapPassage.cc
+ *
+ * @brief           Implements Map::addMapPassage(), declared in Map.h.
+ */
+
 #include "Map.h"
 #include "Semantic/Passage.h"
 #include "Semantic/PassageStatus.h"

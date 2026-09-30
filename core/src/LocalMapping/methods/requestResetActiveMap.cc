@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            requestResetActiveMap.cc
+ *
+ * @brief           Implements LocalMapping::requestResetActiveMap(), declared
+ *                  in LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 #include <mutex>

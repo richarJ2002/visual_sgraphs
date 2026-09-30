@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            clearAtlas.cc
+ *
+ * @brief           Implements Atlas::clearAtlas(), declared in Atlas.h.
+ */
+
 #include "Atlas.h"
 
 namespace vs_graphs

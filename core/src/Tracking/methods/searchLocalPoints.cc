@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            searchLocalPoints.cc
+ *
+ * @brief           Implements Tracking::searchLocalPoints(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include "LocalMapping.h"

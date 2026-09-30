@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            reservePlaneId.cc
+ *
+ * @brief           Implements Map::reservePlaneId(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

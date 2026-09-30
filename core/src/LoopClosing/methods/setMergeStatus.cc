@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setMergeStatus.cc
+ *
+ * @brief           Implements LoopClosing::setMergeStatus(), declared in
+ *                  LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 namespace vs_graphs

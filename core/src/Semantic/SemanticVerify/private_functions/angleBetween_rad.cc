@@ -1,4 +1,9 @@
-
+/*!
+ * @file            angleBetween_rad.cc
+ *
+ * @brief           Implements angleBetween_rad(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
 
 #include "Semantic/SemanticVerify.h"
 

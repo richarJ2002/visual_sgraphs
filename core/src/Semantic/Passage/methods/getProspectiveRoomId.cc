@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getProspectiveRoomId.cc
+ *
+ * @brief           Implements Passage::getProspectiveRoomId(), declared in
+ *                  Semantic/Passage.h.
+ */
+
 #include "Semantic/Passage.h"
 #include "Semantic/Room.h"
 #include "Semantic/RoomStatus.h"

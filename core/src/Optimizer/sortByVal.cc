@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            sortByVal.cc
+ *
+ * @brief           Implements sortByVal(), declared in
+ *                  Optimizer/private_functions.h.
+ */
+
 #include "Optimizer.h"
 
 namespace vs_graphs

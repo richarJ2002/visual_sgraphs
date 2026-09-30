@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            replaceRoom.cc
+ *
+ * @brief           Implements Floor::replaceRoom(), declared in
+ *                  Semantic/Floor.h.
+ */
+
 #include "Semantic/Floor.h"
 #include "Semantic/Room.h"
 #include "Semantic/RoomStatus.h"

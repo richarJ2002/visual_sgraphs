@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            loadAtlas.cc
+ *
+ * @brief           Implements System::loadAtlas(), declared in System.h.
+ */
+
 #include "System.h"
 
 #include <boost/archive/binary_iarchive.hpp>

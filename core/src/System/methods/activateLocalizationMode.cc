@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            activateLocalizationMode.cc
+ *
+ * @brief           Implements System::activateLocalizationMode(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 
 namespace vs_graphs

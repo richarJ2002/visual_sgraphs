@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            MapDrawer.h
+ *
+ * @brief           Declares MapDrawer, which draws the map points, key frames
+ *                  and camera in the viewer.
+ */
+
 #ifndef MAPDRAWER_H
 #define MAPDRAWER_H
 

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            filterWallPlanes.cc
+ *
+ * @brief           Implements SemanticsManager::filterWallPlanes(), declared in
+ *                  SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

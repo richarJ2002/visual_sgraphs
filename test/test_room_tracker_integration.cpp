@@ -1,4 +1,11 @@
 /*!
+ * @file            test_room_tracker_integration.cpp
+ *
+ * @brief           Integration tests for the room tracker inside the production
+ *                  pipeline (RoomTrackerProductionIntegration).
+ */
+
+/*!
  * Focused production seam tests for event delivery.
  */
 

@@ -16,6 +16,13 @@
  */
 
 /*!
+ * @file            computeKeyPointsOctTree.cc
+ *
+ * @brief           Implements ORBextractor::computeKeyPointsOctTree(), declared
+ *                  in ORBextractor.h.
+ */
+
+/*!
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2009, Willow Garage, Inc.

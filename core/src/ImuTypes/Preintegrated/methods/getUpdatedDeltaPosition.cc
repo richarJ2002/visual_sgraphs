@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getUpdatedDeltaPosition.cc
+ *
+ * @brief           Implements Preintegrated::getUpdatedDeltaPosition(),
+ *                  declared in ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 #include <mutex>

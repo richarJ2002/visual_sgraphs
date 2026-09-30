@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            getEstimatedScale.cc
+ *
+ * @brief           Implements Sim3Solver::getEstimatedScale(), declared in
+ *                  Sim3Solver.h.
+ */
+
 #include "Sim3Solver.h"
 
 #include <cmath>

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            isInUse.cc
+ *
+ * @brief           Implements Map::isInUse(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

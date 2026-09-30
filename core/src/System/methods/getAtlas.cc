@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getAtlas.cc
+ *
+ * @brief           Implements System::getAtlas(), declared in System.h.
+ */
+
 #include "System.h"
 
 namespace vs_graphs

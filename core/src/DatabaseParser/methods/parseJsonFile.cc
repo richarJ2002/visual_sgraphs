@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            parseJsonFile.cc
+ *
+ * @brief           Implements DBParser::parseJsonFile(), declared in
+ *                  DatabaseParser.h.
+ */
+
 #include "DatabaseParser.h"
 
 #include "System.h"

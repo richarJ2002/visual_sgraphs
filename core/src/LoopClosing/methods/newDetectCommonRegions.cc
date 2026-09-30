@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            newDetectCommonRegions.cc
+ *
+ * @brief           Implements LoopClosing::newDetectCommonRegions(), declared
+ *                  in LoopClosing.h.
+ */
+
 #include "KeyFrameDatabase.h"
 #include "LoopClosing.h"
 #include "System.h"

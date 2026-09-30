@@ -23,6 +23,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            G2oTypes.h
+ *
+ * @brief           Declares the g2o vertex and edge types for visual-inertial
+ *                  optimisation: IMU-camera poses, velocities, biases and IMU
+ *                  preintegration constraints.
+ */
+
 #ifndef G2OTYPES_H
 #define G2OTYPES_H
 

@@ -16,6 +16,13 @@
  */
 
 /*!
+ * @file            computeOrbDescriptor.cc
+ *
+ * @brief           Implements computeOrbDescriptor(), declared in
+ *                  ORBextractor/private_functions.h.
+ */
+
+/*!
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2009, Willow Garage, Inc.

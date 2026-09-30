@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            tracking.cc
+ *
+ * @brief           Implements the Tracking constructor, declared in Tracking.h.
+ */
+
 #include "Tracking.h"
 #include "System.h"
 

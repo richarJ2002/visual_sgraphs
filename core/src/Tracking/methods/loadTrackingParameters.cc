@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            loadTrackingParameters.cc
+ *
+ * @brief           Implements Tracking::loadTrackingParameters(), declared in
+ *                  Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include <iostream>

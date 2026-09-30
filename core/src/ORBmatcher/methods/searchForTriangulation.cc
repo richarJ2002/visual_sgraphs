@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            searchForTriangulation.cc
+ *
+ * @brief           Implements ORBmatcher::searchForTriangulation(), declared in
+ *                  ORBmatcher.h.
+ */
+
 #include "ORBmatcher.h"
 
 #include <limits.h>

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            requestStop.cc
+ *
+ * @brief           Implements Tracking::requestStop(), declared in Tracking.h.
+ */
+
 #include "Tracking.h"
 
 #include <mutex>

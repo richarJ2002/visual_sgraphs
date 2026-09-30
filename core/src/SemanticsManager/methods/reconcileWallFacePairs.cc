@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            reconcileWallFacePairs.cc
+ *
+ * @brief           Implements SemanticsManager::reconcileWallFacePairs(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

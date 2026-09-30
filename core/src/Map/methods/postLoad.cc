@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            postLoad.cc
+ *
+ * @brief           Implements Map::postLoad(), declared in Map.h.
+ */
+
 #include "KeyFrame.h"
 #include "KeyFrameDatabase.h"
 #include "Map.h"

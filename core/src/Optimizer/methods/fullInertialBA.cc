@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            fullInertialBA.cc
+ *
+ * @brief           Implements Optimizer::fullInertialBA(), declared in
+ *                  Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "G2oTypes.h"

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setImuInitialized.cc
+ *
+ * @brief           Implements Map::setImuInitialized(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

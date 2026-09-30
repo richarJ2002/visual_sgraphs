@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            insertRectTime.cc
+ *
+ * @brief           Implements System::insertRectTime(), declared in System.h.
+ */
+
 #include "System.h"
 #include "Tracking.h"
 

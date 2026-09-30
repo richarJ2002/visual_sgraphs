@@ -1,4 +1,9 @@
-
+/*!
+ * @file            finiteNonnegative.cc
+ *
+ * @brief           Implements finiteNonnegative(), declared in
+ *                  Semantic/SemanticCandidates/private_functions.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

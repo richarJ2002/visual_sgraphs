@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withIntVector.cc
+ *
+ * @brief           Implements calcDeviation() (withIntVector), declared in
+ *                  Tracking/private_functions.h.
+ */
+
 #include "Tracking.h"
 
 #include <cmath>

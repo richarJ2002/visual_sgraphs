@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            SerializationUtils.h
+ *
+ * @brief           Declares helpers that save and load Sophus, Eigen and OpenCV
+ *                  types with Boost serialization.
+ */
+
 #ifndef SERIALIZATION_UTILS_H
 #define SERIALIZATION_UTILS_H
 

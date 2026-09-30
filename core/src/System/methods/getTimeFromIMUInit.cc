@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getTimeFromIMUInit.cc
+ *
+ * @brief           Implements System::getTimeFromIMUInit(), declared in
+ *                  System.h.
+ */
+
 #include "LocalMapping.h"
 #include "System.h"
 #include <rclcpp/logging.hpp>

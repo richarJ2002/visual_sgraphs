@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            requestFinish.cc
+ *
+ * @brief           Implements LoopClosing::requestFinish(), declared in
+ *                  LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include <mutex>

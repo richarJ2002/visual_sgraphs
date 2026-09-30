@@ -1,4 +1,9 @@
-
+/*!
+ * @file            isValidWallBounds.cc
+ *
+ * @brief           Implements isValidWallBounds(), declared in
+ *                  Semantic/SemanticCandidates/private_functions.h.
+ */
 
 #include "Semantic/SemanticCandidates.h"
 

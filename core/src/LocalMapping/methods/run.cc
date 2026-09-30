@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            run.cc
+ *
+ * @brief           Implements LocalMapping::run(), declared in LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 #include "Optimizer.h"

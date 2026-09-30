@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            serialize.cc
+ *
+ * @brief           Implements KannalaBrandt8::serialize(), declared in
+ *                  CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h.
+ */
+
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 #include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"
 

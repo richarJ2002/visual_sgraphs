@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            system.cc
+ *
+ * @brief           Implements the System constructor, declared in System.h.
+ */
+
 #include "System.h"
 #include "FrameDrawer.h"
 #include "KeyFrameDatabase.h"

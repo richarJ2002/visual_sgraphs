@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setCurrentRoomIdForTest.cc
+ *
+ * @brief           Implements SemanticsManager::setCurrentRoomIdForTest().
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

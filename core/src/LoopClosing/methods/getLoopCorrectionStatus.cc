@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getLoopCorrectionStatus.cc
+ *
+ * @brief           Implements LoopClosing::getLoopCorrectionStatus(), declared
+ *                  in LoopClosing.h.
+ */
+
 #include "LoopClosing.h"
 
 #include <mutex>

@@ -16,6 +16,13 @@
  */
 
 /*!
+ * @file            computePyramid.cc
+ *
+ * @brief           Implements ORBextractor::computePyramid(), declared in
+ *                  ORBextractor.h.
+ */
+
+/*!
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2009, Willow Garage, Inc.

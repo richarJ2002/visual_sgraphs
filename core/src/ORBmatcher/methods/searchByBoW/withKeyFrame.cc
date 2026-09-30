@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            withKeyFrame.cc
+ *
+ * @brief           Implements ORBmatcher::searchByBoW() (withKeyFrame),
+ *                  declared in ORBmatcher.h.
+ */
+
 #include "ORBmatcher.h"
 
 #include <limits.h>

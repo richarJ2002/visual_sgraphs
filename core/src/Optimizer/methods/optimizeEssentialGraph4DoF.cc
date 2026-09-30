@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            optimizeEssentialGraph4DoF.cc
+ *
+ * @brief           Implements Optimizer::optimizeEssentialGraph4DoF(), declared
+ *                  in Optimizer.h.
+ */
+
 #include "Optimizer.h"
 
 #include "G2oTypes.h"

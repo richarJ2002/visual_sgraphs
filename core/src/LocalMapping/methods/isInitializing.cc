@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            isInitializing.cc
+ *
+ * @brief           Implements LocalMapping::isInitializing(), declared in
+ *                  LocalMapping.h.
+ */
+
 #include "LocalMapping.h"
 
 namespace vs_graphs

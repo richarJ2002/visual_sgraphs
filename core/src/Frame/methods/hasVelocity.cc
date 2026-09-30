@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            hasVelocity.cc
+ *
+ * @brief           Implements Frame::hasVelocity(), declared in Frame.h.
+ */
+
 #include "Frame.h"
 
 namespace vs_graphs

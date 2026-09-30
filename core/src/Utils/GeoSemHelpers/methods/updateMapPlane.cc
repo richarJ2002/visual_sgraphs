@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            updateMapPlane.cc
+ *
+ * @brief           Implements GeoSemHelpers::updateMapPlane(), declared in
+ *                  GeoSemHelpers.h.
+ */
+
 #include "GeoSemHelpers.h"
 #include "Utils/Utils/objects/Utils.h"
 

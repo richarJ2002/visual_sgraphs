@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            initialize.cc
+ *
+ * @brief           Implements Preintegrated::initialize(), declared in
+ *                  ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 
 namespace vs_graphs

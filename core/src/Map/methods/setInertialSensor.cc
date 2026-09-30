@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            setInertialSensor.cc
+ *
+ * @brief           Implements Map::setInertialSensor(), declared in Map.h.
+ */
+
 #include "Map.h"
 
 #include <algorithm>

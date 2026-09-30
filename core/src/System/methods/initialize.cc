@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            initialize.cc
+ *
+ * @brief           Implements System::initialize(), declared in System.h.
+ */
+
 #include "FrameDrawer.h"
 #include "KeyFrameDatabase.h"
 #include "LocalMapping.h"

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            eraseKeyFrame.cc
+ *
+ * @brief           Implements Map::eraseKeyFrame(), declared in Map.h.
+ */
+
 #include "KeyFrame.h"
 #include "Map.h"
 

@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            addMapFloor.cc
+ *
+ * @brief           Implements Map::addMapFloor(), declared in Map.h.
+ */
+
 #include "Map.h"
 #include "Semantic/Floor.h"
 #include "Semantic/FloorStatus.h"

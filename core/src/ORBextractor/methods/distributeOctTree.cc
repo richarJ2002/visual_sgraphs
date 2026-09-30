@@ -16,6 +16,13 @@
  */
 
 /*!
+ * @file            distributeOctTree.cc
+ *
+ * @brief           Implements ORBextractor::distributeOctTree(), declared in
+ *                  ORBextractor.h.
+ */
+
+/*!
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2009, Willow Garage, Inc.

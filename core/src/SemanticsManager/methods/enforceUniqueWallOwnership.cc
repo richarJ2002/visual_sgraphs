@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            enforceUniqueWallOwnership.cc
+ *
+ * @brief           Implements SemanticsManager::enforceUniqueWallOwnership(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

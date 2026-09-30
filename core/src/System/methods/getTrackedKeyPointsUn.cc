@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getTrackedKeyPointsUn.cc
+ *
+ * @brief           Implements System::getTrackedKeyPointsUn(), declared in
+ *                  System.h.
+ */
+
 #include "System.h"
 
 namespace vs_graphs

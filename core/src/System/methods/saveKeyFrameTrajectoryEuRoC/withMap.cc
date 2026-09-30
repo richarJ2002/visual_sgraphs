@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withMap.cc
+ *
+ * @brief           Implements System::saveKeyFrameTrajectoryEuRoC() (withMap),
+ *                  declared in System.h.
+ */
+
 #include "System.h"
 
 #include <iomanip>

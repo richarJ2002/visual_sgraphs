@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            trackMonocular.cc
+ *
+ * @brief           Implements System::trackMonocular(), declared in System.h.
+ */
+
 #include "LocalMapping.h"
 #include "System.h"
 #include "Tracking.h"

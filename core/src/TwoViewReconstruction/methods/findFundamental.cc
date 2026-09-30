@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            findFundamental.cc
+ *
+ * @brief           Implements TwoViewReconstruction::findFundamental(),
+ *                  declared in TwoViewReconstruction.h.
+ */
+
 #include "TwoViewReconstruction.h"
 
 #include "GeometricTools.h"

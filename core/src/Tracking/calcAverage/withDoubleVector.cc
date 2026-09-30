@@ -23,6 +23,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            withDoubleVector.cc
+ *
+ * @brief           Implements calcAverage() (withDoubleVector), declared in
+ *                  Tracking/private_functions.h.
+ */
+
 #include "Tracking.h"
 
 #include <cmath>

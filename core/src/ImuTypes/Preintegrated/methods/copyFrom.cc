@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            copyFrom.cc
+ *
+ * @brief           Implements Preintegrated::copyFrom(), declared in
+ *                  ImuTypes.h.
+ */
+
 #include "ImuTypes.h"
 #include <rclcpp/logging.hpp>
 

@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            findHomography.cc
+ *
+ * @brief           Implements TwoViewReconstruction::findHomography(), declared
+ *                  in TwoViewReconstruction.h.
+ */
+
 #include "TwoViewReconstruction.h"
 
 #include "GeometricTools.h"

@@ -16,6 +16,12 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            setRooms.cc
+ *
+ * @brief           Implements Floor::setRooms(), declared in Semantic/Floor.h.
+ */
+
 #include "Semantic/Floor.h"
 #include "Semantic/Room.h"
 #include "Semantic/RoomStatus.h"

@@ -16,6 +16,13 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            partitionFreeSpaceAtPassages.cc
+ *
+ * @brief           Implements SemanticsManager::partitionFreeSpaceAtPassages(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 
 #include "../private_functions.h"

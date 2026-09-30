@@ -23,6 +23,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*!
+ * @file            getCurrentFrame.cc
+ *
+ * @brief           Implements System::getCurrentFrame(), declared in System.h.
+ */
+
 #include "FrameDrawer.h"
 #include "System.h"
 #include <rclcpp/logging.hpp>

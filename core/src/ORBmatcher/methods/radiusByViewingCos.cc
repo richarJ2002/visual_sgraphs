@@ -15,6 +15,13 @@
  * https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            radiusByViewingCos.cc
+ *
+ * @brief           Implements ORBmatcher::radiusByViewingCos(), declared in
+ *                  ORBmatcher.h.
+ */
+
 #include "ORBmatcher.h"
 
 #include <limits.h>

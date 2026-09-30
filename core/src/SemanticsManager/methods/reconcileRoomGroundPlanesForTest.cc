@@ -16,6 +16,14 @@
  * details: https://www.gnu.org/licenses/
  */
 
+/*!
+ * @file            reconcileRoomGroundPlanesForTest.cc
+ *
+ * @brief           Implements
+ *                  SemanticsManager::reconcileRoomGroundPlanesForTest(),
+ *                  declared in SemanticsManager.h.
+ */
+
 #include "SemanticsManager.h"
 #include <rclcpp/logging.hpp>
 

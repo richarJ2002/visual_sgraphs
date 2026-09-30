@@ -43,42 +43,44 @@ class Passage;
 struct FiniteWallSegment2d
 {
     /*!
-     * @brief       TODO
+     * @brief       Wall the segment was built from; non-owning.
      *
      * @frame       N/A
-     * @unit        N/A
+     * @units       N/A
      */
     geometric::Plane *p_wall = nullptr;
 
     /*!
-     * @brief       TODO
+     * @brief       First end of the wall on the ground plane.
      *
-     * @frame       TODO
-     * @unit        meters
+     * @frame       World, projected onto the two ground axes
+     * @units       metres
      */
     Eigen::Vector2d start_World_m = Eigen::Vector2d::Zero();
 
     /*!
-     * @brief       TODO
+     * @brief       Second end of the wall on the ground plane.
      *
-     * @frame       TODO
-     * @unit        meters
+     * @frame       World, projected onto the two ground axes
+     * @units       metres
      */
     Eigen::Vector2d end_World_m = Eigen::Vector2d::Zero();
 
     /*!
-     * @brief       TODO
+     * @brief       Distance between the two ends.
      *
      * @frame       N/A
-     * @unit        meters
+     * @units       metres
      */
     double length_m = 0.0;
 
     /*!
-     * @brief       TODO
+     * @brief       How well supported the wall is: observation count (at least
+     *              1) times the square root of the length; larger wins when
+     *              walls compete.
      *
      * @frame       N/A
-     * @unit        N/A
+     * @units       square root of metres
      */
     double supportScore = 0.0;
 };
@@ -86,41 +88,45 @@ struct FiniteWallSegment2d
 struct WallAdmissionEvidence
 {
     /*!
-     * @brief       TODO
+     * @brief       True when the wall may join a room: it is a wall by type and
+     *              by expected type, its finite fit is adequate, and it was
+     *              seen often enough or strongly enough at first sight.
      *
      * @frame       N/A
-     * @unit        N/A
+     * @units       N/A
      */
     bool isAdmissible = false;
 
     /*!
-     * @brief       TODO
+     * @brief       True when at least 20 points fit the plane, enough of the
+     *              points fit, and the fitted extent is large enough (length,
+     *              height and area).
      *
      * @frame       N/A
-     * @unit        N/A
+     * @units       N/A
      */
     bool hasAdequateFiniteFit = false;
 
     /*!
-     * @brief       TODO
+     * @brief       Points of the support cloud with finite coordinates.
      *
      * @frame       N/A
-     * @unit        Number of Points
+     * @units       number of points
      */
     std::size_t finitePointCount = 0U;
 
     /*!
-     * @brief       TODO
+     * @brief       Finite points within the RANSAC distance of the plane.
      *
      * @frame       N/A
-     * @unit        Number of Points
+     * @units       number of points
      */
     std::size_t fittedPointCount = 0U;
     /*!
-     * @brief       TODO
+     * @brief       Number of times the wall has been observed.
      *
      * @frame       N/A
-     * @unit        Number of Obeservations
+     * @units       number of observations
      */
     std::size_t observationCount = 0U;
 };
