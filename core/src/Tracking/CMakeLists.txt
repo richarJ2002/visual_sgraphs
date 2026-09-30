@@ -11,7 +11,6 @@ set(VS_GRAPHS_TRACKING_SOURCES
   core/src/Tracking/methods/createInitialMapMonocular.cc
   core/src/Tracking/methods/createMapInAtlas.cc
   core/src/Tracking/methods/createNewKeyFrame.cc
-  core/src/Tracking/methods/destruct.cc
   core/src/Tracking/methods/findPointsCloseToLocation.cc
   core/src/Tracking/methods/findPointsCloseToMarker.cc
   core/src/Tracking/methods/getCamTwc.cc

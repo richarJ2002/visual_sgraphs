@@ -133,7 +133,6 @@ class Passage
         traversalUnknownCount(0U),
         p_map(nullptr)
     {}
-    ~Passage() {}
 
     /*!
      * @brief       Apply a rigid/similarity transform to the plane geometry.

@@ -43,7 +43,7 @@ TrackingStatus Tracking::localMapStats2File()
     f << "#Stereo rect[ms], MP culling[ms], MP creation[ms], LBA[ms], KF "
          "culling[ms], Total[ms]"
       << std::endl;
-    for (int sampleIndex = 0;
+    for (std::size_t sampleIndex = 0;
          sampleIndex < p_localMapper->localMappingTotalTimes_ms.size();
          ++sampleIndex)
     {
@@ -60,7 +60,7 @@ TrackingStatus Tracking::localMapStats2File()
     f.open("LBA_Stats.txt");
     f << std::fixed << std::setprecision(6);
     f << "#LBA time[ms], KF opt[#], KF fixed[#], MP[#], Edges[#]" << std::endl;
-    for (int sampleIndex = 0;
+    for (std::size_t sampleIndex = 0;
          sampleIndex < p_localMapper->localBaSyncTimes_ms.size();
          ++sampleIndex)
     {

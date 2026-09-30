@@ -202,7 +202,8 @@ class Settings
      * @param[out] baselineFocal_out Product in pixel-metres.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus getBaselineFocal(double &baselineFocal_out)
+    [[nodiscard]] SettingsStatus
+        getBaselineFocal(double &baselineFocal_out) const
     {
         baselineFocal_out = baselineFocal;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -213,7 +214,7 @@ class Settings
      * @param[out] b_out Baseline in metres.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus b(double &b_out)
+    [[nodiscard]] SettingsStatus b(double &b_out) const
     {
         b_out = stereoBaseline;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -224,7 +225,7 @@ class Settings
      * @param[out] thDepth_out Threshold in metres.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus thDepth(double &thDepth_out)
+    [[nodiscard]] SettingsStatus thDepth(double &thDepth_out) const
     {
         thDepth_out = depthThreshold;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -237,7 +238,8 @@ class Settings
      * precomputed.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus needToUndistort(bool &needToUndistort_out)
+    [[nodiscard]] SettingsStatus
+        needToUndistort(bool &needToUndistort_out) const
     {
         needToUndistort_out = isUndistortionNeeded;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -260,7 +262,8 @@ class Settings
      * @param[out] framesPerSecond_out Frames per second in hertz.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus getFramesPerSecond(double &framesPerSecond_out)
+    [[nodiscard]] SettingsStatus
+        getFramesPerSecond(double &framesPerSecond_out) const
     {
         framesPerSecond_out = framesPerSecond;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -271,7 +274,7 @@ class Settings
      * @param[out] isRgbEnabled_out True for RGB input.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus isRgbEnabled(bool &isRgbEnabled_out)
+    [[nodiscard]] SettingsStatus isRgbEnabled(bool &isRgbEnabled_out) const
     {
         isRgbEnabled_out = isRgbInputEnabled;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -282,7 +285,7 @@ class Settings
      * @param[out] needToResize_out True when a resize step is configured.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus needToResize(bool &needToResize_out)
+    [[nodiscard]] SettingsStatus needToResize(bool &needToResize_out) const
     {
         needToResize_out = isFirstResizeNeeded;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -294,7 +297,7 @@ class Settings
      * precomputed.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus needToRectify(bool &needToRectify_out)
+    [[nodiscard]] SettingsStatus needToRectify(bool &needToRectify_out) const
     {
         needToRectify_out = isRectificationNeeded;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -307,7 +310,7 @@ class Settings
      * @param[out] accWalk_out Configured walk noise.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus accWalk(double &accWalk_out)
+    [[nodiscard]] SettingsStatus accWalk(double &accWalk_out) const
     {
         accWalk_out = accelWalkNoise;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -318,7 +321,7 @@ class Settings
      * @param[out] gyroWalk_out Configured walk noise.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus gyroWalk(double &gyroWalk_out)
+    [[nodiscard]] SettingsStatus gyroWalk(double &gyroWalk_out) const
     {
         gyroWalk_out = gyroWalkNoise;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -329,7 +332,7 @@ class Settings
      * @param[out] noiseAcc_out Configured measurement noise.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus noiseAcc(double &noiseAcc_out)
+    [[nodiscard]] SettingsStatus noiseAcc(double &noiseAcc_out) const
     {
         noiseAcc_out = accelNoise;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -340,7 +343,7 @@ class Settings
      * @param[out] imuFrequency_out Samples per second in hertz.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus imuFrequency(double &imuFrequency_out)
+    [[nodiscard]] SettingsStatus imuFrequency(double &imuFrequency_out) const
     {
         imuFrequency_out = imuSampleRate;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -351,7 +354,7 @@ class Settings
      * @param[out] imuThreshold_out Configured threshold.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus imuThreshold(double &imuThreshold_out)
+    [[nodiscard]] SettingsStatus imuThreshold(double &imuThreshold_out) const
     {
         imuThreshold_out = imuErrorThreshold;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -362,7 +365,7 @@ class Settings
      * @param[out] noiseGyro_out Configured measurement noise.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus noiseGyro(double &noiseGyro_out)
+    [[nodiscard]] SettingsStatus noiseGyro(double &noiseGyro_out) const
     {
         noiseGyro_out = gyroNoise;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -386,7 +389,8 @@ class Settings
      * enabled.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus insertKFsWhenLost(bool &insertKFsWhenLost_out)
+    [[nodiscard]] SettingsStatus
+        insertKFsWhenLost(bool &insertKFsWhenLost_out) const
     {
         insertKFsWhenLost_out = shouldInsertKeyFramesWhenLost;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -411,7 +415,8 @@ class Settings
      * reach metres.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus depthMapFactor(double &depthMapFactor_out)
+    [[nodiscard]] SettingsStatus
+        depthMapFactor(double &depthMapFactor_out) const
     {
         depthMapFactor_out = depthMapScale;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -423,7 +428,7 @@ class Settings
      * @param[out] nFeatures_out Target number of features.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus nFeatures(int &nFeatures_out)
+    [[nodiscard]] SettingsStatus nFeatures(int &nFeatures_out) const
     {
         nFeatures_out = featureCount;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -434,7 +439,7 @@ class Settings
      * @param[out] nLevels_out Configured level count.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus nLevels(int &nLevels_out)
+    [[nodiscard]] SettingsStatus nLevels(int &nLevels_out) const
     {
         nLevels_out = pyramidLevels;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -445,7 +450,7 @@ class Settings
      * @param[out] initThFAST_out Configured extraction threshold.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus initThFAST(double &initThFAST_out)
+    [[nodiscard]] SettingsStatus initThFAST(double &initThFAST_out) const
     {
         initThFAST_out = initialFastThreshold;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -457,7 +462,7 @@ class Settings
      * @return SETTINGS_STATUS_SUCCESS.
      */
     [[nodiscard]] SettingsStatus
-        getMinimumFastThreshold(double &minimumFastThreshold_out)
+        getMinimumFastThreshold(double &minimumFastThreshold_out) const
     {
         minimumFastThreshold_out = minimumFastThreshold;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -468,7 +473,7 @@ class Settings
      * @param[out] scaleFactor_out Configured pyramid scale factor.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus scaleFactor(double &scaleFactor_out)
+    [[nodiscard]] SettingsStatus scaleFactor(double &scaleFactor_out) const
     {
         scaleFactor_out = orbScaleFactor;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -480,7 +485,7 @@ class Settings
      * @param[out] keyFrameSize_out Configured marker size.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus keyFrameSize(double &keyFrameSize_out)
+    [[nodiscard]] SettingsStatus keyFrameSize(double &keyFrameSize_out) const
     {
         keyFrameSize_out = viewerKeyFrameSize;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -492,7 +497,7 @@ class Settings
      * @return SETTINGS_STATUS_SUCCESS.
      */
     [[nodiscard]] SettingsStatus
-        keyFrameLineWidth(double &keyFrameLineWidth_out)
+        keyFrameLineWidth(double &keyFrameLineWidth_out) const
     {
         keyFrameLineWidth_out = viewerKeyFrameLineWidth;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -503,7 +508,8 @@ class Settings
      * @param[out] graphLineWidth_out Configured line width.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus graphLineWidth(double &graphLineWidth_out)
+    [[nodiscard]] SettingsStatus
+        graphLineWidth(double &graphLineWidth_out) const
     {
         graphLineWidth_out = viewerGraphLineWidth;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -514,7 +520,7 @@ class Settings
      * @param[out] pointSize_out Configured marker size.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus pointSize(double &pointSize_out)
+    [[nodiscard]] SettingsStatus pointSize(double &pointSize_out) const
     {
         pointSize_out = viewerPointSize;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -525,7 +531,7 @@ class Settings
      * @param[out] cameraSize_out Configured marker size.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus cameraSize(double &cameraSize_out)
+    [[nodiscard]] SettingsStatus cameraSize(double &cameraSize_out) const
     {
         cameraSize_out = viewerCameraSize;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -536,7 +542,8 @@ class Settings
      * @param[out] cameraLineWidth_out Configured line width.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus cameraLineWidth(double &cameraLineWidth_out)
+    [[nodiscard]] SettingsStatus
+        cameraLineWidth(double &cameraLineWidth_out) const
     {
         cameraLineWidth_out = viewerCameraLineWidth;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -547,7 +554,7 @@ class Settings
      * @param[out] viewPointX_out Configured coordinate.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus viewPointX(double &viewPointX_out)
+    [[nodiscard]] SettingsStatus viewPointX(double &viewPointX_out) const
     {
         viewPointX_out = viewerViewPointX;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -558,7 +565,7 @@ class Settings
      * @param[out] viewPointY_out Configured coordinate.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus viewPointY(double &viewPointY_out)
+    [[nodiscard]] SettingsStatus viewPointY(double &viewPointY_out) const
     {
         viewPointY_out = viewerViewPointY;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -569,7 +576,7 @@ class Settings
      * @param[out] viewPointZ_out Configured coordinate.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus viewPointZ(double &viewPointZ_out)
+    [[nodiscard]] SettingsStatus viewPointZ(double &viewPointZ_out) const
     {
         viewPointZ_out = viewerViewPointZ;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -580,7 +587,7 @@ class Settings
      * @param[out] viewPointF_out Configured focal value.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus viewPointF(double &viewPointF_out)
+    [[nodiscard]] SettingsStatus viewPointF(double &viewPointF_out) const
     {
         viewPointF_out = viewerViewPointF;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -591,7 +598,8 @@ class Settings
      * @param[out] imageViewerScale_out Configured display scale.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus imageViewerScale(double &imageViewerScale_out)
+    [[nodiscard]] SettingsStatus
+        imageViewerScale(double &imageViewerScale_out) const
     {
         imageViewerScale_out = viewerImageScale;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
@@ -626,7 +634,7 @@ class Settings
      * @param[out] thFarPoints_out Threshold in metres.
      * @return SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus thFarPoints(double &thFarPoints_out)
+    [[nodiscard]] SettingsStatus thFarPoints(double &thFarPoints_out) const
     {
         thFarPoints_out = farPointsThreshold;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;

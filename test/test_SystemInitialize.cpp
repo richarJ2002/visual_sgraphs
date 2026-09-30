@@ -60,6 +60,10 @@ class ReadableSettingsFile
     {
         std::remove(path.c_str());
     }
+    /*! Not copyable: each copy would remove the same file. */
+    ReadableSettingsFile(const ReadableSettingsFile &otherFile_in) = delete;
+    ReadableSettingsFile &
+        operator=(const ReadableSettingsFile &otherFile_in) = delete;
     const std::string path;
 };
 

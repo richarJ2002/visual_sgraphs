@@ -105,8 +105,6 @@ class Tracking
              utils::settings::Settings *p_settings_in,
              const std::string         &nameSeq_in = std::string());
 
-    ~Tracking();
-
     // Parse the config file
     [[nodiscard]] TrackingStatus parseCamParamFile(cv::FileStorage &settings_in,
                                                    bool &isParsed_out);
@@ -151,7 +149,7 @@ class Tracking
     [[nodiscard]] TrackingStatus setLocalMapper(LocalMapping *p_localMapper_in);
 
     [[nodiscard]] TrackingStatus setStepByStep(bool isEnabled_in);
-    [[nodiscard]] TrackingStatus getStepByStep(bool &stepByStep_out);
+    [[nodiscard]] TrackingStatus getStepByStep(bool &stepByStep_out) const;
 
     // Load new settings
     // The focal lenght should be similar or scale prediction will fail when
@@ -172,19 +170,20 @@ class Tracking
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    [[nodiscard]] TrackingStatus getCamTwc(Sophus::SE3f &camTwc_out);
+    [[nodiscard]] TrackingStatus getCamTwc(Sophus::SE3f &camTwc_out) const;
     [[nodiscard]] TrackingStatus getImuTwb(Sophus::SE3f &imuTwb_out);
-    [[nodiscard]] TrackingStatus getImuVwb(Eigen::Vector3f &imuVwb_out);
+    [[nodiscard]] TrackingStatus getImuVwb(Eigen::Vector3f &imuVwb_out) const;
     [[nodiscard]] TrackingStatus
-        isImuPreintegrated(bool &isImuPreintegrated_out);
+        isImuPreintegrated(bool &isImuPreintegrated_out) const;
 
     [[nodiscard]] TrackingStatus createMapInAtlas();
     // std::mutex mMutexTracks;
 
     //--
     [[nodiscard]] TrackingStatus newDataset();
-    [[nodiscard]] TrackingStatus getNumberDataset(int &numberDataset_out);
-    [[nodiscard]] TrackingStatus getMatchesInliers(int &matchesInliers_out);
+    [[nodiscard]] TrackingStatus getNumberDataset(int &numberDataset_out) const;
+    [[nodiscard]] TrackingStatus
+        getMatchesInliers(int &matchesInliers_out) const;
 
     // DEBUG
     [[nodiscard]] TrackingStatus
@@ -196,7 +195,7 @@ class Tracking
                           std::string textNameFileKeyFrame_in,
                           Map        *p_map_in);
 
-    [[nodiscard]] TrackingStatus getImageScale(float &imageScale_out);
+    [[nodiscard]] TrackingStatus getImageScale(float &imageScale_out) const;
 
     // Get parameters
     [[nodiscard]] TrackingStatus

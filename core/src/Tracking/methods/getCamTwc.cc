@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-TrackingStatus Tracking::getCamTwc(Sophus::SE3f &camTwc_out)
+TrackingStatus Tracking::getCamTwc(Sophus::SE3f &camTwc_out) const
 {
     Sophus::SE3<float> currentFrameGetPose{};
     if (currentFrame.getPose(currentFrameGetPose) !=

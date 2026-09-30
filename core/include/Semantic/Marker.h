@@ -78,7 +78,6 @@ class Marker
         markerType(MarkerVariant::UNKNOWN),
         p_map(nullptr)
     {}
-    ~Marker() {}
 
     /*!
      * @brief       Applies a map-frame similarity transform to the marker.

@@ -98,14 +98,14 @@ class MapDrawer
 
     Atlas *p_atlas;
 
-    [[nodiscard]] MapDrawerStatus drawMapPoints();
+    [[nodiscard]] MapDrawerStatus drawMapPoints() const;
     [[nodiscard]] MapDrawerStatus
         drawKeyFrames(const bool shouldDrawKeyFrames_in,
                       const bool shouldDrawGraph_in,
                       const bool shouldDrawInertialGraph_in,
                       const bool shouldDrawOptimizedLba_in);
     [[nodiscard]] MapDrawerStatus
-        drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in);
+        drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in) const;
     [[nodiscard]] MapDrawerStatus
         setCurrentCameraPose(const Sophus::SE3f &Tcw_in);
     [[nodiscard]] MapDrawerStatus

@@ -411,7 +411,7 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
      * @param[out] precision_out Solver precision.
      * @return KANNALA_BRANDT8_STATUS_SUCCESS.
      */
-    [[nodiscard]] KannalaBrandt8Status getPrecision(float &precision_out)
+    [[nodiscard]] KannalaBrandt8Status getPrecision(float &precision_out) const
     {
         precision_out = precision;
         return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;

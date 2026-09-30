@@ -35,7 +35,7 @@ namespace vs_graphs
 namespace core
 {
 
-MapDrawerStatus MapDrawer::drawMapPoints()
+MapDrawerStatus MapDrawer::drawMapPoints() const
 {
     Map *p_activeMap = nullptr;
     if (p_atlas->getCurrentMap(p_activeMap) !=

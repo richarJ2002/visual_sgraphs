@@ -99,7 +99,8 @@ class LocalMapping
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
 
-    [[nodiscard]] LocalMappingStatus isInitializing(bool &isInitializing_out);
+    [[nodiscard]] LocalMappingStatus
+        isInitializing(bool &isInitializing_out) const;
     [[nodiscard]] LocalMappingStatus
         getCurrentKeyFrameTime(double &currentKeyFrameTime_out);
     [[nodiscard]] LocalMappingStatus

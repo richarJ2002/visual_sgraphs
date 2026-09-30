@@ -279,7 +279,7 @@ class ProductionCrossingScene
   private:
     void addKeyFrame(KeyFrame              &keyFrame_inout,
                      unsigned long          keyFrameId_in,
-                     const Eigen::Vector3f &cameraCenter_World_m_in)
+                     const Eigen::Vector3f &cameraCenter_World_m_in) const
     {
         keyFrame_inout.id = keyFrameId_in;
         ASSERT_EQ(

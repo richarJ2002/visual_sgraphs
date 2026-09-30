@@ -401,7 +401,6 @@ class Plane
         minPlaneV = std::numeric_limits<double>::max();
         maxPlaneV = std::numeric_limits<double>::lowest();
     }
-    ~Plane() {}
 
     /*!
      * @brief       Apply a rigid/similarity transform to the plane geometry.

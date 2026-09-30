@@ -34,7 +34,8 @@ namespace vs_graphs
 namespace core
 {
 
-MapDrawerStatus MapDrawer::drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in)
+MapDrawerStatus
+    MapDrawer::drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in) const
 {
     const float &w = cameraSize;
     const float  h = w * 0.75;

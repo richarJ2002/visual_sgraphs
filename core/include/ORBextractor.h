@@ -131,11 +131,6 @@ class ORBextractor
                  int   minimumFastThreshold_in);
 
     /*!
-     * @brief        Destroys the extractor.
-     */
-    ~ORBextractor() {}
-
-    /*!
      * @brief        Extracts ORB features dispersed over the
      *               image with an octree.
      *
@@ -168,7 +163,7 @@ class ORBextractor
      * @param[out] levelCount_out Configured level count.
      * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    [[nodiscard]] ORBextractorStatus getLevelCount(int &levelCount_out)
+    [[nodiscard]] ORBextractorStatus getLevelCount(int &levelCount_out) const
     {
         levelCount_out = levelCount;
         return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
@@ -180,7 +175,8 @@ class ORBextractor
      * @param[out] scaleFactor_out Configured scale factor.
      * @return ORBEXTRACTOR_STATUS_SUCCESS.
      */
-    [[nodiscard]] ORBextractorStatus getScaleFactor(float &scaleFactor_out)
+    [[nodiscard]] ORBextractorStatus
+        getScaleFactor(float &scaleFactor_out) const
     {
         scaleFactor_out = scaleFactor;
         return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
@@ -292,7 +288,7 @@ class ORBextractor
                           const int                       &maximumY_in,
                           const int                       &featureCount_in,
                           const int                       &level_in,
-                          std::vector<cv::KeyPoint>       &keyPoints_out);
+                          std::vector<cv::KeyPoint>       &keyPoints_out) const;
 
     /*!
      * @brief        Detects keypoints on every pyramid level

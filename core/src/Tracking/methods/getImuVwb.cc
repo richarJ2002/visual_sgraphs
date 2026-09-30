@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-TrackingStatus Tracking::getImuVwb(Eigen::Vector3f &imuVwb_out)
+TrackingStatus Tracking::getImuVwb(Eigen::Vector3f &imuVwb_out) const
 {
     Eigen::Vector3f currentFrameGetVelocity{};
     if (currentFrame.getVelocity(currentFrameGetVelocity) !=

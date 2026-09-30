@@ -279,37 +279,6 @@ class Calib
     }
 
     /*!
-     * @brief        Copies another calibration.
-     *
-     * @param[in]    calib_in
-     *               Source calibration.
-     */
-    Calib(const Calib &calib_in)
-    {
-        isCalibrationSet = calib_in.isCalibrationSet;
-        // Sophus/Eigen parameters
-        mTbc    = calib_in.mTbc;
-        mTcb    = calib_in.mTcb;
-        Cov     = calib_in.Cov;
-        CovWalk = calib_in.CovWalk;
-    }
-    /*!
-     * @brief        Copies every member from another
-     *               calibration.
-     *
-     *               Declared explicitly because the
-     *               user-provided copy constructor suppresses
-     *               the implicit declaration; the copy
-     *               constructor is memberwise, so the
-     *               defaulted assignment matches it.
-     *
-     * @param[in]    calib_in
-     *               Source calibration.
-     *
-     * @return       Reference to this calibration.
-     */
-    Calib &operator=(const Calib &calib_in) = default;
-    /*!
      * @brief        Creates an unset calibration.
      */
     Calib()
@@ -517,10 +486,6 @@ class Preintegrated
      * @brief        Creates an empty preintegration.
      */
     Preintegrated() {}
-    /*!
-     * @brief        Destroys the preintegration.
-     */
-    ~Preintegrated() {}
     /*!
      * @brief        Copies the state of another
      *               preintegration.

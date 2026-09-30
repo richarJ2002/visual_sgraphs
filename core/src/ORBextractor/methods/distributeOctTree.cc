@@ -75,7 +75,7 @@ ORBextractorStatus ORBextractor::distributeOctTree(
     const int                       &maximumY_in,
     const int                       &featureCount_in,
     [[maybe_unused]] const int      &level_in,
-    std::vector<cv::KeyPoint>       &keyPoints_out)
+    std::vector<cv::KeyPoint>       &keyPoints_out) const
 {
     // Compute how many initial nodes
     const int initialNodeCount =

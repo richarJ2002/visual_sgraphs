@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-TrackingStatus Tracking::getNumberDataset(int &numberDataset_out)
+TrackingStatus Tracking::getNumberDataset(int &numberDataset_out) const
 {
     numberDataset_out = numDataset;
     return TrackingStatus::TRACKING_STATUS_SUCCESS;

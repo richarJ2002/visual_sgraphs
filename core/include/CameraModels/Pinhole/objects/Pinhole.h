@@ -109,6 +109,13 @@ class Pinhole : public geometriccamera::GeometricCamera
         if (p_twoViewReconstruction)
             delete p_twoViewReconstruction;
     }
+    /*!
+     * @brief        Copying is forbidden: a copy would share the two-view
+     *               helper and both destructors would delete it. Clone the
+     *               calibration with Pinhole(Pinhole *) instead.
+     */
+    Pinhole(const Pinhole &otherPinhole_in)            = delete;
+    Pinhole &operator=(const Pinhole &otherPinhole_in) = delete;
 
     /*!
      * @brief        Projects a camera-frame point into the image.

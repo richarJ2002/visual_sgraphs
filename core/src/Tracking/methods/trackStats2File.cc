@@ -71,7 +71,7 @@ TrackingStatus Tracking::trackStats2File()
          "IMU preint[ms], Pose pred[ms], LM track[ms], KF dec[ms], Total[ms]"
       << std::endl;
 
-    for (int trackTotalTimeIndex = 0;
+    for (std::size_t trackTotalTimeIndex = 0;
          trackTotalTimeIndex < trackTotalTimes_ms.size();
          ++trackTotalTimeIndex)
     {

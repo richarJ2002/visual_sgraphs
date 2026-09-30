@@ -282,7 +282,8 @@ class Sim3Solver
         getEstimatedRotation(Eigen::Matrix3f &estimatedRotation_out);
     [[nodiscard]] Sim3SolverStatus
         getEstimatedTranslation(Eigen::Vector3f &estimatedTranslation_out);
-    [[nodiscard]] Sim3SolverStatus getEstimatedScale(float &estimatedScale_out);
+    [[nodiscard]] Sim3SolverStatus
+        getEstimatedScale(float &estimatedScale_out) const;
 
   protected:
     [[nodiscard]] Sim3SolverStatus computeCentroid(Eigen::Matrix3f &P_in,

@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-TrackingStatus Tracking::getImageScale(float &imageScale_out)
+TrackingStatus Tracking::getImageScale(float &imageScale_out) const
 {
     imageScale_out = imageScale;
     return TrackingStatus::TRACKING_STATUS_SUCCESS;

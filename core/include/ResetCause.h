@@ -110,9 +110,6 @@ enum class ResetCause : std::uint8_t
 class ResetCauseRetention
 {
   public:
-    ResetCauseRetention()  = default;
-    ~ResetCauseRetention() = default;
-
     /*!
      * @brief        Retains one deferred reset cause.
      *
@@ -131,14 +128,14 @@ class ResetCauseRetention
      * @return       Retained cause, or UNATTRIBUTED_PUBLIC_REQUEST when
      *               no cause was retained.
      */
-    [[nodiscard]] [[nodiscard]] ResetCauseRetentionStatus
+    [[nodiscard]] ResetCauseRetentionStatus
         consume(ResetCause &resetCause_out) noexcept;
     /*!
      * @brief        Checks whether a cause is currently retained.
      *
      * @return       True when a cause is retained.
      */
-    [[nodiscard]] [[nodiscard]] ResetCauseRetentionStatus
+    [[nodiscard]] ResetCauseRetentionStatus
         hasRetainedCause(bool &hasRetainedCause_out) const noexcept;
 
   private:
@@ -175,8 +172,8 @@ class ResetCauseRetention
  * @return       Retained cause, or UNATTRIBUTED_PUBLIC_REQUEST when the
  *               owner has no retained cause.
  */
-[[nodiscard]] [[nodiscard]] ResetCauseStatus
-    consumeResetCause(const void *p_owner_in, ResetCause &resetCause_out);
+[[nodiscard]] ResetCauseStatus consumeResetCause(const void *p_owner_in,
+                                                 ResetCause &resetCause_out);
 
 /*!
  * @brief        Clears any deferred reset cause when its owner is
@@ -216,7 +213,7 @@ enum class ResetAction : std::uint8_t
  * @return       Pointer to a static snake-case name, or "unknown" for
  *               an unmapped value.
  */
-[[nodiscard]] [[nodiscard]] ResetCauseStatus
+[[nodiscard]] ResetCauseStatus
     resetCauseToString(ResetCause cause_in, const char *&p_text_out) noexcept;
 /*!
  * @brief        Maps a reset action to its stable log name.
@@ -227,7 +224,7 @@ enum class ResetAction : std::uint8_t
  * @return       Pointer to a static snake-case name, or "unknown" for
  *               an unmapped value.
  */
-[[nodiscard]] [[nodiscard]] ResetCauseStatus
+[[nodiscard]] ResetCauseStatus
     resetActionToString(ResetAction  action_in,
                         const char *&p_text_out) noexcept;
 /*!
@@ -241,7 +238,7 @@ enum class ResetAction : std::uint8_t
  * @return       Text of the form "VSG_RESET_ATTRIBUTION cause=<cause>
  *               action=<action>".
  */
-[[nodiscard]] [[nodiscard]] ResetCauseStatus
+[[nodiscard]] ResetCauseStatus
                                formatResetAttribution(ResetCause   cause_in,
                                                       ResetAction  action_in,
                                                       std::string &resetAttribution_out);

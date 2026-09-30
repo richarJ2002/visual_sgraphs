@@ -55,15 +55,6 @@ class DBParser
 
   public:
     /*!
-     * @brief        Creates an empty parser.
-     */
-    DBParser() {}
-    /*!
-     * @brief        Destroys the parser.
-     */
-    ~DBParser() {}
-
-    /*!
      * @brief        Loads and parses the JSON file at the given path.
      *
      *               Terminates the process when the file cannot be

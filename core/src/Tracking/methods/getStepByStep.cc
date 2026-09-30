@@ -30,7 +30,7 @@ namespace vs_graphs
 namespace core
 {
 
-TrackingStatus Tracking::getStepByStep(bool &stepByStep_out)
+TrackingStatus Tracking::getStepByStep(bool &stepByStep_out) const
 {
     stepByStep_out = isStepByStepMode;
     return TrackingStatus::TRACKING_STATUS_SUCCESS;

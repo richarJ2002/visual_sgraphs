@@ -88,7 +88,7 @@ class GeometricCamera
      * @brief        Destroys the camera; virtual so that deleting a camera
      *               through this base type runs the derived destructor.
      */
-    virtual ~GeometricCamera() {}
+    virtual ~GeometricCamera() = default;
 
     /*!
      * @brief        Projects a camera-frame point into the image.
@@ -338,7 +338,7 @@ class GeometricCamera
      * @param[out] id_out Identifier assigned at construction.
      * @return GEOMETRIC_CAMERA_STATUS_SUCCESS.
      */
-    [[nodiscard]] GeometricCameraStatus getId(unsigned int &id_out)
+    [[nodiscard]] GeometricCameraStatus getId(unsigned int &id_out) const
     {
         id_out = id;
         return GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS;
@@ -350,7 +350,7 @@ class GeometricCamera
      * @param[out] type_out CAM_PINHOLE or CAM_FISHEYE.
      * @return GEOMETRIC_CAMERA_STATUS_SUCCESS.
      */
-    [[nodiscard]] GeometricCameraStatus getType(unsigned int &type_out)
+    [[nodiscard]] GeometricCameraStatus getType(unsigned int &type_out) const
     {
         type_out = type;
         return GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS;

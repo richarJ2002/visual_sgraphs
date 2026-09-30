@@ -604,7 +604,7 @@ TrackingStatus Tracking::printTimeStats()
                      __func__);
     }
     Map *p_bestMap = maps[0];
-    for (int mapIndex = 1; mapIndex < maps.size(); ++mapIndex)
+    for (std::size_t mapIndex = 1; mapIndex < maps.size(); ++mapIndex)
     {
         std::vector<KeyFrame *> bestMapKeyFrames;
         if (p_bestMap->getAllKeyFrames(bestMapKeyFrames) !=

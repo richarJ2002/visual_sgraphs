@@ -96,6 +96,12 @@ class Map
     Map();
     Map(int initialKeyFrameId_in);
     ~Map();
+    /*!
+     * @brief        Copying is forbidden: the map owns its thumbnail
+     *               image and deletes it when destroyed.
+     */
+    Map(const Map &otherMap_in)            = delete;
+    Map &operator=(const Map &otherMap_in) = delete;
 
     [[nodiscard]] MapStatus addKeyFrame(KeyFrame *p_keyFrame_inout);
     [[nodiscard]] MapStatus addMapPoint(MapPoint *p_mapPoint_in);
@@ -241,7 +247,7 @@ class Map
     [[nodiscard]] MapStatus getMarkerCount(unsigned long &markerCount_out);
     [[nodiscard]] MapStatus getMapPointCount(unsigned long &mapPointCount_out);
 
-    [[nodiscard]] MapStatus getId(unsigned long &id_out);
+    [[nodiscard]] MapStatus getId(unsigned long &id_out) const;
     [[nodiscard]] MapStatus getMaxKeyFrameId(unsigned long &maxKeyFrameId_out);
     [[nodiscard]] MapStatus
         getInitKeyFrameId(unsigned long &initKeyFrameId_out);
@@ -270,7 +276,7 @@ class Map
     [[nodiscard]] MapStatus setStoredMap();
     [[nodiscard]] MapStatus setCurrentMap();
 
-    [[nodiscard]] MapStatus isInUse(bool &isInUse_out);
+    [[nodiscard]] MapStatus isInUse(bool &isInUse_out) const;
 
     [[nodiscard]] MapStatus isBad(bool &isBad_out);
     [[nodiscard]] MapStatus setBad();

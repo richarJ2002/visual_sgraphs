@@ -943,6 +943,12 @@ class System
      *              performed here, never in Shutdown().
      */
     ~System();
+    /*!
+     * @brief        Copying is forbidden: the system owns its worker
+     *               threads and modules and deletes them when destroyed.
+     */
+    System(const System &otherSystem_in)            = delete;
+    System &operator=(const System &otherSystem_in) = delete;
 
     /*!
      * @brief       Process the given stereo frame for tracking. Images must be

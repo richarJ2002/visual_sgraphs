@@ -149,6 +149,12 @@ class Atlas
     Atlas(int initialKeyFrameId_in); // When its initialization the first map is
                                      // created
     ~Atlas();
+    /*!
+     * @brief        Copying is forbidden: the atlas owns its maps and
+     *               deletes them when destroyed.
+     */
+    Atlas(const Atlas &otherAtlas_in)            = delete;
+    Atlas &operator=(const Atlas &otherAtlas_in) = delete;
 
     [[nodiscard]] AtlasStatus createNewMap();
     [[nodiscard]] AtlasStatus changeMap(Map *p_map_in);

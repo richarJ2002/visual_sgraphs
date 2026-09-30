@@ -153,8 +153,6 @@ class MLPnPsolver
         }
     }
 
-    ~MLPnPsolver();
-
     [[nodiscard]] MLPnPsolverStatus
         setRansacParameters(double probability_in       = 0.99,
                             int    minimumInliers_in    = 8,
