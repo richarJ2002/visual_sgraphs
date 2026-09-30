@@ -47,13 +47,10 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromLastKF(
     std::vector<MapPoint *> &matchedMapPoints_inout,
     bool                    &isDetected_out)
 {
-    std::set<MapPoint *> alreadyMatchedMapPoints(matchedMapPoints_inout.begin(),
-                                                 matchedMapPoints_inout.end());
-    int                  matches{};
+    int matches{};
     if (findMatchesByProjection(p_currentKeyFrame_in,
                                 p_matchedKeyFrame_in,
                                 gScw_inout,
-                                alreadyMatchedMapPoints,
                                 mapPoints_inout,
                                 matchedMapPoints_inout,
                                 matches) !=

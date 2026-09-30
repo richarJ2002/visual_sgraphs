@@ -65,18 +65,15 @@ class Optimizer
 {
   public:
     [[nodiscard]] static OptimizerStatus bundleAdjustment(
-        const std::vector<vs_graphs::core::KeyFrame *>          &keyFrames_in,
-        const std::vector<vs_graphs::core::MapPoint *>          &mapPoints_in,
-        const std::vector<vs_graphs::core::semantic::Marker *>  &markers_in,
-        const std::vector<vs_graphs::core::geometric::Plane *>  &planes_in,
-        const std::vector<vs_graphs::core::semantic::Passage *> &doorways_in,
-        const std::vector<vs_graphs::core::semantic::Room *>    &rooms_in,
-        const std::vector<vs_graphs::core::semantic::Floor *>   &floors_in,
+        const std::vector<vs_graphs::core::KeyFrame *>         &keyFrames_in,
+        const std::vector<vs_graphs::core::MapPoint *>         &mapPoints_in,
+        const std::vector<vs_graphs::core::semantic::Marker *> &markers_in,
+        const std::vector<vs_graphs::core::geometric::Plane *> &planes_in,
+        const std::vector<vs_graphs::core::semantic::Room *>   &rooms_in,
         int                     iterationCount_in  = 5,
         bool                   *p_stopFlag_inout   = nullptr,
         const unsigned long     loopKeyFrameId_in  = 0,
         const bool              useRobustKernel_in = true,
-        double                  markerImpact_in    = 0.1,
         const std::atomic_bool *p_stopRequested_in = nullptr);
 
     [[nodiscard]] static OptimizerStatus globalBundleAdjustment(
@@ -85,7 +82,6 @@ class Optimizer
         bool                   *p_stopFlag_inout   = nullptr,
         const unsigned long     loopKeyFrameId_in  = 0,
         const bool              useRobustKernel_in = true,
-        double                  markerImpact_in    = 0.1,
         const std::atomic_bool *p_stopRequested_in = nullptr);
 
     [[nodiscard]] static OptimizerStatus
@@ -108,8 +104,7 @@ class Optimizer
                               int      &fixedKeyFrameCount_inout,
                               int      &optKeyFrameCount_out,
                               int      &mapPointCount_out,
-                              int      &edgeCount_out,
-                              double    markerImpact_in = 0.1);
+                              int      &edgeCount_out);
 
     /*!
      * @brief Local Bundle Adjustment for loop closure detection

@@ -246,15 +246,6 @@ TrackingStatus Tracking::createInitialMapMonocular()
     }
     std::cout << "- New map created with #"
               << std::to_string(atlasMapPointCount) << " points!" << std::endl;
-    types::SystemParams *p_params = nullptr;
-    if (types::SystemParams::getParams(p_params) !=
-        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getParams returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
     Map *p_atlasCurrentMap4 = nullptr;
     if (p_atlas->getCurrentMap(p_atlasCurrentMap4) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -268,8 +259,7 @@ TrackingStatus Tracking::createInitialMapMonocular()
                                           20,
                                           nullptr,
                                           0,
-                                          true,
-                                          p_params->markers.impact) !=
+                                          true) !=
         OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

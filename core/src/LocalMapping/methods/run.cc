@@ -369,17 +369,6 @@ void LocalMapping::run()
                     }
                     else
                     {
-                        types::SystemParams *p_params = nullptr;
-                        if (types::SystemParams::getParams(p_params) !=
-                            types::SystemParamsStatus::
-                                SYSTEM_PARAMS_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: getParams returned a failure "
-                                         "status although it cannot fail; "
-                                         "continuing as before.",
-                                         __func__);
-                        }
                         Map *p_currentKeyFrameMap4 = nullptr;
                         if (p_currentKeyFrame->getMap(p_currentKeyFrameMap4) !=
                             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -397,8 +386,7 @@ void LocalMapping::run()
                                 baFixedKeyFrameCount,
                                 baOptimizedKeyFrameCount,
                                 baMapPointCount,
-                                baEdgeCount,
-                                p_params->markers.impact) !=
+                                baEdgeCount) !=
                             OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

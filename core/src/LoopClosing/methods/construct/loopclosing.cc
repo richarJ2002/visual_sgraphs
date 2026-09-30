@@ -49,7 +49,6 @@ LoopClosing::LoopClosing(Atlas            *p_atlas_in,
     p_atlas(p_atlas_in),
     p_keyFrameDatabase(p_database_in),
     p_orbVocabulary(p_vocabulary_in),
-    p_matchedKF(nullptr),
     isLoopDetected(false),
     loopNumCoincidences(0),
     loopNumNotFound(0),
@@ -65,8 +64,7 @@ LoopClosing::LoopClosing(Atlas            *p_atlas_in,
     fullBundleAdjustmentIndex(0),
     isLoopClosingActive(isActiveLc_in)
 {
-    covisibilityConsistencyThreshold = 3;
-    p_lastCurrentKF                  = static_cast<KeyFrame *>(nullptr);
+    p_lastCurrentKF = static_cast<KeyFrame *>(nullptr);
 
 #ifdef REGISTER_TIMES
 
@@ -98,9 +96,8 @@ LoopClosing::LoopClosing(Atlas            *p_atlas_in,
 
 #endif
 
-    mstrFolderSubTraj = "SubTrajectories/";
-    numCorrection     = 0;
-    correctionGBA     = 0;
+    numCorrection = 0;
+    correctionGBA = 0;
 }
 
 } // namespace core

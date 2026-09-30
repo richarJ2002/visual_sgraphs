@@ -51,8 +51,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     int                       &fixedKeyFrameCount_inout,
     int                       &optKeyFrameCount_out,
     int                       &mapPointCount_out,
-    int                       &edgeCount_out,
-    double                     markerImpact_in)
+    int                       &edgeCount_out)
 {
     // System parameters
     vs_graphs::core::types::SystemParams *p_sysParams = nullptr;
@@ -80,13 +79,12 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                      "fail; continuing as before.",
                      __func__);
     }
-    std::list<vs_graphs::core::geometric::Plane *>  localPlaneList;
-    std::list<vs_graphs::core::semantic::Marker *>  localMarkerList;
-    std::list<vs_graphs::core::semantic::Passage *> localPassageList;
-    std::list<vs_graphs::core::KeyFrame *>          localKeyFrameList;
-    std::list<vs_graphs::core::MapPoint *>          localMapPointList;
-    std::vector<vs_graphs::core::KeyFrame *>        neighborKeyFrameVector;
-    std::vector<vs_graphs::core::semantic::Room *>  allRooms{};
+    std::list<vs_graphs::core::geometric::Plane *> localPlaneList;
+    std::list<vs_graphs::core::semantic::Marker *> localMarkerList;
+    std::list<vs_graphs::core::KeyFrame *>         localKeyFrameList;
+    std::list<vs_graphs::core::MapPoint *>         localMapPointList;
+    std::vector<vs_graphs::core::KeyFrame *>       neighborKeyFrameVector;
+    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
     if (p_currentMap->getAllRooms(allRooms) != MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -94,19 +92,9 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    std::vector<vs_graphs::core::semantic::Floor *> allFloors{};
-    if (p_currentMap->getAllFloors(allFloors) != MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
     // Unorderd maps to keep track of the local entities
     std::unordered_map<int, bool> localPlaneId;
     std::unordered_map<int, bool> localMarkerId;
-    std::unordered_map<int, bool> localDoorwayId;
     std::unordered_map<int, bool> localMapPointId;
     std::unordered_map<int, bool> localKeyFrameId;
 
@@ -212,15 +200,6 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getMapMarkers returned a failure status although "
                          "it cannot fail; continuing as before.",
-                         __func__);
-        }
-        std::vector<vs_graphs::core::semantic::Passage *> localDoorwaysVector{};
-        if (p_keyFrame->getMapPassages(localDoorwaysVector) !=
-            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getMapPassages returned a failure status "
-                         "although it cannot fail; continuing as before.",
                          __func__);
         }
         std::vector<vs_graphs::core::MapPoint *> localMapPointsVector{};
@@ -379,39 +358,6 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                                  __func__);
                 }
                 localPlaneId[localPlaneGetId2] = true;
-            }
-        }
-
-        // [LBA] Loop through all the Doorways and prepare them for LBA
-        for (std::vector<vs_graphs::core::semantic::Passage *>::iterator
-                 markerIt = localDoorwaysVector.begin(),
-                 vend     = localDoorwaysVector.end();
-             markerIt != vend;
-             markerIt++)
-        {
-            int id3{};
-            if ((*markerIt)->getId(id3) !=
-                semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-            {
-                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                             "%s: getId returned a failure status although it "
-                             "cannot fail; continuing as before.",
-                             __func__);
-            }
-            if (localDoorwayId.find(id3) == localDoorwayId.end())
-            {
-                vs_graphs::core::semantic::Passage *p_doorway = *markerIt;
-                localPassageList.push_back(p_doorway);
-                int doorwayId{};
-                if (p_doorway->getId(doorwayId) !=
-                    semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                 "%s: getId returned a failure status although "
-                                 "it cannot fail; continuing as before.",
-                                 __func__);
-                }
-                localDoorwayId[doorwayId] = true;
             }
         }
     }
@@ -853,12 +799,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     const float thresholdHuberMono   = sqrt(5.991);
     const float thresholdHuberStereo = sqrt(7.815);
 
-    int roomCount    = 1;
-    int floorCount   = 1;
-    int planeCount   = 1;
-    int pointCount   = 0;
-    int markerCount  = 1;
-    int doorwayCount = 1;
+    int roomCount   = 1;
+    int planeCount  = 1;
+    int pointCount  = 0;
+    int markerCount = 1;
 
     int edgeCount   = 0;
     int maximumOpId = 0;
@@ -2089,61 +2033,11 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     //         *>(optimizer.vertex(pMapRoom->getOpId())); g2o::SE3Quat SE3quat =
     //         vrtxRoom->estimate();
     //         pMapRoom->setCentroid(SE3quat.translation());
-
-    //         // Locally Optimized Doorways
-    //         // for (const auto doorway : pMapRoom->getPassages())
-    //         // {
-    //         //     vs_graphs::core::semantic::Passage *pMapDoorway = doorway;
-    //         //     g2o::VertexSE3Expmap *vDoorway =
-    //         static_cast<g2o::VertexSE3Expmap
-    //         *>(optimizer.vertex(pMapDoorway->getOpId()));
-    //         //     g2o::SE3Quat SE3quat = vDoorway->estimate();
-    //         //     Sophus::SE3f Tiw(SE3quat.rotation().cast<float>(),
-    //         SE3quat.translation().cast<float>());
-    //         //     pMapDoorway->setGlobalPose(Tiw);
-    //         // }
     //     }
     //     catch (std::exception &e)
     //     {
     //         std::cerr << "[Optimizer] Error while locally updating optimized
     //         room: " << e.what() << std::endl; continue;
-    //     }
-    // }
-
-    // [LBA] Locally optimized floors
-    // 🚧 Temporarily disabled: We moved the floor optimization to the the
-    // front-end (SemanticsManager) as some rooms may not be available in the
-    // local optimizer, causing wrong floor optimization for (const auto
-    // &pMapFloor : allFloors)
-    // {
-    //     try
-    //     {
-    //         int opId = pMapFloor->getOpId();
-
-    //         if (opId < 0)
-    //             continue;
-
-    //         g2o::OptimizableGraph::Vertex *vBase = optimizer.vertex(opId);
-    //         if (!vBase)
-    //         {
-    //             std::cerr << "[Warning] Floor vertex with opId='" << opId <<
-    //             "' not found in optimizer!" << std::endl; continue;
-    //         }
-
-    //         // Safe downcast
-    //         g2o::VertexSE3Expmap *vrtxFloor =
-    //         dynamic_cast<g2o::VertexSE3Expmap *>(vBase); if (!vrtxFloor)
-    //         {
-    //             std::cerr << "[Warning] Vertex Floor with opId='" << opId <<
-    //             "' is not a VertexSE3Expmap!" << std::endl; continue;
-    //         }
-
-    //         pMapFloor->setCentroid(vrtxFloor->estimate().translation());
-    //     }
-    //     catch (std::exception &e)
-    //     {
-    //         std::cerr << "[Optimizer] Error while locally updating optimized
-    //         floor: " << e.what() << std::endl; continue;
     //     }
     // }
 

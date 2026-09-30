@@ -32,7 +32,7 @@ general:
 
 #################################### Marker Parameters ###########################################
 markers:
-  # How much the framework should trust the markers (0.1 default, higher for mono setups)
+  # Read but not used: no optimisation step weights markers by it at present
   impact: 0.1
 
 ################################## Optimization Parameters #######################################

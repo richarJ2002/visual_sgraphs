@@ -45,7 +45,6 @@ LoopClosingStatus LoopClosing::findMatchesByProjection(
     KeyFrame                *p_currentKeyFrame_in,
     KeyFrame                *p_matchedKFw_in,
     g2o::Sim3               &g2oScw_in,
-    std::set<MapPoint *>    &matchedMPinOrigins_in,
     std::vector<MapPoint *> &mapPoints_out,
     std::vector<MapPoint *> &matchedMapPoints_out,
     int                     &matches_out)

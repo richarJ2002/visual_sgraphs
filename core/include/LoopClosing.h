@@ -141,8 +141,6 @@ class LoopClosing
         std::string   lastReason;
     };
 
-    typedef std::pair<std::set<KeyFrame *>, int> ConsistentGroup;
-
     typedef std::map<
         KeyFrame *,
         g2o::Sim3,
@@ -444,11 +442,6 @@ class LoopClosing
     std::mutex loopQueueMutex;
 
     /*!
-     * @brief      Loop detector parameters
-     */
-    float covisibilityConsistencyThreshold;
-
-    /*!
      * @brief       Key frame being checked now.
      */
     KeyFrame *p_currentKF;
@@ -459,46 +452,16 @@ class LoopClosing
     KeyFrame *p_lastCurrentKF;
 
     /*!
-     * @brief       Only initialised, never read (kept from ORB-SLAM3).
-     */
-    KeyFrame *p_matchedKF;
-
-    /*!
-     * @brief       Not used (kept from ORB-SLAM2).
-     */
-    std::vector<ConsistentGroup> consistentGroups;
-
-    /*!
-     * @brief       Not used (kept from ORB-SLAM2).
-     */
-    std::vector<KeyFrame *> enoughConsistentCandidates;
-
-    /*!
      * @brief       Key frames connected to the current key frame in the
      *              covisibility graph.
      */
     std::vector<KeyFrame *> currentConnectedKFs;
 
     /*!
-     * @brief       Not used (kept from ORB-SLAM2).
-     */
-    std::vector<MapPoint *> currentMatchedPoints;
-
-    /*!
      * @brief       Map points around the loop candidate, fused into the map
      *              when the loop is corrected.
      */
     std::vector<MapPoint *> loopMapPoints;
-
-    /*!
-     * @brief       Not used (kept from ORB-SLAM2).
-     */
-    cv::Mat correctedPose;
-
-    /*!
-     * @brief       Not used (kept from ORB-SLAM2).
-     */
-    g2o::Sim3 mg2oScw;
 
     /*!
      * @brief       Map that the previously checked key frame belonged to.
@@ -598,24 +561,12 @@ class LoopClosing
     g2o::Sim3 mg2oMergeSlw;
 
     /*!
-     * @brief       Set when a merge is confirmed but never read (kept from
-     *              ORB-SLAM3).
-     */
-    g2o::Sim3 mg2oMergeSmw;
-
-    /*!
      * @brief       Similarity transform used to carry out the merge.
      *
      * @frame       World to current key-frame camera (similarity: rotation,
      *              translation, scale).
      */
     g2o::Sim3 mg2oMergeScw;
-
-    /*!
-     * @brief       Set when a merge is confirmed but never read (kept from
-     *              ORB-SLAM3).
-     */
-    g2o::Sim3 mg2oMergeSw1w2;
 
     /*!
      * @brief       Key frame of another map recognised as the same place (the
@@ -716,12 +667,6 @@ class LoopClosing
      *              merge.
      */
     std::vector<int> placeRecognitionTypes;
-
-    /*!
-     * @brief       Set in the constructor but never read (kept from ORB-
-     *              SLAM3).
-     */
-    std::string mstrFolderSubTraj;
 
     /*!
      * @brief       Number of loop corrections so far.
@@ -907,9 +852,6 @@ class LoopClosing
      *              World to current key-frame camera (similarity: rotation,
      *              translation, scale).
      *
-     * @param[in]   matchedMPinOrigins_in
-     *              Not used (kept from ORB-SLAM3).
-     *
      * @param[out]  mapPoints_out
      *              Map points around the candidate.
      *
@@ -924,7 +866,6 @@ class LoopClosing
         findMatchesByProjection(KeyFrame                *p_currentKeyFrame_in,
                                 KeyFrame                *p_matchedKFw_in,
                                 g2o::Sim3               &g2oScw_in,
-                                std::set<MapPoint *>    &matchedMPinOrigins_in,
                                 std::vector<MapPoint *> &mapPoints_out,
                                 std::vector<MapPoint *> &matchedMapPoints_out,
                                 int                     &matches_out);

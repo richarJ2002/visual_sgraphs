@@ -95,11 +95,6 @@ class Settings;
 
 class Tracking
 {
-  private:
-    // Variables for tracking and mapping
-    double markerImpact =
-        0.1; // Should be 1e10 for mono and 0.1 for stereo/rgb-d
-
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Tracking(System                    *p_sys_in,
@@ -204,11 +199,6 @@ class Tracking
                           Map        *p_map_in);
 
     [[nodiscard]] TrackingStatus getImageScale(float &imageScale_out) const;
-
-    // Get parameters
-    [[nodiscard]] TrackingStatus
-        getMarkerImpact(double &getMarkerImpact_out) const;
-    [[nodiscard]] TrackingStatus setMarkerImpact(const double newValue_in);
 
     // Semantic Entities
     /*!

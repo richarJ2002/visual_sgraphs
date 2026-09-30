@@ -840,9 +840,6 @@ extern void appendFloorMarkers(
  * @param[in]   mappedPassages_in
  *              Collection of mapped passage elements to process.
  *
- * @param[in]   mappedRooms_in
- *              Collection of mapped room elements; not used at present.
- *
  * @param[in]   msgTime_s_in
  *              ROS timestamp assigned to the generated markers.
  *
@@ -852,7 +849,6 @@ extern void appendFloorMarkers(
  */
 extern void appendPassageMarkers(
     const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
-    const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
     const rclcpp::Time                                      &msgTime_s_in,
     visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out);
 

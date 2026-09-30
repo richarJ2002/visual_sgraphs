@@ -18,7 +18,6 @@ set(VS_GRAPHS_TRACKING_SOURCES
   core/src/Tracking/methods/getImuTwb.cc
   core/src/Tracking/methods/getImuVwb.cc
   core/src/Tracking/methods/getLocalMapPoints.cc
-  core/src/Tracking/methods/getMarkerImpact.cc
   core/src/Tracking/methods/getMatchesInliers.cc
   core/src/Tracking/methods/getNumberDataset.cc
   core/src/Tracking/methods/getStepByStep.cc
@@ -52,7 +51,6 @@ set(VS_GRAPHS_TRACKING_SOURCES
   core/src/Tracking/methods/searchLocalPoints.cc
   core/src/Tracking/methods/setLocalMapper.cc
   core/src/Tracking/methods/setLoopClosing.cc
-  core/src/Tracking/methods/setMarkerImpact.cc
   core/src/Tracking/methods/setStepByStep.cc
   core/src/Tracking/methods/setViewer.cc
   core/src/Tracking/methods/stereoInitialization.cc

@@ -871,7 +871,6 @@ void appendFloorMarkers(
 
 void appendPassageMarkers(
     const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
-    const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
     const rclcpp::Time                                      &msgTime_s_in,
     visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out)
 {
@@ -6445,7 +6444,6 @@ void publishStructuralElements(
 
     /* Append the passage markers */
     appendPassageMarkers(mappedPassages_in,
-                         mappedRooms_in,
                          msgTime_s_in,
                          structuralElementMarkerArray);
 

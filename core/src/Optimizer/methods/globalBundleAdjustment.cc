@@ -44,7 +44,6 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
     bool                   *p_stopFlag_inout,
     const unsigned long     loopKeyFrameId_in,
     const bool              useRobustKernel_in,
-    double                  markerImpact_in,
     const std::atomic_bool *p_stopRequested_in)
 {
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
@@ -52,14 +51,6 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllRooms returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    std::vector<vs_graphs::core::semantic::Floor *> allFloors{};
-    if (p_map_in->getAllFloors(allFloors) != MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllFloors returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
@@ -76,14 +67,6 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getAllMarkers returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-    std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
-    if (p_map_in->getAllPassages(allPassages) != MapStatus::MAP_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getAllPassages returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
     }
@@ -110,14 +93,11 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
                          allMapPoints,
                          allMarkers,
                          allPlanes,
-                         allPassages,
                          allRooms,
-                         allFloors,
                          iterationCount_in,
                          p_stopFlag_inout,
                          loopKeyFrameId_in,
                          useRobustKernel_in,
-                         markerImpact_in,
                          p_stopRequested_in) !=
         OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
     {

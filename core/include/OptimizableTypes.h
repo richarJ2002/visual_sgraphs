@@ -746,77 +746,6 @@ class EdgeVertexPlanePerpendicularity
 };
 
 /*!
- * The edge used to connect a Two-wall Room's center (SE3) to Wall vertices
- * (VertexPlane) [Note]: it creates constraint for three measurements, i.e., (x,
- * y, z) 🚧 [vS-Graphs v1.5] Deprecated with the introduction of n-wall rooms.
- */
-class EdgeVertex2PlaneProjectSE3Room
-    : public g2o::BaseMultiEdge<3, Eigen::Vector3d>
-{
-  public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    EdgeVertex2PlaneProjectSE3Room() :
-        g2o::BaseMultiEdge<3, Eigen::Vector3d>()
-    {
-        resize(3);
-    }
-    EdgeVertex2PlaneProjectSE3Room(Eigen::Vector3d position_in) :
-        g2o::BaseMultiEdge<3, Eigen::Vector3d>()
-    {
-        // markerPosition = position;
-        resize(3);
-    }
-
-    virtual bool read(std::istream &inputStream_inout);
-    virtual bool write(std::ostream &outputStream_inout) const;
-
-    void computeError() override
-    {
-        const g2o::VertexSE3Expmap *v1 =
-            static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        const g2o::VertexPlane *v2 =
-            static_cast<const g2o::VertexPlane *>(_vertices[1]);
-        const g2o::VertexPlane *v3 =
-            static_cast<const g2o::VertexPlane *>(_vertices[2]);
-
-        Eigen::Vector3d roomPose = v1->estimate().translation();
-        Eigen::Vector4d wall1    = v2->estimate().coeffs();
-        Eigen::Vector4d wall2    = v3->estimate().coeffs();
-
-        correctPlaneDirection(wall1);
-        correctPlaneDirection(wall2);
-
-        Eigen::Vector3d vector;
-        if (fabs(wall1(3)) > fabs(wall2(3)))
-        {
-            vector = (0.5 * (fabs(wall1(3)) * wall1.head(3) -
-                             fabs(wall2(3)) * wall2.head(3))) +
-                     fabs(wall2(3)) * wall2.head(3);
-        }
-        else
-        {
-            vector = (0.5 * (fabs(wall2(3)) * wall2.head(3) -
-                             fabs(wall1(3)) * wall1.head(3))) +
-                     fabs(wall1(3)) * wall1.head(3);
-        }
-
-        Eigen::Vector3d normal = vector / vector.norm();
-        // Eigen::Vector3d finalPose = vec + (markerPosition -
-        // (markerPosition.dot(normal)) * normal);
-
-        _error = roomPose - vector;
-    }
-
-  protected:
-    virtual void correctPlaneDirection(Eigen::Vector4d &plane_inout)
-    {
-        if (plane_inout(3) > 0)
-            plane_inout *= -1;
-    }
-};
-
-/*!
  * The edge used to connect a Four-wall Room's centroid (SE3) to Wall vertices
  * (VertexPlane) [Note]: it creates constraint for three measurements, i.e., (x,
  * y, z) 🚧 [vS-Graphs v1.5] Deprecated with the introduction of n-wall rooms.
@@ -966,56 +895,6 @@ class EdgeVertexNPlaneProjectSE3Room
 
         return EdgeVertexNPlaneProjectSE3RoomStatus::
             EDGE_VERTEX_NPLANE_PROJECT_SE3_ROOM_STATUS_SUCCESS;
-    }
-};
-
-/*!
- * The edge used to connect a Floor centroid (SE3) to its Room vertices (SE3)
- * [Note]: it creates constraint for three measurements, i.e., (x, y, z)
- */
-class EdgeVertexNSE3RoomProjectSE3Floor
-    : public g2o::BaseMultiEdge<3, Eigen::Vector3d>
-{
-  public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    virtual bool read(std::istream &inputStream_inout);
-    virtual bool write(std::ostream &outputStream_inout) const;
-    EdgeVertexNSE3RoomProjectSE3Floor()
-    {
-        // Dynamically sized edge: at least one SE3 (floor center) + N rooms
-        resize(1);
-    }
-
-    void computeError() override
-    {
-        // First vertex is always the floor pose (SE3)
-        const g2o::VertexSE3Expmap *p_floorVertex =
-            static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        Eigen::Vector3d floorPose = p_floorVertex->estimate().translation();
-
-        // Remaining vertices are rooms
-        std::vector<Eigen::Vector3d> rooms;
-        for (size_t vertexIndex = 1; vertexIndex < _vertices.size();
-             ++vertexIndex)
-        {
-            const g2o::VertexSE3Expmap *p_roomVertex =
-                static_cast<const g2o::VertexSE3Expmap *>(
-                    _vertices[vertexIndex]);
-            Eigen::Vector3d room = p_roomVertex->estimate().translation();
-            rooms.push_back(room);
-        }
-
-        // Compute representative position from all rooms in the floor
-        Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-        for (const Eigen::Vector3d &room : rooms)
-            centroid += room;
-
-        if (!rooms.empty())
-            centroid /= static_cast<double>(rooms.size());
-
-        // Final error
-        _error = floorPose - centroid;
     }
 };
 

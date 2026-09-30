@@ -184,27 +184,6 @@ void LoopClosing::run(void)
                     else
                     {
                         /*!
-                         * Get pose of the matched keyframe in the matched
-                         * keyframes world frame.
-                         */
-                        Sophus::SE3f mergeMatchedKFPose{};
-                        if (p_mergeMatchedKF->getPose(mergeMatchedKFPose) !=
-                            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: getPose returned a failure "
-                                         "status although it cannot fail; "
-                                         "continuing as before.",
-                                         __func__);
-                        }
-                        Sophus::SE3d mTmw = mergeMatchedKFPose.cast<double>();
-
-                        /* Convert above keyframe pose into Sim3 datatype */
-                        g2o::Sim3 gSmw2(mTmw.unit_quaternion(),
-                                        mTmw.translation(),
-                                        1.0);
-
-                        /*!
                          * Get pose of the current keyframe in the current
                          * keyframes world frame.
                          */
@@ -405,19 +384,9 @@ void LoopClosing::run(void)
                         }
 
                         /*!
-                         * This creates a transform from the current keyframes
-                         * world frame to the matched cameras keyframe. This
-                         * is the critical transform to cause the loop closure.
-                         *
-                         * gScw1:   current keyframe world -> current camera
-                         * gSw2c:   current camera -> matched keyframe world
-                         * gWmw2:   matched keyframes world -> matched camera
-                         *
-                         *  - mg2oMergeScw:     (Primary) World frame to Camera
-                         *                      frame transform
-                         *
-                         *  - mg2oMergew1m:     Matched Camera frame to Primary
-                         *                      World frame
+                         * The merge corrects with mg2oMergeSlw, the pose of
+                         * the current camera in the matched key frame's world
+                         * frame (see above).
                          *
                          * @note        Note that w1 reffers to the primary
                          *              frame which is the current frame that
@@ -428,9 +397,7 @@ void LoopClosing::run(void)
                          *              operation (which would be the case if
                          *              the primary map was the matched map)
                          */
-                        mg2oMergeSmw   = gSmw2 * gSw2c * gScw1;
-                        mg2oMergeScw   = mg2oMergeSlw;
-                        mg2oMergeSw1w2 = (gSw2c * gScw1).inverse();
+                        mg2oMergeScw = mg2oMergeSlw;
 
 #ifdef REGISTER_TIMES
                         std::chrono::steady_clock::time_point timeStartMerge =

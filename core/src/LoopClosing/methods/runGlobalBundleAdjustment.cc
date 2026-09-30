@@ -35,7 +35,6 @@
 #include "LocalMapping.h"
 #include "Optimizer.h"
 #include "System.h"
-#include "Tracking.h"
 #include "Utils/Utils/objects/Utils.h"
 #include "Utils/Utils/objects/UtilsStatus.h"
 
@@ -113,22 +112,12 @@ LoopClosingStatus
 
     if (!isImuInitialized)
     {
-        double trackerGetMarkerImpact{};
-        if (p_tracker->getMarkerImpact(trackerGetMarkerImpact) !=
-            TrackingStatus::TRACKING_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getMarkerImpact returned a failure status "
-                         "although it cannot fail; continuing as before.",
-                         __func__);
-        }
         if (Optimizer::globalBundleAdjustment(
                 p_activeMap_inout,
                 10,
                 &optimizerStopRequested,
                 loopKeyFrameCount_in,
                 false,
-                trackerGetMarkerImpact,
                 &isGlobalBundleAdjustmentStopRequested) !=
             OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
         {

@@ -314,16 +314,6 @@ SystemStatus System::initialize(const std::string &vocabularyFile_in,
                              p_settings,
                              sequence_in);
 
-    /* Set the value of marker impact */
-    if (p_tracker->setMarkerImpact(p_sysParams->markers.impact) !=
-        TrackingStatus::TRACKING_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: setMarkerImpact returned a failure status although "
-                     "it cannot fail; continuing as before.",
-                     __func__);
-    }
-
     /* ---------------------------------------------------------------------- *
      * LOCAL MAPPING THREAD
      * ---------------------------------------------------------------------- */
