@@ -169,7 +169,7 @@ LoopClosingStatus LoopClosing::correctLoop()
 
     {
         // Get Map Mutex
-        unique_lock<mutex> lock(p_loopMap->mapUpdateMutex);
+        std::unique_lock<std::mutex> lock(p_loopMap->mapUpdateMutex);
 
         bool isImuInitialized{};
         if (p_loopMap->isImuInitialized(isImuInitialized) !=
@@ -181,8 +181,9 @@ LoopClosingStatus LoopClosing::correctLoop()
                          __func__);
         }
 
-        for (vector<KeyFrame *>::iterator vit  = currentConnectedKFs.begin(),
-                                          vend = currentConnectedKFs.end();
+        for (std::vector<KeyFrame *>::iterator
+                 vit  = currentConnectedKFs.begin(),
+                 vend = currentConnectedKFs.end();
              vit != vend;
              vit++)
         {
@@ -458,10 +459,10 @@ LoopClosingStatus LoopClosing::correctLoop()
 
     // After the MapPoint fusion, new links in the covisibility graph will
     // appear attaching both sides of the loop
-    map<KeyFrame *, set<KeyFrame *>> loopConnections;
+    std::map<KeyFrame *, std::set<KeyFrame *>> loopConnections;
 
-    for (vector<KeyFrame *>::iterator vit  = currentConnectedKFs.begin(),
-                                      vend = currentConnectedKFs.end();
+    for (std::vector<KeyFrame *>::iterator vit  = currentConnectedKFs.begin(),
+                                           vend = currentConnectedKFs.end();
          vit != vend;
          vit++)
     {
@@ -496,7 +497,7 @@ LoopClosingStatus LoopClosing::correctLoop()
                          __func__);
         }
         loopConnections[p_keyFrame] = keyFrameConnectedKeyFrames;
-        for (vector<KeyFrame *>::iterator
+        for (std::vector<KeyFrame *>::iterator
                  vitPrevious  = previousNeighbors.begin(),
                  vendPrevious = previousNeighbors.end();
              vitPrevious != vendPrevious;
@@ -504,8 +505,9 @@ LoopClosingStatus LoopClosing::correctLoop()
         {
             loopConnections[p_keyFrame].erase(*vitPrevious);
         }
-        for (vector<KeyFrame *>::iterator vit2  = currentConnectedKFs.begin(),
-                                          vend2 = currentConnectedKFs.end();
+        for (std::vector<KeyFrame *>::iterator
+                 vit2  = currentConnectedKFs.begin(),
+                 vend2 = currentConnectedKFs.end();
              vit2 != vend2;
              vit2++)
         {
@@ -681,11 +683,11 @@ LoopClosingStatus LoopClosing::correctLoop()
         isGlobalBundleAdjustmentStopRequested.store(false,
                                                     std::memory_order_release);
 
-        p_threadGBA = new thread(&LoopClosing::runGlobalBundleAdjustment,
-                                 this,
-                                 p_loopMap,
-                                 p_currentKF->id,
-                                 fullBundleAdjustmentIndex);
+        p_threadGBA = new std::thread(&LoopClosing::runGlobalBundleAdjustment,
+                                      this,
+                                      p_loopMap,
+                                      p_currentKF->id,
+                                      fullBundleAdjustmentIndex);
     }
 
     // Loop closed. Release Local Mapping.

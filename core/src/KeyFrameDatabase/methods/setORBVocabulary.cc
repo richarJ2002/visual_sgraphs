@@ -22,8 +22,6 @@
 
 #include <mutex>
 
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core

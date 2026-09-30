@@ -38,11 +38,11 @@ MapStatus Map::getRoomWallPlaneById(
     int                                 planeId_in,
     vs_graphs::core::geometric::Plane *&p_roomWallPlaneById_out)
 {
-    unique_lock<mutex> lock(mapMutex);
-    const auto         wallIterator = roomWallPlaneIndex.find(planeId_in);
-    p_roomWallPlaneById_out         = wallIterator != roomWallPlaneIndex.end()
-                                          ? wallIterator->second
-                                          : nullptr;
+    std::unique_lock<std::mutex> lock(mapMutex);
+    const auto wallIterator = roomWallPlaneIndex.find(planeId_in);
+    p_roomWallPlaneById_out = wallIterator != roomWallPlaneIndex.end()
+                                  ? wallIterator->second
+                                  : nullptr;
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 

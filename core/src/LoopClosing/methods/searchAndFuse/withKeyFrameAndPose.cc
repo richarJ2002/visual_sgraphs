@@ -37,8 +37,8 @@ namespace core
 {
 
 LoopClosingStatus
-    LoopClosing::searchAndFuse(const KeyFrameAndPose &correctedPosesMap_in,
-                               vector<MapPoint *>    &mapPoints_in)
+    LoopClosing::searchAndFuse(const KeyFrameAndPose   &correctedPosesMap_in,
+                               std::vector<MapPoint *> &mapPoints_in)
 {
     ORBmatcher matcher(0.8);
 
@@ -75,9 +75,9 @@ LoopClosingStatus
                          __func__);
         }
 
-        vector<MapPoint *> replacePoints(mapPoints_in.size(),
-                                         static_cast<MapPoint *>(nullptr));
-        int                fusedCount{};
+        std::vector<MapPoint *> replacePoints(mapPoints_in.size(),
+                                              static_cast<MapPoint *>(nullptr));
+        int                     fusedCount{};
         if (matcher.fuse(p_keyFrame,
                          Scw,
                          mapPoints_in,
@@ -93,8 +93,8 @@ LoopClosingStatus
         }
 
         // Get Map Mutex
-        unique_lock<mutex> lock(p_map->mapUpdateMutex);
-        const int          lpCount = mapPoints_in.size();
+        std::unique_lock<std::mutex> lock(p_map->mapUpdateMutex);
+        const int                    lpCount = mapPoints_in.size();
         for (int lpIndex = 0; lpIndex < lpCount; lpIndex++)
         {
             MapPoint *p_rep = replacePoints[lpIndex];

@@ -33,8 +33,8 @@ namespace vs_graphs
 namespace core
 {
 
-SystemStatus System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
-                                                 Map          *p_map_in)
+SystemStatus System::saveKeyFrameTrajectoryEuRoC(const std::string &filename_in,
+                                                 Map               *p_map_in)
 {
 
     unsigned long mapId{};
@@ -45,9 +45,9 @@ SystemStatus System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
                      "fail; continuing as before.",
                      __func__);
     }
-    cout << endl
-         << "Saving keyframe trajectory of map " << mapId << " to "
-         << filename_in << " ..." << endl;
+    std::cout << std::endl
+              << "Saving keyframe trajectory of map " << mapId << " to "
+              << filename_in << " ..." << std::endl;
 
     std::vector<KeyFrame *> keyFrames{};
     if (p_map_in->getAllKeyFrames(keyFrames) != MapStatus::MAP_STATUS_SUCCESS)
@@ -57,13 +57,13 @@ SystemStatus System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
+    std::sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
     ofstream f;
     f.open(filename_in.c_str());
-    f << fixed;
+    f << std::fixed;
 
     for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
          keyFrameIndex++)
@@ -95,10 +95,10 @@ SystemStatus System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
             }
             Eigen::Quaternionf q   = Twb.unit_quaternion();
             Eigen::Vector3f    twb = Twb.translation();
-            f << setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
-              << setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2)
-              << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()
-              << endl;
+            f << std::setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
+              << std::setprecision(9) << twb(0) << " " << twb(1) << " "
+              << twb(2) << " " << q.x() << " " << q.y() << " " << q.z() << " "
+              << q.w() << std::endl;
         }
         else
         {
@@ -113,9 +113,10 @@ SystemStatus System::saveKeyFrameTrajectoryEuRoC(const string &filename_in,
             }
             Eigen::Quaternionf q = Twc.unit_quaternion();
             Eigen::Vector3f    t = Twc.translation();
-            f << setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
-              << setprecision(9) << t(0) << " " << t(1) << " " << t(2) << " "
-              << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << std::setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
+              << std::setprecision(9) << t(0) << " " << t(1) << " " << t(2)
+              << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()
+              << std::endl;
         }
     }
     f.close();

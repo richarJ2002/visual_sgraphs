@@ -134,12 +134,13 @@ class LoopClosing
         std::string   lastReason;
     };
 
-    typedef pair<set<KeyFrame *>, int> ConsistentGroup;
+    typedef std::pair<std::set<KeyFrame *>, int> ConsistentGroup;
 
-    typedef map<KeyFrame *,
-                g2o::Sim3,
-                std::less<KeyFrame *>,
-                Eigen::aligned_allocator<std::pair<KeyFrame *const, g2o::Sim3>>>
+    typedef std::map<
+        KeyFrame *,
+        g2o::Sim3,
+        std::less<KeyFrame *>,
+        Eigen::aligned_allocator<std::pair<KeyFrame *const, g2o::Sim3>>>
         KeyFrameAndPose;
 
     /* ---------------------------------------------------------------------- *
@@ -246,7 +247,7 @@ class LoopClosing
     [[nodiscard]] LoopClosingStatus isRunningGBA(bool &isRunningGBA_out)
     {
         /* Lock mutext */
-        unique_lock<std::mutex> lock(gbaMutex);
+        std::unique_lock<std::mutex> lock(gbaMutex);
 
         /* Return flag to indicate if global bundal adjustemnt is running */
         isRunningGBA_out = isGbaRunning;
@@ -259,7 +260,7 @@ class LoopClosing
     [[nodiscard]] LoopClosingStatus isFinishedGBA(bool &isFinishedGBA_out)
     {
         /* Lock mutext */
-        unique_lock<std::mutex> lock(gbaMutex);
+        std::unique_lock<std::mutex> lock(gbaMutex);
 
         /* Return flag to indicate if global bundal adjustemnt is finished */
         isFinishedGBA_out = hasGbaFinished;
@@ -292,31 +293,31 @@ class LoopClosing
 
 #ifdef REGISTER_TIMES
 
-    vector<double> dataQueryTimes_ms;
-    vector<double> sim3EstimationTimes_ms;
-    vector<double> placeRecognitionTotalTimes_ms;
+    std::vector<double> dataQueryTimes_ms;
+    std::vector<double> sim3EstimationTimes_ms;
+    std::vector<double> placeRecognitionTotalTimes_ms;
 
-    vector<double> mergeMapsTimes_ms;
-    vector<double> weldingBaTimes_ms;
-    vector<double> mergeEssentialGraphTimes_ms;
-    vector<double> mergeTotalTimes_ms;
-    vector<int>    mergeKeyFrameCounts;
-    vector<int>    mergeMapPointCounts;
-    int            mergeCount;
+    std::vector<double> mergeMapsTimes_ms;
+    std::vector<double> weldingBaTimes_ms;
+    std::vector<double> mergeEssentialGraphTimes_ms;
+    std::vector<double> mergeTotalTimes_ms;
+    std::vector<int>    mergeKeyFrameCounts;
+    std::vector<int>    mergeMapPointCounts;
+    int                 mergeCount;
 
-    vector<double> loopFusionTimes_ms;
-    vector<double> loopEssentialGraphTimes_ms;
-    vector<double> loopTotalTimes_ms;
-    vector<int>    loopKeyFrameCounts;
-    int            loopCount;
+    std::vector<double> loopFusionTimes_ms;
+    std::vector<double> loopEssentialGraphTimes_ms;
+    std::vector<double> loopTotalTimes_ms;
+    std::vector<int>    loopKeyFrameCounts;
+    int                 loopCount;
 
-    vector<double> gbaTimes_ms;
-    vector<double> updateMapTimes_ms;
-    vector<double> fullGbaTotalTimes_ms;
-    vector<int>    gbaKeyFrameCounts;
-    vector<int>    gbaMapPointCounts;
-    int            fullGbaExecutionCount;
-    int            fullGbaAbortCount;
+    std::vector<double> gbaTimes_ms;
+    std::vector<double> updateMapTimes_ms;
+    std::vector<double> fullGbaTotalTimes_ms;
+    std::vector<int>    gbaKeyFrameCounts;
+    std::vector<int>    gbaMapPointCounts;
+    int                 fullGbaExecutionCount;
+    int                 fullGbaAbortCount;
 
 #endif
 
@@ -621,22 +622,22 @@ class LoopClosing
     /*!
      * @brief      TODO
      */
-    vector<double> placeRecognitionCurrentTimes;
+    std::vector<double> placeRecognitionCurrentTimes;
 
     /*!
      * @brief      TODO
      */
-    vector<double> placeRecognitionMatchedTimes;
+    std::vector<double> placeRecognitionMatchedTimes;
 
     /*!
      * @brief      TODO
      */
-    vector<int> placeRecognitionTypes;
+    std::vector<int> placeRecognitionTypes;
 
     /*!
      * @brief      TODO
      */
-    string mstrFolderSubTraj;
+    std::string mstrFolderSubTraj;
 
     /*!
      * @brief      TODO
@@ -806,8 +807,8 @@ class LoopClosing
         findMatchesByProjection(KeyFrame                *p_currentKeyFrame_in,
                                 KeyFrame                *p_matchedKFw_in,
                                 g2o::Sim3               &g2oScw_in,
-                                set<MapPoint *>         &matchedMPinOrigins_in,
-                                vector<MapPoint *>      &mapPoints_out,
+                                std::set<MapPoint *>    &matchedMPinOrigins_in,
+                                std::vector<MapPoint *> &mapPoints_out,
                                 std::vector<MapPoint *> &matchedMapPoints_out,
                                 int                     &matches_out);
 
@@ -821,8 +822,8 @@ class LoopClosing
      *              TODO
      */
     [[nodiscard]] LoopClosingStatus
-        searchAndFuse(const KeyFrameAndPose &correctedPosesMap_in,
-                      vector<MapPoint *>    &mapPoints_in);
+        searchAndFuse(const KeyFrameAndPose   &correctedPosesMap_in,
+                      std::vector<MapPoint *> &mapPoints_in);
 
     /*!
      * @brief       TODO
@@ -835,7 +836,7 @@ class LoopClosing
      */
     [[nodiscard]] LoopClosingStatus
         searchAndFuse(const std::vector<KeyFrame *> &conectedKeyFrames_in,
-                      vector<MapPoint *>            &mapPoints_in);
+                      std::vector<MapPoint *>       &mapPoints_in);
 
     /*!
      * @brief       TODO
@@ -917,7 +918,7 @@ class LoopClosing
      */
     [[nodiscard]] LoopClosingStatus
         checkObservations(std::set<KeyFrame *> &keyFramesMap1_in,
-                          set<KeyFrame *>      &keyFramesMap2_in);
+                          std::set<KeyFrame *> &keyFramesMap2_in);
 
     /*!
      * @brief       TODO
@@ -934,7 +935,7 @@ class LoopClosing
      */
     [[nodiscard]] LoopClosingStatus setFinish(void);
 #ifdef REGISTER_LOOP
-    string mstrFolderLoop;
+    std::string mstrFolderLoop;
 #endif
 };
 

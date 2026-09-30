@@ -34,8 +34,8 @@ namespace core
 AtlasStatus
     Atlas::getBiggestGroundPlane(geometric::Plane *&p_biggestGroundPlane_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    geometric::Plane  *p_activeMapBiggestGroundPlane = nullptr;
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    geometric::Plane            *p_activeMapBiggestGroundPlane = nullptr;
     if ((p_activeMap != nullptr) &&
         p_activeMap->getBiggestGroundPlane(p_activeMapBiggestGroundPlane) !=
             MapStatus::MAP_STATUS_SUCCESS)

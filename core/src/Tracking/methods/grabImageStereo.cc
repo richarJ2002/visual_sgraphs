@@ -36,7 +36,7 @@ TrackingStatus
     Tracking::grabImageStereo(const cv::Mat &imageRectifiedLeft_in,
                               const cv::Mat &imageRectifiedRight_in,
                               const double  &timestamp_in,
-                              string         filename_in,
+                              std::string    filename_in,
                               const std::vector<semantic::Marker *> markers_in,
                               const std::vector<semantic::Room *>   rooms_in,
                               Sophus::SE3f &cameraPose_out)
@@ -61,26 +61,26 @@ TrackingStatus
     {
         if (isRgbEnabled)
         {
-            cvtColor(imageGray, imageGray, cv::COLOR_RGB2GRAY);
-            cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_RGB2GRAY);
+            cv::cvtColor(imageGray, imageGray, cv::COLOR_RGB2GRAY);
+            cv::cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_RGB2GRAY);
         }
         else
         {
-            cvtColor(imageGray, imageGray, cv::COLOR_BGR2GRAY);
-            cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_BGR2GRAY);
+            cv::cvtColor(imageGray, imageGray, cv::COLOR_BGR2GRAY);
+            cv::cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_BGR2GRAY);
         }
     }
     else if (imageGray.channels() == 4)
     {
         if (isRgbEnabled)
         {
-            cvtColor(imageGray, imageGray, cv::COLOR_RGBA2GRAY);
-            cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_RGBA2GRAY);
+            cv::cvtColor(imageGray, imageGray, cv::COLOR_RGBA2GRAY);
+            cv::cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_RGBA2GRAY);
         }
         else
         {
-            cvtColor(imageGray, imageGray, cv::COLOR_BGRA2GRAY);
-            cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_BGRA2GRAY);
+            cv::cvtColor(imageGray, imageGray, cv::COLOR_BGRA2GRAY);
+            cv::cvtColor(imageGrayRight, imageGrayRight, cv::COLOR_BGRA2GRAY);
         }
     }
 

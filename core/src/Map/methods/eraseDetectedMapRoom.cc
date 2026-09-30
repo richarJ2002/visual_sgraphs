@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::eraseDetectedMapRoom(semantic::Room *p_room_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     detectedRooms.erase(p_room_in);
 
     return MapStatus::MAP_STATUS_SUCCESS;

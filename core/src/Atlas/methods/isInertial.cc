@@ -33,8 +33,8 @@ namespace core
 
 AtlasStatus Atlas::isInertial(bool &isInertial_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    bool               activeMapIsInertial{};
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    bool                         activeMapIsInertial{};
     if (p_activeMap->isInertial(activeMapIsInertial) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {

@@ -36,7 +36,7 @@ namespace core
 
 MapPointStatus MapPoint::increaseVisible(int n_in)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     visibleCount += n_in;
 
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;

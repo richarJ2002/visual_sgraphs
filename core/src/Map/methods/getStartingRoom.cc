@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getStartingRoom(semantic::Room *&p_startingRoom_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_startingRoom_out = p_startingRoom;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

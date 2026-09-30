@@ -34,8 +34,8 @@ namespace vs_graphs
 namespace core
 {
 
-SystemStatus System::saveTrajectoryEuRoC(const string &filename_in,
-                                         Map          *p_map_in)
+SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in,
+                                         Map               *p_map_in)
 {
 
     unsigned long mapId{};
@@ -46,9 +46,9 @@ SystemStatus System::saveTrajectoryEuRoC(const string &filename_in,
                      "fail; continuing as before.",
                      __func__);
     }
-    cout << endl
-         << "Saving trajectory of map " << mapId << " to " << filename_in
-         << " ..." << endl;
+    std::cout << std::endl
+              << "Saving trajectory of map " << mapId << " to " << filename_in
+              << " ..." << std::endl;
 
     std::vector<KeyFrame *> keyFrames{};
     if (p_map_in->getAllKeyFrames(keyFrames) != MapStatus::MAP_STATUS_SUCCESS)
@@ -58,7 +58,7 @@ SystemStatus System::saveTrajectoryEuRoC(const string &filename_in,
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
+    std::sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
@@ -91,9 +91,9 @@ SystemStatus System::saveTrajectoryEuRoC(const string &filename_in,
         Twb = poseInverse;
     }
 
-    ofstream f;
+    std::ofstream f;
     f.open(filename_in.c_str());
-    f << fixed;
+    f << std::fixed;
 
     // Frame pose is stored relative to its reference keyframe (which is
     // optimized by BA and pose graph). We need to get first the keyframe pose
@@ -104,8 +104,8 @@ SystemStatus System::saveTrajectoryEuRoC(const string &filename_in,
     // and a flag which is true when tracking failed (lbL).
     list<vs_graphs::core::KeyFrame *>::iterator rits =
         p_tracker->referenceKeyFrames.begin();
-    list<double>::iterator lT  = p_tracker->frameTimes.begin();
-    list<bool>::iterator   lbL = p_tracker->lostFlags.begin();
+    std::list<double>::iterator lT  = p_tracker->frameTimes.begin();
+    std::list<bool>::iterator   lbL = p_tracker->lostFlags.begin();
 
     for (auto lit  = p_tracker->relativeFramePoses.begin(),
               lend = p_tracker->relativeFramePoses.end();
@@ -183,23 +183,26 @@ SystemStatus System::saveTrajectoryEuRoC(const string &filename_in,
                 (p_keyFrame->imuCalibration.mTbc * (*lit) * Trw).inverse();
             Eigen::Quaternionf q   = Twb.unit_quaternion();
             Eigen::Vector3f    twb = Twb.translation();
-            f << setprecision(6) << 1e9 * (*lT) << " " << setprecision(9)
-              << twb(0) << " " << twb(1) << " " << twb(2) << " " << q.x() << " "
-              << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << std::setprecision(6) << 1e9 * (*lT) << " "
+              << std::setprecision(9) << twb(0) << " " << twb(1) << " "
+              << twb(2) << " " << q.x() << " " << q.y() << " " << q.z() << " "
+              << q.w() << std::endl;
         }
         else
         {
             Sophus::SE3f       Twc = ((*lit) * Trw).inverse();
             Eigen::Quaternionf q   = Twc.unit_quaternion();
             Eigen::Vector3f    twc = Twc.translation();
-            f << setprecision(6) << 1e9 * (*lT) << " " << setprecision(9)
-              << twc(0) << " " << twc(1) << " " << twc(2) << " " << q.x() << " "
-              << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << std::setprecision(6) << 1e9 * (*lT) << " "
+              << std::setprecision(9) << twc(0) << " " << twc(1) << " "
+              << twc(2) << " " << q.x() << " " << q.y() << " " << q.z() << " "
+              << q.w() << std::endl;
         }
     }
     f.close();
-    cout << endl
-         << "End of saving trajectory to " << filename_in << " ..." << endl;
+    std::cout << std::endl
+              << "End of saving trajectory to " << filename_in << " ..."
+              << std::endl;
 
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }

@@ -34,7 +34,7 @@ namespace core
 
 Sim3SolverStatus Sim3Solver::checkInliers()
 {
-    vector<Eigen::Vector2f> vP1im2, vP2im1;
+    std::vector<Eigen::Vector2f> vP1im2, vP2im1;
     if (project(points3Dc2, vP2im1, mT12i, p_firstCamera) !=
         Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS)
     {

@@ -43,9 +43,9 @@ SystemStatus
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
+    std::sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
-    vector<Sophus::SE3f> keyFramePoses;
+    std::vector<Sophus::SE3f> keyFramePoses;
 
     for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
          keyFrameIndex++)

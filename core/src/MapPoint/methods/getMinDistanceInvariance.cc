@@ -37,7 +37,7 @@ namespace core
 MapPointStatus
     MapPoint::getMinDistanceInvariance(float &minDistanceInvariance_out)
 {
-    unique_lock<mutex> lock(positionMutex);
+    std::unique_lock<std::mutex> lock(positionMutex);
     minDistanceInvariance_out = 0.8f * minDistance;
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

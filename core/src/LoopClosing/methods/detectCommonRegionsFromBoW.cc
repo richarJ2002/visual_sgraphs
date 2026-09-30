@@ -77,9 +77,9 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
     std::vector<MapPoint *> bestMapPoints;
     std::vector<MapPoint *> bestMatchedMapPoints;
 
-    int         candidateCount = bowCandidates_in.size();
-    vector<int> stageCounts(candidateCount, 0);
-    vector<int> matchStageCounts(candidateCount, 0);
+    int              candidateCount = bowCandidates_in.size();
+    std::vector<int> stageCounts(candidateCount, 0);
+    std::vector<int> matchStageCounts(candidateCount, 0);
 
     int index = 0;
     // Verbose::PrintMess("BoW candidates: There are " +
@@ -296,11 +296,11 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                     __func__);
             } // at least 15 inliers
 
-            bool            areIterationsExhausted = false;
-            vector<bool>    inliersFlags;
-            int             inlierCount;
-            bool            hasConverged = false;
-            Eigen::Matrix4f mTcm;
+            bool              areIterationsExhausted = false;
+            std::vector<bool> inliersFlags;
+            int               inlierCount;
+            bool              hasConverged = false;
+            Eigen::Matrix4f   mTcm;
             while (!hasConverged && !areIterationsExhausted)
             {
                 Eigen::Matrix4f solverTransform{};
@@ -351,15 +351,15 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                 covisibleKeyFrames =
                     mostBowMatchesKeyFrameBestCovisibilityKeyFrames;
                 covisibleKeyFrames.push_back(p_mostBowMatchesKeyFrame);
-                set<KeyFrame *> checkKeyFrames(covisibleKeyFrames.begin(),
-                                               covisibleKeyFrames.end());
+                std::set<KeyFrame *> checkKeyFrames(covisibleKeyFrames.begin(),
+                                                    covisibleKeyFrames.end());
 
                 // std::cout << "There are " << vpCovKFi.size() <<" near KFs" <<
                 // std::endl;
 
-                set<MapPoint *>    mapPoints;
-                vector<MapPoint *> candidateMapPoints;
-                vector<KeyFrame *> keyFrames;
+                std::set<MapPoint *>    mapPoints;
+                std::vector<MapPoint *> candidateMapPoints;
+                std::vector<KeyFrame *> keyFrames;
                 for (KeyFrame *p_covisibleKeyFrame : covisibleKeyFrames)
                 {
                     std::vector<MapPoint *> covisibleKeyFrameMapPointMatches{};
@@ -477,7 +477,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                         __func__);
                 }
 
-                vector<MapPoint *>      bowMatchedMapPoints;
+                std::vector<MapPoint *> bowMatchedMapPoints;
                 std::vector<MapPoint *> currentKFMapPointMatches3{};
                 if (p_currentKF->getMapPointMatches(
                         currentKFMapPointMatches3) !=
@@ -491,7 +491,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                 }
                 bowMatchedMapPoints.resize(currentKFMapPointMatches3.size(),
                                            static_cast<MapPoint *>(nullptr));
-                vector<KeyFrame *>      matchedKeyFrames;
+                std::vector<KeyFrame *> matchedKeyFrames;
                 std::vector<MapPoint *> currentKFMapPointMatches4{};
                 if (p_currentKF->getMapPointMatches(
                         currentKFMapPointMatches4) !=
@@ -622,7 +622,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                          __func__);
                         }
 
-                        vector<MapPoint *>      bowMatchedMapPoints;
+                        std::vector<MapPoint *> bowMatchedMapPoints;
                         std::vector<MapPoint *> currentKFMapPointMatches5{};
                         if (p_currentKF->getMapPointMatches(
                                 currentKFMapPointMatches5) !=
@@ -693,9 +693,9 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                         "fail; continuing as before.",
                                         __func__);
                                 }
-                                tuple<size_t, size_t> indexes =
+                                std::tuple<size_t, size_t> indexes =
                                     mapPointIndexInKeyFrame;
-                                int index = get<0>(indexes);
+                                int index = std::get<0>(indexes);
                                 if (index >= 0)
                                 {
                                     int coordinateX =
@@ -783,8 +783,9 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                                1.0);
                                 g2o::Sim3 gSjw = gSjc * gScw;
                                 int       covisibleProjectionMatchCount = 0;
-                                vector<MapPoint *> covisibleMatchedMapPoints;
-                                bool               isValid{};
+                                std::vector<MapPoint *>
+                                     covisibleMatchedMapPoints;
+                                bool isValid{};
                                 if (detectCommonRegionsFromLastKF(
                                         p_currentCovisibleKeyFrame,
                                         p_mostBowMatchesKeyFrame,

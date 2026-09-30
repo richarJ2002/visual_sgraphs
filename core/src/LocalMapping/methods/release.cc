@@ -34,14 +34,14 @@ namespace core
 
 LocalMappingStatus LocalMapping::release()
 {
-    unique_lock<mutex> stopLock(stopMutex);
-    unique_lock<mutex> finishLock(finishMutex);
+    std::unique_lock<std::mutex> stopLock(stopMutex);
+    std::unique_lock<std::mutex> finishLock(finishMutex);
     if (hasFinished)
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     hasStopped      = false;
     isStopRequested = false;
-    for (list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
-                                    newKeyFrameEnd = newKeyFrames.end();
+    for (std::list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
+                                         newKeyFrameEnd = newKeyFrames.end();
          newKeyFrameIt != newKeyFrameEnd;
          newKeyFrameIt++)
         delete *newKeyFrameIt;

@@ -196,7 +196,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
             }
             if (!covisibleKeyFrames.empty())
             {
-                for (vector<KeyFrame *>::const_iterator
+                for (std::vector<KeyFrame *>::const_iterator
                          vit  = covisibleKeyFrames.begin(),
                          vend = covisibleKeyFrames.end();
                      vit != vend;
@@ -255,8 +255,8 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            for (set<KeyFrame *>::iterator sit  = loopKeyFrames.begin(),
-                                           send = loopKeyFrames.end();
+            for (std::set<KeyFrame *>::iterator sit  = loopKeyFrames.begin(),
+                                                send = loopKeyFrames.end();
                  sit != send;
                  sit++)
             {

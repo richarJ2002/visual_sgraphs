@@ -35,10 +35,11 @@ namespace core
 LocalMappingStatus LocalMapping::resetIfRequested()
 {
     {
-        unique_lock<mutex> resetLock(resetMutex);
+        std::unique_lock<std::mutex> resetLock(resetMutex);
         if (isResetRequested)
         {
-            cout << "[Mapping] Reseting Atlas in 'LocalMapping' ..." << endl;
+            std::cout << "[Mapping] Reseting Atlas in 'LocalMapping' ..."
+                      << std::endl;
             newKeyFrames.clear();
             recentAddedMapPoints.clear();
             isResetRequested          = false;
@@ -54,8 +55,9 @@ LocalMappingStatus LocalMapping::resetIfRequested()
 
         if (isResetActiveMapRequested)
         {
-            cout << "[Mapping] Reseting the Current Map in 'LocalMapping' ..."
-                 << endl;
+            std::cout
+                << "[Mapping] Reseting the Current Map in 'LocalMapping' ..."
+                << std::endl;
 
             newKeyFrames.clear();
             recentAddedMapPoints.clear();

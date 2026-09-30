@@ -32,7 +32,7 @@ namespace core
 
 AtlasStatus Atlas::clearAtlas()
 {
-    unique_lock<mutex> atlasLock(atlasMutex);
+    std::unique_lock<std::mutex> atlasLock(atlasMutex);
     maps.clear();
     p_activeMap        = static_cast<Map *>(nullptr);
     lastInitKeyFrameId = 0;

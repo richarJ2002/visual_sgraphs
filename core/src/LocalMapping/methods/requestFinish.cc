@@ -34,7 +34,7 @@ namespace core
 
 LocalMappingStatus LocalMapping::requestFinish()
 {
-    unique_lock<mutex> finishLock(finishMutex);
+    std::unique_lock<std::mutex> finishLock(finishMutex);
     isFinishRequested = true;
 
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;

@@ -39,7 +39,7 @@ MapStatus Map::setSkeletonEdges(
         &newSkeletonEdges_in)
 {
     /* Lock access to the map data */
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     /* Replace the previous connected skeleton edge collection */
     skeletonEdges = newSkeletonEdges_in;

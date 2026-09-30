@@ -60,7 +60,7 @@ KannalaBrandt8Status
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (abs(precision - kannalaCameraPrecision) > 1e-6)
+    if (std::abs(precision - kannalaCameraPrecision) > 1e-6)
     {
         isEqual_out = false;
         return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
@@ -113,7 +113,8 @@ KannalaBrandt8Status
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (abs(parameters[parameterIndex] - kannalaCameraParameter) > 1e-6)
+        if (std::abs(parameters[parameterIndex] - kannalaCameraParameter) >
+            1e-6)
         {
             isSameCamera = false;
             break;

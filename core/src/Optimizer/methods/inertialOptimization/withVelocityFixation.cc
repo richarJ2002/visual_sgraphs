@@ -164,9 +164,9 @@ OptimizerStatus Optimizer::inertialOptimization(
 
     // Graph edges
     // IMU links with gravity and scale
-    vector<EdgeInertialGS *> vpei;
+    std::vector<EdgeInertialGS *> vpei;
     vpei.reserve(keyFrames.size());
-    vector<pair<KeyFrame *, KeyFrame *>> vppUsedKeyFrame;
+    std::vector<std::pair<KeyFrame *, KeyFrame *>> vppUsedKeyFrame;
     vppUsedKeyFrame.reserve(keyFrames.size());
     // std::cout << "build optimization graph" << std::endl;
 
@@ -229,12 +229,13 @@ OptimizerStatus Optimizer::inertialOptimization(
                 !p_secondPoseVertex || !p_secondVelocityVertex ||
                 !p_gravityDirectionVertex || !p_scaleVertex)
             {
-                cout << "Error" << p_firstPoseVertex << ", "
-                     << p_firstVelocityVertex << ", " << p_gyroBiasVertex
-                     << ", " << p_accelerometerBiasVertex << ", "
-                     << p_secondPoseVertex << ", " << p_secondVelocityVertex
-                     << ", " << p_gravityDirectionVertex << ", "
-                     << p_scaleVertex << endl;
+                std::cout << "Error" << p_firstPoseVertex << ", "
+                          << p_firstVelocityVertex << ", " << p_gyroBiasVertex
+                          << ", " << p_accelerometerBiasVertex << ", "
+                          << p_secondPoseVertex << ", "
+                          << p_secondVelocityVertex << ", "
+                          << p_gravityDirectionVertex << ", " << p_scaleVertex
+                          << std::endl;
 
                 continue;
             }
@@ -268,7 +269,7 @@ OptimizerStatus Optimizer::inertialOptimization(
             vpei.push_back(ei);
 
             vppUsedKeyFrame.push_back(
-                make_pair(p_keyFrame->p_prevKF, p_keyFrame));
+                std::make_pair(p_keyFrame->p_prevKF, p_keyFrame));
             optimizer.addEdge(ei);
         }
     }

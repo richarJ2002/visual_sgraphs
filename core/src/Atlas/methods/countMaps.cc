@@ -32,7 +32,7 @@ namespace core
 
 AtlasStatus Atlas::countMaps(int &maps_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
+    std::unique_lock<std::mutex> lock(atlasMutex);
     maps_out = maps.size();
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }

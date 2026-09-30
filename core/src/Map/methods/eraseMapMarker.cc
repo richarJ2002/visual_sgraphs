@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::eraseMapMarker(semantic::Marker *p_marker_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     markers.erase(p_marker_in);
 
     for (auto markerIterator = markerIndex.begin();

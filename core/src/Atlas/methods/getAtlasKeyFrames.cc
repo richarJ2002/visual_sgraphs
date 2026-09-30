@@ -34,7 +34,7 @@ namespace core
 AtlasStatus Atlas::getAtlasKeyFrames(
     std::map<unsigned long, KeyFrame *> &atlasKeyFrames_out)
 {
-    map<long unsigned int, KeyFrame *> idKeyFrames;
+    std::map<long unsigned int, KeyFrame *> idKeyFrames;
     for (Map *p_backupMap : backupMaps)
     {
         std::vector<KeyFrame *> backupKeyFrames{};

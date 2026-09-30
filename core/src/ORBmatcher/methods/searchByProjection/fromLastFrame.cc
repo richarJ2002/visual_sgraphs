@@ -40,7 +40,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
     int nmatches = 0;
 
     // Rotation Histogram (to check rotation consistency)
-    vector<int> rotHist[HISTO_LENGTH];
+    std::vector<int> rotHist[HISTO_LENGTH];
     for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
          histogramBinIndex++)
         rotHist[histogramBinIndex].reserve(500);
@@ -116,7 +116,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                 // Search in a window. Size depends on scale
                 float radius = th * CurrentFrame.scaleFactors[lastOctaveCount];
 
-                vector<size_t> indices2;
+                std::vector<size_t> indices2;
 
                 if (isMovingForward)
                 {
@@ -195,8 +195,8 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                 int bestDistance = 256;
                 int bestIndex2   = -1;
 
-                for (vector<size_t>::const_iterator vit  = indices2.begin(),
-                                                    vend = indices2.end();
+                for (std::vector<size_t>::const_iterator vit = indices2.begin(),
+                                                         vend = indices2.end();
                      vit != vend;
                      vit++)
                 {
@@ -225,7 +225,8 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                         CurrentFrame.uRight[i2] > 0)
                     {
                         const float ur = uv(0) - CurrentFrame.mbf * invzc;
-                        const float er = fabs(ur - CurrentFrame.uRight[i2]);
+                        const float er =
+                            std::fabs(ur - CurrentFrame.uRight[i2]);
                         if (er > radius)
                             continue;
                     }
@@ -280,7 +281,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                         float rot = keyPointLf.angle - keyPointCf.angle;
                         if (rot < 0.0)
                             rot += 360.0f;
-                        int bin = round(rot * factor);
+                        int bin = std::round(rot * factor);
                         if (bin == HISTO_LENGTH)
                             bin = 0;
                         assert(bin >= 0 && bin < HISTO_LENGTH);
@@ -316,7 +317,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                     float radius =
                         th * CurrentFrame.scaleFactors[lastOctaveCount];
 
-                    vector<size_t> indices2;
+                    std::vector<size_t> indices2;
 
                     if (isMovingForward)
                     {
@@ -393,8 +394,9 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                     int bestDistance = 256;
                     int bestIndex2   = -1;
 
-                    for (vector<size_t>::const_iterator vit  = indices2.begin(),
-                                                        vend = indices2.end();
+                    for (std::vector<size_t>::const_iterator
+                             vit  = indices2.begin(),
+                             vend = indices2.end();
                          vit != vend;
                          vit++)
                     {
@@ -471,7 +473,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &CurrentFrame,
                             float rot = keyPointLf.angle - keyPointCf.angle;
                             if (rot < 0.0)
                                 rot += 360.0f;
-                            int bin = round(rot * factor);
+                            int bin = std::round(rot * factor);
                             if (bin == HISTO_LENGTH)
                                 bin = 0;
                             assert(bin >= 0 && bin < HISTO_LENGTH);

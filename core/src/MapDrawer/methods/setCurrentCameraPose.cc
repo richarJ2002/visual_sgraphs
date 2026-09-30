@@ -36,7 +36,7 @@ namespace core
 
 MapDrawerStatus MapDrawer::setCurrentCameraPose(const Sophus::SE3f &Tcw_in)
 {
-    unique_lock<mutex> lock(cameraMutex);
+    std::unique_lock<std::mutex> lock(cameraMutex);
     cameraPose = Tcw_in.inverse();
 
     return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;

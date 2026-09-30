@@ -84,11 +84,11 @@ TrackingStatus Tracking::preintegrateIMU()
     {
         bool shouldSleep = false;
         {
-            unique_lock<mutex> lock(imuQueueMutex);
+            std::unique_lock<std::mutex> lock(imuQueueMutex);
             if (!queueImuData.empty())
             {
                 IMU::Point *m = &queueImuData.front();
-                cout.precision(17);
+                std::cout.precision(17);
                 if (m->t < currentFrame.p_previousFrame->timeStamp - imuPeriod)
                     queueImuData.pop_front();
                 else if (m->t < currentFrame.timeStamp - imuPeriod)
@@ -115,7 +115,7 @@ TrackingStatus Tracking::preintegrateIMU()
     const int n = imuFromLastFrame.size() - 1;
     if (n == 0)
     {
-        cout << "Empty IMU measurements vector!!!\n";
+        std::cout << "Empty IMU measurements vector!!!\n";
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
@@ -189,7 +189,8 @@ TrackingStatus Tracking::preintegrateIMU()
         }
 
         if (!p_imuPreintegratedFromLastKF)
-            cout << "mpImuPreintegratedFromLastKF does not exist" << endl;
+            std::cout << "mpImuPreintegratedFromLastKF does not exist"
+                      << std::endl;
         if (p_imuPreintegratedFromLastKF->integrateNewMeasurement(acceleration,
                                                                   angleVelocity,
                                                                   tstep) !=

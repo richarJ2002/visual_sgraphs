@@ -36,7 +36,7 @@ namespace core
 
 MapPointStatus MapPoint::getNormal(Eigen::Vector3f &normal_out)
 {
-    unique_lock<mutex> lock(positionMutex);
+    std::unique_lock<std::mutex> lock(positionMutex);
     normal_out = normalVector;
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

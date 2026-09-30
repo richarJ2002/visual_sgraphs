@@ -100,10 +100,10 @@ class Tracking
              MapDrawer                 *p_mapDrawer_in,
              Atlas                     *p_atlas_in,
              KeyFrameDatabase          *p_keyFrameDatabase_in,
-             const string              &settingPath_in,
+             const std::string         &settingPath_in,
              const int                  sensorType_in,
              utils::settings::Settings *p_settings_in,
-             const string              &nameSeq_in = std::string());
+             const std::string         &nameSeq_in = std::string());
 
     ~Tracking();
 
@@ -121,7 +121,7 @@ class Tracking
         grabImageStereo(const cv::Mat &imageRectifiedLeft_in,
                         const cv::Mat &imageRectifiedRight_in,
                         const double  &timestamp_in,
-                        string         filename_in,
+                        std::string    filename_in,
                         const std::vector<semantic::Marker *> markers_in,
                         const std::vector<semantic::Room *>   rooms_in,
                         Sophus::SE3f                         &cameraPose_out);
@@ -130,14 +130,14 @@ class Tracking
         const cv::Mat                                &imageD_in,
         const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_pointcloud_in,
         const double                                 &timestamp_in,
-        string                                        filename_in,
+        std::string                                   filename_in,
         const std::vector<semantic::Marker *>         markers_in,
         const std::vector<semantic::Room *>           rooms_in,
         Sophus::SE3f                                 &cameraPose_out);
     [[nodiscard]] TrackingStatus
         grabImageMonocular(const cv::Mat                        &image_in,
                            const double                         &timestamp_in,
-                           string                                filename_in,
+                           std::string                           filename_in,
                            const std::vector<semantic::Marker *> markers_in,
                            const std::vector<semantic::Room *>   rooms_in,
                            Sophus::SE3f &cameraPose_out);
@@ -157,7 +157,7 @@ class Tracking
     // The focal lenght should be similar or scale prediction will fail when
     // projecting points
     [[nodiscard]] TrackingStatus
-        changeCalibration(const string &settingPath_in);
+        changeCalibration(const std::string &settingPath_in);
 
     // Use this function if you have deactivated local mapping and you only want
     // to localize the camera.
@@ -188,13 +188,13 @@ class Tracking
 
     // DEBUG
     [[nodiscard]] TrackingStatus
-        saveSubTrajectory(string textNameFileFrames_in,
-                          string textNameFileKeyFrame_in,
-                          string folder_in = "");
+        saveSubTrajectory(std::string textNameFileFrames_in,
+                          std::string textNameFileKeyFrame_in,
+                          std::string folder_in = "");
     [[nodiscard]] TrackingStatus
-        saveSubTrajectory(string textNameFileFrames_in,
-                          string textNameFileKeyFrame_in,
-                          Map   *p_map_in);
+        saveSubTrajectory(std::string textNameFileFrames_in,
+                          std::string textNameFileKeyFrame_in,
+                          Map        *p_map_in);
 
     [[nodiscard]] TrackingStatus getImageScale(float &imageScale_out);
 
@@ -267,10 +267,10 @@ class Tracking
     // Lists used to recover the full camera trajectory at the end of the
     // execution. Basically we store the reference keyframe for each frame and
     // its relative transformation
-    list<Sophus::SE3f> relativeFramePoses;
-    list<KeyFrame *>   referenceKeyFrames;
-    list<double>       frameTimes;
-    list<bool>         lostFlags;
+    std::list<Sophus::SE3f> relativeFramePoses;
+    std::list<KeyFrame *>   referenceKeyFrames;
+    std::list<double>       frameTimes;
+    std::list<bool>         lostFlags;
 
     // frames with estimated pose
     int  trackedFr;
@@ -305,15 +305,15 @@ class Tracking
     [[nodiscard]] TrackingStatus trackStats2File();
     [[nodiscard]] TrackingStatus printTimeStats();
 
-    vector<double> stereoRectificationTimes_ms;
-    vector<double> imageResizeTimes_ms;
-    vector<double> orbExtractionTimes_ms;
-    vector<double> stereoMatchTimes_ms;
-    vector<double> imuIntegrationTimes_ms;
-    vector<double> posePredictionTimes_ms;
-    vector<double> localMapTrackTimes_ms;
-    vector<double> newKeyFrameTimes_ms;
-    vector<double> trackTotalTimes_ms;
+    std::vector<double> stereoRectificationTimes_ms;
+    std::vector<double> imageResizeTimes_ms;
+    std::vector<double> orbExtractionTimes_ms;
+    std::vector<double> stereoMatchTimes_ms;
+    std::vector<double> imuIntegrationTimes_ms;
+    std::vector<double> posePredictionTimes_ms;
+    std::vector<double> localMapTrackTimes_ms;
+    std::vector<double> newKeyFrameTimes_ms;
+    std::vector<double> trackTotalTimes_ms;
 #endif
 
   protected:
@@ -485,19 +485,19 @@ class Tracking
     // Color order (true RGB, false BGR, ignored if grayscale)
     bool isRgbEnabled;
 
-    list<MapPoint *> temporalMapPoints;
+    std::list<MapPoint *> temporalMapPoints;
 
     // int nMapChangeIndex;
 
     int numDataset;
 
-    ofstream trackStatsFile;
+    std::ofstream trackStatsFile;
 
-    ofstream trackTimesFile;
-    double   imuPreintegrationTime;
-    double   posePredictionTime;
-    double   localMapTrackTime;
-    double   newKeyFrameDecisionTime;
+    std::ofstream trackTimesFile;
+    double        imuPreintegrationTime;
+    double        posePredictionTime;
+    double        localMapTrackTime;
+    double        newKeyFrameDecisionTime;
 
     // Adaptive FAST threshold: track feature count to adjust threshold
     int lastFrameFeatures;
@@ -514,7 +514,7 @@ class Tracking
     [[nodiscard]] TrackingStatus
         newParameterLoader(utils::settings::Settings *p_settings_inout);
     [[nodiscard]] TrackingStatus
-        loadTrackingParameters(const string &settingPath_in);
+        loadTrackingParameters(const std::string &settingPath_in);
     [[nodiscard]] TrackingStatus
         adjustFASTThreshold(); // Adaptive threshold based on tracking
                                // quality

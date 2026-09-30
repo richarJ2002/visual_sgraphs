@@ -282,14 +282,14 @@ OptimizerStatus Optimizer::fullInertialBA(
                         !p_currentVelocityVertex || !p_currentGyroBiasVertex ||
                         !p_currentAccelBiasVertex)
                     {
-                        cout << "Error" << p_previousPoseVertex << ", "
-                             << p_previousVelocityVertex << ", "
-                             << p_previousGyroBiasVertex << ", "
-                             << p_previousAccelBiasVertex << ", "
-                             << p_currentPoseVertex << ", "
-                             << p_currentVelocityVertex << ", "
-                             << p_currentGyroBiasVertex << ", "
-                             << p_currentAccelBiasVertex << endl;
+                        std::cout << "Error" << p_previousPoseVertex << ", "
+                                  << p_previousVelocityVertex << ", "
+                                  << p_previousGyroBiasVertex << ", "
+                                  << p_previousAccelBiasVertex << ", "
+                                  << p_currentPoseVertex << ", "
+                                  << p_currentVelocityVertex << ", "
+                                  << p_currentGyroBiasVertex << ", "
+                                  << p_currentAccelBiasVertex << std::endl;
                         continue;
                     }
                 }
@@ -300,12 +300,12 @@ OptimizerStatus Optimizer::fullInertialBA(
                         !p_previousAccelBiasVertex || !p_currentPoseVertex ||
                         !p_currentVelocityVertex)
                     {
-                        cout << "Error" << p_previousPoseVertex << ", "
-                             << p_previousVelocityVertex << ", "
-                             << p_previousGyroBiasVertex << ", "
-                             << p_previousAccelBiasVertex << ", "
-                             << p_currentPoseVertex << ", "
-                             << p_currentVelocityVertex << endl;
+                        std::cout << "Error" << p_previousPoseVertex << ", "
+                                  << p_previousVelocityVertex << ", "
+                                  << p_previousGyroBiasVertex << ", "
+                                  << p_previousAccelBiasVertex << ", "
+                                  << p_currentPoseVertex << ", "
+                                  << p_currentVelocityVertex << std::endl;
                         continue;
                     }
                 }
@@ -375,8 +375,8 @@ OptimizerStatus Optimizer::fullInertialBA(
                 }
             }
             else
-                cout << p_keyFrame->id << " or " << p_keyFrame->p_prevKF->id
-                     << " no imu" << endl;
+                std::cout << p_keyFrame->id << " or "
+                          << p_keyFrame->p_prevKF->id << " no imu" << std::endl;
         }
     }
 
@@ -415,7 +415,7 @@ OptimizerStatus Optimizer::fullInertialBA(
 
     const unsigned long mapPointVertexIdBase = maxKeyFrameId * 5;
 
-    vector<bool> mapPointExcludedFlags(mapPoints.size(), false);
+    std::vector<bool> mapPointExcludedFlags(mapPoints.size(), false);
 
     for (size_t elementIndex = 0; elementIndex < mapPoints.size();
          elementIndex++)
@@ -451,7 +451,7 @@ OptimizerStatus Optimizer::fullInertialBA(
         bool allVerticesFixed = true;
 
         // Set edges
-        for (map<KeyFrame *, tuple<int, int>>::const_iterator
+        for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
                  featureObservationIt  = observations.begin(),
                  featureObservationEnd = observations.end();
              featureObservationIt != featureObservationEnd;
@@ -473,12 +473,12 @@ OptimizerStatus Optimizer::fullInertialBA(
             }
             if (!keyFrameIsBad2)
             {
-                const int    leftIndex = get<0>(featureObservationIt->second);
+                const int leftIndex = std::get<0>(featureObservationIt->second);
                 cv::KeyPoint undistortedKeyPoint;
 
-                if (leftIndex != -1 &&
-                    p_keyFrame->uRight[get<0>(featureObservationIt->second)] <
-                        0) // Monocular observation
+                if (leftIndex != -1 && p_keyFrame->uRight[std::get<0>(
+                                           featureObservationIt->second)] <
+                                           0) // Monocular observation
                 {
                     undistortedKeyPoint =
                         p_keyFrame->keyPointsUndistorted[leftIndex];
@@ -558,7 +558,7 @@ OptimizerStatus Optimizer::fullInertialBA(
 
                 if (p_keyFrame->p_camera2)
                 { // Monocular right observation
-                    int rightIndex = get<1>(featureObservationIt->second);
+                    int rightIndex = std::get<1>(featureObservationIt->second);
 
                     if (rightIndex != -1 &&
                         static_cast<size_t>(rightIndex) <

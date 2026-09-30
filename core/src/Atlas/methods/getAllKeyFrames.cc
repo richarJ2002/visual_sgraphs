@@ -33,8 +33,8 @@ namespace core
 
 AtlasStatus Atlas::getAllKeyFrames(std::vector<KeyFrame *> &allKeyFrames_out)
 {
-    unique_lock<mutex>      lock(atlasMutex);
-    std::vector<KeyFrame *> activeMapAllKeyFrames{};
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    std::vector<KeyFrame *>      activeMapAllKeyFrames{};
     if (p_activeMap->getAllKeyFrames(activeMapAllKeyFrames) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {

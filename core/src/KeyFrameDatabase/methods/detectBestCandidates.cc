@@ -23,25 +23,23 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
 KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
-    KeyFrame           *p_currentKeyFrame_in,
-    vector<KeyFrame *> &loopCandidateKeyFrames_out,
-    vector<KeyFrame *> &mergeCandidateKeyFrames_out,
-    int                 minWordCount_in)
+    KeyFrame                *p_currentKeyFrame_in,
+    std::vector<KeyFrame *> &loopCandidateKeyFrames_out,
+    std::vector<KeyFrame *> &mergeCandidateKeyFrames_out,
+    int                      minWordCount_in)
 {
-    list<KeyFrame *> keyFramesSharingWords;
-    set<KeyFrame *>  connectedKeyFrames;
+    std::list<KeyFrame *> keyFramesSharingWords;
+    std::set<KeyFrame *>  connectedKeyFrames;
 
     // Search all keyframes that share a word with current frame
     {
-        unique_lock<mutex> lock(databaseMutex);
+        std::unique_lock<std::mutex> lock(databaseMutex);
 
         std::set<KeyFrame *> currentKeyFrameConnectedKeyFrames{};
         if (p_currentKeyFrame_in->getConnectedKeyFrames(
@@ -61,9 +59,10 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
              wordIt != wordEnd;
              wordIt++)
         {
-            list<KeyFrame *> &keyFramesForWord = invertedFile[wordIt->first];
+            std::list<KeyFrame *> &keyFramesForWord =
+                invertedFile[wordIt->first];
 
-            for (list<KeyFrame *>::iterator
+            for (std::list<KeyFrame *>::iterator
                      keyFrameIt  = keyFramesForWord.begin(),
                      keyFrameEnd = keyFramesForWord.end();
                  keyFrameIt != keyFrameEnd;
@@ -92,8 +91,9 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
 
     // Only compare against those keyframes that share enough words
     int maxCommonWordCount = 0;
-    for (list<KeyFrame *>::iterator keyFrameIt  = keyFramesSharingWords.begin(),
-                                    keyFrameEnd = keyFramesSharingWords.end();
+    for (std::list<KeyFrame *>::iterator
+             keyFrameIt  = keyFramesSharingWords.begin(),
+             keyFrameEnd = keyFramesSharingWords.end();
          keyFrameIt != keyFrameEnd;
          keyFrameIt++)
     {
@@ -108,13 +108,14 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
         minCommonWordCount = minWordCount_in;
     }
 
-    list<pair<float, KeyFrame *>> scoredCandidates;
+    std::list<std::pair<float, KeyFrame *>> scoredCandidates;
 
     int scoredCandidateCount = 0;
 
     // Compute similarity score.
-    for (list<KeyFrame *>::iterator keyFrameIt  = keyFramesSharingWords.begin(),
-                                    keyFrameEnd = keyFramesSharingWords.end();
+    for (std::list<KeyFrame *>::iterator
+             keyFrameIt  = keyFramesSharingWords.begin(),
+             keyFrameEnd = keyFramesSharingWords.end();
          keyFrameIt != keyFrameEnd;
          keyFrameIt++)
     {
@@ -128,18 +129,18 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
                                     p_candidateKeyFrame->bowVector);
             p_candidateKeyFrame->placeRecognitionScore = candidateScore;
             scoredCandidates.push_back(
-                make_pair(candidateScore, p_candidateKeyFrame));
+                std::make_pair(candidateScore, p_candidateKeyFrame));
         }
     }
 
     if (scoredCandidates.empty())
         return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 
-    list<pair<float, KeyFrame *>> accumulatedScoredCandidates;
-    float                         bestAccumulatedScore = 0;
+    std::list<std::pair<float, KeyFrame *>> accumulatedScoredCandidates;
+    float                                   bestAccumulatedScore = 0;
 
     // Lets now accumulate score by covisibility
-    for (list<pair<float, KeyFrame *>>::iterator
+    for (std::list<std::pair<float, KeyFrame *>>::iterator
              scoredCandidateIt  = scoredCandidates.begin(),
              scoredCandidateEnd = scoredCandidates.end();
          scoredCandidateIt != scoredCandidateEnd;
@@ -162,7 +163,7 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
         float     bestGroupScore        = scoredCandidateIt->first;
         float     accumulatedScore      = bestGroupScore;
         KeyFrame *p_bestScoringKeyFrame = p_candidateKeyFrame;
-        for (vector<KeyFrame *>::iterator
+        for (std::vector<KeyFrame *>::iterator
                  wordIt  = covisibilityNeighborKeyFrames.begin(),
                  wordEnd = covisibilityNeighborKeyFrames.end();
              wordIt != wordEnd;
@@ -181,17 +182,17 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
             }
         }
         accumulatedScoredCandidates.push_back(
-            make_pair(accumulatedScore, p_bestScoringKeyFrame));
+            std::make_pair(accumulatedScore, p_bestScoringKeyFrame));
         if (accumulatedScore > bestAccumulatedScore)
             bestAccumulatedScore = accumulatedScore;
     }
 
     // Return all those keyframes with a score higher than 0.75*bestScore
-    float           minScoreToRetain = 0.75f * bestAccumulatedScore;
-    set<KeyFrame *> alreadyAddedKeyFrames;
+    float                minScoreToRetain = 0.75f * bestAccumulatedScore;
+    std::set<KeyFrame *> alreadyAddedKeyFrames;
     loopCandidateKeyFrames_out.reserve(accumulatedScoredCandidates.size());
     mergeCandidateKeyFrames_out.reserve(accumulatedScoredCandidates.size());
-    for (list<pair<float, KeyFrame *>>::iterator
+    for (std::list<std::pair<float, KeyFrame *>>::iterator
              scoredCandidateIt  = accumulatedScoredCandidates.begin(),
              scoredCandidateEnd = accumulatedScoredCandidates.end();
          scoredCandidateIt != scoredCandidateEnd;

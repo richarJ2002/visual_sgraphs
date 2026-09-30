@@ -83,7 +83,7 @@ SemanticsManagerStatus SemanticsManager::filterWallPlanes(void)
              * leniently set (ideally with correct ground plane reference, this
              * value should be close to 0.00)
              */
-            if (abs(transformedPlaneCoefficients(1)) >
+            if (std::abs(transformedPlaneCoefficients(1)) >
                 p_sysParams->semSeg.maxTiltWall)
             {
                 if (plane->resetPlaneSemantics() !=

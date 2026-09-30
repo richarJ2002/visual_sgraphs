@@ -46,16 +46,16 @@ LocalMappingStatus LocalMapping::scaleRefinement()
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
     // Retrieve all keyframes in temporal order
-    list<KeyFrame *> temporalKeyFrames;
-    KeyFrame        *p_walkKeyFrame = p_currentKeyFrame;
+    std::list<KeyFrame *> temporalKeyFrames;
+    KeyFrame             *p_walkKeyFrame = p_currentKeyFrame;
     while (p_walkKeyFrame->p_prevKF)
     {
         temporalKeyFrames.push_front(p_walkKeyFrame);
         p_walkKeyFrame = p_walkKeyFrame->p_prevKF;
     }
     temporalKeyFrames.push_front(p_walkKeyFrame);
-    vector<KeyFrame *> orderedKeyFrames(temporalKeyFrames.begin(),
-                                        temporalKeyFrames.end());
+    std::vector<KeyFrame *> orderedKeyFrames(temporalKeyFrames.begin(),
+                                             temporalKeyFrames.end());
 
     for (;;)
     {
@@ -107,7 +107,7 @@ LocalMappingStatus LocalMapping::scaleRefinement()
 
     if (scale < 1e-1) // 1e-1
     {
-        cout << "scale too small" << endl;
+        std::cout << "scale too small" << std::endl;
         isInitializationInProgress = false;
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
@@ -139,7 +139,7 @@ LocalMappingStatus LocalMapping::scaleRefinement()
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
 
-    unique_lock<mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
+    std::unique_lock<std::mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
     if ((fabs(scale - 1.f) > 0.002) || !isMonocular)
     {
         Sophus::SE3f Tgw(mRwg.cast<float>().transpose(),
@@ -173,8 +173,8 @@ LocalMappingStatus LocalMapping::scaleRefinement()
         }
     }
 
-    for (list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
-                                    newKeyFrameEnd = newKeyFrames.end();
+    for (std::list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
+                                         newKeyFrameEnd = newKeyFrames.end();
          newKeyFrameIt != newKeyFrameEnd;
          newKeyFrameIt++)
     {

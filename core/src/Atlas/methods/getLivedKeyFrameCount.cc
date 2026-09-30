@@ -33,8 +33,8 @@ namespace core
 
 AtlasStatus Atlas::getLivedKeyFrameCount(unsigned long &livedKeyFrameCount_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    long unsigned int  count = 0;
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    long unsigned int            count = 0;
     for (Map *p_atlasMap : maps)
     {
         std::vector<KeyFrame *> atlasMapAllKeyFrames{};

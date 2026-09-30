@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::reserveFloorId(int &floorId_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     while (floorIndex.count(nextAvailableFloorId) > 0)
     {

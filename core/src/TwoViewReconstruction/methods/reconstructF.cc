@@ -25,22 +25,21 @@
 #include <rclcpp/logging.hpp>
 #include <thread>
 
-using namespace std;
 namespace vs_graphs
 {
 namespace core
 {
 
-TwoViewReconstructionStatus
-    TwoViewReconstruction::reconstructF(vector<bool> &matchesInliersFlags_inout,
-                                        Eigen::Matrix3f     &F21_in,
-                                        Eigen::Matrix3f     &K_in,
-                                        Sophus::SE3f        &T21_out,
-                                        vector<cv::Point3f> &vP3D_out,
-                                        vector<bool> &triangulatedFlags_out,
-                                        float         minimumParallax_in,
-                                        int           minimumTriangulated_in,
-                                        bool         &isReconstructed_out)
+TwoViewReconstructionStatus TwoViewReconstruction::reconstructF(
+    std::vector<bool>        &matchesInliersFlags_inout,
+    Eigen::Matrix3f          &F21_in,
+    Eigen::Matrix3f          &K_in,
+    Sophus::SE3f             &T21_out,
+    std::vector<cv::Point3f> &vP3D_out,
+    std::vector<bool>        &triangulatedFlags_out,
+    float                     minimumParallax_in,
+    int                       minimumTriangulated_in,
+    bool                     &isReconstructed_out)
 {
     int N = 0;
     for (size_t matchIndex = 0, iend = matchesInliersFlags_inout.size();
@@ -69,9 +68,9 @@ TwoViewReconstructionStatus
     Eigen::Vector3f t2 = -t;
 
     // Reconstruct with the 4 hyphoteses and check
-    vector<cv::Point3f> vP3D1, vP3D2, vP3D3, vP3D4;
-    vector<bool> triangulated1Flags, triangulated2Flags, triangulated3Flags,
-        triangulated4Flags;
+    std::vector<cv::Point3f> vP3D1, vP3D2, vP3D3, vP3D4;
+    std::vector<bool>        triangulated1Flags, triangulated2Flags,
+        triangulated3Flags, triangulated4Flags;
     float parallax1, parallax2, parallax3, parallax4;
 
     int good1Count{};
@@ -156,10 +155,11 @@ TwoViewReconstructionStatus
     }
 
     int maximumGood =
-        max(good1Count, max(good2Count, max(good3Count, good4Count)));
+        std::max(good1Count,
+                 std::max(good2Count, std::max(good3Count, good4Count)));
 
     int minimumGoodCount =
-        max(static_cast<int>(0.9 * N), minimumTriangulated_in);
+        std::max(static_cast<int>(0.9 * N), minimumTriangulated_in);
 
     int nsimilar = 0;
     if (good1Count > 0.7 * maximumGood)

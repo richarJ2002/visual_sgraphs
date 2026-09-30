@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getGyroBias(Eigen::Vector3f &gyroBias_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     gyroBias_out = Eigen::Vector3f(imuBias.bwx, imuBias.bwy, imuBias.bwz);
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

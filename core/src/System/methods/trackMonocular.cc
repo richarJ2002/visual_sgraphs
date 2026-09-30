@@ -40,12 +40,12 @@ SystemStatus
                            const double                         &timestamp_in,
                            Sophus::SE3f                         &cameraPose_out,
                            const std::vector<IMU::Point>        &imuMeas_in,
-                           string                                filename_in,
+                           std::string                           filename_in,
                            const std::vector<semantic::Marker *> markers_in)
 {
     // Multi-thread to prevent race conditions
     {
-        unique_lock<mutex> lock(resetMutex);
+        std::unique_lock<std::mutex> lock(resetMutex);
         if (isShutdownRequested)
         {
             cameraPose_out = Sophus::SE3f();
@@ -56,9 +56,10 @@ SystemStatus
     // Check if the sensor is Monocular
     if (sensor != MONOCULAR && sensor != IMU_MONOCULAR)
     {
-        cerr << "ERROR: you called TrackMonocular but input sensor was not set "
-                "to Monocular nor Monocular-Inertial."
-             << endl;
+        std::cerr
+            << "ERROR: you called TrackMonocular but input sensor was not set "
+               "to Monocular nor Monocular-Inertial."
+            << std::endl;
         exit(-1);
     }
 
@@ -131,7 +132,7 @@ SystemStatus
                      __func__);
     }
 
-    unique_lock<mutex> lock2(stateMutex);
+    std::unique_lock<std::mutex> lock2(stateMutex);
     trackingState      = p_tracker->state;
     trackedMapPoints   = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn = p_tracker->currentFrame.keyPointsUndistorted;

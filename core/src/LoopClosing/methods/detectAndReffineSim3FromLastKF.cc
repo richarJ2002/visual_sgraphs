@@ -44,8 +44,8 @@ LoopClosingStatus LoopClosing::detectAndReffineSim3FromLastKF(
     std::vector<MapPoint *> &matchedMapPoints_inout,
     bool                    &isDetected_out)
 {
-    set<MapPoint *> alreadyMatchedMapPoints;
-    int             matches2{};
+    std::set<MapPoint *> alreadyMatchedMapPoints;
+    int                  matches2{};
     if (findMatchesByProjection(p_currentKeyFrame_in,
                                 p_matchedKeyFrame_in,
                                 gScw_inout,
@@ -137,7 +137,7 @@ LoopClosingStatus LoopClosing::detectAndReffineSim3FromLastKF(
                                       gScw_inout.translation(),
                                       1.0);
 
-            vector<MapPoint *>      matchedMapPoints;
+            std::vector<MapPoint *> matchedMapPoints;
             std::vector<MapPoint *> currentKFMapPointMatches{};
             if (p_currentKF->getMapPointMatches(currentKFMapPointMatches) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)

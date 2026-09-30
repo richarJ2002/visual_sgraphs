@@ -86,7 +86,7 @@ MapPoint::MapPoint(const double invDepth_in,
     // Worldpos is not set
     // MapPoints can be created from Tracking and Local Mapping. This mutex
     // avoid conflicts with id.
-    unique_lock<mutex> lock(p_map->pointCreationMutex);
+    unique_lock<std::mutex> lock(p_map->pointCreationMutex);
     id = nextId++;
 }
 

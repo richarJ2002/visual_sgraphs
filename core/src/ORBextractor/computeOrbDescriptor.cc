@@ -61,21 +61,18 @@
 
 const float factorPI = (float)(CV_PI / 180.f);
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
-ORBextractorStatus computeOrbDescriptor(const KeyPoint &kpt_in,
-                                        const Mat      &image_in,
-                                        const Point    *p_briefPattern_in,
-                                        uchar          *p_descriptor_inout)
+ORBextractorStatus computeOrbDescriptor(const cv::KeyPoint &kpt_in,
+                                        const cv::Mat      &image_in,
+                                        const cv::Point    *p_briefPattern_in,
+                                        uchar              *p_descriptor_inout)
 {
     float angle = (float)kpt_in.angle * factorPI;
-    float a = (float)cos(angle), b = (float)sin(angle);
+    float a = (float)std::cos(angle), b = (float)std::sin(angle);
 
     const uchar *p_center =
         &image_in.at<uchar>(cvRound(kpt_in.pt.y), cvRound(kpt_in.pt.x));

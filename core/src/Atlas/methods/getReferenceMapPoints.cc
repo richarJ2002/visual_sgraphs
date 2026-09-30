@@ -34,8 +34,8 @@ namespace core
 AtlasStatus Atlas::getReferenceMapPoints(
     std::vector<MapPoint *> &referenceMapPoints_out)
 {
-    unique_lock<mutex>      lock(atlasMutex);
-    std::vector<MapPoint *> activeMapReferenceMapPoints{};
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    std::vector<MapPoint *>      activeMapReferenceMapPoints{};
     if (p_activeMap->getReferenceMapPoints(activeMapReferenceMapPoints) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {

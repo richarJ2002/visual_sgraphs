@@ -55,11 +55,11 @@ class LocalMapping
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    LocalMapping(System       *p_system_in,
-                 Atlas        *p_atlas_in,
-                 const float   monocular_in,
-                 bool          inertial_in,
-                 const string &sequenceName_in = std::string());
+    LocalMapping(System            *p_system_in,
+                 Atlas             *p_atlas_in,
+                 const float        monocular_in,
+                 bool               inertial_in,
+                 const std::string &sequenceName_in = std::string());
 
     [[nodiscard]] LocalMappingStatus
         setLoopCloser(LoopClosing *p_loopCloser_in);
@@ -94,7 +94,7 @@ class LocalMapping
 
     [[nodiscard]] LocalMappingStatus keyframesInQueue(int &keyFrameCount_out)
     {
-        unique_lock<std::mutex> lock(newKeyFramesMutex);
+        std::unique_lock<std::mutex> lock(newKeyFramesMutex);
         keyFrameCount_out = newKeyFrames.size();
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
@@ -122,9 +122,9 @@ class LocalMapping
     int          matchesInliers;
 
     // For debugging (erase in normal mode)
-    int    initFrame;
-    int    iterationIndex;
-    string sequence;
+    int         initFrame;
+    int         iterationIndex;
+    std::string sequence;
 
     bool isFirstImuBaPending;
     bool isSecondImuBaPending;
@@ -137,21 +137,21 @@ class LocalMapping
     float farPointsThreshold;
 
 #ifdef REGISTER_TIMES
-    vector<double> keyFrameInsertTimes_ms;
-    vector<double> mapPointCullingTimes_ms;
-    vector<double> mapPointCreationTimes_ms;
-    vector<double> localBaTimes_ms;
-    vector<double> keyFrameCullingTimes_ms;
-    vector<double> localMappingTotalTimes_ms;
+    std::vector<double> keyFrameInsertTimes_ms;
+    std::vector<double> mapPointCullingTimes_ms;
+    std::vector<double> mapPointCreationTimes_ms;
+    std::vector<double> localBaTimes_ms;
+    std::vector<double> keyFrameCullingTimes_ms;
+    std::vector<double> localMappingTotalTimes_ms;
 
-    vector<double> localBaSyncTimes_ms;
-    vector<double> keyFrameCullingSyncTimes_ms;
-    vector<int>    localBaEdgeCounts;
-    vector<int>    localBaOptimizedKeyFrameCounts;
-    vector<int>    localBaFixedKeyFrameCounts;
-    vector<int>    localBaMapPointCounts;
-    int            localBaExecutionCount;
-    int            localBaAbortCount;
+    std::vector<double> localBaSyncTimes_ms;
+    std::vector<double> keyFrameCullingSyncTimes_ms;
+    std::vector<int>    localBaEdgeCounts;
+    std::vector<int>    localBaOptimizedKeyFrameCounts;
+    std::vector<int>    localBaFixedKeyFrameCounts;
+    std::vector<int>    localBaMapPointCounts;
+    int                 localBaExecutionCount;
+    int                 localBaAbortCount;
 #endif
   protected:
     [[nodiscard]] LocalMappingStatus
@@ -221,7 +221,7 @@ class LocalMapping
     int countRefinement;
 
     // DEBUG
-    ofstream localMappingStatsFile;
+    std::ofstream localMappingStatsFile;
 };
 
 } // namespace core

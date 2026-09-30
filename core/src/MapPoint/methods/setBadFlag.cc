@@ -38,21 +38,23 @@ namespace core
 
 MapPointStatus MapPoint::setBadFlag()
 {
-    map<KeyFrame *, tuple<int, int>> observation;
+    std::map<KeyFrame *, std::tuple<int, int>> observation;
     {
-        unique_lock<mutex> lock1(featuresMutex);
-        unique_lock<mutex> lock2(positionMutex);
+        std::unique_lock<std::mutex> lock1(featuresMutex);
+        std::unique_lock<std::mutex> lock2(positionMutex);
         isFlaggedBad = true;
         observation  = observations;
         observations.clear();
     }
-    for (map<KeyFrame *, tuple<int, int>>::iterator mit  = observation.begin(),
-                                                    mend = observation.end();
+    for (std::map<KeyFrame *, std::tuple<int, int>>::iterator
+             mit  = observation.begin(),
+             mend = observation.end();
          mit != mend;
          mit++)
     {
         KeyFrame *p_keyFrame = mit->first;
-        int leftIndex = get<0>(mit->second), rightIndex = get<1>(mit->second);
+        int       leftIndex  = std::get<0>(mit->second),
+            rightIndex       = std::get<1>(mit->second);
         if (leftIndex != -1)
         {
             if (p_keyFrame->eraseMapPointMatch(leftIndex) !=

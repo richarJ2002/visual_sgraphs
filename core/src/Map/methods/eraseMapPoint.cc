@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::eraseMapPoint(MapPoint *p_mapPoint_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     mapPoints.erase(p_mapPoint_in);
     referenceMapPoints.erase(std::remove(referenceMapPoints.begin(),
                                          referenceMapPoints.end(),

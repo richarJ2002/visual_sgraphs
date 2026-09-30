@@ -38,18 +38,19 @@ namespace core
 
 KeyFrameStatus KeyFrame::updateBestCovisibles()
 {
-    unique_lock<mutex>            lock(connectionsMutex);
-    vector<pair<int, KeyFrame *>> pairs;
+    std::unique_lock<std::mutex>            lock(connectionsMutex);
+    std::vector<std::pair<int, KeyFrame *>> pairs;
     pairs.reserve(connectedKeyFrameWeights.size());
-    for (map<KeyFrame *, int>::iterator mit  = connectedKeyFrameWeights.begin(),
-                                        mend = connectedKeyFrameWeights.end();
+    for (std::map<KeyFrame *, int>::iterator
+             mit  = connectedKeyFrameWeights.begin(),
+             mend = connectedKeyFrameWeights.end();
          mit != mend;
          mit++)
-        pairs.push_back(make_pair(mit->second, mit->first));
+        pairs.push_back(std::make_pair(mit->second, mit->first));
 
-    sort(pairs.begin(), pairs.end());
-    list<KeyFrame *> keyFrames;
-    list<int>        weights;
+    std::sort(pairs.begin(), pairs.end());
+    std::list<KeyFrame *> keyFrames;
+    std::list<int>        weights;
     for (size_t pairIndex = 0, iend = pairs.size(); pairIndex < iend;
          pairIndex++)
     {
@@ -73,8 +74,8 @@ KeyFrameStatus KeyFrame::updateBestCovisibles()
     }
 
     orderedConnectedKeyFrames =
-        vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
-    orderedWeights = vector<int>(weights.begin(), weights.end());
+        std::vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
+    orderedWeights = std::vector<int>(weights.begin(), weights.end());
 
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

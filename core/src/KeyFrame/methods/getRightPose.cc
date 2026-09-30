@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getRightPose(Sophus::SE3<float> &rightPose_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
 
     rightPose_out = poseTrl * poseTcw;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

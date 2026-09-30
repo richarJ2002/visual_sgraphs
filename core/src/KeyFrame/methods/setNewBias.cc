@@ -38,7 +38,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::setNewBias(const IMU::Bias &b_in)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     imuBias = b_in;
     if (p_imuPreintegrated)
     {

@@ -48,13 +48,14 @@ ORBmatcherStatus
     }
 
     vpMapPointMatches =
-        vector<MapPoint *>(F.keyPointCount, static_cast<MapPoint *>(nullptr));
+        std::vector<MapPoint *>(F.keyPointCount,
+                                static_cast<MapPoint *>(nullptr));
 
     const DBoW2::FeatureVector &featureVectorKeyFrame = pKF->featureVector;
 
     int nmatches = 0;
 
-    vector<int> rotHist[HISTO_LENGTH];
+    std::vector<int> rotHist[HISTO_LENGTH];
     for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
          histogramBinIndex++)
         rotHist[histogramBinIndex].reserve(500);
@@ -72,8 +73,8 @@ ORBmatcherStatus
     {
         if (KFit->first == Fit->first)
         {
-            const vector<unsigned int> indicesKeyFrames = KFit->second;
-            const vector<unsigned int> indicesFs        = Fit->second;
+            const std::vector<unsigned int> indicesKeyFrames = KFit->second;
+            const std::vector<unsigned int> indicesFs        = Fit->second;
 
             for (size_t keyFrameFeatureListIndex = 0;
                  keyFrameFeatureListIndex < indicesKeyFrames.size();
@@ -231,7 +232,7 @@ ORBmatcherStatus
                             float rot = keyPoint.angle - Fkp.angle;
                             if (rot < 0.0)
                                 rot += 360.0f;
-                            int bin = round(rot * factor);
+                            int bin = std::round(rot * factor);
                             if (bin == HISTO_LENGTH)
                                 bin = 0;
                             assert(bin >= 0 && bin < HISTO_LENGTH);
@@ -272,7 +273,7 @@ ORBmatcherStatus
                                 float rot = keyPoint.angle - Fkp.angle;
                                 if (rot < 0.0)
                                     rot += 360.0f;
-                                int bin = round(rot * factor);
+                                int bin = std::round(rot * factor);
                                 if (bin == HISTO_LENGTH)
                                     bin = 0;
                                 assert(bin >= 0 && bin < HISTO_LENGTH);

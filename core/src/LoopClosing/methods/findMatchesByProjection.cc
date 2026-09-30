@@ -38,8 +38,8 @@ LoopClosingStatus LoopClosing::findMatchesByProjection(
     KeyFrame                *p_currentKeyFrame_in,
     KeyFrame                *p_matchedKFw_in,
     g2o::Sim3               &g2oScw_in,
-    set<MapPoint *>         &matchedMPinOrigins_in,
-    vector<MapPoint *>      &mapPoints_out,
+    std::set<MapPoint *>    &matchedMPinOrigins_in,
+    std::vector<MapPoint *> &mapPoints_out,
     std::vector<MapPoint *> &matchedMapPoints_out,
     int                     &matches_out)
 {
@@ -56,8 +56,8 @@ LoopClosingStatus LoopClosing::findMatchesByProjection(
     }
     int initialCovisibleCount = covisibleKeyFrames.size();
     covisibleKeyFrames.push_back(p_matchedKFw_in);
-    set<KeyFrame *>      checkKeyFrames(covisibleKeyFrames.begin(),
-                                   covisibleKeyFrames.end());
+    std::set<KeyFrame *> checkKeyFrames(covisibleKeyFrames.begin(),
+                                        covisibleKeyFrames.end());
     std::set<KeyFrame *> currentCovisbles{};
     if (p_currentKeyFrame_in->getConnectedKeyFrames(currentCovisbles) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -102,7 +102,7 @@ LoopClosingStatus LoopClosing::findMatchesByProjection(
                                       keyFrames.end());
         }
     }
-    set<MapPoint *> mapPoints;
+    std::set<MapPoint *> mapPoints;
     mapPoints_out.clear();
     matchedMapPoints_out.clear();
     for (KeyFrame *p_keyFrame : covisibleKeyFrames)

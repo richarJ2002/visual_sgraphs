@@ -140,12 +140,14 @@ TrackingStatus Tracking::parseORBParamFile(cv::FileStorage &settings_in,
     baseInitialFastThreshold = initialThresholdFast;
     baseMinimumFastThreshold = minimumThresholdFast;
 
-    cout << endl << "ORB Extractor Parameters: " << endl;
-    cout << "- Number of Features: " << featureCount << endl;
-    cout << "- Scale Levels: " << levelCount << endl;
-    cout << "- Scale Factor: " << scaleFactor << endl;
-    cout << "- Initial Fast Threshold: " << initialThresholdFast << endl;
-    cout << "- Minimum Fast Threshold: " << minimumThresholdFast << endl;
+    std::cout << std::endl << "ORB Extractor Parameters: " << std::endl;
+    std::cout << "- Number of Features: " << featureCount << std::endl;
+    std::cout << "- Scale Levels: " << levelCount << std::endl;
+    std::cout << "- Scale Factor: " << scaleFactor << std::endl;
+    std::cout << "- Initial Fast Threshold: " << initialThresholdFast
+              << std::endl;
+    std::cout << "- Minimum Fast Threshold: " << minimumThresholdFast
+              << std::endl;
 
     isParsed_out = true;
     return TrackingStatus::TRACKING_STATUS_SUCCESS;

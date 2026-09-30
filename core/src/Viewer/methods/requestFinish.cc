@@ -36,7 +36,7 @@ namespace core
 
 ViewerStatus Viewer::requestFinish()
 {
-    unique_lock<mutex> lock(finishMutex);
+    std::unique_lock<std::mutex> lock(finishMutex);
     isFinishRequested = true;
 
     return ViewerStatus::VIEWER_STATUS_SUCCESS;

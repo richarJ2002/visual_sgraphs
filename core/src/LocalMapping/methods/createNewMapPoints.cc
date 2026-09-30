@@ -64,7 +64,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                (p_walkKeyFrame->p_prevKF) &&
                (temporalChainStepCount++ < neighborKeyFrameCount))
         {
-            vector<KeyFrame *>::iterator neighborKeyFrameIt =
+            std::vector<KeyFrame *>::iterator neighborKeyFrameIt =
                 std::find(neighborKeyFrames.begin(),
                           neighborKeyFrames.end(),
                           p_walkKeyFrame->p_prevKF);
@@ -174,8 +174,8 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
         }
 
         // Search matches that fullfil epipolar constraint
-        vector<pair<size_t, size_t>> matchedKeyPointIndices;
-        Map                         *p_currentKeyFrameMap = nullptr;
+        std::vector<std::pair<size_t, size_t>> matchedKeyPointIndices;
+        Map                                   *p_currentKeyFrameMap = nullptr;
         if ((isInertial && p_tracker->state == Tracking::RECENTLY_LOST) &&
             p_currentKeyFrame->getMap(p_currentKeyFrameMap) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -527,18 +527,19 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             float cosParallaxStereo2 = cosParallaxStereo;
 
             if (hasStereoMatch1)
-                cosParallaxStereo1 =
-                    cos(2 * atan2(p_currentKeyFrame->mb / 2,
-                                  p_currentKeyFrame->depths[keyPointIndex1]));
+                cosParallaxStereo1 = std::cos(
+                    2 * std::atan2(p_currentKeyFrame->mb / 2,
+                                   p_currentKeyFrame->depths[keyPointIndex1]));
             else if (hasStereoMatch2)
-                cosParallaxStereo2 =
-                    cos(2 * atan2(p_neighborKeyFrame->mb / 2,
-                                  p_neighborKeyFrame->depths[keyPointIndex2]));
+                cosParallaxStereo2 = std::cos(
+                    2 * std::atan2(p_neighborKeyFrame->mb / 2,
+                                   p_neighborKeyFrame->depths[keyPointIndex2]));
 
             if (hasStereoMatch1 || hasStereoMatch2)
                 totalStereoPointCount++;
 
-            cosParallaxStereo = min(cosParallaxStereo1, cosParallaxStereo2);
+            cosParallaxStereo =
+                std::min(cosParallaxStereo1, cosParallaxStereo2);
 
             Eigen::Vector3f triangulatedPoint;
 

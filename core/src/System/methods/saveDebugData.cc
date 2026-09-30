@@ -38,8 +38,8 @@ SystemStatus System::saveDebugData(const int &initialIndex_in)
 {
     // 0. Save initialization trajectory
     if (saveTrajectoryEuRoC("init_FrameTrajectoy_" +
-                            to_string(p_localMapper->initSection) + "_" +
-                            to_string(initialIndex_in) + ".txt") !=
+                            std::to_string(p_localMapper->initSection) + "_" +
+                            std::to_string(initialIndex_in) + ".txt") !=
         SystemStatus::SYSTEM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -49,47 +49,48 @@ SystemStatus System::saveDebugData(const int &initialIndex_in)
     }
 
     // 1. Save scale
-    ofstream f;
-    f.open("init_Scale_" + to_string(p_localMapper->initSection) + ".txt",
-           ios_base::app);
-    f << fixed;
-    f << p_localMapper->scale << endl;
+    std::ofstream f;
+    f.open("init_Scale_" + std::to_string(p_localMapper->initSection) + ".txt",
+           std::ios_base::app);
+    f << std::fixed;
+    f << p_localMapper->scale << std::endl;
     f.close();
 
     // 2. Save gravity direction
-    f.open("init_GDir_" + to_string(p_localMapper->initSection) + ".txt",
-           ios_base::app);
-    f << fixed;
+    f.open("init_GDir_" + std::to_string(p_localMapper->initSection) + ".txt",
+           std::ios_base::app);
+    f << std::fixed;
     f << p_localMapper->mRwg(0, 0) << "," << p_localMapper->mRwg(0, 1) << ","
-      << p_localMapper->mRwg(0, 2) << endl;
+      << p_localMapper->mRwg(0, 2) << std::endl;
     f << p_localMapper->mRwg(1, 0) << "," << p_localMapper->mRwg(1, 1) << ","
-      << p_localMapper->mRwg(1, 2) << endl;
+      << p_localMapper->mRwg(1, 2) << std::endl;
     f << p_localMapper->mRwg(2, 0) << "," << p_localMapper->mRwg(2, 1) << ","
-      << p_localMapper->mRwg(2, 2) << endl;
+      << p_localMapper->mRwg(2, 2) << std::endl;
     f.close();
 
     // 3. Save computational cost
-    f.open("init_CompCost_" + to_string(p_localMapper->initSection) + ".txt",
-           ios_base::app);
-    f << fixed;
-    f << p_localMapper->costTime << endl;
+    f.open("init_CompCost_" + std::to_string(p_localMapper->initSection) +
+               ".txt",
+           std::ios_base::app);
+    f << std::fixed;
+    f << p_localMapper->costTime << std::endl;
     f.close();
 
     // 4. Save biases
-    f.open("init_Biases_" + to_string(p_localMapper->initSection) + ".txt",
-           ios_base::app);
-    f << fixed;
+    f.open("init_Biases_" + std::to_string(p_localMapper->initSection) + ".txt",
+           std::ios_base::app);
+    f << std::fixed;
     f << p_localMapper->mbg(0) << "," << p_localMapper->mbg(1) << ","
-      << p_localMapper->mbg(2) << endl;
+      << p_localMapper->mbg(2) << std::endl;
     f << p_localMapper->mba(0) << "," << p_localMapper->mba(1) << ","
-      << p_localMapper->mba(2) << endl;
+      << p_localMapper->mba(2) << std::endl;
     f.close();
 
     // 5. Save covariance matrix
-    f.open("init_CovMatrix_" + to_string(p_localMapper->initSection) + "_" +
-               to_string(initialIndex_in) + ".txt",
-           ios_base::app);
-    f << fixed;
+    f.open("init_CovMatrix_" + std::to_string(p_localMapper->initSection) +
+               "_" + std::to_string(initialIndex_in) + ".txt",
+           std::ios_base::app);
+    f << std::fixed;
     for (int rowIndex = 0; rowIndex < p_localMapper->mcovInertial.rows();
          rowIndex++)
     {
@@ -99,18 +100,18 @@ SystemStatus System::saveDebugData(const int &initialIndex_in)
         {
             if (columnIndex != 0)
                 f << ",";
-            f << setprecision(15)
+            f << std::setprecision(15)
               << p_localMapper->mcovInertial(rowIndex, columnIndex);
         }
-        f << endl;
+        f << std::endl;
     }
     f.close();
 
     // 6. Save initialization time
-    f.open("init_Time_" + to_string(p_localMapper->initSection) + ".txt",
-           ios_base::app);
-    f << fixed;
-    f << p_localMapper->initTime << endl;
+    f.open("init_Time_" + std::to_string(p_localMapper->initSection) + ".txt",
+           std::ios_base::app);
+    f << std::fixed;
+    f << p_localMapper->initTime << std::endl;
     f.close();
 
     return SystemStatus::SYSTEM_STATUS_SUCCESS;

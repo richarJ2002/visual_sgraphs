@@ -36,7 +36,7 @@ namespace core
 
 ViewerStatus Viewer::requestStop()
 {
-    unique_lock<mutex> lock(stopMutex);
+    std::unique_lock<std::mutex> lock(stopMutex);
     if (!hasStopped)
         isStopRequested = true;
 

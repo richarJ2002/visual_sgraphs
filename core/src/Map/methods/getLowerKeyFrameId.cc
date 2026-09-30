@@ -37,7 +37,7 @@ namespace core
 
 MapStatus Map::getLowerKeyFrameId(unsigned int &lowerKeyFrameId_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     if (p_lowerIdKeyFrame)
     {
         lowerKeyFrameId_out = p_lowerIdKeyFrame->id;

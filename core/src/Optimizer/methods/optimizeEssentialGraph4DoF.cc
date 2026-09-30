@@ -36,12 +36,12 @@ namespace core
 {
 
 OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
-    Map                                    *p_map_inout,
-    KeyFrame                               *p_loopKeyFrame_in,
-    KeyFrame                               *p_currentKeyFrame_in,
-    const LoopClosing::KeyFrameAndPose     &NonCorrectedSim3_in,
-    const LoopClosing::KeyFrameAndPose     &CorrectedSim3_in,
-    const map<KeyFrame *, set<KeyFrame *>> &loopConnections_in)
+    Map                                              *p_map_inout,
+    KeyFrame                                         *p_loopKeyFrame_in,
+    KeyFrame                                         *p_currentKeyFrame_in,
+    const LoopClosing::KeyFrameAndPose               &NonCorrectedSim3_in,
+    const LoopClosing::KeyFrameAndPose               &CorrectedSim3_in,
+    const std::map<KeyFrame *, std::set<KeyFrame *>> &loopConnections_in)
 {
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
@@ -86,12 +86,12 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
     const unsigned int maximumKeyFrameIdCount =
         static_cast<unsigned int>(maximumKeyFrameIdCountValue);
 
-    vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vScw(
+    std::vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vScw(
         maximumKeyFrameIdCount + 1);
-    vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vCorrectedSwc(
+    std::vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vCorrectedSwc(
         maximumKeyFrameIdCount + 1);
 
-    vector<VertexPose4DoF *> vertices(maximumKeyFrameIdCount + 1);
+    std::vector<VertexPose4DoF *> vertices(maximumKeyFrameIdCount + 1);
 
     const int minimumFeature = 100;
     // Set KeyFrame vertices
@@ -154,7 +154,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
         optimizer.addVertex(p_pose4DofVertex);
         vertices[idCount] = p_pose4DofVertex;
     }
-    set<pair<long unsigned int, long unsigned int>> insertedEdges;
+    std::set<std::pair<long unsigned int, long unsigned int>> insertedEdges;
 
     // Edge used in posegraph has still 6Dof, even if updates of camera poses
     // are just in 4DoF
@@ -165,19 +165,19 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
     matrixLambda(0, 0) = 1e3;
 
     // Set Loop edges
-    for (map<KeyFrame *, set<KeyFrame *>>::const_iterator
+    for (std::map<KeyFrame *, std::set<KeyFrame *>>::const_iterator
              mit  = loopConnections_in.begin(),
              mend = loopConnections_in.end();
          mit != mend;
          mit++)
     {
-        KeyFrame               *p_keyFrame  = mit->first;
-        const long unsigned int idCount     = p_keyFrame->id;
-        const set<KeyFrame *>  &connections = mit->second;
-        const g2o::Sim3         Siw         = vScw[idCount];
+        KeyFrame                   *p_keyFrame  = mit->first;
+        const long unsigned int     idCount     = p_keyFrame->id;
+        const std::set<KeyFrame *> &connections = mit->second;
+        const g2o::Sim3             Siw         = vScw[idCount];
 
-        for (set<KeyFrame *>::const_iterator sit  = connections.begin(),
-                                             send = connections.end();
+        for (std::set<KeyFrame *>::const_iterator sit  = connections.begin(),
+                                                  send = connections.end();
              sit != send;
              sit++)
         {
@@ -216,8 +216,9 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
             e->information() = matrixLambda;
             optimizer.addEdge(e);
 
-            insertedEdges.insert(make_pair(min(idCount, loopKeyFrameId),
-                                           max(idCount, loopKeyFrameId)));
+            insertedEdges.insert(
+                std::make_pair(std::min(idCount, loopKeyFrameId),
+                               std::max(idCount, loopKeyFrameId)));
         }
     }
 
@@ -317,8 +318,8 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        for (set<KeyFrame *>::const_iterator sit  = loopEdges.begin(),
-                                             send = loopEdges.end();
+        for (std::set<KeyFrame *>::const_iterator sit  = loopEdges.begin(),
+                                                  send = loopEdges.end();
              sit != send;
              sit++)
         {
@@ -364,7 +365,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        for (vector<KeyFrame *>::const_iterator vit =
+        for (std::vector<KeyFrame *>::const_iterator vit =
                  connectedKeyFrames.begin();
              vit != connectedKeyFrames.end();
              vit++)
@@ -397,8 +398,8 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
                 if (!pKFnIsBad && pKFn->id < p_keyFrame->id)
                 {
                     if (insertedEdges.count(
-                            make_pair(min(p_keyFrame->id, pKFn->id),
-                                      max(p_keyFrame->id, pKFn->id))))
+                            std::make_pair(std::min(p_keyFrame->id, pKFn->id),
+                                           std::max(p_keyFrame->id, pKFn->id))))
                         continue;
 
                     g2o::Sim3 Swn;
@@ -434,7 +435,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
     optimizer.computeActiveErrors();
     optimizer.optimize(20);
 
-    unique_lock<mutex> lock(p_map_inout->mapUpdateMutex);
+    std::unique_lock<std::mutex> lock(p_map_inout->mapUpdateMutex);
 
     // SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1]
     for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();

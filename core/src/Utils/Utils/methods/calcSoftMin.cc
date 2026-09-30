@@ -36,7 +36,8 @@ namespace utils
 namespace utils
 {
 
-UtilsStatus Utils::calcSoftMin(vector<double> &values_in, double &softMin_out)
+UtilsStatus Utils::calcSoftMin(std::vector<double> &values_in,
+                               double              &softMin_out)
 {
     // parameter controlling the softness/sharpness of the soft-min
     // the smaller the value, the more conservative the soft-min

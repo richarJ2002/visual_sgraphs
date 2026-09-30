@@ -282,15 +282,17 @@ class KeyFrame
                               float       &v_out,
                               bool        &isProjected_out);
 
-    [[nodiscard]] KeyFrameStatus preSave(
-        set<KeyFrame *>                                        &keyFrames_in,
-        set<MapPoint *>                                        &mapPoints_in,
-        set<camera_models::geometriccamera::GeometricCamera *> &cameras_in);
-    [[nodiscard]] KeyFrameStatus postLoad(
-        map<long unsigned int, KeyFrame *> &keyFrameId_in,
-        map<long unsigned int, MapPoint *> &mapPointId_in,
-        map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
-            &cameraId_in);
+    [[nodiscard]] KeyFrameStatus
+        preSave(std::set<KeyFrame *> &keyFrames_in,
+                std::set<MapPoint *> &mapPoints_in,
+                std::set<camera_models::geometriccamera::GeometricCamera *>
+                    &cameras_in);
+    [[nodiscard]] KeyFrameStatus
+        postLoad(std::map<long unsigned int, KeyFrame *> &keyFrameId_in,
+                 std::map<long unsigned int, MapPoint *> &mapPointId_in,
+                 std::map<unsigned int,
+                          camera_models::geometriccamera::GeometricCamera *>
+                     &cameraId_in);
 
     [[nodiscard]] KeyFrameStatus
         setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
@@ -407,7 +409,7 @@ class KeyFrame
 
     unsigned int originMapId;
 
-    string fileName;
+    std::string fileName;
 
     int datasetId;
 

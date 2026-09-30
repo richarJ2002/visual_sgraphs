@@ -36,7 +36,7 @@ namespace core
 
 MapPointStatus MapPoint::getWorldPos(Eigen::Vector3f &worldPos_out)
 {
-    unique_lock<mutex> lock(positionMutex);
+    std::unique_lock<std::mutex> lock(positionMutex);
     worldPos_out = worldPos;
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

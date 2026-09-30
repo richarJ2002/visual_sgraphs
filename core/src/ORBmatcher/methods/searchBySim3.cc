@@ -87,8 +87,8 @@ ORBmatcherStatus
     }
     const int N2 = mapPoints2.size();
 
-    vector<bool> alreadyMatched1Flags(N1, false);
-    vector<bool> alreadyMatched2Flags(N2, false);
+    std::vector<bool> alreadyMatched1Flags(N1, false);
+    std::vector<bool> alreadyMatched2Flags(N2, false);
 
     for (int keyPointIndex1 = 0; keyPointIndex1 < N1; keyPointIndex1++)
     {
@@ -105,14 +105,14 @@ ORBmatcherStatus
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            int index2 = get<0>(mapPointIndexInKeyFrame);
+            int index2 = std::get<0>(mapPointIndexInKeyFrame);
             if (index2 >= 0 && index2 < N2)
                 alreadyMatched2Flags[index2] = true;
         }
     }
 
-    vector<int> matchIndices1(N1, -1);
-    vector<int> matchIndices2(N2, -1);
+    std::vector<int> matchIndices1(N1, -1);
+    std::vector<int> matchIndices2(N2, -1);
 
     // Transform from KF1 to KF2 and search
     for (int i1 = 0; i1 < N1; i1++)
@@ -236,8 +236,8 @@ ORBmatcherStatus
 
         int bestDistance = INT_MAX;
         int bestIndex    = -1;
-        for (vector<size_t>::const_iterator vit  = indices.begin(),
-                                            vend = indices.end();
+        for (std::vector<size_t>::const_iterator vit  = indices.begin(),
+                                                 vend = indices.end();
              vit != vend;
              vit++)
         {
@@ -401,8 +401,8 @@ ORBmatcherStatus
 
         int bestDistance = INT_MAX;
         int bestIndex    = -1;
-        for (vector<size_t>::const_iterator vit  = indices.begin(),
-                                            vend = indices.end();
+        for (std::vector<size_t>::const_iterator vit  = indices.begin(),
+                                                 vend = indices.end();
              vit != vend;
              vit++)
         {

@@ -23,7 +23,7 @@ FrameDrawerStatus FrameDrawer::drawTextInfo(cv::Mat &sourceImage_in,
                                             int      trackingState_in,
                                             cv::Mat &annotatedImage_out)
 {
-    stringstream textStream;
+    std::stringstream textStream;
     if (trackingState_in == Tracking::NO_IMAGES_YET)
         textStream << " WAITING FOR IMAGES";
     else if (trackingState_in == Tracking::NOT_INITIALIZED)

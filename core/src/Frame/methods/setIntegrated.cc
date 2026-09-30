@@ -45,7 +45,7 @@ namespace core
 
 FrameStatus Frame::setIntegrated()
 {
-    unique_lock<std::mutex> lock(*p_imuMutex);
+    std::unique_lock<std::mutex> lock(*p_imuMutex);
     hasImuPreintegration = true;
 
     return FrameStatus::FRAME_STATUS_SUCCESS;

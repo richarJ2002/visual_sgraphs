@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::addLoopEdge(KeyFrame *p_keyFrame_in)
 {
-    unique_lock<mutex> lockCon(connectionsMutex);
+    std::unique_lock<std::mutex> lockCon(connectionsMutex);
     isEraseProtected = true;
     loopEdges.insert(p_keyFrame_in);
 

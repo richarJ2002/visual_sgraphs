@@ -38,7 +38,7 @@ MapStatus Map::getSkeletonEdges(
     std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &skeletonEdges_out)
 {
     /* Lock access to the map data */
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     /* Return a copy of the latest connected skeleton edges */
     skeletonEdges_out = skeletonEdges;

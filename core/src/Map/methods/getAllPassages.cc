@@ -37,7 +37,7 @@ namespace core
 MapStatus Map::getAllPassages(
     std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     allPassages_out =
         std::vector<vs_graphs::core::semantic::Passage *>(passages.begin(),
                                                           passages.end());

@@ -46,18 +46,18 @@ KeyFrameStatus KeyFrame::computeSceneMedianDepth(const int q_in,
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
-    vector<MapPoint *> keyFrameMapPoints;
-    Eigen::Matrix3f    Rcw;
-    Eigen::Vector3f    tcw;
+    std::vector<MapPoint *> keyFrameMapPoints;
+    Eigen::Matrix3f         Rcw;
+    Eigen::Vector3f         tcw;
     {
-        unique_lock<mutex> lock(featuresMutex);
-        unique_lock<mutex> lock2(poseMutex);
+        std::unique_lock<std::mutex> lock(featuresMutex);
+        std::unique_lock<std::mutex> lock2(poseMutex);
         keyFrameMapPoints = mapPoints;
         tcw               = poseTcw.translation();
         Rcw               = rotationRcw;
     }
 
-    vector<float> mapPointDepths;
+    std::vector<float> mapPointDepths;
     mapPointDepths.reserve(keyPointCount);
     Eigen::Matrix<float, 1, 3> Rcw2 = Rcw.row(2);
     float                      zcw  = tcw(2);
@@ -80,7 +80,7 @@ KeyFrameStatus KeyFrame::computeSceneMedianDepth(const int q_in,
         }
     }
 
-    sort(mapPointDepths.begin(), mapPointDepths.end());
+    std::sort(mapPointDepths.begin(), mapPointDepths.end());
 
     sceneMedianDepth_out = mapPointDepths[(mapPointDepths.size() - 1) / q_in];
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

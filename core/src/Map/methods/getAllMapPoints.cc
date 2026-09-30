@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getAllMapPoints(std::vector<MapPoint *> &allMapPoints_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     allMapPoints_out =
         std::vector<MapPoint *>(mapPoints.begin(), mapPoints.end());
     return MapStatus::MAP_STATUS_SUCCESS;

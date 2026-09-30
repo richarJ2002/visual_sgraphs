@@ -81,7 +81,7 @@ MapStatus Map::preSave(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        for (map<KeyFrame *, std::tuple<int, int>>::iterator
+        for (std::map<KeyFrame *, std::tuple<int, int>>::iterator
                  observationIt = observations.begin(),
                  end           = observations.end();
              observationIt != end;

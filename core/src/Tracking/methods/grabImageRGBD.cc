@@ -37,7 +37,7 @@ TrackingStatus Tracking::grabImageRGBD(
     const cv::Mat                                &imageD_in,
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_pointcloud_in,
     const double                                 &timestamp_in,
-    string                                        filename_in,
+    std::string                                   filename_in,
     const std::vector<semantic::Marker *>         markers_in,
     const std::vector<semantic::Room *>           rooms_in,
     Sophus::SE3f                                 &cameraPose_out)
@@ -60,19 +60,20 @@ TrackingStatus Tracking::grabImageRGBD(
     if (imageGray.channels() == 3)
     {
         if (isRgbEnabled)
-            cvtColor(imageGray, imageGray, cv::COLOR_RGB2GRAY);
+            cv::cvtColor(imageGray, imageGray, cv::COLOR_RGB2GRAY);
         else
-            cvtColor(imageGray, imageGray, cv::COLOR_BGR2GRAY);
+            cv::cvtColor(imageGray, imageGray, cv::COLOR_BGR2GRAY);
     }
     else if (imageGray.channels() == 4)
     {
         if (isRgbEnabled)
-            cvtColor(imageGray, imageGray, cv::COLOR_RGBA2GRAY);
+            cv::cvtColor(imageGray, imageGray, cv::COLOR_RGBA2GRAY);
         else
-            cvtColor(imageGray, imageGray, cv::COLOR_BGRA2GRAY);
+            cv::cvtColor(imageGray, imageGray, cv::COLOR_BGRA2GRAY);
     }
 
-    if ((fabs(depthMapFactor - 1.0f) > 1e-5) || imageDepth.type() != CV_32F)
+    if ((std::fabs(depthMapFactor - 1.0f) > 1e-5) ||
+        imageDepth.type() != CV_32F)
         imageDepth.convertTo(imageDepth, CV_32F, depthMapFactor);
 
     // RGB-D

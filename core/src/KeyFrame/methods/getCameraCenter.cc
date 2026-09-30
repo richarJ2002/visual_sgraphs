@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getCameraCenter(Eigen::Vector3f &cameraCenter_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     cameraCenter_out = twc.translation();
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

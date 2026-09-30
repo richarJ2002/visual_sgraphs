@@ -32,7 +32,7 @@ namespace core
 
 AtlasStatus Atlas::getLastInitKeyFrameId(unsigned long &lastInitKeyFrameId_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
+    std::unique_lock<std::mutex> lock(atlasMutex);
     lastInitKeyFrameId_out = lastInitKeyFrameId;
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }

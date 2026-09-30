@@ -37,7 +37,7 @@ namespace core
 MapPointStatus
     MapPoint::getMaxDistanceInvariance(float &maxDistanceInvariance_out)
 {
-    unique_lock<mutex> lock(positionMutex);
+    std::unique_lock<std::mutex> lock(positionMutex);
     maxDistanceInvariance_out = 1.2f * maxDistance;
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

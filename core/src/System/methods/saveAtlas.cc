@@ -49,11 +49,11 @@ SystemStatus System::saveAtlas(int type_in, bool &isSaved_out)
                              __func__);
             }
 
-            string pathSaveFileName = "./";
-            pathSaveFileName        = pathSaveFileName.append(saveAtlasFile);
-            pathSaveFileName        = pathSaveFileName.append(".osa");
+            std::string pathSaveFileName = "./";
+            pathSaveFileName = pathSaveFileName.append(saveAtlasFile);
+            pathSaveFileName = pathSaveFileName.append(".osa");
 
-            string vocabularyChecksum{};
+            std::string vocabularyChecksum{};
             if (calculateCheckSum(vocabularyFilePath,
                                   TEXT_FILE,
                                   vocabularyChecksum) !=
@@ -65,12 +65,12 @@ SystemStatus System::saveAtlas(int type_in, bool &isSaved_out)
                              __func__);
             }
             std::size_t found          = vocabularyFilePath.find_last_of("/\\");
-            string      vocabularyName = vocabularyFilePath.substr(found + 1);
+            std::string vocabularyName = vocabularyFilePath.substr(found + 1);
 
             if (type_in == TEXT_FILE) // File text
             {
-                cout << "Starting to write the save text file to "
-                     << pathSaveFileName.c_str() << endl;
+                std::cout << "Starting to write the save text file to "
+                          << pathSaveFileName.c_str() << std::endl;
                 std::remove(pathSaveFileName.c_str());
                 std::ofstream ofs(pathSaveFileName, std::ios::binary);
                 boost::archive::text_oarchive oa(ofs);
@@ -78,19 +78,19 @@ SystemStatus System::saveAtlas(int type_in, bool &isSaved_out)
                 oa << vocabularyName;
                 oa << vocabularyChecksum;
                 oa << p_atlas;
-                cout << "End to write the save text file" << endl;
+                std::cout << "End to write the save text file" << std::endl;
             }
             else if (type_in == BINARY_FILE) // File binary
             {
-                cout << "Starting to write the save binary file to "
-                     << pathSaveFileName.c_str() << endl;
+                std::cout << "Starting to write the save binary file to "
+                          << pathSaveFileName.c_str() << std::endl;
                 std::remove(pathSaveFileName.c_str());
                 std::ofstream ofs(pathSaveFileName, std::ios::binary);
                 boost::archive::binary_oarchive oa(ofs);
                 oa << vocabularyName;
                 oa << vocabularyChecksum;
                 oa << p_atlas;
-                cout << "End to write save binary file" << endl;
+                std::cout << "End to write save binary file" << std::endl;
             }
         }
     }

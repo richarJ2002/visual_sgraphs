@@ -36,8 +36,8 @@ namespace core
 
 MapPointStatus MapPoint::getReplaced(MapPoint *&p_replaced_out)
 {
-    unique_lock<mutex> lock1(featuresMutex);
-    unique_lock<mutex> lock2(positionMutex);
+    std::unique_lock<std::mutex> lock1(featuresMutex);
+    std::unique_lock<std::mutex> lock2(positionMutex);
     p_replaced_out = p_replaced;
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

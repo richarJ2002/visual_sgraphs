@@ -88,7 +88,7 @@ AtlasStatus Atlas::preSave()
         }
     };
     std::copy(maps.begin(), maps.end(), std::back_inserter(backupMaps));
-    sort(backupMaps.begin(), backupMaps.end(), CompFunctor());
+    std::sort(backupMaps.begin(), backupMaps.end(), CompFunctor());
 
     std::set<camera_models::geometriccamera::GeometricCamera *> cameraSet(
         cameras.begin(),

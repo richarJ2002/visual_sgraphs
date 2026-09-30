@@ -106,12 +106,13 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     const std::size_t poseTableSize =
         static_cast<std::size_t>(maximumKeyFrameId) + 1U;
 
-    vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vScw(poseTableSize);
-    vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vCorrectedSwc(
+    std::vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vScw(
+        poseTableSize);
+    std::vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vCorrectedSwc(
         poseTableSize);
 
-    vector<bool> goodPoses(poseTableSize);
-    vector<bool> badPoses(poseTableSize);
+    std::vector<bool> goodPoses(poseTableSize);
+    std::vector<bool> badPoses(poseTableSize);
 
     const int minimumFeature = 100;
 
@@ -163,7 +164,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     }
 
     // Loop over fixed corrected KeyFrames
-    set<unsigned long> idKeyFrames;
+    std::set<unsigned long> idKeyFrames;
     for (KeyFrame *p_fixedKeyFrame : fixedCorrectedKeyFrames_in)
     {
         bool fixedKeyFrameIsBad2{};
@@ -269,15 +270,15 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         badPoses[idCount]  = true;
     }
 
-    vector<KeyFrame *> mapKeyFrames;
-    set<KeyFrame *>    keyFrames;
+    std::vector<KeyFrame *> mapKeyFrames;
+    std::set<KeyFrame *>    keyFrames;
     mapKeyFrames.reserve(fixedKeyFrames_in.size() +
                          fixedCorrectedKeyFrames_in.size() +
                          nonFixedKeyFrames_in.size());
 
     const auto appendOptimizedKeyFrames =
         [&optimizer, &mapKeyFrames, &keyFrames](
-            const vector<KeyFrame *> &keyFrames_in)
+            const std::vector<KeyFrame *> &keyFrames_in)
     {
         for (KeyFrame *p_keyFrame : keyFrames_in)
         {
@@ -379,8 +380,8 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        for (set<KeyFrame *>::const_iterator sit  = loopEdges.begin(),
-                                             send = loopEdges.end();
+        for (std::set<KeyFrame *>::const_iterator sit  = loopEdges.begin(),
+                                                  send = loopEdges.end();
              sit != send;
              sit++)
         {
@@ -431,7 +432,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        for (vector<KeyFrame *>::const_iterator vit =
+        for (std::vector<KeyFrame *>::const_iterator vit =
                  connectedKeyFrames.begin();
              vit != connectedKeyFrames.end();
              vit++)
@@ -500,7 +501,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         if (connectionCount == 0)
         {
             if (Verbose::printMess("Opt_Essential: KF " +
-                                       to_string(p_fixedKeyFrame->id) +
+                                       std::to_string(p_fixedKeyFrame->id) +
                                        " has 0 connections",
                                    Verbose::VERBOSITY_DEBUG) !=
                 VerboseStatus::VERBOSE_STATUS_SUCCESS)
@@ -517,7 +518,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     optimizer.initializeOptimization();
     optimizer.optimize(20);
 
-    unique_lock<mutex> lock(p_map->mapUpdateMutex);
+    std::unique_lock<std::mutex> lock(p_map->mapUpdateMutex);
 
     // Inform the user
     std::cout << "\n[Optimizer]" << std::endl;
@@ -664,7 +665,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
 
         if (p_referenceKeyFrame == nullptr)
         {
-            if (Verbose::printMess("MP " + to_string(p_mapPoint->id) +
+            if (Verbose::printMess("MP " + std::to_string(p_mapPoint->id) +
                                        " without a valid reference KF",
                                    Verbose::VERBOSITY_DEBUG) !=
                 VerboseStatus::VERBOSE_STATUS_SUCCESS)

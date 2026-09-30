@@ -63,24 +63,24 @@ TrackingStatus Tracking::updateLastFrame()
     // Create "visual odometry" MapPoints
     // We sort points according to their measured depth by the stereo/RGB-D
     // sensor
-    vector<pair<float, int>> depthIndices;
-    const int                featureCount = lastFrame.leftKeyPointCount == -1
-                                                ? lastFrame.keyPointCount
-                                                : lastFrame.leftKeyPointCount;
+    std::vector<std::pair<float, int>> depthIndices;
+    const int featureCount = lastFrame.leftKeyPointCount == -1
+                                 ? lastFrame.keyPointCount
+                                 : lastFrame.leftKeyPointCount;
     depthIndices.reserve(featureCount);
     for (int featureIndex = 0; featureIndex < featureCount; featureIndex++)
     {
         float z = lastFrame.depths[featureIndex];
         if (z > 0)
         {
-            depthIndices.push_back(make_pair(z, featureIndex));
+            depthIndices.push_back(std::make_pair(z, featureIndex));
         }
     }
 
     if (depthIndices.empty())
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
 
-    sort(depthIndices.begin(), depthIndices.end());
+    std::sort(depthIndices.begin(), depthIndices.end());
 
     // We insert all close points (depth<mThDepth)
     // If less than 100 close points, we insert the 100 closest ones.

@@ -175,7 +175,7 @@ LoopClosingStatus
     // the updated map. We need to propagate the correction through the spanning
     // tree
     {
-        unique_lock<mutex> lock(gbaMutex);
+        std::unique_lock<std::mutex> lock(gbaMutex);
         if (generation_in != fullBundleAdjustmentIndex)
         {
             hasGbaFinished = true;
@@ -273,13 +273,14 @@ LoopClosingStatus
             }
 
             // Get Map Mutex
-            unique_lock<mutex> lock(p_activeMap_inout->mapUpdateMutex);
+            std::unique_lock<std::mutex> lock(
+                p_activeMap_inout->mapUpdateMutex);
 
             KeyFrameAndPose keyFramePosesBefore_WorldToCamera;
             KeyFrameAndPose keyFramePosesAfter_WorldToCamera;
 
             //  Correct keyframes starting at map first keyframe
-            list<KeyFrame *> keyFramesToCheck(
+            std::list<KeyFrame *> keyFramesToCheck(
                 p_activeMap_inout->keyFrameOrigins.begin(),
                 p_activeMap_inout->keyFrameOrigins.end());
 
@@ -306,7 +307,7 @@ LoopClosingStatus
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
-                for (set<KeyFrame *>::const_iterator sit = childs.begin();
+                for (std::set<KeyFrame *>::const_iterator sit = childs.begin();
                      sit != childs.end();
                      sit++)
                 {

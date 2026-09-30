@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getAllKeyFrames(std::vector<KeyFrame *> &allKeyFrames_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     allKeyFrames_out =
         std::vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
     return MapStatus::MAP_STATUS_SUCCESS;

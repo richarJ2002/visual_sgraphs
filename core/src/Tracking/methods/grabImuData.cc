@@ -34,7 +34,7 @@ namespace core
 
 TrackingStatus Tracking::grabImuData(const IMU::Point &imuMeasurement_in)
 {
-    unique_lock<mutex> lock(imuQueueMutex);
+    std::unique_lock<std::mutex> lock(imuQueueMutex);
     queueImuData.push_back(imuMeasurement_in);
 
     return TrackingStatus::TRACKING_STATUS_SUCCESS;

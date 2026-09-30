@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getAllFloors(std::vector<semantic::Floor *> &allFloors_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     allFloors_out =
         std::vector<semantic::Floor *>(floors.begin(), floors.end());
     return MapStatus::MAP_STATUS_SUCCESS;

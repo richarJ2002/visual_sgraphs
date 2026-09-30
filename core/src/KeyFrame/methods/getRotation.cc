@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getRotation(Eigen::Matrix3f &rotation_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     rotation_out = rotationRcw;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

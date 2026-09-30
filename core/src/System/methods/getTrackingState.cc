@@ -32,7 +32,7 @@ namespace core
 
 SystemStatus System::getTrackingState(int &trackingState_out)
 {
-    unique_lock<mutex> lock(stateMutex);
+    std::unique_lock<std::mutex> lock(stateMutex);
     trackingState_out = trackingState;
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }

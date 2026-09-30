@@ -24,8 +24,6 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
@@ -36,11 +34,11 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectRelocalizationCandidates(
     Map                     *p_map_in,
     std::vector<KeyFrame *> &relocalizationCandidates_out)
 {
-    list<KeyFrame *> keyFramesSharingWords;
+    std::list<KeyFrame *> keyFramesSharingWords;
 
     // Search all keyframes that share a word with current frame
     {
-        unique_lock<mutex> lock(databaseMutex);
+        std::unique_lock<std::mutex> lock(databaseMutex);
 
         for (DBoW2::BowVector::const_iterator
                  wordIt  = p_frame_in->bowVector.begin(),
@@ -48,9 +46,10 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectRelocalizationCandidates(
              wordIt != wordEnd;
              wordIt++)
         {
-            list<KeyFrame *> &keyFramesForWord = invertedFile[wordIt->first];
+            std::list<KeyFrame *> &keyFramesForWord =
+                invertedFile[wordIt->first];
 
-            for (list<KeyFrame *>::iterator
+            for (std::list<KeyFrame *>::iterator
                      keyFrameIt  = keyFramesForWord.begin(),
                      keyFrameEnd = keyFramesForWord.end();
                  keyFrameIt != keyFrameEnd;
@@ -75,8 +74,9 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectRelocalizationCandidates(
 
     // Only compare against those keyframes that share enough words
     int maxCommonWordCount = 0;
-    for (list<KeyFrame *>::iterator keyFrameIt  = keyFramesSharingWords.begin(),
-                                    keyFrameEnd = keyFramesSharingWords.end();
+    for (std::list<KeyFrame *>::iterator
+             keyFrameIt  = keyFramesSharingWords.begin(),
+             keyFrameEnd = keyFramesSharingWords.end();
          keyFrameIt != keyFrameEnd;
          keyFrameIt++)
     {
@@ -86,13 +86,14 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectRelocalizationCandidates(
 
     int minCommonWordCount = maxCommonWordCount * 0.8f;
 
-    list<pair<float, KeyFrame *>> scoredCandidates;
+    std::list<std::pair<float, KeyFrame *>> scoredCandidates;
 
     int scoredCandidateCount = 0;
 
     // Compute similarity score.
-    for (list<KeyFrame *>::iterator keyFrameIt  = keyFramesSharingWords.begin(),
-                                    keyFrameEnd = keyFramesSharingWords.end();
+    for (std::list<KeyFrame *>::iterator
+             keyFrameIt  = keyFramesSharingWords.begin(),
+             keyFrameEnd = keyFramesSharingWords.end();
          keyFrameIt != keyFrameEnd;
          keyFrameIt++)
     {
@@ -106,7 +107,7 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectRelocalizationCandidates(
                                     p_candidateKeyFrame->bowVector);
             p_candidateKeyFrame->relocScore = candidateScore;
             scoredCandidates.push_back(
-                make_pair(candidateScore, p_candidateKeyFrame));
+                std::make_pair(candidateScore, p_candidateKeyFrame));
         }
     }
 
@@ -116,11 +117,11 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectRelocalizationCandidates(
         return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
     }
 
-    list<pair<float, KeyFrame *>> accumulatedScoredCandidates;
-    float                         bestAccumulatedScore = 0;
+    std::list<std::pair<float, KeyFrame *>> accumulatedScoredCandidates;
+    float                                   bestAccumulatedScore = 0;
 
     // Lets now accumulate score by covisibility
-    for (list<pair<float, KeyFrame *>>::iterator
+    for (std::list<std::pair<float, KeyFrame *>>::iterator
              scoredCandidateIt  = scoredCandidates.begin(),
              scoredCandidateEnd = scoredCandidates.end();
          scoredCandidateIt != scoredCandidateEnd;
@@ -143,7 +144,7 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectRelocalizationCandidates(
         float     bestGroupScore        = scoredCandidateIt->first;
         float     accumulatedScore      = bestGroupScore;
         KeyFrame *p_bestScoringKeyFrame = p_candidateKeyFrame;
-        for (vector<KeyFrame *>::iterator
+        for (std::vector<KeyFrame *>::iterator
                  wordIt  = covisibilityNeighborKeyFrames.begin(),
                  wordEnd = covisibilityNeighborKeyFrames.end();
              wordIt != wordEnd;
@@ -161,18 +162,18 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectRelocalizationCandidates(
             }
         }
         accumulatedScoredCandidates.push_back(
-            make_pair(accumulatedScore, p_bestScoringKeyFrame));
+            std::make_pair(accumulatedScore, p_bestScoringKeyFrame));
         if (accumulatedScore > bestAccumulatedScore)
             bestAccumulatedScore = accumulatedScore;
     }
 
     // Return all those keyframes with a score higher than 0.75*bestScore
-    float              minScoreToRetain = 0.75f * bestAccumulatedScore;
-    set<KeyFrame *>    alreadyAddedKeyFrames;
-    vector<KeyFrame *> relocalizationCandidateKeyFrames;
+    float                   minScoreToRetain = 0.75f * bestAccumulatedScore;
+    std::set<KeyFrame *>    alreadyAddedKeyFrames;
+    std::vector<KeyFrame *> relocalizationCandidateKeyFrames;
     relocalizationCandidateKeyFrames.reserve(
         accumulatedScoredCandidates.size());
-    for (list<pair<float, KeyFrame *>>::iterator
+    for (std::list<std::pair<float, KeyFrame *>>::iterator
              scoredCandidateIt  = accumulatedScoredCandidates.begin(),
              scoredCandidateEnd = accumulatedScoredCandidates.end();
          scoredCandidateIt != scoredCandidateEnd;

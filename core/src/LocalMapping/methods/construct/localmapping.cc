@@ -30,11 +30,12 @@ namespace vs_graphs
 namespace core
 {
 
-LocalMapping::LocalMapping(System                        *p_system_in,
-                           Atlas                         *p_atlas_in,
-                           const float                    monocular_in,
-                           bool                           inertial_in,
-                           [[maybe_unused]] const string &sequenceName_in) :
+LocalMapping::LocalMapping(
+    System                             *p_system_in,
+    Atlas                              *p_atlas_in,
+    const float                         monocular_in,
+    bool                                inertial_in,
+    [[maybe_unused]] const std::string &sequenceName_in) :
     scale(1.0),
     initSection(0),
     initIndex(0),

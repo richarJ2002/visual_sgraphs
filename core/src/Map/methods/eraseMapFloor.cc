@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::eraseMapFloor(vs_graphs::core::semantic::Floor *p_floor_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     floors.erase(p_floor_in);
 
     for (auto floorIterator = floorIndex.begin();

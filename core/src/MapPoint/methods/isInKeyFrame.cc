@@ -37,7 +37,7 @@ namespace core
 MapPointStatus MapPoint::isInKeyFrame(KeyFrame *p_keyFrame_in,
                                       bool     &isInKeyFrame_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     isInKeyFrame_out = (observations.count(p_keyFrame_in));
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

@@ -47,7 +47,7 @@ class MapDrawer
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MapDrawer(Atlas                     *p_atlas_in,
-              const string              &settingsFilePath_in,
+              const std::string         &settingsFilePath_in,
               utils::settings::Settings *p_settings_in) :
         p_atlas(p_atlas_in)
     {
@@ -87,7 +87,7 @@ class MapDrawer
                 {
                     throw -1;
                 }
-                catch (exception &caughtException)
+                catch (std::exception &caughtException)
                 {}
             }
         }

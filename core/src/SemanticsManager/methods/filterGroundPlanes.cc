@@ -165,7 +165,7 @@ SemanticsManagerStatus
          * Ignore threshold should be lenient. With correct ground plane
          * reference, this value should be close to 0.00.
          */
-        if (abs(transformedPlaneCoefficients(0)) >
+        if (std::abs(transformedPlaneCoefficients(0)) >
             p_sysParams->semSeg.maxTiltGround)
         {
             if (plane->resetPlaneSemantics() !=

@@ -37,7 +37,7 @@ namespace core
 MapPointStatus MapPoint::getObservations(
     std::map<KeyFrame *, std::tuple<int, int>> &observations_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     observations_out = observations;
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

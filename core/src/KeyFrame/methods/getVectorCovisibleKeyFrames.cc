@@ -38,7 +38,7 @@ namespace core
 KeyFrameStatus KeyFrame::getVectorCovisibleKeyFrames(
     std::vector<KeyFrame *> &vectorCovisibleKeyFrames_out)
 {
-    unique_lock<mutex> lock(connectionsMutex);
+    std::unique_lock<std::mutex> lock(connectionsMutex);
     vectorCovisibleKeyFrames_out = orderedConnectedKeyFrames;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

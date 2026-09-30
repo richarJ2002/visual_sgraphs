@@ -62,35 +62,32 @@
 
 #include "../private_functions.h"
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
 ORBextractorStatus ORBextractor::distributeOctTree(
-    const vector<cv::KeyPoint> &keysToDistribute_in,
-    const int                  &minimumX_in,
-    const int                  &maximumX_in,
-    const int                  &minimumY_in,
-    const int                  &maximumY_in,
-    const int                  &featureCount_in,
-    [[maybe_unused]] const int &level_in,
-    std::vector<cv::KeyPoint>  &keyPoints_out)
+    const std::vector<cv::KeyPoint> &keysToDistribute_in,
+    const int                       &minimumX_in,
+    const int                       &maximumX_in,
+    const int                       &minimumY_in,
+    const int                       &maximumY_in,
+    const int                       &featureCount_in,
+    [[maybe_unused]] const int      &level_in,
+    std::vector<cv::KeyPoint>       &keyPoints_out)
 {
     // Compute how many initial nodes
     const int initialNodeCount =
-        round(static_cast<float>(maximumX_in - minimumX_in) /
-              (maximumY_in - minimumY_in));
+        std::round(static_cast<float>(maximumX_in - minimumX_in) /
+                   (maximumY_in - minimumY_in));
 
     const float hX =
         static_cast<float>(maximumX_in - minimumX_in) / initialNodeCount;
 
-    list<ExtractorNode> nodes;
+    std::list<ExtractorNode> nodes;
 
-    vector<ExtractorNode *> initialNodes;
+    std::vector<ExtractorNode *> initialNodes;
     initialNodes.resize(initialNodeCount);
 
     for (int keyPointIndex = 0; keyPointIndex < initialNodeCount;
@@ -116,7 +113,7 @@ ORBextractorStatus ORBextractor::distributeOctTree(
         initialNodes[keyPoint.pt.x / hX]->keys.push_back(keyPoint);
     }
 
-    list<ExtractorNode>::iterator nodeIterator = nodes.begin();
+    std::list<ExtractorNode>::iterator nodeIterator = nodes.begin();
 
     while (nodeIterator != nodes.end())
     {
@@ -135,7 +132,7 @@ ORBextractorStatus ORBextractor::distributeOctTree(
 
     int iteration = 0;
 
-    vector<pair<int, ExtractorNode *>> vSizeAndPointerToNode;
+    std::vector<std::pair<int, ExtractorNode *>> vSizeAndPointerToNode;
     vSizeAndPointerToNode.reserve(nodes.size() * 4);
 
     while (!isFinished)
@@ -183,7 +180,8 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                     {
                         toExpandCount++;
                         vSizeAndPointerToNode.push_back(
-                            make_pair(node1_out.keys.size(), &nodes.front()));
+                            std::make_pair(node1_out.keys.size(),
+                                           &nodes.front()));
                         nodes.front().nodeIterator = nodes.begin();
                     }
                 }
@@ -194,7 +192,8 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                     {
                         toExpandCount++;
                         vSizeAndPointerToNode.push_back(
-                            make_pair(node2_out.keys.size(), &nodes.front()));
+                            std::make_pair(node2_out.keys.size(),
+                                           &nodes.front()));
                         nodes.front().nodeIterator = nodes.begin();
                     }
                 }
@@ -205,7 +204,8 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                     {
                         toExpandCount++;
                         vSizeAndPointerToNode.push_back(
-                            make_pair(node3_out.keys.size(), &nodes.front()));
+                            std::make_pair(node3_out.keys.size(),
+                                           &nodes.front()));
                         nodes.front().nodeIterator = nodes.begin();
                     }
                 }
@@ -216,7 +216,8 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                     {
                         toExpandCount++;
                         vSizeAndPointerToNode.push_back(
-                            make_pair(node4_out.keys.size(), &nodes.front()));
+                            std::make_pair(node4_out.keys.size(),
+                                           &nodes.front()));
                         nodes.front().nodeIterator = nodes.begin();
                     }
                 }
@@ -241,13 +242,13 @@ ORBextractorStatus ORBextractor::distributeOctTree(
 
                 previousSize = nodes.size();
 
-                vector<pair<int, ExtractorNode *>> vPrevSizeAndPointerToNode =
-                    vSizeAndPointerToNode;
+                std::vector<std::pair<int, ExtractorNode *>>
+                    vPrevSizeAndPointerToNode = vSizeAndPointerToNode;
                 vSizeAndPointerToNode.clear();
 
-                sort(vPrevSizeAndPointerToNode.begin(),
-                     vPrevSizeAndPointerToNode.end(),
-                     compareNodes);
+                std::sort(vPrevSizeAndPointerToNode.begin(),
+                          vPrevSizeAndPointerToNode.end(),
+                          compareNodes);
                 for (int nodeIndex = vPrevSizeAndPointerToNode.size() - 1;
                      nodeIndex >= 0;
                      nodeIndex--)
@@ -274,8 +275,8 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                         if (node1_out.keys.size() > 1)
                         {
                             vSizeAndPointerToNode.push_back(
-                                make_pair(node1_out.keys.size(),
-                                          &nodes.front()));
+                                std::make_pair(node1_out.keys.size(),
+                                               &nodes.front()));
                             nodes.front().nodeIterator = nodes.begin();
                         }
                     }
@@ -285,8 +286,8 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                         if (node2_out.keys.size() > 1)
                         {
                             vSizeAndPointerToNode.push_back(
-                                make_pair(node2_out.keys.size(),
-                                          &nodes.front()));
+                                std::make_pair(node2_out.keys.size(),
+                                               &nodes.front()));
                             nodes.front().nodeIterator = nodes.begin();
                         }
                     }
@@ -296,8 +297,8 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                         if (node3_out.keys.size() > 1)
                         {
                             vSizeAndPointerToNode.push_back(
-                                make_pair(node3_out.keys.size(),
-                                          &nodes.front()));
+                                std::make_pair(node3_out.keys.size(),
+                                               &nodes.front()));
                             nodes.front().nodeIterator = nodes.begin();
                         }
                     }
@@ -307,8 +308,8 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                         if (node4_out.keys.size() > 1)
                         {
                             vSizeAndPointerToNode.push_back(
-                                make_pair(node4_out.keys.size(),
-                                          &nodes.front()));
+                                std::make_pair(node4_out.keys.size(),
+                                               &nodes.front()));
                             nodes.front().nodeIterator = nodes.begin();
                         }
                     }
@@ -328,15 +329,15 @@ ORBextractorStatus ORBextractor::distributeOctTree(
     }
 
     // Retain the best point in each node
-    vector<cv::KeyPoint> resultKeys;
+    std::vector<cv::KeyPoint> resultKeys;
     resultKeys.reserve(featureCount);
-    for (list<ExtractorNode>::iterator nodeIterator = nodes.begin();
+    for (std::list<ExtractorNode>::iterator nodeIterator = nodes.begin();
          nodeIterator != nodes.end();
          nodeIterator++)
     {
-        vector<cv::KeyPoint> &nodeKeys        = nodeIterator->keys;
-        cv::KeyPoint         *p_keyPoint      = &nodeKeys[0];
-        float                 maximumResponse = p_keyPoint->response;
+        std::vector<cv::KeyPoint> &nodeKeys        = nodeIterator->keys;
+        cv::KeyPoint              *p_keyPoint      = &nodeKeys[0];
+        float                      maximumResponse = p_keyPoint->response;
 
         for (size_t nodeKeyIndex = 1; nodeKeyIndex < nodeKeys.size();
              nodeKeyIndex++)

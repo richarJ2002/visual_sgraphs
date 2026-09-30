@@ -321,12 +321,12 @@ class ORBmatcher
      * @return ORBMATCHER_STATUS_SUCCESS.
      */
     [[nodiscard]] ORBmatcherStatus searchForTriangulation(
-        KeyFrame                          *p_keyframe1_in,
-        KeyFrame                          *p_keyframe2_in,
-        std::vector<pair<size_t, size_t>> &matchedPairs_out,
-        const bool                         stereoOnly_in,
-        int                               &forTriangulation_out,
-        const bool                         coarse_in = false);
+        KeyFrame                               *p_keyframe1_in,
+        KeyFrame                               *p_keyframe2_in,
+        std::vector<std::pair<size_t, size_t>> &matchedPairs_out,
+        const bool                              stereoOnly_in,
+        int                                    &forTriangulation_out,
+        const bool                              coarse_in = false);
 
     // Search matches between MapPoints seen in KF1 and KF2 transforming by a
     // Sim3 [s12*R12|t12] In the stereo and RGB-D case, s12=1 int
@@ -379,11 +379,12 @@ class ORBmatcher
      * @param[out] fusedCount_out Number of fused points.
      * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    [[nodiscard]] ORBmatcherStatus fuse(KeyFrame *p_keyframe_inout,
-                                        const vector<MapPoint *> &mapPoints_in,
-                                        int        &fusedCount_out,
-                                        const float threshold_in = 3.0,
-                                        const bool  right_in     = false);
+    [[nodiscard]] ORBmatcherStatus
+        fuse(KeyFrame                      *p_keyframe_inout,
+             const std::vector<MapPoint *> &mapPoints_in,
+             int                           &fusedCount_out,
+             const float                    threshold_in = 3.0,
+             const bool                     right_in     = false);
 
     /*!
      * @brief        Fuses duplicated map points projected under

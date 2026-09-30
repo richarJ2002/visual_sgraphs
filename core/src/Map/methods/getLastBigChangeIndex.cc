@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getLastBigChangeIndex(int &lastBigChangeIndex_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     lastBigChangeIndex_out = bigChangeIndex;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

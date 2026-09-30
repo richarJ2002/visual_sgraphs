@@ -62,16 +62,13 @@
 
 #include "../private_functions.h"
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
 ORBextractorStatus ORBextractor::computeKeyPointsOld(
-    std::vector<std::vector<KeyPoint>> &keypointsPerLevel_inout)
+    std::vector<std::vector<cv::KeyPoint>> &keypointsPerLevel_inout)
 {
     keypointsPerLevel_inout.resize(levelCount);
 
@@ -82,7 +79,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
         const int desiredFeatureCount = featuresPerLevel[level];
 
         const int levelCols =
-            sqrt((float)desiredFeatureCount / (5 * imageRatio));
+            std::sqrt((float)desiredFeatureCount / (5 * imageRatio));
         const int levelRows = imageRatio * levelCols;
 
         const int minimumBorderX = EDGE_THRESHOLD;
@@ -92,24 +89,30 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
 
         const int W     = maximumBorderX - minimumBorderX;
         const int H     = maximumBorderY - minimumBorderY;
-        const int cellW = ceil((float)W / levelCols);
-        const int cellH = ceil((float)H / levelRows);
+        const int cellW = std::ceil((float)W / levelCols);
+        const int cellH = std::ceil((float)H / levelRows);
 
-        const int cellCount     = levelRows * levelCols;
-        const int nfeaturesCell = ceil((float)desiredFeatureCount / cellCount);
+        const int cellCount = levelRows * levelCols;
+        const int nfeaturesCell =
+            std::ceil((float)desiredFeatureCount / cellCount);
 
-        vector<vector<vector<KeyPoint>>> cellKeyPoints(
+        std::vector<std::vector<std::vector<cv::KeyPoint>>> cellKeyPoints(
             levelRows,
-            vector<vector<KeyPoint>>(levelCols));
+            std::vector<std::vector<cv::KeyPoint>>(levelCols));
 
-        vector<vector<int>> toRetainCount(levelRows, vector<int>(levelCols, 0));
-        vector<vector<int>> totalCount(levelRows, vector<int>(levelCols, 0));
-        vector<vector<bool>> isExhausted(levelRows,
-                                         vector<bool>(levelCols, false));
-        vector<int>          initialXCol(levelCols);
-        vector<int>          initialYRow(levelRows);
-        int                  noMoreCount       = 0;
-        int                  toDistributeCount = 0;
+        std::vector<std::vector<int>> toRetainCount(
+            levelRows,
+            std::vector<int>(levelCols, 0));
+        std::vector<std::vector<int>> totalCount(
+            levelRows,
+            std::vector<int>(levelCols, 0));
+        std::vector<std::vector<bool>> isExhausted(
+            levelRows,
+            std::vector<bool>(levelCols, false));
+        std::vector<int> initialXCol(levelCols);
+        std::vector<int> initialYRow(levelRows);
+        int              noMoreCount       = 0;
+        int              toDistributeCount = 0;
 
         float hY = cellH + 6;
 
@@ -148,25 +151,25 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
                         continue;
                 }
 
-                Mat cellImage = imagePyramid[level]
-                                    .rowRange(initialY, initialY + hY)
-                                    .colRange(initialX, initialX + hX);
+                cv::Mat cellImage = imagePyramid[level]
+                                        .rowRange(initialY, initialY + hY)
+                                        .colRange(initialX, initialX + hX);
 
                 cellKeyPoints[rowIndex][columnIndex].reserve(nfeaturesCell * 5);
 
-                FAST(cellImage,
-                     cellKeyPoints[rowIndex][columnIndex],
-                     initialFastThreshold,
-                     true);
+                cv::FAST(cellImage,
+                         cellKeyPoints[rowIndex][columnIndex],
+                         initialFastThreshold,
+                         true);
 
                 if (cellKeyPoints[rowIndex][columnIndex].size() <= 3)
                 {
                     cellKeyPoints[rowIndex][columnIndex].clear();
 
-                    FAST(cellImage,
-                         cellKeyPoints[rowIndex][columnIndex],
-                         minimumFastThreshold,
-                         true);
+                    cv::FAST(cellImage,
+                             cellKeyPoints[rowIndex][columnIndex],
+                             minimumFastThreshold,
+                             true);
                 }
 
                 const int keyCount =
@@ -194,7 +197,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
         {
             int newFeaturesCellCount =
                 nfeaturesCell +
-                ceil((float)toDistributeCount / (cellCount - noMoreCount));
+                std::ceil((float)toDistributeCount / (cellCount - noMoreCount));
             toDistributeCount = 0;
 
             for (int rowIndex = 0; rowIndex < levelRows; rowIndex++)
@@ -226,7 +229,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
             }
         }
 
-        vector<KeyPoint> &keypoints = keypointsPerLevel_inout[level];
+        std::vector<cv::KeyPoint> &keypoints = keypointsPerLevel_inout[level];
         keypoints.reserve(desiredFeatureCount * 2);
 
         const int scaledPatchSize = PATCH_SIZE * scaleFactors[level];
@@ -236,9 +239,9 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
         {
             for (int columnIndex = 0; columnIndex < levelCols; columnIndex++)
             {
-                vector<KeyPoint> &keysCell =
+                std::vector<cv::KeyPoint> &keysCell =
                     cellKeyPoints[rowIndex][columnIndex];
-                KeyPointsFilter::retainBest(
+                cv::KeyPointsFilter::retainBest(
                     keysCell,
                     toRetainCount[rowIndex][columnIndex]);
                 if ((int)keysCell.size() > toRetainCount[rowIndex][columnIndex])
@@ -260,7 +263,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
 
         if ((int)keypoints.size() > desiredFeatureCount)
         {
-            KeyPointsFilter::retainBest(keypoints, desiredFeatureCount);
+            cv::KeyPointsFilter::retainBest(keypoints, desiredFeatureCount);
             keypoints.resize(desiredFeatureCount);
         }
     }

@@ -35,7 +35,7 @@ AtlasStatus Atlas::getSkeletonEdges(
     std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &skeletonEdges_out)
 {
     /* Lock access to the active map */
-    unique_lock<mutex> lock(atlasMutex);
+    std::unique_lock<std::mutex> lock(atlasMutex);
 
     if (p_activeMap == nullptr)
     {

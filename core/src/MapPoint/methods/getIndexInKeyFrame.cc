@@ -38,7 +38,7 @@ MapPointStatus
     MapPoint::getIndexInKeyFrame(KeyFrame             *p_keyFrame_in,
                                  std::tuple<int, int> &indexInKeyFrame_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     if (observations.count(p_keyFrame_in))
     {
         indexInKeyFrame_out = observations[p_keyFrame_in];

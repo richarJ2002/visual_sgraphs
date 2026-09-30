@@ -38,7 +38,7 @@ namespace core
 KeyFrameStatus
     KeyFrame::getRightRotation(Eigen::Matrix<float, 3, 3> &rightRotation_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
 
     rightRotation_out = (poseTrl.so3() * poseTcw.so3()).matrix();
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

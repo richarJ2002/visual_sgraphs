@@ -34,8 +34,8 @@ namespace core
 AtlasStatus Atlas::getMarkerById(int                markerId_in,
                                  semantic::Marker *&p_markerById_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    semantic::Marker  *p_activeMapMarkerById = nullptr;
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    semantic::Marker            *p_activeMapMarkerById = nullptr;
     if ((p_activeMap != nullptr) &&
         p_activeMap->getMarkerById(markerId_in, p_activeMapMarkerById) !=
             MapStatus::MAP_STATUS_SUCCESS)

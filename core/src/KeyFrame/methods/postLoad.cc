@@ -37,9 +37,9 @@ namespace core
 {
 
 KeyFrameStatus KeyFrame::postLoad(
-    map<long unsigned int, KeyFrame *> &keyFrameId_in,
-    map<long unsigned int, MapPoint *> &mapPointId_in,
-    map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
+    std::map<long unsigned int, KeyFrame *> &keyFrameId_in,
+    std::map<long unsigned int, MapPoint *> &mapPointId_in,
+    std::map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
         &cameraId_in)
 {
     // Rebuild the empty variables
@@ -70,7 +70,7 @@ KeyFrameStatus KeyFrame::postLoad(
 
     // Conected KeyFrames with him weight
     connectedKeyFrameWeights.clear();
-    for (map<long unsigned int, int>::const_iterator
+    for (std::map<long unsigned int, int>::const_iterator
              mergeEdgeIdIt = backupConnectedKeyFrameIdWeights.begin(),
              end           = backupConnectedKeyFrameIdWeights.end();
          mergeEdgeIdIt != end;
@@ -86,7 +86,7 @@ KeyFrameStatus KeyFrame::postLoad(
 
     // KeyFrame childrens
     childrens.clear();
-    for (vector<long unsigned int>::const_iterator
+    for (std::vector<long unsigned int>::const_iterator
              mergeEdgeIdIt = backupChildrensId.begin(),
              end           = backupChildrensId.end();
          mergeEdgeIdIt != end;
@@ -97,7 +97,7 @@ KeyFrameStatus KeyFrame::postLoad(
 
     // Loop edge KeyFrame
     loopEdges.clear();
-    for (vector<long unsigned int>::const_iterator
+    for (std::vector<long unsigned int>::const_iterator
              mergeEdgeIdIt = backupLoopEdgesId.begin(),
              end           = backupLoopEdgesId.end();
          mergeEdgeIdIt != end;
@@ -108,7 +108,7 @@ KeyFrameStatus KeyFrame::postLoad(
 
     // Merge edge KeyFrame
     mergeEdges.clear();
-    for (vector<long unsigned int>::const_iterator
+    for (std::vector<long unsigned int>::const_iterator
              mergeEdgeIdIt = backupMergeEdgesId.begin(),
              end           = backupMergeEdgesId.end();
          mergeEdgeIdIt != end;
@@ -124,7 +124,8 @@ KeyFrameStatus KeyFrame::postLoad(
     }
     else
     {
-        cout << "ERROR: There is not a main camera in KF " << id << endl;
+        std::cout << "ERROR: There is not a main camera in KF " << id
+                  << std::endl;
     }
     if (backupCamera2Id >= 0)
     {

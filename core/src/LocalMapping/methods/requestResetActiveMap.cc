@@ -35,7 +35,7 @@ namespace core
 LocalMappingStatus LocalMapping::requestResetActiveMap(Map *p_map_in)
 {
     {
-        unique_lock<mutex> resetLock(resetMutex);
+        std::unique_lock<std::mutex> resetLock(resetMutex);
         // Request to reset the active map
         isResetActiveMapRequested = true;
         p_mapToReset              = p_map_in;
@@ -45,7 +45,7 @@ LocalMappingStatus LocalMapping::requestResetActiveMap(Map *p_map_in)
     while (1)
     {
         {
-            unique_lock<mutex> resetLock2(resetMutex);
+            std::unique_lock<std::mutex> resetLock2(resetMutex);
             if (!isResetActiveMapRequested)
                 break;
         }

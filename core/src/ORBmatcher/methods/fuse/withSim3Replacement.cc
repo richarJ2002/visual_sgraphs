@@ -31,12 +31,12 @@ namespace vs_graphs
 namespace core
 {
 
-ORBmatcherStatus ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
-                                  Sophus::Sim3f            &Scw,
-                                  const vector<MapPoint *> &vpPoints,
-                                  float                     th,
-                                  std::vector<MapPoint *>  &replacePoints_inout,
-                                  int                      &fusedCount_out)
+ORBmatcherStatus ORBmatcher::fuse(KeyFrame      *p_keyframe_inout,
+                                  Sophus::Sim3f &Scw,
+                                  const std::vector<MapPoint *> &vpPoints,
+                                  float                          th,
+                                  std::vector<MapPoint *> &replacePoints_inout,
+                                  int                     &fusedCount_out)
 {
     // Decompose Scw
     Sophus::SE3f Tcw =
@@ -198,7 +198,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
 
         int bestDistance = INT_MAX;
         int bestIndex    = -1;
-        for (vector<size_t>::const_iterator vit = indices.begin();
+        for (std::vector<size_t>::const_iterator vit = indices.begin();
              vit != indices.end();
              vit++)
         {

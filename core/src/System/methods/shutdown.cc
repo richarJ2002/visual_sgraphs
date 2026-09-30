@@ -40,11 +40,11 @@ namespace core
 SystemStatus System::shutdown()
 {
     {
-        unique_lock<mutex> lock(resetMutex);
+        std::unique_lock<std::mutex> lock(resetMutex);
         isShutdownRequested = true;
     }
 
-    cout << "Shutdown" << endl;
+    std::cout << "Shutdown" << std::endl;
 
     if (p_localMapper->requestFinish() !=
         LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)

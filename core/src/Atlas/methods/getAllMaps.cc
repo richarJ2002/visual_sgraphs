@@ -33,7 +33,7 @@ namespace core
 
 AtlasStatus Atlas::getAllMaps(std::vector<Map *> &allMaps_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
+    std::unique_lock<std::mutex> lock(atlasMutex);
     struct CompFunctor
     {
         inline bool operator()(Map *p_elem1_inout, Map *p_elem2_inout)
@@ -57,8 +57,8 @@ AtlasStatus Atlas::getAllMaps(std::vector<Map *> &allMaps_out)
             return elem1Id < elem2Id;
         }
     };
-    vector<Map *> mapList(maps.begin(), maps.end());
-    sort(mapList.begin(), mapList.end(), CompFunctor());
+    std::vector<Map *> mapList(maps.begin(), maps.end());
+    std::sort(mapList.begin(), mapList.end(), CompFunctor());
     allMaps_out = mapList;
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }

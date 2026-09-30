@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getMapChangeIndex(int &mapChangeIndex_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     mapChangeIndex_out = mapChange;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

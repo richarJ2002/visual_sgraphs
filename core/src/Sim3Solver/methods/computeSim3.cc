@@ -104,7 +104,7 @@ Sim3SolverStatus Sim3Solver::computeSim3(Eigen::Matrix3f &P1_inout,
 
     // Rotation angle. sin is the norm of the imaginary part, cos is the real
     // part
-    double angle = atan2(vector.norm(), evec(0, maximumIndex));
+    double angle = std::atan2(vector.norm(), evec(0, maximumIndex));
 
     vector =
         2 * angle * vector /
@@ -139,8 +139,8 @@ Sim3SolverStatus Sim3Solver::computeSim3(Eigen::Matrix3f &P1_inout,
         }
         double cvnom = cvMat.dot(cvMat2);
         double nom   = (Pr1.array() * P3.array()).sum();
-        if (abs(nom - cvnom) > 1e-3)
-            std::cout << "sim3 solver: " << abs(nom - cvnom) << std::endl
+        if (std::abs(nom - cvnom) > 1e-3)
+            std::cout << "sim3 solver: " << std::abs(nom - cvnom) << std::endl
                       << nom << std::endl;
         Eigen::Array<float, 3, 3> aux_P3;
         aux_P3     = P3.array() * P3.array();

@@ -34,9 +34,9 @@ namespace core
 
 LocalMappingStatus LocalMapping::requestStop()
 {
-    unique_lock<mutex> stopLock(stopMutex);
+    std::unique_lock<std::mutex> stopLock(stopMutex);
     isStopRequested = true;
-    unique_lock<mutex> newKeyFramesLock(newKeyFramesMutex);
+    std::unique_lock<std::mutex> newKeyFramesLock(newKeyFramesMutex);
     shouldAbortBa = true;
 
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;

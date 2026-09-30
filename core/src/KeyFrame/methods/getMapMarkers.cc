@@ -38,7 +38,7 @@ namespace core
 KeyFrameStatus
     KeyFrame::getMapMarkers(std::vector<semantic::Marker *> &mapMarkers_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     mapMarkers_out = mapMarkers;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

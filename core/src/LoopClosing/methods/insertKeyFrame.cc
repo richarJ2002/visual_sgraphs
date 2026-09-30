@@ -34,7 +34,7 @@ namespace core
 
 LoopClosingStatus LoopClosing::insertKeyFrame(KeyFrame *p_keyFrame_in)
 {
-    unique_lock<mutex> lock(loopQueueMutex);
+    std::unique_lock<std::mutex> lock(loopQueueMutex);
     if (p_keyFrame_in->id != 0)
         loopKeyFrameQueue.push_back(p_keyFrame_in);
 

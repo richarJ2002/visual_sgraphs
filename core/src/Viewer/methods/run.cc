@@ -136,7 +136,7 @@ void Viewer::run()
                      __func__);
     }
 
-    cout << "Starting the Viewer" << endl;
+    std::cout << "Starting the Viewer" << std::endl;
     while (1)
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

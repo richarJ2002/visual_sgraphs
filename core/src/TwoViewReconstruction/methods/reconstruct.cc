@@ -25,7 +25,6 @@
 #include <rclcpp/logging.hpp>
 #include <thread>
 
-using namespace std;
 namespace vs_graphs
 {
 namespace core
@@ -34,9 +33,9 @@ namespace core
 TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
     const std::vector<cv::KeyPoint> &keys1_in,
     const std::vector<cv::KeyPoint> &keys2_in,
-    const vector<int>               &matches12_in,
+    const std::vector<int>          &matches12_in,
     Sophus::SE3f                    &T21_inout,
-    vector<cv::Point3f>             &vP3D_inout,
+    std::vector<cv::Point3f>        &vP3D_inout,
     std::vector<bool>               &triangulatedFlags_inout,
     bool                            &isReconstructed_out)
 {
@@ -57,7 +56,7 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
         if (matches12_in[matchIndex] >= 0)
         {
             matches12.push_back(
-                make_pair(matchIndex, matches12_in[matchIndex]));
+                std::make_pair(matchIndex, matches12_in[matchIndex]));
             matchedFlags1[matchIndex] = true;
         }
         else
@@ -67,9 +66,9 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
     const int N = matches12.size();
 
     // Indices for minimum set selection
-    vector<size_t> allIndices;
+    std::vector<size_t> allIndices;
     allIndices.reserve(N);
-    vector<size_t> availableIndices;
+    std::vector<size_t> availableIndices;
 
     for (int matchIndex = 0; matchIndex < N; matchIndex++)
     {
@@ -77,7 +76,8 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
     }
 
     // Generate sets of 8 points for each RANSAC iteration
-    sets = vector<vector<size_t>>(maxIterations, vector<size_t>(8, 0));
+    sets = std::vector<std::vector<size_t>>(maxIterations,
+                                            std::vector<size_t>(8, 0));
 
     DUtils::Random::SeedRandOnce(0);
 
@@ -102,20 +102,20 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
 
     // Launch threads to compute in parallel a fundamental matrix and a
     // homography
-    vector<bool>    matchesInliersHFlags, matchesInliersFFlags;
-    float           SH, SF;
-    Eigen::Matrix3f H, F;
+    std::vector<bool> matchesInliersHFlags, matchesInliersFFlags;
+    float             SH, SF;
+    Eigen::Matrix3f   H, F;
 
-    thread threadH(&TwoViewReconstruction::findHomography,
-                   this,
-                   ref(matchesInliersHFlags),
-                   ref(SH),
-                   ref(H));
-    thread threadF(&TwoViewReconstruction::findFundamental,
-                   this,
-                   ref(matchesInliersFFlags),
-                   ref(SF),
-                   ref(F));
+    std::thread threadH(&TwoViewReconstruction::findHomography,
+                        this,
+                        std::ref(matchesInliersHFlags),
+                        std::ref(SH),
+                        std::ref(H));
+    std::thread threadF(&TwoViewReconstruction::findFundamental,
+                        this,
+                        std::ref(matchesInliersFFlags),
+                        std::ref(SF),
+                        std::ref(F));
 
     // Wait until both threads have finished
     threadH.join();

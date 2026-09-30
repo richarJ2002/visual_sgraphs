@@ -46,8 +46,8 @@ namespace core
 KeyFrameStatus KeyFrame::setBadFlag()
 {
     {
-        unique_lock<mutex> lock(connectionsMutex);
-        unsigned long      mapInitKeyFrameId{};
+        std::unique_lock<std::mutex> lock(connectionsMutex);
+        unsigned long                mapInitKeyFrameId{};
         if (p_map->getInitKeyFrameId(mapInitKeyFrameId) !=
             MapStatus::MAP_STATUS_SUCCESS)
         {
@@ -67,8 +67,9 @@ KeyFrameStatus KeyFrame::setBadFlag()
         }
     }
 
-    for (map<KeyFrame *, int>::iterator mit  = connectedKeyFrameWeights.begin(),
-                                        mend = connectedKeyFrameWeights.end();
+    for (std::map<KeyFrame *, int>::iterator
+             mit  = connectedKeyFrameWeights.begin(),
+             mend = connectedKeyFrameWeights.end();
          mit != mend;
          mit++)
     {
@@ -152,8 +153,8 @@ KeyFrameStatus KeyFrame::setBadFlag()
     }
 
     {
-        unique_lock<mutex> lock(connectionsMutex);
-        unique_lock<mutex> lock1(featuresMutex);
+        std::unique_lock<std::mutex> lock(connectionsMutex);
+        std::unique_lock<std::mutex> lock1(featuresMutex);
 
         connectedKeyFrameWeights.clear();
         orderedConnectedKeyFrames.clear();
@@ -161,7 +162,7 @@ KeyFrameStatus KeyFrame::setBadFlag()
         mapMarkers.clear();
 
         // Update Spanning Tree
-        set<KeyFrame *> parentCandidates;
+        std::set<KeyFrame *> parentCandidates;
         if (p_parent)
             parentCandidates.insert(p_parent);
 
@@ -176,8 +177,8 @@ KeyFrameStatus KeyFrame::setBadFlag()
             KeyFrame *pC;
             KeyFrame *pP;
 
-            for (set<KeyFrame *>::iterator sit  = childrens.begin(),
-                                           send = childrens.end();
+            for (std::set<KeyFrame *>::iterator sit  = childrens.begin(),
+                                                send = childrens.end();
                  sit != send;
                  sit++)
             {
@@ -209,7 +210,7 @@ KeyFrameStatus KeyFrame::setBadFlag()
                      mapPointIndex < iend;
                      mapPointIndex++)
                 {
-                    for (set<KeyFrame *>::iterator
+                    for (std::set<KeyFrame *>::iterator
                              spcit  = parentCandidates.begin(),
                              spcend = parentCandidates.end();
                          spcit != spcend;
@@ -262,7 +263,7 @@ KeyFrameStatus KeyFrame::setBadFlag()
         // assign to the original parent of this KF
         if (!childrens.empty())
         {
-            for (set<KeyFrame *>::iterator sit = childrens.begin();
+            for (std::set<KeyFrame *>::iterator sit = childrens.begin();
                  sit != childrens.end();
                  sit++)
             {

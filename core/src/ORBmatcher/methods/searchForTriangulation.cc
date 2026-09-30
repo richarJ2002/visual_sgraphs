@@ -32,12 +32,12 @@ namespace core
 {
 
 ORBmatcherStatus ORBmatcher::searchForTriangulation(
-    KeyFrame                     *pKF1,
-    KeyFrame                     *pKF2,
-    vector<pair<size_t, size_t>> &vMatchedPairs,
-    const bool                    bOnlyStereo,
-    int                          &forTriangulation_out,
-    const bool                    bCoarse)
+    KeyFrame                               *pKF1,
+    KeyFrame                               *pKF2,
+    std::vector<std::pair<size_t, size_t>> &vMatchedPairs,
+    const bool                              bOnlyStereo,
+    int                                    &forTriangulation_out,
+    const bool                              bCoarse)
 {
     const DBoW2::FeatureVector &featureVector1 = pKF1->featureVector;
     const DBoW2::FeatureVector &featureVector2 = pKF2->featureVector;
@@ -126,11 +126,11 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
     // Find matches between not tracked keypoints
     // Matching speed-up by ORB Vocabulary
     // Compare only ORB that share the same node
-    int          nmatches = 0;
-    vector<bool> matched2Flags(pKF2->keyPointCount, false);
-    vector<int>  matches12(pKF1->keyPointCount, -1);
+    int               nmatches = 0;
+    std::vector<bool> matched2Flags(pKF2->keyPointCount, false);
+    std::vector<int>  matches12(pKF1->keyPointCount, -1);
 
-    vector<int> rotHist[HISTO_LENGTH];
+    std::vector<int> rotHist[HISTO_LENGTH];
     for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
          histogramBinIndex++)
         rotHist[histogramBinIndex].reserve(500);
@@ -341,7 +341,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                         float rot = keyPoint1.angle - keyPoint2.angle;
                         if (rot < 0.0)
                             rot += 360.0f;
-                        int bin = round(rot * factor);
+                        int bin = std::round(rot * factor);
                         if (bin == HISTO_LENGTH)
                             bin = 0;
                         assert(bin >= 0 && bin < HISTO_LENGTH);
@@ -405,7 +405,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
         if (matches12[histogramBinIndex] < 0)
             continue;
         vMatchedPairs.push_back(
-            make_pair(histogramBinIndex, matches12[histogramBinIndex]));
+            std::make_pair(histogramBinIndex, matches12[histogramBinIndex]));
     }
 
     forTriangulation_out = nmatches;

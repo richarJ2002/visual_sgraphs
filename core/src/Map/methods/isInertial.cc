@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::isInertial(bool &isInertial_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     isInertial_out = isInertialMode;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

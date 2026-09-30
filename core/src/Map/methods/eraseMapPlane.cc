@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::eraseMapPlane(geometric::Plane *p_plane_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     planes.erase(p_plane_in);
 
     for (auto planeIterator = planeIndex.begin();

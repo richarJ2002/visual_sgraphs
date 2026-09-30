@@ -172,8 +172,8 @@ void LoopClosing::run(void)
                          p_tracker->sensor == System::IMU_RGBD) &&
                         (!isImuInitialized2))
                     {
-                        cout << "IMU is not initilized, merge is aborted"
-                             << endl;
+                        std::cout << "IMU is not initilized, merge is aborted"
+                                  << std::endl;
                     }
                     else
                     {
@@ -286,8 +286,8 @@ void LoopClosing::run(void)
                         }
                         if (isInertial2 && isInertial3)
                         {
-                            cout << "Merge check transformation with IMU"
-                                 << endl;
+                            std::cout << "Merge check transformation with IMU"
+                                      << std::endl;
 
                             /* Reject maps with bad scale */
                             if (oldCorrectedPose.scale() < 0.90 ||

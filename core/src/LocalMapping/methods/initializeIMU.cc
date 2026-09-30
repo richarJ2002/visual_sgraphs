@@ -70,16 +70,16 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
     // Retrieve all keyframe in temporal order
-    list<KeyFrame *> temporalKeyFrames;
-    KeyFrame        *p_walkKeyFrame = p_currentKeyFrame;
+    std::list<KeyFrame *> temporalKeyFrames;
+    KeyFrame             *p_walkKeyFrame = p_currentKeyFrame;
     while (p_walkKeyFrame->p_prevKF)
     {
         temporalKeyFrames.push_front(p_walkKeyFrame);
         p_walkKeyFrame = p_walkKeyFrame->p_prevKF;
     }
     temporalKeyFrames.push_front(p_walkKeyFrame);
-    vector<KeyFrame *> orderedKeyFrames(temporalKeyFrames.begin(),
-                                        temporalKeyFrames.end());
+    std::vector<KeyFrame *> orderedKeyFrames(temporalKeyFrames.begin(),
+                                             temporalKeyFrames.end());
 
     if (orderedKeyFrames.size() < minKeyFrameCount)
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
@@ -173,7 +173,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         Eigen::Matrix3f Rwg;
         Eigen::Vector3f gravityDirection;
         gravityDirection.setZero();
-        for (vector<KeyFrame *>::iterator orderedKeyFrameIt =
+        for (std::vector<KeyFrame *>::iterator orderedKeyFrameIt =
                  orderedKeyFrames.begin();
              orderedKeyFrameIt != orderedKeyFrames.end();
              orderedKeyFrameIt++)
@@ -251,10 +251,10 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         const float rotationAxisNorm = rotationAxis.norm();
         const float gravityCosine =
             referenceGravityDirection.dot(gravityDirection);
-        const float     rotationAngle = acos(gravityCosine);
+        const float     rotationAngle = std::acos(gravityCosine);
         Eigen::Vector3f rotationVector(0.0f, 0.0f, 0.0f); // = v*ang/nv;
-        if (rotationAxisNorm != 0 && !isnan(gravityCosine) &&
-            !isnan(rotationAngle))
+        if (rotationAxisNorm != 0 && !std::isnan(gravityCosine) &&
+            !std::isnan(rotationAngle))
             rotationVector = rotationAxis * rotationAngle / rotationAxisNorm;
         Rwg                     = Sophus::SO3f::exp(rotationVector).matrix();
         mRwg                    = Rwg.cast<double>();
@@ -320,7 +320,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
 
     if (scale < 1e-1)
     {
-        cout << "scale too small" << endl;
+        std::cout << "scale too small" << std::endl;
         isInitializationInProgress = false;
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
@@ -362,7 +362,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        unique_lock<mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
+        std::unique_lock<std::mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
         if ((fabs(scale - 1.f) > 0.00001) || !isMonocular)
         {
             Sophus::SE3f Twg(mRwg.cast<float>().transpose(),
@@ -531,7 +531,8 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    unique_lock<mutex> mapUpdateLock(p_atlasCurrentMap4->mapUpdateMutex);
+    std::unique_lock<std::mutex> mapUpdateLock(
+        p_atlasCurrentMap4->mapUpdateMutex);
 
     unsigned long globalBaId = p_currentKeyFrame->id;
 
@@ -582,7 +583,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    list<KeyFrame *> keyFramesToCorrect(
+    std::list<KeyFrame *> keyFramesToCorrect(
         p_atlasCurrentMap5->keyFrameOrigins.begin(),
         p_atlasCurrentMap6->keyFrameOrigins.end());
 
@@ -607,7 +608,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        for (set<KeyFrame *>::const_iterator childKeyFrameIt =
+        for (std::set<KeyFrame *>::const_iterator childKeyFrameIt =
                  childKeyFrames.begin();
              childKeyFrameIt != childKeyFrames.end();
              childKeyFrameIt++)
@@ -758,7 +759,8 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         }
         else
         {
-            cout << "KF " << p_walkKeyFrame->id << " not set to inertial!! \n";
+            std::cout << "KF " << p_walkKeyFrame->id
+                      << " not set to inertial!! \n";
         }
 
         keyFramesToCorrect.pop_front();
@@ -877,8 +879,8 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
     keyFrameCount = orderedKeyFrames.size();
     initIndex++;
 
-    for (list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
-                                    newKeyFrameEnd = newKeyFrames.end();
+    for (std::list<KeyFrame *>::iterator newKeyFrameIt  = newKeyFrames.begin(),
+                                         newKeyFrameEnd = newKeyFrames.end();
          newKeyFrameIt != newKeyFrameEnd;
          newKeyFrameIt++)
     {

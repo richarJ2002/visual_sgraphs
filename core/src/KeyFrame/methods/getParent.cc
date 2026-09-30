@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getParent(KeyFrame *&p_parent_out)
 {
-    unique_lock<mutex> lockCon(connectionsMutex);
+    std::unique_lock<std::mutex> lockCon(connectionsMutex);
     p_parent_out = p_parent;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

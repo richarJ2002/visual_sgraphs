@@ -62,21 +62,18 @@
 
 #include "private_functions.h"
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
 ORBextractorStatus
-    computeOrientation(const Mat         &image_in,
-                       vector<KeyPoint>  &keypoints_in,
-                       const vector<int> &orientationMaximumOffset_in)
+    computeOrientation(const cv::Mat             &image_in,
+                       std::vector<cv::KeyPoint> &keypoints_in,
+                       const std::vector<int>    &orientationMaximumOffset_in)
 {
-    for (vector<KeyPoint>::iterator keypoint    = keypoints_in.begin(),
-                                    keypointEnd = keypoints_in.end();
+    for (std::vector<cv::KeyPoint>::iterator keypoint    = keypoints_in.begin(),
+                                             keypointEnd = keypoints_in.end();
          keypoint != keypointEnd;
          ++keypoint)
     {

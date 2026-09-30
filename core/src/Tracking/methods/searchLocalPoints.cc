@@ -38,8 +38,8 @@ namespace core
 TrackingStatus Tracking::searchLocalPoints()
 {
     // Do not search map points already matched
-    for (vector<MapPoint *>::iterator vit  = currentFrame.mapPoints.begin(),
-                                      vend = currentFrame.mapPoints.end();
+    for (std::vector<MapPoint *>::iterator vit = currentFrame.mapPoints.begin(),
+                                           vend = currentFrame.mapPoints.end();
          vit != vend;
          vit++)
     {
@@ -80,8 +80,8 @@ TrackingStatus Tracking::searchLocalPoints()
     int toMatchCount = 0;
 
     // Project points in frame and check its visibility
-    for (vector<MapPoint *>::iterator vit  = localMapPoints.begin(),
-                                      vend = localMapPoints.end();
+    for (std::vector<MapPoint *>::iterator vit  = localMapPoints.begin(),
+                                           vend = localMapPoints.end();
          vit != vend;
          vit++)
     {

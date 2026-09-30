@@ -37,7 +37,7 @@ TrackingStatus Tracking::updateLocalPoints()
 
     int pointCount = 0;
 
-    for (vector<KeyFrame *>::const_reverse_iterator
+    for (std::vector<KeyFrame *>::const_reverse_iterator
              itKeyFrame    = localKeyFrames.rbegin(),
              itEndKeyFrame = localKeyFrames.rend();
          itKeyFrame != itEndKeyFrame;
@@ -54,8 +54,9 @@ TrackingStatus Tracking::updateLocalPoints()
                          __func__);
         }
 
-        for (vector<MapPoint *>::const_iterator itMapPoint = mapPoints.begin(),
-                                                itEndMapPoint = mapPoints.end();
+        for (std::vector<MapPoint *>::const_iterator
+                 itMapPoint    = mapPoints.begin(),
+                 itEndMapPoint = mapPoints.end();
              itMapPoint != itEndMapPoint;
              itMapPoint++)
         {

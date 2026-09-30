@@ -36,8 +36,8 @@ namespace core
 
 MapStatus Map::getPlaneById(int planeId_in, geometric::Plane *&p_planeById_out)
 {
-    unique_lock<mutex> lock(mapMutex);
-    const auto         planeIterator = planeIndex.find(planeId_in);
+    std::unique_lock<std::mutex> lock(mapMutex);
+    const auto                   planeIterator = planeIndex.find(planeId_in);
     p_planeById_out =
         planeIterator != planeIndex.end() ? planeIterator->second : nullptr;
     return MapStatus::MAP_STATUS_SUCCESS;

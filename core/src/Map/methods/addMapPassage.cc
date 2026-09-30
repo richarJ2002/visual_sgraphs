@@ -45,7 +45,7 @@ MapStatus vs_graphs::core::Map::addMapPassage(
         return MapStatus::MAP_STATUS_SUCCESS;
     }
 
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     int passage_inoutId{};
     if (p_passage_inout->getId(passage_inoutId) !=

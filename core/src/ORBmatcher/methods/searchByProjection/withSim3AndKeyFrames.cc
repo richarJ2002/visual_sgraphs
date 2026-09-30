@@ -53,7 +53,8 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
     Eigen::Vector3f Ow = Tcw.inverse().translation();
 
     // Set of MapPoints already found in the KeyFrame
-    set<MapPoint *> alreadyFounds(matched_inout.begin(), matched_inout.end());
+    std::set<MapPoint *> alreadyFounds(matched_inout.begin(),
+                                       matched_inout.end());
     alreadyFounds.erase(static_cast<MapPoint *>(nullptr));
 
     int nmatches = 0;
@@ -198,8 +199,8 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
 
         int bestDistance = 256;
         int bestIndex    = -1;
-        for (vector<size_t>::const_iterator vit  = indices.begin(),
-                                            vend = indices.end();
+        for (std::vector<size_t>::const_iterator vit  = indices.begin(),
+                                                 vend = indices.end();
              vit != vend;
              vit++)
         {

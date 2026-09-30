@@ -33,7 +33,7 @@ namespace core
 
 AtlasStatus Atlas::postLoad()
 {
-    map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
+    std::map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
         camerasById;
     for (camera_models::geometriccamera::GeometricCamera *p_camera : cameras)
     {

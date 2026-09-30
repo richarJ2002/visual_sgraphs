@@ -60,17 +60,14 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
 ORBextractorStatus
-    computeIntensityCentroidAngle(const Mat              &image_in,
-                                  Point2f                 point_in,
+    computeIntensityCentroidAngle(const cv::Mat          &image_in,
+                                  cv::Point2f             point_in,
                                   const std::vector<int> &maximumU_in,
                                   float &intensityCentroidAngle_out)
 {
@@ -100,7 +97,7 @@ ORBextractorStatus
         momentY += v * sum;
     }
 
-    intensityCentroidAngle_out = fastAtan2((float)momentY, (float)momentX);
+    intensityCentroidAngle_out = cv::fastAtan2((float)momentY, (float)momentX);
     return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 

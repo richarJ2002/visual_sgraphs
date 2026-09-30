@@ -41,13 +41,13 @@ MapPointStatus
     p_referenceKeyFrame = keyFrameId_in[backupRefKeyFrameId];
     if (!p_referenceKeyFrame)
     {
-        cout << "ERROR: MP without KF reference " << backupRefKeyFrameId
-             << "; Num obs: " << observationCount << endl;
+        std::cout << "ERROR: MP without KF reference " << backupRefKeyFrameId
+                  << "; Num obs: " << observationCount << std::endl;
     }
     p_replaced = static_cast<MapPoint *>(nullptr);
     if (backupReplacedId >= 0)
     {
-        map<long unsigned int, MapPoint *>::iterator mapPointIdIt =
+        std::map<long unsigned int, MapPoint *>::iterator mapPointIdIt =
             mapPointId_in.find(backupReplacedId);
         if (mapPointIdIt != mapPointId_in.end())
             p_replaced = mapPointIdIt->second;
@@ -55,17 +55,17 @@ MapPointStatus
 
     observations.clear();
 
-    for (map<long unsigned int, int>::const_iterator
+    for (std::map<long unsigned int, int>::const_iterator
              mapPointIdIt = backupObservationIds1.begin(),
              end          = backupObservationIds1.end();
          mapPointIdIt != end;
          ++mapPointIdIt)
     {
         KeyFrame *p_keyFrame = keyFrameId_in[mapPointIdIt->first];
-        map<long unsigned int, int>::const_iterator it2 =
+        std::map<long unsigned int, int>::const_iterator it2 =
             backupObservationIds2.find(mapPointIdIt->first);
         std::tuple<int, int> indexes =
-            tuple<int, int>(mapPointIdIt->second, it2->second);
+            std::tuple<int, int>(mapPointIdIt->second, it2->second);
         if (p_keyFrame)
         {
             observations[p_keyFrame] = indexes;

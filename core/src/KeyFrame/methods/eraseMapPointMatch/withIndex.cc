@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::eraseMapPointMatch(const int &index_in)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     mapPoints[index_in] = static_cast<MapPoint *>(nullptr);
 
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

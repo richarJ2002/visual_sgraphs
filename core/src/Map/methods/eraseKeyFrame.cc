@@ -37,7 +37,7 @@ namespace core
 
 MapStatus Map::eraseKeyFrame(KeyFrame *p_keyFrame_inout)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     keyFrames.erase(p_keyFrame_inout);
     keyFrameIndex.erase(p_keyFrame_inout->id);
     keyFrameOrigins.erase(std::remove(keyFrameOrigins.begin(),
@@ -59,11 +59,11 @@ MapStatus Map::eraseKeyFrame(KeyFrame *p_keyFrame_inout)
     {
         if (p_keyFrame_inout->id == p_lowerIdKeyFrame->id)
         {
-            vector<KeyFrame *> remainingKeyFrames =
-                vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
-            sort(remainingKeyFrames.begin(),
-                 remainingKeyFrames.end(),
-                 KeyFrame::lId);
+            std::vector<KeyFrame *> remainingKeyFrames =
+                std::vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
+            std::sort(remainingKeyFrames.begin(),
+                      remainingKeyFrames.end(),
+                      KeyFrame::lId);
             p_lowerIdKeyFrame = remainingKeyFrames[0];
         }
 

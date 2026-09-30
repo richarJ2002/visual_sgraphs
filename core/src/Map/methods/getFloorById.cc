@@ -36,8 +36,8 @@ namespace core
 
 MapStatus Map::getFloorById(int floorId_in, semantic::Floor *&p_floorById_out)
 {
-    unique_lock<mutex> lock(mapMutex);
-    const auto         floorIterator = floorIndex.find(floorId_in);
+    std::unique_lock<std::mutex> lock(mapMutex);
+    const auto                   floorIterator = floorIndex.find(floorId_in);
     p_floorById_out =
         floorIterator != floorIndex.end() ? floorIterator->second : nullptr;
     return MapStatus::MAP_STATUS_SUCCESS;

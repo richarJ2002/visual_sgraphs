@@ -60,14 +60,14 @@ TrackingStatus Tracking::printTimeStats()
                      __func__);
     }
 
-    ofstream f;
+    std::ofstream f;
     f.open("ExecMean.txt");
-    f << fixed;
+    f << std::fixed;
     // Report the mean and std of each one
     std::cout << std::endl << " TIME STATS in ms (mean$\\pm$std)" << std::endl;
     f << " TIME STATS in ms (mean$\\pm$std)" << std::endl;
-    cout << "OpenCV version: " << CV_VERSION << endl;
-    f << "OpenCV version: " << CV_VERSION << endl;
+    std::cout << "OpenCV version: " << CV_VERSION << std::endl;
+    f << "OpenCV version: " << CV_VERSION << std::endl;
     std::cout << "---------------------------" << std::endl;
     std::cout << "Tracking" << std::setprecision(5) << std::endl << std::endl;
     f << "---------------------------" << std::endl;

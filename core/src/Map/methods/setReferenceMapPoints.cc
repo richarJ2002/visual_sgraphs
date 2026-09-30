@@ -37,7 +37,7 @@ namespace core
 MapStatus
     Map::setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     referenceMapPoints = mapPoints_in;
 
     return MapStatus::MAP_STATUS_SUCCESS;

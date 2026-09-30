@@ -37,7 +37,7 @@ namespace core
 MapStatus Map::getAllMarkerBasedMapRooms(
     std::vector<semantic::Room *> &allMarkerBasedMapRooms_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     allMarkerBasedMapRooms_out =
         std::vector<semantic::Room *>(markerBasedRooms.begin(),
                                       markerBasedRooms.end());

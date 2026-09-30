@@ -40,7 +40,7 @@ MapDrawerStatus
 {
     Eigen::Matrix4f Twc;
     {
-        unique_lock<mutex> lock(cameraMutex);
+        std::unique_lock<std::mutex> lock(cameraMutex);
         Twc = cameraPose.matrix();
     }
 

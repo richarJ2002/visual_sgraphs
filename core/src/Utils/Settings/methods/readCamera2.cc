@@ -49,12 +49,10 @@ namespace utils
 namespace settings
 {
 
-using namespace std;
-
 SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
 {
-    bool          found;
-    vector<float> calibrations;
+    bool               found;
+    std::vector<float> calibrations;
     if (cameraModel == CameraType::PINHOLE)
     {
         isRectificationNeeded = true;
@@ -316,7 +314,7 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        vector<int> overlappings = {colBegin, colEnd};
+        std::vector<int> overlappings = {colBegin, colEnd};
 
         static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
             p_calibration2)

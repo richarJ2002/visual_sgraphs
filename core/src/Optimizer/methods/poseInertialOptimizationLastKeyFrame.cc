@@ -78,10 +78,10 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
     optimizer.addVertex(p_accelerometerBiasVertex);
 
     // Set MapPoint vertices
-    vector<EdgeMonoOnlyPose *>   edgesMonos;
-    vector<EdgeStereoOnlyPose *> edgesStereos;
-    vector<size_t>               monoEdgeIndices;
-    vector<size_t>               stereoEdgeIndices;
+    std::vector<EdgeMonoOnlyPose *>   edgesMonos;
+    std::vector<EdgeStereoOnlyPose *> edgesStereos;
+    std::vector<size_t>               monoEdgeIndices;
+    std::vector<size_t>               stereoEdgeIndices;
     if (addPoseOnlyObservationEdges(p_frame_inout,
                                     p_poseVertex,
                                     optimizer,

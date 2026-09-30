@@ -34,7 +34,7 @@ namespace core
 AtlasStatus Atlas::getAllPlanes(
     std::vector<vs_graphs::core::geometric::Plane *> &allPlanes_out)
 {
-    unique_lock<mutex>              lock(atlasMutex);
+    std::unique_lock<std::mutex>    lock(atlasMutex);
     std::vector<geometric::Plane *> activeMapAllPlanes{};
     if (p_activeMap->getAllPlanes(activeMapAllPlanes) !=
         MapStatus::MAP_STATUS_SUCCESS)

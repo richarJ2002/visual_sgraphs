@@ -46,18 +46,17 @@ namespace utils
 namespace settings
 {
 
-using namespace std;
-
 SettingsStatus Settings::readLoadAndSave(cv::FileStorage &storage_inout)
 {
     bool found;
 
-    string stringParameter{};
-    if (readParameter<string>(storage_inout,
-                              "System.LoadAtlasFromFile",
-                              found,
-                              stringParameter,
-                              false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    std::string stringParameter{};
+    if (readParameter<std::string>(storage_inout,
+                                   "System.LoadAtlasFromFile",
+                                   found,
+                                   stringParameter,
+                                   false) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: readParameter returned a failure status although it "
@@ -65,12 +64,13 @@ SettingsStatus Settings::readLoadAndSave(cv::FileStorage &storage_inout)
                      __func__);
     }
     atlasLoadPath = stringParameter;
-    string stringParameter2{};
-    if (readParameter<string>(storage_inout,
-                              "System.SaveAtlasToFile",
-                              found,
-                              stringParameter2,
-                              false) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
+    std::string stringParameter2{};
+    if (readParameter<std::string>(storage_inout,
+                                   "System.SaveAtlasToFile",
+                                   found,
+                                   stringParameter2,
+                                   false) !=
+        SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: readParameter returned a failure status although it "

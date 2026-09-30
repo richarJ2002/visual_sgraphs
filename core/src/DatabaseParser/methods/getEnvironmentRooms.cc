@@ -57,7 +57,7 @@ DBParserStatus DBParser::getEnvironmentRooms(
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            if (p_environmentRoom->setId(stoi(environmentDatum.key())) !=
+            if (p_environmentRoom->setId(std::stoi(environmentDatum.key())) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

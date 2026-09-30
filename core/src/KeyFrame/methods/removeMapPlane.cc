@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::removeMapPlane(geometric::Plane *p_plane_in)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
 
     if (!p_plane_in)
     {

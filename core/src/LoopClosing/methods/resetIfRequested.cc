@@ -35,10 +35,10 @@ namespace core
 
 LoopClosingStatus LoopClosing::resetIfRequested()
 {
-    unique_lock<mutex> lock(resetMutex);
+    std::unique_lock<std::mutex> lock(resetMutex);
     if (isResetRequested)
     {
-        cout << "Loop closer reset requested..." << endl;
+        std::cout << "Loop closer reset requested..." << std::endl;
         loopKeyFrameQueue.clear();
         lastLoopKeyFrameId =
             0; // TODO old variable, it is not use in the new algorithm
@@ -48,7 +48,7 @@ LoopClosingStatus LoopClosing::resetIfRequested()
     else if (isResetActiveMapRequested)
     {
 
-        for (list<KeyFrame *>::const_iterator loopKeyFrameIt =
+        for (std::list<KeyFrame *>::const_iterator loopKeyFrameIt =
                  loopKeyFrameQueue.begin();
              loopKeyFrameIt != loopKeyFrameQueue.end();)
         {

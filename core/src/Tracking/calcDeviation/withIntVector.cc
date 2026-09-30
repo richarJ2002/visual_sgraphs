@@ -43,7 +43,7 @@ TrackingStatus calcDeviation(std::vector<int> values_in,
     {
         if (value == 0)
             continue;
-        accum += pow(value - average_in, 2);
+        accum += std::pow(value - average_in, 2);
         total++;
     }
     deviation_out = sqrt(accum / total);

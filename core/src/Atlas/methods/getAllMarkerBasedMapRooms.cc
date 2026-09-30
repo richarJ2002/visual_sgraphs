@@ -34,7 +34,7 @@ namespace core
 AtlasStatus Atlas::getAllMarkerBasedMapRooms(
     std::vector<semantic::Room *> &allMarkerBasedMapRooms_out)
 {
-    unique_lock<mutex>            lock(atlasMutex);
+    std::unique_lock<std::mutex>  lock(atlasMutex);
     std::vector<semantic::Room *> activeMapAllMarkerBasedMapRooms{};
     if (p_activeMap->getAllMarkerBasedMapRooms(
             activeMapAllMarkerBasedMapRooms) != MapStatus::MAP_STATUS_SUCCESS)

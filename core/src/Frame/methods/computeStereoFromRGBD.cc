@@ -45,8 +45,8 @@ namespace core
 
 FrameStatus Frame::computeStereoFromRGBD(const cv::Mat &imageDepth_in)
 {
-    uRight = vector<float>(keyPointCount, -1);
-    depths = vector<float>(keyPointCount, -1);
+    uRight = std::vector<float>(keyPointCount, -1);
+    depths = std::vector<float>(keyPointCount, -1);
 
     for (int keyPointIndex = 0; keyPointIndex < keyPointCount; keyPointIndex++)
     {

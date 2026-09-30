@@ -38,9 +38,9 @@ namespace core
 {
 
 KeyFrameStatus KeyFrame::preSave(
-    set<KeyFrame *>                                        &keyFrames_in,
-    set<MapPoint *>                                        &mapPoints_in,
-    set<camera_models::geometriccamera::GeometricCamera *> &cameras_in)
+    std::set<KeyFrame *>                                        &keyFrames_in,
+    std::set<MapPoint *>                                        &mapPoints_in,
+    std::set<camera_models::geometriccamera::GeometricCamera *> &cameras_in)
 {
     // Save the id of each MapPoint in this KF, there can be null pointer in the
     // vector

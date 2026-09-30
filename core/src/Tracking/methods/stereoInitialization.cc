@@ -345,7 +345,7 @@ TrackingStatus Tracking::stereoInitialization()
                          __func__);
         }
         std::cout << "\n[Tracking] New map created with #" +
-                         to_string(atlasMapPointCount) + " points!"
+                         std::to_string(atlasMapPointCount) + " points!"
                   << std::endl;
 
         // Require minimum points for successful initialization

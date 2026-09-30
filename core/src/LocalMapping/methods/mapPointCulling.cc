@@ -34,8 +34,9 @@ namespace core
 LocalMappingStatus LocalMapping::mapPointCulling()
 {
     // Check Recent Added MapPoints
-    list<MapPoint *>::iterator recentMapPointIt  = recentAddedMapPoints.begin();
-    const unsigned long int    currentKeyFrameId = p_currentKeyFrame->id;
+    std::list<MapPoint *>::iterator recentMapPointIt =
+        recentAddedMapPoints.begin();
+    const unsigned long int currentKeyFrameId = p_currentKeyFrame->id;
 
     int rawObservationThreshold;
     if (isMonocular)

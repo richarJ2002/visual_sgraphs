@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getAccBias(Eigen::Vector3f &accBias_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     accBias_out = Eigen::Vector3f(imuBias.bax, imuBias.bay, imuBias.baz);
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

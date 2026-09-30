@@ -40,7 +40,7 @@ KeyFrameStatus KeyFrame::addConnection(KeyFrame  *p_keyFrame_inout,
                                        const int &weight_in)
 {
     {
-        unique_lock<mutex> lock(connectionsMutex);
+        std::unique_lock<std::mutex> lock(connectionsMutex);
         if (!connectedKeyFrameWeights.count(p_keyFrame_inout))
             connectedKeyFrameWeights[p_keyFrame_inout] = weight_in;
         else if (connectedKeyFrameWeights[p_keyFrame_inout] != weight_in)

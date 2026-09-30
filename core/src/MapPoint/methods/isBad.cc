@@ -36,9 +36,9 @@ namespace core
 
 MapPointStatus MapPoint::isBad(bool &isBad_out)
 {
-    unique_lock<mutex> lock1(featuresMutex, std::defer_lock);
-    unique_lock<mutex> lock2(positionMutex, std::defer_lock);
-    lock(lock1, lock2);
+    std::unique_lock<std::mutex> lock1(featuresMutex, std::defer_lock);
+    std::unique_lock<std::mutex> lock2(positionMutex, std::defer_lock);
+    std::lock(lock1, lock2);
 
     isBad_out = isFlaggedBad;
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;

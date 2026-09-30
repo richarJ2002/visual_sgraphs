@@ -48,7 +48,7 @@ KeyFrameStatus KeyFrame::eraseMapPointMatch(MapPoint *p_mapPoint_in)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+    int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
     if (leftIndex != -1)
         mapPoints[leftIndex] = static_cast<MapPoint *>(nullptr);
     if (rightIndex != -1)

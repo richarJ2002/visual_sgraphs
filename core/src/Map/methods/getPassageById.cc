@@ -38,11 +38,11 @@ MapStatus
     Map::getPassageById(int                                  passageId_in,
                         vs_graphs::core::semantic::Passage *&p_passageById_out)
 {
-    unique_lock<mutex> lock(mapMutex);
-    const auto         passageIterator = passageIndex.find(passageId_in);
-    p_passageById_out                  = passageIterator != passageIndex.end()
-                                             ? passageIterator->second
-                                             : nullptr;
+    std::unique_lock<std::mutex> lock(mapMutex);
+    const auto passageIterator = passageIndex.find(passageId_in);
+    p_passageById_out          = passageIterator != passageIndex.end()
+                                     ? passageIterator->second
+                                     : nullptr;
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 

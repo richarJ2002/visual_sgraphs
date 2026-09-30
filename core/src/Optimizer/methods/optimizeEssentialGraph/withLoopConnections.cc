@@ -36,13 +36,13 @@ namespace core
 {
 
 OptimizerStatus Optimizer::optimizeEssentialGraph(
-    Map                                    *p_map_inout,
-    KeyFrame                               *p_loopKeyFrame_in,
-    KeyFrame                               *p_currentKeyFrame_in,
-    const LoopClosing::KeyFrameAndPose     &NonCorrectedSim3_in,
-    const LoopClosing::KeyFrameAndPose     &CorrectedSim3_in,
-    const map<KeyFrame *, set<KeyFrame *>> &loopConnections_in,
-    const bool                             &isScaleFixed_in)
+    Map                                              *p_map_inout,
+    KeyFrame                                         *p_loopKeyFrame_in,
+    KeyFrame                                         *p_currentKeyFrame_in,
+    const LoopClosing::KeyFrameAndPose               &NonCorrectedSim3_in,
+    const LoopClosing::KeyFrameAndPose               &CorrectedSim3_in,
+    const std::map<KeyFrame *, std::set<KeyFrame *>> &loopConnections_in,
+    const bool                                       &isScaleFixed_in)
 {
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
@@ -87,15 +87,15 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     const unsigned int maximumKeyFrameIdCount =
         static_cast<unsigned int>(maximumKeyFrameIdCountValue);
 
-    vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vScw(
+    std::vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vScw(
         maximumKeyFrameIdCount + 1);
-    vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vCorrectedSwc(
+    std::vector<g2o::Sim3, Eigen::aligned_allocator<g2o::Sim3>> vCorrectedSwc(
         maximumKeyFrameIdCount + 1);
-    vector<g2o::VertexSim3Expmap *> vertices(maximumKeyFrameIdCount + 1);
+    std::vector<g2o::VertexSim3Expmap *> vertices(maximumKeyFrameIdCount + 1);
 
-    vector<Eigen::Vector3d> zvectors(maximumKeyFrameIdCount +
-                                     1); // For debugging
-    Eigen::Vector3d         z_vec;
+    std::vector<Eigen::Vector3d> zvectors(maximumKeyFrameIdCount +
+                                          1); // For debugging
+    Eigen::Vector3d              z_vec;
     z_vec << 0.0, 0.0, 1.0;
 
     const int minimumFeature = 100;
@@ -168,27 +168,27 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         vertices[idCount] = p_sim3Vertex;
     }
 
-    set<pair<long unsigned int, long unsigned int>> insertedEdges;
+    std::set<std::pair<long unsigned int, long unsigned int>> insertedEdges;
 
     const Eigen::Matrix<double, 7, 7> matrixLambda =
         Eigen::Matrix<double, 7, 7>::Identity();
 
     // Set Loop edges
     int loopCount = 0;
-    for (map<KeyFrame *, set<KeyFrame *>>::const_iterator
+    for (std::map<KeyFrame *, std::set<KeyFrame *>>::const_iterator
              mit  = loopConnections_in.begin(),
              mend = loopConnections_in.end();
          mit != mend;
          mit++)
     {
-        KeyFrame               *p_keyFrame  = mit->first;
-        const long unsigned int idCount     = p_keyFrame->id;
-        const set<KeyFrame *>  &connections = mit->second;
-        const g2o::Sim3         Siw         = vScw[idCount];
-        const g2o::Sim3         Swi         = Siw.inverse();
+        KeyFrame                   *p_keyFrame  = mit->first;
+        const long unsigned int     idCount     = p_keyFrame->id;
+        const std::set<KeyFrame *> &connections = mit->second;
+        const g2o::Sim3             Siw         = vScw[idCount];
+        const g2o::Sim3             Swi         = Siw.inverse();
 
-        for (set<KeyFrame *>::const_iterator sit  = connections.begin(),
-                                             send = connections.end();
+        for (std::set<KeyFrame *>::const_iterator sit  = connections.begin(),
+                                                  send = connections.end();
              sit != send;
              sit++)
         {
@@ -225,8 +225,9 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
 
             optimizer.addEdge(e);
             loopCount++;
-            insertedEdges.insert(make_pair(min(idCount, loopKeyFrameId),
-                                           max(idCount, loopKeyFrameId)));
+            insertedEdges.insert(
+                std::make_pair(std::min(idCount, loopKeyFrameId),
+                               std::max(idCount, loopKeyFrameId)));
         }
     }
 
@@ -298,8 +299,8 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        for (set<KeyFrame *>::const_iterator sit  = loopEdges.begin(),
-                                             send = loopEdges.end();
+        for (std::set<KeyFrame *>::const_iterator sit  = loopEdges.begin(),
+                                                  send = loopEdges.end();
              sit != send;
              sit++)
         {
@@ -341,7 +342,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        for (vector<KeyFrame *>::const_iterator vit =
+        for (std::vector<KeyFrame *>::const_iterator vit =
                  connectedKeyFrames.begin();
              vit != connectedKeyFrames.end();
              vit++)
@@ -372,8 +373,8 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                 if (!pKFnIsBad && pKFn->id < p_keyFrame->id)
                 {
                     if (insertedEdges.count(
-                            make_pair(min(p_keyFrame->id, pKFn->id),
-                                      max(p_keyFrame->id, pKFn->id))))
+                            std::make_pair(std::min(p_keyFrame->id, pKFn->id),
+                                           std::max(p_keyFrame->id, pKFn->id))))
                         continue;
 
                     g2o::Sim3 Snw;
@@ -431,7 +432,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     optimizer.computeActiveErrors();
     optimizer.optimize(20);
     optimizer.computeActiveErrors();
-    unique_lock<mutex> lock(p_map_inout->mapUpdateMutex);
+    std::unique_lock<std::mutex> lock(p_map_inout->mapUpdateMutex);
 
     // SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1]
     for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();

@@ -38,7 +38,7 @@ namespace core
 KeyFrameStatus vs_graphs::core::KeyFrame::getMapPassages(
     std::vector<vs_graphs::core::semantic::Passage *> &mapPassages_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     mapPassages_out = mapPassages;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

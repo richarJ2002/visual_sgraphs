@@ -60,9 +60,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
@@ -390,9 +387,9 @@ ORBextractor::ORBextractor(int   featureCount_in,
     //  pre-compute the end of a row in a circular patch
     orientationMaxOffset.resize(HALF_PATCH_SIZE + 1);
 
-    int          v, v0, vmax = cvFloor(HALF_PATCH_SIZE * sqrt(2.f) / 2 + 1);
-    int          vmin = cvCeil(HALF_PATCH_SIZE * sqrt(2.f) / 2);
-    const double hp2  = HALF_PATCH_SIZE * HALF_PATCH_SIZE;
+    int v, v0, vmax = cvFloor(HALF_PATCH_SIZE * std::sqrt(2.f) / 2 + 1);
+    int vmin         = cvCeil(HALF_PATCH_SIZE * std::sqrt(2.f) / 2);
+    const double hp2 = HALF_PATCH_SIZE * HALF_PATCH_SIZE;
     for (v = 0; v <= vmax; ++v)
         orientationMaxOffset[v] = cvRound(sqrt(hp2 - v * v));
 

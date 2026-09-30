@@ -36,8 +36,8 @@ namespace core
 
 MapPointStatus MapPoint::setWorldPos(const Eigen::Vector3f &Pos_in)
 {
-    unique_lock<mutex> lock2(globalMutex);
-    unique_lock<mutex> lock(positionMutex);
+    std::unique_lock<std::mutex> lock2(globalMutex);
+    std::unique_lock<std::mutex> lock(positionMutex);
     worldPos = Pos_in;
 
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;

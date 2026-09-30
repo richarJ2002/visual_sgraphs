@@ -48,7 +48,7 @@ FrameStatus Frame::computeBagOfWords()
 {
     if (bowVector.empty())
     {
-        vector<cv::Mat> currentDescriptors{};
+        std::vector<cv::Mat> currentDescriptors{};
         if (utils::converter::Converter::toDescriptorVector(
                 descriptors,
                 currentDescriptors) !=

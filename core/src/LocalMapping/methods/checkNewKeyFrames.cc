@@ -34,7 +34,7 @@ namespace core
 
 LocalMappingStatus LocalMapping::checkNewKeyFrames(bool &hasNewKeyFrames_out)
 {
-    unique_lock<mutex> newKeyFramesLock(newKeyFramesMutex);
+    std::unique_lock<std::mutex> newKeyFramesLock(newKeyFramesMutex);
     hasNewKeyFrames_out = (!newKeyFrames.empty());
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }

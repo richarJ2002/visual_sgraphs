@@ -33,7 +33,7 @@ namespace core
 SystemStatus
     System::getTrackedMapPoints(std::vector<MapPoint *> &trackedMapPoints_out)
 {
-    unique_lock<mutex> lock(stateMutex);
+    std::unique_lock<std::mutex> lock(stateMutex);
     trackedMapPoints_out = trackedMapPoints;
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }

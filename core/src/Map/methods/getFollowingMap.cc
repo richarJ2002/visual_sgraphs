@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getFollowingMap(Map *&p_followingMap_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_followingMap_out = p_followingMap;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

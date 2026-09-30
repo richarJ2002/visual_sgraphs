@@ -45,7 +45,7 @@ KeyFrameStatus KeyFrame::replaceMapPlane(geometric::Plane *p_retiredPlane_in,
         return KeyFrameStatus::KEY_FRAME_STATUS_INVALID_ARGUMENT;
     }
 
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
 
     bool                            replacedRetiredPlane = false;
     std::vector<geometric::Plane *> rebuiltPlanes;

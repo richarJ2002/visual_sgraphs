@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::setInitKeyFrameId(long unsigned int initialKFif_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     initKeyFrameId = initialKFif_in;
 
     return MapStatus::MAP_STATUS_SUCCESS;

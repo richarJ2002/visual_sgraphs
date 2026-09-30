@@ -33,7 +33,7 @@ namespace core
 
 AtlasStatus Atlas::setInertialSensor()
 {
-    unique_lock<mutex> lock(atlasMutex);
+    std::unique_lock<std::mutex> lock(atlasMutex);
     if (p_activeMap->setInertialSensor() != MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     allMarkers_out =
         std::vector<semantic::Marker *>(markers.begin(), markers.end());
     return MapStatus::MAP_STATUS_SUCCESS;

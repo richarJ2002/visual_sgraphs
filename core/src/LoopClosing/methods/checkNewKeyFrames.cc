@@ -34,7 +34,7 @@ namespace core
 
 LoopClosingStatus LoopClosing::checkNewKeyFrames(bool &hasNewKeyFrames_out)
 {
-    unique_lock<mutex> lock(loopQueueMutex);
+    std::unique_lock<std::mutex> lock(loopQueueMutex);
     hasNewKeyFrames_out = (!loopKeyFrameQueue.empty());
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }

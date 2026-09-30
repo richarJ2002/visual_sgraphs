@@ -25,7 +25,6 @@
 #include <rclcpp/logging.hpp>
 #include <thread>
 
-using namespace std;
 namespace vs_graphs
 {
 namespace core
@@ -40,8 +39,8 @@ TwoViewReconstructionStatus TwoViewReconstruction::findFundamental(
     const int N = inliersFlags_inout.size();
 
     // Normalize coordinates
-    vector<cv::Point2f> normalizedPoints1, normalizedPoints2;
-    Eigen::Matrix3f     T1, T2;
+    std::vector<cv::Point2f> normalizedPoints1, normalizedPoints2;
+    Eigen::Matrix3f          T1, T2;
     if (normalize(keys1, normalizedPoints1, T1) !=
         TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
     {
@@ -62,14 +61,14 @@ TwoViewReconstructionStatus TwoViewReconstruction::findFundamental(
 
     // Best Results variables
     score_inout        = 0.0;
-    inliersFlags_inout = vector<bool>(N, false);
+    inliersFlags_inout = std::vector<bool>(N, false);
 
     // Iteration variables
-    vector<cv::Point2f> sampledPoints1(8);
-    vector<cv::Point2f> sampledPoints2(8);
-    Eigen::Matrix3f     F21i;
-    vector<bool>        currentInliersFlags(N, false);
-    float               currentScore;
+    std::vector<cv::Point2f> sampledPoints1(8);
+    std::vector<cv::Point2f> sampledPoints2(8);
+    Eigen::Matrix3f          F21i;
+    std::vector<bool>        currentInliersFlags(N, false);
+    float                    currentScore;
 
     // Perform all RANSAC iterations and save the solution with highest score
     for (int iterationIndex = 0; iterationIndex < maxIterations;

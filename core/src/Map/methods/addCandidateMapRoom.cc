@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::addCandidateMapRoom(semantic::Room *p_room_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     markerBasedRooms.insert(p_room_in);
 
     return MapStatus::MAP_STATUS_SUCCESS;

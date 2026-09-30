@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getKeyFrameCount(unsigned long &keyFrameCount_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     keyFrameCount_out = keyFrames.size();
     return MapStatus::MAP_STATUS_SUCCESS;
 }

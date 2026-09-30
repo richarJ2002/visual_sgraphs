@@ -284,7 +284,7 @@ TrackingStatus
                          __func__);
         }
         depthMapFactor = settingsDepthMapFactor;
-        if (fabs(depthMapFactor) < 1e-5)
+        if (std::fabs(depthMapFactor) < 1e-5)
             depthMapFactor = 1;
         else
             depthMapFactor = 1.0f / depthMapFactor;
@@ -482,7 +482,7 @@ TrackingStatus
         }
         float awCount = static_cast<float>(accWalkValue);
 
-        const float sf = sqrt(imuFrequency);
+        const float sf = std::sqrt(imuFrequency);
         p_imuCalibration =
             new IMU::Calib(Tbc, Ng * sf, Na * sf, gwCount / sf, awCount / sf);
 

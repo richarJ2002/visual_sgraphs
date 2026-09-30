@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getRelativePoseTrl(Sophus::SE3f &relativePoseTrl_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     relativePoseTrl_out = poseTrl;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

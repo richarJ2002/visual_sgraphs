@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getAllDoors(std::vector<Door *> &allDoors_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     allDoors_out = std::vector<Door *>(doors.begin(), doors.end());
     return MapStatus::MAP_STATUS_SUCCESS;
 }

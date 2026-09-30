@@ -68,7 +68,7 @@ MapDrawerStatus MapDrawer::drawMapPoints()
                      __func__);
     }
 
-    set<MapPoint *> referenceMapPoints(vpRefMPs.begin(), vpRefMPs.end());
+    std::set<MapPoint *> referenceMapPoints(vpRefMPs.begin(), vpRefMPs.end());
 
     if (mapPoints.empty())
         return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
@@ -109,8 +109,8 @@ MapDrawerStatus MapDrawer::drawMapPoints()
     glBegin(GL_POINTS);
     glColor3f(1.0, 0.0, 0.0);
 
-    for (set<MapPoint *>::iterator sit  = referenceMapPoints.begin(),
-                                   send = referenceMapPoints.end();
+    for (std::set<MapPoint *>::iterator sit  = referenceMapPoints.begin(),
+                                        send = referenceMapPoints.end();
          sit != send;
          sit++)
     {

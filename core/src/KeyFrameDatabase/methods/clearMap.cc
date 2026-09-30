@@ -23,8 +23,6 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
@@ -32,20 +30,21 @@ namespace core
 
 KeyFrameDatabaseStatus KeyFrameDatabase::clearMap(Map *p_map_in)
 {
-    unique_lock<mutex> lock(databaseMutex);
+    std::unique_lock<std::mutex> lock(databaseMutex);
 
     // Erase elements in the Inverse File for the entry
-    for (std::vector<list<KeyFrame *>>::iterator
+    for (std::vector<std::list<KeyFrame *>>::iterator
              invertedFileRowIt  = invertedFile.begin(),
              invertedFileRowEnd = invertedFile.end();
          invertedFileRowIt != invertedFileRowEnd;
          invertedFileRowIt++)
     {
         // List of keyframes that share the word
-        list<KeyFrame *> &keyFramesForWord = *invertedFileRowIt;
+        std::list<KeyFrame *> &keyFramesForWord = *invertedFileRowIt;
 
-        for (list<KeyFrame *>::iterator keyFrameIt  = keyFramesForWord.begin(),
-                                        keyFrameEnd = keyFramesForWord.end();
+        for (std::list<KeyFrame *>::iterator
+                 keyFrameIt  = keyFramesForWord.begin(),
+                 keyFrameEnd = keyFramesForWord.end();
              keyFrameIt != keyFrameEnd;)
         {
             KeyFrame *p_candidateKeyFrame    = *keyFrameIt;

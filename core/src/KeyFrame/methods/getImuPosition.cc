@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getImuPosition(Eigen::Vector3f &imuPosition_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     imuPosition_out = owb;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

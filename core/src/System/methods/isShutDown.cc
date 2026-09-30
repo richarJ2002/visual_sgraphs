@@ -32,7 +32,7 @@ namespace core
 
 SystemStatus System::isShutDown(bool &isShutDown_out)
 {
-    unique_lock<mutex> lock(resetMutex);
+    std::unique_lock<std::mutex> lock(resetMutex);
     isShutDown_out = isShutdownRequested;
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }

@@ -33,9 +33,9 @@ DBParserStatus DBParser::parseJsonFile(std::string jsonFilePath_in,
         VSLAM_LOG_INFO("- Loading JSON data from %s\n",
                        jsonFilePath_in.c_str());
         // Reading the JSON file from the given path
-        ifstream jsonFile(jsonFilePath_in);
+        std::ifstream jsonFile(jsonFilePath_in);
         // Parsing the JSON file to get the envrionment data
-        Json     environmentData = Json::parse(jsonFile);
+        Json          environmentData = Json::parse(jsonFile);
         // Return parsed data
         json_out = environmentData;
         return DBParserStatus::DBPARSER_STATUS_SUCCESS;

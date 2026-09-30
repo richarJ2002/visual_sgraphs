@@ -33,8 +33,8 @@ namespace core
 
 AtlasStatus Atlas::isImuInitialized(bool &isImuInitialized_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    bool               activeMapIsImuInitialized{};
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    bool                         activeMapIsImuInitialized{};
     if (p_activeMap->isImuInitialized(activeMapIsImuInitialized) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {

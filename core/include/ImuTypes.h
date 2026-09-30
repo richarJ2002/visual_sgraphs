@@ -396,7 +396,7 @@ class IntegratedRotation
         const float rotationAngleSquared = rotationVectorX * rotationVectorX +
                                            rotationVectorY * rotationVectorY +
                                            rotationVectorZ * rotationVectorZ;
-        const float rotationAngle = sqrt(rotationAngleSquared);
+        const float rotationAngle = std::sqrt(rotationAngleSquared);
 
         Eigen::Vector3f rotationVector;
         rotationVector << rotationVectorX, rotationVectorY, rotationVectorZ;
@@ -409,14 +409,15 @@ class IntegratedRotation
         else
         {
             deltaR = Eigen::Matrix3f::Identity() +
-                     skewMatrix * sin(rotationAngle) / rotationAngle +
-                     skewMatrix * skewMatrix * (1.0f - cos(rotationAngle)) /
+                     skewMatrix * std::sin(rotationAngle) / rotationAngle +
+                     skewMatrix * skewMatrix *
+                         (1.0f - std::cos(rotationAngle)) /
                          rotationAngleSquared;
             rightJ = Eigen::Matrix3f::Identity() -
-                     skewMatrix * (1.0f - cos(rotationAngle)) /
+                     skewMatrix * (1.0f - std::cos(rotationAngle)) /
                          rotationAngleSquared +
                      skewMatrix * skewMatrix *
-                         (rotationAngle - sin(rotationAngle)) /
+                         (rotationAngle - std::sin(rotationAngle)) /
                          (rotationAngleSquared * rotationAngle);
         }
     }

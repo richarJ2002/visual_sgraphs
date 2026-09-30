@@ -38,16 +38,16 @@ namespace core
 {
 
 OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
-    KeyFrame          *p_mainKeyFrame_in,
-    vector<KeyFrame *> adjustKeyFrames_in,
-    vector<KeyFrame *> fixedKeyFrames_in,
-    bool              *p_pbStopFlag_in)
+    KeyFrame               *p_mainKeyFrame_in,
+    std::vector<KeyFrame *> adjustKeyFrames_in,
+    std::vector<KeyFrame *> fixedKeyFrames_in,
+    bool                   *p_pbStopFlag_in)
 {
     // Variables
-    vector<MapPoint *>   mapPoints;
-    set<KeyFrame *>      keyFrameBas;
-    long unsigned int    maximumKeyFrameId = 0;
-    g2o::SparseOptimizer optimizer;
+    std::vector<MapPoint *> mapPoints;
+    std::set<KeyFrame *>    keyFrameBas;
+    long unsigned int       maximumKeyFrameId = 0;
+    g2o::SparseOptimizer    optimizer;
 
     // Define a linear solver to solve the linear system arising while
     // optimization
@@ -191,8 +191,8 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
     }
 
     // Set non-fixed KeyFrame vertices
-    set<KeyFrame *> adjustKeyFrames(adjustKeyFrames_in.begin(),
-                                    adjustKeyFrames_in.end());
+    std::set<KeyFrame *> adjustKeyFrames(adjustKeyFrames_in.begin(),
+                                         adjustKeyFrames_in.end());
     insertedPointCount = 0;
     for (KeyFrame *p_adjustKeyFrame : adjustKeyFrames_in)
     {
@@ -290,31 +290,31 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         (adjustKeyFrames_in.size() + fixedKeyFrames_in.size()) *
         mapPoints.size();
 
-    vector<vs_graphs::core::EdgeSE3ProjectXYZ *> edgesMonos;
+    std::vector<vs_graphs::core::EdgeSE3ProjectXYZ *> edgesMonos;
     edgesMonos.reserve(expectedSizeCount);
 
-    vector<KeyFrame *> edgeKeyFrameMonos;
+    std::vector<KeyFrame *> edgeKeyFrameMonos;
     edgeKeyFrameMonos.reserve(expectedSizeCount);
 
-    vector<MapPoint *> mapPointEdgeMonos;
+    std::vector<MapPoint *> mapPointEdgeMonos;
     mapPointEdgeMonos.reserve(expectedSizeCount);
 
-    vector<g2o::EdgeStereoSE3ProjectXYZ *> edgesStereos;
+    std::vector<g2o::EdgeStereoSE3ProjectXYZ *> edgesStereos;
     edgesStereos.reserve(expectedSizeCount);
 
-    vector<KeyFrame *> edgeKeyFrameStereos;
+    std::vector<KeyFrame *> edgeKeyFrameStereos;
     edgeKeyFrameStereos.reserve(expectedSizeCount);
 
-    vector<MapPoint *> mapPointEdgeStereos;
+    std::vector<MapPoint *> mapPointEdgeStereos;
     mapPointEdgeStereos.reserve(expectedSizeCount);
 
     const float thresholdHuber2d = sqrt(5.99);
     const float thresholdHuber3d = sqrt(7.815);
 
     // Set MapPoint vertices
-    map<KeyFrame *, int> observationKeyFrames;
-    map<KeyFrame *, int> observationFinalKeyFrames;
-    map<MapPoint *, int> observationMapPoints;
+    std::map<KeyFrame *, int> observationKeyFrames;
+    std::map<KeyFrame *, int> observationFinalKeyFrames;
+    std::map<MapPoint *, int> observationMapPoints;
     for (unsigned int mapPointIndex = 0; mapPointIndex < mapPoints.size();
          ++mapPointIndex)
     {
@@ -358,7 +358,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         }
         int edgeCount = 0;
         // SET EDGES
-        for (map<KeyFrame *, tuple<int, int>>::const_iterator mit =
+        for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator mit =
                  observations.begin();
              mit != observations.end();
              mit++)
@@ -376,7 +376,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
             MapPoint *p_keyFrameMapPoint = nullptr;
             if (!(keyFrameIsBad || p_keyFrame->id > maximumKeyFrameId ||
                   p_keyFrame->baLocalMergeId != p_mainKeyFrame_in->id) &&
-                p_keyFrame->getMapPoint(get<0>(mit->second),
+                p_keyFrame->getMapPoint(std::get<0>(mit->second),
                                         p_keyFrameMapPoint) !=
                     KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
@@ -393,9 +393,9 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
             edgeCount++;
 
             const cv::KeyPoint &keyPointUn =
-                p_keyFrame->keyPointsUndistorted[get<0>(mit->second)];
+                p_keyFrame->keyPointsUndistorted[std::get<0>(mit->second)];
 
-            if (p_keyFrame->uRight[get<0>(mit->second)] < 0) // Monocular
+            if (p_keyFrame->uRight[std::get<0>(mit->second)] < 0) // Monocular
             {
                 observationMapPoints[p_viewMapPoint]++;
                 Eigen::Matrix<double, 2, 1> observation;
@@ -435,7 +435,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                 observationMapPoints[p_viewMapPoint] += 2;
                 Eigen::Matrix<double, 3, 1> observation;
                 const float                 rightKeyPointU =
-                    p_keyFrame->uRight[get<0>(mit->second)];
+                    p_keyFrame->uRight[std::get<0>(mit->second)];
                 observation << keyPointUn.pt.x, keyPointUn.pt.y, rightKeyPointU;
 
                 g2o::EdgeStereoSE3ProjectXYZ *e =
@@ -488,7 +488,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         if (*p_pbStopFlag_in)
             shouldOptimizeMore = false;
 
-    map<unsigned long int, int> wrongObservationKeyFrame;
+    std::map<unsigned long int, int> wrongObservationKeyFrame;
     if (shouldOptimizeMore)
     {
         // Check inlier observations
@@ -549,8 +549,8 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         }
         if (Verbose::printMess(
                 "[BA]: First optimization(Huber), there are " +
-                    to_string(badMonoMapPoint) + " monocular and " +
-                    to_string(badStereoMapPoint) + " stereo bad edges",
+                    std::to_string(badMonoMapPoint) + " monocular and " +
+                    std::to_string(badStereoMapPoint) + " stereo bad edges",
                 Verbose::VERBOSITY_DEBUG) !=
             VerboseStatus::VERBOSE_STATUS_SUCCESS)
         {
@@ -564,10 +564,10 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         optimizer.optimize(10);
     }
 
-    vector<pair<KeyFrame *, MapPoint *>> vToErase;
+    std::vector<std::pair<KeyFrame *, MapPoint *>> vToErase;
     vToErase.reserve(edgesMonos.size() + edgesStereos.size());
-    set<MapPoint *> erasedMapPoints;
-    set<KeyFrame *> erasedKeyFrames;
+    std::set<MapPoint *> erasedMapPoints;
+    std::set<KeyFrame *> erasedKeyFrames;
 
     // Check inlier observations
     int badMonoMapPoint = 0, badStereoMapPoint = 0;
@@ -593,7 +593,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         if (e->chi2() > 5.991 || !e->isDepthPositive())
         {
             KeyFrame *p_adjustKeyFrame = edgeKeyFrameMonos[mapPointIndex];
-            vToErase.push_back(make_pair(p_adjustKeyFrame, p_mapPoint));
+            vToErase.push_back(std::make_pair(p_adjustKeyFrame, p_mapPoint));
             wrongObservationKeyFrame[p_adjustKeyFrame->id]++;
             badMonoMapPoint++;
 
@@ -624,7 +624,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         if (e->chi2() > 7.815 || !e->isDepthPositive())
         {
             KeyFrame *p_adjustKeyFrame = edgeKeyFrameStereos[mapPointIndex];
-            vToErase.push_back(make_pair(p_adjustKeyFrame, p_mapPoint));
+            vToErase.push_back(std::make_pair(p_adjustKeyFrame, p_mapPoint));
             wrongObservationKeyFrame[p_adjustKeyFrame->id]++;
             badStereoMapPoint++;
 
@@ -635,8 +635,8 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
 
     if (Verbose::printMess(
             "[BA]: Second optimization, there are " +
-                to_string(badMonoMapPoint) + " monocular and " +
-                to_string(badStereoMapPoint) + " sterero bad edges",
+                std::to_string(badMonoMapPoint) + " monocular and " +
+                std::to_string(badStereoMapPoint) + " sterero bad edges",
             Verbose::VERBOSITY_DEBUG) != VerboseStatus::VERBOSE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -655,7 +655,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                      "fail; continuing as before.",
                      __func__);
     }
-    unique_lock<mutex> lock(p_mainKeyFrameMap->mapUpdateMutex);
+    std::unique_lock<std::mutex> lock(p_mainKeyFrameMap->mapUpdateMutex);
 
     if (!vToErase.empty())
     {
@@ -707,7 +707,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        for (map<KeyFrame *, tuple<int, int>>::const_iterator mit =
+        for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator mit =
                  observations.begin();
              mit != observations.end();
              mit++)
@@ -725,7 +725,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
             MapPoint *p_keyFrameMapPoint2 = nullptr;
             if (!(keyFrameIsBad2 || p_keyFrame->id > maximumKeyFrameId ||
                   p_keyFrame->baLocalKeyFrameId != p_mainKeyFrame_in->id) &&
-                p_keyFrame->getMapPoint(get<0>(mit->second),
+                p_keyFrame->getMapPoint(std::get<0>(mit->second),
                                         p_keyFrameMapPoint2) !=
                     KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
@@ -739,7 +739,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                 !p_keyFrameMapPoint2)
                 continue;
 
-            if (p_keyFrame->uRight[get<0>(mit->second)] < 0) // Monocular
+            if (p_keyFrame->uRight[std::get<0>(mit->second)] < 0) // Monocular
             {
                 observationFinalKeyFrames[p_keyFrame]++;
             }
@@ -772,10 +772,10 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         Sophus::SE3f Tiw(poseEstimate.rotation().cast<float>(),
                          poseEstimate.translation().cast<float>());
 
-        int                monoBadPointCount = 0, monoOptPointCount = 0;
-        int                stereoBadPointCount = 0, stereoOptPointCount = 0;
-        vector<MapPoint *> monoMapPointsOpts, stereoMapPointsOpts;
-        vector<MapPoint *> monoMapPointsBads, stereoMapPointsBads;
+        int monoBadPointCount = 0, monoOptPointCount = 0;
+        int stereoBadPointCount = 0, stereoOptPointCount = 0;
+        std::vector<MapPoint *> monoMapPointsOpts, stereoMapPointsOpts;
+        std::vector<MapPoint *> monoMapPointsBads, stereoMapPointsBads;
 
         for (size_t mapPointIndex = 0, iend = edgesMonos.size();
              mapPointIndex < iend;

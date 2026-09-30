@@ -36,7 +36,7 @@ namespace core
 
 ViewerStatus Viewer::release()
 {
-    unique_lock<mutex> lock(stopMutex);
+    std::unique_lock<std::mutex> lock(stopMutex);
     hasStopped = false;
 
     return ViewerStatus::VIEWER_STATUS_SUCCESS;

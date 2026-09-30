@@ -41,11 +41,11 @@ MapPointStatus MapPoint::replace(MapPoint *p_mapPoint_inout)
     if (p_mapPoint_inout->id == this->id)
         return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 
-    int                              nvisible, nfound;
-    map<KeyFrame *, tuple<int, int>> observation;
+    int                                        nvisible, nfound;
+    std::map<KeyFrame *, std::tuple<int, int>> observation;
     {
-        unique_lock<mutex> lock1(featuresMutex);
-        unique_lock<mutex> lock2(positionMutex);
+        std::unique_lock<std::mutex> lock1(featuresMutex);
+        std::unique_lock<std::mutex> lock2(positionMutex);
         observation = observations;
         observations.clear();
         isFlaggedBad = true;
@@ -54,16 +54,17 @@ MapPointStatus MapPoint::replace(MapPoint *p_mapPoint_inout)
         p_replaced   = p_mapPoint_inout;
     }
 
-    for (map<KeyFrame *, tuple<int, int>>::iterator mit  = observation.begin(),
-                                                    mend = observation.end();
+    for (std::map<KeyFrame *, std::tuple<int, int>>::iterator
+             mit  = observation.begin(),
+             mend = observation.end();
          mit != mend;
          mit++)
     {
         // Replace measurement in keyframe
         KeyFrame *p_keyFrame = mit->first;
 
-        tuple<int, int> indexes = mit->second;
-        int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+        std::tuple<int, int> indexes = mit->second;
+        int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
 
         bool mapPointIsInKeyFrame{};
         if (p_mapPoint_inout->isInKeyFrame(p_keyFrame, mapPointIsInKeyFrame) !=

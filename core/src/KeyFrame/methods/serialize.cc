@@ -113,8 +113,8 @@ void KeyFrame::serialize(Archive &ar, const unsigned int version)
     // KeyPoints
     serializeVectorKeyPoints<Archive>(ar, keyPoints, version);
     serializeVectorKeyPoints<Archive>(ar, keyPointsUndistorted, version);
-    ar &const_cast<vector<float> &>(uRight);
-    ar &const_cast<vector<float> &>(depths);
+    ar &const_cast<std::vector<float> &>(uRight);
+    ar &const_cast<std::vector<float> &>(depths);
     serializeMatrix<Archive>(ar, descriptors, version);
     // BOW
     ar & bowVector;
@@ -125,9 +125,9 @@ void KeyFrame::serialize(Archive &ar, const unsigned int version)
     ar &const_cast<int &>(scaleLevelCount);
     ar &const_cast<float &>(scaleFactor);
     ar &const_cast<float &>(logScaleFactor);
-    ar &const_cast<vector<float> &>(scaleFactors);
-    ar &const_cast<vector<float> &>(levelSigmaSquared);
-    ar &const_cast<vector<float> &>(invLevelSigmaSquared);
+    ar &const_cast<std::vector<float> &>(scaleFactors);
+    ar &const_cast<std::vector<float> &>(levelSigmaSquared);
+    ar &const_cast<std::vector<float> &>(invLevelSigmaSquared);
     // Image bounds and calibration
     ar &const_cast<int &>(gridMinX);
     ar &const_cast<int &>(gridMinY);

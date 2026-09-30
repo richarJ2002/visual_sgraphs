@@ -38,7 +38,7 @@ namespace core
 KeyFrameStatus KeyFrame::getMapPoint(const size_t &index_in,
                                      MapPoint    *&p_mapPoint_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     p_mapPoint_out = mapPoints[index_in];
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

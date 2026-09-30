@@ -57,7 +57,7 @@ namespace core
 
 MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
 {
-    vector<int> indices;
+    std::vector<int> indices;
     indices.reserve(bestInlierFlags.size());
 
     for (size_t bestInlierFlagIndex = 0;
@@ -71,9 +71,9 @@ MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
     }
 
     // Bearing vectors and 3D points used for this ransac iteration
-    BearingVectors bearingVecs;
-    Points3        p3DS;
-    vector<int>    indexes;
+    BearingVectors   bearingVecs;
+    Points3          p3DS;
+    std::vector<int> indexes;
 
     for (size_t bestInlierFlagIndex = 0; bestInlierFlagIndex < indices.size();
          bestInlierFlagIndex++)

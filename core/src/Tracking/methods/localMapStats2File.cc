@@ -37,12 +37,12 @@ namespace core
 #ifdef REGISTER_TIMES
 TrackingStatus Tracking::localMapStats2File()
 {
-    ofstream f;
+    std::ofstream f;
     f.open("LocalMapTimeStats.txt");
-    f << fixed << setprecision(6);
+    f << std::fixed << std::setprecision(6);
     f << "#Stereo rect[ms], MP culling[ms], MP creation[ms], LBA[ms], KF "
          "culling[ms], Total[ms]"
-      << endl;
+      << std::endl;
     for (int sampleIndex = 0;
          sampleIndex < p_localMapper->localMappingTotalTimes_ms.size();
          ++sampleIndex)
@@ -52,14 +52,14 @@ TrackingStatus Tracking::localMapStats2File()
           << p_localMapper->mapPointCreationTimes_ms[sampleIndex] << ","
           << p_localMapper->localBaSyncTimes_ms[sampleIndex] << ","
           << p_localMapper->keyFrameCullingSyncTimes_ms[sampleIndex] << ","
-          << p_localMapper->localMappingTotalTimes_ms[sampleIndex] << endl;
+          << p_localMapper->localMappingTotalTimes_ms[sampleIndex] << std::endl;
     }
 
     f.close();
 
     f.open("LBA_Stats.txt");
-    f << fixed << setprecision(6);
-    f << "#LBA time[ms], KF opt[#], KF fixed[#], MP[#], Edges[#]" << endl;
+    f << std::fixed << std::setprecision(6);
+    f << "#LBA time[ms], KF opt[#], KF fixed[#], MP[#], Edges[#]" << std::endl;
     for (int sampleIndex = 0;
          sampleIndex < p_localMapper->localBaSyncTimes_ms.size();
          ++sampleIndex)
@@ -68,7 +68,7 @@ TrackingStatus Tracking::localMapStats2File()
           << p_localMapper->localBaOptimizedKeyFrameCounts[sampleIndex] << ","
           << p_localMapper->localBaFixedKeyFrameCounts[sampleIndex] << ","
           << p_localMapper->localBaMapPointCounts[sampleIndex] << ","
-          << p_localMapper->localBaEdgeCounts[sampleIndex] << endl;
+          << p_localMapper->localBaEdgeCounts[sampleIndex] << std::endl;
     }
 
     f.close();

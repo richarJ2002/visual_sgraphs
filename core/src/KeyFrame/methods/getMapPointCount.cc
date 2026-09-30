@@ -37,8 +37,8 @@ namespace core
 
 KeyFrameStatus KeyFrame::getMapPointCount(int &mapPointCount_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
-    int                numberMapPoints = 0;
+    std::unique_lock<std::mutex> lock(featuresMutex);
+    int                          numberMapPoints = 0;
     for (size_t mapPointIndex = 0, iend = mapPoints.size();
          mapPointIndex < iend;
          mapPointIndex++)

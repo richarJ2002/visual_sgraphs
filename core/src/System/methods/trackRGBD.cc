@@ -43,15 +43,16 @@ SystemStatus System::trackRGBD(
     const double                                 &timestamp_in,
     Sophus::SE3f                                 &cameraPose_out,
     const std::vector<IMU::Point>                &imuMeas_in,
-    string                                        filename_in,
+    std::string                                   filename_in,
     const std::vector<semantic::Marker *>         markers_in)
 {
     // Check if the sensor is correctly set as RGB-D
     if (sensor != RGBD && sensor != IMU_RGBD)
     {
-        cerr << "[Error] Improper sensor-type is set for 'TrackRGBD'! Exiting "
-                "..."
-             << endl;
+        std::cerr
+            << "[Error] Improper sensor-type is set for 'TrackRGBD'! Exiting "
+               "..."
+            << std::endl;
         exit(-1);
     }
 
@@ -139,7 +140,7 @@ SystemStatus System::trackRGBD(
                      __func__);
     }
 
-    unique_lock<mutex> lock2(stateMutex);
+    std::unique_lock<std::mutex> lock2(stateMutex);
     trackingState = p_tracker->state;
     int trackerMatchesInliers{};
     if (p_tracker->getMatchesInliers(trackerMatchesInliers) !=

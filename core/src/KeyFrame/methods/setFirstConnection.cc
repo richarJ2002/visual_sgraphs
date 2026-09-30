@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::setFirstConnection(bool isFirst_in)
 {
-    unique_lock<mutex> lockCon(connectionsMutex);
+    std::unique_lock<std::mutex> lockCon(connectionsMutex);
     isFirstConnection = isFirst_in;
 
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

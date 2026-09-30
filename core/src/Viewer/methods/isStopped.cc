@@ -36,7 +36,7 @@ namespace core
 
 ViewerStatus Viewer::isStopped(bool &isStopped_out)
 {
-    unique_lock<mutex> lock(stopMutex);
+    std::unique_lock<std::mutex> lock(stopMutex);
     isStopped_out = hasStopped;
     return ViewerStatus::VIEWER_STATUS_SUCCESS;
 }

@@ -37,12 +37,12 @@ namespace core
 
 MapPointStatus MapPoint::updateNormalAndDepth()
 {
-    map<KeyFrame *, tuple<int, int>> observedKeyFrames;
-    KeyFrame                        *p_localReferenceKeyFrame;
-    Eigen::Vector3f                  Pos;
+    std::map<KeyFrame *, std::tuple<int, int>> observedKeyFrames;
+    KeyFrame                                  *p_localReferenceKeyFrame;
+    Eigen::Vector3f                            Pos;
     {
-        unique_lock<mutex> lock1(featuresMutex);
-        unique_lock<mutex> lock2(positionMutex);
+        std::unique_lock<std::mutex> lock1(featuresMutex);
+        std::unique_lock<std::mutex> lock2(positionMutex);
         if (isFlaggedBad)
             return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
         observedKeyFrames        = observations;
@@ -56,7 +56,7 @@ MapPointStatus MapPoint::updateNormalAndDepth()
     Eigen::Vector3f normal;
     normal.setZero();
     int n = 0;
-    for (map<KeyFrame *, tuple<int, int>>::iterator
+    for (std::map<KeyFrame *, std::tuple<int, int>>::iterator
              mit  = observedKeyFrames.begin(),
              mend = observedKeyFrames.end();
          mit != mend;
@@ -64,8 +64,8 @@ MapPointStatus MapPoint::updateNormalAndDepth()
     {
         KeyFrame *p_keyFrame = mit->first;
 
-        tuple<int, int> indexes = mit->second;
-        int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+        std::tuple<int, int> indexes = mit->second;
+        int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
 
         if (leftIndex != -1)
         {
@@ -113,9 +113,9 @@ MapPointStatus MapPoint::updateNormalAndDepth()
     Eigen::Vector3f PC       = Pos - localReferenceKeyFrameCameraCenter;
     const float     distance = PC.norm();
 
-    tuple<int, int> indexes   = observedKeyFrames[p_localReferenceKeyFrame];
-    int             leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
-    int             level;
+    std::tuple<int, int> indexes = observedKeyFrames[p_localReferenceKeyFrame];
+    int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
+    int level;
     if (p_localReferenceKeyFrame->leftKeyPointCount == -1)
     {
         level =
@@ -140,7 +140,7 @@ MapPointStatus MapPoint::updateNormalAndDepth()
     const int levelCount = p_localReferenceKeyFrame->scaleLevelCount;
 
     {
-        unique_lock<mutex> lock3(positionMutex);
+        std::unique_lock<std::mutex> lock3(positionMutex);
         maxDistance = distance * levelScaleFactor;
         minDistance = maxDistance /
                       p_localReferenceKeyFrame->scaleFactors[levelCount - 1];

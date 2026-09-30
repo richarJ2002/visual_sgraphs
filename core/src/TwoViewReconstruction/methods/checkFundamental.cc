@@ -24,7 +24,6 @@
 
 #include <thread>
 
-using namespace std;
 namespace vs_graphs
 {
 namespace core
@@ -32,7 +31,7 @@ namespace core
 
 TwoViewReconstructionStatus TwoViewReconstruction::checkFundamental(
     const Eigen::Matrix3f &F21_in,
-    vector<bool>          &matchesInliersFlags_inout,
+    std::vector<bool>     &matchesInliersFlags_inout,
     float                  sigma_in,
     float                 &score_out)
 {

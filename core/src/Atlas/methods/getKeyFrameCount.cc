@@ -33,8 +33,8 @@ namespace core
 
 AtlasStatus Atlas::getKeyFrameCount(unsigned long &keyFrameCount_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    unsigned long      activeMapKeyFrameCount{};
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    unsigned long                activeMapKeyFrameCount{};
     if (p_activeMap->getKeyFrameCount(activeMapKeyFrameCount) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {

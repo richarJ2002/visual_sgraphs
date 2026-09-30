@@ -62,20 +62,18 @@
 
 #include "private_functions.h"
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
-ORBextractorStatus computeDescriptors(const Mat           &image_in,
-                                      vector<KeyPoint>    &keypoints_in,
-                                      Mat                 &descriptors_out,
-                                      const vector<Point> &briefPattern_in)
+ORBextractorStatus
+    computeDescriptors(const cv::Mat                &image_in,
+                       std::vector<cv::KeyPoint>    &keypoints_in,
+                       cv::Mat                      &descriptors_out,
+                       const std::vector<cv::Point> &briefPattern_in)
 {
-    descriptors_out = Mat::zeros((int)keypoints_in.size(), 32, CV_8UC1);
+    descriptors_out = cv::Mat::zeros((int)keypoints_in.size(), 32, CV_8UC1);
 
     for (size_t keypointIndex = 0; keypointIndex < keypoints_in.size();
          keypointIndex++)

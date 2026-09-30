@@ -346,8 +346,8 @@ MLPnPsolverStatus
         R2.col(1) = -rout1.col(1);
         R2.col(2) = rout1.col(2);
 
-        vector<TransformationMatrix,
-               Eigen::aligned_allocator<TransformationMatrix>>
+        std::vector<TransformationMatrix,
+                    Eigen::aligned_allocator<TransformationMatrix>>
             Ts(4);
         Ts[0].block<3, 3>(0, 0) = R1;
         Ts[0].block<3, 1>(0, 3) = t;
@@ -358,7 +358,7 @@ MLPnPsolverStatus
         Ts[3].block<3, 3>(0, 0) = R2;
         Ts[3].block<3, 1>(0, 3) = -t;
 
-        vector<double> normValue(4);
+        std::vector<double> normValue(4);
         for (int correspondenceIndex = 0; correspondenceIndex < 4;
              ++correspondenceIndex)
         {
@@ -409,9 +409,9 @@ MLPnPsolverStatus
 
         // find correct direction in terms of reprojection error, just take the
         // first 6 correspondences
-        vector<double> error(2);
-        vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> Ts(
-            2);
+        std::vector<double> error(2);
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>
+            Ts(2);
         for (int s = 0; s < 2; ++s)
         {
             error[s]                = 0.0;

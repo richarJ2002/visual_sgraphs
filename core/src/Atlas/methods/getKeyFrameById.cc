@@ -34,8 +34,8 @@ namespace core
 AtlasStatus Atlas::getKeyFrameById(long unsigned int idCount_in,
                                    KeyFrame        *&p_keyFrameById_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    KeyFrame          *p_activeMapKeyFrameById = nullptr;
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    KeyFrame                    *p_activeMapKeyFrameById = nullptr;
     if ((p_activeMap != nullptr) &&
         p_activeMap->getKeyFrameById(idCount_in, p_activeMapKeyFrameById) !=
             MapStatus::MAP_STATUS_SUCCESS)

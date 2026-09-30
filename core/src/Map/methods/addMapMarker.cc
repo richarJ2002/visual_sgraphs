@@ -39,7 +39,7 @@ namespace core
 
 MapStatus Map::addMapMarker(semantic::Marker *p_marker_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     markers.insert(p_marker_in);
     // Add the marker to the hashmap
     int marker_inId{};

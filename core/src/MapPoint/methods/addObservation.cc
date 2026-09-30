@@ -37,8 +37,8 @@ namespace core
 MapPointStatus MapPoint::addObservation(KeyFrame *p_keyFrame_inout,
                                         int       index_in)
 {
-    unique_lock<mutex> lock(featuresMutex);
-    tuple<int, int>    indexes;
+    std::unique_lock<std::mutex> lock(featuresMutex);
+    std::tuple<int, int>         indexes;
 
     if (observations.count(p_keyFrame_inout))
     {
@@ -46,17 +46,17 @@ MapPointStatus MapPoint::addObservation(KeyFrame *p_keyFrame_inout,
     }
     else
     {
-        indexes = tuple<int, int>(-1, -1);
+        indexes = std::tuple<int, int>(-1, -1);
     }
 
     if (p_keyFrame_inout->leftKeyPointCount != -1 &&
         index_in >= p_keyFrame_inout->leftKeyPointCount)
     {
-        get<1>(indexes) = index_in;
+        std::get<1>(indexes) = index_in;
     }
     else
     {
-        get<0>(indexes) = index_in;
+        std::get<0>(indexes) = index_in;
     }
 
     observations[p_keyFrame_inout] = indexes;

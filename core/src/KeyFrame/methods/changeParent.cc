@@ -38,11 +38,12 @@ namespace core
 
 KeyFrameStatus KeyFrame::changeParent(KeyFrame *p_keyFrame_inout)
 {
-    unique_lock<mutex> lockCon(connectionsMutex);
+    std::unique_lock<std::mutex> lockCon(connectionsMutex);
     if (p_keyFrame_inout == this)
     {
-        cout << "ERROR: Change parent KF, the parent and child are the same KF"
-             << endl;
+        std::cout
+            << "ERROR: Change parent KF, the parent and child are the same KF"
+            << std::endl;
         throw std::invalid_argument("The parent and child can not be the same");
     }
 

@@ -35,7 +35,7 @@ namespace core
 #ifdef REGISTER_LOOP
 TrackingStatus Tracking::stopRequested(bool &isStopRequested_out)
 {
-    unique_lock<mutex> lock(stopMutex);
+    std::unique_lock<std::mutex> lock(stopMutex);
     isStopRequested_out = isStopRequested;
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }

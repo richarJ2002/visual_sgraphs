@@ -53,13 +53,13 @@ namespace vs_graphs
 namespace core
 {
 
-SystemStatus System::initialize(const string    &vocabularyFile_in,
-                                const string    &settingsFile_in,
-                                const string    &sysParamsFile_in,
-                                const SensorType sensor_in,
-                                const bool       shouldUseViewer_in,
-                                const int        initialFr_in,
-                                const string    &sequence_in,
+SystemStatus System::initialize(const std::string &vocabularyFile_in,
+                                const std::string &settingsFile_in,
+                                const std::string &sysParamsFile_in,
+                                const SensorType   sensor_in,
+                                const bool         shouldUseViewer_in,
+                                const int          initialFr_in,
+                                const std::string &sequence_in,
                                 const Verbose::VerbosityLevel verboseLevel_in)
 {
     sensor = sensor_in;
@@ -149,11 +149,11 @@ SystemStatus System::initialize(const string    &vocabularyFile_in,
         p_settings        = nullptr;
         cv::FileNode node = fsSettings["System.LoadAtlasFromFile"];
         if (!node.empty() && node.isString())
-            loadAtlasFile = (string)node;
+            loadAtlasFile = (std::string)node;
 
         node = fsSettings["System.SaveAtlasToFile"];
         if (!node.empty() && node.isString())
-            saveAtlasFile = (string)node;
+            saveAtlasFile = (std::string)node;
     }
 
     if ((sensor_in == RGBD || sensor_in == IMU_RGBD) && p_settings != nullptr)
@@ -196,8 +196,8 @@ SystemStatus System::initialize(const string    &vocabularyFile_in,
     bool isVocabularyLoaded = p_vocabulary->loadFromBinFile(vocabularyFile_in);
     if (!isVocabularyLoaded)
     {
-        cerr << "- Wrong path to vocabulary. " << endl;
-        cerr << "- Failed to open at: " << vocabularyFile_in << endl;
+        std::cerr << "- Wrong path to vocabulary. " << std::endl;
+        std::cerr << "- Failed to open at: " << vocabularyFile_in << std::endl;
         return SystemStatus::SYSTEM_STATUS_VOCABULARY_UNREADABLE;
     }
 
@@ -333,7 +333,7 @@ SystemStatus System::initialize(const string    &vocabularyFile_in,
 
     /* Set up thread to run the mpLocalMapper and call Run() method */
     p_localMappingThread =
-        new thread(&vs_graphs::core::LocalMapping::run, p_localMapper);
+        new std::thread(&vs_graphs::core::LocalMapping::run, p_localMapper);
 
     p_localMapper->initFrame = initialFr_in;
     if (p_settings)
@@ -356,9 +356,9 @@ SystemStatus System::initialize(const string    &vocabularyFile_in,
 
     if (p_localMapper->farPointsThreshold != 0)
     {
-        cout << "Discard points further than "
-             << p_localMapper->farPointsThreshold << " m from current camera"
-             << endl;
+        std::cout << "Discard points further than "
+                  << p_localMapper->farPointsThreshold
+                  << " m from current camera" << std::endl;
         p_localMapper->shouldSkipFarPoints = true;
     }
     else
@@ -379,7 +379,7 @@ SystemStatus System::initialize(const string    &vocabularyFile_in,
 
     /* Launch the loop closing thread */
     p_loopClosingThread =
-        new thread(&vs_graphs::core::LoopClosing::run, p_loopCloser);
+        new std::thread(&vs_graphs::core::LoopClosing::run, p_loopCloser);
 
     /* ---------------------------------------------------------------------- *
      * SEMANTIC SEGMENTATION THREAD
@@ -390,7 +390,7 @@ SystemStatus System::initialize(const string    &vocabularyFile_in,
 
     /* Launch the Semantic Segmentation thread */
     p_semanticSegmentationThread =
-        new thread(&SemanticSegmentation::run, p_semanticSegmentation);
+        new std::thread(&SemanticSegmentation::run, p_semanticSegmentation);
 
     /* ---------------------------------------------------------------------- *
      * SEMANTIC MANAGER THREAD
@@ -401,7 +401,7 @@ SystemStatus System::initialize(const string    &vocabularyFile_in,
 
     /* Launch the Semantic Manager thread */
     p_semanticsManagerThread =
-        new thread(&SemanticsManager::run, p_semanticsManager);
+        new std::thread(&SemanticsManager::run, p_semanticsManager);
 
     /* ---------------------------------------------------------------------- *
      * THREAD POINTER STORAGE
@@ -470,7 +470,7 @@ SystemStatus System::initialize(const string    &vocabularyFile_in,
                               p_tracker,
                               settingsFile_in,
                               p_settings);
-        p_viewerThread = new thread(&Viewer::run, p_viewer);
+        p_viewerThread = new std::thread(&Viewer::run, p_viewer);
         if (p_tracker->setViewer(p_viewer) !=
             TrackingStatus::TRACKING_STATUS_SUCCESS)
         {

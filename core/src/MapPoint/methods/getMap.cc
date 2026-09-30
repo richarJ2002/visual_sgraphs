@@ -36,7 +36,7 @@ namespace core
 
 MapPointStatus MapPoint::getMap(Map *&p_map_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_map_out = p_map;
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

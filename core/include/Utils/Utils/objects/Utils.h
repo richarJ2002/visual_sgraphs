@@ -384,7 +384,7 @@ class Utils
      * @return UTILS_STATUS_SUCCESS.
      */
     [[nodiscard]] static UtilsStatus associatePlanes(
-        const vector<geometric::Plane *>            &mappedPlanes_in,
+        const std::vector<geometric::Plane *>       &mappedPlanes_in,
         g2o::Plane3D                                 observedPlane_in,
         pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
         const Eigen::Matrix4d                       &keyframePose_in,
@@ -630,8 +630,8 @@ class Utils
      * @param[out] softMin_out Soft-min value.
      * @return UTILS_STATUS_SUCCESS.
      */
-    [[nodiscard]] static UtilsStatus calcSoftMin(vector<double> &values_in,
-                                                 double         &softMin_out);
+    [[nodiscard]] static UtilsStatus calcSoftMin(std::vector<double> &values_in,
+                                                 double &softMin_out);
 };
 } // namespace utils
 } // namespace utils

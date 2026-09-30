@@ -25,22 +25,21 @@
 #include <rclcpp/logging.hpp>
 #include <thread>
 
-using namespace std;
 namespace vs_graphs
 {
 namespace core
 {
 
-TwoViewReconstructionStatus
-    TwoViewReconstruction::reconstructH(vector<bool> &matchesInliersFlags_inout,
-                                        Eigen::Matrix3f     &H21_in,
-                                        Eigen::Matrix3f     &K_in,
-                                        Sophus::SE3f        &T21_out,
-                                        vector<cv::Point3f> &vP3D_inout,
-                                        vector<bool> &triangulatedFlags_out,
-                                        float         minimumParallax_in,
-                                        int           minimumTriangulated_in,
-                                        bool         &isReconstructed_out)
+TwoViewReconstructionStatus TwoViewReconstruction::reconstructH(
+    std::vector<bool>        &matchesInliersFlags_inout,
+    Eigen::Matrix3f          &H21_in,
+    Eigen::Matrix3f          &K_in,
+    Sophus::SE3f             &T21_out,
+    std::vector<cv::Point3f> &vP3D_inout,
+    std::vector<bool>        &triangulatedFlags_out,
+    float                     minimumParallax_in,
+    int                       minimumTriangulated_in,
+    bool                     &isReconstructed_out)
 {
     int N = 0;
     for (size_t i = 0, iend = matchesInliersFlags_inout.size(); i < iend; i++)
@@ -75,21 +74,21 @@ TwoViewReconstructionStatus
             TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
     }
 
-    vector<Eigen::Matrix3f> vR;
-    vector<Eigen::Vector3f> vt, vn;
+    std::vector<Eigen::Matrix3f> vR;
+    std::vector<Eigen::Vector3f> vt, vn;
     vR.reserve(8);
     vt.reserve(8);
     vn.reserve(8);
 
     // n'=[x1 0 x3] 4 posibilities e1=e3=1, e1=1 e3=-1, e1=-1 e3=1, e1=e3=-1
-    float aux1 = sqrt((d1 * d1 - d2 * d2) / (d1 * d1 - d3 * d3));
-    float aux3 = sqrt((d2 * d2 - d3 * d3) / (d1 * d1 - d3 * d3));
+    float aux1 = std::sqrt((d1 * d1 - d2 * d2) / (d1 * d1 - d3 * d3));
+    float aux3 = std::sqrt((d2 * d2 - d3 * d3) / (d1 * d1 - d3 * d3));
     float x1[] = {aux1, aux1, -aux1, -aux1};
     float x3[] = {aux3, -aux3, aux3, -aux3};
 
     // case d'=d2
     float auxStheta =
-        sqrt((d1 * d1 - d2 * d2) * (d2 * d2 - d3 * d3)) / ((d1 + d3) * d2);
+        std::sqrt((d1 * d1 - d2 * d2) * (d2 * d2 - d3 * d3)) / ((d1 + d3) * d2);
 
     float ctheta   = (d2 * d2 + d1 * d3) / ((d1 + d3) * d2);
     float stheta[] = {auxStheta, -auxStheta, -auxStheta, auxStheta};
@@ -129,7 +128,7 @@ TwoViewReconstructionStatus
 
     // case d'=-d2
     float auxSphi =
-        sqrt((d1 * d1 - d2 * d2) * (d2 * d2 - d3 * d3)) / ((d1 - d3) * d2);
+        std::sqrt((d1 * d1 - d2 * d2) * (d2 * d2 - d3 * d3)) / ((d1 - d3) * d2);
 
     float cphi   = (d1 * d3 - d2 * d2) / ((d1 - d3) * d2);
     float sphi[] = {auxSphi, -auxSphi, -auxSphi, auxSphi};
@@ -167,22 +166,22 @@ TwoViewReconstructionStatus
         vn.push_back(n);
     }
 
-    int                 bestGood          = 0;
-    int                 secondBestGood    = 0;
-    int                 bestSolutionIndex = -1;
-    float               bestParallax      = -1;
-    vector<cv::Point3f> bestP3d;
-    vector<bool>        bestTriangulated;
+    int                      bestGood          = 0;
+    int                      secondBestGood    = 0;
+    int                      bestSolutionIndex = -1;
+    float                    bestParallax      = -1;
+    std::vector<cv::Point3f> bestP3d;
+    std::vector<bool>        bestTriangulated;
 
     // Instead of applying the visibility constraints proposed in the Faugeras'
     // paper (which could fail for points seen with low parallax) We reconstruct
     // all hypotheses and check in terms of triangulated points and parallax
     for (size_t i = 0; i < 8; i++)
     {
-        float               parallaxi;
-        vector<cv::Point3f> vP3Di;
-        vector<bool>        triangulatediFlags;
-        int                 goodCount{};
+        float                    parallaxi;
+        std::vector<cv::Point3f> vP3Di;
+        std::vector<bool>        triangulatediFlags;
+        int                      goodCount{};
         if (checkRT(vR[i],
                     vt[i],
                     keys1,

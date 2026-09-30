@@ -40,7 +40,7 @@ TrackingStatus calcDeviation(std::vector<double> times_in,
     double accum = 0;
     for (double value : times_in)
     {
-        accum += pow(value - average_in, 2);
+        accum += std::pow(value - average_in, 2);
     }
     deviation_out = sqrt(accum / times_in.size());
     return TrackingStatus::TRACKING_STATUS_SUCCESS;

@@ -38,7 +38,7 @@ namespace core
 KeyFrameStatus
     KeyFrame::getMapPointMatches(std::vector<MapPoint *> &mapPointMatches_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     mapPointMatches_out = mapPoints;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

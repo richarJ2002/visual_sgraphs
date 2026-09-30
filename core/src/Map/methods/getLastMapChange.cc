@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getLastMapChange(int &lastMapChange_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     lastMapChange_out = mapChangeNotified;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

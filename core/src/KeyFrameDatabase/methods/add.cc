@@ -22,8 +22,6 @@
 
 #include <mutex>
 
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
@@ -31,7 +29,7 @@ namespace core
 
 KeyFrameDatabaseStatus KeyFrameDatabase::add(KeyFrame *p_keyFrame_in)
 {
-    unique_lock<mutex> lock(databaseMutex);
+    std::unique_lock<std::mutex> lock(databaseMutex);
 
     for (DBoW2::BowVector::const_iterator
              wordIt  = p_keyFrame_in->bowVector.begin(),

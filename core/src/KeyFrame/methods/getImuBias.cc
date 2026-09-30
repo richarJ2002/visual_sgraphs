@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getImuBias(IMU::Bias &imuBias_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     imuBias_out = imuBias;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

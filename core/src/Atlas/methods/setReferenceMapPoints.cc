@@ -34,7 +34,7 @@ namespace core
 AtlasStatus
     Atlas::setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in)
 {
-    unique_lock<mutex> lock(atlasMutex);
+    std::unique_lock<std::mutex> lock(atlasMutex);
     if (p_activeMap->setReferenceMapPoints(mapPoints_in) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {

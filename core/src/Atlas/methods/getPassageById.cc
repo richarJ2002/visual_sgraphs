@@ -35,7 +35,7 @@ AtlasStatus Atlas::getPassageById(
     int                                  passageId_in,
     vs_graphs::core::semantic::Passage *&p_passageById_out)
 {
-    unique_lock<mutex>                  lock(atlasMutex);
+    std::unique_lock<std::mutex>        lock(atlasMutex);
     vs_graphs::core::semantic::Passage *p_activeMapPassageById = nullptr;
     if ((p_activeMap != nullptr) &&
         p_activeMap->getPassageById(passageId_in, p_activeMapPassageById) !=

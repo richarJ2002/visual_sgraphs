@@ -36,7 +36,7 @@ namespace core
 
 MapPointStatus MapPoint::getDescriptor(cv::Mat &descriptor_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     descriptor_out = descriptor.clone();
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

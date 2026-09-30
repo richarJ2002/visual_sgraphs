@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::eraseMapPassage(vs_graphs::core::semantic::Passage *p_passage_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     passages.erase(p_passage_in);
 
     for (auto passageIterator = passageIndex.begin();

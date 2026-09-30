@@ -69,10 +69,10 @@ FrameStatus Frame::computeImageBounds(const cv::Mat &imageLeft_in)
         matrix = matrix.reshape(1);
 
         // Undistort corners
-        gridMinX = min(matrix.at<float>(0, 0), matrix.at<float>(2, 0));
-        gridMaxX = max(matrix.at<float>(1, 0), matrix.at<float>(3, 0));
-        gridMinY = min(matrix.at<float>(0, 1), matrix.at<float>(1, 1));
-        gridMaxY = max(matrix.at<float>(2, 1), matrix.at<float>(3, 1));
+        gridMinX = std::min(matrix.at<float>(0, 0), matrix.at<float>(2, 0));
+        gridMaxX = std::max(matrix.at<float>(1, 0), matrix.at<float>(3, 0));
+        gridMinY = std::min(matrix.at<float>(0, 1), matrix.at<float>(1, 1));
+        gridMaxY = std::max(matrix.at<float>(2, 1), matrix.at<float>(3, 1));
     }
     else
     {

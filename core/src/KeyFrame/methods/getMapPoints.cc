@@ -39,10 +39,10 @@ namespace core
 
 KeyFrameStatus KeyFrame::getMapPoints(std::set<MapPoint *> &mapPoints_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
 
     /* Init vector of map points */
-    set<MapPoint *> s;
+    std::set<MapPoint *> s;
 
     /* Iterate through map points and move them over to list if valid */
     for (size_t mapPointIndex = 0, iend = mapPoints.size();

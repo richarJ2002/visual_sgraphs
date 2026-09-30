@@ -62,9 +62,9 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
     // STRUCTURAL PRIORS: Use room centroids from S-Graph to guide
     // relocalization In office corridors, room/passage markers provide strong
     // topological priors
-    vector<Eigen::Vector3f>  roomCentroids;
-    vector<semantic::Room *> currentRooms;
-    Map                     *p_currentMap = nullptr;
+    std::vector<Eigen::Vector3f>  roomCentroids;
+    std::vector<semantic::Room *> currentRooms;
+    Map                          *p_currentMap = nullptr;
     if (p_atlas->getCurrentMap(p_currentMap) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -171,13 +171,13 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
     // If enough matches are found we setup a PnP solver
     ORBmatcher matcher(0.75, true);
 
-    vector<MLPnPsolver *> pnpSolvers;
+    std::vector<MLPnPsolver *> pnpSolvers;
     pnpSolvers.resize(keyFrameCount);
 
-    vector<vector<MapPoint *>> vvpMapPointMatches;
+    std::vector<std::vector<MapPoint *>> vvpMapPointMatches;
     vvpMapPointMatches.resize(keyFrameCount);
 
-    vector<bool> discardedFlags;
+    std::vector<bool> discardedFlags;
     discardedFlags.resize(keyFrameCount);
 
     int candidateCount = 0;
@@ -256,7 +256,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
 
         // Score candidates by: visual matches + proximity to known room
         // centroids
-        vector<float> candidateScores(keyFrameCount, 0.0f);
+        std::vector<float> candidateScores(keyFrameCount, 0.0f);
         for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount;
              keyFrameIndex++)
         {
@@ -292,7 +292,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
         }
 
         // Re-sort candidates by combined score (highest first)
-        vector<int> sortedIndices(keyFrameCount);
+        std::vector<int> sortedIndices(keyFrameCount);
         for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount;
              keyFrameIndex++)
             sortedIndices[keyFrameIndex] = keyFrameIndex;
@@ -302,10 +302,11 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                   { return candidateScores[a] > candidateScores[b]; });
 
         // Reorder vectors for processing
-        vector<KeyFrame *>         reorderedKeyFrames = candidateKeyFrames;
-        vector<vector<MapPoint *>> reorderedMatches   = vvpMapPointMatches;
-        vector<MLPnPsolver *>      reorderedSolvers   = pnpSolvers;
-        vector<bool>               reorderedDiscarded = discardedFlags;
+        std::vector<KeyFrame *> reorderedKeyFrames = candidateKeyFrames;
+        std::vector<std::vector<MapPoint *>> reorderedMatches =
+            vvpMapPointMatches;
+        std::vector<MLPnPsolver *> reorderedSolvers   = pnpSolvers;
+        std::vector<bool>          reorderedDiscarded = discardedFlags;
 
         for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount;
              keyFrameIndex++)
@@ -335,9 +336,9 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                 continue;
 
             // Perform 5 Ransac Iterations
-            vector<bool> inliersFlags;
-            int          inlierCount;
-            bool         areIterationsExhausted;
+            std::vector<bool> inliersFlags;
+            int               inlierCount;
+            bool              areIterationsExhausted;
 
             MLPnPsolver    *p_solver = pnpSolvers[keyFrameIndex];
             Eigen::Matrix4f eigTcw;
@@ -378,7 +379,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                 }
                 // Tcw.copyTo(mCurrentFrame.poseTcw);
 
-                set<MapPoint *> founds;
+                std::set<MapPoint *> founds;
 
                 const int np = inliersFlags.size();
 

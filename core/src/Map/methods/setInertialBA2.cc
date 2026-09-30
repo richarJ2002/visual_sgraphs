@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::setInertialBA2()
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     hasInertialBA2 = true;
 
     return MapStatus::MAP_STATUS_SUCCESS;

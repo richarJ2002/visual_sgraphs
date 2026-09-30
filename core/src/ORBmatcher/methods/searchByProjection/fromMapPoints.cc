@@ -32,8 +32,8 @@ namespace core
 {
 
 ORBmatcherStatus
-    ORBmatcher::searchByProjection(Frame                      &F,
-                                   const vector<MapPoint *>   &vpMapPoints,
+    ORBmatcher::searchByProjection(Frame                         &F,
+                                   const std::vector<MapPoint *> &vpMapPoints,
                                    int                        &byProjection_out,
                                    const float                 th,
                                    const bool                  bFarPoints,
@@ -129,8 +129,8 @@ ORBmatcherStatus
                 int bestIndex     = -1;
 
                 // Get best and second matches with near keypoints
-                for (vector<size_t>::const_iterator vit  = indices.begin(),
-                                                    vend = indices.end();
+                for (std::vector<size_t>::const_iterator vit  = indices.begin(),
+                                                         vend = indices.end();
                      vit != vend;
                      vit++)
                 {
@@ -157,8 +157,8 @@ ORBmatcherStatus
 
                     if (F.leftKeyPointCount == -1 && F.uRight[featureIndex] > 0)
                     {
-                        const float er = fabs(p_mapPoint->trackProjXR -
-                                              F.uRight[featureIndex]);
+                        const float er = std::fabs(p_mapPoint->trackProjXR -
+                                                   F.uRight[featureIndex]);
                         if (er > r * F.scaleFactors[predictedLevelCount])
                             continue;
                     }
@@ -301,8 +301,8 @@ ORBmatcherStatus
                 int bestIndex     = -1;
 
                 // Get best and second matches with near keypoints
-                for (vector<size_t>::const_iterator vit  = indices.begin(),
-                                                    vend = indices.end();
+                for (std::vector<size_t>::const_iterator vit  = indices.begin(),
+                                                         vend = indices.end();
                      vit != vend;
                      vit++)
                 {

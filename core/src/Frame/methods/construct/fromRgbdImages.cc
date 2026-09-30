@@ -118,7 +118,7 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
                      __func__);
     }
     scaleFactor    = orbExtractorLeftScaleFactor;
-    logScaleFactor = log(scaleFactor);
+    logScaleFactor = std::log(scaleFactor);
     std::vector<float> orbExtractorLeftScaleFactors{};
     if (p_orbExtractorLeft->getScaleFactors(orbExtractorLeftScaleFactors) !=
         ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
@@ -208,8 +208,8 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
     }
 
     // Initialize MapPoints
-    mapPoints =
-        vector<MapPoint *>(keyPointCount, static_cast<MapPoint *>(nullptr));
+    mapPoints = std::vector<MapPoint *>(keyPointCount,
+                                        static_cast<MapPoint *>(nullptr));
 
     // Initialize MapMarkers
     mapMarkers = markers_in;
@@ -220,7 +220,7 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
     projectedPoints.clear();
     matchedPoints.clear();
 
-    outlierFlags = vector<bool>(keyPointCount, false);
+    outlierFlags = std::vector<bool>(keyPointCount, false);
 
     // This is done only for the first Frame (or after a change in the
     // calibration)
@@ -294,9 +294,9 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
     rightKeyPointCount = -1;
     monoLeft           = -1;
     monoRight          = -1;
-    leftToRightMatches = vector<int>(0);
-    rightToLeftMatches = vector<int>(0);
-    stereoPoints3D     = vector<Eigen::Vector3f>(0);
+    leftToRightMatches = std::vector<int>(0);
+    rightToLeftMatches = std::vector<int>(0);
+    stereoPoints3D     = std::vector<Eigen::Vector3f>(0);
 
     if (assignFeaturesToGrid() != FrameStatus::FRAME_STATUS_SUCCESS)
     {

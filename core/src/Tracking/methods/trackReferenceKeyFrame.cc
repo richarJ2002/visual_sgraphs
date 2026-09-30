@@ -50,8 +50,8 @@ TrackingStatus Tracking::trackReferenceKeyFrame(bool &isTracked_out)
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
-    ORBmatcher         matcher(0.7, true);
-    vector<MapPoint *> mapPointMatches;
+    ORBmatcher              matcher(0.7, true);
+    std::vector<MapPoint *> mapPointMatches;
 
     int nmatches{};
     if (matcher.searchByBoW(p_referenceKF,

@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getImuRotation(Eigen::Matrix3f &imuRotation_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     imuRotation_out = (twc * imuCalibration.mTcb).rotationMatrix();
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

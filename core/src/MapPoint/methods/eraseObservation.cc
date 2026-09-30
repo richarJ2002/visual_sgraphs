@@ -39,11 +39,12 @@ MapPointStatus MapPoint::eraseObservation(KeyFrame *p_keyFrame_in)
 {
     bool bBad = false;
     {
-        unique_lock<mutex> lock(featuresMutex);
+        std::unique_lock<std::mutex> lock(featuresMutex);
         if (observations.count(p_keyFrame_in))
         {
-            tuple<int, int> indexes = observations[p_keyFrame_in];
-            int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+            std::tuple<int, int> indexes   = observations[p_keyFrame_in];
+            int                  leftIndex = std::get<0>(indexes),
+                rightIndex                 = std::get<1>(indexes);
 
             if (leftIndex != -1)
             {

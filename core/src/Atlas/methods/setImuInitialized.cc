@@ -33,7 +33,7 @@ namespace core
 
 AtlasStatus Atlas::setImuInitialized()
 {
-    unique_lock<mutex> lock(atlasMutex);
+    std::unique_lock<std::mutex> lock(atlasMutex);
     if (p_activeMap->setImuInitialized() != MapStatus::MAP_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -17,7 +17,7 @@ namespace core
 
 FrameDrawerStatus FrameDrawer::update(Tracking *p_tracker_in)
 {
-    unique_lock<mutex> stateLock(frameStateMutex);
+    std::unique_lock<std::mutex> stateLock(frameStateMutex);
     p_tracker_in->imageGray.copyTo(image);
     currentKeys    = p_tracker_in->currentFrame.keyPoints;
     depthThreshold = p_tracker_in->currentFrame.depthThreshold;
@@ -34,8 +34,8 @@ FrameDrawerStatus FrameDrawer::update(Tracking *p_tracker_in)
         keyPointCount = currentKeys.size();
     }
 
-    isVisualOdometryPoint = vector<bool>(keyPointCount, false);
-    isTrackedMapPoint     = vector<bool>(keyPointCount, false);
+    isVisualOdometryPoint = std::vector<bool>(keyPointCount, false);
+    isTrackedMapPoint     = std::vector<bool>(keyPointCount, false);
     isTrackingOnlyMode    = p_tracker_in->isTrackingOnlyMode;
 
     // Variables for the new visualization

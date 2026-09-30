@@ -35,7 +35,7 @@ namespace core
 LocalMappingStatus
     LocalMapping::setAcceptKeyFrames(bool shouldAcceptKeyFrames_in)
 {
-    unique_lock<mutex> acceptLock(acceptMutex);
+    std::unique_lock<std::mutex> acceptLock(acceptMutex);
     shouldAcceptKeyFrames = shouldAcceptKeyFrames_in;
 
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;

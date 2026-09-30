@@ -33,13 +33,13 @@ namespace core
 
 LoopClosingStatus
     LoopClosing::checkObservations(std::set<KeyFrame *> &keyFramesMap1_in,
-                                   set<KeyFrame *>      &keyFramesMap2_in)
+                                   std::set<KeyFrame *> &keyFramesMap2_in)
 {
-    cout << "----------------------" << endl;
+    std::cout << "----------------------" << std::endl;
     for (KeyFrame *p_keyFrameInMap1 : keyFramesMap1_in)
     {
-        map<KeyFrame *, int> matchedMapPointCounts;
-        std::set<MapPoint *> mapPoints{};
+        std::map<KeyFrame *, int> matchedMapPointCounts;
+        std::set<MapPoint *>      mapPoints{};
         if (p_keyFrameInMap1->getMapPoints(mapPoints) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
@@ -96,23 +96,25 @@ LoopClosingStatus
 
         if (matchedMapPointCounts.size() == 0)
         {
-            cout << "CHECK-OBS: KF " << p_keyFrameInMap1->id
-                 << " has not any matched MP with the other map" << endl;
+            std::cout << "CHECK-OBS: KF " << p_keyFrameInMap1->id
+                      << " has not any matched MP with the other map"
+                      << std::endl;
         }
         else
         {
-            cout << "CHECK-OBS: KF " << p_keyFrameInMap1->id
-                 << " has matched MP with " << matchedMapPointCounts.size()
-                 << " KF from the other map" << endl;
-            for (pair<KeyFrame *, int> matchedKeyFrame : matchedMapPointCounts)
+            std::cout << "CHECK-OBS: KF " << p_keyFrameInMap1->id
+                      << " has matched MP with " << matchedMapPointCounts.size()
+                      << " KF from the other map" << std::endl;
+            for (std::pair<KeyFrame *, int> matchedKeyFrame :
+                 matchedMapPointCounts)
             {
-                cout << "   -KF: " << matchedKeyFrame.first->id
-                     << ", Number of matches: " << matchedKeyFrame.second
-                     << endl;
+                std::cout << "   -KF: " << matchedKeyFrame.first->id
+                          << ", Number of matches: " << matchedKeyFrame.second
+                          << std::endl;
             }
         }
     }
-    cout << "----------------------" << endl;
+    std::cout << "----------------------" << std::endl;
 
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }

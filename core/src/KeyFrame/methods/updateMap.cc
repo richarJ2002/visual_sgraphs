@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::updateMap(Map *p_map_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_map = p_map_in;
 
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

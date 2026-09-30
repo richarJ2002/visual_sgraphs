@@ -52,9 +52,10 @@ TrackingStatus Tracking::track()
 
     if (p_localMapper->isImuBad)
     {
-        cout << "[Tracking] Reseting map because the Local Mapper set the 'Bad "
-                "IMU' flag ..."
-             << endl;
+        std::cout
+            << "[Tracking] Reseting map because the Local Mapper set the 'Bad "
+               "IMU' flag ..."
+            << std::endl;
         if (p_system->requestResetActiveMapWithCause(
                 ResetCause::LOCAL_MAPPER_BAD_IMU) !=
             SystemStatus::SYSTEM_STATUS_SUCCESS)
@@ -79,7 +80,7 @@ TrackingStatus Tracking::track()
     }
     if (!p_currentMap)
     {
-        cout << "[ERROR] No active maps found in the ATLAS!" << endl;
+        std::cout << "[ERROR] No active maps found in the ATLAS!" << std::endl;
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
@@ -87,10 +88,11 @@ TrackingStatus Tracking::track()
     {
         if (lastFrame.timeStamp > currentFrame.timeStamp)
         {
-            cerr << "ERROR: Frame with a timestamp older than previous frame "
-                    "detected!"
-                 << endl;
-            unique_lock<mutex> lock(imuQueueMutex);
+            std::cerr
+                << "ERROR: Frame with a timestamp older than previous frame "
+                   "detected!"
+                << std::endl;
+            std::unique_lock<std::mutex> lock(imuQueueMutex);
             queueImuData.clear();
             if (reportResetAttribution(
                     ResetCause::NON_MONOTONIC_SENSOR_TIMESTAMP,
@@ -141,9 +143,9 @@ TrackingStatus Tracking::track()
                 }
                 if (atlasIsImuInitialized)
                 {
-                    cout << "Timestamp jump detected. State set to LOST. "
-                            "Reseting IMU integration..."
-                         << endl;
+                    std::cout << "Timestamp jump detected. State set to LOST. "
+                                 "Reseting IMU integration..."
+                              << std::endl;
                     bool currentMapInertialBA2{};
                     if (p_currentMap->getInertialBA2(currentMapInertialBA2) !=
                         MapStatus::MAP_STATUS_SUCCESS)
@@ -192,9 +194,9 @@ TrackingStatus Tracking::track()
                 }
                 else
                 {
-                    cout << "Timestamp jump detected, before IMU "
-                            "initialization. Reseting..."
-                         << endl;
+                    std::cout << "Timestamp jump detected, before IMU "
+                                 "initialization. Reseting..."
+                              << std::endl;
                     if (p_system->requestResetActiveMapWithCause(
                             ResetCause::
                                 TIMESTAMP_JUMP_BEFORE_IMU_INITIALIZATION) !=
@@ -269,7 +271,7 @@ TrackingStatus Tracking::track()
     hasCreatedMap = false;
 
     // Get Map Mutex -> Map cannot be changed
-    unique_lock<mutex> lock(p_currentMap->mapUpdateMutex);
+    std::unique_lock<std::mutex> lock(p_currentMap->mapUpdateMutex);
 
     isMapUpdated = false;
 
@@ -763,11 +765,11 @@ TrackingStatus Tracking::track()
                     // we choose that solution, otherwise we retain the "visual
                     // odometry" solution.
 
-                    bool               bOKMM     = false;
-                    bool               isOkReloc = false;
-                    vector<MapPoint *> mapPointsMMs;
-                    vector<bool>       outMmFlags;
-                    Sophus::SE3f       TcwMM;
+                    bool                    bOKMM     = false;
+                    bool                    isOkReloc = false;
+                    std::vector<MapPoint *> mapPointsMMs;
+                    std::vector<bool>       outMmFlags;
+                    Sophus::SE3f            TcwMM;
                     if (isVelocityAvailable)
                     {
                         bool isTracked6{};
@@ -969,7 +971,7 @@ TrackingStatus Tracking::track()
             {
                 if (currentFrame.id == (lastRelocFrameId + framesToResetIMU))
                 {
-                    cout << "RESETING FRAME!!!" << endl;
+                    std::cout << "RESETING FRAME!!!" << std::endl;
                     if (resetFrameIMU() !=
                         TrackingStatus::TRACKING_STATUS_SUCCESS)
                     {
@@ -1141,8 +1143,9 @@ TrackingStatus Tracking::track()
             }
 
             // Delete temporal MapPoints
-            for (list<MapPoint *>::iterator lit  = temporalMapPoints.begin(),
-                                            lend = temporalMapPoints.end();
+            for (std::list<MapPoint *>::iterator
+                     lit  = temporalMapPoints.begin(),
+                     lend = temporalMapPoints.end();
                  lit != lend;
                  lit++)
             {

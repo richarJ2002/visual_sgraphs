@@ -927,13 +927,13 @@ class System
      *              (no thread has been started then).
      */
     [[nodiscard]] SystemStatus
-        initialize(const string                 &vocabularyFile_in,
-                   const string                 &settingsFile_in,
-                   const string                 &sysParamsFile_in,
+        initialize(const std::string            &vocabularyFile_in,
+                   const std::string            &settingsFile_in,
+                   const std::string            &sysParamsFile_in,
                    const SensorType              sensor_in,
                    const bool                    shouldUseViewer_in = true,
                    const int                     initialFr_in       = 0,
-                   const string                 &sequence_in = std::string(),
+                   const std::string            &sequence_in = std::string(),
                    const Verbose::VerbosityLevel verboseLevel_in =
                        Verbose::VERBOSITY_QUIET);
 
@@ -972,14 +972,14 @@ class System
      * @return SYSTEM_STATUS_SUCCESS.
      */
     [[nodiscard]] SystemStatus trackStereo(
-        const cv::Mat                   &imageLeft_in,
-        const cv::Mat                   &imageRight_in,
-        const double                    &timestamp_in,
-        Sophus::SE3f                    &cameraPose_out,
-        const std::vector<IMU::Point>   &imuMeas_in = std::vector<IMU::Point>(),
-        string                           filename_in = "",
-        const vector<semantic::Marker *> markers_in =
-            vector<semantic::Marker *>{});
+        const cv::Mat                 &imageLeft_in,
+        const cv::Mat                 &imageRight_in,
+        const double                  &timestamp_in,
+        Sophus::SE3f                  &cameraPose_out,
+        const std::vector<IMU::Point> &imuMeas_in  = std::vector<IMU::Point>(),
+        std::string                    filename_in = "",
+        const std::vector<semantic::Marker *> markers_in =
+            std::vector<semantic::Marker *>{});
 
     /*!
      * @brief       Process the given rgbd frame for tracking. The DepthMap must
@@ -1015,10 +1015,10 @@ class System
         const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_mainCloud_in,
         const double                                 &timestamp_in,
         Sophus::SE3f                                 &cameraPose_out,
-        const std::vector<IMU::Point>   &imuMeas_in = std::vector<IMU::Point>(),
-        string                           filename_in = "",
-        const vector<semantic::Marker *> markers_in =
-            vector<semantic::Marker *>{});
+        const std::vector<IMU::Point> &imuMeas_in  = std::vector<IMU::Point>(),
+        std::string                    filename_in = "",
+        const std::vector<semantic::Marker *> markers_in =
+            std::vector<semantic::Marker *>{});
 
     /*!
      * @brief       Process the given stereo frame for tracking. Images must be
@@ -1044,13 +1044,13 @@ class System
      * @return SYSTEM_STATUS_SUCCESS.
      */
     [[nodiscard]] SystemStatus trackMonocular(
-        const cv::Mat                   &image_in,
-        const double                    &timestamp_in,
-        Sophus::SE3f                    &cameraPose_out,
-        const std::vector<IMU::Point>   &imuMeas_in = std::vector<IMU::Point>(),
-        string                           filename_in = "",
-        const vector<semantic::Marker *> markers_in =
-            vector<semantic::Marker *>{});
+        const cv::Mat                 &image_in,
+        const double                  &timestamp_in,
+        Sophus::SE3f                  &cameraPose_out,
+        const std::vector<IMU::Point> &imuMeas_in  = std::vector<IMU::Point>(),
+        std::string                    filename_in = "",
+        const std::vector<semantic::Marker *> markers_in =
+            std::vector<semantic::Marker *>{});
 
     /*!
      * @brief       This stops local mapping thread (map building) and performs
@@ -1190,7 +1190,8 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    [[nodiscard]] SystemStatus saveTrajectoryTUM(const string &filename_in);
+    [[nodiscard]] SystemStatus
+        saveTrajectoryTUM(const std::string &filename_in);
 
     /*!
      * @brief       Save keyframe poses in the TUM RGB-D dataset format. This
@@ -1202,7 +1203,7 @@ class System
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
     [[nodiscard]] SystemStatus
-        saveKeyFrameTrajectoryTUM(const string &filename_in);
+        saveKeyFrameTrajectoryTUM(const std::string &filename_in);
 
     /*!
      * @brief       Save camera trajectory in the EuRoC MAV dataset format.
@@ -1217,7 +1218,8 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    [[nodiscard]] SystemStatus saveTrajectoryEuRoC(const string &filename_in);
+    [[nodiscard]] SystemStatus
+        saveTrajectoryEuRoC(const std::string &filename_in);
 
     /*!
      * @brief       Save keyframe poses in the EuRoC MAV dataset format. This
@@ -1233,7 +1235,7 @@ class System
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
     [[nodiscard]] SystemStatus
-        saveKeyFrameTrajectoryEuRoC(const string &filename_in);
+        saveKeyFrameTrajectoryEuRoC(const std::string &filename_in);
 
     /*!
      * @brief       Save camera trajectory in the EuRoC MAV dataset format,
@@ -1250,8 +1252,8 @@ class System
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
-    [[nodiscard]] SystemStatus saveTrajectoryEuRoC(const string &filename_in,
-                                                   Map          *p_map_in);
+    [[nodiscard]] SystemStatus
+        saveTrajectoryEuRoC(const std::string &filename_in, Map *p_map_in);
 
     /*!
      * @brief       Save keyframe poses in the EuRoC MAV dataset format,
@@ -1271,7 +1273,8 @@ class System
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
     [[nodiscard]] SystemStatus
-        saveKeyFrameTrajectoryEuRoC(const string &filename_in, Map *p_map_in);
+        saveKeyFrameTrajectoryEuRoC(const std::string &filename_in,
+                                    Map               *p_map_in);
 
     /*!
      * @brief       Save data used for initialization debug. This dump includes
@@ -1294,7 +1297,8 @@ class System
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
      */
-    [[nodiscard]] SystemStatus saveTrajectoryKITTI(const string &filename_in);
+    [[nodiscard]] SystemStatus
+        saveTrajectoryKITTI(const std::string &filename_in);
 
     /*!
      * @brief       Save the map to a file. The format (text or binary) is
@@ -1308,8 +1312,8 @@ class System
      * if saving is not supported for the current sensor configuration.
      * @return SYSTEM_STATUS_SUCCESS.
      */
-    [[nodiscard]] SystemStatus saveMap(const string &filename_in,
-                                       bool         &isSaved_out);
+    [[nodiscard]] SystemStatus saveMap(const std::string &filename_in,
+                                       bool              &isSaved_out);
 
     /*!
      * @brief       Save map points as a PCD (Point Cloud Data) file. This can
@@ -1324,8 +1328,8 @@ class System
      * initialized or if there are no map points to save.
      * @return SYSTEM_STATUS_SUCCESS.
      */
-    [[nodiscard]] SystemStatus saveMapPointsAsPCD(const string &filename_in,
-                                                  bool         &isSaved_out);
+    [[nodiscard]] SystemStatus
+        saveMapPointsAsPCD(const std::string &filename_in, bool &isSaved_out);
 
     /*!
      * @brief       Get the current tracking state code. This reflects the
@@ -1609,7 +1613,7 @@ class System
      * @param[in]   jsonFilePath_in
      *              The path to the JSON file
      */
-    [[nodiscard]] SystemStatus parseJsonDatabase(string jsonFilePath_in);
+    [[nodiscard]] SystemStatus parseJsonDatabase(std::string jsonFilePath_in);
 
     /*!
      * @brief       Add the segmented image to the buffer in the
@@ -1760,9 +1764,9 @@ class System
      * @frame       N/A
      * @unit        N/A
      */
-    [[nodiscard]] SystemStatus calculateCheckSum(string  filename_in,
-                                                 int     type_in,
-                                                 string &checkSum_out);
+    [[nodiscard]] SystemStatus calculateCheckSum(std::string  filename_in,
+                                                 int          type_in,
+                                                 std::string &checkSum_out);
 
     /*!
      * @brief       Atlas pointer. Owned by the System class. Provides access to
@@ -2036,20 +2040,20 @@ class System
      * @brief       File path for loading an Atlas from disk. Used to resume
      *              processing from a saved map state.
      */
-    string loadAtlasFile;
+    std::string loadAtlasFile;
 
     /*!
      * @brief       File path for saving the Atlas to disk. Used to persist the
      *              map state for later resumption.
      */
-    string saveAtlasFile;
+    std::string saveAtlasFile;
 
     /*!
      * @brief       File path for the ORB vocabulary. Used by the System
      *              constructor to locate the vocabulary file for place
      *              recognition and feature matching.
      */
-    string vocabularyFilePath;
+    std::string vocabularyFilePath;
 
     /*!
      * @brief       Vector of Room pointers from the environment. Maintained for

@@ -24,15 +24,13 @@
 
 #include "private_functions.h"
 
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
-bool compFirst(const pair<float, KeyFrame *> &firstScoredCandidate_in,
-               const pair<float, KeyFrame *> &secondScoredCandidate_in)
+bool compFirst(const std::pair<float, KeyFrame *> &firstScoredCandidate_in,
+               const std::pair<float, KeyFrame *> &secondScoredCandidate_in)
 {
     return firstScoredCandidate_in.first > secondScoredCandidate_in.first;
 }

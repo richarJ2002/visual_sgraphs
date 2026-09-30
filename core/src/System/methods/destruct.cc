@@ -49,7 +49,7 @@ System::~System()
     }
 
     {
-        unique_lock<mutex> lock(resetMutex);
+        std::unique_lock<std::mutex> lock(resetMutex);
         isShutdownRequested = true;
     }
 

@@ -258,7 +258,8 @@ TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
     // Count lost frames
     std::list<bool> lbLost;
     int             lostFrameCount = 0;
-    for (list<bool>::iterator ilbL = lostFlags.begin(); ilbL != lostFlags.end();
+    for (std::list<bool>::iterator ilbL = lostFlags.begin();
+         ilbL != lostFlags.end();
          ilbL++)
     {
         if (index < initialFrameId)
@@ -271,7 +272,7 @@ TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
         index++;
     }
     std::cout << "[Tracking] " << lostFrameCount << " frames were set to lost!"
-              << endl;
+              << std::endl;
 
     lostFlags = lbLost;
 

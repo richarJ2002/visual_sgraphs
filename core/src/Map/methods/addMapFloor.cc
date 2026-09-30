@@ -44,7 +44,7 @@ MapStatus Map::addMapFloor(semantic::Floor *p_floor_inout)
         return MapStatus::MAP_STATUS_SUCCESS;
     }
 
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     for (auto floorIterator = floorIndex.begin();
          floorIterator != floorIndex.end();)

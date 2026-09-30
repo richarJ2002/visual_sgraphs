@@ -33,7 +33,7 @@ namespace core
 
 SystemStatus System::requestResetActiveMapWithCause(const ResetCause cause_in)
 {
-    unique_lock<mutex> lock(resetMutex);
+    std::unique_lock<std::mutex> lock(resetMutex);
     if (retainResetCause(this, cause_in) !=
         ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
     {

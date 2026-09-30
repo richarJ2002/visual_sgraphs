@@ -45,7 +45,7 @@ namespace core
 
 FrameStatus Frame::isImuPreintegrated(bool &isImuPreintegrated_out)
 {
-    unique_lock<std::mutex> lock(*p_imuMutex);
+    std::unique_lock<std::mutex> lock(*p_imuMutex);
     isImuPreintegrated_out = hasImuPreintegration;
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }

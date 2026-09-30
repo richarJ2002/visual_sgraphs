@@ -48,7 +48,7 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
     }
 
     {
-        unique_lock<mutex> lock(loopQueueMutex);
+        std::unique_lock<std::mutex> lock(loopQueueMutex);
         p_currentKF = loopKeyFrameQueue.front();
         loopKeyFrameQueue.pop_front();
         // Avoid that a keyframe can be erased while it is being process by this
@@ -212,8 +212,8 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
         g2o::Sim3 gScl(mTcl.unit_quaternion(), mTcl.translation(), 1.0);
         g2o::Sim3 gScw                 = gScl * mg2oLoopSlw;
         int       projectionMatchCount = 0;
-        vector<MapPoint *> matchedMapPoints;
-        bool               isCommonRegionFound{};
+        std::vector<MapPoint *> matchedMapPoints;
+        bool                    isCommonRegionFound{};
         if (detectAndReffineSim3FromLastKF(p_currentKF,
                                            p_loopMatchedKF,
                                            gScw,
@@ -322,8 +322,8 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
         g2o::Sim3 gScl(mTcl.unit_quaternion(), mTcl.translation(), 1.0);
         g2o::Sim3 gScw                 = gScl * mg2oMergeSlw;
         int       projectionMatchCount = 0;
-        vector<MapPoint *> matchedMapPoints;
-        bool               isCommonRegionFound{};
+        std::vector<MapPoint *> matchedMapPoints;
+        bool                    isCommonRegionFound{};
         if (detectAndReffineSim3FromLastKF(p_currentKF,
                                            p_mergeMatchedKF,
                                            gScw,
@@ -431,7 +431,7 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
     }
 
     // Extract candidates from the bag of words
-    vector<KeyFrame *> mergeBowCandidates, loopBowCandidates;
+    std::vector<KeyFrame *> mergeBowCandidates, loopBowCandidates;
     if (!isMergeDetectedInKeyFrame || !isLoopDetectedInKeyFrame)
     {
         // Search in BoW

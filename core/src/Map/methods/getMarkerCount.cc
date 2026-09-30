@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getMarkerCount(unsigned long &markerCount_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     markerCount_out = markers.size();
     return MapStatus::MAP_STATUS_SUCCESS;
 }

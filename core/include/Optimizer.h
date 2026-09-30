@@ -112,11 +112,11 @@ class Optimizer
      * @param fixedKeyFrames_in Fixed KeyFrames to set
      * @param p_pbStopFlag_in Flag to forcely stop the optimization
      */
-    [[nodiscard]] static OptimizerStatus
-        loopClosureLocalBundleAdjustment(KeyFrame          *p_mainKeyFrame_in,
-                                         vector<KeyFrame *> adjustKeyFrames_in,
-                                         vector<KeyFrame *> fixedKeyFrames_in,
-                                         bool              *p_pbStopFlag_in);
+    [[nodiscard]] static OptimizerStatus loopClosureLocalBundleAdjustment(
+        KeyFrame               *p_mainKeyFrame_in,
+        std::vector<KeyFrame *> adjustKeyFrames_in,
+        std::vector<KeyFrame *> fixedKeyFrames_in,
+        bool                   *p_pbStopFlag_in);
 
     [[nodiscard]] static OptimizerStatus poseOptimization(Frame *p_frame_inout,
                                                    int   &inlierCount_out);
@@ -132,13 +132,13 @@ class Optimizer
     // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise
     // (mono)
     [[nodiscard]] static OptimizerStatus optimizeEssentialGraph(
-        Map                                    *p_map_inout,
-        KeyFrame                               *p_loopKeyFrame_in,
-        KeyFrame                               *p_currentKeyFrame_in,
-        const LoopClosing::KeyFrameAndPose     &NonCorrectedSim3_in,
-        const LoopClosing::KeyFrameAndPose     &CorrectedSim3_in,
-        const map<KeyFrame *, set<KeyFrame *>> &loopConnections_in,
-        const bool                             &isScaleFixed_in);
+        Map                                              *p_map_inout,
+        KeyFrame                                         *p_loopKeyFrame_in,
+        KeyFrame                                         *p_currentKeyFrame_in,
+        const LoopClosing::KeyFrameAndPose               &NonCorrectedSim3_in,
+        const LoopClosing::KeyFrameAndPose               &CorrectedSim3_in,
+        const std::map<KeyFrame *, std::set<KeyFrame *>> &loopConnections_in,
+        const bool                                       &isScaleFixed_in);
 
     /*!
      * @brief Optimize the Essential Graph when a loop closure is detected
@@ -165,12 +165,12 @@ class Optimizer
 
     // For inertial loopclosing
     [[nodiscard]] static OptimizerStatus optimizeEssentialGraph4DoF(
-        Map                                    *p_map_inout,
-        KeyFrame                               *p_loopKeyFrame_in,
-        KeyFrame                               *p_currentKeyFrame_in,
-        const LoopClosing::KeyFrameAndPose     &NonCorrectedSim3_in,
-        const LoopClosing::KeyFrameAndPose     &CorrectedSim3_in,
-        const map<KeyFrame *, set<KeyFrame *>> &loopConnections_in);
+        Map                                              *p_map_inout,
+        KeyFrame                                         *p_loopKeyFrame_in,
+        KeyFrame                                         *p_currentKeyFrame_in,
+        const LoopClosing::KeyFrameAndPose               &NonCorrectedSim3_in,
+        const LoopClosing::KeyFrameAndPose               &CorrectedSim3_in,
+        const std::map<KeyFrame *, std::set<KeyFrame *>> &loopConnections_in);
 
     // if bFixScale is true, optimize SE3 (stereo,rgbd), Sim3 otherwise (mono)
     // (NEW)

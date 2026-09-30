@@ -48,7 +48,7 @@ MapPointStatus MapPoint::preSave(std::set<KeyFrame *> &keyFrames_in,
     // EraseObservation() takes featuresMutex again.
     std::map<KeyFrame *, std::tuple<int, int>> savedObservations;
     {
-        unique_lock<mutex> lock(featuresMutex);
+        std::unique_lock<std::mutex> lock(featuresMutex);
         if (p_replaced && mapPoints_in.find(p_replaced) != mapPoints_in.end())
             backupReplacedId = p_replaced->id;
 
@@ -65,9 +65,9 @@ MapPointStatus MapPoint::preSave(std::set<KeyFrame *> &keyFrames_in,
         if (keyFrames_in.find(p_keyFrame) != keyFrames_in.end())
         {
             backupObservationIds1[observationIt->first->id] =
-                get<0>(observationIt->second);
+                std::get<0>(observationIt->second);
             backupObservationIds2[observationIt->first->id] =
-                get<1>(observationIt->second);
+                std::get<1>(observationIt->second);
         }
         else
         {
@@ -83,7 +83,7 @@ MapPointStatus MapPoint::preSave(std::set<KeyFrame *> &keyFrames_in,
     }
 
     // Save the id of the reference KF
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     if (keyFrames_in.find(p_referenceKeyFrame) != keyFrames_in.end())
     {
         backupRefKeyFrameId = p_referenceKeyFrame->id;

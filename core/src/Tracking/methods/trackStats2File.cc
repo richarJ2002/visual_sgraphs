@@ -36,9 +36,9 @@ namespace core
 #ifdef REGISTER_TIMES
 TrackingStatus Tracking::trackStats2File()
 {
-    ofstream f;
+    std::ofstream f;
     f.open("SessionInfo.txt");
-    f << fixed;
+    f << std::fixed;
     std::vector<KeyFrame *> atlasAllKeyFrames{};
     if (p_atlas->getAllKeyFrames(atlasAllKeyFrames) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -48,7 +48,7 @@ TrackingStatus Tracking::trackStats2File()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    f << "Number of KFs: " << atlasAllKeyFrames.size() << endl;
+    f << "Number of KFs: " << atlasAllKeyFrames.size() << std::endl;
     std::vector<MapPoint *> atlasAllMapPoints{};
     if (p_atlas->getAllMapPoints(atlasAllMapPoints) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -58,18 +58,18 @@ TrackingStatus Tracking::trackStats2File()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    f << "Number of MPs: " << atlasAllMapPoints.size() << endl;
+    f << "Number of MPs: " << atlasAllMapPoints.size() << std::endl;
 
-    f << "OpenCV version: " << CV_VERSION << endl;
+    f << "OpenCV version: " << CV_VERSION << std::endl;
 
     f.close();
 
     f.open("TrackingTimeStats.txt");
-    f << fixed << setprecision(6);
+    f << std::fixed << std::setprecision(6);
 
     f << "#Image Rect[ms], Image Resize[ms], ORB ext[ms], Stereo match[ms], "
          "IMU preint[ms], Pose pred[ms], LM track[ms], KF dec[ms], Total[ms]"
-      << endl;
+      << std::endl;
 
     for (int trackTotalTimeIndex = 0;
          trackTotalTimeIndex < trackTotalTimes_ms.size();
@@ -105,7 +105,7 @@ TrackingStatus Tracking::trackStats2File()
           << posePredictionTimes_ms[trackTotalTimeIndex] << ","
           << localMapTrackTimes_ms[trackTotalTimeIndex] << ","
           << newKeyFrameTimes_ms[trackTotalTimeIndex] << ","
-          << trackTotalTimes_ms[trackTotalTimeIndex] << endl;
+          << trackTotalTimes_ms[trackTotalTimeIndex] << std::endl;
     }
 
     f.close();

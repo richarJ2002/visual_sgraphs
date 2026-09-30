@@ -794,52 +794,52 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         (localKeyFrameList.size() + fixedCameras.size()) *
         localMapPointList.size();
 
-    vector<vs_graphs::core::EdgeSE3ProjectXYZ *> edgesMonos;
+    std::vector<vs_graphs::core::EdgeSE3ProjectXYZ *> edgesMonos;
     edgesMonos.reserve(expectedSizeCount);
 
-    vector<vs_graphs::core::EdgeSE3ProjectXYZToBody *> edgesBodies;
+    std::vector<vs_graphs::core::EdgeSE3ProjectXYZToBody *> edgesBodies;
     edgesBodies.reserve(expectedSizeCount);
 
-    vector<KeyFrame *> edgeKeyFrameMonos;
+    std::vector<KeyFrame *> edgeKeyFrameMonos;
     edgeKeyFrameMonos.reserve(expectedSizeCount);
 
-    vector<KeyFrame *> edgeKeyFrameBodies;
+    std::vector<KeyFrame *> edgeKeyFrameBodies;
     edgeKeyFrameBodies.reserve(expectedSizeCount);
 
-    vector<MapPoint *> mapPointEdgeMonos;
+    std::vector<MapPoint *> mapPointEdgeMonos;
     mapPointEdgeMonos.reserve(expectedSizeCount);
 
-    vector<MapPoint *> mapPointEdgeBodies;
+    std::vector<MapPoint *> mapPointEdgeBodies;
     mapPointEdgeBodies.reserve(expectedSizeCount);
 
-    vector<g2o::EdgeStereoSE3ProjectXYZ *> edgesStereos;
+    std::vector<g2o::EdgeStereoSE3ProjectXYZ *> edgesStereos;
     edgesStereos.reserve(expectedSizeCount);
 
-    vector<KeyFrame *> edgeKeyFrameStereos;
+    std::vector<KeyFrame *> edgeKeyFrameStereos;
     edgeKeyFrameStereos.reserve(expectedSizeCount);
 
-    vector<MapPoint *> mapPointEdgeStereos;
+    std::vector<MapPoint *> mapPointEdgeStereos;
     mapPointEdgeStereos.reserve(expectedSizeCount);
 
     const int expectedSizePlaneCount =
         (localKeyFrameList.size() + fixedCameras.size()) *
         localPlaneList.size();
-    vector<EdgeVertexPlaneProjectSE3KF *> edgesPlanes;
+    std::vector<EdgeVertexPlaneProjectSE3KF *> edgesPlanes;
     edgesPlanes.reserve(expectedSizePlaneCount);
 
-    vector<KeyFrame *> edgeKeyFramePlanes;
+    std::vector<KeyFrame *> edgeKeyFramePlanes;
     edgeKeyFramePlanes.reserve(expectedSizePlaneCount);
 
-    vector<geometric::Plane *> planeEdgePlanes;
+    std::vector<geometric::Plane *> planeEdgePlanes;
     planeEdgePlanes.reserve(expectedSizePlaneCount);
 
-    vector<EdgeSE3KFPointToPlane *> edgesPlanePoints;
+    std::vector<EdgeSE3KFPointToPlane *> edgesPlanePoints;
     edgesPlanePoints.reserve(expectedSizePlaneCount);
 
-    vector<KeyFrame *> edgeKeyFramePlanePoints;
+    std::vector<KeyFrame *> edgeKeyFramePlanePoints;
     edgeKeyFramePlanePoints.reserve(expectedSizePlaneCount);
 
-    vector<geometric::Plane *> planeEdgePlanePoints;
+    std::vector<geometric::Plane *> planeEdgePlanePoints;
     planeEdgePlanePoints.reserve(expectedSizePlaneCount);
 
     const float thresholdHuber1d     = sqrt(3.841);
@@ -897,7 +897,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
 
         // Set edges
-        for (map<KeyFrame *, tuple<int, int>>::const_iterator
+        for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
                  mit  = observations.begin(),
                  mend = observations.end();
              mit != mend;
@@ -926,11 +926,11 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             }
             if (!keyFrameIsBad4 && p_keyFrameMap4 == p_currentMap)
             {
-                const int leftIndex = get<0>(mit->second);
+                const int leftIndex = std::get<0>(mit->second);
 
                 // Monocular observation
                 if (leftIndex != -1 &&
-                    p_keyFrame->uRight[get<0>(mit->second)] < 0)
+                    p_keyFrame->uRight[std::get<0>(mit->second)] < 0)
                 {
                     const cv::KeyPoint &keyPointUn =
                         p_keyFrame->keyPointsUndistorted[leftIndex];
@@ -966,14 +966,14 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                     edgeCount++;
                 }
                 else if (leftIndex != -1 &&
-                         p_keyFrame->uRight[get<0>(mit->second)] >=
+                         p_keyFrame->uRight[std::get<0>(mit->second)] >=
                              0) // Stereo observation
                 {
                     const cv::KeyPoint &keyPointUn =
                         p_keyFrame->keyPointsUndistorted[leftIndex];
                     Eigen::Matrix<double, 3, 1> observation;
                     const float                 rightKeyPointU =
-                        p_keyFrame->uRight[get<0>(mit->second)];
+                        p_keyFrame->uRight[std::get<0>(mit->second)];
                     observation << keyPointUn.pt.x, keyPointUn.pt.y,
                         rightKeyPointU;
 
@@ -1020,7 +1020,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
 
                 if (p_keyFrame->p_camera2)
                 {
-                    int rightIndex = get<1>(mit->second);
+                    int rightIndex = std::get<1>(mit->second);
 
                     if (rightIndex != -1 &&
                         rightIndex < (int)p_keyFrame->keyPointsRight.size())
@@ -1090,8 +1090,9 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     edgeCount_out = edgeCount;
 
     // [LBA] Markers
-    for (list<semantic::Marker *>::iterator markerIt = localMarkerList.begin(),
-                                            lend     = localMarkerList.end();
+    for (std::list<semantic::Marker *>::iterator
+             markerIt = localMarkerList.begin(),
+             lend     = localMarkerList.end();
          markerIt != lend;
          markerIt++)
     {
@@ -1190,7 +1191,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         if (p_sysParams->optimization.planeMapPoint.enabled &&
             !p_sysParams->optimization.shouldMarginalizePlanes)
         {
-            set<MapPoint *> mapPoints{};
+            std::set<MapPoint *> mapPoints{};
             if (p_mapPlane->getMapPoints(mapPoints) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
@@ -1199,8 +1200,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            for (set<MapPoint *>::iterator lit  = mapPoints.begin(),
-                                           lend = mapPoints.end();
+            for (std::set<MapPoint *>::iterator lit  = mapPoints.begin(),
+                                                lend = mapPoints.end();
                  lit != lend;
                  lit++)
             {
@@ -1248,7 +1249,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
 
         // Adding an edge between the plane and the keyframes
-        map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
+        std::map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
             observations{};
         if (p_mapPlane->getObservations(observations) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -1258,7 +1259,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        for (map<KeyFrame *,
+        for (std::map<
+                 KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>::const_iterator
                  observationId = observations.begin(),
                  obLast        = observations.end();
@@ -1699,11 +1701,11 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     optimizer.initializeOptimization();
     optimizer.optimize(10);
 
-    vector<pair<KeyFrame *, MapPoint *>> vToErase;
+    std::vector<std::pair<KeyFrame *, MapPoint *>> vToErase;
     vToErase.reserve(edgesMonos.size() + edgesBodies.size() +
                      edgesStereos.size());
 
-    vector<pair<KeyFrame *, geometric::Plane *>> vToErasePlane;
+    std::vector<std::pair<KeyFrame *, geometric::Plane *>> vToErasePlane;
     vToErasePlane.reserve(edgesPlanes.size() * 2);
 
     // Check inlier observations
@@ -1730,7 +1732,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         if (e->chi2() > 5.991 || !e->isDepthPositive())
         {
             KeyFrame *p_keyFrame = edgeKeyFrameMonos[edgeIndex];
-            vToErase.push_back(make_pair(p_keyFrame, p_mapPoint));
+            vToErase.push_back(std::make_pair(p_keyFrame, p_mapPoint));
         }
     }
 
@@ -1757,7 +1759,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         if (e->chi2() > 5.991 || !e->isDepthPositive())
         {
             KeyFrame *p_keyFrame = edgeKeyFrameBodies[edgeIndex];
-            vToErase.push_back(make_pair(p_keyFrame, p_mapPoint));
+            vToErase.push_back(std::make_pair(p_keyFrame, p_mapPoint));
         }
     }
 
@@ -1784,7 +1786,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         if (e->chi2() > 7.815 || !e->isDepthPositive())
         {
             KeyFrame *p_keyFrame = edgeKeyFrameStereos[edgeIndex];
-            vToErase.push_back(make_pair(p_keyFrame, p_mapPoint));
+            vToErase.push_back(std::make_pair(p_keyFrame, p_mapPoint));
         }
     }
 
@@ -1812,7 +1814,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
 
             // if not already in ToErase, add it
             std::pair<KeyFrame *, geometric::Plane *> keyFramePlane =
-                make_pair(edgeKeyFramePlanes[edgeIndex], p_edgePlane);
+                std::make_pair(edgeKeyFramePlanes[edgeIndex], p_edgePlane);
             if (std::find(vToErasePlane.begin(),
                           vToErasePlane.end(),
                           keyFramePlane) == vToErasePlane.end())
@@ -1844,7 +1846,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         {
             // if not already in ToErase, add it
             std::pair<KeyFrame *, geometric::Plane *> keyFramePlane =
-                make_pair(edgeKeyFramePlanePoints[edgeIndex], p_edgePlane);
+                std::make_pair(edgeKeyFramePlanePoints[edgeIndex], p_edgePlane);
             if (std::find(vToErasePlane.begin(),
                           vToErasePlane.end(),
                           keyFramePlane) == vToErasePlane.end())
@@ -1855,7 +1857,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     }
 
     // Get Map Mutex
-    unique_lock<mutex> lock(p_map_inout->mapUpdateMutex);
+    std::unique_lock<std::mutex> lock(p_map_inout->mapUpdateMutex);
 
     if (!vToErase.empty())
     {
@@ -1909,8 +1911,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     }
 
     // [LBA] Locally optimized KeyFrames
-    for (list<KeyFrame *>::iterator lit  = localKeyFrameList.begin(),
-                                    lend = localKeyFrameList.end();
+    for (std::list<KeyFrame *>::iterator lit  = localKeyFrameList.begin(),
+                                         lend = localKeyFrameList.end();
          lit != lend;
          lit++)
     {
@@ -1942,8 +1944,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     }
 
     // [LBA] Locally optimized MapPoints
-    for (list<MapPoint *>::iterator lit  = localMapPointList.begin(),
-                                    lend = localMapPointList.end();
+    for (std::list<MapPoint *>::iterator lit  = localMapPointList.begin(),
+                                         lend = localMapPointList.end();
          lit != lend;
          lit++)
     {
@@ -1982,8 +1984,9 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     }
 
     // [LBA] Locally optimized markers
-    for (list<semantic::Marker *>::iterator markerIt = localMarkerList.begin(),
-                                            lend     = localMarkerList.end();
+    for (std::list<semantic::Marker *>::iterator
+             markerIt = localMarkerList.begin(),
+             lend     = localMarkerList.end();
          markerIt != lend;
          markerIt++)
     {

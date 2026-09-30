@@ -35,7 +35,7 @@ namespace core
 LocalMappingStatus LocalMapping::setNotStop(bool  shouldPreventStop_in,
                                             bool &wasSet_out)
 {
-    unique_lock<mutex> stopLock(stopMutex);
+    std::unique_lock<std::mutex> stopLock(stopMutex);
 
     if (shouldPreventStop_in && hasStopped)
     {

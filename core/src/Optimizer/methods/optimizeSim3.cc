@@ -37,7 +37,7 @@ namespace core
 OptimizerStatus
     Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
                             KeyFrame                    *p_keyFrame2_in,
-                            vector<MapPoint *>          &matches1_inout,
+                            std::vector<MapPoint *>     &matches1_inout,
                             g2o::Sim3                   &g2oS12_inout,
                             const float                  threshold2_in,
                             const bool                   isScaleFixed_in,
@@ -117,17 +117,17 @@ OptimizerStatus
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    vector<vs_graphs::core::EdgeSim3ProjectXYZ *>        edges12;
-    vector<vs_graphs::core::EdgeInverseSim3ProjectXYZ *> edges21;
-    vector<size_t>                                       edgeIndices;
-    vector<bool>                                         isInKeyFrame2Flags;
+    std::vector<vs_graphs::core::EdgeSim3ProjectXYZ *>        edges12;
+    std::vector<vs_graphs::core::EdgeInverseSim3ProjectXYZ *> edges21;
+    std::vector<size_t>                                       edgeIndices;
+    std::vector<bool> isInKeyFrame2Flags;
 
     edgeIndices.reserve(2 * N);
     edges12.reserve(2 * N);
     edges21.reserve(2 * N);
     isInKeyFrame2Flags.reserve(2 * N);
 
-    const float deltaHuber = sqrt(threshold2_in);
+    const float deltaHuber = std::sqrt(threshold2_in);
 
     int correspondenceCount       = 0;
     int badMapPointCount          = 0;
@@ -135,7 +135,7 @@ OptimizerStatus
     int outKeyFrame2Count         = 0;
     int matchWithoutMapPointCount = 0;
 
-    vector<int> idsOnlyInKeyFrame2;
+    std::vector<int> idsOnlyInKeyFrame2;
 
     for (int edges12Index = 0; edges12Index < N; edges12Index++)
     {
@@ -158,7 +158,7 @@ OptimizerStatus
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const int i2 = get<0>(mapPoint2IndexInKeyFrame);
+        const int i2 = std::get<0>(mapPoint2IndexInKeyFrame);
 
         Eigen::Vector3f P3D1c;
         Eigen::Vector3f P3D2c;
@@ -269,10 +269,10 @@ OptimizerStatus
 
         if (i2 < 0 && !shouldUseAllPoints_in)
         {
-            if (Verbose::printMess(
-                    "    Remove point -> i2: " + to_string(i2) +
-                        "; bAllPoints: " + to_string(shouldUseAllPoints_in),
-                    Verbose::VERBOSITY_DEBUG) !=
+            if (Verbose::printMess("    Remove point -> i2: " +
+                                       std::to_string(i2) + "; bAllPoints: " +
+                                       std::to_string(shouldUseAllPoints_in),
+                                   Verbose::VERBOSITY_DEBUG) !=
                 VerboseStatus::VERBOSE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

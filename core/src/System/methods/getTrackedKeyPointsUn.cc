@@ -33,7 +33,7 @@ namespace core
 SystemStatus System::getTrackedKeyPointsUn(
     std::vector<cv::KeyPoint> &trackedKeyPointsUn_out)
 {
-    unique_lock<mutex> lock(stateMutex);
+    std::unique_lock<std::mutex> lock(stateMutex);
     trackedKeyPointsUn_out = trackedKeyPointsUn;
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }

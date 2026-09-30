@@ -30,8 +30,8 @@ namespace vs_graphs
 namespace core
 {
 
-bool sortByVal(const pair<MapPoint *, int> &firstEntry_in,
-               const pair<MapPoint *, int> &secondEntry_in)
+bool sortByVal(const std::pair<MapPoint *, int> &firstEntry_in,
+               const std::pair<MapPoint *, int> &secondEntry_in)
 {
     return (firstEntry_in.second < secondEntry_in.second);
 }

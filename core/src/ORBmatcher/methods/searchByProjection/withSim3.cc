@@ -32,20 +32,21 @@ namespace core
 {
 
 ORBmatcherStatus
-    ORBmatcher::searchByProjection(KeyFrame                 *pKF,
-                                   Sophus::Sim3f            &Scw,
-                                   const vector<MapPoint *> &vpPoints,
-                                   vector<MapPoint *>       &matched_inout,
-                                   int                       th,
-                                   int                      &byProjection_out,
-                                   float                     ratioHamming)
+    ORBmatcher::searchByProjection(KeyFrame                      *pKF,
+                                   Sophus::Sim3f                 &Scw,
+                                   const std::vector<MapPoint *> &vpPoints,
+                                   std::vector<MapPoint *>       &matched_inout,
+                                   int                            th,
+                                   int  &byProjection_out,
+                                   float ratioHamming)
 {
     Sophus::SE3f Tcw =
         Sophus::SE3f(Scw.rotationMatrix(), Scw.translation() / Scw.scale());
     Eigen::Vector3f Ow = Tcw.inverse().translation();
 
     // Set of MapPoints already found in the KeyFrame
-    set<MapPoint *> alreadyFounds(matched_inout.begin(), matched_inout.end());
+    std::set<MapPoint *> alreadyFounds(matched_inout.begin(),
+                                       matched_inout.end());
     alreadyFounds.erase(static_cast<MapPoint *>(nullptr));
 
     int nmatches = 0;
@@ -184,8 +185,8 @@ ORBmatcherStatus
 
         int bestDistance = 256;
         int bestIndex    = -1;
-        for (vector<size_t>::const_iterator vit  = indices.begin(),
-                                            vend = indices.end();
+        for (std::vector<size_t>::const_iterator vit  = indices.begin(),
+                                                 vend = indices.end();
              vit != vend;
              vit++)
         {

@@ -44,7 +44,7 @@ MapStatus Map::addMapPlane(geometric::Plane *p_plane_inout)
         return MapStatus::MAP_STATUS_SUCCESS;
     }
 
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     for (auto planeIterator = planeIndex.begin();
          planeIterator != planeIndex.end();)

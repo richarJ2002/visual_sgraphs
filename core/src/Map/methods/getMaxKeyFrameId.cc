@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getMaxKeyFrameId(unsigned long &maxKeyFrameId_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     maxKeyFrameId_out = maxKeyFrameId;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

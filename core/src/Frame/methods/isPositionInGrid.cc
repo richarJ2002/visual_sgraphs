@@ -49,9 +49,9 @@ FrameStatus Frame::isPositionInGrid(const cv::KeyPoint &keyPoint_in,
                                     bool               &isPositionInGrid_out)
 {
     positionX_out =
-        round((keyPoint_in.pt.x - gridMinX) * gridElementWidthInverse);
+        std::round((keyPoint_in.pt.x - gridMinX) * gridElementWidthInverse);
     positionY_out =
-        round((keyPoint_in.pt.y - gridMinY) * gridElementHeightInverse);
+        std::round((keyPoint_in.pt.y - gridMinY) * gridElementHeightInverse);
 
     // Keypoint's coordinates are undistorted, which could cause to go out of
     // the image

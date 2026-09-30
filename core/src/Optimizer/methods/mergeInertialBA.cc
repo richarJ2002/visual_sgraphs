@@ -48,12 +48,12 @@ OptimizerStatus
     const int           Nd                = 6;
     const unsigned long maximumKeyFrameId = p_currentKeyFrame_inout->id;
 
-    vector<KeyFrame *> optimizableKeyFrames;
+    std::vector<KeyFrame *> optimizableKeyFrames;
     optimizableKeyFrames.reserve(2 * Nd);
 
     // For cov KFS, inertial parameters are not optimized
-    const int          maximumCovisibleKeyFrameCount = 30;
-    vector<KeyFrame *> optimizableCovisibleKeyFrames;
+    const int               maximumCovisibleKeyFrameCount = 30;
+    std::vector<KeyFrame *> optimizableCovisibleKeyFrames;
     optimizableCovisibleKeyFrames.reserve(maximumCovisibleKeyFrameCount);
 
     // Add sliding window for current KF
@@ -72,7 +72,7 @@ OptimizerStatus
             break;
     }
 
-    list<KeyFrame *> fixedKeyFrames;
+    std::list<KeyFrame *> fixedKeyFrames;
     if (optimizableKeyFrames.back()->p_prevKF)
     {
         optimizableCovisibleKeyFrames.push_back(
@@ -144,8 +144,8 @@ OptimizerStatus
     int N = optimizableKeyFrames.size();
 
     // Optimizable points seen by optimizable keyframes
-    list<MapPoint *>     localMapPointList;
-    map<MapPoint *, int> localObservationCounts;
+    std::list<MapPoint *>     localMapPointList;
+    std::map<MapPoint *, int> localObservationCounts;
     for (int i = 0; i < N; i++)
     {
         std::vector<MapPoint *> mapPoints{};
@@ -157,8 +157,8 @@ OptimizerStatus
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        for (vector<MapPoint *>::iterator vit  = mapPoints.begin(),
-                                          vend = mapPoints.end();
+        for (std::vector<MapPoint *>::iterator vit  = mapPoints.begin(),
+                                               vend = mapPoints.end();
              vit != vend;
              vit++)
         {
@@ -201,13 +201,13 @@ OptimizerStatus
          itr != localObservationCounts.end();
          ++itr)
         pairs.push_back(*itr);
-    sort(pairs.begin(), pairs.end(), sortByVal);
+    std::sort(pairs.begin(), pairs.end(), sortByVal);
 
     // Fixed Keyframes. Keyframes that see Local MapPoints but that are not
     // Local Keyframes
     int i = 0;
-    for (vector<pair<MapPoint *, int>>::iterator lit  = pairs.begin(),
-                                                 lend = pairs.end();
+    for (std::vector<std::pair<MapPoint *, int>>::iterator lit  = pairs.begin(),
+                                                           lend = pairs.end();
          lit != lend;
          lit++, i++)
     {
@@ -222,7 +222,7 @@ OptimizerStatus
         }
         if (i >= maximumCovisibleKeyFrameCount)
             break;
-        for (map<KeyFrame *, tuple<int, int>>::iterator
+        for (std::map<KeyFrame *, std::tuple<int, int>>::iterator
                  mit  = observations.begin(),
                  mend = observations.end();
              mit != mend;
@@ -334,8 +334,8 @@ OptimizerStatus
     }
 
     // Set Fixed KeyFrame vertices
-    for (list<KeyFrame *>::iterator lit  = fixedKeyFrames.begin(),
-                                    lend = fixedKeyFrames.end();
+    for (std::list<KeyFrame *>::iterator lit  = fixedKeyFrames.begin(),
+                                         lend = fixedKeyFrames.end();
          lit != lend;
          lit++)
     {
@@ -367,9 +367,9 @@ OptimizerStatus
     }
 
     // Create intertial constraints
-    vector<EdgeInertial *> vei(N, (EdgeInertial *)nullptr);
-    vector<EdgeGyroRW *>   vegr(N, (EdgeGyroRW *)nullptr);
-    vector<EdgeAccRW *>    vear(N, (EdgeAccRW *)nullptr);
+    std::vector<EdgeInertial *> vei(N, (EdgeInertial *)nullptr);
+    std::vector<EdgeGyroRW *>   vegr(N, (EdgeGyroRW *)nullptr);
+    std::vector<EdgeAccRW *>    vear(N, (EdgeAccRW *)nullptr);
     for (int i = 0; i < N; i++)
     {
         // cout << "inserting inertial edge " << i << endl;
@@ -431,12 +431,14 @@ OptimizerStatus
                 !p_secondPoseVertex || !p_secondVelocityVertex ||
                 !p_secondGyroBiasVertex || !p_secondAccelerometerBiasVertex)
             {
-                cerr << "Error " << p_firstPoseVertex << ", "
-                     << p_firstVelocityVertex << ", " << p_firstGyroBiasVertex
-                     << ", " << p_firstAccelerometerBiasVertex << ", "
-                     << p_secondPoseVertex << ", " << p_secondVelocityVertex
-                     << ", " << p_secondGyroBiasVertex << ", "
-                     << p_secondAccelerometerBiasVertex << endl;
+                std::cerr << "Error " << p_firstPoseVertex << ", "
+                          << p_firstVelocityVertex << ", "
+                          << p_firstGyroBiasVertex << ", "
+                          << p_firstAccelerometerBiasVertex << ", "
+                          << p_secondPoseVertex << ", "
+                          << p_secondVelocityVertex << ", "
+                          << p_secondGyroBiasVertex << ", "
+                          << p_secondAccelerometerBiasVertex << std::endl;
                 continue;
             }
 
@@ -517,23 +519,23 @@ OptimizerStatus
         localMapPointList.size();
 
     // Mono
-    vector<EdgeMono *> edgesMonos;
+    std::vector<EdgeMono *> edgesMonos;
     edgesMonos.reserve(expectedSizeCount);
 
-    vector<KeyFrame *> edgeKeyFrameMonos;
+    std::vector<KeyFrame *> edgeKeyFrameMonos;
     edgeKeyFrameMonos.reserve(expectedSizeCount);
 
-    vector<MapPoint *> mapPointEdgeMonos;
+    std::vector<MapPoint *> mapPointEdgeMonos;
     mapPointEdgeMonos.reserve(expectedSizeCount);
 
     // Stereo
-    vector<EdgeStereo *> edgesStereos;
+    std::vector<EdgeStereo *> edgesStereos;
     edgesStereos.reserve(expectedSizeCount);
 
-    vector<KeyFrame *> edgeKeyFrameStereos;
+    std::vector<KeyFrame *> edgeKeyFrameStereos;
     edgeKeyFrameStereos.reserve(expectedSizeCount);
 
-    vector<MapPoint *> mapPointEdgeStereos;
+    std::vector<MapPoint *> mapPointEdgeStereos;
     mapPointEdgeStereos.reserve(expectedSizeCount);
 
     const float thresholdHuberMono   = sqrt(5.991);
@@ -543,8 +545,8 @@ OptimizerStatus
 
     const unsigned long initialMapPointId = maximumKeyFrameId * 5;
 
-    for (list<MapPoint *>::iterator lit  = localMapPointList.begin(),
-                                    lend = localMapPointList.end();
+    for (std::list<MapPoint *>::iterator lit  = localMapPointList.begin(),
+                                         lend = localMapPointList.end();
          lit != lend;
          lit++)
     {
@@ -580,7 +582,7 @@ OptimizerStatus
         }
 
         // Create visual constraints
-        for (map<KeyFrame *, tuple<int, int>>::const_iterator
+        for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
                  mit  = observations.begin(),
                  mend = observations.end();
              mit != mend;
@@ -617,9 +619,9 @@ OptimizerStatus
             if (!keyFrameIsBad2)
             {
                 const cv::KeyPoint &keyPointUn =
-                    p_keyFrame->keyPointsUndistorted[get<0>(mit->second)];
+                    p_keyFrame->keyPointsUndistorted[std::get<0>(mit->second)];
 
-                if (p_keyFrame->uRight[get<0>(mit->second)] <
+                if (p_keyFrame->uRight[std::get<0>(mit->second)] <
                     0) // Monocular observation
                 {
                     Eigen::Matrix<double, 2, 1> observation;
@@ -649,7 +651,7 @@ OptimizerStatus
                 else // stereo observation
                 {
                     const float rightKeyPointU =
-                        p_keyFrame->uRight[get<0>(mit->second)];
+                        p_keyFrame->uRight[std::get<0>(mit->second)];
                     Eigen::Matrix<double, 3, 1> observation;
                     observation << keyPointUn.pt.x, keyPointUn.pt.y,
                         rightKeyPointU;
@@ -691,7 +693,7 @@ OptimizerStatus
     optimizer.initializeOptimization();
     optimizer.optimize(8);
 
-    vector<pair<KeyFrame *, MapPoint *>> vToErase;
+    std::vector<std::pair<KeyFrame *, MapPoint *>> vToErase;
     vToErase.reserve(edgesMonos.size() + edgesStereos.size());
 
     // Check inlier observations
@@ -716,7 +718,7 @@ OptimizerStatus
         if (e->chi2() > chi2Mono2)
         {
             KeyFrame *p_keyFrame = edgeKeyFrameMonos[i];
-            vToErase.push_back(make_pair(p_keyFrame, p_mapPoint));
+            vToErase.push_back(std::make_pair(p_keyFrame, p_mapPoint));
         }
     }
 
@@ -741,12 +743,12 @@ OptimizerStatus
         if (e->chi2() > chi2Stereo2)
         {
             KeyFrame *p_keyFrame = edgeKeyFrameStereos[i];
-            vToErase.push_back(make_pair(p_keyFrame, p_mapPoint));
+            vToErase.push_back(std::make_pair(p_keyFrame, p_mapPoint));
         }
     }
 
     // Get Map Mutex and erase outliers
-    unique_lock<mutex> lock(p_map_inout->mapUpdateMutex);
+    std::unique_lock<std::mutex> lock(p_map_inout->mapUpdateMutex);
     if (!vToErase.empty())
     {
         for (size_t i = 0; i < vToErase.size(); i++)
@@ -901,8 +903,8 @@ OptimizerStatus
     }
 
     // Points
-    for (list<MapPoint *>::iterator lit  = localMapPointList.begin(),
-                                    lend = localMapPointList.end();
+    for (std::list<MapPoint *>::iterator lit  = localMapPointList.begin(),
+                                         lend = localMapPointList.end();
          lit != lend;
          lit++)
     {

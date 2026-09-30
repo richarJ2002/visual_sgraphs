@@ -35,12 +35,12 @@ class Sim3Solver
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Sim3Solver(
-        KeyFrame                      *p_keyFrame1_inout,
-        KeyFrame                      *p_keyFrame2_inout,
-        const std::vector<MapPoint *> &matched12_in,
-        const bool                     isScaleFixed_in = true,
-        vector<KeyFrame *> keyFrameMatchedMapPoints_in = vector<KeyFrame *>()) :
+    Sim3Solver(KeyFrame                      *p_keyFrame1_inout,
+               KeyFrame                      *p_keyFrame2_inout,
+               const std::vector<MapPoint *> &matched12_in,
+               const bool                     isScaleFixed_in = true,
+               std::vector<KeyFrame *>        keyFrameMatchedMapPoints_in =
+                   std::vector<KeyFrame *>()) :
         iterationCount(0),
         bestInlierCount(0),
         isScaleFixed(isScaleFixed_in),
@@ -52,7 +52,7 @@ class Sim3Solver
         {
             areKeyFramesDifferent = true;
             keyFrameMatchedMapPoints_in =
-                vector<KeyFrame *>(matched12_in.size(), p_keyFrame2_inout);
+                std::vector<KeyFrame *>(matched12_in.size(), p_keyFrame2_inout);
         }
 
         p_keyFrame1 = p_keyFrame1_inout;
@@ -165,7 +165,7 @@ class Sim3Solver
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                int indexKeyFrame1 = get<0>(mapPoint1IndexInKeyFrame);
+                int indexKeyFrame1 = std::get<0>(mapPoint1IndexInKeyFrame);
                 std::tuple<int, int> mapPoint2IndexInKeyFrame{};
                 if (p_mapPoint2->getIndexInKeyFrame(pKFm,
                                                     mapPoint2IndexInKeyFrame) !=
@@ -177,7 +177,7 @@ class Sim3Solver
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                int indexKeyFrame2 = get<0>(mapPoint2IndexInKeyFrame);
+                int indexKeyFrame2 = std::get<0>(mapPoint2IndexInKeyFrame);
 
                 if (indexKeyFrame1 < 0 || indexKeyFrame2 < 0)
                     continue;
@@ -271,10 +271,10 @@ class Sim3Solver
                                            Eigen::Matrix4f   &transform_out);
     [[nodiscard]] Sim3SolverStatus iterate(int   iterationCount_in,
                                            bool &areIterationsExhausted_out,
-                                           vector<bool>    &inliersFlags_out,
-                                           int             &inlierCount_out,
-                                           bool            &hasConverged_out,
-                                           Eigen::Matrix4f &transform_out);
+                                           std::vector<bool> &inliersFlags_out,
+                                           int               &inlierCount_out,
+                                           bool              &hasConverged_out,
+                                           Eigen::Matrix4f   &transform_out);
 
     [[nodiscard]] Sim3SolverStatus getEstimatedTransformation(
         Eigen::Matrix4f &estimatedTransformation_out);

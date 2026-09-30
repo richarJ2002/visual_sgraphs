@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getMergeEdges(std::set<KeyFrame *> &mergeEdges_out)
 {
-    unique_lock<mutex> lockCon(connectionsMutex);
+    std::unique_lock<std::mutex> lockCon(connectionsMutex);
     mergeEdges_out = mergeEdges;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

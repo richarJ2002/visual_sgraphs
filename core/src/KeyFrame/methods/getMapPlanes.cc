@@ -38,7 +38,7 @@ namespace core
 KeyFrameStatus
     KeyFrame::getMapPlanes(std::vector<geometric::Plane *> &mapPlanes_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     mapPlanes_out = mapPlanes;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

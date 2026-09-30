@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-SystemStatus System::saveMap(const string &filename_in, bool &isSaved_out)
+SystemStatus System::saveMap(const std::string &filename_in, bool &isSaved_out)
 {
     saveAtlasFile = filename_in;
     if (!saveAtlasFile.empty())

@@ -51,24 +51,24 @@ FrameStatus Frame::getFeaturesInArea(const float         &x_in,
                                      const int            maximumLevel_in,
                                      const bool isRightCamera_in) const
 {
-    vector<size_t> indices;
+    std::vector<size_t> indices;
     indices.reserve(keyPointCount);
 
     float factorX = r_in;
     float factorY = r_in;
 
-    const int minimumCellXCount =
-        max(0,
-            (int)floor((x_in - gridMinX - factorX) * gridElementWidthInverse));
+    const int minimumCellXCount = std::max(
+        0,
+        (int)std::floor((x_in - gridMinX - factorX) * gridElementWidthInverse));
     if (minimumCellXCount >= FRAME_GRID_COLS)
     {
         featuresInArea_out = indices;
         return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
-    const int maximumCellXCount =
-        min((int)FRAME_GRID_COLS - 1,
-            (int)ceil((x_in - gridMinX + factorX) * gridElementWidthInverse));
+    const int maximumCellXCount = std::min(
+        (int)FRAME_GRID_COLS - 1,
+        (int)std::ceil((x_in - gridMinX + factorX) * gridElementWidthInverse));
     if (maximumCellXCount < 0)
     {
         featuresInArea_out = indices;
@@ -76,17 +76,18 @@ FrameStatus Frame::getFeaturesInArea(const float         &x_in,
     }
 
     const int minimumCellYCount =
-        max(0,
-            (int)floor((y_in - gridMinY - factorY) * gridElementHeightInverse));
+        std::max(0,
+                 (int)std::floor((y_in - gridMinY - factorY) *
+                                 gridElementHeightInverse));
     if (minimumCellYCount >= FRAME_GRID_ROWS)
     {
         featuresInArea_out = indices;
         return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
-    const int maximumCellYCount =
-        min((int)FRAME_GRID_ROWS - 1,
-            (int)ceil((y_in - gridMinY + factorY) * gridElementHeightInverse));
+    const int maximumCellYCount = std::min(
+        (int)FRAME_GRID_ROWS - 1,
+        (int)std::ceil((y_in - gridMinY + factorY) * gridElementHeightInverse));
     if (maximumCellYCount < 0)
     {
         featuresInArea_out = indices;
@@ -100,7 +101,7 @@ FrameStatus Frame::getFeaturesInArea(const float         &x_in,
     {
         for (int iy = minimumCellYCount; iy <= maximumCellYCount; iy++)
         {
-            const vector<size_t> cells =
+            const std::vector<size_t> cells =
                 (!isRightCamera_in) ? grid[ix][iy] : gridRight[ix][iy];
             if (cells.empty())
                 continue;
@@ -127,7 +128,7 @@ FrameStatus Frame::getFeaturesInArea(const float         &x_in,
                 const float distx = keyPointUn.pt.x - x_in;
                 const float disty = keyPointUn.pt.y - y_in;
 
-                if (fabs(distx) < factorX && fabs(disty) < factorY)
+                if (std::fabs(distx) < factorX && std::fabs(disty) < factorY)
                     indices.push_back(cells[cellFeatureIndex]);
             }
         }

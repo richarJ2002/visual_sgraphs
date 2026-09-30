@@ -62,7 +62,8 @@ TrackingStatus Tracking::parseIMUParamFile(cv::FileStorage &settings_in,
         isParsed_out = false;
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
-    cout << "\t- Left camera to Imu Transform (Tbc): " << endl << cvTbc << endl;
+    std::cout << "\t- Left camera to Imu Transform (Tbc): " << std::endl
+              << cvTbc << std::endl;
     Eigen::Matrix<float, 4, 4, Eigen::RowMajor> eigTbc(cvTbc.ptr<float>(0));
     Sophus::SE3f                                Tbc(eigTbc);
 
@@ -74,7 +75,8 @@ TrackingStatus Tracking::parseIMUParamFile(cv::FileStorage &settings_in,
     }
 
     if (!shouldInsertKeyFramesWhenLost)
-        cout << "Do not insert keyframes when lost visual tracking " << endl;
+        std::cout << "Do not insert keyframes when lost visual tracking "
+                  << std::endl;
 
     node = settings_in["IMU.Frequency"];
     if (!node.empty() && node.isInt())
@@ -169,13 +171,16 @@ TrackingStatus Tracking::parseIMUParamFile(cv::FileStorage &settings_in,
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    const float sf = sqrt(imuFrequency);
-    cout << endl;
-    cout << "IMU frequency: " << imuFrequency << " Hz" << endl;
-    cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << endl;
-    cout << "IMU gyro walk: " << gwCount << " rad/s^2/sqrt(Hz)" << endl;
-    cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << endl;
-    cout << "IMU accelerometer walk: " << awCount << " m/s^3/sqrt(Hz)" << endl;
+    const float sf = std::sqrt(imuFrequency);
+    std::cout << std::endl;
+    std::cout << "IMU frequency: " << imuFrequency << " Hz" << std::endl;
+    std::cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << std::endl;
+    std::cout << "IMU gyro walk: " << gwCount << " rad/s^2/sqrt(Hz)"
+              << std::endl;
+    std::cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)"
+              << std::endl;
+    std::cout << "IMU accelerometer walk: " << awCount << " m/s^3/sqrt(Hz)"
+              << std::endl;
 
     p_imuCalibration =
         new IMU::Calib(Tbc, Ng * sf, Na * sf, gwCount / sf, awCount / sf);

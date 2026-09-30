@@ -34,8 +34,8 @@ namespace core
 AtlasStatus Atlas::getPlaneById(int                planeId_in,
                                 geometric::Plane *&p_planeById_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    geometric::Plane  *p_activeMapPlaneById = nullptr;
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    geometric::Plane            *p_activeMapPlaneById = nullptr;
     if ((p_activeMap != nullptr) &&
         p_activeMap->getPlaneById(planeId_in, p_activeMapPlaneById) !=
             MapStatus::MAP_STATUS_SUCCESS)

@@ -52,7 +52,7 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
                                    const float         s_in,
                                    const bool          isScaledVelocity_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     // Body position (IMU) of first keyframe is fixed to (0,0,0)
     Sophus::SE3f    Tyw = T_in;
@@ -63,7 +63,7 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
                                                  tyw.cast<double>(),
                                                  static_cast<double>(s_in));
 
-    for (set<KeyFrame *>::iterator sit = keyFrames.begin();
+    for (std::set<KeyFrame *>::iterator sit = keyFrames.begin();
          sit != keyFrames.end();
          sit++)
     {
@@ -121,7 +121,7 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
         }
     }
 
-    for (set<MapPoint *>::iterator sit = mapPoints.begin();
+    for (std::set<MapPoint *>::iterator sit = mapPoints.begin();
          sit != mapPoints.end();
          sit++)
     {

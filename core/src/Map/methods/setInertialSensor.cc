@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::setInertialSensor()
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     isInertialMode = true;
 
     return MapStatus::MAP_STATUS_SUCCESS;

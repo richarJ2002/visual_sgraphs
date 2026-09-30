@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getWorldFrameEpoch(std::uint64_t &worldFrameEpoch_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     worldFrameEpoch_out = worldFrameEpoch;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

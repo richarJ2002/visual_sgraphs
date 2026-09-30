@@ -107,31 +107,31 @@ OptimizerStatus Optimizer::bundleAdjustment(
 
     const int expectedEdgeCount = (keyFrames_in.size()) * mapPoints_in.size();
 
-    vector<vs_graphs::core::EdgeSE3ProjectXYZ *> monoEdges;
+    std::vector<vs_graphs::core::EdgeSE3ProjectXYZ *> monoEdges;
     monoEdges.reserve(expectedEdgeCount);
 
-    vector<vs_graphs::core::EdgeSE3ProjectXYZToBody *> bodyEdges;
+    std::vector<vs_graphs::core::EdgeSE3ProjectXYZToBody *> bodyEdges;
     bodyEdges.reserve(expectedEdgeCount);
 
-    vector<KeyFrame *> monoEdgeKeyFrames;
+    std::vector<KeyFrame *> monoEdgeKeyFrames;
     monoEdgeKeyFrames.reserve(expectedEdgeCount);
 
-    vector<KeyFrame *> bodyEdgeKeyFrames;
+    std::vector<KeyFrame *> bodyEdgeKeyFrames;
     bodyEdgeKeyFrames.reserve(expectedEdgeCount);
 
-    vector<MapPoint *> monoEdgeMapPoints;
+    std::vector<MapPoint *> monoEdgeMapPoints;
     monoEdgeMapPoints.reserve(expectedEdgeCount);
 
-    vector<MapPoint *> bodyEdgeMapPoints;
+    std::vector<MapPoint *> bodyEdgeMapPoints;
     bodyEdgeMapPoints.reserve(expectedEdgeCount);
 
-    vector<g2o::EdgeStereoSE3ProjectXYZ *> stereoEdges;
+    std::vector<g2o::EdgeStereoSE3ProjectXYZ *> stereoEdges;
     stereoEdges.reserve(expectedEdgeCount);
 
-    vector<KeyFrame *> stereoEdgeKeyFrames;
+    std::vector<KeyFrame *> stereoEdgeKeyFrames;
     stereoEdgeKeyFrames.reserve(expectedEdgeCount);
 
-    vector<MapPoint *> stereoEdgeMapPoints;
+    std::vector<MapPoint *> stereoEdgeMapPoints;
     stereoEdgeMapPoints.reserve(expectedEdgeCount);
 
     // [GBA] KeyFrames
@@ -238,7 +238,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
 
         int mapPointEdgeCount = 0;
         // SET EDGES
-        for (map<KeyFrame *, tuple<int, int>>::const_iterator
+        for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
                  featureObservationIt = observations.begin();
              featureObservationIt != observations.end();
              featureObservationIt++)
@@ -260,10 +260,11 @@ OptimizerStatus Optimizer::bundleAdjustment(
                 continue;
             mapPointEdgeCount++;
 
-            const int leftIndex = get<0>(featureObservationIt->second);
+            const int leftIndex = std::get<0>(featureObservationIt->second);
 
             if (leftIndex != -1 &&
-                p_keyFrame->uRight[get<0>(featureObservationIt->second)] < 0)
+                p_keyFrame->uRight[std::get<0>(featureObservationIt->second)] <
+                    0)
             {
                 const cv::KeyPoint &undistortedKeyPoint =
                     p_keyFrame->keyPointsUndistorted[leftIndex];
@@ -312,7 +313,8 @@ OptimizerStatus Optimizer::bundleAdjustment(
 
                 Eigen::Matrix<double, 3, 1> observation;
                 const float                 rightUCoordinate =
-                    p_keyFrame->uRight[get<0>(featureObservationIt->second)];
+                    p_keyFrame
+                        ->uRight[std::get<0>(featureObservationIt->second)];
                 observation << undistortedKeyPoint.pt.x,
                     undistortedKeyPoint.pt.y, rightUCoordinate;
 
@@ -356,7 +358,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
 
             if (p_keyFrame->p_camera2)
             {
-                int rightIndex = get<1>(featureObservationIt->second);
+                int rightIndex = std::get<1>(featureObservationIt->second);
 
                 if (rightIndex != -1 && static_cast<size_t>(rightIndex) <
                                             p_keyFrame->keyPointsRight.size())
@@ -521,7 +523,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
 
         // Adding an edge between the plane and the keyframes
-        map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
+        std::map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
             observations{};
         if (plane->getObservations(observations) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -531,7 +533,8 @@ OptimizerStatus Optimizer::bundleAdjustment(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        for (map<KeyFrame *,
+        for (std::map<
+                 KeyFrame *,
                  vs_graphs::core::geometric::Plane::Observation>::const_iterator
                  planeObservationIt  = observations.begin(),
                  planeObservationEnd = observations.end();
@@ -1134,7 +1137,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
             {
                 int monoBadPointCount = 0, monoOptimizedPointCount = 0;
                 int stereoBadPointCount = 0, stereoOptimizedPointCount = 0;
-                vector<MapPoint *> monoOptimizedMapPoints,
+                std::vector<MapPoint *> monoOptimizedMapPoints,
                     stereoOptimizedMapPoints;
 
                 for (size_t edgeIndex = 0, edgeCount = monoEdges.size();

@@ -90,9 +90,10 @@ MLPnPsolverStatus MLPnPsolver::setRansacParameters(double probability_in,
         nIterations = 1;
     else
         nIterations =
-            ceil(log(1 - ransacProb) / log(1 - pow(ransacEpsilon, 3)));
+            ceil(log(1 - ransacProb) / log(1 - std::pow(ransacEpsilon, 3)));
 
-    ransacMaxIterations = max(1, min(nIterations, ransacMaxIterations));
+    ransacMaxIterations =
+        std::max(1, std::min(nIterations, ransacMaxIterations));
 
     maxError.resize(sigmaSquared.size());
     for (size_t sigmaSquaredIndex = 0; sigmaSquaredIndex < sigmaSquared.size();

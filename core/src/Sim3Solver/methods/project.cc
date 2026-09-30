@@ -32,8 +32,8 @@ namespace core
 {
 
 Sim3SolverStatus Sim3Solver::project(
-    const vector<Eigen::Vector3f>                   &vP3Dw_in,
-    vector<Eigen::Vector2f>                         &points2D_out,
+    const std::vector<Eigen::Vector3f>              &vP3Dw_in,
+    std::vector<Eigen::Vector2f>                    &points2D_out,
     Eigen::Matrix4f                                  Tcw_in,
     camera_models::geometriccamera::GeometricCamera *p_camera_inout)
 {

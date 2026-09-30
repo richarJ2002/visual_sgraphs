@@ -44,9 +44,9 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
                      "fail; continuing as before.",
                      __func__);
     }
-    list<vs_graphs::core::KeyFrame *>::iterator rits =
+    std::list<vs_graphs::core::KeyFrame *>::iterator rits =
         referenceKeyFrames.begin();
-    list<bool>::iterator lbL = lostFlags.begin();
+    std::list<bool>::iterator lbL = lostFlags.begin();
     for (auto lit = relativeFramePoses.begin(), lend = relativeFramePoses.end();
          lit != lend;
          lit++, rits++, lbL++)

@@ -32,8 +32,8 @@ namespace core
 {
 
 Sim3SolverStatus Sim3Solver::fromCameraToImage(
-    const vector<Eigen::Vector3f>                   &vP3Dc_in,
-    vector<Eigen::Vector2f>                         &points2D_out,
+    const std::vector<Eigen::Vector3f>              &vP3Dc_in,
+    std::vector<Eigen::Vector2f>                    &points2D_out,
     camera_models::geometriccamera::GeometricCamera *p_camera_inout)
 {
     points2D_out.clear();

@@ -237,8 +237,8 @@ TrackingStatus Tracking::createInitialMapMonocular()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    std::cout << "- New map created with #" << to_string(atlasMapPointCount)
-              << " points!" << std::endl;
+    std::cout << "- New map created with #"
+              << std::to_string(atlasMapPointCount) << " points!" << std::endl;
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)

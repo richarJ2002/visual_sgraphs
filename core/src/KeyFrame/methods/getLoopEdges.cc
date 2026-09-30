@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getLoopEdges(std::set<KeyFrame *> &loopEdges_out)
 {
-    unique_lock<mutex> lockCon(connectionsMutex);
+    std::unique_lock<std::mutex> lockCon(connectionsMutex);
     loopEdges_out = loopEdges;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

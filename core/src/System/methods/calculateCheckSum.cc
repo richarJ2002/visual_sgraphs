@@ -34,21 +34,21 @@ namespace vs_graphs
 namespace core
 {
 
-SystemStatus System::calculateCheckSum(string  filename_in,
-                                       int     type_in,
-                                       string &checkSum_out)
+SystemStatus System::calculateCheckSum(std::string  filename_in,
+                                       int          type_in,
+                                       std::string &checkSum_out)
 {
-    string checksum = "";
+    std::string checksum = "";
 
     std::ios_base::openmode flags = std::ios::in;
     if (type_in == BINARY_FILE) // Binary file
         flags = std::ios::in | std::ios::binary;
 
-    ifstream f(filename_in.c_str(), flags);
+    std::ifstream f(filename_in.c_str(), flags);
     if (!f.is_open())
     {
-        cout << "[E] Unable to open the in file " << filename_in
-             << " for Md5 hash." << endl;
+        std::cout << "[E] Unable to open the in file " << filename_in
+                  << " for Md5 hash." << std::endl;
         checkSum_out = checksum;
         return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
@@ -63,16 +63,16 @@ SystemStatus System::calculateCheckSum(string  filename_in,
 
     if (!p_digestContext)
     {
-        cout << "[E] Unable to allocate the Md5 context for " << filename_in
-             << "." << endl;
+        std::cout << "[E] Unable to allocate the Md5 context for "
+                  << filename_in << "." << std::endl;
         checkSum_out = checksum;
         return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 
     if (EVP_DigestInit_ex(p_digestContext.get(), EVP_md5(), nullptr) != 1)
     {
-        cout << "[E] Unable to start the Md5 hash of " << filename_in << "."
-             << endl;
+        std::cout << "[E] Unable to start the Md5 hash of " << filename_in
+                  << "." << std::endl;
         checkSum_out = checksum;
         return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
@@ -85,8 +85,8 @@ SystemStatus System::calculateCheckSum(string  filename_in,
                              buffer,
                              static_cast<std::size_t>(count)) != 1)
         {
-            cout << "[E] Unable to hash the contents of " << filename_in << "."
-                 << endl;
+            std::cout << "[E] Unable to hash the contents of " << filename_in
+                      << "." << std::endl;
             checkSum_out = checksum;
             return SystemStatus::SYSTEM_STATUS_SUCCESS;
         }
@@ -100,8 +100,8 @@ SystemStatus System::calculateCheckSum(string  filename_in,
     if (EVP_DigestFinal_ex(p_digestContext.get(), digest, &digestLengthBytes) !=
         1)
     {
-        cout << "[E] Unable to finish the Md5 hash of " << filename_in << "."
-             << endl;
+        std::cout << "[E] Unable to finish the Md5 hash of " << filename_in
+                  << "." << std::endl;
         checkSum_out = checksum;
         return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }

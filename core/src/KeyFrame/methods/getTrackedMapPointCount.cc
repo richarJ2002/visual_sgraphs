@@ -41,7 +41,7 @@ KeyFrameStatus
     KeyFrame::getTrackedMapPointCount(const int &minimumObservation_in,
                                       int       &trackedMapPointCount_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
 
     int        pointCount              = 0;
     const bool shouldCheckObservations = minimumObservation_in > 0;

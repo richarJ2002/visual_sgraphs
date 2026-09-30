@@ -46,7 +46,7 @@ KeyFrameStatus vs_graphs::core::KeyFrame::replaceMapPassage(
         return KeyFrameStatus::KEY_FRAME_STATUS_INVALID_ARGUMENT;
     }
 
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
 
     bool replacedAssociation = false;
     std::vector<vs_graphs::core::semantic::Passage *> rebuiltPassages;

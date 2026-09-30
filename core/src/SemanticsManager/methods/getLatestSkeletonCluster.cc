@@ -28,7 +28,7 @@ SemanticsManagerStatus SemanticsManager::getLatestSkeletonCluster(
     std::vector<std::vector<Eigen::Vector3d>> &latestSkeletonCluster_out)
 {
     /* Lock the skeleton cluster */
-    unique_lock<std::mutex> lock(newRoomsMutex);
+    std::unique_lock<std::mutex> lock(newRoomsMutex);
 
     /* Get the latest skeleton cluster from Atlas */
     std::vector<std::vector<Eigen::Vector3d>> atlasSkeletonClusterPoints{};

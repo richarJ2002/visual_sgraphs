@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::addMapPoint(MapPoint *p_mapPoint_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     mapPoints.insert(p_mapPoint_in);
 
     return MapStatus::MAP_STATUS_SUCCESS;

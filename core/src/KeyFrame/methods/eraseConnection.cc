@@ -40,7 +40,7 @@ KeyFrameStatus KeyFrame::eraseConnection(KeyFrame *p_keyFrame_in)
 {
     bool shouldUpdate = false;
     {
-        unique_lock<mutex> lock(connectionsMutex);
+        std::unique_lock<std::mutex> lock(connectionsMutex);
         if (connectedKeyFrameWeights.count(p_keyFrame_in))
         {
             connectedKeyFrameWeights.erase(p_keyFrame_in);

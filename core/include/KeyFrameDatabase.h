@@ -78,20 +78,20 @@ class KeyFrameDatabase
 
     // Loop and Merge Detection
     [[nodiscard]] KeyFrameDatabaseStatus
-        detectCandidates(KeyFrame           *p_currentKeyFrame_in,
-                         float               minScore_in,
-                         vector<KeyFrame *> &loopCandidateKeyFrames_out,
-                         vector<KeyFrame *> &mergeCandidateKeyFrames_out);
-    [[nodiscard]] KeyFrameDatabaseStatus
-        detectBestCandidates(KeyFrame           *p_currentKeyFrame_in,
-                             vector<KeyFrame *> &loopCandidateKeyFrames_out,
-                             vector<KeyFrame *> &mergeCandidateKeyFrames_out,
-                             int                 minWordCount_in);
-    [[nodiscard]] KeyFrameDatabaseStatus
-        detectNBestCandidates(KeyFrame           *p_currentKeyFrame_in,
-                              vector<KeyFrame *> &loopCandidateKeyFrames_out,
-                              vector<KeyFrame *> &mergeCandidateKeyFrames_out,
-                              int                 candidateCount_in);
+        detectCandidates(KeyFrame                *p_currentKeyFrame_in,
+                         float                    minScore_in,
+                         std::vector<KeyFrame *> &loopCandidateKeyFrames_out,
+                         std::vector<KeyFrame *> &mergeCandidateKeyFrames_out);
+    [[nodiscard]] KeyFrameDatabaseStatus detectBestCandidates(
+        KeyFrame                *p_currentKeyFrame_in,
+        std::vector<KeyFrame *> &loopCandidateKeyFrames_out,
+        std::vector<KeyFrame *> &mergeCandidateKeyFrames_out,
+        int                      minWordCount_in);
+    [[nodiscard]] KeyFrameDatabaseStatus detectNBestCandidates(
+        KeyFrame                *p_currentKeyFrame_in,
+        std::vector<KeyFrame *> &loopCandidateKeyFrames_out,
+        std::vector<KeyFrame *> &mergeCandidateKeyFrames_out,
+        int                      candidateCount_in);
 
     // Relocalization
     [[nodiscard]] KeyFrameDatabaseStatus detectRelocalizationCandidates(
@@ -107,11 +107,11 @@ class KeyFrameDatabase
     const ORBVocabulary *p_vocabulary;
 
     // Inverted file
-    std::vector<list<KeyFrame *>> invertedFile;
+    std::vector<std::list<KeyFrame *>> invertedFile;
 
     // For save relation without pointer, this is necessary for save/load
     // function
-    std::vector<list<long unsigned int>> backupInvertedFileIds;
+    std::vector<std::list<long unsigned int>> backupInvertedFileIds;
 
     // Mutex
     std::mutex databaseMutex;

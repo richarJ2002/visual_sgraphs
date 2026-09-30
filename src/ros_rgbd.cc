@@ -29,8 +29,6 @@
 #include <condition_variable>
 #include <rclcpp/logging.hpp>
 
-using namespace std;
-
 class ImageGrabber : public rclcpp::Node
 {
   public:

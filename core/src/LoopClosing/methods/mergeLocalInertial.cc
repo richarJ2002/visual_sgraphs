@@ -154,8 +154,8 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
     KeyFrame *p_newChild;
     KeyFrame *p_newParent;
 
-    vector<KeyFrame *> localCurrentWindowKeyFrames;
-    vector<KeyFrame *> mergeConnectedKeyFrames;
+    std::vector<KeyFrame *> localCurrentWindowKeyFrames;
+    std::vector<KeyFrame *> mergeConnectedKeyFrames;
 
     KeyFrameAndPose CorrectedSim3, NonCorrectedSim3;
 
@@ -1392,10 +1392,10 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
         p_newChild  = p_oldParent;
     }
 
-    vector<MapPoint *>
+    std::vector<MapPoint *>
         checkFuseMapPoints; // MapPoint vector from current map to allow to
                             // fuse duplicated points with the old map (merge)
-    vector<KeyFrame *> currentConnectedKeyFrames;
+    std::vector<KeyFrame *> currentConnectedKeyFrames;
 
     mergeConnectedKFs.clear();
     mergeConnectedKFs.push_back(p_mergeMatchedKF);
@@ -1440,7 +1440,7 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
         currentConnectedKeyFrames.erase(currentConnectedKeyFrames.begin() + 6,
                                         currentConnectedKeyFrames.end());
 
-    set<MapPoint *> mapPointMerges;
+    std::set<MapPoint *> mapPointMerges;
     for (KeyFrame *p_keyFrame : mergeConnectedKFs)
     {
         std::set<MapPoint *> mapPoints{};

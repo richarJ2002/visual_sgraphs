@@ -34,7 +34,7 @@ namespace core
 AtlasStatus Atlas::setSkeletonClusterPoints(
     const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints_in)
 {
-    unique_lock<mutex> lock(atlasMutex);
+    std::unique_lock<std::mutex> lock(atlasMutex);
     if (p_activeMap->setSkeletonClusterPoints(newClusterPoints_in) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {

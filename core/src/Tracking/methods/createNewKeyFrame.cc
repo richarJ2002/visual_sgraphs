@@ -165,23 +165,23 @@ TrackingStatus Tracking::createNewKeyFrame()
             maximumPoint = 100;
         }
 
-        vector<pair<float, int>> depthIndices;
-        int                      N = (currentFrame.leftKeyPointCount != -1)
-                                         ? currentFrame.leftKeyPointCount
-                                         : currentFrame.keyPointCount;
+        std::vector<std::pair<float, int>> depthIndices;
+        int N = (currentFrame.leftKeyPointCount != -1)
+                    ? currentFrame.leftKeyPointCount
+                    : currentFrame.keyPointCount;
         depthIndices.reserve(currentFrame.keyPointCount);
         for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
         {
             float z = currentFrame.depths[keyPointIndex];
             if (z > 0)
             {
-                depthIndices.push_back(make_pair(z, keyPointIndex));
+                depthIndices.push_back(std::make_pair(z, keyPointIndex));
             }
         }
 
         if (!depthIndices.empty())
         {
-            sort(depthIndices.begin(), depthIndices.end());
+            std::sort(depthIndices.begin(), depthIndices.end());
 
             int pointCount = 0;
             for (size_t depthIndexIndex = 0;

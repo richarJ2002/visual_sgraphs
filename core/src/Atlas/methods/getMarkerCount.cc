@@ -33,8 +33,8 @@ namespace core
 
 AtlasStatus Atlas::getMarkerCount(unsigned long &markerCount_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    unsigned long      activeMapMarkerCount{};
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    unsigned long                activeMapMarkerCount{};
     if (p_activeMap->getMarkerCount(activeMapMarkerCount) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {

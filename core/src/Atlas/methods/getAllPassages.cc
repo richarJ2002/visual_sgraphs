@@ -34,7 +34,7 @@ namespace core
 AtlasStatus Atlas::getAllPassages(
     std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out)
 {
-    unique_lock<mutex>                                lock(atlasMutex);
+    std::unique_lock<std::mutex>                      lock(atlasMutex);
     std::vector<vs_graphs::core::semantic::Passage *> activeMapAllPassages{};
     if (p_activeMap->getAllPassages(activeMapAllPassages) !=
         MapStatus::MAP_STATUS_SUCCESS)

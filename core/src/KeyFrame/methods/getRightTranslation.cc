@@ -38,7 +38,7 @@ namespace core
 KeyFrameStatus
     KeyFrame::getRightTranslation(Eigen::Vector3f &rightTranslation_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     rightTranslation_out = (poseTrl * poseTcw).translation();
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

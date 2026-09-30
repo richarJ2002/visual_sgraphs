@@ -31,8 +31,8 @@ namespace vs_graphs
 namespace core
 {
 
-SystemStatus System::saveMapPointsAsPCD(const string &filename_in,
-                                        bool         &isSaved_out)
+SystemStatus System::saveMapPointsAsPCD(const std::string &filename_in,
+                                        bool              &isSaved_out)
 {
     try
     {

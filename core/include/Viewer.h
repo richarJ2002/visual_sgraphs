@@ -52,7 +52,7 @@ class Viewer
            FrameDrawer               *p_frameDrawer_in,
            MapDrawer                 *p_mapDrawer_in,
            Tracking                  *p_tracking_in,
-           const string              &settingsFilePath_in,
+           const std::string         &settingsFilePath_in,
            utils::settings::Settings *p_settings_in) :
         shouldDrawBothImages(false),
         p_system(p_system_in),
@@ -101,7 +101,7 @@ class Viewer
                 {
                     throw -1;
                 }
-                catch (exception &parseError)
+                catch (std::exception &parseError)
                 {}
             }
         }

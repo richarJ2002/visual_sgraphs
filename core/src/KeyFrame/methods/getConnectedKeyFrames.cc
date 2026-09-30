@@ -38,9 +38,10 @@ namespace core
 KeyFrameStatus KeyFrame::getConnectedKeyFrames(
     std::set<KeyFrame *> &connectedKeyFrames_out)
 {
-    unique_lock<mutex> lock(connectionsMutex);
-    set<KeyFrame *>    s;
-    for (map<KeyFrame *, int>::iterator mit = connectedKeyFrameWeights.begin();
+    std::unique_lock<std::mutex> lock(connectionsMutex);
+    std::set<KeyFrame *>         s;
+    for (std::map<KeyFrame *, int>::iterator mit =
+             connectedKeyFrameWeights.begin();
          mit != connectedKeyFrameWeights.end();
          mit++)
         s.insert(mit->first);

@@ -36,7 +36,7 @@ namespace core
 
 MapPointStatus MapPoint::getObservationCount(int &observationCount_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     observationCount_out = observationCount;
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

@@ -43,10 +43,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                                            bool            &isParsed_out)
 {
     distortionCoefficients = cv::Mat::zeros(4, 1, CV_32F);
-    cout << endl << "Camera Parameters: " << endl;
+    std::cout << std::endl << "Camera Parameters: " << std::endl;
     bool isParameterMissing = false;
 
-    string cameraName = settings_in["Camera.type"];
+    std::string cameraName = settings_in["Camera.type"];
     if (cameraName == "PinHole")
     {
         float fx   = 0.0F;
@@ -189,7 +189,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
             cy = cy * imageScale;
         }
 
-        vector<float> cameraCalibrations{fx, fy, cx, cy};
+        std::vector<float> cameraCalibrations{fx, fy, cx, cy};
 
         p_camera = new camera_models::pinhole::Pinhole(cameraCalibrations);
 
@@ -370,7 +370,8 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                 cy = cy * imageScale;
             }
 
-            vector<float> cameraCalibrations{fx, fy, cx, cy, k1, k2, k3, k4};
+            std::vector<float>
+                cameraCalibrations{fx, fy, cx, cy, k1, k2, k3, k4};
             p_camera = new camera_models::kannalabrandt8::KannalaBrandt8(
                 cameraCalibrations);
             camera_models::geometriccamera::GeometricCamera *p_atlasCamera2 =
@@ -609,7 +610,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
 
                 p_frameDrawer->shouldDrawBothImages = true;
 
-                vector<float>
+                std::vector<float>
                     cameraCalibration2{fx, fy, cx, cy, k1, k2, k3, k4};
                 p_camera2 = new camera_models::kannalabrandt8::KannalaBrandt8(
                     cameraCalibration2);
@@ -710,15 +711,15 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
     minFrames = 0;
     maxFrames = fps;
 
-    cout << "- fps: " << fps << endl;
+    std::cout << "- fps: " << fps << std::endl;
 
     int rgbCount = settings_in["Camera.RGB"];
     isRgbEnabled = rgbCount;
 
     if (isRgbEnabled)
-        cout << "- color order: RGB (ignored if grayscale)" << endl;
+        std::cout << "- color order: RGB (ignored if grayscale)" << std::endl;
     else
-        cout << "- color order: BGR (ignored if grayscale)" << endl;
+        std::cout << "- color order: BGR (ignored if grayscale)" << std::endl;
 
     if (sensor == System::STEREO || sensor == System::RGBD ||
         sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
@@ -738,9 +739,9 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
         {
             depthThreshold = node.real();
             depthThreshold = mbf * depthThreshold / fx;
-            cout << endl
-                 << "Depth Threshold (Close/Far Points): " << depthThreshold
-                 << endl;
+            std::cout << std::endl
+                      << "Depth Threshold (Close/Far Points): "
+                      << depthThreshold << std::endl;
         }
         else
         {
@@ -757,7 +758,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
         if (!node.empty() && node.isReal())
         {
             depthMapFactor = node.real();
-            if (fabs(depthMapFactor) < 1e-5)
+            if (std::fabs(depthMapFactor) < 1e-5)
                 depthMapFactor = 1;
             else
                 depthMapFactor = 1.0f / depthMapFactor;

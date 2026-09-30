@@ -103,7 +103,7 @@ PinholeStatus Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in,
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (abs(parameters[parameterIndex] - otherPinholeParameter) > 1e-6)
+        if (std::abs(parameters[parameterIndex] - otherPinholeParameter) > 1e-6)
         {
             isSameCamera = false;
             break;

@@ -39,7 +39,7 @@ KeyFrameStatus KeyFrame::getCovisiblesByWeight(
     const int               &w_in,
     std::vector<KeyFrame *> &covisiblesByWeight_out)
 {
-    unique_lock<mutex> lock(connectionsMutex);
+    std::unique_lock<std::mutex> lock(connectionsMutex);
 
     if (orderedConnectedKeyFrames.empty())
     {
@@ -47,10 +47,11 @@ KeyFrameStatus KeyFrame::getCovisiblesByWeight(
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
-    vector<int>::iterator weightIt = upper_bound(orderedWeights.begin(),
-                                                 orderedWeights.end(),
-                                                 w_in,
-                                                 KeyFrame::weightComp);
+    std::vector<int>::iterator weightIt =
+        std::upper_bound(orderedWeights.begin(),
+                         orderedWeights.end(),
+                         w_in,
+                         KeyFrame::weightComp);
 
     if (weightIt == orderedWeights.end() && orderedWeights.back() < w_in)
     {

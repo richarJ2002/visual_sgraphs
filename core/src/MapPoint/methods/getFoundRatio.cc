@@ -36,7 +36,7 @@ namespace core
 
 MapPointStatus MapPoint::getFoundRatio(float &foundRatio_out)
 {
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
     foundRatio_out = static_cast<float>(foundCount) / visibleCount;
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }

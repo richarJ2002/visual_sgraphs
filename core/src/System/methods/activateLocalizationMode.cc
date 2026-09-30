@@ -32,7 +32,7 @@ namespace core
 
 SystemStatus System::activateLocalizationMode()
 {
-    unique_lock<mutex> lock(modeMutex);
+    std::unique_lock<std::mutex> lock(modeMutex);
     isLocalizationModeActivationRequested = true;
 
     return SystemStatus::SYSTEM_STATUS_SUCCESS;

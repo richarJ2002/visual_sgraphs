@@ -32,16 +32,16 @@ namespace vs_graphs
 namespace core
 {
 
-Sim3SolverStatus Sim3Solver::iterate(int           iterationCount_in,
-                                     bool         &areIterationsExhausted_out,
-                                     vector<bool> &inliersFlags_out,
-                                     int          &inlierCount_out,
-                                     bool         &hasConverged_out,
-                                     Eigen::Matrix4f &transform_out)
+Sim3SolverStatus Sim3Solver::iterate(int   iterationCount_in,
+                                     bool &areIterationsExhausted_out,
+                                     std::vector<bool> &inliersFlags_out,
+                                     int               &inlierCount_out,
+                                     bool              &hasConverged_out,
+                                     Eigen::Matrix4f   &transform_out)
 {
     areIterationsExhausted_out = false;
     hasConverged_out           = false;
-    inliersFlags_out           = vector<bool>(firstMatchCount, false);
+    inliersFlags_out           = std::vector<bool>(firstMatchCount, false);
     inlierCount_out            = 0;
 
     if (correspondenceCount < ransacMinInliers)
@@ -51,7 +51,7 @@ Sim3SolverStatus Sim3Solver::iterate(int           iterationCount_in,
         return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
     }
 
-    vector<size_t> availableIndices;
+    std::vector<size_t> availableIndices;
 
     Eigen::Matrix3f P3Dc1i;
     Eigen::Matrix3f P3Dc2i;

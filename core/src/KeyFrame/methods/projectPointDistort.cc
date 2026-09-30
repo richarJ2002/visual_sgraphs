@@ -64,7 +64,7 @@ KeyFrameStatus KeyFrame::projectPointDistort(MapPoint    *p_mapPoint_in,
     // Check positive depth
     if (PcZ < 0.0f)
     {
-        cout << "Negative depth: " << PcZ << endl;
+        std::cout << "Negative depth: " << PcZ << std::endl;
         isProjected_out = false;
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }

@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::setPose(const Sophus::SE3f &Tcw_in)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
 
     poseTcw     = Tcw_in;
     rotationRcw = poseTcw.rotationMatrix();

@@ -53,9 +53,10 @@ Sim3SolverStatus Sim3Solver::setRansacParameters(double probability_in,
     if (ransacMinInliers == correspondenceCount)
         nIterations = 1;
     else
-        nIterations = ceil(log(1 - ransacProb) / log(1 - pow(epsilon, 3)));
+        nIterations = ceil(log(1 - ransacProb) / log(1 - std::pow(epsilon, 3)));
 
-    ransacMaxIterations = max(1, min(nIterations, ransacMaxIterations));
+    ransacMaxIterations =
+        std::max(1, std::min(nIterations, ransacMaxIterations));
 
     iterationCount = 0;
 

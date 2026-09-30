@@ -35,8 +35,8 @@ namespace core
 TrackingStatus Tracking::updateLocalKeyFrames()
 {
     // Each map point vote for the keyframes in which it has been observed
-    map<KeyFrame *, int> keyframeCounter;
-    bool                 atlasIsImuInitialized{};
+    std::map<KeyFrame *, int> keyframeCounter;
+    bool                      atlasIsImuInitialized{};
     if (p_atlas->isImuInitialized(atlasIsImuInitialized) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -74,7 +74,8 @@ TrackingStatus Tracking::updateLocalKeyFrames()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    for (map<KeyFrame *, tuple<int, int>>::const_iterator
+                    for (std::map<KeyFrame *,
+                                  std::tuple<int, int>>::const_iterator
                              keyFrameCounterIt = observations.begin(),
                              itend             = observations.end();
                          keyFrameCounterIt != itend;
@@ -120,7 +121,8 @@ TrackingStatus Tracking::updateLocalKeyFrames()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    for (map<KeyFrame *, tuple<int, int>>::const_iterator
+                    for (std::map<KeyFrame *,
+                                  std::tuple<int, int>>::const_iterator
                              keyFrameCounterIt = observations.begin(),
                              itend             = observations.end();
                          keyFrameCounterIt != itend;
@@ -144,7 +146,7 @@ TrackingStatus Tracking::updateLocalKeyFrames()
 
     // All keyframes that observe a map point are included in the local map.
     // Also check which keyframe shares most points
-    for (map<KeyFrame *, int>::const_iterator
+    for (std::map<KeyFrame *, int>::const_iterator
              keyFrameCounterIt = keyframeCounter.begin(),
              itEnd             = keyframeCounter.end();
          keyFrameCounterIt != itEnd;
@@ -176,7 +178,7 @@ TrackingStatus Tracking::updateLocalKeyFrames()
 
     // Include also some not-already-included keyframes that are neighbors to
     // already-included keyframes
-    for (vector<KeyFrame *>::const_iterator
+    for (std::vector<KeyFrame *>::const_iterator
              itKeyFrame    = localKeyFrames.begin(),
              itEndKeyFrame = localKeyFrames.end();
          itKeyFrame != itEndKeyFrame;
@@ -202,7 +204,7 @@ TrackingStatus Tracking::updateLocalKeyFrames()
                 __func__);
         }
 
-        for (vector<KeyFrame *>::const_iterator
+        for (std::vector<KeyFrame *>::const_iterator
                  itNeighborKeyFrame    = neighbors.begin(),
                  itEndNeighborKeyFrame = neighbors.end();
              itNeighborKeyFrame != itEndNeighborKeyFrame;
@@ -239,8 +241,8 @@ TrackingStatus Tracking::updateLocalKeyFrames()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        for (set<KeyFrame *>::const_iterator sit  = childs.begin(),
-                                             send = childs.end();
+        for (std::set<KeyFrame *>::const_iterator sit  = childs.begin(),
+                                                  send = childs.end();
              sit != send;
              sit++)
         {

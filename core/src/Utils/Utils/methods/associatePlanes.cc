@@ -45,7 +45,7 @@ namespace utils
 {
 
 UtilsStatus Utils::associatePlanes(
-    const vector<geometric::Plane *>            &mappedPlanes_in,
+    const std::vector<geometric::Plane *>       &mappedPlanes_in,
     g2o::Plane3D                                 observedPlane_in,
     pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_observedCloud_in,
     const Eigen::Matrix4d                       &keyframePose_in,

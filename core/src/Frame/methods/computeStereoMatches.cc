@@ -46,8 +46,8 @@ namespace core
 
 FrameStatus Frame::computeStereoMatches()
 {
-    uRight = vector<float>(keyPointCount, -1.0f);
-    depths = vector<float>(keyPointCount, -1.0f);
+    uRight = std::vector<float>(keyPointCount, -1.0f);
+    depths = std::vector<float>(keyPointCount, -1.0f);
 
     const int thresholdOrbDistance =
         (ORBmatcher::TH_HIGH + ORBmatcher::TH_LOW) / 2;
@@ -55,7 +55,8 @@ FrameStatus Frame::computeStereoMatches()
     const int rowCount = p_orbExtractorLeft->imagePyramid[0].rows;
 
     // Assign keypoints to row table
-    vector<vector<size_t>> rowIndices(rowCount, vector<size_t>());
+    std::vector<std::vector<size_t>> rowIndices(rowCount,
+                                                std::vector<size_t>());
 
     for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
         rowIndices[rowIndex].reserve(200);
@@ -67,8 +68,8 @@ FrameStatus Frame::computeStereoMatches()
         const cv::KeyPoint &keyPoint  = keyPointsRight[iR];
         const float        &keyPointY = keyPoint.pt.y;
         const float         r = 2.0f * scaleFactors[keyPointsRight[iR].octave];
-        const int           maxr = ceil(keyPointY + r);
-        const int           minr = floor(keyPointY - r);
+        const int           maxr = std::ceil(keyPointY + r);
+        const int           minr = std::floor(keyPointY - r);
 
         for (int yi = minr; yi <= maxr; yi++)
             rowIndices[yi].push_back(iR);
@@ -80,7 +81,7 @@ FrameStatus Frame::computeStereoMatches()
     const float maximumD = mbf / minimumZ;
 
     // For each left keypoint search a match in the right image
-    vector<pair<int, int>> distanceIndices;
+    std::vector<std::pair<int, int>> distanceIndices;
     distanceIndices.reserve(keyPointCount);
 
     for (int iL = 0; iL < keyPointCount; iL++)
@@ -90,7 +91,7 @@ FrameStatus Frame::computeStereoMatches()
         const float        &vL        = keyPointL.pt.y;
         const float        &uL        = keyPointL.pt.x;
 
-        const vector<size_t> &candidates = rowIndices[vL];
+        const std::vector<size_t> &candidates = rowIndices[vL];
 
         if (candidates.empty())
             continue;
@@ -145,9 +146,9 @@ FrameStatus Frame::computeStereoMatches()
             // coordinates in image pyramid at keypoint scale
             const float bestRightU  = keyPointsRight[bestIndexR].pt.x;
             const float scaleFactor = invScaleFactors[keyPointL.octave];
-            const float scaleduL    = round(keyPointL.pt.x * scaleFactor);
-            const float scaledvL    = round(keyPointL.pt.y * scaleFactor);
-            const float scaleduR0   = round(bestRightU * scaleFactor);
+            const float scaleduL    = std::round(keyPointL.pt.x * scaleFactor);
+            const float scaledvL    = std::round(keyPointL.pt.y * scaleFactor);
+            const float scaleduR0   = std::round(bestRightU * scaleFactor);
 
             // sliding window search
             const int w  = 5;
@@ -155,10 +156,10 @@ FrameStatus Frame::computeStereoMatches()
                              .rowRange(scaledvL - w, scaledvL + w + 1)
                              .colRange(scaleduL - w, scaleduL + w + 1);
 
-            int           bestDistance = INT_MAX;
-            int           bestincR     = 0;
-            const int     L            = 5;
-            vector<float> dists;
+            int                bestDistance = INT_MAX;
+            int                bestincR     = 0;
+            const int          L            = 5;
+            std::vector<float> dists;
             dists.resize(2 * L + 1);
 
             const float iniu = scaleduR0 + L - w;
@@ -215,7 +216,8 @@ FrameStatus Frame::computeStereoMatches()
                 }
                 depths[iL] = mbf / disparity;
                 uRight[iL] = bestuR;
-                distanceIndices.push_back(pair<int, int>(bestDistance, iL));
+                distanceIndices.push_back(
+                    std::pair<int, int>(bestDistance, iL));
             }
         }
     }

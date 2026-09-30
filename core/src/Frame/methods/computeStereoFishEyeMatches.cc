@@ -47,25 +47,25 @@ namespace core
 FrameStatus Frame::computeStereoFishEyeMatches()
 {
     // Speed it up by matching keypoints in the lapping area
-    vector<cv::KeyPoint> stereoLeft(keyPoints.begin() + monoLeft,
-                                    keyPoints.end());
-    vector<cv::KeyPoint> stereoRight(keyPointsRight.begin() + monoRight,
-                                     keyPointsRight.end());
+    std::vector<cv::KeyPoint> stereoLeft(keyPoints.begin() + monoLeft,
+                                         keyPoints.end());
+    std::vector<cv::KeyPoint> stereoRight(keyPointsRight.begin() + monoRight,
+                                          keyPointsRight.end());
 
     cv::Mat stereoDescriptorLeft =
         descriptors.rowRange(monoLeft, descriptors.rows);
     cv::Mat stereoDescriptorRight =
         descriptorsRight.rowRange(monoRight, descriptorsRight.rows);
 
-    leftToRightMatches = vector<int>(leftKeyPointCount, -1);
-    rightToLeftMatches = vector<int>(rightKeyPointCount, -1);
-    depths             = vector<float>(leftKeyPointCount, -1.0f);
-    uRight             = vector<float>(leftKeyPointCount, -1);
-    stereoPoints3D     = vector<Eigen::Vector3f>(leftKeyPointCount);
+    leftToRightMatches = std::vector<int>(leftKeyPointCount, -1);
+    rightToLeftMatches = std::vector<int>(rightKeyPointCount, -1);
+    depths             = std::vector<float>(leftKeyPointCount, -1.0f);
+    uRight             = std::vector<float>(leftKeyPointCount, -1);
+    stereoPoints3D     = std::vector<Eigen::Vector3f>(leftKeyPointCount);
     closeMapPointCount = 0;
 
     // Perform a brute force between Keypoint in the left and right image
-    vector<vector<cv::DMatch>> matches;
+    std::vector<std::vector<cv::DMatch>> matches;
 
     bfMatcher.knnMatch(stereoDescriptorLeft, stereoDescriptorRight, matches, 2);
 
@@ -73,7 +73,8 @@ FrameStatus Frame::computeStereoFishEyeMatches()
     int descriptorMatches = 0;
 
     // Check matches using Lowe's ratio
-    for (vector<vector<cv::DMatch>>::iterator matchIt = matches.begin();
+    for (std::vector<std::vector<cv::DMatch>>::iterator matchIt =
+             matches.begin();
          matchIt != matches.end();
          ++matchIt)
     {

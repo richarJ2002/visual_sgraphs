@@ -31,7 +31,7 @@ namespace vs_graphs
 namespace core
 {
 
-SystemStatus System::parseJsonDatabase(string jsonFilePath_in)
+SystemStatus System::parseJsonDatabase(std::string jsonFilePath_in)
 {
     // Skip the parsing
     if (jsonFilePath_in.empty())

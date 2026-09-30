@@ -37,7 +37,7 @@ namespace core
 MapStatus Map::getAllDetectedMapRooms(
     std::vector<semantic::Room *> &allDetectedMapRooms_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     allDetectedMapRooms_out =
         std::vector<semantic::Room *>(detectedRooms.begin(),
                                       detectedRooms.end());

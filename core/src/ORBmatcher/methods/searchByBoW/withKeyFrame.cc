@@ -36,7 +36,7 @@ ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
                                          std::vector<MapPoint *> &vpMatches12,
                                          int                     &byBoW_out)
 {
-    const vector<cv::KeyPoint> &undistortedKeyPoints1 =
+    const std::vector<cv::KeyPoint> &undistortedKeyPoints1 =
         pKF1->keyPointsUndistorted;
     const DBoW2::FeatureVector &featureVector1 = pKF1->featureVector;
     std::vector<MapPoint *>     mapPoints1{};
@@ -50,7 +50,7 @@ ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
     }
     const cv::Mat &descriptors1 = pKF1->descriptors;
 
-    const vector<cv::KeyPoint> &undistortedKeyPoints2 =
+    const std::vector<cv::KeyPoint> &undistortedKeyPoints2 =
         pKF2->keyPointsUndistorted;
     const DBoW2::FeatureVector &featureVector2 = pKF2->featureVector;
     std::vector<MapPoint *>     mapPoints2{};
@@ -64,11 +64,11 @@ ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
     }
     const cv::Mat &descriptors2 = pKF2->descriptors;
 
-    vpMatches12 =
-        vector<MapPoint *>(mapPoints1.size(), static_cast<MapPoint *>(nullptr));
-    vector<bool> matched2Flags(mapPoints2.size(), false);
+    vpMatches12 = std::vector<MapPoint *>(mapPoints1.size(),
+                                          static_cast<MapPoint *>(nullptr));
+    std::vector<bool> matched2Flags(mapPoints2.size(), false);
 
-    vector<int> rotHist[HISTO_LENGTH];
+    std::vector<int> rotHist[HISTO_LENGTH];
     for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
          histogramBinIndex++)
         rotHist[histogramBinIndex].reserve(500);
@@ -192,7 +192,7 @@ ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
                                         undistortedKeyPoints2[bestIndex2].angle;
                             if (rot < 0.0)
                                 rot += 360.0f;
-                            int bin = round(rot * factor);
+                            int bin = std::round(rot * factor);
                             if (bin == HISTO_LENGTH)
                                 bin = 0;
                             assert(bin >= 0 && bin < HISTO_LENGTH);

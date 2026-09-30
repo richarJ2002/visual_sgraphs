@@ -79,10 +79,10 @@ OptimizerStatus
     optimizer.addVertex(p_accelerometerBiasVertex);
 
     // Set MapPoint vertices
-    vector<EdgeMonoOnlyPose *>   edgesMonos;
-    vector<EdgeStereoOnlyPose *> edgesStereos;
-    vector<size_t>               monoEdgeIndices;
-    vector<size_t>               stereoEdgeIndices;
+    std::vector<EdgeMonoOnlyPose *>   edgesMonos;
+    std::vector<EdgeStereoOnlyPose *> edgesStereos;
+    std::vector<size_t>               monoEdgeIndices;
+    std::vector<size_t>               stereoEdgeIndices;
     if (addPoseOnlyObservationEdges(p_frame_inout,
                                     p_poseVertex,
                                     optimizer,
@@ -172,7 +172,7 @@ OptimizerStatus
     {
         if (Verbose::printMess(
                 "pFp->p_poseImuConstraint does not exist!!!\nPrevious Frame " +
-                    to_string(p_previousFrame->id),
+                    std::to_string(p_previousFrame->id),
                 Verbose::VERBOSITY_NORMAL) !=
             VerboseStatus::VERBOSE_STATUS_SUCCESS)
         {

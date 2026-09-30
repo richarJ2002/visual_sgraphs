@@ -61,9 +61,6 @@
 
 #include "../private_functions.h"
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
@@ -73,42 +70,42 @@ ORBextractorStatus ORBextractor::computePyramid(cv::Mat image_in)
 {
     for (int level = 0; level < levelCount; ++level)
     {
-        float scale = inverseScaleFactors[level];
-        Size  size(cvRound((float)image_in.cols * scale),
-                  cvRound((float)image_in.rows * scale));
-        Size  wholeSize(size.width + EDGE_THRESHOLD * 2,
-                       size.height + EDGE_THRESHOLD * 2);
-        Mat   temp(wholeSize, image_in.type()), masktemp;
-        imagePyramid[level] =
-            temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, size.width, size.height));
+        float    scale = inverseScaleFactors[level];
+        cv::Size size(cvRound((float)image_in.cols * scale),
+                      cvRound((float)image_in.rows * scale));
+        cv::Size wholeSize(size.width + EDGE_THRESHOLD * 2,
+                           size.height + EDGE_THRESHOLD * 2);
+        cv::Mat  temp(wholeSize, image_in.type()), masktemp;
+        imagePyramid[level] = temp(
+            cv::Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, size.width, size.height));
 
         // Compute the resized image_in
         if (level != 0)
         {
-            resize(imagePyramid[level - 1],
-                   imagePyramid[level],
-                   size,
-                   0,
-                   0,
-                   INTER_LINEAR);
+            cv::resize(imagePyramid[level - 1],
+                       imagePyramid[level],
+                       size,
+                       0,
+                       0,
+                       cv::INTER_LINEAR);
 
-            copyMakeBorder(imagePyramid[level],
-                           temp,
-                           EDGE_THRESHOLD,
-                           EDGE_THRESHOLD,
-                           EDGE_THRESHOLD,
-                           EDGE_THRESHOLD,
-                           BORDER_REFLECT_101 + BORDER_ISOLATED);
+            cv::copyMakeBorder(imagePyramid[level],
+                               temp,
+                               EDGE_THRESHOLD,
+                               EDGE_THRESHOLD,
+                               EDGE_THRESHOLD,
+                               EDGE_THRESHOLD,
+                               cv::BORDER_REFLECT_101 + cv::BORDER_ISOLATED);
         }
         else
         {
-            copyMakeBorder(image_in,
-                           temp,
-                           EDGE_THRESHOLD,
-                           EDGE_THRESHOLD,
-                           EDGE_THRESHOLD,
-                           EDGE_THRESHOLD,
-                           BORDER_REFLECT_101);
+            cv::copyMakeBorder(image_in,
+                               temp,
+                               EDGE_THRESHOLD,
+                               EDGE_THRESHOLD,
+                               EDGE_THRESHOLD,
+                               EDGE_THRESHOLD,
+                               cv::BORDER_REFLECT_101);
         }
     }
 

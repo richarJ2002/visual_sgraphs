@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getFinalRoom(semantic::Room *&p_finalRoom_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_finalRoom_out = p_finalRoom;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

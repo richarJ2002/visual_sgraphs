@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::setVelocity(const Eigen::Vector3f &Vw_in)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     velocityVw          = Vw_in;
     isVelocityAvailable = true;
 

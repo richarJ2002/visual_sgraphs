@@ -49,8 +49,8 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
                      "status although it cannot fail; continuing as before.",
                      __func__);
     }
-    vector<KeyFrame *> targetKeyFrames;
-    for (vector<KeyFrame *>::const_iterator
+    std::vector<KeyFrame *> targetKeyFrames;
+    for (std::vector<KeyFrame *>::const_iterator
              targetKeyFrameIt  = neighborKeyFrames.begin(),
              targetKeyFrameEnd = neighborKeyFrames.end();
          targetKeyFrameIt != targetKeyFrameEnd;
@@ -91,7 +91,7 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        for (vector<KeyFrame *>::const_iterator
+        for (std::vector<KeyFrame *>::const_iterator
                  secondNeighborKeyFrameIt  = secondNeighborKeyFrames.begin(),
                  secondNeighborKeyFrameEnd = secondNeighborKeyFrames.end();
              secondNeighborKeyFrameIt != secondNeighborKeyFrameEnd;
@@ -158,7 +158,7 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    for (vector<KeyFrame *>::iterator
+    for (std::vector<KeyFrame *>::iterator
              targetKeyFrameIt  = targetKeyFrames.begin(),
              targetKeyFrameEnd = targetKeyFrames.end();
          targetKeyFrameIt != targetKeyFrameEnd;
@@ -198,11 +198,11 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
     // Search matches by projection from target KFs in current KF
-    vector<MapPoint *> fuseCandidateMapPoints;
+    std::vector<MapPoint *> fuseCandidateMapPoints;
     fuseCandidateMapPoints.reserve(targetKeyFrames.size() *
                                    currentMapPointMatches.size());
 
-    for (vector<KeyFrame *>::iterator
+    for (std::vector<KeyFrame *>::iterator
              targetKeyFrameIt2  = targetKeyFrames.begin(),
              targetKeyFrameEnd2 = targetKeyFrames.end();
          targetKeyFrameIt2 != targetKeyFrameEnd2;
@@ -220,7 +220,7 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
                          __func__);
         }
 
-        for (vector<MapPoint *>::iterator
+        for (std::vector<MapPoint *>::iterator
                  targetMapPointIt  = targetMapPoints.begin(),
                  targetMapPointEnd = targetMapPoints.end();
              targetMapPointIt != targetMapPointEnd;

@@ -25,23 +25,22 @@
 #include <rclcpp/logging.hpp>
 #include <thread>
 
-using namespace std;
 namespace vs_graphs
 {
 namespace core
 {
 
-TwoViewReconstructionStatus
-    TwoViewReconstruction::findHomography(vector<bool> &matchesInliersFlags_out,
-                                          float        &score_inout,
-                                          Eigen::Matrix3f &H21_out)
+TwoViewReconstructionStatus TwoViewReconstruction::findHomography(
+    std::vector<bool> &matchesInliersFlags_out,
+    float             &score_inout,
+    Eigen::Matrix3f   &H21_out)
 {
     // Number of putative matches
     const int N = matches12.size();
 
     // Normalize coordinates
-    vector<cv::Point2f> normalizedPoints1, normalizedPoints2;
-    Eigen::Matrix3f     T1, T2;
+    std::vector<cv::Point2f> normalizedPoints1, normalizedPoints2;
+    Eigen::Matrix3f          T1, T2;
     if (normalize(keys1, normalizedPoints1, T1) !=
         TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
     {
@@ -62,14 +61,14 @@ TwoViewReconstructionStatus
 
     // Best Results variables
     score_inout             = 0.0;
-    matchesInliersFlags_out = vector<bool>(N, false);
+    matchesInliersFlags_out = std::vector<bool>(N, false);
 
     // Iteration variables
-    vector<cv::Point2f> sampledPoints1(8);
-    vector<cv::Point2f> sampledPoints2(8);
-    Eigen::Matrix3f     H21i, H12i;
-    vector<bool>        currentInliersFlags(N, false);
-    float               currentScore;
+    std::vector<cv::Point2f> sampledPoints1(8);
+    std::vector<cv::Point2f> sampledPoints2(8);
+    Eigen::Matrix3f          H21i, H12i;
+    std::vector<bool>        currentInliersFlags(N, false);
+    float                    currentScore;
 
     // Perform all RANSAC iterations and save the solution with highest score
     for (int iterationIndex = 0; iterationIndex < maxIterations;

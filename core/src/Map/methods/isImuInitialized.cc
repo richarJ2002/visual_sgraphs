@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::isImuInitialized(bool &isImuInitialized_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     isImuInitialized_out = hasImuInitialization;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

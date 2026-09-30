@@ -27,8 +27,6 @@
 #include "common.hpp"
 #include <rclcpp/logging.hpp>
 
-using namespace std;
-
 class ImuGrabber : public rclcpp::Node
 {
   public:

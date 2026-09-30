@@ -24,16 +24,15 @@
 
 #include <thread>
 
-using namespace std;
 namespace vs_graphs
 {
 namespace core
 {
 
 TwoViewReconstructionStatus TwoViewReconstruction::normalize(
-    const vector<cv::KeyPoint> &keys_in,
-    vector<cv::Point2f>        &normalizedPoints_inout,
-    Eigen::Matrix3f            &T_out)
+    const std::vector<cv::KeyPoint> &keys_in,
+    std::vector<cv::Point2f>        &normalizedPoints_inout,
+    Eigen::Matrix3f                 &T_out)
 {
     float     meanX = 0;
     float     meanY = 0;
@@ -60,8 +59,8 @@ TwoViewReconstructionStatus TwoViewReconstruction::normalize(
         normalizedPoints_inout[keyPointIndex].y =
             keys_in[keyPointIndex].pt.y - meanY;
 
-        meanDevX += fabs(normalizedPoints_inout[keyPointIndex].x);
-        meanDevY += fabs(normalizedPoints_inout[keyPointIndex].y);
+        meanDevX += std::fabs(normalizedPoints_inout[keyPointIndex].x);
+        meanDevY += std::fabs(normalizedPoints_inout[keyPointIndex].y);
     }
 
     meanDevX = meanDevX / N;

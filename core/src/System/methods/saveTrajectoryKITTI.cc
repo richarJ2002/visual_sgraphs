@@ -34,14 +34,15 @@ namespace vs_graphs
 namespace core
 {
 
-SystemStatus System::saveTrajectoryKITTI(const string &filename_in)
+SystemStatus System::saveTrajectoryKITTI(const std::string &filename_in)
 {
-    cout << endl
-         << "Saving camera trajectory to " << filename_in << " ..." << endl;
+    std::cout << std::endl
+              << "Saving camera trajectory to " << filename_in << " ..."
+              << std::endl;
     if (sensor == MONOCULAR)
     {
-        cerr << "ERROR: SaveTrajectoryKITTI cannot be used for monocular."
-             << endl;
+        std::cerr << "ERROR: SaveTrajectoryKITTI cannot be used for monocular."
+                  << std::endl;
         return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
 
@@ -54,7 +55,7 @@ SystemStatus System::saveTrajectoryKITTI(const string &filename_in)
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
+    std::sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
@@ -68,9 +69,9 @@ SystemStatus System::saveTrajectoryKITTI(const string &filename_in)
                      __func__);
     }
 
-    ofstream f;
+    std::ofstream f;
     f.open(filename_in.c_str());
-    f << fixed;
+    f << std::fixed;
 
     // Frame pose is stored relative to its reference keyframe (which is
     // optimized by BA and pose graph). We need to get first the keyframe pose
@@ -81,8 +82,8 @@ SystemStatus System::saveTrajectoryKITTI(const string &filename_in)
     // and a flag which is true when tracking failed (lbL).
     list<vs_graphs::core::KeyFrame *>::iterator rits =
         p_tracker->referenceKeyFrames.begin();
-    list<double>::iterator lT = p_tracker->frameTimes.begin();
-    for (list<Sophus::SE3f>::iterator
+    std::list<double>::iterator lT = p_tracker->frameTimes.begin();
+    for (std::list<Sophus::SE3f>::iterator
              lit  = p_tracker->relativeFramePoses.begin(),
              lend = p_tracker->relativeFramePoses.end();
          lit != lend;
@@ -139,10 +140,10 @@ SystemStatus System::saveTrajectoryKITTI(const string &filename_in)
         Eigen::Matrix3f Rwc = Twc.rotationMatrix();
         Eigen::Vector3f twc = Twc.translation();
 
-        f << setprecision(9) << Rwc(0, 0) << " " << Rwc(0, 1) << " "
+        f << std::setprecision(9) << Rwc(0, 0) << " " << Rwc(0, 1) << " "
           << Rwc(0, 2) << " " << twc(0) << " " << Rwc(1, 0) << " " << Rwc(1, 1)
           << " " << Rwc(1, 2) << " " << twc(1) << " " << Rwc(2, 0) << " "
-          << Rwc(2, 1) << " " << Rwc(2, 2) << " " << twc(2) << endl;
+          << Rwc(2, 1) << " " << Rwc(2, 2) << " " << twc(2) << std::endl;
     }
     f.close();
 

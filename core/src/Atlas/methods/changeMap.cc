@@ -33,7 +33,7 @@ namespace core
 
 AtlasStatus Atlas::changeMap(Map *p_map_in)
 {
-    unique_lock<mutex> atlasLock(atlasMutex);
+    std::unique_lock<std::mutex> atlasLock(atlasMutex);
     std::cout << "\n[Atlas]" << std::endl;
     unsigned long mapId{};
     if (p_map_in->getId(mapId) != MapStatus::MAP_STATUS_SUCCESS)

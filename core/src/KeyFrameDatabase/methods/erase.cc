@@ -22,8 +22,6 @@
 
 #include <mutex>
 
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
@@ -31,7 +29,7 @@ namespace core
 
 KeyFrameDatabaseStatus KeyFrameDatabase::erase(KeyFrame *p_keyFrame_in)
 {
-    unique_lock<mutex> lock(databaseMutex);
+    std::unique_lock<std::mutex> lock(databaseMutex);
 
     // Erase elements in the Inverse File for the entry
     for (DBoW2::BowVector::const_iterator
@@ -41,10 +39,11 @@ KeyFrameDatabaseStatus KeyFrameDatabase::erase(KeyFrame *p_keyFrame_in)
          wordIt++)
     {
         // List of keyframes that share the word
-        list<KeyFrame *> &keyFramesForWord = invertedFile[wordIt->first];
+        std::list<KeyFrame *> &keyFramesForWord = invertedFile[wordIt->first];
 
-        for (list<KeyFrame *>::iterator keyFrameIt  = keyFramesForWord.begin(),
-                                        keyFrameEnd = keyFramesForWord.end();
+        for (std::list<KeyFrame *>::iterator
+                 keyFrameIt  = keyFramesForWord.begin(),
+                 keyFrameEnd = keyFramesForWord.end();
              keyFrameIt != keyFrameEnd;
              keyFrameIt++)
         {

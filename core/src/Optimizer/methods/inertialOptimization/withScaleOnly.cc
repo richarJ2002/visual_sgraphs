@@ -157,14 +157,17 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                 !p_gravityDirectionVertex || !p_scaleVertex)
             {
                 if (Verbose::printMess(
-                        "Error" + to_string(p_firstPoseVertex->id()) + ", " +
-                            to_string(p_firstVelocityVertex->id()) + ", " +
-                            to_string(p_gyroBiasVertex->id()) + ", " +
-                            to_string(p_accelerometerBiasVertex->id()) + ", " +
-                            to_string(p_secondPoseVertex->id()) + ", " +
-                            to_string(p_secondVelocityVertex->id()) + ", " +
-                            to_string(p_gravityDirectionVertex->id()) + ", " +
-                            to_string(p_scaleVertex->id()),
+                        "Error" + std::to_string(p_firstPoseVertex->id()) +
+                            ", " + std::to_string(p_firstVelocityVertex->id()) +
+                            ", " + std::to_string(p_gyroBiasVertex->id()) +
+                            ", " +
+                            std::to_string(p_accelerometerBiasVertex->id()) +
+                            ", " + std::to_string(p_secondPoseVertex->id()) +
+                            ", " +
+                            std::to_string(p_secondVelocityVertex->id()) +
+                            ", " +
+                            std::to_string(p_gravityDirectionVertex->id()) +
+                            ", " + std::to_string(p_scaleVertex->id()),
                         Verbose::VERBOSITY_NORMAL) !=
                     VerboseStatus::VERBOSE_STATUS_SUCCESS)
                 {

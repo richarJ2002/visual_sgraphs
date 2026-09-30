@@ -24,14 +24,13 @@
 
 #include <thread>
 
-using namespace std;
 namespace vs_graphs
 {
 namespace core
 {
 
 TwoViewReconstructionStatus TwoViewReconstruction::computeH21(
-    const vector<cv::Point2f>      &points1_in,
+    const std::vector<cv::Point2f> &points1_in,
     const std::vector<cv::Point2f> &points2_in,
     Eigen::Matrix3f                &h21_out)
 {

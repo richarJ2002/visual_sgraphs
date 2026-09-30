@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::setFollowingMap(Map *p_map_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_followingMap = p_map_in;
 
     return MapStatus::MAP_STATUS_SUCCESS;

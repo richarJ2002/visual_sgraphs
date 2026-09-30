@@ -37,8 +37,8 @@ namespace core
 MapStatus Map::getMarkerById(int                markerId_in,
                              semantic::Marker *&p_markerById_out)
 {
-    unique_lock<mutex> lock(mapMutex);
-    const auto         markerIterator = markerIndex.find(markerId_in);
+    std::unique_lock<std::mutex> lock(mapMutex);
+    const auto                   markerIterator = markerIndex.find(markerId_in);
     p_markerById_out =
         markerIterator != markerIndex.end() ? markerIterator->second : nullptr;
     return MapStatus::MAP_STATUS_SUCCESS;

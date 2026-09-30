@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::reservePlaneId(int &planeId_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     while (planeIndex.count(nextAvailablePlaneId) > 0)
     {

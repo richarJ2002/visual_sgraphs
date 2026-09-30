@@ -31,11 +31,11 @@ namespace vs_graphs
 namespace core
 {
 
-ORBmatcherStatus ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
-                                  const vector<MapPoint *> &vpMapPoints,
-                                  int                      &fusedCount_out,
-                                  const float               th,
-                                  const bool                bRight)
+ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
+                                  const std::vector<MapPoint *> &vpMapPoints,
+                                  int                           &fusedCount_out,
+                                  const float                    th,
+                                  const bool                     bRight)
 {
     camera_models::geometriccamera::GeometricCamera *p_camera;
     Sophus::SE3f                                     Tcw;
@@ -275,8 +275,8 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame                 *p_keyframe_inout,
 
         int bestDistance = 256;
         int bestIndex    = -1;
-        for (vector<size_t>::const_iterator vit  = indices.begin(),
-                                            vend = indices.end();
+        for (std::vector<size_t>::const_iterator vit  = indices.begin(),
+                                                 vend = indices.end();
              vit != vend;
              vit++)
         {

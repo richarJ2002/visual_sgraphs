@@ -36,21 +36,21 @@ namespace core
 
 SystemStatus System::loadAtlas(int type_in, bool &isLoaded_out)
 {
-    string fileVocabulary, vocabularyChecksum;
-    bool   isRead = false;
+    std::string fileVocabulary, vocabularyChecksum;
+    bool        isRead = false;
 
-    string pathLoadFileName = "./";
-    pathLoadFileName        = pathLoadFileName.append(loadAtlasFile);
-    pathLoadFileName        = pathLoadFileName.append(".osa");
+    std::string pathLoadFileName = "./";
+    pathLoadFileName             = pathLoadFileName.append(loadAtlasFile);
+    pathLoadFileName             = pathLoadFileName.append(".osa");
 
     if (type_in == TEXT_FILE) // File text
     {
-        cout << "Starting to read the save text file "
-             << pathLoadFileName.c_str() << endl;
+        std::cout << "Starting to read the save text file "
+                  << pathLoadFileName.c_str() << std::endl;
         std::ifstream ifs(pathLoadFileName, std::ios::binary);
         if (!ifs.good())
         {
-            cout << "Load file not found" << endl;
+            std::cout << "Load file not found" << std::endl;
             isLoaded_out = false;
             return SystemStatus::SYSTEM_STATUS_SUCCESS;
         }
@@ -58,17 +58,17 @@ SystemStatus System::loadAtlas(int type_in, bool &isLoaded_out)
         ia >> fileVocabulary;
         ia >> vocabularyChecksum;
         ia >> p_atlas;
-        cout << "End to load the save text file " << endl;
+        std::cout << "End to load the save text file " << std::endl;
         isRead = true;
     }
     else if (type_in == BINARY_FILE) // File binary
     {
-        cout << "Starting to read the save binary file "
-             << pathLoadFileName.c_str() << endl;
+        std::cout << "Starting to read the save binary file "
+                  << pathLoadFileName.c_str() << std::endl;
         std::ifstream ifs(pathLoadFileName, std::ios::binary);
         if (!ifs.good())
         {
-            cout << "Load file not found" << endl;
+            std::cout << "Load file not found" << std::endl;
             isLoaded_out = false;
             return SystemStatus::SYSTEM_STATUS_SUCCESS;
         }
@@ -76,14 +76,14 @@ SystemStatus System::loadAtlas(int type_in, bool &isLoaded_out)
         ia >> fileVocabulary;
         ia >> vocabularyChecksum;
         ia >> p_atlas;
-        cout << "End to load the save binary file" << endl;
+        std::cout << "End to load the save binary file" << std::endl;
         isRead = true;
     }
 
     if (isRead)
     {
         // Check if the vocabulary is the same
-        string inputVocabularyChecksum{};
+        std::string inputVocabularyChecksum{};
         if (calculateCheckSum(vocabularyFilePath,
                               TEXT_FILE,
                               inputVocabularyChecksum) !=
@@ -97,10 +97,11 @@ SystemStatus System::loadAtlas(int type_in, bool &isLoaded_out)
 
         if (inputVocabularyChecksum.compare(vocabularyChecksum) != 0)
         {
-            cout << "The vocabulary load isn't the same which the load session "
-                    "was created "
-                 << endl;
-            cout << "-Vocabulary name: " << fileVocabulary << endl;
+            std::cout
+                << "The vocabulary load isn't the same which the load session "
+                   "was created "
+                << std::endl;
+            std::cout << "-Vocabulary name: " << fileVocabulary << std::endl;
             isLoaded_out = false;
             return SystemStatus::SYSTEM_STATUS_SUCCESS; // Both are differents
         }

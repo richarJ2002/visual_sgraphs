@@ -33,8 +33,8 @@ namespace core
 
 AtlasStatus Atlas::getLastBigChangeIndex(int &lastBigChangeIndex_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    int                activeMapLastBigChangeIndex{};
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    int                          activeMapLastBigChangeIndex{};
     if (p_activeMap->getLastBigChangeIndex(activeMapLastBigChangeIndex) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {

@@ -392,13 +392,13 @@ class Frame
     KeyFrame *p_referenceKeyFrame;
 
     // Scale pyramid info.
-    int           scaleLevelCount;
-    float         scaleFactor;
-    float         logScaleFactor;
-    vector<float> scaleFactors;
-    vector<float> invScaleFactors;
-    vector<float> levelSigmaSquared;
-    vector<float> invLevelSigmaSquared;
+    int                scaleLevelCount;
+    float              scaleFactor;
+    float              logScaleFactor;
+    std::vector<float> scaleFactors;
+    std::vector<float> invScaleFactors;
+    std::vector<float> levelSigmaSquared;
+    std::vector<float> invLevelSigmaSquared;
 
     // Undistorted Image Bounds (computed once).
     static float gridMinX;
@@ -408,10 +408,10 @@ class Frame
 
     static bool areInitialComputationsDone;
 
-    map<long unsigned int, cv::Point2f> projectedPoints;
-    map<long unsigned int, cv::Point2f> matchedPoints;
+    std::map<long unsigned int, cv::Point2f> projectedPoints;
+    std::map<long unsigned int, cv::Point2f> matchedPoints;
 
-    string fileName;
+    std::string fileName;
 
     int datasetId;
 

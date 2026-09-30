@@ -33,8 +33,8 @@ namespace core
 
 AtlasStatus Atlas::getMapPointCount(unsigned long &mapPointCount_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    unsigned long      activeMapMapPointCount{};
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    unsigned long                activeMapMapPointCount{};
     if (p_activeMap->getMapPointCount(activeMapMapPointCount) !=
         MapStatus::MAP_STATUS_SUCCESS)
     {

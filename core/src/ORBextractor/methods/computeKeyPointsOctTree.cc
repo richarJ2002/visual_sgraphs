@@ -62,16 +62,13 @@
 
 #include "../private_functions.h"
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
 ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
-    vector<vector<KeyPoint>> &keypointsPerLevel_inout)
+    std::vector<std::vector<cv::KeyPoint>> &keypointsPerLevel_inout)
 {
     keypointsPerLevel_inout.resize(levelCount);
 
@@ -86,7 +83,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
         const int maximumBorderY =
             imagePyramid[level].rows - EDGE_THRESHOLD + 3;
 
-        vector<cv::KeyPoint> keysToDistribute_in;
+        std::vector<cv::KeyPoint> keysToDistribute_in;
         keysToDistribute_in.reserve(featureCount * 10);
 
         const float width  = (maximumBorderX - minimumBorderX);
@@ -94,8 +91,8 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
 
         const int colCount   = width / W;
         const int rowCount   = height / W;
-        const int cellWidth  = ceil(width / colCount);
-        const int cellHeight = ceil(height / rowCount);
+        const int cellWidth  = std::ceil(width / colCount);
+        const int cellHeight = std::ceil(height / rowCount);
 
         for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
         {
@@ -116,14 +113,14 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
                 if (maximumX > maximumBorderX)
                     maximumX = maximumBorderX;
 
-                vector<cv::KeyPoint> keysCells;
+                std::vector<cv::KeyPoint> keysCells;
 
-                FAST(imagePyramid[level]
-                         .rowRange(initialY, maximumY)
-                         .colRange(initialX, maximumX),
-                     keysCells,
-                     initialFastThreshold,
-                     true);
+                cv::FAST(imagePyramid[level]
+                             .rowRange(initialY, maximumY)
+                             .colRange(initialX, maximumX),
+                         keysCells,
+                         initialFastThreshold,
+                         true);
 
                 /*if(bRight && j <= 13){
                     FAST(imagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
@@ -140,12 +137,12 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
 
                 if (keysCells.empty())
                 {
-                    FAST(imagePyramid[level]
-                             .rowRange(initialY, maximumY)
-                             .colRange(initialX, maximumX),
-                         keysCells,
-                         minimumFastThreshold,
-                         true);
+                    cv::FAST(imagePyramid[level]
+                                 .rowRange(initialY, maximumY)
+                                 .colRange(initialX, maximumX),
+                             keysCells,
+                             minimumFastThreshold,
+                             true);
                     /*if(bRight && j <= 13){
                         FAST(imagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
                              vKeysCell,5,true);
@@ -162,7 +159,8 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
 
                 if (!keysCells.empty())
                 {
-                    for (vector<cv::KeyPoint>::iterator vit = keysCells.begin();
+                    for (std::vector<cv::KeyPoint>::iterator vit =
+                             keysCells.begin();
                          vit != keysCells.end();
                          vit++)
                     {
@@ -174,7 +172,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
             }
         }
 
-        vector<KeyPoint> &keypoints = keypointsPerLevel_inout[level];
+        std::vector<cv::KeyPoint> &keypoints = keypointsPerLevel_inout[level];
         keypoints.reserve(featureCount);
 
         std::vector<cv::KeyPoint> keyPoints{};

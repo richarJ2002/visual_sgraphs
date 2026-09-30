@@ -48,8 +48,6 @@ namespace utils
 namespace settings
 {
 
-using namespace std;
-
 std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
 {
     // Camera#1
@@ -91,7 +89,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
         }
         output_inout << " " << parameter;
     }
-    output_inout << " ]" << endl;
+    output_inout << " ]" << std::endl;
 
     if (!s_in.pinholeDistortion1.empty())
     {
@@ -100,7 +98,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
         {
             output_inout << " " << d;
         }
-        output_inout << " ]" << endl;
+        output_inout << " ]" << std::endl;
     }
 
     if ((s_in.sensor == System::STEREO || s_in.sensor == System::IMU_STEREO) &&
@@ -144,7 +142,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
             }
             output_inout << " " << parameter2;
         }
-        output_inout << " ]" << endl;
+        output_inout << " ]" << std::endl;
 
         if (!s_in.pinholeDistortion2.empty())
         {
@@ -153,15 +151,15 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
             {
                 output_inout << " " << d;
             }
-            output_inout << " ]" << endl;
+            output_inout << " ]" << std::endl;
         }
     }
 
     output_inout << "\t- Original frame size: [ "
                  << s_in.originalImageSize.width << ","
-                 << s_in.originalImageSize.height << " ]" << endl;
+                 << s_in.originalImageSize.height << " ]" << std::endl;
     output_inout << "\t- Current frame size: [ " << s_in.newImageSize.width
-                 << "," << s_in.newImageSize.height << " ]" << endl;
+                 << "," << s_in.newImageSize.height << " ]" << std::endl;
 
     if (s_in.isRectificationNeeded)
     {
@@ -193,7 +191,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
             }
             output_inout << " " << parameter3;
         }
-        output_inout << " ]" << endl;
+        output_inout << " ]" << std::endl;
 
         if (s_in.sensor == System::STEREO || s_in.sensor == System::IMU_STEREO)
         {
@@ -226,7 +224,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                 }
                 output_inout << " " << parameter4;
             }
-            output_inout << " ]" << endl;
+            output_inout << " ]" << std::endl;
         }
     }
     else if (s_in.isFirstResizeNeeded)
@@ -259,7 +257,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
             }
             output_inout << " " << parameter5;
         }
-        output_inout << " ]" << endl;
+        output_inout << " ]" << std::endl;
 
         if ((s_in.sensor == System::STEREO ||
              s_in.sensor == System::IMU_STEREO) &&
@@ -294,19 +292,20 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                 }
                 output_inout << " " << parameter6;
             }
-            output_inout << " ]" << endl;
+            output_inout << " ]" << std::endl;
         }
     }
 
     // Frame rate
-    output_inout << "\t- Sequence FPS: " << s_in.framesPerSecond << endl;
+    output_inout << "\t- Sequence FPS: " << s_in.framesPerSecond << std::endl;
 
     // Stereo stuff
     if (s_in.sensor == System::STEREO || s_in.sensor == System::IMU_STEREO)
     {
-        output_inout << "\t- Stereo baseline: " << s_in.stereoBaseline << endl;
+        output_inout << "\t- Stereo baseline: " << s_in.stereoBaseline
+                     << std::endl;
         output_inout << "\t- Stereo depth threshold : " << s_in.depthThreshold
-                     << endl;
+                     << std::endl;
 
         if (s_in.cameraModel == Settings::CameraType::KANNALA_BRANDT)
         {
@@ -320,10 +319,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                     ->lappingArea;
             output_inout << "\t- Camera 1 overlapping area: [ "
                          << overlapping1[0] << " , " << overlapping1[1] << " ]"
-                         << endl;
+                         << std::endl;
             output_inout << "\t- Camera 2 overlapping area: [ "
                          << overlapping2[0] << " , " << overlapping2[1] << " ]"
-                         << endl;
+                         << std::endl;
         }
     }
 
@@ -331,34 +330,40 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
     if (s_in.sensor == System::IMU_MONOCULAR ||
         s_in.sensor == System::IMU_STEREO || s_in.sensor == System::IMU_RGBD)
     {
-        output_inout << "\t- Gyro noise: " << s_in.gyroNoise << endl;
-        output_inout << "\t- Accelerometer noise: " << s_in.accelNoise << endl;
-        output_inout << "\t- Gyro walk: " << s_in.gyroWalkNoise << endl;
+        output_inout << "\t- Gyro noise: " << s_in.gyroNoise << std::endl;
+        output_inout << "\t- Accelerometer noise: " << s_in.accelNoise
+                     << std::endl;
+        output_inout << "\t- Gyro walk: " << s_in.gyroWalkNoise << std::endl;
         output_inout << "\t- Accelerometer walk: " << s_in.accelWalkNoise
-                     << endl;
-        output_inout << "\t- IMU frequency: " << s_in.imuSampleRate << endl;
-        output_inout << "\t- IMU threshold: " << s_in.imuErrorThreshold << endl;
+                     << std::endl;
+        output_inout << "\t- IMU frequency: " << s_in.imuSampleRate
+                     << std::endl;
+        output_inout << "\t- IMU threshold: " << s_in.imuErrorThreshold
+                     << std::endl;
     }
 
     // RGB-D parameters
     if (s_in.sensor == System::RGBD || s_in.sensor == System::IMU_RGBD)
     {
         output_inout << "\t- RGB-D depth map factor: " << s_in.depthMapScale
-                     << endl;
+                     << std::endl;
         output_inout << "\t- Stereo depth threshold: " << s_in.depthThreshold
-                     << endl;
+                     << std::endl;
         output_inout << "\t- Metric close depth: "
-                     << s_in.stereoBaseline * s_in.depthThreshold << endl;
+                     << s_in.stereoBaseline * s_in.depthThreshold << std::endl;
     }
 
     // ORB parameters
-    output_inout << "\t- Features per image: " << s_in.featureCount << endl;
-    output_inout << "\t- ORB scale factor: " << s_in.orbScaleFactor << endl;
-    output_inout << "\t- ORB number of scales: " << s_in.pyramidLevels << endl;
+    output_inout << "\t- Features per image: " << s_in.featureCount
+                 << std::endl;
+    output_inout << "\t- ORB scale factor: " << s_in.orbScaleFactor
+                 << std::endl;
+    output_inout << "\t- ORB number of scales: " << s_in.pyramidLevels
+                 << std::endl;
     output_inout << "\t- Initial FAST threshold: " << s_in.initialFastThreshold
-                 << endl;
+                 << std::endl;
     output_inout << "\t- Min FAST threshold: " << s_in.minimumFastThreshold
-                 << endl;
+                 << std::endl;
 
     return output_inout;
 }

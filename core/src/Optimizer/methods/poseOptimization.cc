@@ -82,22 +82,23 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
     // Set MapPoint vertices
     const int N = p_frame_inout->keyPointCount;
 
-    vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *>       edgesMonos;
-    vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody *> vpEdgesMonoFhr;
-    vector<size_t> monoEdgeIndices, rightEdgeIndices;
+    std::vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *> edgesMonos;
+    std::vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPoseToBody *>
+                        vpEdgesMonoFhr;
+    std::vector<size_t> monoEdgeIndices, rightEdgeIndices;
     edgesMonos.reserve(N);
     vpEdgesMonoFhr.reserve(N);
     monoEdgeIndices.reserve(N);
     rightEdgeIndices.reserve(N);
 
-    vector<g2o::EdgeStereoSE3ProjectXYZOnlyPose *> edgesStereos;
-    vector<size_t>                                 stereoEdgeIndices;
+    std::vector<g2o::EdgeStereoSE3ProjectXYZOnlyPose *> edgesStereos;
+    std::vector<size_t>                                 stereoEdgeIndices;
     edgesStereos.reserve(N);
     stereoEdgeIndices.reserve(N);
 
     // DEPTH-AIDED TRACKING: For RGB-D, add depth residuals
-    vector<vs_graphs::core::EdgeSE3ProjectXYZDepth *> edgesDepths;
-    vector<size_t>                                    depthEdgeIndices;
+    std::vector<vs_graphs::core::EdgeSE3ProjectXYZDepth *> edgesDepths;
+    std::vector<size_t>                                    depthEdgeIndices;
     edgesDepths.reserve(N);
     depthEdgeIndices.reserve(N);
 
@@ -106,7 +107,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
     const float deltaDepth  = sqrt(3.841); // chi2 for 1 DoF at 95%
 
     {
-        unique_lock<mutex> lock(MapPoint::globalMutex);
+        std::unique_lock<std::mutex> lock(MapPoint::globalMutex);
 
         for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
         {
@@ -360,7 +361,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
         (p_frame_inout->depths.size() > 0 && !p_frame_inout->p_camera2);
     if (isRgbd)
     {
-        unique_lock<mutex> lock(MapPoint::globalMutex);
+        std::unique_lock<std::mutex> lock(MapPoint::globalMutex);
         for (int keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
         {
             MapPoint *p_mapPoint = p_frame_inout->mapPoints[keyPointIndex];
@@ -457,8 +458,8 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
         if (p_sysParams->refineMapPoints.enabled && p_referenceKeyFrame &&
             iterationIndex == 2)
         {
-            vector<geometric::Plane *>    planes;
-            std::unordered_map<int, bool> planeCheck;
+            std::vector<geometric::Plane *> planes;
+            std::unordered_map<int, bool>   planeCheck;
 
             // populate the vector of planes using the covisibility graph of the
             // reference keyframe

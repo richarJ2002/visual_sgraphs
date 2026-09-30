@@ -156,10 +156,11 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
                 else
                 {
                     point.a =
-                        255 - static_cast<int>(
-                                  210 * sqrt((point.z - distanceThresholdNear) /
-                                             (distanceThresholdFar -
-                                              distanceThresholdNear)));
+                        255 -
+                        static_cast<int>(
+                            210 * std::sqrt((point.z - distanceThresholdNear) /
+                                            (distanceThresholdFar -
+                                             distanceThresholdNear)));
                 }
 
                 /* Add the point to the respective class specific point cloud */

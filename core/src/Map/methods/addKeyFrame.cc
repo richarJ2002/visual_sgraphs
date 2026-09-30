@@ -37,7 +37,7 @@ namespace core
 
 MapStatus Map::addKeyFrame(KeyFrame *p_keyFrame_inout)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     // First keyframe seeds the map (origin and lowest-id keyframe references);
     // later keyframes are inserted with no id-duplicate check.

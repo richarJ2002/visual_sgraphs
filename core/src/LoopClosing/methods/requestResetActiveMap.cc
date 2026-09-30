@@ -36,7 +36,7 @@ namespace core
 LoopClosingStatus LoopClosing::requestResetActiveMap(Map *p_map_in)
 {
     {
-        unique_lock<mutex> lock(resetMutex);
+        std::unique_lock<std::mutex> lock(resetMutex);
         isResetActiveMapRequested = true;
         p_mapToReset              = p_map_in;
     }
@@ -44,7 +44,7 @@ LoopClosingStatus LoopClosing::requestResetActiveMap(Map *p_map_in)
     while (1)
     {
         {
-            unique_lock<mutex> lock2(resetMutex);
+            std::unique_lock<std::mutex> lock2(resetMutex);
             if (!isResetActiveMapRequested)
                 break;
         }

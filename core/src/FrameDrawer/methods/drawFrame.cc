@@ -23,33 +23,33 @@ FrameDrawerStatus FrameDrawer::drawFrame(cv::Mat &frameImage_out,
                                          float    imageScale_in)
 {
     cv::Mat displayImage;
-    vector<cv::KeyPoint>
+    std::vector<cv::KeyPoint>
         initialKeyPoints; // Initialization: KeyPoints in reference frame
-    vector<int> initialMatchIndices; // Initialization: correspondeces with
-                                     // reference keypoints
-    vector<cv::KeyPoint> currentKeyPoints; // KeyPoints in current frame
-    vector<bool>         visualOdometryFlags,
+    std::vector<int> initialMatchIndices; // Initialization: correspondeces with
+                                          // reference keypoints
+    std::vector<cv::KeyPoint> currentKeyPoints; // KeyPoints in current frame
+    std::vector<bool>         visualOdometryFlags,
         mapPointFlags; // Tracked MapPoints in current frame
-    vector<pair<cv::Point2f, cv::Point2f>> initialTracks;
-    int                                    drawState; // Tracking state
-    vector<float>                          currentDepthValues;
-    float                                  depthCutoff;
+    std::vector<std::pair<cv::Point2f, cv::Point2f>> initialTracks;
+    int                drawState; // Tracking state
+    std::vector<float> currentDepthValues;
+    float              depthCutoff;
 
-    Frame                               drawnFrame;
-    vector<MapPoint *>                  localMapPoints;
-    vector<cv::KeyPoint>                matchedKeyPoints;
-    vector<MapPoint *>                  matchedMapPoints;
-    vector<cv::KeyPoint>                outlierKeyPoints;
-    vector<MapPoint *>                  outlierMapPoints;
-    map<long unsigned int, cv::Point2f> projectedPointMap;
-    map<long unsigned int, cv::Point2f> matchedInImageMap;
+    Frame                                    drawnFrame;
+    std::vector<MapPoint *>                  localMapPoints;
+    std::vector<cv::KeyPoint>                matchedKeyPoints;
+    std::vector<MapPoint *>                  matchedMapPoints;
+    std::vector<cv::KeyPoint>                outlierKeyPoints;
+    std::vector<MapPoint *>                  outlierMapPoints;
+    std::map<long unsigned int, cv::Point2f> projectedPointMap;
+    std::map<long unsigned int, cv::Point2f> matchedInImageMap;
 
     cv::Scalar standardColor(0, 255, 0);
     cv::Scalar odometryColor(255, 0, 0);
 
     // Copy variables within scoped mutex
     {
-        unique_lock<mutex> stateLock(frameStateMutex);
+        std::unique_lock<std::mutex> stateLock(frameStateMutex);
         drawState = state;
         if (state == Tracking::SYSTEM_NOT_READY)
             state = Tracking::NO_IMAGES_YET;
@@ -97,7 +97,7 @@ FrameDrawerStatus FrameDrawer::drawFrame(cv::Mat &frameImage_out,
     }
 
     if (displayImage.channels() < 3) // this should be always true
-        cvtColor(displayImage, displayImage, cv::COLOR_GRAY2BGR);
+        cv::cvtColor(displayImage, displayImage, cv::COLOR_GRAY2BGR);
 
     // Draw
     if (drawState == Tracking::NOT_INITIALIZED)
@@ -127,8 +127,8 @@ FrameDrawerStatus FrameDrawer::drawFrame(cv::Mat &frameImage_out,
                 cv::line(displayImage, drawPoint1, drawPoint2, standardColor);
             }
         }
-        for (vector<pair<cv::Point2f, cv::Point2f>>::iterator trackIt =
-                 initialTracks.begin();
+        for (std::vector<std::pair<cv::Point2f, cv::Point2f>>::iterator
+                 trackIt = initialTracks.begin();
              trackIt != initialTracks.end();
              trackIt++)
         {

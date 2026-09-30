@@ -22,18 +22,18 @@ FrameDrawerStatus FrameDrawer::drawRightFrame(cv::Mat &frameImage_out,
                                               float    imageScale_in)
 {
     cv::Mat displayImage;
-    vector<cv::KeyPoint>
+    std::vector<cv::KeyPoint>
         initialKeyPoints; // Initialization: KeyPoints in reference frame
-    vector<int> initialMatchIndices; // Initialization: correspondeces with
-                                     // reference keypoints
-    vector<cv::KeyPoint> currentKeyPoints; // KeyPoints in current frame
-    vector<bool>         visualOdometryFlags,
+    std::vector<int> initialMatchIndices; // Initialization: correspondeces with
+                                          // reference keypoints
+    std::vector<cv::KeyPoint> currentKeyPoints; // KeyPoints in current frame
+    std::vector<bool>         visualOdometryFlags,
         mapPointFlags; // Tracked MapPoints in current frame
     int drawState;     // Tracking state
 
     // Copy variables within scoped mutex
     {
-        unique_lock<mutex> stateLock(frameStateMutex);
+        std::unique_lock<std::mutex> stateLock(frameStateMutex);
         drawState = state;
         if (state == Tracking::SYSTEM_NOT_READY)
             state = Tracking::NO_IMAGES_YET;
@@ -68,7 +68,7 @@ FrameDrawerStatus FrameDrawer::drawRightFrame(cv::Mat &frameImage_out,
     }
 
     if (displayImage.channels() < 3) // this should be always true
-        cvtColor(displayImage, displayImage, cv::COLOR_GRAY2BGR);
+        cv::cvtColor(displayImage, displayImage, cv::COLOR_GRAY2BGR);
 
     // Draw
     if (drawState == Tracking::NOT_INITIALIZED) // INITIALIZING

@@ -32,7 +32,7 @@ namespace core
 
 SystemStatus System::reset()
 {
-    unique_lock<mutex> lock(resetMutex);
+    std::unique_lock<std::mutex> lock(resetMutex);
     isResetRequested = true;
 
     return SystemStatus::SYSTEM_STATUS_SUCCESS;

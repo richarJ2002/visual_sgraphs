@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::eraseRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
 
     for (auto wallIterator = roomWallPlaneIndex.begin();
          wallIterator != roomWallPlaneIndex.end();)

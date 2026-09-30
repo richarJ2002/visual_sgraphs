@@ -25,25 +25,24 @@
 #include <rclcpp/logging.hpp>
 #include <thread>
 
-using namespace std;
 namespace vs_graphs
 {
 namespace core
 {
 
 TwoViewReconstructionStatus
-    TwoViewReconstruction::checkRT(const Eigen::Matrix3f      &R_in,
-                                   const Eigen::Vector3f      &t_in,
-                                   const vector<cv::KeyPoint> &keys1_in,
-                                   const vector<cv::KeyPoint> &keys2_in,
-                                   const vector<Match>        &matches12_in,
-                                   vector<bool> &matchesInliersFlags_in,
-                                   const Eigen::Matrix3f &K_in,
-                                   vector<cv::Point3f>   &vP3D_inout,
-                                   float                  threshold2_in,
-                                   vector<bool>          &goodFlags_out,
-                                   float                 &parallax_out,
-                                   int                   &goodPointCount_out)
+    TwoViewReconstruction::checkRT(const Eigen::Matrix3f           &R_in,
+                                   const Eigen::Vector3f           &t_in,
+                                   const std::vector<cv::KeyPoint> &keys1_in,
+                                   const std::vector<cv::KeyPoint> &keys2_in,
+                                   const std::vector<Match> &matches12_in,
+                                   std::vector<bool> &matchesInliersFlags_in,
+                                   const Eigen::Matrix3f    &K_in,
+                                   std::vector<cv::Point3f> &vP3D_inout,
+                                   float                     threshold2_in,
+                                   std::vector<bool>        &goodFlags_out,
+                                   float                    &parallax_out,
+                                   int                      &goodPointCount_out)
 {
     // Calibration parameters
     const float fx = K_in(0, 0);
@@ -51,10 +50,10 @@ TwoViewReconstructionStatus
     const float cx = K_in(0, 2);
     const float cy = K_in(1, 2);
 
-    goodFlags_out = vector<bool>(keys1_in.size(), false);
+    goodFlags_out = std::vector<bool>(keys1_in.size(), false);
     vP3D_inout.resize(keys1_in.size());
 
-    vector<float> cosParallaxes;
+    std::vector<float> cosParallaxes;
     cosParallaxes.reserve(keys1_in.size());
 
     // Camera 1 Projection Matrix K[I|0]
@@ -103,7 +102,8 @@ TwoViewReconstructionStatus
                 __func__);
         }
 
-        if (!isfinite(p3dC1(0)) || !isfinite(p3dC1(1)) || !isfinite(p3dC1(2)))
+        if (!std::isfinite(p3dC1(0)) || !std::isfinite(p3dC1(1)) ||
+            !std::isfinite(p3dC1(2)))
         {
             goodFlags_out[matches12_in[matchIndex].first] = false;
             continue;
@@ -167,10 +167,10 @@ TwoViewReconstructionStatus
 
     if (goodCount > 0)
     {
-        sort(cosParallaxes.begin(), cosParallaxes.end());
+        std::sort(cosParallaxes.begin(), cosParallaxes.end());
 
-        size_t parallaxIndex = min(50, int(cosParallaxes.size() - 1));
-        parallax_out         = acos(cosParallaxes[parallaxIndex]) * 180 / CV_PI;
+        size_t parallaxIndex = std::min(50, int(cosParallaxes.size() - 1));
+        parallax_out = std::acos(cosParallaxes[parallaxIndex]) * 180 / CV_PI;
     }
     else
         parallax_out = 0;

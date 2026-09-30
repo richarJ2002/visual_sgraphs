@@ -46,11 +46,11 @@ MapPointStatus MapPoint::predictScale(const float &currentDistance_in,
 
     float ratio;
     {
-        unique_lock<mutex> lock(positionMutex);
+        std::unique_lock<std::mutex> lock(positionMutex);
         ratio = maxDistance / currentDistance_in;
     }
 
-    int scaleCount = ceil(log(ratio) / p_pF_in->logScaleFactor);
+    int scaleCount = std::ceil(std::log(ratio) / p_pF_in->logScaleFactor);
     if (scaleCount < 0)
         scaleCount = 0;
     else if (scaleCount >= p_pF_in->scaleLevelCount)

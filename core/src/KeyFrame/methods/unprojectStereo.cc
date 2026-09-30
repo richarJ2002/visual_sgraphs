@@ -48,7 +48,7 @@ KeyFrameStatus KeyFrame::unprojectStereo(int              index_in,
         const float     y = (v - cy) * z * invfy;
         Eigen::Vector3f x3Dc(x, y, z);
 
-        unique_lock<mutex> lock(poseMutex);
+        std::unique_lock<std::mutex> lock(poseMutex);
         x3D_out           = rotationRwc * x3Dc + twc.translation();
         isUnprojected_out = true;
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

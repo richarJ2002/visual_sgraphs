@@ -32,7 +32,8 @@ namespace vs_graphs
 namespace core
 {
 
-TrackingStatus Tracking::loadTrackingParameters(const string &settingPath_in)
+TrackingStatus
+    Tracking::loadTrackingParameters(const std::string &settingPath_in)
 {
     cv::FileStorage settings(settingPath_in, cv::FileStorage::READ);
 
@@ -134,19 +135,21 @@ TrackingStatus Tracking::loadTrackingParameters(const string &settingPath_in)
                                        1000,
                                        relocalizationMinInliers);
 
-    cout << endl << "Effective Tracking Parameters:" << endl;
-    cout << "- Min Inliers for KF: " << minInliersForKF << endl;
-    cout << "- Min Close Inliers for KF: " << minCloseInliersForKF << endl;
-    cout << "- Min Temporal Spacing KF: " << minKeyFrameTemporalSpacing << " s"
-         << endl;
-    cout << "- Max KFs in Local Map: " << maxKFsInLocalMap << endl;
-    cout << "- Motion Model Search Radius Multiplier: "
-         << motionModelSearchRadiusMultiplier << endl;
-    cout << "- Motion Model Max Search Radius: " << motionModelMaxSearchRadius
-         << endl;
-    cout << "- Initialization Min Points: " << initializationMinPoints << endl;
-    cout << "- Relocalization Min Inliers: " << relocalizationMinInliers
-         << endl;
+    std::cout << std::endl << "Effective Tracking Parameters:" << std::endl;
+    std::cout << "- Min Inliers for KF: " << minInliersForKF << std::endl;
+    std::cout << "- Min Close Inliers for KF: " << minCloseInliersForKF
+              << std::endl;
+    std::cout << "- Min Temporal Spacing KF: " << minKeyFrameTemporalSpacing
+              << " s" << std::endl;
+    std::cout << "- Max KFs in Local Map: " << maxKFsInLocalMap << std::endl;
+    std::cout << "- Motion Model Search Radius Multiplier: "
+              << motionModelSearchRadiusMultiplier << std::endl;
+    std::cout << "- Motion Model Max Search Radius: "
+              << motionModelMaxSearchRadius << std::endl;
+    std::cout << "- Initialization Min Points: " << initializationMinPoints
+              << std::endl;
+    std::cout << "- Relocalization Min Inliers: " << relocalizationMinInliers
+              << std::endl;
 
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }

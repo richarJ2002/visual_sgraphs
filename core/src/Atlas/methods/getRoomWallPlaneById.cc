@@ -35,7 +35,7 @@ AtlasStatus Atlas::getRoomWallPlaneById(
     int                                 planeId_in,
     vs_graphs::core::geometric::Plane *&p_roomWallPlaneById_out)
 {
-    unique_lock<mutex>                 lock(atlasMutex);
+    std::unique_lock<std::mutex>       lock(atlasMutex);
     vs_graphs::core::geometric::Plane *p_activeMapRoomWallPlaneById = nullptr;
     if ((p_activeMap != nullptr) &&
         p_activeMap->getRoomWallPlaneById(planeId_in,

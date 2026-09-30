@@ -140,9 +140,9 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
 
     // Graph edges
     // IMU links with gravity and scale
-    vector<EdgeInertialGS *> inertialEdges;
+    std::vector<EdgeInertialGS *> inertialEdges;
     inertialEdges.reserve(keyFrames.size());
-    vector<pair<KeyFrame *, KeyFrame *>> usedKeyFramePairs;
+    std::vector<std::pair<KeyFrame *, KeyFrame *>> usedKeyFramePairs;
     usedKeyFramePairs.reserve(keyFrames.size());
 
     for (size_t elementIndex = 0; elementIndex < keyFrames.size();
@@ -203,12 +203,13 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                 !p_currentPoseVertex || !p_currentVelocityVertex ||
                 !p_gravityDirectionVertex || !p_scaleVertex)
             {
-                cout << "Error" << p_previousPoseVertex << ", "
-                     << p_previousVelocityVertex << ", " << p_gyroBiasVertex
-                     << ", " << p_accelBiasVertex << ", " << p_currentPoseVertex
-                     << ", " << p_currentVelocityVertex << ", "
-                     << p_gravityDirectionVertex << ", " << p_scaleVertex
-                     << endl;
+                std::cout << "Error" << p_previousPoseVertex << ", "
+                          << p_previousVelocityVertex << ", "
+                          << p_gyroBiasVertex << ", " << p_accelBiasVertex
+                          << ", " << p_currentPoseVertex << ", "
+                          << p_currentVelocityVertex << ", "
+                          << p_gravityDirectionVertex << ", " << p_scaleVertex
+                          << std::endl;
 
                 continue;
             }
@@ -249,7 +250,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
             inertialEdges.push_back(p_inertialEdge);
 
             usedKeyFramePairs.push_back(
-                make_pair(p_keyFrame->p_prevKF, p_keyFrame));
+                std::make_pair(p_keyFrame->p_prevKF, p_keyFrame));
             optimizer.addEdge(p_inertialEdge);
         }
     }

@@ -38,16 +38,17 @@ namespace core
 
 MapPointStatus MapPoint::printObservations()
 {
-    unique_lock<mutex> lock(featuresMutex);
-    cout << "MP_OBS: MP " << id << endl;
-    for (map<KeyFrame *, tuple<int, int>>::iterator mit  = observations.begin(),
-                                                    mend = observations.end();
+    std::unique_lock<std::mutex> lock(featuresMutex);
+    std::cout << "MP_OBS: MP " << id << std::endl;
+    for (std::map<KeyFrame *, std::tuple<int, int>>::iterator
+             mit  = observations.begin(),
+             mend = observations.end();
          mit != mend;
          mit++)
     {
-        KeyFrame       *p_keyFrame = mit->first;
-        tuple<int, int> indexes    = mit->second;
-        int  leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+        KeyFrame            *p_keyFrame = mit->first;
+        std::tuple<int, int> indexes    = mit->second;
+        int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
         Map *p_keyFrameMap = nullptr;
         if (p_keyFrame->getMap(p_keyFrameMap) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -65,7 +66,8 @@ MapPointStatus MapPoint::printObservations()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        cout << "--OBS in KF " << p_keyFrame->id << " in map " << id2 << endl;
+        std::cout << "--OBS in KF " << p_keyFrame->id << " in map " << id2
+                  << std::endl;
     }
 
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;

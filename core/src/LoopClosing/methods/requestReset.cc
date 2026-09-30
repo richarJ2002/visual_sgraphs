@@ -36,14 +36,14 @@ namespace core
 LoopClosingStatus LoopClosing::requestReset()
 {
     {
-        unique_lock<mutex> lock(resetMutex);
+        std::unique_lock<std::mutex> lock(resetMutex);
         isResetRequested = true;
     }
 
     while (1)
     {
         {
-            unique_lock<mutex> lock2(resetMutex);
+            std::unique_lock<std::mutex> lock2(resetMutex);
             if (!isResetRequested)
                 break;
         }

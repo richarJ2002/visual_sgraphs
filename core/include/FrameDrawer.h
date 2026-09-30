@@ -75,32 +75,32 @@ class FrameDrawer
                                                  cv::Mat &annotatedImage_out);
 
     // Info of the frame to be drawn
-    cv::Mat              image, imageRight;
-    int                  keyPointCount;
-    vector<cv::KeyPoint> currentKeys, currentKeysRight;
-    vector<bool>         isTrackedMapPoint, isVisualOdometryPoint;
-    bool                 isTrackingOnlyMode;
-    int                  trackedCount, trackedVOCount;
-    vector<cv::KeyPoint> iniKeys;
-    vector<int>          iniMatches;
-    int                  state;
-    std::vector<float>   currentDepths;
-    float                depthThreshold;
+    cv::Mat                   image, imageRight;
+    int                       keyPointCount;
+    std::vector<cv::KeyPoint> currentKeys, currentKeysRight;
+    std::vector<bool>         isTrackedMapPoint, isVisualOdometryPoint;
+    bool                      isTrackingOnlyMode;
+    int                       trackedCount, trackedVOCount;
+    std::vector<cv::KeyPoint> iniKeys;
+    std::vector<int>          iniMatches;
+    int                       state;
+    std::vector<float>        currentDepths;
+    float                     depthThreshold;
 
     Atlas *p_atlas;
 
-    std::mutex                             frameStateMutex;
-    vector<pair<cv::Point2f, cv::Point2f>> tracks;
+    std::mutex                                       frameStateMutex;
+    std::vector<std::pair<cv::Point2f, cv::Point2f>> tracks;
 
-    Frame                currentFrame;
-    vector<MapPoint *>   localMap;
-    vector<cv::KeyPoint> matchedKeys;
-    vector<MapPoint *>   matchedMPs;
-    vector<cv::KeyPoint> outlierKeys;
-    vector<MapPoint *>   outlierMPs;
+    Frame                     currentFrame;
+    std::vector<MapPoint *>   localMap;
+    std::vector<cv::KeyPoint> matchedKeys;
+    std::vector<MapPoint *>   matchedMPs;
+    std::vector<cv::KeyPoint> outlierKeys;
+    std::vector<MapPoint *>   outlierMPs;
 
-    map<long unsigned int, cv::Point2f> projectPoints;
-    map<long unsigned int, cv::Point2f> matchedInImage;
+    std::map<long unsigned int, cv::Point2f> projectPoints;
+    std::map<long unsigned int, cv::Point2f> matchedInImage;
 };
 
 } // namespace core

@@ -55,12 +55,12 @@ namespace vs_graphs
 namespace core
 {
 
-MLPnPsolverStatus MLPnPsolver::iterate(int           iterationCount_in,
-                                       bool         &areIterationsExhausted_out,
-                                       vector<bool> &inliersFlags_out,
-                                       int          &inlierCount_out,
-                                       Eigen::Matrix4f &Tout_out,
-                                       bool            &isSolved_out)
+MLPnPsolverStatus MLPnPsolver::iterate(int   iterationCount_in,
+                                       bool &areIterationsExhausted_out,
+                                       std::vector<bool> &inliersFlags_out,
+                                       int               &inlierCount_out,
+                                       Eigen::Matrix4f   &Tout_out,
+                                       bool              &isSolved_out)
 {
     Tout_out.setIdentity();
     areIterationsExhausted_out = false;
@@ -74,7 +74,7 @@ MLPnPsolverStatus MLPnPsolver::iterate(int           iterationCount_in,
         return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
     }
 
-    vector<size_t> availableIndices;
+    std::vector<size_t> availableIndices;
 
     int currentIterationCount = 0;
     while (iterationCount < ransacMaxIterations ||
@@ -86,9 +86,9 @@ MLPnPsolverStatus MLPnPsolver::iterate(int           iterationCount_in,
         availableIndices = allIndices;
 
         // Bearing vectors and 3D points used for this ransac iteration
-        BearingVectors bearingVecs(ransacMinSet);
-        Points3        p3DS(ransacMinSet);
-        vector<int>    indexes(ransacMinSet);
+        BearingVectors   bearingVecs(ransacMinSet);
+        Points3          p3DS(ransacMinSet);
+        std::vector<int> indexes(ransacMinSet);
 
         // Get min set of points
         for (short pointIndex = 0; pointIndex < ransacMinSet; ++pointIndex)
@@ -199,8 +199,9 @@ MLPnPsolverStatus MLPnPsolver::iterate(int           iterationCount_in,
             }
             if (isRefined)
             {
-                inlierCount_out  = refinedInlierCount;
-                inliersFlags_out = vector<bool>(mapPointMatches.size(), false);
+                inlierCount_out = refinedInlierCount;
+                inliersFlags_out =
+                    std::vector<bool>(mapPointMatches.size(), false);
                 for (int pointIndex = 0; pointIndex < correspondenceCount;
                      pointIndex++)
                 {
@@ -220,7 +221,7 @@ MLPnPsolverStatus MLPnPsolver::iterate(int           iterationCount_in,
         if (bestInlierCount >= ransacMinInliers)
         {
             inlierCount_out  = bestInlierCount;
-            inliersFlags_out = vector<bool>(mapPointMatches.size(), false);
+            inliersFlags_out = std::vector<bool>(mapPointMatches.size(), false);
             for (int pointIndex = 0; pointIndex < correspondenceCount;
                  pointIndex++)
             {

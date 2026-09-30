@@ -41,14 +41,15 @@ SystemStatus
                         const double                         &timestamp_in,
                         Sophus::SE3f                         &cameraPose_out,
                         const std::vector<IMU::Point>        &imuMeas_in,
-                        string                                filename_in,
+                        std::string                           filename_in,
                         const std::vector<semantic::Marker *> markers_in)
 {
     if (sensor != STEREO && sensor != IMU_STEREO)
     {
-        cerr << "ERROR: you called TrackStereo but input sensor was not set to "
-                "Stereo nor Stereo-Inertial."
-             << endl;
+        std::cerr
+            << "ERROR: you called TrackStereo but input sensor was not set to "
+               "Stereo nor Stereo-Inertial."
+            << std::endl;
         exit(-1);
     }
 
@@ -186,7 +187,7 @@ SystemStatus
                      __func__);
     }
 
-    unique_lock<mutex> lock2(stateMutex);
+    std::unique_lock<std::mutex> lock2(stateMutex);
     trackingState = p_tracker->state;
     int trackerMatchesInliers{};
     if (p_tracker->getMatchesInliers(trackerMatchesInliers) !=

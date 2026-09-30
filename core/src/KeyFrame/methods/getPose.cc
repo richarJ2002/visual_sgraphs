@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getPose(Sophus::SE3f &pose_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     pose_out = poseTcw;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

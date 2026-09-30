@@ -39,7 +39,7 @@ namespace core
 KeyFrameStatus KeyFrame::setErase()
 {
     {
-        unique_lock<mutex> lock(connectionsMutex);
+        std::unique_lock<std::mutex> lock(connectionsMutex);
         if (loopEdges.empty())
         {
             isEraseProtected = false;

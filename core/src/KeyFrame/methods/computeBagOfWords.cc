@@ -40,7 +40,7 @@ KeyFrameStatus KeyFrame::computeBagOfWords()
 {
     if (bowVector.empty() || featureVector.empty())
     {
-        vector<cv::Mat> currentDescriptors{};
+        std::vector<cv::Mat> currentDescriptors{};
         if (utils::converter::Converter::toDescriptorVector(
                 descriptors,
                 currentDescriptors) !=

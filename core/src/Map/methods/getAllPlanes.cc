@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     allPlanes_out =
         std::vector<geometric::Plane *>(planes.begin(), planes.end());
     return MapStatus::MAP_STATUS_SUCCESS;

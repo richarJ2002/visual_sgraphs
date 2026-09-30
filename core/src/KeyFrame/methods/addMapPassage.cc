@@ -43,7 +43,7 @@ KeyFrameStatus vs_graphs::core::KeyFrame::addMapPassage(
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
 
     if (std::find(mapPassages.begin(), mapPassages.end(), p_passage_in) ==
         mapPassages.end())

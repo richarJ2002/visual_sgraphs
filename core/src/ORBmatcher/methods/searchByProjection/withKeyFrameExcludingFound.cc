@@ -32,12 +32,12 @@ namespace core
 {
 
 ORBmatcherStatus
-    ORBmatcher::searchByProjection(Frame                 &CurrentFrame,
-                                   KeyFrame              *pKF,
-                                   const set<MapPoint *> &sAlreadyFound,
-                                   const float            th,
-                                   const int              ORBdist,
-                                   int                   &byProjection_out)
+    ORBmatcher::searchByProjection(Frame                      &CurrentFrame,
+                                   KeyFrame                   *pKF,
+                                   const std::set<MapPoint *> &sAlreadyFound,
+                                   const float                 th,
+                                   const int                   ORBdist,
+                                   int                        &byProjection_out)
 {
     int nmatches = 0;
 
@@ -52,7 +52,7 @@ ORBmatcherStatus
     Eigen::Vector3f Ow = Tcw.inverse().translation();
 
     // Rotation Histogram (to check rotation consistency)
-    vector<int> rotHist[HISTO_LENGTH];
+    std::vector<int> rotHist[HISTO_LENGTH];
     for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
          histogramBinIndex++)
         rotHist[histogramBinIndex].reserve(500);
@@ -189,7 +189,7 @@ ORBmatcherStatus
                 int bestDistance = 256;
                 int bestIndex2   = -1;
 
-                for (vector<size_t>::const_iterator vit = indices2.begin();
+                for (std::vector<size_t>::const_iterator vit = indices2.begin();
                      vit != indices2.end();
                      vit++)
                 {
@@ -231,7 +231,7 @@ ORBmatcherStatus
                             CurrentFrame.keyPointsUndistorted[bestIndex2].angle;
                         if (rot < 0.0)
                             rot += 360.0f;
-                        int bin = round(rot * factor);
+                        int bin = std::round(rot * factor);
                         if (bin == HISTO_LENGTH)
                             bin = 0;
                         assert(bin >= 0 && bin < HISTO_LENGTH);

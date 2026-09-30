@@ -36,7 +36,7 @@ AtlasStatus Atlas::setSkeletonEdges(
         &newSkeletonEdges_in)
 {
     /* Lock access to the active map */
-    unique_lock<mutex> lock(atlasMutex);
+    std::unique_lock<std::mutex> lock(atlasMutex);
 
     if (p_activeMap == nullptr)
     {

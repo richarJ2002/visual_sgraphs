@@ -55,7 +55,7 @@ PlaneStatus Plane::addObservation(core::KeyFrame    *p_keyFrame_inout,
     }
 
     /* Lock the plane observation data */
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
 
     /*!
      * Insert the observation only when the keyframe has not previously

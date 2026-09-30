@@ -65,8 +65,8 @@ class MLPnPsolver
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    MLPnPsolver(const Frame              &frame_in,
-                const vector<MapPoint *> &mapPointMatches_in) :
+    MLPnPsolver(const Frame                   &frame_in,
+                const std::vector<MapPoint *> &mapPointMatches_in) :
         inlierCount(0),
         iterationCount(0),
         bestInlierCount(0),
@@ -167,10 +167,10 @@ class MLPnPsolver
 
     [[nodiscard]] MLPnPsolverStatus iterate(int   iterationCount_in,
                                             bool &areIterationsExhausted_out,
-                                            vector<bool>    &inliersFlags_out,
-                                            int             &inlierCount_out,
-                                            Eigen::Matrix4f &Tout_out,
-                                            bool            &isSolved_out);
+                                            std::vector<bool> &inliersFlags_out,
+                                            int               &inlierCount_out,
+                                            Eigen::Matrix4f   &Tout_out,
+                                            bool              &isSolved_out);
 
     // Type definitions needed by the original code
 
@@ -291,45 +291,45 @@ class MLPnPsolver
     //----------------------------------------------------
     // Fields of the solver
     //----------------------------------------------------
-    vector<MapPoint *> mapPointMatches;
+    std::vector<MapPoint *> mapPointMatches;
 
     // 2D Points
-    vector<cv::Point2f> points2D;
+    std::vector<cv::Point2f> points2D;
     // Substitued by bearing vectors
-    BearingVectors      bearingVectors;
+    BearingVectors           bearingVectors;
 
-    vector<float> sigmaSquared;
+    std::vector<float> sigmaSquared;
 
     // 3D Points
     // vector<cv::Point3f> mvP3Dw;
     Points3 points3Dw;
 
     // Index in Frame
-    vector<size_t> keypointIndices;
+    std::vector<size_t> keypointIndices;
 
     // Current Estimation
-    double          mRi[3][3];
-    double          mti[3];
-    Eigen::Matrix4f mTcwi;
-    vector<bool>    inlierFlags;
-    int             inlierCount;
+    double            mRi[3][3];
+    double            mti[3];
+    Eigen::Matrix4f   mTcwi;
+    std::vector<bool> inlierFlags;
+    int               inlierCount;
 
     // Current Ransac State
-    int             iterationCount;
-    vector<bool>    bestInlierFlags;
-    int             bestInlierCount;
-    Eigen::Matrix4f mBestTcw;
+    int               iterationCount;
+    std::vector<bool> bestInlierFlags;
+    int               bestInlierCount;
+    Eigen::Matrix4f   mBestTcw;
 
     // Refined
-    Eigen::Matrix4f mRefinedTcw;
-    vector<bool>    refinedInlierFlags;
-    int             refinedInlierCount;
+    Eigen::Matrix4f   mRefinedTcw;
+    std::vector<bool> refinedInlierFlags;
+    int               refinedInlierCount;
 
     // Number of Correspondences
     int correspondenceCount;
 
     // Indices for random selection [0 .. N-1]
-    vector<size_t> allIndices;
+    std::vector<size_t> allIndices;
 
     // RANSAC probability
     double ransacProb;
@@ -351,7 +351,7 @@ class MLPnPsolver
 
     // Max square error associated with scale level. Max error =
     // th*th*sigma(level)*sigma(level)
-    vector<float> maxError;
+    std::vector<float> maxError;
 
     camera_models::geometriccamera::GeometricCamera *p_camera;
 };

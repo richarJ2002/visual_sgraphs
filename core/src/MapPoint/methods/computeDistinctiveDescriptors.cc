@@ -38,12 +38,12 @@ namespace core
 MapPointStatus MapPoint::computeDistinctiveDescriptors()
 {
     // Retrieve all observed descriptors
-    vector<cv::Mat> descriptors;
+    std::vector<cv::Mat> descriptors;
 
-    map<KeyFrame *, tuple<int, int>> observedKeyFrames;
+    std::map<KeyFrame *, std::tuple<int, int>> observedKeyFrames;
 
     {
-        unique_lock<mutex> lock1(featuresMutex);
+        std::unique_lock<std::mutex> lock1(featuresMutex);
         if (isFlaggedBad)
             return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
         observedKeyFrames = observations;
@@ -54,7 +54,7 @@ MapPointStatus MapPoint::computeDistinctiveDescriptors()
 
     descriptors.reserve(observedKeyFrames.size());
 
-    for (map<KeyFrame *, tuple<int, int>>::iterator
+    for (std::map<KeyFrame *, std::tuple<int, int>>::iterator
              mit  = observedKeyFrames.begin(),
              mend = observedKeyFrames.end();
          mit != mend;
@@ -73,8 +73,9 @@ MapPointStatus MapPoint::computeDistinctiveDescriptors()
         }
         if (!keyFrameIsBad)
         {
-            tuple<int, int> indexes = mit->second;
-            int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+            std::tuple<int, int> indexes   = mit->second;
+            int                  leftIndex = std::get<0>(indexes),
+                rightIndex                 = std::get<1>(indexes);
 
             if (leftIndex != -1)
             {
@@ -125,9 +126,9 @@ MapPointStatus MapPoint::computeDistinctiveDescriptors()
     int bestIndex  = 0;
     for (size_t keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
     {
-        const float *p_row = &distances[keyPointIndex * N];
-        vector<int>  dists(p_row, p_row + N);
-        sort(dists.begin(), dists.end());
+        const float     *p_row = &distances[keyPointIndex * N];
+        std::vector<int> dists(p_row, p_row + N);
+        std::sort(dists.begin(), dists.end());
         int median = dists[0.5 * (N - 1)];
 
         if (median < bestMedian)
@@ -138,7 +139,7 @@ MapPointStatus MapPoint::computeDistinctiveDescriptors()
     }
 
     {
-        unique_lock<mutex> lock(featuresMutex);
+        std::unique_lock<std::mutex> lock(featuresMutex);
         descriptor = descriptors[bestIndex].clone();
     }
 

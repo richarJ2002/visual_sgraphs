@@ -38,8 +38,8 @@ namespace core
 
 MapStatus Map::clear()
 {
-    for (set<KeyFrame *>::iterator sit  = keyFrames.begin(),
-                                   send = keyFrames.end();
+    for (std::set<KeyFrame *>::iterator sit  = keyFrames.begin(),
+                                        send = keyFrames.end();
          sit != send;
          sit++)
     {

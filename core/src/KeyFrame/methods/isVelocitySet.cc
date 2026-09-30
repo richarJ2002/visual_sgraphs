@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::isVelocitySet(bool &isVelocitySet_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     isVelocitySet_out = isVelocityAvailable;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::informNewBigChange()
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     bigChangeIndex++;
 
     return MapStatus::MAP_STATUS_SUCCESS;

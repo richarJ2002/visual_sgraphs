@@ -43,7 +43,7 @@ MapStatus Map::postLoad(
     ORBVocabulary *
         p_orbVocabulary_in /*, map<long unsigned int, KeyFrame*>& mpKeyFrameId*/
     ,
-    map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
+    std::map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
         &cams_inout)
 {
     std::copy(backupMapPoints.begin(),
@@ -53,7 +53,7 @@ MapStatus Map::postLoad(
               backupKeyFrames.end(),
               std::inserter(keyFrames, keyFrames.begin()));
 
-    map<long unsigned int, MapPoint *> mapPointId;
+    std::map<long unsigned int, MapPoint *> mapPointId;
     for (MapPoint *p_mapPoint : mapPoints)
     {
         bool mapPointIsBad{};
@@ -79,7 +79,7 @@ MapStatus Map::postLoad(
         mapPointId[p_mapPoint->id] = p_mapPoint;
     }
 
-    map<long unsigned int, KeyFrame *> keyFrameId;
+    std::map<long unsigned int, KeyFrame *> keyFrameId;
     for (KeyFrame *p_keyFrame : keyFrames)
     {
         bool keyFrameIsBad{};

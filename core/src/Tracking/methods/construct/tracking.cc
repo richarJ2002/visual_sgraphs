@@ -40,10 +40,10 @@ Tracking::Tracking(System                    *p_sys_in,
                    MapDrawer                 *p_mapDrawer_in,
                    Atlas                     *p_atlas_in,
                    KeyFrameDatabase          *p_keyFrameDatabase_in,
-                   const string              &settingPath_in,
+                   const std::string         &settingPath_in,
                    const int                  sensorType_in,
                    utils::settings::Settings *p_settings_in,
-                   const string              &nameSeq_in) :
+                   const std::string         &nameSeq_in) :
     state(NO_IMAGES_YET),
     sensor(sensorType_in),
     trackedFr(0),
@@ -157,7 +157,7 @@ Tracking::Tracking(System                    *p_sys_in,
             {
                 throw -1;
             }
-            catch (exception &e)
+            catch (std::exception &e)
             {}
         }
     }
@@ -183,7 +183,7 @@ Tracking::Tracking(System                    *p_sys_in,
     {
         float worldRollPitchYaw[3] = {};
 
-        string angleNames[3] = {"roll", "pitch", "yaw"};
+        std::string angleNames[3] = {"roll", "pitch", "yaw"};
 
         cv::FileStorage settingsFile(settingPath_in, cv::FileStorage::READ);
 
@@ -203,7 +203,7 @@ Tracking::Tracking(System                    *p_sys_in,
             std::cout << angleNames[axisIndex] << " "
                       << worldRollPitchYaw[axisIndex] << " ";
         }
-        std::cout << endl;
+        std::cout << std::endl;
 
         Eigen::AngleAxisf  angleR(worldRollPitchYaw[0],
                                  Eigen::Vector3f::UnitX());

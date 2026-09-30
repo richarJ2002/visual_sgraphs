@@ -36,7 +36,7 @@ namespace core
 
 MapStatus Map::clearTransferredEntityIndexes()
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     floorIndex.clear();
     planeIndex.clear();
     markerIndex.clear();

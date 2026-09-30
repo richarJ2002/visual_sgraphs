@@ -32,9 +32,9 @@ namespace vs_graphs
 namespace core
 {
 
-TrackingStatus Tracking::saveSubTrajectory(string textNameFileFrames_in,
-                                           string textNameFileKeyFrame_in,
-                                           Map   *p_map_in)
+TrackingStatus Tracking::saveSubTrajectory(std::string textNameFileFrames_in,
+                                           std::string textNameFileKeyFrame_in,
+                                           Map        *p_map_in)
 {
     if (p_system->saveTrajectoryEuRoC(textNameFileFrames_in, p_map_in) !=
         SystemStatus::SYSTEM_STATUS_SUCCESS)

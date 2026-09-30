@@ -95,9 +95,9 @@ TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
         }
     }
 
-    fill(currentFrame.mapPoints.begin(),
-         currentFrame.mapPoints.end(),
-         static_cast<MapPoint *>(nullptr));
+    std::fill(currentFrame.mapPoints.begin(),
+              currentFrame.mapPoints.end(),
+              static_cast<MapPoint *>(nullptr));
 
     // Project points seen in previous frame
     int threshold;
@@ -147,9 +147,9 @@ TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        fill(currentFrame.mapPoints.begin(),
-             currentFrame.mapPoints.end(),
-             static_cast<MapPoint *>(nullptr));
+        std::fill(currentFrame.mapPoints.begin(),
+                  currentFrame.mapPoints.end(),
+                  static_cast<MapPoint *>(nullptr));
 
         int matcherByProjection{};
         if (matcher.searchByProjection(currentFrame,
@@ -167,7 +167,7 @@ TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
         }
         nmatches = matcherByProjection;
         if (Verbose::printMess("Matches with wider search: " +
-                                   to_string(nmatches),
+                                   std::to_string(nmatches),
                                Verbose::VERBOSITY_NORMAL) !=
             VerboseStatus::VERBOSE_STATUS_SUCCESS)
         {

@@ -36,7 +36,7 @@ namespace core
 
 MapPointStatus MapPoint::updateMap(Map *p_map_in)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     p_map = p_map_in;
 
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;

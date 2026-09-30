@@ -37,7 +37,7 @@ namespace core
 MapStatus Map::getSkeletonClusterPoints(
     std::vector<std::vector<Eigen::Vector3d>> &skeletonClusterPoints_out)
 {
-    unique_lock<mutex> lock(mapMutex);
+    std::unique_lock<std::mutex> lock(mapMutex);
     skeletonClusterPoints_out = skeletonClusterPoints;
     return MapStatus::MAP_STATUS_SUCCESS;
 }

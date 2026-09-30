@@ -62,25 +62,22 @@
 
 #include "../../private_functions.h"
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
-int ORBextractor::operator()(InputArray                  image_in,
-                             [[maybe_unused]] InputArray mask_in,
-                             vector<KeyPoint>           &keypoints_inout,
-                             OutputArray                 descriptors_in,
-                             std::vector<int>           &lappingArea_in)
+int ORBextractor::operator()(cv::InputArray                  image_in,
+                             [[maybe_unused]] cv::InputArray mask_in,
+                             std::vector<cv::KeyPoint>      &keypoints_inout,
+                             cv::OutputArray                 descriptors_in,
+                             std::vector<int>               &lappingArea_in)
 {
     // cout << "[ORBextractor]: Max Features: " << featureCount << endl;
     if (image_in.empty())
         return -1;
 
-    Mat image = image_in.getMat();
+    cv::Mat image = image_in.getMat();
     assert(image.type() == CV_8UC1);
 
     // Pre-compute the scale pyramid
@@ -93,7 +90,7 @@ int ORBextractor::operator()(InputArray                  image_in,
                      __func__);
     }
 
-    vector<vector<KeyPoint>> allKeypoints;
+    std::vector<std::vector<cv::KeyPoint>> allKeypoints;
     if (computeKeyPointsOctTree(allKeypoints) !=
         ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
     {
@@ -104,7 +101,7 @@ int ORBextractor::operator()(InputArray                  image_in,
     }
     // computeKeyPointsOld(allKeypoints);
 
-    Mat descriptors;
+    cv::Mat descriptors;
 
     int nkeypoints = 0;
     for (int level = 0; level < levelCount; ++level)
@@ -119,31 +116,31 @@ int ORBextractor::operator()(InputArray                  image_in,
 
     // keypoints_out.clear();
     // keypoints_out.reserve(nkeypoints);
-    keypoints_inout = vector<cv::KeyPoint>(nkeypoints);
+    keypoints_inout = std::vector<cv::KeyPoint>(nkeypoints);
 
     int offset = 0;
     // Modified for speeding up stereo fisheye matching
     int monoIndex = 0, stereoIndex = nkeypoints - 1;
     for (int level = 0; level < levelCount; ++level)
     {
-        vector<KeyPoint> &keypoints       = allKeypoints[level];
-        int               nkeypointsLevel = (int)keypoints.size();
+        std::vector<cv::KeyPoint> &keypoints       = allKeypoints[level];
+        int                        nkeypointsLevel = (int)keypoints.size();
 
         if (nkeypointsLevel == 0)
             continue;
 
         // preprocess the resized image
-        Mat workingMatrix = imagePyramid[level].clone();
-        GaussianBlur(workingMatrix,
-                     workingMatrix,
-                     Size(7, 7),
-                     2,
-                     2,
-                     BORDER_REFLECT_101);
+        cv::Mat workingMatrix = imagePyramid[level].clone();
+        cv::GaussianBlur(workingMatrix,
+                         workingMatrix,
+                         cv::Size(7, 7),
+                         2,
+                         2,
+                         cv::BORDER_REFLECT_101);
 
         // Compute the descriptors
         // Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
-        Mat descriptor = cv::Mat(nkeypointsLevel, 32, CV_8U);
+        cv::Mat descriptor = cv::Mat(nkeypointsLevel, 32, CV_8U);
         if (computeDescriptors(workingMatrix,
                                keypoints,
                                descriptor,
@@ -161,8 +158,8 @@ int ORBextractor::operator()(InputArray                  image_in,
         float scale =
             scaleFactors[level]; // getScale(level, firstLevel, scaleFactor);
         int i = 0;
-        for (vector<KeyPoint>::iterator keypoint    = keypoints.begin(),
-                                        keypointEnd = keypoints.end();
+        for (std::vector<cv::KeyPoint>::iterator keypoint = keypoints.begin(),
+                                                 keypointEnd = keypoints.end();
              keypoint != keypointEnd;
              ++keypoint)
         {

@@ -36,7 +36,7 @@ namespace core
 LocalMappingStatus LocalMapping::processNewKeyFrame()
 {
     {
-        unique_lock<mutex> newKeyFramesLock(newKeyFramesMutex);
+        std::unique_lock<std::mutex> newKeyFramesLock(newKeyFramesMutex);
         p_currentKeyFrame = newKeyFrames.front();
         newKeyFrames.pop_front();
     }

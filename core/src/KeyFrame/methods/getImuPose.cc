@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getImuPose(Sophus::SE3f &imuPose_out)
 {
-    unique_lock<mutex> lock(poseMutex);
+    std::unique_lock<std::mutex> lock(poseMutex);
     imuPose_out = twc * imuCalibration.mTcb;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

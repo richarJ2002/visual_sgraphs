@@ -39,8 +39,8 @@ AtlasStatus Atlas::isActiveMap(Map *p_map_in, bool &isActiveMap_out)
         return AtlasStatus::ATLAS_STATUS_SUCCESS;
     }
 
-    unique_lock<mutex> lock(atlasMutex);
-    bool               mapIsBad{};
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    bool                         mapIsBad{};
     if ((maps.count(p_map_in) > 0) &&
         p_map_in->isBad(mapIsBad) != MapStatus::MAP_STATUS_SUCCESS)
     {

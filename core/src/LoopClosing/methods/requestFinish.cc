@@ -34,7 +34,7 @@ namespace core
 
 LoopClosingStatus LoopClosing::requestFinish()
 {
-    unique_lock<mutex> lock(finishMutex);
+    std::unique_lock<std::mutex> lock(finishMutex);
     // cout << "LC: Finish requested" << endl;
     isFinishRequested = true;
 

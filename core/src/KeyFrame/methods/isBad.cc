@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::isBad(bool &isBad_out)
 {
-    unique_lock<mutex> lock(connectionsMutex);
+    std::unique_lock<std::mutex> lock(connectionsMutex);
     isBad_out = isFlaggedBad;
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }

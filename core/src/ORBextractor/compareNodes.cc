@@ -59,16 +59,13 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
 {
 
-bool compareNodes(pair<int, ExtractorNode *> &e1_in,
-                  pair<int, ExtractorNode *> &e2_in)
+bool compareNodes(std::pair<int, ExtractorNode *> &e1_in,
+                  std::pair<int, ExtractorNode *> &e2_in)
 {
     if (e1_in.first < e2_in.first)
     {

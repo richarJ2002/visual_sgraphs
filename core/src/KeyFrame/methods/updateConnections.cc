@@ -43,12 +43,12 @@ namespace core
 
 KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
 {
-    map<KeyFrame *, int> keyFrameCounter;
+    std::map<KeyFrame *, int> keyFrameCounter;
 
-    vector<MapPoint *> keyFrameMapPoints;
+    std::vector<MapPoint *> keyFrameMapPoints;
 
     {
-        unique_lock<mutex> lockMapPoints(featuresMutex);
+        std::unique_lock<std::mutex> lockMapPoints(featuresMutex);
         keyFrameMapPoints = mapPoints;
     }
 
@@ -76,8 +76,8 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
         }
         unsigned int scorePerPlane =
             p_params2->planeBasedCovisibility.scorePerPlane;
-        for (vector<geometric::Plane *>::iterator vit  = mapPlanes.begin(),
-                                                  vend = mapPlanes.end();
+        for (std::vector<geometric::Plane *>::iterator vit  = mapPlanes.begin(),
+                                                       vend = mapPlanes.end();
              vit != vend;
              vit++)
         {
@@ -86,7 +86,7 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
             if (!p_plane)
                 continue;
 
-            map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
+            std::map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
                 observations{};
             if (p_plane->getObservations(observations) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -97,7 +97,8 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
                              __func__);
             }
 
-            for (map<KeyFrame *,
+            for (std::map<
+                     KeyFrame *,
                      vs_graphs::core::geometric::Plane::Observation>::iterator
                      mit  = observations.begin(),
                      mend = observations.end();
@@ -150,8 +151,8 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
 
     // For all map points in keyframe check in which other keyframes are they
     // seen Increase counter for those keyframes
-    for (vector<MapPoint *>::iterator vit  = keyFrameMapPoints.begin(),
-                                      vend = keyFrameMapPoints.end();
+    for (std::vector<MapPoint *>::iterator vit  = keyFrameMapPoints.begin(),
+                                           vend = keyFrameMapPoints.end();
          vit != vend;
          vit++)
     {
@@ -182,7 +183,7 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
                          __func__);
         }
 
-        for (map<KeyFrame *, tuple<int, int>>::iterator
+        for (std::map<KeyFrame *, std::tuple<int, int>>::iterator
                  mit  = observations.begin(),
                  mend = observations.end();
              mit != mend;
@@ -225,18 +226,18 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
     KeyFrame *p_keyFrameMaximum = nullptr;
     int       threshold         = 15;
 
-    vector<pair<int, KeyFrame *>> pairs;
+    std::vector<std::pair<int, KeyFrame *>> pairs;
     pairs.reserve(keyFrameCounter.size());
     if (!upParent_in)
-        cout << "UPDATE_CONN: current KF " << id << endl;
-    for (map<KeyFrame *, int>::iterator mit  = keyFrameCounter.begin(),
-                                        mend = keyFrameCounter.end();
+        std::cout << "UPDATE_CONN: current KF " << id << std::endl;
+    for (std::map<KeyFrame *, int>::iterator mit  = keyFrameCounter.begin(),
+                                             mend = keyFrameCounter.end();
          mit != mend;
          mit++)
     {
         if (!upParent_in)
-            cout << "  UPDATE_CONN: KF " << mit->first->id
-                 << " ; num matches: " << mit->second << endl;
+            std::cout << "  UPDATE_CONN: KF " << mit->first->id
+                      << " ; num matches: " << mit->second << std::endl;
         if (mit->second > nmax)
         {
             nmax              = mit->second;
@@ -244,7 +245,7 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
         }
         if (mit->second >= threshold)
         {
-            pairs.push_back(make_pair(mit->second, mit->first));
+            pairs.push_back(std::make_pair(mit->second, mit->first));
             if ((mit->first)->addConnection(this, mit->second) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
@@ -258,7 +259,7 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
 
     if (pairs.empty())
     {
-        pairs.push_back(make_pair(nmax, p_keyFrameMaximum));
+        pairs.push_back(std::make_pair(nmax, p_keyFrameMaximum));
         if (p_keyFrameMaximum->addConnection(this, nmax) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
@@ -269,9 +270,9 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
         }
     }
 
-    sort(pairs.begin(), pairs.end());
-    list<KeyFrame *> keyFrames;
-    list<int>        weights;
+    std::sort(pairs.begin(), pairs.end());
+    std::list<KeyFrame *> keyFrames;
+    std::list<int>        weights;
     for (size_t pairIndex = 0; pairIndex < pairs.size(); pairIndex++)
     {
         keyFrames.push_front(pairs[pairIndex].second);
@@ -279,12 +280,12 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
     }
 
     {
-        unique_lock<mutex> lockCon(connectionsMutex);
+        std::unique_lock<std::mutex> lockCon(connectionsMutex);
 
         connectedKeyFrameWeights = keyFrameCounter;
         orderedConnectedKeyFrames =
-            vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
-        orderedWeights = vector<int>(weights.begin(), weights.end());
+            std::vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
+        orderedWeights = std::vector<int>(weights.begin(), weights.end());
 
         unsigned long mapInitKeyFrameId{};
         if ((isFirstConnection) &&

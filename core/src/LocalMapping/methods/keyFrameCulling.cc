@@ -90,7 +90,7 @@ LocalMappingStatus LocalMapping::keyFrameCulling()
         lastOptimizableKeyFrameId = p_oldestKeyFrame->id;
     }
 
-    for (vector<KeyFrame *>::iterator
+    for (std::vector<KeyFrame *>::iterator
              neighborKeyFrameIt  = neighborKeyFrames.begin(),
              neighborKeyFrameEnd = neighborKeyFrames.end();
          neighborKeyFrameIt != neighborKeyFrameEnd;
@@ -210,7 +210,8 @@ LocalMappingStatus LocalMapping::keyFrameCulling()
                                          __func__);
                         }
                         int observationCount = 0;
-                        for (map<KeyFrame *, tuple<int, int>>::const_iterator
+                        for (std::map<KeyFrame *,
+                                      std::tuple<int, int>>::const_iterator
                                  observationIt  = pointObservations.begin(),
                                  observationEnd = pointObservations.end();
                              observationIt != observationEnd;
@@ -220,10 +221,10 @@ LocalMappingStatus LocalMapping::keyFrameCulling()
                                 observationIt->first;
                             if (p_observingKeyFrame == p_neighborKeyFrame)
                                 continue;
-                            tuple<int, int> observationIndices =
+                            std::tuple<int, int> observationIndices =
                                 observationIt->second;
-                            int leftIndex          = get<0>(observationIndices),
-                                rightIndex         = get<1>(observationIndices);
+                            int leftIndex  = std::get<0>(observationIndices),
+                                rightIndex = std::get<1>(observationIndices);
                             int observerScaleLevel = -1;
                             if (p_observingKeyFrame->leftKeyPointCount == -1)
                                 observerScaleLevel =

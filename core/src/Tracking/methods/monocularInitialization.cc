@@ -53,7 +53,7 @@ TrackingStatus Tracking::monocularInitialization()
                     currentFrame.keyPointsUndistorted[keyPointsUndistortedIndex]
                         .pt;
 
-            fill(iniMatches.begin(), iniMatches.end(), -1);
+            std::fill(iniMatches.begin(), iniMatches.end(), -1);
 
             if (sensor == System::IMU_MONOCULAR)
             {
@@ -106,7 +106,7 @@ TrackingStatus Tracking::monocularInitialization()
         }
 
         Sophus::SE3f Tcw;
-        vector<bool>
+        std::vector<bool>
             triangulatedFlags; // Triangulated Correspondences (mvIniMatches)
 
         if (p_camera->reconstructWithTwoViews(initialFrame.keyPointsUndistorted,

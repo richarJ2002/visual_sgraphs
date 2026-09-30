@@ -42,7 +42,7 @@ KeyFrameStatus KeyFrame::addMapPlane(geometric::Plane *p_plane_in)
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
-    unique_lock<mutex> lock(featuresMutex);
+    std::unique_lock<std::mutex> lock(featuresMutex);
 
     if (std::find(mapPlanes.begin(), mapPlanes.end(), p_plane_in) ==
         mapPlanes.end())

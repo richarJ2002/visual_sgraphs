@@ -37,7 +37,7 @@ namespace core
 
 KeyFrameStatus KeyFrame::getWeight(KeyFrame *p_keyFrame_in, int &weight_out)
 {
-    unique_lock<mutex> lock(connectionsMutex);
+    std::unique_lock<std::mutex> lock(connectionsMutex);
     if (connectedKeyFrameWeights.count(p_keyFrame_in))
     {
         weight_out = connectedKeyFrameWeights[p_keyFrame_in];

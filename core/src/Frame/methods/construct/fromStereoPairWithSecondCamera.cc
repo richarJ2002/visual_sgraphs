@@ -123,7 +123,7 @@ Frame::Frame(const cv::Mat &imageColor_in,
                      __func__);
     }
     scaleFactor    = orbExtractorLeftScaleFactor;
-    logScaleFactor = log(scaleFactor);
+    logScaleFactor = std::log(scaleFactor);
     std::vector<float> orbExtractorLeftScaleFactors{};
     if (p_orbExtractorLeft->getScaleFactors(orbExtractorLeftScaleFactors) !=
         ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
@@ -173,7 +173,7 @@ Frame::Frame(const cv::Mat &imageColor_in,
     std::chrono::steady_clock::time_point timeStartExtOrb =
         std::chrono::steady_clock::now();
 #endif
-    thread threadLeft(
+    std::thread threadLeft(
         &Frame::extractOrbFeatures,
         this,
         0,
@@ -182,7 +182,7 @@ Frame::Frame(const cv::Mat &imageColor_in,
             ->lappingArea[0],
         static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(p_camera)
             ->lappingArea[1]);
-    thread threadRight(
+    std::thread threadRight(
         &Frame::extractOrbFeatures,
         this,
         1,
@@ -271,13 +271,13 @@ Frame::Frame(const cv::Mat &imageColor_in,
     cv::vconcat(descriptors, descriptorsRight, descriptors);
 
     // Initialize MapPoints
-    mapPoints =
-        vector<MapPoint *>(keyPointCount, static_cast<MapPoint *>(nullptr));
+    mapPoints = std::vector<MapPoint *>(keyPointCount,
+                                        static_cast<MapPoint *>(nullptr));
 
     // Initialize MapMarkers
     mapMarkers = markers_in;
 
-    outlierFlags = vector<bool>(keyPointCount, false);
+    outlierFlags = std::vector<bool>(keyPointCount, false);
 
     if (assignFeaturesToGrid() != FrameStatus::FRAME_STATUS_SUCCESS)
     {

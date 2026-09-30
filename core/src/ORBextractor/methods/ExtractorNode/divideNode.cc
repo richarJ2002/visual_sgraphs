@@ -59,9 +59,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 
-using namespace cv;
-using namespace std;
-
 namespace vs_graphs
 {
 namespace core
@@ -72,8 +69,9 @@ ExtractorNodeStatus ExtractorNode::divideNode(ExtractorNode &node1_inout,
                                               ExtractorNode &node3_inout,
                                               ExtractorNode &node4_inout)
 {
-    const int halfX = ceil(static_cast<float>(topRight.x - topLeft.x) / 2);
-    const int halfY = ceil(static_cast<float>(bottomRight.y - topLeft.y) / 2);
+    const int halfX = std::ceil(static_cast<float>(topRight.x - topLeft.x) / 2);
+    const int halfY =
+        std::ceil(static_cast<float>(bottomRight.y - topLeft.y) / 2);
 
     // Define boundaries of childs
     node1_inout.topLeft     = topLeft;

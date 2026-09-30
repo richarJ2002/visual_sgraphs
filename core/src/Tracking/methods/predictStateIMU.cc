@@ -270,7 +270,7 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
     else
-        cout << "not IMU prediction!!" << endl;
+        std::cout << "not IMU prediction!!" << std::endl;
 
     isPredicted_out = false;
     return TrackingStatus::TRACKING_STATUS_SUCCESS;

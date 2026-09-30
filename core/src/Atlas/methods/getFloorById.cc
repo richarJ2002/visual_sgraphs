@@ -34,8 +34,8 @@ namespace core
 AtlasStatus Atlas::getFloorById(int               floorId_in,
                                 semantic::Floor *&p_floorById_out)
 {
-    unique_lock<mutex> lock(atlasMutex);
-    semantic::Floor   *p_activeMapFloorById = nullptr;
+    std::unique_lock<std::mutex> lock(atlasMutex);
+    semantic::Floor             *p_activeMapFloorById = nullptr;
     if ((p_activeMap != nullptr) &&
         p_activeMap->getFloorById(floorId_in, p_activeMapFloorById) !=
             MapStatus::MAP_STATUS_SUCCESS)

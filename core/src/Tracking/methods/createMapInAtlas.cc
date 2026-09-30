@@ -63,7 +63,7 @@ TrackingStatus Tracking::createMapInAtlas()
     // mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is
     // the current id, because it is the new starting point for new map
     if (Verbose::printMess(
-            "First frame id in map: " + to_string(lastInitFrameId + 1),
+            "First frame id in map: " + std::to_string(lastInitFrameId + 1),
             Verbose::VERBOSITY_NORMAL) != VerboseStatus::VERBOSE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
