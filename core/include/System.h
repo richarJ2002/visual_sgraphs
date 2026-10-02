@@ -949,11 +949,16 @@ class System
      * @brief       Stops and joins all worker threads and frees the thread
      *              objects. Safe to run after Shutdown(); join() is only
      *              performed here, never in Shutdown().
+     *
+     * @note        After a successful initialize() nothing else is freed:
+     *              the atlas, key-frame database, vocabulary, settings and
+     *              modules are left for the operating system to reclaim at
+     *              exit.
      */
     ~System();
     /*!
      * @brief        Copying is forbidden: the system owns its worker
-     *               threads and modules and deletes them when destroyed.
+     *               threads and deletes them when destroyed.
      */
     System(const System &otherSystem_in)            = delete;
     System &operator=(const System &otherSystem_in) = delete;

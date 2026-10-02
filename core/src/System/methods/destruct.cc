@@ -27,8 +27,8 @@
  * @file            destruct.cc
  *
  * @brief           Implements the System destructor, declared in System.h:
- *                  stops and joins the worker threads, then frees what the
- *                  system owns.
+ *                  stops and joins the worker threads, then frees the thread
+ *                  objects.
  */
 
 #include "KeyFrameDatabase.h"
@@ -152,6 +152,12 @@ System::~System()
         delete p_viewerThread;
     }
     delete p_geometricSegmentationThread;
+
+    /* The atlas, key-frame database, vocabulary, settings and modules are
+     * deliberately not freed, as in ORB-SLAM3: map elements (key frames, map
+     * points, planes, rooms) point at each other and are never deleted, so
+     * no single owner can free them safely. The operating system reclaims
+     * them at exit. */
 }
 
 } // namespace core
