@@ -4,7 +4,7 @@
  * @brief           Unit tests for semantic diagnostics (SemanticDiagnostics).
  */
 
-/*!
+/*
  * Focused, ROS/Gazebo-free tests for the pure
  * buildSemanticDiagnosticUpdate() builder extracted from
  * SemanticsManager::logSemanticDiagnostics().

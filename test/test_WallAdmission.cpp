@@ -4,7 +4,7 @@
  * @brief           Unit tests for admitting planes as walls (WallAdmission).
  */
 
-/*!
+/*
  * Focused tests for two wall-admission fixes reported directly against a
  * live sim run (office_clean):
  *
@@ -25,8 +25,8 @@
  *     on the wrong side" reported live. The fix orients the wall equation
  *     toward the room's own centroid, then rejects when the keyframes that
  *     actually observed the wall have a confident sign-consensus on the
- *     FAR side (geometric::Plane::getObservationSideSnapshot(), previously
- * read-only diagnostic logging, now also a gate).
+ *     FAR side (`geometric::Plane::getObservationSideSnapshot()`,
+ *     previously read-only diagnostic logging, now also a gate).
  *
  * Both fixes are exercised through SemanticsManager's private production
  * methods via the *ForTest wrappers of the test-only SemanticsManager
@@ -57,14 +57,14 @@ namespace core
 namespace
 {
 
-/*! Builds a wall geometric::Plane with a genuine, production-computed geometry
- * snapshot: a flat rectangular grid of points, spanning [-halfU, halfU]
- * along axisU_World and [-halfV, halfV] along axisV_World, offset from the
- * plane's own centroid, all exactly on-plane. Mirrors
- * test_RoomContextPersist.cpp's makeRefitWallPlane pattern (feed a
- * synthetic cloud through the real geometric::Plane::updateSizeOfPlane() path,
- * the same function evaluateWallAdmissionEvidence's
- * geometric::Plane::getGeometrySnapshot() call reads from). */
+/*! Builds a wall `geometric::Plane` with a genuine, production-computed
+ * geometry snapshot: a flat rectangular grid of points, spanning [-halfU,
+ * halfU] along axisU_World and [-halfV, halfV] along axisV_World, offset from
+ * the plane's own centroid, all exactly on-plane. Mirrors
+ * test_RoomContextPersist.cpp's makeRefitWallPlane pattern (feed a synthetic
+ * cloud through the real `geometric::Plane::updateSizeOfPlane()` path, the same
+ * function evaluateWallAdmissionEvidence's
+ * `geometric::Plane::getGeometrySnapshot()` call reads from). */
 void makeWallWithGridCloud(geometric::Plane      &wall_inout,
                            int                    id_in,
                            Map                   *p_map_in,
@@ -610,7 +610,7 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
 namespace
 {
 
-/*! Builds a GROUND geometric::Plane at z=0 with a genuine, production-refit
+/*! Builds a GROUND `geometric::Plane` at z=0 with a genuine, production-refit
  * geometry snapshot (Map::GetBiggestGroundPlane() requires cloudGeneration ==
  * successfulRefitGeneration and a finite support count). */
 std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
@@ -686,9 +686,9 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
     return ground;
 }
 
-/*! Builds a long, admissible WALL geometric::Plane whose horizontal (in-plane)
- * span runs along axisAlong_World_in through the origin, at a given normal
- * direction, wide enough to produce a decisive interior crossing. */
+/*! Builds a long, admissible WALL `geometric::Plane` whose horizontal
+ * (in-plane) span runs along axisAlong_World_in through the origin, at a given
+ * normal direction, wide enough to produce a decisive interior crossing. */
 std::unique_ptr<geometric::Plane>
     makeLongWallThroughOrigin(int                    id_in,
                               Map                   *p_map_in,

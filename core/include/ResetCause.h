@@ -169,8 +169,11 @@ class ResetCauseRetention
  * @param[in]    p_owner_in
  *               Owning object the cause was attributed to; may be null.
  *
- * @return       Retained cause, or UNATTRIBUTED_PUBLIC_REQUEST when the
- *               owner has no retained cause.
+ * @param[out]   resetCause_out
+ *               Retained cause, or UNATTRIBUTED_PUBLIC_REQUEST when the owner
+ *               has no retained cause.
+ *
+ * @return       RESET_CAUSE_STATUS_SUCCESS.
  */
 [[nodiscard]] ResetCauseStatus consumeResetCause(const void *p_owner_in,
                                                  ResetCause &resetCause_out);
@@ -210,8 +213,11 @@ enum class ResetAction : std::uint8_t
  * @param[in]    cause_in
  *               Cause to name.
  *
- * @return       Pointer to a static snake-case name, or "unknown" for
- *               an unmapped value.
+ * @param[out]   p_text_out
+ *               Pointer to a static snake-case name, or "unknown" for an
+ *               unmapped value.
+ *
+ * @return       RESET_CAUSE_STATUS_SUCCESS.
  */
 [[nodiscard]] ResetCauseStatus
     resetCauseToString(ResetCause cause_in, const char *&p_text_out) noexcept;
@@ -221,8 +227,11 @@ enum class ResetAction : std::uint8_t
  * @param[in]    action_in
  *               Action to name.
  *
- * @return       Pointer to a static snake-case name, or "unknown" for
- *               an unmapped value.
+ * @param[out]   p_text_out
+ *               Pointer to a static snake-case name, or "unknown" for an
+ *               unmapped value.
+ *
+ * @return       RESET_CAUSE_STATUS_SUCCESS.
  */
 [[nodiscard]] ResetCauseStatus
     resetActionToString(ResetAction  action_in,
@@ -235,8 +244,11 @@ enum class ResetAction : std::uint8_t
  * @param[in]    action_in
  *               Attributed action.
  *
- * @return       Text of the form "VSG_RESET_ATTRIBUTION cause=<cause>
+ * @param[out]   resetAttribution_out
+ *               Text of the form "VSG_RESET_ATTRIBUTION cause=<cause>
  *               action=<action>".
+ *
+ * @return       RESET_CAUSE_STATUS_SUCCESS.
  */
 [[nodiscard]] ResetCauseStatus
                                formatResetAttribution(ResetCause   cause_in,

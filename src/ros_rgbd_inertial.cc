@@ -80,6 +80,9 @@ class ImageGrabber : public rclcpp::Node
      * @param[in] useSimTime_in True when timestamps must follow `/clock`.
      * @param[in] maximumTrackingRate_hz_in Maximum visual estimator rate.
      * @param[in] maximumBufferDuration_seconds_in Allowed sensor latency.
+     * @param[in] directGazeboFluCloud_in True when the input cloud is a
+     * direct Gazebo cloud in forward-left-up axes, converted to the optical
+     * camera frame; generated RGB-D clouds are already optical.
      */
     ImageGrabber(std::shared_ptr<ImuGrabber> p_imuGrabber_in,
                  bool                        useSimTime_in,
@@ -131,7 +134,7 @@ class ImageGrabber : public rclcpp::Node
     // void GrabArUcoMarker(const aruco_msgs::MarkerArray &msg);
     cv::Mat GetImage(const sensor_msgs::msg::Image::ConstSharedPtr &img_msg);
     void    GrabVoxbloxSkeletonGraph(
-           const visualization_msgs::msg::MarkerArray &msgSkeletonGraphs);
+           const visualization_msgs::msg::MarkerArray &msgSkeletonGraph);
     void GrabPointCloud(
         const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC);
     void GrabRGBD(const sensor_msgs::msg::Image::ConstSharedPtr &msgRGB,
@@ -958,8 +961,8 @@ void ImageGrabber::GrabRGBD(
     hasAdmittedRgbdPacket             = true;
 }
 
-/*!
- * @brief Callback function to get the markers detected by the `aruco_ros`
+/*
+ * Callback function to get the markers detected by the `aruco_ros`
  * library
  *
  * @param msgMarkerArray The markers detected by the `aruco_ros` library
@@ -974,12 +977,12 @@ void ImageGrabber::GrabRGBD(
 /*!
  * @brief Callback function to get the skeleton graph from the `voxblox` module
  *
- * @param msgSkeletonGraphs The skeleton graph from the `voxblox` module
+ * @param msgSkeletonGraph The skeleton graph from the `voxblox` module
  */
 void ImageGrabber::GrabVoxbloxSkeletonGraph(
-    const visualization_msgs::msg::MarkerArray &msgSkeletonGraphs)
+    const visualization_msgs::msg::MarkerArray &msgSkeletonGraph)
 {
     // Pass the skeleton graph to a buffer to be processed by the
     // SemanticSegmentation thread
-    setVoxbloxSkeletonCluster(msgSkeletonGraphs);
+    setVoxbloxSkeletonCluster(msgSkeletonGraph);
 }

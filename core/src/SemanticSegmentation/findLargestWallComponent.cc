@@ -50,7 +50,10 @@ namespace core
  * @param[in]    clusterTolerance_m_in
  *               Maximum Euclidean neighbour separation in metres.
  *
- * @return       Largest connected component and its support statistics.
+ * @param[out]   largestWallComponent_out
+ *               Largest connected component and its support statistics.
+ *
+ * @return       SEMANTIC_SEGMENTATION_STATUS_SUCCESS.
  */
 SemanticSegmentationStatus findLargestWallComponent(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_wallCloud_in,

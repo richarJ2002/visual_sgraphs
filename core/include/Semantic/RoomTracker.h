@@ -402,9 +402,21 @@ class RoomTracker
     /*!
      * @brief       Accumulates the crossing/dwell timer for the given state.
      *
-     * @param[out] accumulatedDwell_out Dwell seconds elapsed so far
-     * (accumulated countdown).
-     * @return ROOM_TRACKER_STATUS_SUCCESS.
+     * @param[in]   state_in
+     *              Current tracking state (not used by the timer).
+     *
+     * @param[in]   now_s_in
+     *              Current time, in seconds.
+     *
+     * @param[in]   guardSatisfied_in
+     *              Whether the dwell guard holds now; false restarts the
+     *              timer.
+     *
+     * @param[out]  accumulatedDwell_out
+     *              Seconds elapsed since the guard became satisfied, or 0
+     *              when it is not.
+     *
+     * @return      ROOM_TRACKER_STATUS_SUCCESS.
      */
     [[nodiscard]] RoomTrackerStatus
         accumulateDwell(RoomTrackingState state_in,

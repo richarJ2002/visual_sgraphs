@@ -7,7 +7,7 @@
  * Strategy (headless, live objects, SAME frame for both maps so the
  * transform is identity g2o::Sim3 -- no Horn estimation in tests):
  *   1. Build an Atlas, map0 filled, Atlas::CreateNewMap() for map1, fill it,
- *   set Map::setFinalRoom/setStartingRoom links (verify these methods exist),
+ *   set `Map::setFinalRoom`/setStartingRoom links (verify these methods exist),
  *   then for TC1-7 call evaluateConsecutiveMergeGate directly with identity
  *   transform and explicit MapMergeConfig (or
  * mapMergeConfigFromSystemParams()); for TC8-9 call

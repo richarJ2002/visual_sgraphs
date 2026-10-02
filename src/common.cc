@@ -1,7 +1,7 @@
 /*!
- * @File:         common.cc
+ * File:          common.cc
  *
- * @Brief:        This file is a modified version of a file from ORB-SLAM3.
+ * Brief:         This file is a modified version of a file from ORB-SLAM3.
  *
  *                Modifications Copyright (C) 2023-2025 SnT, University of
  *                Luxembourg Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis
@@ -26,7 +26,7 @@
  *                License along with this program. If not, see
  *                <https://www.gnu.org/licenses/>.
  *
- * @Date:         20/07/2026
+ * Date:          20/07/2026
  *
  */
 
@@ -1094,8 +1094,8 @@ void appendPassageMarkers(
     }
 }
 
-/*!
- * @brief Computes the ordered horizontal corner polygon of a room boundary.
+/*
+ * Computes the ordered horizontal corner polygon of a room boundary.
  *
  * Each wall is treated as a vertical line in the horizontal plane: the wall
  * plane is projected onto the plane orthogonal to the room ground normal to

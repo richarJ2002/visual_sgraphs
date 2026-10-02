@@ -21,7 +21,7 @@
  * @brief           Implements MLPnPsolver::refine(), declared in MLPnPsolver.h.
  */
 
-/*!****************************************************************************
+/******************************************************************************
  * Author:   Steffen Urban                                              *
  * Contact:  urbste@gmail.com                                          *
  * License:  Copyright (c) 2016 Steffen Urban, ANU. All rights reserved.      *

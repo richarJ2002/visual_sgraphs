@@ -5,11 +5,11 @@
  *                  pipeline (VerificationWiringIntegration).
  */
 
-/*!
+/*
  * Focused test: proves SemanticsManager::Run()'s new
  * candidate-verification wiring (evaluateTopCandidateVerification) actually
- * drives real Atlas/Map/semantic::Room/geometric::Plane/semantic::Floor objects
- * through semantic::SemanticCandidates -> semantic::SemanticVerify ->
+ * drives real Atlas/Map/`semantic::Room`/`geometric::Plane`/`semantic::Floor`
+ * objects through semantic::SemanticCandidates -> semantic::SemanticVerify ->
  * submitVerificationVerdict -> semantic::RoomTracker, not just the individual
  * phases in isolation (already covered by test_CandidateGen.cpp /
  * test_GeometricVerify.cpp).
@@ -86,9 +86,10 @@ RawWall transformWall(const RawWall         &source_in,
     return transformed;
 }
 
-/*! Owns every geometric::Plane/semantic::Floor object one synthetic room needs,
- * and wires them into a real semantic::Room via the genuine setter API so the
- * production wiring's Atlas/Map lookups (SemanticsManager::findRoomByMapAndId,
+/*! Owns every `geometric::Plane`/`semantic::Floor` object one synthetic room
+ * needs, and wires them into a real semantic::Room via the genuine setter API
+ * so the production wiring's Atlas/Map lookups
+ * (SemanticsManager::findRoomByMapAndId,
  * semantic::SemanticVerify::collectWallObservations, the floor gate) see
  * exactly what a live map would produce. */
 struct SyntheticRoomFixture

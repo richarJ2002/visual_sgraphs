@@ -58,6 +58,11 @@ class ImageGrabber : public rclcpp::Node
      *
      * @param[in]   useSimTime_in
      *              True when timestamps must follow `/clock`.
+     *
+     * @param[in]   directGazeboFluCloud_in
+     *              True when the input cloud is a direct Gazebo cloud in
+     *              forward-left-up axes, converted to the optical camera
+     *              frame; generated RGB-D clouds are already optical.
      */
     ImageGrabber(const bool useSimTime_in, const bool directGazeboFluCloud_in) :
         rclcpp::Node(

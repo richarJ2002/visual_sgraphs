@@ -13,7 +13,8 @@
  * order and required setters from scratch.
  *
  * Every builder here constructs plain, in-memory model objects
- * (Atlas/Map/geometric::Plane/semantic::Room/semantic::Passage/semantic::Floor/KeyFrame)
+ * (`Atlas`, `Map`, `geometric::Plane`, `semantic::Room`, `semantic::Passage`,
+ * `semantic::Floor`, `KeyFrame`)
  * with no ROS node, message, or Gazebo dependency, so these fixtures run in a
  * bare GTest binary.
  */

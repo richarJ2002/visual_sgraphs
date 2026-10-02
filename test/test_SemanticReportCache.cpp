@@ -5,7 +5,7 @@
  *                  (SemanticReportCache).
  */
 
-/*!
+/*
  * Focused, ROS/Gazebo-free tests for the copied-value SemanticReportCache
  * contract.
  */

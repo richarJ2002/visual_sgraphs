@@ -119,6 +119,10 @@ class SemanticCandidates
 
     /*! Generates bounded candidates and reports configuration rejection.
      *
+     *  @param history_in  Room context snapshots per map id.
+     *  @param generation_out  Generated candidates, and the reason the
+     *  configuration was rejected when it is invalid.
+     *  @param configuration_in  Candidate-generation limits and thresholds.
      *  @param anchorRoomId_in  Optional identity of the last-confirmed
      *  room. When present, room pairs sharing a passage with that room
      *  (or involving it directly) are enumerated first, bounded by

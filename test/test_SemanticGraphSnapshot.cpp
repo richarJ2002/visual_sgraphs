@@ -5,12 +5,12 @@
  *                  (SemanticGraphSnapshot).
  */
 
-/*!
+/*
  * Focused, ROS/Gazebo-free tests for the value-only SemanticGraphSnapshot
  * capture contract. These
  * exercise the genuine production capture entry point
  * (vs_graphs::core::semantic::captureSemanticGraphSnapshot()) against real
- * Atlas/Map/Room/geometric::Plane/Passage/Floor objects built through
+ * Atlas/Map/Room/`geometric::Plane`/Passage/Floor objects built through
  * SemanticFixtures and the model's own setters -- they do not reconstruct the
  * expected snapshot by hand, except where a test white-box-verifies one
  * internal helper directly (documented at each such case).

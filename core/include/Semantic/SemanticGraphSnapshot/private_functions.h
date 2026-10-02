@@ -196,6 +196,7 @@ bool isValueLessForCollisionTiebreak(const FloorRecord &lhs_in,
  * @param[in]   isMarkerBasedMember_in  Whether \p p_room_in was present in
  *                                      Map::GetAllMarkerBasedMapRooms() for
  *                                      that map at capture time.
+ * @param[out]  roomRecord_out          Captured record.
  */
 [[nodiscard]] SemanticGraphSnapshotStatus
     captureRoom(Room             *p_room_in,
@@ -215,6 +216,7 @@ bool isValueLessForCollisionTiebreak(const FloorRecord &lhs_in,
  *                                         see captureSemanticGraphSnapshot()'s
  *                                         implementation for how it is
  *                                         built.
+ * @param[out]  wallRecord_out             Captured record.
  */
 [[nodiscard]] SemanticGraphSnapshotStatus
     captureWall(geometric::Plane *p_wall_in,

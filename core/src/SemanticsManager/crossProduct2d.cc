@@ -37,7 +37,8 @@ namespace core
  *
  * @param[in] firstVector_in First vector.
  * @param[in] secondVector_in Second vector.
- * @return Signed scalar cross product.
+ * @param[out] crossProduct_out Signed scalar cross product.
+ * @return SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus crossProduct2d(const Eigen::Vector2d &firstVector_in,
                                       const Eigen::Vector2d &secondVector_in,

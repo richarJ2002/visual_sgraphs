@@ -59,6 +59,9 @@ class GeoSemHelpers
      * @param       p_planeCloud_in
      *              The plane point cloud
      *
+     * @param[out]  p_mapPlane_out
+     *              The new map plane, or nullptr when none was created
+     *
      * @param       semanticType_in
      *              The semantic type of the plane observation
      *
@@ -160,6 +163,9 @@ class GeoSemHelpers
      *
      * @param       p_visitedMarker_in
      *              The address of the visited marker
+     *
+     * @param[out]  p_mapMarker_out
+     *              The new map marker
      */
     [[nodiscard]] static GeoSemHelpersStatus
         createMapMarker(Atlas                  *p_atlas_inout,
@@ -200,8 +206,18 @@ class GeoSemHelpers
      * @param[in,out] p_atlas_inout
      *              The current map in Atlas
      *
+     * @param[out]  p_blankRoomCandidate_out
+     *              The new room, or nullptr when the Atlas is null or the
+     *              map already holds one room more than its passable
+     *              passages
+     *
      * @param       centroid_in
      *              The centroid of the room (optional)
+     *
+     * @param[in]   stableRoomId_in
+     *              Identity to restore after a tracking-loss reset (not
+     *              limited by the passage count); when absent a new identity
+     *              is reserved from the Atlas
      */
     [[nodiscard]] static GeoSemHelpersStatus createBlankRoomCandidate(
         Atlas                            *p_atlas_inout,
@@ -232,6 +248,9 @@ class GeoSemHelpers
      *
      * @param       p_groundPlane_in
      *              The ground plane associated with the room
+     *
+     * @param[out]  groundPlanePoints_out
+     *              Number of ground-plane points within the walls
      */
     [[nodiscard]] static GeoSemHelpersStatus countGroundPlanePointsWithinWalls(
         std::vector<vs_graphs::core::geometric::Plane *> &roomWalls_in,
@@ -243,6 +262,10 @@ class GeoSemHelpers
      *
      * @param[in,out] p_atlas_inout
      *              The current map in Atlas
+     *
+     * @param[in]   stableFloorId_in
+     *              Identity to restore after a tracking-loss reset; when
+     *              absent a new identity is reserved from the Atlas
      */
     [[nodiscard]] static GeoSemHelpersStatus
         createMapFloor(vs_graphs::core::Atlas *p_atlas_inout,
@@ -254,6 +277,9 @@ class GeoSemHelpers
      *
      * @param[in,out] p_plane_inout
      *              Mapped plane which will be refitted.
+     *
+     * @param[out]  wasPlaneRefit_out
+     *              True when the plane equation was refitted from the cloud.
      */
     [[nodiscard]] static GeoSemHelpersStatus refitMappedPlaneFromCloud(
         vs_graphs::core::geometric::Plane *p_plane_inout,

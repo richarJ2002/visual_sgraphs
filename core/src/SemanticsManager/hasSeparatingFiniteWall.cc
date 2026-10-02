@@ -54,7 +54,10 @@ namespace core
  * @param[in]   finiteBoundsMargin_m_in
  *              Margin applied around the observed wall-cloud bounds.
  *
- * @return      True when the segment crosses an observed finite wall patch.
+ * @param[out]  hasSeparatingFiniteWall_out
+ *              True when the segment crosses an observed finite wall patch.
+ *
+ * @return      SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus hasSeparatingFiniteWall(
     const std::vector<geometric::Plane *> &wallList_World_in,

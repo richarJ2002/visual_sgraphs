@@ -105,6 +105,7 @@ namespace semantic
  *                          is non-const even though this function only
  *                          reads through it. Passing nullptr returns a
  *                          default-constructed (empty) snapshot.
+ * @param[out]  snapshot_out  The captured snapshot.
  */
 [[nodiscard]] SemanticGraphSnapshotStatus
     captureSemanticGraphSnapshot(Atlas                 *p_atlas_in,

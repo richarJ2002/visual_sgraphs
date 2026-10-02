@@ -205,6 +205,7 @@ class Tracking
     /*!
      * @brief Get the points close to a given marker
      * @param p_currentMarker_in the address of the current marker
+     * @param[out] pointsClose_out the map points close to the marker
      */
     [[nodiscard]] TrackingStatus
         findPointsCloseToMarker(const semantic::Marker  *p_currentMarker_in,
@@ -215,6 +216,7 @@ class Tracking
      * @param points_in the set of map-points
      * @param location_in the given location
      * @param distanceThreshold_in the pre-defined threshold
+     * @param[out] pointsClose_out the map points within the threshold
      */
     [[nodiscard]] TrackingStatus
         findPointsCloseToLocation(const std::vector<MapPoint *> &points_in,

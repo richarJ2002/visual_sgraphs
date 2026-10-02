@@ -5,7 +5,7 @@
  *                  (GeometricVerify).
  */
 
-/*!
+/*
  * Focused tests: plane-gated geometric verification
  * (semantic::SemanticVerify) against synthetic two-room scenarios with a known
  * ground-truth SE(3) transform, plus the floor gate and the

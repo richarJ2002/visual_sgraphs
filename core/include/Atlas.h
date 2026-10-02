@@ -423,7 +423,7 @@ class Atlas
      *        stranded by a restart.
      *
      * Called internally from \ref createNewMapWhileAtlasLocked,
-     * \ref clearMap, and \ref clearAtlas so that room identity survives map
+     * clearMap() and clearAtlas() so that room identity survives map
      * transitions.
      */
     [[nodiscard]] AtlasStatus exportRoomContextFromCurrentMap();
@@ -598,7 +598,7 @@ class Atlas
     std::map<long unsigned int, MergeAttemptState> consecutiveMergeState;
 
     /*!
-     * @brief Protects \ref mRoomContextHistory against concurrent access from
+     * @brief Protects roomContextHistory against concurrent access from
      *        tracking and the semantic worker thread.
      */
     mutable std::mutex roomContextMutex;

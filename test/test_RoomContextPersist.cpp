@@ -5,7 +5,7 @@
  *                  (RoomContextPersist).
  */
 
-/*!
+/*
  * Focused tests: persistence of the last-confirmed room context
  * (semantic::RoomContextSnapshot, WallBounds, semantic::PassageContext) across
  * the real Atlas::CreateNewMap() tracking-loss/new-map lifecycle boundary.
@@ -13,8 +13,8 @@
  * These tests exercise the genuine production exporter
  * (Atlas::exportRoomContextFromCurrentMap(), invoked internally from
  * Atlas::createNewMapWhileAtlasLocked()) and the genuine
- * semantic::Room/geometric::Plane/semantic::Passage getters it reads from --
- * they do not reconstruct the expected snapshot by hand.
+ * `semantic::Room`/`geometric::Plane`/`semantic::Passage` getters it reads
+ * from -- they do not reconstruct the expected snapshot by hand.
  */
 
 #include "Atlas.h"

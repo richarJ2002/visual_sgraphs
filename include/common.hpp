@@ -859,6 +859,9 @@ extern void appendPassageMarkers(
  * @param[in]   mappedRooms_in
  *              Collection of mapped room elements to process.
  *
+ * @param[in]   mappedFloors_in
+ *              Not used at present.
+ *
  * @param[in]   msgTime_s_in
  *              ROS timestamp assigned to the generated markers.
  *
@@ -1298,6 +1301,9 @@ extern void publishKeyFrameMarkers(
  * @param[in]   mappedPlanes_in
  *              Collection of mapped planes to publish. Null, invalid,
  *              undefined, and empty planes are ignored.
+ *
+ * @param[in]   mappedRooms_in
+ *              Mapped rooms; each plane's label lists the rooms that own it.
  *
  * @param[in]   msgTime_s_in
  *              ROS timestamp assigned to the published point cloud and

@@ -68,8 +68,11 @@ namespace core
  * @param[in]   minimumWallLength_m_in
  *              Forwarded to buildFiniteWallSegment2d.
  *
- * @return      True when a foreign room's own finite wall extent blocks
- *              the segment.
+ * @param[out]  crossesForeignWall_out
+ *              True when a foreign room's own finite wall extent blocks the
+ *              segment.
+ *
+ * @return      SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus segmentCrossesForeignWall(
     const Eigen::Vector3d &segmentStart_World_m_in,

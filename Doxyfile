@@ -1,0 +1,21 @@
+# Doxygen check of the project-owned sources (CPP_CODING_STANDARD section 14).
+# Run from this folder: doxygen Doxyfile
+# Warnings go to stderr; the XML output (build/doxygen/, git-ignored) exists
+# only so doxygen performs its full documentation pass.
+PROJECT_NAME           = vs_graphs
+INPUT                  = core/include core/src include src test
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h *.hpp *.cc *.cpp *.tpp
+EXTENSION_MAPPING      = tpp=C++
+EXCLUDE_PATTERNS       = */Thirdparty/* */Examples/*
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+ALIASES                = "frame=@par Frame:^^" "units=@par Units:^^"
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO
+OUTPUT_DIRECTORY       = build/doxygen
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+XML_PROGRAMLISTING     = NO
+HAVE_DOT               = NO

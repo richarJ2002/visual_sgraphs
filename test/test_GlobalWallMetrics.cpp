@@ -1,7 +1,6 @@
 /*!
  * @file test_GlobalWallMetrics.cpp
- * @brief Self-test for the scoped global-wall-metrics evaluation adapter
- *.
+ * @brief Self-test for the scoped global-wall-metrics evaluation adapter.
  *
  * `compare_sgraph_to_ground_truth.py`'s wall precision/recall denominator
  * only counts walls belonging to a room that matched between truth

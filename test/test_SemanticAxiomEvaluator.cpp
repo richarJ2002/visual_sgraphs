@@ -5,17 +5,17 @@
  *                  (SemanticAxiomEvaluator).
  */
 
-/*!
+/*
  * Focused, ROS/Gazebo-free tests for the pure SemanticAxiomEvaluator module
  * (evaluateState(), evaluateTransition(), evaluateMapCompleteness(),
  * computeAxiomCapabilityTable()).
  *
- * Every test builds real Atlas/Map/Room/geometric::Plane/Passage/Floor objects
- * through SemanticFixtures and the model's own setters, captures a genuine
- * SemanticGraphSnapshot via the production captureSemanticGraphSnapshot()
- * entry point (never hand-constructing a snapshot), then evaluates it
- * through the production evaluator entry points -- matching
- * test_SemanticGraphSnapshot.cpp's own methodology.
+ * Every test builds real Atlas/Map/Room/`geometric::Plane`/Passage/Floor
+ * objects through SemanticFixtures and the model's own setters, captures a
+ * genuine SemanticGraphSnapshot via the production
+ * captureSemanticGraphSnapshot() entry point (never hand-constructing a
+ * snapshot), then evaluates it through the production evaluator entry points --
+ * matching test_SemanticGraphSnapshot.cpp's own methodology.
  */
 
 #include "Semantic/SemanticAxiomEvaluator.h"

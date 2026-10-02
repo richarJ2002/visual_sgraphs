@@ -5,7 +5,7 @@
  *                  pipeline (RoomTrackerProductionIntegration).
  */
 
-/*!
+/*
  * Focused production seam tests for event delivery.
  */
 

@@ -48,7 +48,10 @@ namespace core
  * @param[in]   p_secondMap_in
  *              Map whose tagged rooms are tested against the collected tags.
  *
- * @return      True when both maps observe at least one shared room tag.
+ * @param[out]  sharesRoomNameTag_out
+ *              True when both maps observe at least one shared room tag.
+ *
+ * @return      SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus sharesRoomNameTag(Map  *p_firstMap_in,
                                          Map  *p_secondMap_in,

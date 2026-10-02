@@ -5,7 +5,7 @@
  *                  snapshots (SemanticCanonicalSerialization).
  */
 
-/*!
+/*
  * Focused, ROS/Gazebo-free tests for versioned canonical JSON
  * serialization of SemanticGraphSnapshot, AxiomEvaluationReport, and
  * MapCompletenessResult.

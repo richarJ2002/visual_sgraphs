@@ -330,6 +330,10 @@ class SemanticsManager
      *        active map before any semantic inference is performed.
      * @param[out] bootstrapResult_out Typed initialization result, also emitted
      * through SG_PIPELINE.
+     * @param[in] cameraPositionOverride_World_m_in Camera position in the
+     * active map frame, in metres, used to place the bootstrap room; when
+     * absent or not finite, the newest valid key frame's camera centre is
+     * used.
      * @return SEMANTICS_MANAGER_STATUS_SUCCESS.
      */
     [[nodiscard]] SemanticsManagerStatus ensureActiveMapBootstrapHierarchy(
@@ -366,6 +370,8 @@ class SemanticsManager
      *              Atlas (not only the current one) since a candidate's two
      *              rooms are, by construction, never in the same map.
      *
+     * @param[in] mapId_in Map that holds the room.
+     * @param[in] roomId_in Room id within that map.
      * @param[out] p_room_out The matching, non-bad ROOM-variant room, or
      * nullptr.
      * @return SEMANTICS_MANAGER_STATUS_SUCCESS.
@@ -604,6 +610,8 @@ class SemanticsManager
      *              purpose: it always flips the normal to face the room, so
      *              it can never report that a face belongs elsewhere.
      *
+     * @param[in] p_room_in Room whose ownership of the face is tested.
+     * @param[in] p_wall_in Wall face (plane) to test.
      * @param[out] isWallFaceForeignToRoom_out True when the face was observed
      * from the side opposite p_room_in (it is the neighbouring room's face);
      * false otherwise, including when no observation origin was stamped or
@@ -856,6 +864,9 @@ class SemanticsManager
      *
      * @param[in]   excludedRoomIds_in
      *              Room IDs already matched to other clusters in this cycle.
+     *
+     * @param[out]  p_room_out
+     *              The existing room, or nullptr when none matches.
      */
     [[nodiscard]] SemanticsManagerStatus associateRooms(
         const Eigen::Vector3d clusterCentroid_World_in,

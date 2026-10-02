@@ -490,9 +490,8 @@ class System
      * @brief       Snapshot of the mission health status, capturing tracking,
      *              semantic, and loop closure state at a given point in time.
      *
-     * This structure is populated by @ref GetMissionHealthSnapshot
-     * "GetMissionHealthSnapshot()" and @ref GetSemanticReportCacheEntry
-     * "GetSemanticReportCacheEntry()". It provides a comprehensive view of the
+     * This structure is populated by getMissionHealthSnapshot() and
+     * getSemanticReportCacheEntry(). It provides a comprehensive view of the
      * system's current state, including pose validity, map statistics, and
      * semantic segmentation progress. A default-constructed instance is
      * returned when no SemanticsManager exists or no complete semantic
@@ -595,9 +594,10 @@ class System
 
         /*!
          * @brief       Total number of system resets that have occurred since
-         *              initialization. Incremented by @ref Reset "Reset()" and
-         *              @ref RequestResetActiveMapWithCause
-         * "RequestResetActiveMapWithCause().
+         *              initialization. Incremented each time a requested
+         *              full or active-map reset is carried out (see reset()
+         *              and requestResetActiveMapWithCause()) and on a dataset
+         *              change.
          *
          * @frame       N/A
          * @units       N/A
@@ -947,8 +947,8 @@ class System
 
     /*!
      * @brief       Stops and joins all worker threads and frees the thread
-     *              objects. Safe to run after Shutdown(); join() is only
-     *              performed here, never in Shutdown().
+     *              objects. Safe to run after shutdown(); join() is only
+     *              performed here, never in shutdown().
      *
      * @note        After a successful initialize() nothing else is freed:
      *              the atlas, key-frame database, vocabulary, settings and
@@ -1204,7 +1204,7 @@ class System
      *              Only for stereo and RGB-D. This method does not work for
      *              monocular.
      *
-     * @note        Call first Shutdown()
+     * @note        Call first shutdown()
      *
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
@@ -1216,7 +1216,7 @@ class System
      * @brief       Save keyframe poses in the TUM RGB-D dataset format. This
      *              method works for all sensor input.
      *
-     * @note        Call first Shutdown()
+     * @note        Call first shutdown()
      *
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
@@ -1227,13 +1227,13 @@ class System
     /*!
      * @brief       Save camera trajectory in the EuRoC MAV dataset format.
      *              Only for stereo and RGB-D. This method does not work for
-     *              monocular. Call Shutdown() before saving.
+     *              monocular. Call shutdown() before saving.
      *
      * @param[in]   filename_in
      *              Path to the output file where the trajectory will be saved
      *              in EuRoC format.
      *
-     * @note        Call first Shutdown()
+     * @note        Call first shutdown()
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
@@ -1242,14 +1242,14 @@ class System
 
     /*!
      * @brief       Save keyframe poses in the EuRoC MAV dataset format. This
-     *              method works for all sensor input. Call Shutdown() before
+     *              method works for all sensor input. Call shutdown() before
      *              saving.
      *
      * @param[in]   filename_in
      *              Path to the output file where the keyframe poses will be
      *              saved in EuRoC format.
      *
-     * @note        Call first Shutdown()
+     * @note        Call first shutdown()
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
@@ -1259,7 +1259,7 @@ class System
     /*!
      * @brief       Save camera trajectory in the EuRoC MAV dataset format,
      *              including map data. Only for stereo and RGB-D. Call
-     *              Shutdown() before saving.
+     *              shutdown() before saving.
      *
      * @param[in]   filename_in
      *              Path to the output file where the trajectory will be saved.
@@ -1267,7 +1267,7 @@ class System
      * @param[in]   p_map_in
      *              Pointer to the map to include in the trajectory save.
      *
-     * @note        Call first Shutdown()
+     * @note        Call first shutdown()
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
@@ -1277,7 +1277,7 @@ class System
     /*!
      * @brief       Save keyframe poses in the EuRoC MAV dataset format,
      *              including map data. Works for all sensor input. Call
-     *              Shutdown() before saving.
+     *              shutdown() before saving.
      *
      * @param[in]   filename_in
      *              Path to the output file where the keyframe poses will be
@@ -1287,7 +1287,7 @@ class System
      *              Pointer to the map to include in the keyframe trajectory
      * save.
      *
-     * @note        Call first Shutdown()
+     * @note        Call first shutdown()
      *
      * @see         https://github.com/ethz-asl/euroc-dataset for format details
      */
@@ -1311,7 +1311,7 @@ class System
      * @brief       Save camera trajectory in the KITTI dataset format. Only for
      *              stereo and RGB-D. This method does not work for monocular.
      *
-     * @note        Call first Shutdown()
+     * @note        Call first shutdown()
      *
      * @note        See format details at:
      *              http://vision.in.tum.de/data/datasets/rgbd-dataset
@@ -1821,8 +1821,8 @@ class System
     /*!
      * @brief       Viewer pointer. Owned by the System class. Draws the map and
      *              the current camera pose using Pangolin. Set to `nullptr`
-     * when
-     *              @ref bUseViewer "bUseViewer" is `false`.
+     *              when the system is initialised with shouldUseViewer_in
+     *              `false`.
      */
     Viewer *p_viewer;
 
@@ -1856,9 +1856,9 @@ class System
      * ---------------------------------------------------------------------- */
 
     /*!
-     * @brief       Viewer thread. Launched when @ref bUseViewer "bUseViewer" is
-     *              `true`. Handles visualization of the map and camera pose.
-     *              Set to `nullptr` when viewer is disabled.
+     * @brief       Viewer thread. Launched when shouldUseViewer_in is `true`.
+     *              Handles visualization of the map and camera pose. Set to
+     *              `nullptr` when viewer is disabled.
      */
     std::thread *p_viewerThread;
 
@@ -1934,7 +1934,7 @@ class System
 
     /*!
      * @brief       Shutdown flag. When `true`, requests all threads to finish.
-     *              After all threads have been joined via @ref Shutdown(), the
+     *              After all threads have been joined via shutdown(), the
      *              system is fully shut down.
      */
     bool isShutdownRequested;
@@ -2012,7 +2012,7 @@ class System
      * @brief       In-frame semantic-segmentation result counting.
      *              Increments when the semantic segmentation pipeline returns a
      *              result for a keyframe. Combined with
-     *              @ref mSegmentationPublishedCount, the difference indicates
+     *              segmentationPublishedCount, the difference indicates
      * how many keyframes remain in-flight.
      */
     std::atomic<std::uint64_t> segmentationReturnedCount{0U};
@@ -2020,8 +2020,8 @@ class System
     /*!
      * @brief       Last returned keyframe ID. Advances in
      *              `addSegmentedImage` when a segmentation result is received.
-     *              Used together with @ref mSegmentationPublishedCount and
-     *              @ref mSegmentationReturnedCount to track in-flight
+     *              Used together with segmentationPublishedCount and
+     *              segmentationReturnedCount to track in-flight
      * keyframes.
      */
     std::atomic<std::uint64_t> lastReturnedKeyFrameId{0U};

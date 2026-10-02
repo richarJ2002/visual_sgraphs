@@ -54,7 +54,10 @@ namespace core
  * @param[out]      secondParameter_out
  *                  Parametric coordinate on the second segment.
  *
- * @return          False when the supporting lines are parallel.
+ * @param[out]      hasIntersection_out
+ *                  False when the supporting lines are parallel.
+ *
+ * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus
     intersectSupportingLines(const FiniteWallSegment2d &firstSegment_in,
