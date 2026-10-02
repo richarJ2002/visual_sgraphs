@@ -45,10 +45,10 @@ namespace core
 OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                                            bool     *p_pbStopFlag_in,
                                            Map      *p_map_inout,
-                                           int      &fixedKeyFrameCount_in,
-                                           int      &optKeyFrameCount_in,
-                                           int      &mapPointCount_in,
-                                           int      &edgeCount_in,
+                                           int      &fixedKeyFrameCount_out,
+                                           int      &optKeyFrameCount_out,
+                                           int      &mapPointCount_out,
+                                           int      &edgeCount_out,
                                            bool      isLargeWindow_in,
                                            bool      isRecentlyInitialized_in)
 {
@@ -796,6 +796,14 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
     {
         assert(mit->second >= 3);
     }
+
+    /* Window size for the timing statistics, counted like
+     * localBundleAdjustment: fixed and optimised key frames and map-point
+     * observation edges, plus the local map points. */
+    fixedKeyFrameCount_out = static_cast<int>(fixedKeyFrames.size());
+    optKeyFrameCount_out   = N + static_cast<int>(optVisKeyFrames.size());
+    mapPointCount_out      = static_cast<int>(localMapPointList.size());
+    edgeCount_out = static_cast<int>(edgesMonos.size() + edgesStereos.size());
 
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();

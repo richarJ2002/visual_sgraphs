@@ -193,10 +193,10 @@ class Optimizer
         localInertialBA(KeyFrame *p_keyFrame_inout,
                         bool     *p_pbStopFlag_in,
                         Map      *p_map_inout,
-                        int      &fixedKeyFrameCount_in,
-                        int      &optKeyFrameCount_in,
-                        int      &mapPointCount_in,
-                        int      &edgeCount_in,
+                        int      &fixedKeyFrameCount_out,
+                        int      &optKeyFrameCount_out,
+                        int      &mapPointCount_out,
+                        int      &edgeCount_out,
                         bool      isLargeWindow_in         = false,
                         bool      isRecentlyInitialized_in = false);
     [[nodiscard]] static OptimizerStatus
