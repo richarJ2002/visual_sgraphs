@@ -114,8 +114,8 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in)
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
-    Sophus::SE3f poseBodyToWorld; // Can be word to cam0 or world to b depending
-                                  // on IMU or not.
+    Sophus::SE3f pose_bodyToWorld; // Can be word to cam0 or world to b
+                                   // depending on IMU or not.
     if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO || sensor == IMU_RGBD)
     {
         Sophus::SE3f imuPose{};
@@ -127,7 +127,7 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        poseBodyToWorld = imuPose;
+        pose_bodyToWorld = imuPose;
     }
     else
     {
@@ -140,7 +140,7 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        poseBodyToWorld = poseInverse;
+        pose_bodyToWorld = poseInverse;
     }
 
     std::ofstream f;
@@ -228,8 +228,8 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in)
                          __func__);
         }
         Trw =
-            Trw * keyFramePose * poseBodyToWorld; // Tcp*Tpw*Twb0=Tcb0 where b0
-                                                  // is the new world reference
+            Trw * keyFramePose * pose_bodyToWorld; // Tcp*Tpw*Twb0=Tcb0 where b0
+                                                   // is the new world reference
 
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD)
@@ -237,23 +237,23 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in)
             Sophus::SE3f keyFrameTwb =
                 (p_keyFrame->imuCalibration.mTbc * (*lit) * Trw).inverse();
             Eigen::Quaternionf q = keyFrameTwb.unit_quaternion();
-            Eigen::Vector3f translationBodyToWorld = keyFrameTwb.translation();
+            Eigen::Vector3f translation_bodyToWorld = keyFrameTwb.translation();
             f << std::setprecision(6) << 1e9 * (*lT) << " "
-              << std::setprecision(9) << translationBodyToWorld(0) << " "
-              << translationBodyToWorld(1) << " " << translationBodyToWorld(2)
+              << std::setprecision(9) << translation_bodyToWorld(0) << " "
+              << translation_bodyToWorld(1) << " " << translation_bodyToWorld(2)
               << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()
               << std::endl;
         }
         else
         {
-            Sophus::SE3f       poseCameraToWorld = ((*lit) * Trw).inverse();
-            Eigen::Quaternionf q = poseCameraToWorld.unit_quaternion();
-            Eigen::Vector3f    translationCameraToWorld =
-                poseCameraToWorld.translation();
+            Sophus::SE3f       pose_cameraToWorld = ((*lit) * Trw).inverse();
+            Eigen::Quaternionf q = pose_cameraToWorld.unit_quaternion();
+            Eigen::Vector3f    translation_cameraToWorld =
+                pose_cameraToWorld.translation();
             f << std::setprecision(6) << 1e9 * (*lT) << " "
-              << std::setprecision(9) << translationCameraToWorld(0) << " "
-              << translationCameraToWorld(1) << " "
-              << translationCameraToWorld(2) << " " << q.x() << " " << q.y()
+              << std::setprecision(9) << translation_cameraToWorld(0) << " "
+              << translation_cameraToWorld(1) << " "
+              << translation_cameraToWorld(2) << " " << q.x() << " " << q.y()
               << " " << q.z() << " " << q.w() << std::endl;
         }
     }

@@ -121,14 +121,14 @@ MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
 
     if (inlierCount > ransacMinInliers)
     {
-        cv::Mat rotationWorldToCamera(3, 3, CV_64F, mRi);
-        cv::Mat translationWorldToCamera(3, 1, CV_64F, mti);
-        rotationWorldToCamera.convertTo(rotationWorldToCamera, CV_32F);
-        translationWorldToCamera.convertTo(translationWorldToCamera, CV_32F);
+        cv::Mat rotation_worldToCamera(3, 3, CV_64F, mRi);
+        cv::Mat translation_worldToCamera(3, 1, CV_64F, mti);
+        rotation_worldToCamera.convertTo(rotation_worldToCamera, CV_32F);
+        translation_worldToCamera.convertTo(translation_worldToCamera, CV_32F);
         mRefinedTcw.setIdentity();
 
         Eigen::Matrix<float, 3, 3> matrix3f{};
-        if (utils::converter::Converter::toMatrix3f(rotationWorldToCamera,
+        if (utils::converter::Converter::toMatrix3f(rotation_worldToCamera,
                                                     matrix3f) !=
             utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
         {
@@ -139,7 +139,7 @@ MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
         }
         mRefinedTcw.block<3, 3>(0, 0) = matrix3f;
         Eigen::Matrix<float, 3, 1> vector3f{};
-        if (utils::converter::Converter::toVector3f(translationWorldToCamera,
+        if (utils::converter::Converter::toVector3f(translation_worldToCamera,
                                                     vector3f) !=
             utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
         {
@@ -150,9 +150,9 @@ MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
         }
         mRefinedTcw.block<3, 1>(0, 3) = vector3f;
 
-        Eigen::Matrix<double, 3, 3, Eigen::RowMajor> rotationWorldToCameraEigen(
-            mRi[0]);
-        Eigen::Vector3d translationWorldToCameraEigen(mti);
+        Eigen::Matrix<double, 3, 3, Eigen::RowMajor>
+                        rotationEigen_worldToCamera(mRi[0]);
+        Eigen::Vector3d translationEigen_worldToCamera(mti);
 
         isRefined_out = true;
         return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;

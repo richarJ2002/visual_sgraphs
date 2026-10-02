@@ -85,8 +85,8 @@ class Sim3Solver
         points3Dc1.reserve(firstMatchCount);
         points3Dc2.reserve(firstMatchCount);
 
-        Eigen::Matrix3f rotationWorldToCamera1{};
-        if (p_keyFrame1_inout->getRotation(rotationWorldToCamera1) !=
+        Eigen::Matrix3f rotation_worldToCamera1{};
+        if (p_keyFrame1_inout->getRotation(rotation_worldToCamera1) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -94,8 +94,8 @@ class Sim3Solver
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector3f translationWorldToCamera1{};
-        if (p_keyFrame1_inout->getTranslation(translationWorldToCamera1) !=
+        Eigen::Vector3f translation_worldToCamera1{};
+        if (p_keyFrame1_inout->getTranslation(translation_worldToCamera1) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -103,8 +103,8 @@ class Sim3Solver
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Matrix3f rotationWorldToCamera2{};
-        if (p_keyFrame2_inout->getRotation(rotationWorldToCamera2) !=
+        Eigen::Matrix3f rotation_worldToCamera2{};
+        if (p_keyFrame2_inout->getRotation(rotation_worldToCamera2) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -112,8 +112,8 @@ class Sim3Solver
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector3f translationWorldToCamera2{};
-        if (p_keyFrame2_inout->getTranslation(translationWorldToCamera2) !=
+        Eigen::Vector3f translation_worldToCamera2{};
+        if (p_keyFrame2_inout->getTranslation(translation_worldToCamera2) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -217,8 +217,8 @@ class Sim3Solver
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                points3Dc1.push_back(rotationWorldToCamera1 * X3D1w +
-                                     translationWorldToCamera1);
+                points3Dc1.push_back(rotation_worldToCamera1 * X3D1w +
+                                     translation_worldToCamera1);
 
                 Eigen::Vector3f X3D2w{};
                 if (p_mapPoint2->getWorldPos(X3D2w) !=
@@ -230,8 +230,8 @@ class Sim3Solver
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                points3Dc2.push_back(rotationWorldToCamera2 * X3D2w +
-                                     translationWorldToCamera2);
+                points3Dc2.push_back(rotation_worldToCamera2 * X3D2w +
+                                     translation_worldToCamera2);
 
                 allIndices.push_back(idx);
                 idx++;
@@ -308,7 +308,7 @@ class Sim3Solver
     [[nodiscard]] Sim3SolverStatus project(
         const std::vector<Eigen::Vector3f>              &vP3Dw_in,
         std::vector<Eigen::Vector2f>                    &points2D_out,
-        Eigen::Matrix4f                                  poseWorldToCamera_in,
+        Eigen::Matrix4f                                  pose_worldToCamera_in,
         camera_models::geometriccamera::GeometricCamera *p_camera_inout);
     [[nodiscard]] Sim3SolverStatus fromCameraToImage(
         const std::vector<Eigen::Vector3f>              &vP3Dc_in,

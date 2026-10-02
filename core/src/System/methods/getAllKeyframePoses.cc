@@ -73,7 +73,7 @@ SystemStatus
 
         // The "body" is the IMU when the sensor has one, otherwise the first
         // camera (cam0).
-        Sophus::SE3f poseBodyToWorld;
+        Sophus::SE3f pose_bodyToWorld;
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD) // with IMU
         {
@@ -86,7 +86,7 @@ SystemStatus
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            poseBodyToWorld = imuPose;
+            pose_bodyToWorld = imuPose;
         }
         else // without IMU
         {
@@ -99,10 +99,10 @@ SystemStatus
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            poseBodyToWorld = poseInverse;
+            pose_bodyToWorld = poseInverse;
         }
 
-        keyFramePoses.push_back(poseBodyToWorld);
+        keyFramePoses.push_back(pose_bodyToWorld);
     }
 
     allKeyframePoses_out = keyFramePoses;

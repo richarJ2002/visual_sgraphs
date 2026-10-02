@@ -44,15 +44,15 @@ void EdgeStereoOnlyPose::linearizeOplus()
     const VertexPose *p_poseVertex =
         static_cast<const VertexPose *>(_vertices[0]);
 
-    const Eigen::Matrix3d &rotationWorldToCamera =
+    const Eigen::Matrix3d &rotation_worldToCamera =
         p_poseVertex->estimate().Rcw[cam_idx];
-    const Eigen::Vector3d &translationWorldToCamera =
+    const Eigen::Vector3d &translation_worldToCamera =
         p_poseVertex->estimate().tcw[cam_idx];
     const Eigen::Vector3d Xc =
-        rotationWorldToCamera * Xw + translationWorldToCamera;
+        rotation_worldToCamera * Xw + translation_worldToCamera;
     const Eigen::Vector3d Xb = p_poseVertex->estimate().Rbc[cam_idx] * Xc +
                                p_poseVertex->estimate().tbc[cam_idx];
-    const Eigen::Matrix3d &rotationBodyToCamera =
+    const Eigen::Matrix3d &rotation_bodyToCamera =
         p_poseVertex->estimate().Rcb[cam_idx];
     const double baselineFocalProduct = p_poseVertex->estimate().bf;
     const double inverseDepthSquared  = 1.0 / (Xc(2) * Xc(2));
@@ -72,7 +72,7 @@ void EdgeStereoOnlyPose::linearizeOplus()
         0.0, bodyPointX, 0.0, 1.0, 0.0, bodyPointY, -bodyPointX, 0.0, 0.0, 0.0,
         1.0;
     _jacobianOplusXi =
-        projectionJacobian * rotationBodyToCamera * se3Derivative;
+        projectionJacobian * rotation_bodyToCamera * se3Derivative;
 }
 
 } // namespace core

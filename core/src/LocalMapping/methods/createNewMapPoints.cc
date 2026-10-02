@@ -94,12 +94,12 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                      "fail; continuing as before.",
                      __func__);
     }
-    Eigen::Matrix<float, 3, 4> poseWorldToCamera1 = sophTcw1.matrix3x4();
-    Eigen::Matrix<float, 3, 3> rotationWorldToCamera1 =
-        poseWorldToCamera1.block<3, 3>(0, 0);
-    Eigen::Matrix<float, 3, 3> rotationCameraToWorld1 =
-        rotationWorldToCamera1.transpose();
-    Eigen::Vector3f translationWorldToCamera1 = sophTcw1.translation();
+    Eigen::Matrix<float, 3, 4> pose_worldToCamera1 = sophTcw1.matrix3x4();
+    Eigen::Matrix<float, 3, 3> rotation_worldToCamera1 =
+        pose_worldToCamera1.block<3, 3>(0, 0);
+    Eigen::Matrix<float, 3, 3> rotation_camera1ToWorld =
+        rotation_worldToCamera1.transpose();
+    Eigen::Vector3f translation_worldToCamera1 = sophTcw1.translation();
     Eigen::Vector3f cameraCenter1_World{};
     if (p_currentKeyFrame->getCameraCenter(cameraCenter1_World) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -233,12 +233,12 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Matrix<float, 3, 4> poseWorldToCamera2 = sophTcw2.matrix3x4();
-        Eigen::Matrix<float, 3, 3> rotationWorldToCamera2 =
-            poseWorldToCamera2.block<3, 3>(0, 0);
-        Eigen::Matrix<float, 3, 3> rotationCameraToWorld2 =
-            rotationWorldToCamera2.transpose();
-        Eigen::Vector3f translationWorldToCamera2 = sophTcw2.translation();
+        Eigen::Matrix<float, 3, 4> pose_worldToCamera2 = sophTcw2.matrix3x4();
+        Eigen::Matrix<float, 3, 3> rotation_worldToCamera2 =
+            pose_worldToCamera2.block<3, 3>(0, 0);
+        Eigen::Matrix<float, 3, 3> rotation_camera2ToWorld =
+            rotation_worldToCamera2.transpose();
+        Eigen::Vector3f translation_worldToCamera2 = sophTcw2.translation();
 
         const float &focalLengthX2    = p_neighborKeyFrame->fx;
         const float &focalLengthY2    = p_neighborKeyFrame->fy;
@@ -511,15 +511,15 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                     p_camera1 = p_currentKeyFrame->p_camera;
                     p_camera2 = p_neighborKeyFrame->p_camera;
                 }
-                poseWorldToCamera1     = sophTcw1.matrix3x4();
-                rotationWorldToCamera1 = poseWorldToCamera1.block<3, 3>(0, 0);
-                rotationCameraToWorld1 = rotationWorldToCamera1.transpose();
-                translationWorldToCamera1 = sophTcw1.translation();
+                pose_worldToCamera1     = sophTcw1.matrix3x4();
+                rotation_worldToCamera1 = pose_worldToCamera1.block<3, 3>(0, 0);
+                rotation_camera1ToWorld = rotation_worldToCamera1.transpose();
+                translation_worldToCamera1 = sophTcw1.translation();
 
-                poseWorldToCamera2     = sophTcw2.matrix3x4();
-                rotationWorldToCamera2 = poseWorldToCamera2.block<3, 3>(0, 0);
-                rotationCameraToWorld2 = rotationWorldToCamera2.transpose();
-                translationWorldToCamera2 = sophTcw2.translation();
+                pose_worldToCamera2     = sophTcw2.matrix3x4();
+                rotation_worldToCamera2 = pose_worldToCamera2.block<3, 3>(0, 0);
+                rotation_camera2ToWorld = rotation_worldToCamera2.transpose();
+                translation_worldToCamera2 = sophTcw2.translation();
             }
 
             // Check parallax between rays
@@ -529,9 +529,9 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                 p_camera2->unprojectEig(keyPoint2.pt);
 
             Eigen::Vector3f worldViewingRay1 =
-                rotationCameraToWorld1 * unprojectedRay1;
+                rotation_camera1ToWorld * unprojectedRay1;
             Eigen::Vector3f worldViewingRay2 =
-                rotationCameraToWorld2 * unprojectedRay2;
+                rotation_camera2ToWorld * unprojectedRay2;
             const float cosParallaxRays =
                 worldViewingRay1.dot(worldViewingRay2) /
                 (worldViewingRay1.norm() * worldViewingRay2.norm());
@@ -567,8 +567,8 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                 wasTriangulationSuccessful =
                     (GeometricTools::triangulate(unprojectedRay1,
                                                  unprojectedRay2,
-                                                 poseWorldToCamera1,
-                                                 poseWorldToCamera2,
+                                                 pose_worldToCamera1,
+                                                 pose_worldToCamera2,
                                                  triangulatedPoint) ==
                      GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS);
                 if (!wasTriangulationSuccessful)
@@ -625,14 +625,14 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
 
             // Check triangulation in front of cameras
             float cameraFrameZ1 =
-                rotationWorldToCamera1.row(2).dot(triangulatedPoint) +
-                translationWorldToCamera1(2);
+                rotation_worldToCamera1.row(2).dot(triangulatedPoint) +
+                translation_worldToCamera1(2);
             if (cameraFrameZ1 <= 0)
                 continue;
 
             float cameraFrameZ2 =
-                rotationWorldToCamera2.row(2).dot(triangulatedPoint) +
-                translationWorldToCamera2(2);
+                rotation_worldToCamera2.row(2).dot(triangulatedPoint) +
+                translation_worldToCamera2(2);
             if (cameraFrameZ2 <= 0)
                 continue;
 
@@ -640,11 +640,11 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             const float &levelSigmaSquared1 =
                 p_currentKeyFrame->levelSigmaSquared[keyPoint1.octave];
             const float cameraFrameX1 =
-                rotationWorldToCamera1.row(0).dot(triangulatedPoint) +
-                translationWorldToCamera1(0);
+                rotation_worldToCamera1.row(0).dot(triangulatedPoint) +
+                translation_worldToCamera1(0);
             const float cameraFrameY1 =
-                rotationWorldToCamera1.row(1).dot(triangulatedPoint) +
-                translationWorldToCamera1(1);
+                rotation_worldToCamera1.row(1).dot(triangulatedPoint) +
+                translation_worldToCamera1(1);
             const float inverseDepth1 = 1.0 / cameraFrameZ1;
 
             if (!hasStereoMatch1)
@@ -681,11 +681,11 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             const float levelSigmaSquared2 =
                 p_neighborKeyFrame->levelSigmaSquared[keyPoint2.octave];
             const float cameraFrameX2 =
-                rotationWorldToCamera2.row(0).dot(triangulatedPoint) +
-                translationWorldToCamera2(0);
+                rotation_worldToCamera2.row(0).dot(triangulatedPoint) +
+                translation_worldToCamera2(0);
             const float cameraFrameY2 =
-                rotationWorldToCamera2.row(1).dot(triangulatedPoint) +
-                translationWorldToCamera2(1);
+                rotation_worldToCamera2.row(1).dot(triangulatedPoint) +
+                translation_worldToCamera2(1);
             const float inverseDepth2 = 1.0 / cameraFrameZ2;
             if (!hasStereoMatch2)
             {

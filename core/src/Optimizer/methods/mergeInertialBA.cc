@@ -790,10 +790,10 @@ OptimizerStatus
 
         VertexPose *p_poseVertex =
             static_cast<VertexPose *>(optimizer.vertex(p_keyFrame->id));
-        Sophus::SE3f poseWorldToCamera(
+        Sophus::SE3f pose_worldToCamera(
             p_poseVertex->estimate().Rcw[0].cast<float>(),
             p_poseVertex->estimate().tcw[0].cast<float>());
-        if (p_keyFrame->setPose(poseWorldToCamera) !=
+        if (p_keyFrame->setPose(pose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -854,10 +854,10 @@ OptimizerStatus
 
         VertexPose *p_poseVertex =
             static_cast<VertexPose *>(optimizer.vertex(p_keyFrame->id));
-        Sophus::SE3f poseWorldToCamera(
+        Sophus::SE3f pose_worldToCamera(
             p_poseVertex->estimate().Rcw[0].cast<float>(),
             p_poseVertex->estimate().tcw[0].cast<float>());
-        if (p_keyFrame->setPose(poseWorldToCamera) !=
+        if (p_keyFrame->setPose(pose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

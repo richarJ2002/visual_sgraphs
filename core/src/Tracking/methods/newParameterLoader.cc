@@ -398,8 +398,8 @@ TrackingStatus
     if (sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
         sensor == System::IMU_RGBD)
     {
-        Sophus::SE3f poseCameraToBody{};
-        if (p_settings_inout->Tbc(poseCameraToBody) !=
+        Sophus::SE3f pose_cameraToBody{};
+        if (p_settings_inout->Tbc(pose_cameraToBody) !=
             utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -490,7 +490,7 @@ TrackingStatus
         float awCount = static_cast<float>(accWalkValue);
 
         const float sf   = std::sqrt(imuFrequency);
-        p_imuCalibration = new IMU::Calib(poseCameraToBody,
+        p_imuCalibration = new IMU::Calib(pose_cameraToBody,
                                           Ng * sf,
                                           Na * sf,
                                           gwCount / sf,

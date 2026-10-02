@@ -143,7 +143,7 @@ SettingsStatus Settings::readIMU(cv::FileStorage &storage_inout)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    bodyToCamera = sophus;
+    extrinsic_cameraToBody = sophus;
 
     int parameter7{};
     if (readParameter<int>(storage_inout,

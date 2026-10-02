@@ -145,16 +145,16 @@ SystemStatus System::saveTrajectoryTUM(const std::string &filename_in)
         }
         Trw = Trw * keyFramePose * Two;
 
-        Sophus::SE3f poseWorldToCamera = (*lit) * Trw;
-        Sophus::SE3f poseCameraToWorld = poseWorldToCamera.inverse();
+        Sophus::SE3f pose_worldToCamera = (*lit) * Trw;
+        Sophus::SE3f pose_cameraToWorld = pose_worldToCamera.inverse();
 
-        Eigen::Vector3f translationCameraToWorld =
-            poseCameraToWorld.translation();
-        Eigen::Quaternionf q = poseCameraToWorld.unit_quaternion();
+        Eigen::Vector3f translation_cameraToWorld =
+            pose_cameraToWorld.translation();
+        Eigen::Quaternionf q = pose_cameraToWorld.unit_quaternion();
 
         f << std::setprecision(6) << *lT << " " << std::setprecision(9)
-          << translationCameraToWorld(0) << " " << translationCameraToWorld(1)
-          << " " << translationCameraToWorld(2) << " " << q.x() << " " << q.y()
+          << translation_cameraToWorld(0) << " " << translation_cameraToWorld(1)
+          << " " << translation_cameraToWorld(2) << " " << q.x() << " " << q.y()
           << " " << q.z() << " " << q.w() << std::endl;
     }
     f.close();

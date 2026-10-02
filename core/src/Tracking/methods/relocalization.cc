@@ -334,13 +334,13 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
             bool              areIterationsExhausted;
 
             MLPnPsolver    *p_solver = pnpSolvers[keyFrameIndex];
-            Eigen::Matrix4f poseWorldToCameraEigen;
+            Eigen::Matrix4f poseEigen_worldToCamera;
             bool            bTcw{};
             if (p_solver->iterate(5,
                                   areIterationsExhausted,
                                   inliersFlags,
                                   inlierCount,
-                                  poseWorldToCameraEigen,
+                                  poseEigen_worldToCamera,
                                   bTcw) !=
                 MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
             {
@@ -360,8 +360,8 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
             // If a Camera Pose is computed, optimize
             if (bTcw)
             {
-                Sophus::SE3f poseWorldToCamera(poseWorldToCameraEigen);
-                if (currentFrame.setPose(poseWorldToCamera) !=
+                Sophus::SE3f pose_worldToCamera(poseEigen_worldToCamera);
+                if (currentFrame.setPose(pose_worldToCamera) !=
                     FrameStatus::FRAME_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(

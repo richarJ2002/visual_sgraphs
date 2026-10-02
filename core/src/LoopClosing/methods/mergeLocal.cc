@@ -352,9 +352,9 @@ LoopClosingStatus
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    const Sophus::SE3d poseCameraToWorld = currentKFPoseInverse.cast<double>();
-    const g2o::Sim3    g2oNonCorrectedSwc(poseCameraToWorld.unit_quaternion(),
-                                       poseCameraToWorld.translation(),
+    const Sophus::SE3d pose_cameraToWorld = currentKFPoseInverse.cast<double>();
+    const g2o::Sim3    g2oNonCorrectedSwc(pose_cameraToWorld.unit_quaternion(),
+                                       pose_cameraToWorld.translation(),
                                        1.0);
     const g2o::Sim3    g2oSwCurrentWMerge = g2oNonCorrectedSwc * mg2oMergeScw;
     const g2o::Sim3    g2oSwMergeWCurrent = g2oSwCurrentWMerge.inverse();

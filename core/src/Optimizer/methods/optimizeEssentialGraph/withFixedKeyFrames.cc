@@ -152,9 +152,9 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3d poseWorldToCamera = fixedKeyFramePose.cast<double>();
-        g2o::Sim3    Siw(poseWorldToCamera.unit_quaternion(),
-                      poseWorldToCamera.translation(),
+        Sophus::SE3d pose_worldToCamera = fixedKeyFramePose.cast<double>();
+        g2o::Sim3    Siw(pose_worldToCamera.unit_quaternion(),
+                      pose_worldToCamera.translation(),
                       1.0);
 
         vCorrectedSwc[idCount] = Siw.inverse();
@@ -202,9 +202,9 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3d poseWorldToCamera = fixedKeyFramePose2.cast<double>();
-        g2o::Sim3    Siw(poseWorldToCamera.unit_quaternion(),
-                      poseWorldToCamera.translation(),
+        Sophus::SE3d pose_worldToCamera = fixedKeyFramePose2.cast<double>();
+        g2o::Sim3    Siw(pose_worldToCamera.unit_quaternion(),
+                      pose_worldToCamera.translation(),
                       1.0);
 
         vCorrectedSwc[idCount] = Siw.inverse();
@@ -261,9 +261,9 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3d poseWorldToCamera = fixedKeyFramePose3.cast<double>();
-        g2o::Sim3    Siw(poseWorldToCamera.unit_quaternion(),
-                      poseWorldToCamera.translation(),
+        Sophus::SE3d pose_worldToCamera = fixedKeyFramePose3.cast<double>();
+        g2o::Sim3    Siw(pose_worldToCamera.unit_quaternion(),
+                      pose_worldToCamera.translation(),
                       1.0);
 
         vScw[idCount] = Siw;

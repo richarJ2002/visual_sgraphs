@@ -679,8 +679,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     {
         vs_graphs::core::KeyFrame *p_keyFrame  = *lit;
         g2o::VertexSE3Expmap      *p_se3Vertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>         poseWorldToCamera{};
-        if (p_keyFrame->getPose(poseWorldToCamera) !=
+        Sophus::SE3<float>         pose_worldToCamera{};
+        if (p_keyFrame->getPose(pose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -689,8 +689,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          __func__);
         }
         p_se3Vertex->setEstimate(
-            g2o::SE3Quat(poseWorldToCamera.unit_quaternion().cast<double>(),
-                         poseWorldToCamera.translation().cast<double>()));
+            g2o::SE3Quat(pose_worldToCamera.unit_quaternion().cast<double>(),
+                         pose_worldToCamera.translation().cast<double>()));
         p_se3Vertex->setId(p_keyFrame->id);
         unsigned long mapInitKeyFrameId2{};
         if (p_map_inout->getInitKeyFrameId(mapInitKeyFrameId2) !=
@@ -720,8 +720,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     {
         KeyFrame             *p_keyFrame  = *lit;
         g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>    poseWorldToCamera{};
-        if (p_keyFrame->getPose(poseWorldToCamera) !=
+        Sophus::SE3<float>    pose_worldToCamera{};
+        if (p_keyFrame->getPose(pose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -730,8 +730,8 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          __func__);
         }
         p_se3Vertex->setEstimate(
-            g2o::SE3Quat(poseWorldToCamera.unit_quaternion().cast<double>(),
-                         poseWorldToCamera.translation().cast<double>()));
+            g2o::SE3Quat(pose_worldToCamera.unit_quaternion().cast<double>(),
+                         pose_worldToCamera.translation().cast<double>()));
         p_se3Vertex->setId(p_keyFrame->id);
         p_se3Vertex->setFixed(true);
         optimizer.addVertex(p_se3Vertex);

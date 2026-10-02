@@ -39,16 +39,16 @@ namespace core
 {
 
 ImuCamPoseStatus ImuCamPose::setParam(
-    const std::vector<Eigen::Matrix3d> &rotationsWorldToCamera_in,
-    const std::vector<Eigen::Vector3d> &translationsWorldToCamera_in,
-    const std::vector<Eigen::Matrix3d> &rotationsCameraToBody_in,
-    const std::vector<Eigen::Vector3d> &translationsCameraToBody_in,
+    const std::vector<Eigen::Matrix3d> &rotations_worldToCamera_in,
+    const std::vector<Eigen::Vector3d> &translations_worldToCamera_in,
+    const std::vector<Eigen::Matrix3d> &rotations_cameraToBody_in,
+    const std::vector<Eigen::Vector3d> &translations_cameraToBody_in,
     const double                       &baselineFocalProduct_in)
 {
-    Rbc                   = rotationsCameraToBody_in;
-    tbc                   = translationsCameraToBody_in;
-    Rcw                   = rotationsWorldToCamera_in;
-    tcw                   = translationsWorldToCamera_in;
+    Rbc                   = rotations_cameraToBody_in;
+    tbc                   = translations_cameraToBody_in;
+    Rcw                   = rotations_worldToCamera_in;
+    tcw                   = translations_worldToCamera_in;
     const int cameraCount = Rbc.size();
     Rcb.resize(cameraCount);
     tcb.resize(cameraCount);

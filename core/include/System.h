@@ -1520,26 +1520,26 @@ class System
      *              estimated position and orientation of the camera relative
      *              to the world origin.
      *
-     * @param[out]  poseCameraToWorld_out
+     * @param[out]  pose_cameraToWorld_out
      *              Camera pose (camera to world) as Sophus::SE3f. May be
      *              invalid if the system has not yet initialized the pose.
      *
      * @return      SYSTEM_STATUS_SUCCESS.
      */
-    [[nodiscard]] SystemStatus getCamTwc(Sophus::SE3f &poseCameraToWorld_out);
+    [[nodiscard]] SystemStatus getCamTwc(Sophus::SE3f &pose_cameraToWorld_out);
 
     /*!
      * @brief       Get the IMU (body) pose in the world frame: the
      *              estimated position and orientation of the IMU relative
      *              to the world origin.
      *
-     * @param[out]  poseBodyToWorld_out
+     * @param[out]  pose_bodyToWorld_out
      *              IMU pose (body to world) as Sophus::SE3f. May be invalid
      *              if IMU data has not been sufficiently processed.
      *
      * @return      SYSTEM_STATUS_SUCCESS.
      */
-    [[nodiscard]] SystemStatus getImuTwb(Sophus::SE3f &poseBodyToWorld_out);
+    [[nodiscard]] SystemStatus getImuTwb(Sophus::SE3f &pose_bodyToWorld_out);
 
     /*!
      * @brief       Get the IMU velocity in the body frame. Represents the

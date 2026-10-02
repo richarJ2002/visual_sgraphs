@@ -142,21 +142,21 @@ SystemStatus System::saveTrajectoryKITTI(const std::string &filename_in)
         }
         Trw = Trw * keyFramePose * Tow;
 
-        Sophus::SE3f    poseWorldToCamera = (*lit) * Trw;
-        Sophus::SE3f    poseCameraToWorld = poseWorldToCamera.inverse();
-        Eigen::Matrix3f rotationCameraToWorld =
-            poseCameraToWorld.rotationMatrix();
-        Eigen::Vector3f translationCameraToWorld =
-            poseCameraToWorld.translation();
+        Sophus::SE3f    pose_worldToCamera = (*lit) * Trw;
+        Sophus::SE3f    pose_cameraToWorld = pose_worldToCamera.inverse();
+        Eigen::Matrix3f rotation_cameraToWorld =
+            pose_cameraToWorld.rotationMatrix();
+        Eigen::Vector3f translation_cameraToWorld =
+            pose_cameraToWorld.translation();
 
-        f << std::setprecision(9) << rotationCameraToWorld(0, 0) << " "
-          << rotationCameraToWorld(0, 1) << " " << rotationCameraToWorld(0, 2)
-          << " " << translationCameraToWorld(0) << " "
-          << rotationCameraToWorld(1, 0) << " " << rotationCameraToWorld(1, 1)
-          << " " << rotationCameraToWorld(1, 2) << " "
-          << translationCameraToWorld(1) << " " << rotationCameraToWorld(2, 0)
-          << " " << rotationCameraToWorld(2, 1) << " "
-          << rotationCameraToWorld(2, 2) << " " << translationCameraToWorld(2)
+        f << std::setprecision(9) << rotation_cameraToWorld(0, 0) << " "
+          << rotation_cameraToWorld(0, 1) << " " << rotation_cameraToWorld(0, 2)
+          << " " << translation_cameraToWorld(0) << " "
+          << rotation_cameraToWorld(1, 0) << " " << rotation_cameraToWorld(1, 1)
+          << " " << rotation_cameraToWorld(1, 2) << " "
+          << translation_cameraToWorld(1) << " " << rotation_cameraToWorld(2, 0)
+          << " " << rotation_cameraToWorld(2, 1) << " "
+          << rotation_cameraToWorld(2, 2) << " " << translation_cameraToWorld(2)
           << std::endl;
     }
     f.close();

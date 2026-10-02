@@ -37,9 +37,9 @@ namespace core
 {
 
 FrameStatus
-    Frame::getRotationRwc(Eigen::Matrix3f &rotationCameraToWorld_out) const
+    Frame::getRotationRwc(Eigen::Matrix3f &rotation_cameraToWorld_out) const
 {
-    rotationCameraToWorld_out = rotationRwc;
+    rotation_cameraToWorld_out = rotationRwc;
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 

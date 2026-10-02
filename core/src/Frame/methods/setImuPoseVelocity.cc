@@ -51,18 +51,18 @@ namespace core
 {
 
 FrameStatus
-    Frame::setImuPoseVelocity(const Eigen::Matrix3f &rotationBodyToWorld_in,
-                              const Eigen::Vector3f &translationBodyToWorld_in,
+    Frame::setImuPoseVelocity(const Eigen::Matrix3f &rotation_bodyToWorld_in,
+                              const Eigen::Vector3f &translation_bodyToWorld_in,
                               const Eigen::Vector3f &Vwb_in)
 {
     velocityVw          = Vwb_in;
     isVelocityAvailable = true;
 
-    Sophus::SE3f poseBodyToWorld(rotationBodyToWorld_in,
-                                 translationBodyToWorld_in);
-    Sophus::SE3f poseWorldToBody = poseBodyToWorld.inverse();
+    Sophus::SE3f pose_bodyToWorld(rotation_bodyToWorld_in,
+                                  translation_bodyToWorld_in);
+    Sophus::SE3f pose_worldToBody = pose_bodyToWorld.inverse();
 
-    poseTcw = imuCalibration.mTcb * poseWorldToBody;
+    poseTcw = imuCalibration.mTcb * pose_worldToBody;
 
     if (updatePoseMatrices() != FrameStatus::FRAME_STATUS_SUCCESS)
     {

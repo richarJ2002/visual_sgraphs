@@ -329,8 +329,8 @@ class ImuCamPose
         Rwb0 = Rwb;
         DR.setIdentity();
     }
-    ImuCamPose(Eigen::Matrix3d &rotationCameraToWorld_inout,
-               Eigen::Vector3d &translationCameraToWorld_inout,
+    ImuCamPose(Eigen::Matrix3d &rotation_cameraToWorld_inout,
+               Eigen::Vector3d &translation_cameraToWorld_inout,
                KeyFrame        *p_keyFrame_inout) :
         its(0)
     {
@@ -350,11 +350,11 @@ class ImuCamPose
         Rbc[0] = Rcb[0].transpose();
         tbc[0] =
             p_keyFrame_inout->imuCalibration.mTbc.translation().cast<double>();
-        twb = rotationCameraToWorld_inout * tcb[0] +
-              translationCameraToWorld_inout;
-        Rwb        = rotationCameraToWorld_inout * Rcb[0];
-        Rcw[0]     = rotationCameraToWorld_inout.transpose();
-        tcw[0]     = -Rcw[0] * translationCameraToWorld_inout;
+        twb = rotation_cameraToWorld_inout * tcb[0] +
+              translation_cameraToWorld_inout;
+        Rwb        = rotation_cameraToWorld_inout * Rcb[0];
+        Rcw[0]     = rotation_cameraToWorld_inout.transpose();
+        tcw[0]     = -Rcw[0] * translation_cameraToWorld_inout;
         pCamera[0] = p_keyFrame_inout->p_camera;
         bf         = p_keyFrame_inout->mbf;
 
@@ -364,10 +364,10 @@ class ImuCamPose
     }
 
     [[nodiscard]] ImuCamPoseStatus setParam(
-        const std::vector<Eigen::Matrix3d> &rotationsWorldToCamera_in,
-        const std::vector<Eigen::Vector3d> &translationsWorldToCamera_in,
-        const std::vector<Eigen::Matrix3d> &rotationsCameraToBody_in,
-        const std::vector<Eigen::Vector3d> &translationsCameraToBody_in,
+        const std::vector<Eigen::Matrix3d> &rotations_worldToCamera_in,
+        const std::vector<Eigen::Vector3d> &translations_worldToCamera_in,
+        const std::vector<Eigen::Matrix3d> &rotations_cameraToBody_in,
+        const std::vector<Eigen::Vector3d> &translations_cameraToBody_in,
         const double                       &baselineFocalProduct_in);
 
     [[nodiscard]] ImuCamPoseStatus
@@ -483,13 +483,13 @@ class VertexPose4DoF : public g2o::BaseVertex<4, ImuCamPose>
     {
         setEstimate(ImuCamPose(p_pF_inout));
     }
-    VertexPose4DoF(Eigen::Matrix3d &rotationCameraToWorld_inout,
-                   Eigen::Vector3d &translationCameraToWorld_inout,
+    VertexPose4DoF(Eigen::Matrix3d &rotation_cameraToWorld_inout,
+                   Eigen::Vector3d &translation_cameraToWorld_inout,
                    KeyFrame        *p_keyFrame_inout)
     {
 
-        setEstimate(ImuCamPose(rotationCameraToWorld_inout,
-                               translationCameraToWorld_inout,
+        setEstimate(ImuCamPose(rotation_cameraToWorld_inout,
+                               translation_cameraToWorld_inout,
                                p_keyFrame_inout));
     }
 
@@ -1415,14 +1415,14 @@ class ConstraintPoseImu
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    ConstraintPoseImu(const Eigen::Matrix3d &rotationBodyToWorld_in,
-                      const Eigen::Vector3d &translationBodyToWorld_in,
+    ConstraintPoseImu(const Eigen::Matrix3d &rotation_bodyToWorld_in,
+                      const Eigen::Vector3d &translation_bodyToWorld_in,
                       const Eigen::Vector3d &vwb_in,
                       const Eigen::Vector3d &bg_in,
                       const Eigen::Vector3d &ba_in,
                       const Matrix15d       &H_in) :
-        Rwb(rotationBodyToWorld_in),
-        twb(translationBodyToWorld_in),
+        Rwb(rotation_bodyToWorld_in),
+        twb(translation_bodyToWorld_in),
         vwb(vwb_in),
         bg(bg_in),
         ba(ba_in),

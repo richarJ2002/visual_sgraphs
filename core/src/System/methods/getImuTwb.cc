@@ -38,7 +38,7 @@ namespace vs_graphs
 namespace core
 {
 
-SystemStatus System::getImuTwb(Sophus::SE3f &poseBodyToWorld_out)
+SystemStatus System::getImuTwb(Sophus::SE3f &pose_bodyToWorld_out)
 {
     Sophus::SE3f trackerImuTwb{};
     if (p_tracker->getImuTwb(trackerImuTwb) !=
@@ -49,7 +49,7 @@ SystemStatus System::getImuTwb(Sophus::SE3f &poseBodyToWorld_out)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    poseBodyToWorld_out = trackerImuTwb;
+    pose_bodyToWorld_out = trackerImuTwb;
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 

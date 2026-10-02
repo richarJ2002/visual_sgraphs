@@ -130,11 +130,11 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
         {
             vScw[idCount]       = correctedPoseIt->second;
             const g2o::Sim3 Swc = correctedPoseIt->second.inverse();
-            Eigen::Matrix3d rotationCameraToWorld =
+            Eigen::Matrix3d rotation_cameraToWorld =
                 Swc.rotation().toRotationMatrix();
-            Eigen::Vector3d translationCameraToWorld = Swc.translation();
-            p_pose4DofVertex = new VertexPose4DoF(rotationCameraToWorld,
-                                                  translationCameraToWorld,
+            Eigen::Vector3d translation_cameraToWorld = Swc.translation();
+            p_pose4DofVertex = new VertexPose4DoF(rotation_cameraToWorld,
+                                                  translation_cameraToWorld,
                                                   p_keyFrame);
         }
         else
@@ -148,9 +148,9 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            Sophus::SE3d poseWorldToCamera = keyFramePose.cast<double>();
-            g2o::Sim3    Siw(poseWorldToCamera.unit_quaternion(),
-                          poseWorldToCamera.translation(),
+            Sophus::SE3d pose_worldToCamera = keyFramePose.cast<double>();
+            g2o::Sim3    Siw(pose_worldToCamera.unit_quaternion(),
+                          pose_worldToCamera.translation(),
                           1.0);
 
             vScw[idCount]    = Siw;

@@ -74,8 +74,8 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
          sit++)
     {
         KeyFrame    *p_keyFrame = *sit;
-        Sophus::SE3f poseCameraToWorld{};
-        if (p_keyFrame->getPoseInverse(poseCameraToWorld) !=
+        Sophus::SE3f pose_cameraToWorld{};
+        if (p_keyFrame->getPoseInverse(pose_cameraToWorld) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -83,8 +83,8 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        poseCameraToWorld.translation() *= s_in;
-        Sophus::SE3f Tyc = Tyw * poseCameraToWorld;
+        pose_cameraToWorld.translation() *= s_in;
+        Sophus::SE3f Tyc = Tyw * pose_cameraToWorld;
         Sophus::SE3f Tcy = Tyc.inverse();
         if (p_keyFrame->setPose(Tcy) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)

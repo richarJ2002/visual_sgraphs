@@ -114,8 +114,8 @@ void Viewer::run()
                        -1024.0f / 768.0f)
             .SetHandler(new pangolin::Handler3D(camera));
 
-    pangolin::OpenGlMatrix poseCameraToWorld, Twr;
-    poseCameraToWorld.SetIdentity();
+    pangolin::OpenGlMatrix pose_cameraToWorld, Twr;
+    pose_cameraToWorld.SetIdentity();
     pangolin::OpenGlMatrix cameraCenter_World; // Oriented with g in the z axis
     cameraCenter_World.SetIdentity();
     cv::namedWindow("ORB-SLAM3: Current Frame");
@@ -147,7 +147,7 @@ void Viewer::run()
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        if (p_mapDrawer->getCurrentOpenGLCameraMatrix(poseCameraToWorld,
+        if (p_mapDrawer->getCurrentOpenGLCameraMatrix(pose_cameraToWorld,
                                                       cameraCenter_World) !=
             MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
         {
@@ -167,7 +167,7 @@ void Viewer::run()
         if (menuFollowCamera && isFollowing)
         {
             if (isCameraView)
-                camera.Follow(poseCameraToWorld);
+                camera.Follow(pose_cameraToWorld);
             else
                 camera.Follow(cameraCenter_World);
         }
@@ -193,7 +193,7 @@ void Viewer::run()
                                                                     0.0,
                                                                     -1.0,
                                                                     0.0));
-                camera.Follow(poseCameraToWorld);
+                camera.Follow(pose_cameraToWorld);
             }
             else
             {
@@ -244,7 +244,7 @@ void Viewer::run()
                                                                 0.0,
                                                                 -1.0,
                                                                 0.0));
-            camera.Follow(poseCameraToWorld);
+            camera.Follow(pose_cameraToWorld);
         }
 
         bool isImuInitialized2{};
@@ -335,7 +335,7 @@ void Viewer::run()
 
         cameraView.Activate(camera);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        if (p_mapDrawer->drawCurrentCamera(poseCameraToWorld) !=
+        if (p_mapDrawer->drawCurrentCamera(pose_cameraToWorld) !=
             MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

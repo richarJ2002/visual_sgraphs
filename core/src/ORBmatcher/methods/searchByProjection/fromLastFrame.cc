@@ -53,8 +53,8 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
         rotHist[histogramBinIndex].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
-    Sophus::SE3f poseWorldToCamera{};
-    if (currentFrame_inout.getPose(poseWorldToCamera) !=
+    Sophus::SE3f pose_worldToCamera{};
+    if (currentFrame_inout.getPose(pose_worldToCamera) !=
         FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -62,8 +62,8 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
                      "fail; continuing as before.",
                      __func__);
     }
-    const Eigen::Vector3f translationCameraToWorld =
-        poseWorldToCamera.inverse().translation();
+    const Eigen::Vector3f translation_cameraToWorld =
+        pose_worldToCamera.inverse().translation();
 
     Sophus::SE3f Tlw{};
     if (lastFrame_in.getPose(Tlw) != FrameStatus::FRAME_STATUS_SUCCESS)
@@ -73,7 +73,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
                      "fail; continuing as before.",
                      __func__);
     }
-    const Eigen::Vector3f tlc = Tlw * translationCameraToWorld;
+    const Eigen::Vector3f tlc = Tlw * translation_cameraToWorld;
 
     const bool isMovingForward  = tlc(2) > currentFrame_inout.mb && !mono_in;
     const bool isMovingBackward = -tlc(2) > currentFrame_inout.mb && !mono_in;
@@ -98,7 +98,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Vector3f x3Dc = poseWorldToCamera * x3Dw;
+                Eigen::Vector3f x3Dc = pose_worldToCamera * x3Dw;
 
                 const float invzc = 1.0 / x3Dc(2);
 

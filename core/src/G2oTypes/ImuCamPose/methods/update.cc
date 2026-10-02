@@ -77,15 +77,15 @@ ImuCamPoseStatus ImuCamPose::update(const double *p_updateVector_in)
     }
 
     // Update camera poses
-    const Eigen::Matrix3d rotationWorldToBody    = Rwb.transpose();
-    const Eigen::Vector3d translationWorldToBody = -rotationWorldToBody * twb;
+    const Eigen::Matrix3d rotation_worldToBody    = Rwb.transpose();
+    const Eigen::Vector3d translation_worldToBody = -rotation_worldToBody * twb;
 
     for (std::size_t cameraIndex = 0; cameraIndex < pCamera.size();
          cameraIndex++)
     {
-        Rcw[cameraIndex] = Rcb[cameraIndex] * rotationWorldToBody;
+        Rcw[cameraIndex] = Rcb[cameraIndex] * rotation_worldToBody;
         tcw[cameraIndex] =
-            Rcb[cameraIndex] * translationWorldToBody + tcb[cameraIndex];
+            Rcb[cameraIndex] * translation_worldToBody + tcb[cameraIndex];
     }
 
     return ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS;

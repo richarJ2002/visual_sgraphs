@@ -55,12 +55,12 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
     const float &cx = p_keyframe_in->cx;
     const float &cy = p_keyframe_in->cy;
 
-    Sophus::SE3f poseWorldToCamera =
+    Sophus::SE3f pose_worldToCamera =
         Sophus::SE3f(similarity_worldToCamera_in.rotationMatrix(),
                      similarity_worldToCamera_in.translation() /
                          similarity_worldToCamera_in.scale());
     Eigen::Vector3f cameraCenter_World =
-        poseWorldToCamera.inverse().translation();
+        pose_worldToCamera.inverse().translation();
 
     // Set of MapPoints already found in the KeyFrame
     std::set<MapPoint *> alreadyFounds(matched_inout.begin(),
@@ -102,7 +102,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         }
 
         // Transform into Camera Coords.
-        Eigen::Vector3f p3Dc = poseWorldToCamera * p3Dw;
+        Eigen::Vector3f p3Dc = pose_worldToCamera * p3Dw;
 
         // Depth must be positive
         if (p3Dc(2) < 0.0)

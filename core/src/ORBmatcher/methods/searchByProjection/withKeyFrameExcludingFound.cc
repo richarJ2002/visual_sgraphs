@@ -48,8 +48,8 @@ ORBmatcherStatus
 {
     int nmatches = 0;
 
-    Sophus::SE3f poseWorldToCamera{};
-    if (currentFrame_inout.getPose(poseWorldToCamera) !=
+    Sophus::SE3f pose_worldToCamera{};
+    if (currentFrame_inout.getPose(pose_worldToCamera) !=
         FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -58,7 +58,7 @@ ORBmatcherStatus
                      __func__);
     }
     Eigen::Vector3f cameraCenter_World =
-        poseWorldToCamera.inverse().translation();
+        pose_worldToCamera.inverse().translation();
 
     // Rotation Histogram (to check rotation consistency)
     std::vector<int> rotHist[HISTO_LENGTH];
@@ -107,7 +107,7 @@ ORBmatcherStatus
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Vector3f x3Dc = poseWorldToCamera * x3Dw;
+                Eigen::Vector3f x3Dc = pose_worldToCamera * x3Dw;
 
                 const Eigen::Vector2f uv =
                     currentFrame_inout.p_camera->project(x3Dc);

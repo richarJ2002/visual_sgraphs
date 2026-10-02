@@ -37,7 +37,7 @@ namespace vs_graphs
 namespace core
 {
 
-TrackingStatus Tracking::getImuTwb(Sophus::SE3f &poseBodyToWorld_out)
+TrackingStatus Tracking::getImuTwb(Sophus::SE3f &pose_bodyToWorld_out)
 {
     Sophus::SE3<float> currentFrameImuPose{};
     if (currentFrame.getImuPose(currentFrameImuPose) !=
@@ -48,7 +48,7 @@ TrackingStatus Tracking::getImuTwb(Sophus::SE3f &poseBodyToWorld_out)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    poseBodyToWorld_out = currentFrameImuPose;
+    pose_bodyToWorld_out = currentFrameImuPose;
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 

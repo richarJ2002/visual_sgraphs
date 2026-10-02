@@ -195,8 +195,9 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
     else
     {
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-        Eigen::Vector3f       translationBodyToWorld1{};
-        if (lastFrame.p_lastKeyFrame->getImuPosition(translationBodyToWorld1) !=
+        Eigen::Vector3f       translation_body1ToWorld{};
+        if (lastFrame.p_lastKeyFrame->getImuPosition(
+                translation_body1ToWorld) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -204,8 +205,8 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Matrix3f rotationBodyToWorld1{};
-        if (lastFrame.p_lastKeyFrame->getImuRotation(rotationBodyToWorld1) !=
+        Eigen::Matrix3f rotation_body1ToWorld{};
+        if (lastFrame.p_lastKeyFrame->getImuRotation(rotation_body1ToWorld) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -236,7 +237,7 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
                 __func__);
         }
         Eigen::Matrix3f rotation{};
-        if (IMU::normalizeRotation(rotationBodyToWorld1 * updatedDeltaRotation,
+        if (IMU::normalizeRotation(rotation_body1ToWorld * updatedDeltaRotation,
                                    rotation) !=
             IMU::ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
         {
@@ -269,10 +270,10 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
         }
         if (lastFrame.setImuPoseVelocity(
                 rotation,
-                translationBodyToWorld1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
-                    rotationBodyToWorld1 * updatedDeltaPosition,
+                translation_body1ToWorld + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
+                    rotation_body1ToWorld * updatedDeltaPosition,
                 Vwb1 + Gz * t12 +
-                    rotationBodyToWorld1 * updatedDeltaVelocity) !=
+                    rotation_body1ToWorld * updatedDeltaVelocity) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -286,9 +287,9 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
     {
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
 
-        Eigen::Vector3f translationBodyToWorld1{};
+        Eigen::Vector3f translation_body1ToWorld{};
         if (currentFrame.p_lastKeyFrame->getImuPosition(
-                translationBodyToWorld1) !=
+                translation_body1ToWorld) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -296,8 +297,9 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Matrix3f rotationBodyToWorld1{};
-        if (currentFrame.p_lastKeyFrame->getImuRotation(rotationBodyToWorld1) !=
+        Eigen::Matrix3f rotation_body1ToWorld{};
+        if (currentFrame.p_lastKeyFrame->getImuRotation(
+                rotation_body1ToWorld) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -328,9 +330,9 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
                 __func__);
         }
         Eigen::Matrix3f rotation2{};
-        if (IMU::normalizeRotation(rotationBodyToWorld1 * updatedDeltaRotation2,
-                                   rotation2) !=
-            IMU::ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
+        if (IMU::normalizeRotation(
+                rotation_body1ToWorld * updatedDeltaRotation2,
+                rotation2) != IMU::ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: normalizeRotation returned a failure status "
@@ -361,10 +363,10 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
         }
         if (currentFrame.setImuPoseVelocity(
                 rotation2,
-                translationBodyToWorld1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
-                    rotationBodyToWorld1 * updatedDeltaPosition2,
+                translation_body1ToWorld + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
+                    rotation_body1ToWorld * updatedDeltaPosition2,
                 Vwb1 + Gz * t12 +
-                    rotationBodyToWorld1 * updatedDeltaVelocity2) !=
+                    rotation_body1ToWorld * updatedDeltaVelocity2) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

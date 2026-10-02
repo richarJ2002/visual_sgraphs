@@ -91,8 +91,8 @@ SystemStatus System::saveKeyFrameTrajectoryEuRoC(const std::string &filename_in,
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD)
         {
-            Sophus::SE3f poseBodyToWorld{};
-            if (p_keyFrame->getImuPose(poseBodyToWorld) !=
+            Sophus::SE3f pose_bodyToWorld{};
+            if (p_keyFrame->getImuPose(pose_bodyToWorld) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -100,19 +100,19 @@ SystemStatus System::saveKeyFrameTrajectoryEuRoC(const std::string &filename_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Quaternionf q = poseBodyToWorld.unit_quaternion();
-            Eigen::Vector3f    translationBodyToWorld =
-                poseBodyToWorld.translation();
+            Eigen::Quaternionf q = pose_bodyToWorld.unit_quaternion();
+            Eigen::Vector3f    translation_bodyToWorld =
+                pose_bodyToWorld.translation();
             f << std::setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
-              << std::setprecision(9) << translationBodyToWorld(0) << " "
-              << translationBodyToWorld(1) << " " << translationBodyToWorld(2)
+              << std::setprecision(9) << translation_bodyToWorld(0) << " "
+              << translation_bodyToWorld(1) << " " << translation_bodyToWorld(2)
               << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()
               << std::endl;
         }
         else
         {
-            Sophus::SE3f poseCameraToWorld{};
-            if (p_keyFrame->getPoseInverse(poseCameraToWorld) !=
+            Sophus::SE3f pose_cameraToWorld{};
+            if (p_keyFrame->getPoseInverse(pose_cameraToWorld) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -120,8 +120,8 @@ SystemStatus System::saveKeyFrameTrajectoryEuRoC(const std::string &filename_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Quaternionf q = poseCameraToWorld.unit_quaternion();
-            Eigen::Vector3f    t = poseCameraToWorld.translation();
+            Eigen::Quaternionf q = pose_cameraToWorld.unit_quaternion();
+            Eigen::Vector3f    t = pose_cameraToWorld.translation();
             f << std::setprecision(6) << 1e9 * p_keyFrame->timeStamp << " "
               << std::setprecision(9) << t(0) << " " << t(1) << " " << t(2)
               << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()

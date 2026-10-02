@@ -222,7 +222,7 @@ SettingsStatus Settings::precomputeRectificationMaps()
         Eigen::Matrix3f eigenR_r1_u1;
         cv::cv2eigen(R_r1_u1, eigenR_r1_u1);
         Sophus::SE3f T_r1_u1(eigenR_r1_u1, Eigen::Vector3f::Zero());
-        bodyToCamera = bodyToCamera * T_r1_u1.inverse();
+        extrinsic_cameraToBody = extrinsic_cameraToBody * T_r1_u1.inverse();
     }
 
     return SettingsStatus::SETTINGS_STATUS_SUCCESS;
