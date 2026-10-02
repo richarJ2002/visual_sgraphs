@@ -34,12 +34,27 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
+#include <limits>
 #include <vector>
 
 namespace vs_graphs
 {
 namespace core
 {
+
+/*!
+ * @brief        Id written to a saved map for an absent link held in an
+ *               unsigned id (a key frame's cameras, a map's initial and
+ *               lowest-id key frames). ORB-SLAM3 stores -1, which an unsigned
+ *               id holds as its largest value; the file format keeps that
+ *               value, so a loaded id equals NO_SAVED_ID exactly when the
+ *               link was absent.
+ *
+ * @tparam       IdType
+ *               Unsigned id type of the stored field.
+ */
+template <typename IdType>
+inline constexpr IdType NO_SAVED_ID = std::numeric_limits<IdType>::max();
 
 template <class Archive>
 void serializeSophusSE3(Archive                            &ar,

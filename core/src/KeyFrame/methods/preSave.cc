@@ -33,6 +33,7 @@
 
 #include "ImuTypes.h"
 #include "MapPoint.h"
+#include "SerializationUtils.h"
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
@@ -123,7 +124,7 @@ KeyFrameStatus KeyFrame::preSave(
     }
 
     // Camera data
-    backupCameraId = -1;
+    backupCameraId = NO_SAVED_ID<unsigned int>;
     if (p_camera && cameras_in.find(p_camera) != cameras_in.end())
     {
         unsigned int cameraId{};
@@ -139,7 +140,7 @@ KeyFrameStatus KeyFrame::preSave(
         backupCameraId = cameraId;
     }
 
-    backupCamera2Id = -1;
+    backupCamera2Id = NO_SAVED_ID<unsigned int>;
     if (p_camera2 && cameras_in.find(p_camera2) != cameras_in.end())
     {
         unsigned int camera2Id{};

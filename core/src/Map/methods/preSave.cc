@@ -32,6 +32,7 @@
 #include "KeyFrame.h"
 #include "Map.h"
 #include "MapPoint.h"
+#include "SerializationUtils.h"
 
 #include <algorithm>
 #include <iterator>
@@ -194,13 +195,13 @@ MapStatus Map::preSave(
         }
     }
 
-    backupInitialKeyFrameId = -1;
+    backupInitialKeyFrameId = NO_SAVED_ID<unsigned long int>;
     if (p_initialKeyFrame)
     {
         backupInitialKeyFrameId = p_initialKeyFrame->id;
     }
 
-    backupLowerKeyFrameId = -1;
+    backupLowerKeyFrameId = NO_SAVED_ID<unsigned long int>;
     if (p_lowerIdKeyFrame)
     {
         backupLowerKeyFrameId = p_lowerIdKeyFrame->id;

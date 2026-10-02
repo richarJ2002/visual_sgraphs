@@ -774,6 +774,45 @@ TEST(SerializationKeyFrame, DefaultRoundTrip)
     EXPECT_EQ(setPoseStatus, KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
 }
 
+TEST(SerializationKeyFrame, AbsentCamerasLoadAsNull)
+{
+    // A key frame saved without cameras stores the "no id" value for both;
+    // loading must leave both pointers null and must not look that value up
+    // in the camera table (the old ">= 0" test on an unsigned id did, which
+    // added a null entry to the table).
+    KeyFrame original;
+    original.id                 = 12U;
+    original.isImu              = false;
+    original.p_camera           = nullptr;
+    original.p_camera2          = nullptr;
+    original.p_imuPreintegrated = nullptr;
+    std::set<KeyFrame *>                                        keyframe_set;
+    std::set<MapPoint *>                                        mappoint_set;
+    std::set<camera_models::geometriccamera::GeometricCamera *> camera_set;
+    ASSERT_EQ((original.preSave(keyframe_set, mappoint_set, camera_set)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+
+    // Stale pointers show that postLoad sets both cameras, not that the
+    // default constructor happened to leave them null.
+    camera_models::pinhole::Pinhole stale(
+        std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
+    KeyFrame loaded;
+    loaded.p_camera           = &stale;
+    loaded.p_camera2          = &stale;
+    loaded.p_imuPreintegrated = nullptr;
+    RoundTripBinaryInto(original, loaded);
+
+    std::map<long unsigned int, KeyFrame *> keyFrameIds;
+    std::map<long unsigned int, MapPoint *> mapPointIds;
+    std::map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
+        cameraIds;
+    ASSERT_EQ((loaded.postLoad(keyFrameIds, mapPointIds, cameraIds)),
+              KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
+    EXPECT_TRUE(cameraIds.empty());
+    EXPECT_EQ(loaded.p_camera, nullptr);
+    EXPECT_EQ(loaded.p_camera2, nullptr);
+}
+
 TEST(SerializationMap, EmptyRoundTripMemoryAndTmpFile)
 {
     Map           original(5);

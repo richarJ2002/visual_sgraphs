@@ -32,6 +32,7 @@
 #include "KeyFrame.h"
 
 #include "ImuTypes.h"
+#include "SerializationUtils.h"
 #include "Utils/Converter/objects/Converter.h"
 
 #include <mutex>
@@ -124,18 +125,25 @@ KeyFrameStatus KeyFrame::postLoad(
     }
 
     // Camera data
-    if (backupCameraId >= 0)
+    // An absent camera stays null (the default constructor leaves both
+    // pointers unset).
+    if (backupCameraId != NO_SAVED_ID<unsigned int>)
     {
         p_camera = cameraId_in[backupCameraId];
     }
     else
     {
+        p_camera = nullptr;
         std::cout << "ERROR: There is not a main camera in KF " << id
                   << std::endl;
     }
-    if (backupCamera2Id >= 0)
+    if (backupCamera2Id != NO_SAVED_ID<unsigned int>)
     {
         p_camera2 = cameraId_in[backupCamera2Id];
+    }
+    else
+    {
+        p_camera2 = nullptr;
     }
 
     // Inertial data
