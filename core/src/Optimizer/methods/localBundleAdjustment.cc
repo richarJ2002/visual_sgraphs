@@ -801,7 +801,6 @@ OptimizerStatus Optimizer::localBundleAdjustment(
 
     int roomCount   = 1;
     int planeCount  = 1;
-    int pointCount  = 0;
     int markerCount = 1;
 
     int edgeCount   = 0;
@@ -829,7 +828,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         p_pointVertex->setId(id);
         p_pointVertex->setMarginalized(true);
         optimizer.addVertex(p_pointVertex);
-        pointCount++;
+        mapPointCount_out++;
 
         // Update the maxOpId to hold the biggest value
         if (id > maximumOpId)
