@@ -62,7 +62,8 @@ class Pinhole : public geometriccamera::GeometricCamera
      * @brief        Creates a pinhole camera with four
      *               calibration entries.
      */
-    Pinhole()
+    Pinhole() :
+        p_twoViewReconstruction(nullptr)
     {
         parameters.resize(4);
         id   = nextId++;

@@ -30,8 +30,10 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <map>
+#include <new>
 #include <set>
 #include <sstream>
 #include <string>
@@ -437,16 +439,10 @@ TEST(SerializationCamera, PinholeRoundTrip)
     ASSERT_EQ((original.getId(original_id)),
               camera_models::geometriccamera::GeometricCameraStatus::
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
-    // Heap leak intentional: camera_models::pinhole::Pinhole
-    // default ctor leaves tvr uninitialised and serialize() never touches it,
-    // so a stack-loaded object could destroy garbage. Leaking mirrors Atlas
-    // (which never deletes cameras).
-    camera_models::pinhole::Pinhole *loaded_ptr =
-        new camera_models::pinhole::Pinhole(
-            std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F});
-    RoundTripBinaryInto(original, *loaded_ptr);
-    camera_models::pinhole::Pinhole &loaded = *loaded_ptr;
-    unsigned int                     id{};
+    camera_models::pinhole::Pinhole loaded(
+        std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F});
+    RoundTripBinaryInto(original, loaded);
+    unsigned int id{};
     ASSERT_EQ((loaded.getId(id)),
               camera_models::geometriccamera::GeometricCameraStatus::
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
@@ -497,14 +493,10 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
     ASSERT_EQ((original.getId(original_id)),
               camera_models::geometriccamera::GeometricCameraStatus::
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
-    // Heap leak intentional (see PinholeRoundTrip): default-constructed
-    // tvr is untouched by serialize().
-    camera_models::kannalabrandt8::KannalaBrandt8 *loaded_ptr =
-        new camera_models::kannalabrandt8::KannalaBrandt8(
-            std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F});
-    RoundTripBinaryInto(original, *loaded_ptr);
-    camera_models::kannalabrandt8::KannalaBrandt8 &loaded = *loaded_ptr;
-    unsigned int                                   id{};
+    camera_models::kannalabrandt8::KannalaBrandt8 loaded(
+        std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F});
+    RoundTripBinaryInto(original, loaded);
+    unsigned int id{};
     ASSERT_EQ((loaded.getId(id)),
               camera_models::geometriccamera::GeometricCameraStatus::
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
@@ -551,6 +543,25 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
               camera_models::kannalabrandt8::KannalaBrandt8Status::
                   KANNALA_BRANDT8_STATUS_SUCCESS);
     EXPECT_TRUE(isEqual2);
+}
+
+// Boost builds a loaded camera with the default constructor. Building one
+// over memory filled with a non-zero pattern and destroying it would delete
+// that pattern as a pointer if the constructor left the two-view helper
+// unset (it did, in both camera models).
+template <typename Camera> void ExpectDefaultBuiltCameraDestroysCleanly()
+{
+    alignas(Camera) unsigned char storage[sizeof(Camera)];
+    std::memset(storage, 0xA5, sizeof(storage));
+    Camera *p_camera = new (storage) Camera();
+    p_camera->~Camera();
+}
+
+TEST(SerializationCamera, DefaultBuiltCamerasOwnNoReconstructor)
+{
+    ExpectDefaultBuiltCameraDestroysCleanly<camera_models::pinhole::Pinhole>();
+    ExpectDefaultBuiltCameraDestroysCleanly<
+        camera_models::kannalabrandt8::KannalaBrandt8>();
 }
 
 TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)

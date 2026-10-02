@@ -61,7 +61,8 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
      *               precision.
      */
     KannalaBrandt8() :
-        precision(1e-6)
+        precision(1e-6),
+        p_twoViewReconstruction(nullptr)
     {
         parameters.resize(8);
         id   = nextId++;
@@ -124,6 +125,23 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
         id   = nextId++;
         type = CAM_FISHEYE;
     }
+
+    /*!
+     * @brief        Destroys the camera and its two-view helper.
+     */
+    ~KannalaBrandt8() override
+    {
+        delete p_twoViewReconstruction;
+    }
+    /*!
+     * @brief        Copying is forbidden: a copy would share the two-view
+     *               helper and both destructors would delete it. Clone the
+     *               calibration with KannalaBrandt8(KannalaBrandt8 *)
+     *               instead.
+     */
+    KannalaBrandt8(const KannalaBrandt8 &otherKannalaBrandt8_in) = delete;
+    KannalaBrandt8 &
+        operator=(const KannalaBrandt8 &otherKannalaBrandt8_in) = delete;
 
     /*!
      * @brief        Projects a camera-frame point into the image.
@@ -446,8 +464,8 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
     //[fx, fy, cx, cy, k0, k1, k2, k3]
 
     /*!
-     * @brief        Two-view helper created on first
-     *               reconstruction.
+     * @brief        Owned two-view helper created on first
+     *               reconstruction and released at destruction.
      */
     TwoViewReconstruction *p_twoViewReconstruction;
 
