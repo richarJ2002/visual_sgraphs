@@ -116,7 +116,7 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
         {
             RCLCPP_ERROR(
                 rclcpp::get_logger("vs_graphs"),
-                "%s: setBoundaryCorners_World_m returned a failure status "
+                "%s: setBoundaryCorners_world_m returned a failure status "
                 "although it cannot fail; continuing as before.",
                 __func__);
         }

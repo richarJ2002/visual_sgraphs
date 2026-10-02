@@ -224,7 +224,7 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                         {
                             RCLCPP_ERROR(
                                 rclcpp::get_logger("vs_graphs"),
-                                "%s: getMedianObservationSide_World_m returned "
+                                "%s: getMedianObservationSide_world_m returned "
                                 "a failure status although it cannot fail; "
                                 "continuing as before.",
                                 __func__);
@@ -238,7 +238,7 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                         {
                             RCLCPP_ERROR(
                                 rclcpp::get_logger("vs_graphs"),
-                                "%s: getMedianObservationSide_World_m returned "
+                                "%s: getMedianObservationSide_world_m returned "
                                 "a failure status although it cannot fail; "
                                 "continuing as before.",
                                 __func__);

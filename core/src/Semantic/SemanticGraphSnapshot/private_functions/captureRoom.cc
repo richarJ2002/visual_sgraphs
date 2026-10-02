@@ -131,7 +131,7 @@ SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getBoundaryCorners_World_m returned a failure status "
+                     "%s: getBoundaryCorners_world_m returned a failure status "
                      "although it cannot fail; continuing as before.",
                      __func__);
     }

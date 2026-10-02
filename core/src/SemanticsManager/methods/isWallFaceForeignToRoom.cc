@@ -74,7 +74,7 @@ SemanticsManagerStatus
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getObservationOrigin_World returned a failure status "
+                     "%s: getObservationOrigin_world returned a failure status "
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
