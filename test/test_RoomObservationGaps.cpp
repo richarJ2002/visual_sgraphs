@@ -104,14 +104,14 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
 }
 
 /*! Builds an admissible WALL geometric::Plane on the plane {normal . p + d = 0}
- * passing through pointOnPlane_World_in, with a genuine on-plane point cloud
- * running along axisAlong_World_in (must be horizontal). */
+ * passing through pointOnPlane_world_in, with a genuine on-plane point cloud
+ * running along axisAlong_world_in (must be horizontal). */
 std::unique_ptr<geometric::Plane>
     makeWallSegmentPlane(int                    id_in,
                          Map                   *p_map_in,
-                         const Eigen::Vector3d &normal_World_in,
-                         const Eigen::Vector3d &pointOnPlane_World_in,
-                         const Eigen::Vector3d &axisAlong_World_in,
+                         const Eigen::Vector3d &normal_world_in,
+                         const Eigen::Vector3d &pointOnPlane_world_in,
+                         const Eigen::Vector3d &axisAlong_world_in,
                          double                 halfLength_m_in,
                          double                 zMin_m_in,
                          double                 zMax_m_in)
@@ -149,11 +149,11 @@ std::unique_ptr<geometric::Plane>
                      __func__);
     }
 
-    const double d = -normal_World_in.dot(pointOnPlane_World_in);
+    const double d = -normal_world_in.dot(pointOnPlane_world_in);
     if (wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(
-            normal_World_in.x(),
-            normal_World_in.y(),
-            normal_World_in.z(),
+            normal_world_in.x(),
+            normal_world_in.y(),
+            normal_world_in.z(),
             d))) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -161,7 +161,7 @@ std::unique_ptr<geometric::Plane>
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    if (wall->setCentroid(pointOnPlane_World_in) !=
+    if (wall->setCentroid(pointOnPlane_world_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -185,10 +185,10 @@ std::unique_ptr<geometric::Plane>
                                              static_cast<double>(heightIndex) /
                                              static_cast<double>(steps - 1);
             pcl::PointXYZRGBA point;
-            point.x = static_cast<float>(pointOnPlane_World_in.x() +
-                                         t * axisAlong_World_in.x());
-            point.y = static_cast<float>(pointOnPlane_World_in.y() +
-                                         t * axisAlong_World_in.y());
+            point.x = static_cast<float>(pointOnPlane_world_in.x() +
+                                         t * axisAlong_world_in.x());
+            point.y = static_cast<float>(pointOnPlane_world_in.y() +
+                                         t * axisAlong_world_in.y());
             point.z = static_cast<float>(z);
             cloud->push_back(point);
         }

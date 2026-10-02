@@ -56,7 +56,7 @@ SemanticsManagerStatus SemanticsManager::captureOpenPassageHypotheses(
                          __func__);
         }
         record.supportingWallRef = rawPlaneRef2;
-        record.centroid_World_m  = evidence.centroid_World_m;
+        record.centroid_world_m  = evidence.centroid_world_m;
         record.confirmationCount = evidence.confirmationCount;
         record.missedUpdateCount = evidence.missedUpdateCount;
         record.lastConfirmedSkeletonFingerprint =
@@ -76,8 +76,8 @@ SemanticsManagerStatus SemanticsManager::captureOpenPassageHypotheses(
                   if (semantic::isRawPlaneRefLess(rhs_in.supportingWallRef,
                                                   lhs_in.supportingWallRef))
                       return false;
-                  return semantic::isVector3dLess(lhs_in.centroid_World_m,
-                                                  rhs_in.centroid_World_m);
+                  return semantic::isVector3dLess(lhs_in.centroid_world_m,
+                                                  rhs_in.centroid_world_m);
               });
     captureOpenPassageHypotheses_out = records;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

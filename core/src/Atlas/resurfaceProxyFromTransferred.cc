@@ -303,7 +303,7 @@ AtlasStatus resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
         transferredSideHasDirection)
     {
         if (p_proxy_inout->setKnownSideDirection(
-                transferredSide.direction_World) !=
+                transferredSide.direction_world) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
         {
             RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),

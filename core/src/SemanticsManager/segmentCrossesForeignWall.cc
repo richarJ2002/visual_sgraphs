@@ -48,20 +48,20 @@ namespace core
  *              between the two points, so they are not each other's
  *              direct neighbour through this passage.
  *
- * @param[in]   segmentStart_World_m_in
+ * @param[in]   segmentStart_world_m_in
  *              One endpoint of the candidate segment.
- * @param[in]   segmentEnd_World_m_in
+ * @param[in]   segmentEnd_world_m_in
  *              The other endpoint of the candidate segment.
  * @param[in]   excludedRooms_in
  *              Rooms whose own walls are not "foreign" -- typically the
  *              rooms/placeholders the segment itself is testing.
  * @param[in]   allRooms_in
  *              Every currently known room to search for a blocking wall.
- * @param[in]   groundAxisU_World_in
+ * @param[in]   groundAxisU_world_in
  *              First horizontal ground axis (matches buildFiniteWallSegment2d).
- * @param[in]   groundAxisV_World_in
+ * @param[in]   groundAxisV_world_in
  *              Second horizontal ground axis.
- * @param[in]   groundNormal_World_in
+ * @param[in]   groundNormal_world_in
  *              Unit ground normal in the world frame.
  * @param[in]   endpointTrimRatio_in
  *              Forwarded to buildFiniteWallSegment2d.
@@ -75,30 +75,30 @@ namespace core
  * @return      SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus segmentCrossesForeignWall(
-    const Eigen::Vector3d &segmentStart_World_m_in,
-    const Eigen::Vector3d &segmentEnd_World_m_in,
+    const Eigen::Vector3d &segmentStart_world_m_in,
+    const Eigen::Vector3d &segmentEnd_world_m_in,
     const std::vector<vs_graphs::core::semantic::Room *> &excludedRooms_in,
     const std::vector<vs_graphs::core::semantic::Room *> &allRooms_in,
-    const Eigen::Vector3d                                &groundAxisU_World_in,
-    const Eigen::Vector3d                                &groundAxisV_World_in,
-    const Eigen::Vector3d                                &groundNormal_World_in,
+    const Eigen::Vector3d                                &groundAxisU_world_in,
+    const Eigen::Vector3d                                &groundAxisV_world_in,
+    const Eigen::Vector3d                                &groundNormal_world_in,
     const double                                          endpointTrimRatio_in,
     const double minimumWallLength_m_in,
     bool        &crossesForeignWall_out)
 {
-    if (!segmentStart_World_m_in.allFinite() ||
-        !segmentEnd_World_m_in.allFinite())
+    if (!segmentStart_world_m_in.allFinite() ||
+        !segmentEnd_world_m_in.allFinite())
     {
         crossesForeignWall_out = false;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     FiniteWallSegment2d testSegment;
-    testSegment.start_World_m = {
-        segmentStart_World_m_in.dot(groundAxisU_World_in),
-        segmentStart_World_m_in.dot(groundAxisV_World_in)};
-    testSegment.end_World_m = {segmentEnd_World_m_in.dot(groundAxisU_World_in),
-                               segmentEnd_World_m_in.dot(groundAxisV_World_in)};
+    testSegment.start_world_m = {
+        segmentStart_world_m_in.dot(groundAxisU_world_in),
+        segmentStart_world_m_in.dot(groundAxisV_world_in)};
+    testSegment.end_world_m = {segmentEnd_world_m_in.dot(groundAxisU_world_in),
+                               segmentEnd_world_m_in.dot(groundAxisV_world_in)};
 
     for (vs_graphs::core::semantic::Room *p_room : allRooms_in)
     {
@@ -135,9 +135,9 @@ SemanticsManagerStatus segmentCrossesForeignWall(
 
             bool isBuilt{};
             if (buildFiniteWallSegment2d(p_wall,
-                                         groundNormal_World_in,
-                                         groundAxisU_World_in,
-                                         groundAxisV_World_in,
+                                         groundNormal_world_in,
+                                         groundAxisU_world_in,
+                                         groundAxisV_world_in,
                                          endpointTrimRatio_in,
                                          minimumWallLength_m_in,
                                          wallSegment,
@@ -155,14 +155,14 @@ SemanticsManagerStatus segmentCrossesForeignWall(
                 continue;
             }
 
-            Eigen::Vector2d intersection_World_m;
+            Eigen::Vector2d intersection_world_m;
             double          testParameter = 0.0;
             double          wallParameter = 0.0;
 
             bool hasIntersection{};
             if (intersectSupportingLines(testSegment,
                                          wallSegment,
-                                         intersection_World_m,
+                                         intersection_world_m,
                                          testParameter,
                                          wallParameter,
                                          hasIntersection) !=

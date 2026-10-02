@@ -272,8 +272,8 @@ LoopClosingStatus
             std::unique_lock<std::mutex> mapUpdateLock(
                 p_activeMap_inout->mapUpdateMutex);
 
-            KeyFrameAndPose keyFramePosesBefore_WorldToCamera;
-            KeyFrameAndPose keyFramePosesAfter_WorldToCamera;
+            KeyFrameAndPose keyFramePosesBefore_worldToCamera;
+            KeyFrameAndPose keyFramePosesAfter_worldToCamera;
 
             //  Correct keyframes starting at map first keyframe
             std::list<KeyFrame *> keyFramesToCheck(
@@ -418,13 +418,13 @@ LoopClosingStatus
                 }
                 p_keyFrame->tcwBefGBA = keyFramePose;
 
-                const Sophus::SE3d poseBefore_WorldToCamera =
+                const Sophus::SE3d poseBefore_worldToCamera =
                     p_keyFrame->tcwBefGBA.cast<double>();
 
-                keyFramePosesBefore_WorldToCamera.insert_or_assign(
+                keyFramePosesBefore_worldToCamera.insert_or_assign(
                     p_keyFrame,
-                    g2o::Sim3(poseBefore_WorldToCamera.unit_quaternion(),
-                              poseBefore_WorldToCamera.translation(),
+                    g2o::Sim3(poseBefore_worldToCamera.unit_quaternion(),
+                              poseBefore_worldToCamera.translation(),
                               1.0));
 
                 if (p_keyFrame->setPose(p_keyFrame->tcwGBA) !=
@@ -447,13 +447,13 @@ LoopClosingStatus
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                const Sophus::SE3d poseAfter_WorldToCamera =
+                const Sophus::SE3d poseAfter_worldToCamera =
                     keyFramePose2.cast<double>();
 
-                keyFramePosesAfter_WorldToCamera.insert_or_assign(
+                keyFramePosesAfter_worldToCamera.insert_or_assign(
                     p_keyFrame,
-                    g2o::Sim3(poseAfter_WorldToCamera.unit_quaternion(),
-                              poseAfter_WorldToCamera.translation(),
+                    g2o::Sim3(poseAfter_worldToCamera.unit_quaternion(),
+                              poseAfter_worldToCamera.translation(),
                               1.0));
 
                 if (p_keyFrame->isImu)
@@ -708,7 +708,7 @@ LoopClosingStatus
                 }
             }
 
-            const g2o::Sim3 identityTransform_WorldToWorld(
+            const g2o::Sim3 identityTransform_worldToWorld(
                 Eigen::Quaterniond::Identity(),
                 Eigen::Vector3d::Zero(),
                 1.0);
@@ -716,9 +716,9 @@ LoopClosingStatus
             /* Keep every semantic entity aligned with the corrected cameras. */
             if (utils::utils::Utils::propagateSemanticPoseCorrections(
                     p_activeMap_inout,
-                    keyFramePosesBefore_WorldToCamera,
-                    keyFramePosesAfter_WorldToCamera,
-                    identityTransform_WorldToWorld) !=
+                    keyFramePosesBefore_worldToCamera,
+                    keyFramePosesAfter_worldToCamera,
+                    identityTransform_worldToWorld) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
                 // propagateSemanticPoseCorrections cannot fail; continue as

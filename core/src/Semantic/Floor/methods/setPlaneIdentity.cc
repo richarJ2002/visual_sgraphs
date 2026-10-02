@@ -34,23 +34,23 @@ namespace core
 namespace semantic
 {
 
-FloorStatus Floor::setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
+FloorStatus Floor::setPlaneIdentity(const Eigen::Vector4d &equation_world_in,
                                     const std::size_t finiteSupportCount_in,
                                     const std::size_t observationCount_in)
 {
-    Eigen::Vector4d normalizedEquation_World = equation_World_in;
-    const double    normalNorm = normalizedEquation_World.head<3>().norm();
+    Eigen::Vector4d normalizedEquation_world = equation_world_in;
+    const double    normalNorm = normalizedEquation_world.head<3>().norm();
 
-    if (!normalizedEquation_World.allFinite() || !std::isfinite(normalNorm) ||
+    if (!normalizedEquation_world.allFinite() || !std::isfinite(normalNorm) ||
         normalNorm < 1e-8)
     {
         return FloorStatus::FLOOR_STATUS_INVALID_ARGUMENT;
     }
 
-    normalizedEquation_World /= normalNorm;
+    normalizedEquation_world /= normalNorm;
 
     std::lock_guard<std::mutex> lock(geometryMutex);
-    planeIdentity = PlaneIdentity{normalizedEquation_World,
+    planeIdentity = PlaneIdentity{normalizedEquation_world,
                                   finiteSupportCount_in,
                                   observationCount_in};
     return FloorStatus::FLOOR_STATUS_SUCCESS;

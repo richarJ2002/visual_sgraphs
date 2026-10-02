@@ -46,7 +46,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
 {
     camera_models::geometriccamera::GeometricCamera *p_camera;
     Sophus::SE3f                                     pose_worldToCamera;
-    Eigen::Vector3f                                  cameraCenter_World;
+    Eigen::Vector3f                                  cameraCenter_world;
 
     if (right_in)
     {
@@ -69,7 +69,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        cameraCenter_World = keyframeRightCameraCenter;
+        cameraCenter_world = keyframeRightCameraCenter;
         p_camera           = p_keyframe_inout->p_camera2;
     }
     else
@@ -93,7 +93,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        cameraCenter_World = keyframeCameraCenter;
+        cameraCenter_world = keyframeCameraCenter;
         p_camera           = p_keyframe_inout->p_camera;
     }
 
@@ -208,7 +208,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        Eigen::Vector3f PO         = p3Dw - cameraCenter_World;
+        Eigen::Vector3f PO         = p3Dw - cameraCenter_world;
         const float     distance3d = PO.norm();
 
         // Depth must be inside the scale pyramid of the image

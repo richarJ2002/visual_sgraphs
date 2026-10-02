@@ -182,7 +182,7 @@ class SemanticsManager
     struct OpenPassageEvidence
     {
         geometric::Plane *p_supportingWall  = nullptr;
-        Eigen::Vector3d   centroid_World_m  = Eigen::Vector3d::Zero();
+        Eigen::Vector3d   centroid_world_m  = Eigen::Vector3d::Zero();
         std::size_t       confirmationCount = 0U;
         std::size_t       missedUpdateCount = 0U;
         std::uint64_t     lastConfirmedSkeletonFingerprint = 0U;
@@ -214,15 +214,15 @@ class SemanticsManager
      *              Maintained while consuming ordered keyframes so traversal
      *              tests cover every consecutive camera segment.
      */
-    Eigen::Vector3d currentCameraCenter_World_m = Eigen::Vector3d::Zero();
+    Eigen::Vector3d currentCameraCenter_world_m = Eigen::Vector3d::Zero();
 
     /*!
      * @brief       Camera centre of the previous processed keyframe.
      */
-    Eigen::Vector3d previousCameraCenter_World_m = Eigen::Vector3d::Zero();
+    Eigen::Vector3d previousCameraCenter_world_m = Eigen::Vector3d::Zero();
 
     /*!
-     * @brief       Whether currentCameraCenter_World_m holds a valid position.
+     * @brief       Whether currentCameraCenter_world_m holds a valid position.
      */
     bool hasCameraCenter = false;
 
@@ -330,7 +330,7 @@ class SemanticsManager
      *        active map before any semantic inference is performed.
      * @param[out] bootstrapResult_out Typed initialization result, also emitted
      * through SG_PIPELINE.
-     * @param[in] cameraPositionOverride_World_m_in Camera position in the
+     * @param[in] cameraPositionOverride_world_m_in Camera position in the
      * active map frame, in metres, used to place the bootstrap room; when
      * absent or not finite, the newest valid key frame's camera centre is
      * used.
@@ -339,7 +339,7 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus ensureActiveMapBootstrapHierarchy(
         SemanticsManager::ActiveMapBootstrapResult &bootstrapResult_out,
         const std::optional<Eigen::Vector3d>
-            &cameraPositionOverride_World_m_in = std::nullopt);
+            &cameraPositionOverride_world_m_in = std::nullopt);
 
     /*!
      * @brief       Seeds currentRoomId from the first confirmed room of the
@@ -413,7 +413,7 @@ class SemanticsManager
      *        believed to be the other face of the same physical wall.
      *
      *        A physical wall can produce two independent Plane objects, one
-     *        per face, distinguished only by observationOrigin_World_m. This
+     *        per face, distinguished only by observationOrigin_world_m. This
      *        pass identifies plausible twin pairs (parallel, plausibly
      *        wall-thick apart, observed from opposite sides, overlapping
      *        in-plane footprint) and links them symmetrically via
@@ -493,7 +493,7 @@ class SemanticsManager
      *        raw sparse-graph edges are therefore cut only inside confirmed
      *        passage apertures before room-wall association.
      *
-     * @param[in] freeSpaceClusters_World_m_in
+     * @param[in] freeSpaceClusters_world_m_in
      *            Connected Voxblox vertex components in the active map frame.
      * @param[out] partitions_out Passage-partitioned components in the same
      * frame.
@@ -501,7 +501,7 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus partitionFreeSpaceAtPassages(
         const std::vector<std::vector<Eigen::Vector3d>>
-                                                  &freeSpaceClusters_World_m_in,
+                                                  &freeSpaceClusters_world_m_in,
         std::vector<std::vector<Eigen::Vector3d>> &partitions_out) const;
 
     /*!
@@ -568,7 +568,7 @@ class SemanticsManager
      * @param[in]   p_wall_in Wall being checked.
      * @param[in]   allPassages_in Every passage in the Atlas (caller-owned,
      *              so a sweep over many walls builds the list once).
-     * @param[in]   groundNormal_World_in Unit ground normal, needed by
+     * @param[in]   groundNormal_world_in Unit ground normal, needed by
      *              segmentCrossesPassageOpening()'s own vertical-offset test.
      * @param[out] outcome_out Whether a violation was found and, if so, how it
      * was resolved.
@@ -578,7 +578,7 @@ class SemanticsManager
         semantic::Room                                  *p_room_inout,
         geometric::Plane                                *p_wall_in,
         const std::vector<semantic::Passage *>          &allPassages_in,
-        const Eigen::Vector3d                           &groundNormal_World_in,
+        const Eigen::Vector3d                           &groundNormal_world_in,
         SemanticsManager::PassageSideEnforcementOutcome &outcome_out);
 
     /*!
@@ -589,7 +589,7 @@ class SemanticsManager
      *              observe the one turned toward it. The face's identity is
      *              therefore fixed the moment it is first seen, and is
      *              stamped then as the observing camera position
-     *              (Plane::getObservationOrigin_World()). A room owns a face
+     *              (Plane::getObservationOrigin_world()). A room owns a face
      *              only if the room lies on the same side of the plane as
      *              that camera did; a room on the opposite side is looking
      *              at the OTHER face, which is a different surface it has
@@ -606,7 +606,7 @@ class SemanticsManager
      *              exemption is required: the far face is simply a different
      *              plane that this room never observed.
      *
-     *              Room::getWallNormalTowardRoom_World() cannot serve this
+     *              Room::getWallNormalTowardRoom_world() cannot serve this
      *              purpose: it always flips the normal to face the room, so
      *              it can never report that a face belongs elsewhere.
      *
@@ -852,14 +852,14 @@ class SemanticsManager
      *              close to a cluster. It returns the address of the existing
      *              room if found, otherwise returns nullptr.
      *
-     * @param       clusterCentroid_World_in
+     * @param       clusterCentroid_world_in
      *              The centroid of the cluster in the world frame of the
      *              current map.
      *
-     * @param       wallList_World_in
+     * @param       wallList_world_in
      *              The list of walls to be checked in the current world map
      *
-     * @param[in]   freeSpaceCluster_World_m_in
+     * @param[in]   freeSpaceCluster_world_m_in
      *              Connected Voxblox skeleton vertices supporting the room.
      *
      * @param[in]   excludedRoomIds_in
@@ -869,10 +869,10 @@ class SemanticsManager
      *              The existing room, or nullptr when none matches.
      */
     [[nodiscard]] SemanticsManagerStatus associateRooms(
-        const Eigen::Vector3d clusterCentroid_World_in,
+        const Eigen::Vector3d clusterCentroid_world_in,
         const std::vector<vs_graphs::core::geometric::Plane *>
-                                           &wallList_World_in,
-        const std::vector<Eigen::Vector3d> &freeSpaceCluster_World_m_in,
+                                           &wallList_world_in,
+        const std::vector<Eigen::Vector3d> &freeSpaceCluster_world_m_in,
         const std::unordered_set<int>      &excludedRoomIds_in,
         vs_graphs::core::semantic::Room   *&p_room_out);
 
@@ -882,16 +882,16 @@ class SemanticsManager
      *
      * @param[in,out] p_retainedRoom_inout
      *                Room which retains the consolidated semantic topology.
-     * @param[in]   freeSpaceCluster_World_m_in
+     * @param[in]   freeSpaceCluster_world_m_in
      *              Connected Voxblox skeleton vertices for the current room.
-     * @param[in]   wallList_World_in
+     * @param[in]   wallList_world_in
      *              Current mapped wall surfaces used as merge vetoes.
      */
     [[nodiscard]] SemanticsManagerStatus consolidateRoomsInFreeSpaceCluster(
         vs_graphs::core::semantic::Room    *p_retainedRoom_inout,
-        const std::vector<Eigen::Vector3d> &freeSpaceCluster_World_m_in,
+        const std::vector<Eigen::Vector3d> &freeSpaceCluster_world_m_in,
         const std::vector<vs_graphs::core::geometric::Plane *>
-            &wallList_World_in);
+            &wallList_world_in);
 
     /*!
      * @brief       Ensures every valid WALL plane belongs to at least one  room
@@ -1000,7 +1000,7 @@ class SemanticsManager
     [[nodiscard]] SemanticsManagerStatus
         evaluateWallAdmissionEvidenceAdmissibleForTest(
             geometric::Plane      *p_wall_in,
-            const Eigen::Vector3d &groundNormal_World_in,
+            const Eigen::Vector3d &groundNormal_world_in,
             bool                  &isAdmissible_out) const;
 
     /*! Test-only direct call into the private admission gate (far-side
@@ -1040,7 +1040,7 @@ class SemanticsManager
     /*! Test-only bootstrap seam with an explicit valid camera position. */
     [[nodiscard]] SemanticsManagerStatus
         ensureActiveMapBootstrapHierarchyForTest(
-            const Eigen::Vector3d &cameraPosition_World_m_in,
+            const Eigen::Vector3d &cameraPosition_world_m_in,
             int                   &bootstrapResult_out);
 
     /*! Test-only equivalent of committing a passage traversal room change. */
@@ -1068,7 +1068,7 @@ class SemanticsManager
     /*! Test-only direct call into the private boundary validator (closed-
      *  loop detection, single-outlier-wall tolerance, and off-loop wall
      *  pruning). Callers inspect the result via Room::getBoundaryStatus(),
-     *  Room::getBoundaryCorners_World_m(), and Room::getWalls(). */
+     *  Room::getBoundaryCorners_world_m(), and Room::getWalls(). */
     [[nodiscard]] SemanticsManagerStatus validateRoomBoundariesForTest(void);
 
     /*!

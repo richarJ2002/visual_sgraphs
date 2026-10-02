@@ -169,11 +169,11 @@ SemanticsManagerStatus SemanticsManager::reconcileRoomGroundPlanes(void)
                          __func__);
         }
         const double roomGroundNormalNorm =
-            roomGroundGeometry.equation_World.head<3>().norm();
+            roomGroundGeometry.equation_world.head<3>().norm();
         if (roomGroundGeometry.cloudGeneration !=
                 roomGroundGeometry.successfulRefitGeneration ||
             roomGroundGeometry.finiteSupportCount == 0U ||
-            !roomGroundGeometry.equation_World.allFinite() ||
+            !roomGroundGeometry.equation_world.allFinite() ||
             !std::isfinite(roomGroundNormalNorm) ||
             std::abs(roomGroundNormalNorm - 1.0) > 1e-3)
         {
@@ -183,7 +183,7 @@ SemanticsManagerStatus SemanticsManager::reconcileRoomGroundPlanes(void)
         }
 
         const semantic::Floor::PlaneIdentity roomIdentity{
-            roomGroundGeometry.equation_World,
+            roomGroundGeometry.equation_world,
             roomGroundGeometry.finiteSupportCount,
             roomGroundGeometry.observationCount};
 

@@ -87,10 +87,10 @@ nlohmann::json serializeRoomRecord(const RoomRecord &value_in,
 
     if (includeGeometry_in)
     {
-        json["centroid_World_m"] = serializeVector3d(value_in.centroid_World_m);
+        json["centroid_World_m"] = serializeVector3d(value_in.centroid_world_m);
 
         nlohmann::json boundaryCornersJson = nlohmann::json::array();
-        for (const Eigen::Vector3d &corner : value_in.boundaryCorners_World_m)
+        for (const Eigen::Vector3d &corner : value_in.boundaryCorners_world_m)
         {
             boundaryCornersJson.push_back(serializeVector3d(corner));
         }

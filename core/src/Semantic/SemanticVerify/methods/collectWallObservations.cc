@@ -48,8 +48,8 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
         return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
     }
 
-    Eigen::Vector3d roomCentroid_World{};
-    if (p_room_in->getCentroid(roomCentroid_World) !=
+    Eigen::Vector3d roomCentroid_world{};
+    if (p_room_in->getCentroid(roomCentroid_world) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -58,7 +58,7 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
                      __func__);
     }
     bool isFiniteVector2{};
-    if (isFiniteVector(roomCentroid_World, isFiniteVector2) !=
+    if (isFiniteVector(roomCentroid_world, isFiniteVector2) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -102,7 +102,7 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
         }
 
         /* Re-derive the SAME oriented (n,d) pair Room::
-         * getWallNormalTowardRoom_World computes internally, but keep d
+         * getWallNormalTowardRoom_world computes internally, but keep d
          * paired with the (possibly sign-flipped) normal -- the existing
          * getter returns only the oriented normal, not a paired oriented d,
          * and n^T x + d = 0 requires both to flip together. */
@@ -127,7 +127,7 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
             continue;
         }
         const double signedDistance =
-            coeffs.head<3>().dot(roomCentroid_World) + coeffs(3);
+            coeffs.head<3>().dot(roomCentroid_world) + coeffs(3);
         if (!std::isfinite(signedDistance))
         {
             continue;
@@ -148,7 +148,7 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
                          __func__);
         }
         observation.wallId       = wallGetId;
-        observation.normal_World = coeffs.head<3>();
+        observation.normal_world = coeffs.head<3>();
         observation.d            = coeffs(3);
         Eigen::Vector3d wallGetCentroid{};
         if (p_wall->getCentroid(wallGetCentroid) !=
@@ -159,9 +159,9 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        observation.centroid_World = wallGetCentroid;
+        observation.centroid_world = wallGetCentroid;
         bool isFiniteVector3{};
-        if (isFiniteVector(observation.centroid_World, isFiniteVector3) !=
+        if (isFiniteVector(observation.centroid_world, isFiniteVector3) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -190,7 +190,7 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
                 1U,
                 total / configuration_in.maxSupportSamplePerWall);
             for (std::size_t index = 0U;
-                 index < total && observation.supportSample_World.size() <
+                 index < total && observation.supportSample_world.size() <
                                       configuration_in.maxSupportSamplePerWall;
                  index += stride)
             {
@@ -200,7 +200,7 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
                 {
                     continue;
                 }
-                observation.supportSample_World.emplace_back(
+                observation.supportSample_world.emplace_back(
                     static_cast<double>(point.x),
                     static_cast<double>(point.y),
                     static_cast<double>(point.z));

@@ -36,7 +36,7 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Structural validity of one RoomRecord::boundaryCorners_World_m
+ * @brief       Structural validity of one RoomRecord::boundaryCorners_world_m
  *              polygon, independent of Room::BoundaryStatus and of any
  *              observation-gap/aperture correspondence (a separate,
  *              non-geometric check performed directly by

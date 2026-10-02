@@ -376,7 +376,7 @@ class Utils
      *               Threshold value for association.
      * @param[in]    maximumFiniteCloudDistance_m_in
      *               Optional finite-cloud gap override, in metres.
-     * @param[in]    observationOrigin_World_m_in
+     * @param[in]    observationOrigin_world_m_in
      *               Optional observing camera origin in the world frame,
      *               in metres, used to keep opposite wall faces separate.
      *
@@ -392,7 +392,7 @@ class Utils
         const float                                  threshold_in,
         int                                         &matchedPlaneId_out,
         const float maximumFiniteCloudDistance_m_in = -1.0F,
-        const std::optional<Eigen::Vector3d> &observationOrigin_World_m_in =
+        const std::optional<Eigen::Vector3d> &observationOrigin_world_m_in =
             std::nullopt);
 
     /*!
@@ -470,10 +470,10 @@ class Utils
      *
      * @param[in,out] p_map_inout
      *                Map whose semantic geometry is updated.
-     * @param[in]    keyFramePosesBefore_WorldToCamera_in
+     * @param[in]    keyFramePosesBefore_worldToCamera_in
      *               World-to-camera poses immediately before
      *               optimization.
-     * @param[in]    keyFramePosesAfter_WorldToCamera_in
+     * @param[in]    keyFramePosesAfter_worldToCamera_in
      *               World-to-camera poses immediately after
      *               optimization.
      * @param[in]    fallbackTransform_oldWorldToNewWorld_in
@@ -483,8 +483,8 @@ class Utils
      */
     [[nodiscard]] static UtilsStatus propagateSemanticPoseCorrections(
         Map                   *p_map_inout,
-        const KeyFramePoseMap &keyFramePosesBefore_WorldToCamera_in,
-        const KeyFramePoseMap &keyFramePosesAfter_WorldToCamera_in,
+        const KeyFramePoseMap &keyFramePosesBefore_worldToCamera_in,
+        const KeyFramePoseMap &keyFramePosesAfter_worldToCamera_in,
         const g2o::Sim3       &fallbackTransform_oldWorldToNewWorld_in);
 
     /*!

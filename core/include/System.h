@@ -564,7 +564,7 @@ class System
          * @frame       World
          * @units       meters / radians (Sophus SE3f convention)
          */
-        Sophus::SE3f cameraPose_World;
+        Sophus::SE3f cameraPose_world;
 
         /*!
          * @brief       Identifier of the most recently processed map.
@@ -712,7 +712,7 @@ class System
          * @frame       World
          * @units       meters / radians (Sophus SE3f convention)
          */
-        Sophus::SE3f latestKeyFramePose_World;
+        Sophus::SE3f latestKeyFramePose_world;
 
         /*!
          * @brief       Identifier of the current room as determined by the
@@ -1658,22 +1658,22 @@ class System
      * @brief       Update the skeleton cluster coming from `voxblox_skeleton`
      *              in the map.
      *
-     * @param[in]   skeletonClusterPoints_World_m_in
+     * @param[in]   skeletonClusterPoints_world_m_in
      *              the skeleton cluster points
      */
     [[nodiscard]] SystemStatus
         setSkeletonCluster(const std::vector<std::vector<Eigen::Vector3d>>
-                               &skeletonClusterPoints_World_m_in);
+                               &skeletonClusterPoints_world_m_in);
 
     /*!
      * @brief       Stores the latest connected Voxblox skeleton edges.
      *
-     * @param[in]   skeletonEdges_World_m_in
+     * @param[in]   skeletonEdges_world_m_in
      *              Start and end points of each connected skeleton edge.
      */
     [[nodiscard]] SystemStatus setSkeletonEdges(
         const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-            &skeletonEdges_World_m_in);
+            &skeletonEdges_world_m_in);
 
     /*!
      * @brief       Update the GNN room candidates list
@@ -1969,7 +1969,7 @@ class System
      * tracker after each frame processing. Represents the estimated position
      * and orientation of the camera.
      */
-    Sophus::SE3f currentCameraPose_World;
+    Sophus::SE3f currentCameraPose_world;
 
     /*!
      * @brief       Whether the current camera pose is valid. If `false`, the

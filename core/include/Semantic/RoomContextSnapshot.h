@@ -38,9 +38,9 @@ struct PassageContext
     bool            isApertureValid{false};
     double          width_m{0.0};
     double          height_m{0.0};
-    Eigen::Vector3d centroid_World{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d centroid_world{Eigen::Vector3d::Zero()};
     bool            hasKnownSideDirection{false};
-    Eigen::Vector3d knownSideDirection_World{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d knownSideDirection_world{Eigen::Vector3d::Zero()};
     bool            hasKnownSideRoom{false};
     int             knownSideRoomId{-1};
     std::size_t     traversalKnownToFarCount{0U};

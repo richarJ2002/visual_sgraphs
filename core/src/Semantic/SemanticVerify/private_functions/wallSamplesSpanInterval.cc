@@ -46,7 +46,7 @@ SemanticVerifyStatus
     bool   hasSample = false;
     double minimum   = std::numeric_limits<double>::infinity();
     double maximum   = -std::numeric_limits<double>::infinity();
-    for (const Eigen::Vector3d &sample : wall_in.supportSample_World)
+    for (const Eigen::Vector3d &sample : wall_in.supportSample_world)
     {
         if (!sample.allFinite())
         {

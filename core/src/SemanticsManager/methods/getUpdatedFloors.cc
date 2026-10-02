@@ -179,17 +179,17 @@ SemanticsManagerStatus SemanticsManager::getUpdatedFloors(void)
                          __func__);
         }
         const double groundNormalNorm =
-            groundGeometry.equation_World.head<3>().norm();
+            groundGeometry.equation_world.head<3>().norm();
         if (groundGeometry.cloudGeneration ==
                 groundGeometry.successfulRefitGeneration &&
             groundGeometry.finiteSupportCount > 0U &&
-            groundGeometry.equation_World.allFinite() &&
+            groundGeometry.equation_world.allFinite() &&
             std::isfinite(groundNormalNorm) &&
             std::abs(groundNormalNorm - 1.0) <= 1e-3)
         {
             groundIdentityUpdated =
                 (p_keeperFloor->setPlaneIdentity(
-                     groundGeometry.equation_World,
+                     groundGeometry.equation_world,
                      groundGeometry.finiteSupportCount,
                      groundGeometry.observationCount) ==
                  semantic::FloorStatus::FLOOR_STATUS_SUCCESS);

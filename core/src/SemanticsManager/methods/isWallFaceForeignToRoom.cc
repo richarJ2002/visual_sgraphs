@@ -69,8 +69,8 @@ SemanticsManagerStatus
      * Only the side of a physical surface turned toward a camera can be
      * seen, so this fixes which of the wall's two faces this plane is -- and
      * therefore which room it bounds -- for the plane's whole lifetime. */
-    std::optional<Eigen::Vector3d> observationOrigin_World_m{};
-    if (p_wall_in->getObservationOrigin_World(observationOrigin_World_m) !=
+    std::optional<Eigen::Vector3d> observationOrigin_world_m{};
+    if (p_wall_in->getObservationOrigin_world(observationOrigin_world_m) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -79,8 +79,8 @@ SemanticsManagerStatus
                      __func__);
     }
 
-    if (!observationOrigin_World_m.has_value() ||
-        !observationOrigin_World_m->allFinite())
+    if (!observationOrigin_world_m.has_value() ||
+        !observationOrigin_world_m->allFinite())
     {
         /* Planes created before the stamp existed carry no face identity;
          * make no claim rather than a wrong one. */
@@ -97,20 +97,20 @@ SemanticsManagerStatus
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector4d equation_World = wallGetGlobalEquation.coeffs();
-    const double    normalNorm     = equation_World.head<3>().norm();
+    Eigen::Vector4d equation_world = wallGetGlobalEquation.coeffs();
+    const double    normalNorm     = equation_world.head<3>().norm();
 
-    if (!equation_World.allFinite() || normalNorm <= 1e-8)
+    if (!equation_world.allFinite() || normalNorm <= 1e-8)
     {
         isWallFaceForeignToRoom_out = false;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    equation_World /= normalNorm;
+    equation_world /= normalNorm;
 
     const double observedSide_m =
-        equation_World.head<3>().dot(observationOrigin_World_m.value()) +
-        equation_World(3);
+        equation_world.head<3>().dot(observationOrigin_world_m.value()) +
+        equation_world(3);
     Eigen::Vector3d room_inCentroid{};
     if (p_room_in->getCentroid(room_inCentroid) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -121,8 +121,8 @@ SemanticsManagerStatus
                      __func__);
     }
     const double roomSide_m =
-        equation_World.head<3>().dot(room_inCentroid.cast<double>()) +
-        equation_World(3);
+        equation_world.head<3>().dot(room_inCentroid.cast<double>()) +
+        equation_world(3);
 
     if (!std::isfinite(observedSide_m) || !std::isfinite(roomSide_m))
     {

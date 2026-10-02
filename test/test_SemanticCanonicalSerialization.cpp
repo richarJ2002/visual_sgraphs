@@ -479,12 +479,12 @@ TEST(SemanticCanonicalSerialization,
 {
     WallRecord wallNearOrigin;
     wallNearOrigin.key              = EntityKey{EntityKind::WALL, 3U, 1};
-    wallNearOrigin.centroid_World_m = Eigen::Vector3d(0.0, 0.0, 0.0);
-    wallNearOrigin.equation_World   = Eigen::Vector4d(1.0, 0.0, 0.0, 0.0);
+    wallNearOrigin.centroid_world_m = Eigen::Vector3d(0.0, 0.0, 0.0);
+    wallNearOrigin.equation_world   = Eigen::Vector4d(1.0, 0.0, 0.0, 0.0);
 
     WallRecord wallFarFromOrigin       = wallNearOrigin;
-    wallFarFromOrigin.centroid_World_m = Eigen::Vector3d(100.0, 0.0, 0.0);
-    wallFarFromOrigin.equation_World   = Eigen::Vector4d(1.0, 0.0, 0.0, -100.0);
+    wallFarFromOrigin.centroid_world_m = Eigen::Vector3d(100.0, 0.0, 0.0);
+    wallFarFromOrigin.equation_world   = Eigen::Vector4d(1.0, 0.0, 0.0, -100.0);
 
     MapSnapshot mapWithNear;
     mapWithNear.mapId = 3U;
@@ -629,12 +629,12 @@ TEST(SemanticCanonicalSerialization, SerializedFindingsCarryReadableNameFields)
 /* Red-first regression: two OpenPassageHypothesisRecord entries
  * colliding on every topology-only field (supportingWallRef,
  * confirmationCount, missedUpdateCount, lastConfirmedSkeletonFingerprint)
- * but differing only in geometry (centroid_World_m, openingRadius_m,
+ * but differing only in geometry (centroid_world_m, openingRadius_m,
  * heightSpan_m) must produce identical topology-only bytes but a different
  * full-geometry projection. Before the fix, serializeOpenPassageHypothesis
- * Record() always emitted centroid_World_m/openingRadius_m/heightSpan_m
+ * Record() always emitted centroid_world_m/openingRadius_m/heightSpan_m
  * regardless of includeGeometry_in, and the sort used to place these
- * records inside serializeSnapshot() broke ties on centroid_World_m -- a
+ * records inside serializeSnapshot() broke ties on centroid_world_m -- a
  * geometric field -- so the topology-only projection was not actually
  * independent of geometry. */
 TEST(SemanticCanonicalSerialization,
@@ -647,12 +647,12 @@ TEST(SemanticCanonicalSerialization,
     hypothesisNear.confirmationCount                = 4U;
     hypothesisNear.missedUpdateCount                = 1U;
     hypothesisNear.lastConfirmedSkeletonFingerprint = 42U;
-    hypothesisNear.centroid_World_m = Eigen::Vector3d(0.0, 0.0, 0.0);
+    hypothesisNear.centroid_world_m = Eigen::Vector3d(0.0, 0.0, 0.0);
     hypothesisNear.openingRadius_m  = 0.5;
     hypothesisNear.heightSpan_m     = 1.0;
 
     OpenPassageHypothesisRecord hypothesisFar = hypothesisNear;
-    hypothesisFar.centroid_World_m = Eigen::Vector3d(100.0, 0.0, 0.0);
+    hypothesisFar.centroid_world_m = Eigen::Vector3d(100.0, 0.0, 0.0);
     hypothesisFar.openingRadius_m  = 5.0;
     hypothesisFar.heightSpan_m     = 9.0;
 
@@ -678,7 +678,7 @@ TEST(SemanticCanonicalSerialization,
 
 /* Red-first regression: two OpenPassageHypothesisRecord entries
  * sharing every field the sort used to compare (supportingWallRef,
- * centroid_World_m) but differing in a field the old comparator ignored
+ * centroid_world_m) but differing in a field the old comparator ignored
  * (confirmationCount, missedUpdateCount, lastConfirmedSkeletonFingerprint)
  * must still serialize identically regardless of input permutation, for
  * both projections; likewise for UnresolvedWallHypothesisRecord's

@@ -125,7 +125,7 @@ std::unique_ptr<SyntheticRoomFixture>
               int                         roomId_in,
               const std::vector<RawWall> &walls_in,
               const Eigen::Vector3d      &centroid_in,
-              const Eigen::Vector4d      &floorEquation_World_in,
+              const Eigen::Vector4d      &floorEquation_world_in,
               int                         floorId_in)
 {
     std::unique_ptr<SyntheticRoomFixture> fixture =
@@ -202,7 +202,7 @@ std::unique_ptr<SyntheticRoomFixture>
                      "fail; continuing as before.",
                      __func__);
     }
-    if (fixture->floor.setPlaneIdentity(floorEquation_World_in,
+    if (fixture->floor.setPlaneIdentity(floorEquation_world_in,
                                         /*finiteSupportCount_in=*/100U,
                                         /*observationCount_in=*/5U) !=
         vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
@@ -298,7 +298,7 @@ TEST(VerificationWiringIntegration,
 
     const std::vector<RawWall> wallsA = makeReferenceWalls();
     const Eigen::Vector3d      centroidA(0.5, 0.5, 0.5);
-    const Eigen::Vector4d      floorEquationA_World(0.0, 0.0, 1.0, -0.4);
+    const Eigen::Vector4d      floorEquationA_world(0.0, 0.0, 1.0, -0.4);
 
     const Eigen::Matrix3d rotationTrue =
         Eigen::AngleAxisd(0.7, Eigen::Vector3d(0.2, 0.6, 0.3).normalized())
@@ -314,17 +314,17 @@ TEST(VerificationWiringIntegration,
     const Eigen::Vector3d centroidB =
         rotationTrue * centroidA + translationTrue;
     const Eigen::Vector3d floorNormalB =
-        rotationTrue * floorEquationA_World.head<3>();
-    const Eigen::Vector4d floorEquationB_World(
+        rotationTrue * floorEquationA_world.head<3>();
+    const Eigen::Vector4d floorEquationB_world(
         floorNormalB.x(),
         floorNormalB.y(),
         floorNormalB.z(),
-        floorEquationA_World.w() - floorNormalB.dot(translationTrue));
+        floorEquationA_world.w() - floorNormalB.dot(translationTrue));
 
     std::unique_ptr<SyntheticRoomFixture> roomA =
-        buildRoom(p_mapA, 10, wallsA, centroidA, floorEquationA_World, 100);
+        buildRoom(p_mapA, 10, wallsA, centroidA, floorEquationA_world, 100);
     std::unique_ptr<SyntheticRoomFixture> roomB =
-        buildRoom(p_mapB, 20, wallsB, centroidB, floorEquationB_World, 200);
+        buildRoom(p_mapB, 20, wallsB, centroidB, floorEquationB_world, 200);
 
     const std::vector<semantic::SemanticCandidate> candidates = {
         makeCandidate(p_mapA, &roomA->room, p_mapB, &roomB->room)};

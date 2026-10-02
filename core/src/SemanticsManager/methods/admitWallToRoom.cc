@@ -92,7 +92,7 @@ SemanticsManagerStatus
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector3d farSideGroundNormal_World = Eigen::Vector3d::Zero();
+    Eigen::Vector3d farSideGroundNormal_world = Eigen::Vector3d::Zero();
     bool            farSideGroundPlaneIsBad{};
     if ((p_farSideGroundPlane != nullptr) &&
         p_farSideGroundPlane->isBad(farSideGroundPlaneIsBad) !=
@@ -120,7 +120,7 @@ SemanticsManagerStatus
         const double groundEquationNormalNorm = groundEquation.head<3>().norm();
         if (groundEquation.allFinite() && groundEquationNormalNorm > 1e-8)
         {
-            farSideGroundNormal_World =
+            farSideGroundNormal_world =
                 groundEquation.head<3>() / groundEquationNormalNorm;
         }
     }
@@ -142,7 +142,7 @@ SemanticsManagerStatus
     if (enforcePassageApertureBackstop(p_room_inout,
                                        p_candidateWall_in,
                                        allPassages,
-                                       farSideGroundNormal_World,
+                                       farSideGroundNormal_world,
                                        outcome) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
@@ -176,7 +176,7 @@ SemanticsManagerStatus
     WallAdmissionEvidence admissionEvidence{};
     if (evaluateWallAdmissionEvidence(p_candidateWall_in,
                                       p_sysParams,
-                                      farSideGroundNormal_World,
+                                      farSideGroundNormal_world,
                                       admissionEvidence) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
@@ -277,11 +277,11 @@ SemanticsManagerStatus
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector4d groundEquation_World =
+    Eigen::Vector4d groundEquation_world =
         groundPlaneGetGlobalEquation.coeffs();
-    const double groundNormalNorm = groundEquation_World.head<3>().norm();
+    const double groundNormalNorm = groundEquation_world.head<3>().norm();
 
-    if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)
+    if (!groundEquation_world.allFinite() || groundNormalNorm < 1e-8)
     {
         if (p_room_inout->setWalls(p_candidateWall_in) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -295,19 +295,19 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    const Eigen::Vector3d groundNormal_World =
-        groundEquation_World.head<3>() / groundNormalNorm;
-    const Eigen::Vector3d groundAxisU_World =
-        groundNormal_World.unitOrthogonal().normalized();
-    const Eigen::Vector3d groundAxisV_World =
-        groundNormal_World.cross(groundAxisU_World).normalized();
+    const Eigen::Vector3d groundNormal_world =
+        groundEquation_world.head<3>() / groundNormalNorm;
+    const Eigen::Vector3d groundAxisU_world =
+        groundNormal_world.unitOrthogonal().normalized();
+    const Eigen::Vector3d groundAxisV_world =
+        groundNormal_world.cross(groundAxisU_world).normalized();
     FiniteWallSegment2d candidateSegment;
 
     bool isBuilt{};
     if (buildFiniteWallSegment2d(p_candidateWall_in,
-                                 groundNormal_World,
-                                 groundAxisU_World,
-                                 groundAxisV_World,
+                                 groundNormal_world,
+                                 groundAxisU_world,
+                                 groundAxisV_world,
                                  topologyParameters.endpointTrimRatio,
                                  topologyParameters.minimumWallLength_m,
                                  candidateSegment,
@@ -341,9 +341,9 @@ SemanticsManagerStatus
 
         bool isBuilt2{};
         if (buildFiniteWallSegment2d(p_existingWall,
-                                     groundNormal_World,
-                                     groundAxisU_World,
-                                     groundAxisV_World,
+                                     groundNormal_world,
+                                     groundAxisU_world,
+                                     groundAxisV_world,
                                      topologyParameters.endpointTrimRatio,
                                      topologyParameters.minimumWallLength_m,
                                      existingSegment,
@@ -361,14 +361,14 @@ SemanticsManagerStatus
             continue;
         }
 
-        Eigen::Vector2d intersection_World_m;
+        Eigen::Vector2d intersection_world_m;
         double          candidateParameter = 0.0;
         double          existingParameter  = 0.0;
 
         bool hasIntersection{};
         if (intersectSupportingLines(candidateSegment,
                                      existingSegment,
-                                     intersection_World_m,
+                                     intersection_world_m,
                                      candidateParameter,
                                      existingParameter,
                                      hasIntersection) !=
@@ -526,9 +526,9 @@ SemanticsManagerStatus
 
             bool isBuilt3{};
             if (buildFiniteWallSegment2d(p_otherWall,
-                                         groundNormal_World,
-                                         groundAxisU_World,
-                                         groundAxisV_World,
+                                         groundNormal_world,
+                                         groundAxisU_world,
+                                         groundAxisV_world,
                                          topologyParameters.endpointTrimRatio,
                                          topologyParameters.minimumWallLength_m,
                                          otherRoomSegment,
@@ -546,14 +546,14 @@ SemanticsManagerStatus
                 continue;
             }
 
-            Eigen::Vector2d otherIntersection_World_m;
+            Eigen::Vector2d otherIntersection_world_m;
             double          candidateOtherParameter = 0.0;
             double          otherRoomParameter      = 0.0;
 
             bool hasIntersection2{};
             if (intersectSupportingLines(candidateSegment,
                                          otherRoomSegment,
-                                         otherIntersection_World_m,
+                                         otherIntersection_world_m,
                                          candidateOtherParameter,
                                          otherRoomParameter,
                                          hasIntersection2) !=

@@ -37,8 +37,8 @@ PlaneStatus Plane::getGeometryMetadataSnapshot(
 {
     std::scoped_lock              lock(positionMutex, featuresMutex);
     PlaneGeometryMetadataSnapshot snapshot;
-    snapshot.equation_World            = globalEquation.coeffs();
-    snapshot.centroid_World_m          = centroid;
+    snapshot.equation_world            = globalEquation.coeffs();
+    snapshot.centroid_world_m          = centroid;
     snapshot.minPlaneU_m               = minPlaneU;
     snapshot.maxPlaneU_m               = maxPlaneU;
     snapshot.minPlaneV_m               = minPlaneV;

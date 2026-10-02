@@ -45,11 +45,11 @@ bool isOpenPassageHypothesisRecordLessFullGeometry(
         return false;
     }
 
-    if (isVector3dLess(lhs_in.centroid_World_m, rhs_in.centroid_World_m))
+    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m))
     {
         return true;
     }
-    if (isVector3dLess(rhs_in.centroid_World_m, lhs_in.centroid_World_m))
+    if (isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
     {
         return false;
     }

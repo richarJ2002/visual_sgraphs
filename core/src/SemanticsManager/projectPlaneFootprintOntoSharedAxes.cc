@@ -47,8 +47,8 @@ namespace core
  */
 SemanticsManagerStatus
     projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
-                                        const Eigen::Vector3d &axisU_World_in,
-                                        const Eigen::Vector3d &axisV_World_in,
+                                        const Eigen::Vector3d &axisU_world_in,
+                                        const Eigen::Vector3d &axisV_world_in,
                                         double                &minimumU_m_out,
                                         double                &maximumU_m_out,
                                         double                &minimumV_m_out,
@@ -87,9 +87,9 @@ SemanticsManagerStatus
         {
             continue;
         }
-        const Eigen::Vector3d point_World_m(point.x, point.y, point.z);
-        const double          pointU_m = point_World_m.dot(axisU_World_in);
-        const double          pointV_m = point_World_m.dot(axisV_World_in);
+        const Eigen::Vector3d point_world_m(point.x, point.y, point.z);
+        const double          pointU_m = point_world_m.dot(axisU_world_in);
+        const double          pointV_m = point_world_m.dot(axisV_world_in);
         minimumU_m_out                 = std::min(minimumU_m_out, pointU_m);
         maximumU_m_out                 = std::max(maximumU_m_out, pointU_m);
         minimumV_m_out                 = std::min(minimumV_m_out, pointV_m);

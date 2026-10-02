@@ -128,13 +128,13 @@ SemanticVerifyStatus
                 ++hypothesesEvaluated;
 
                 const std::vector<Eigen::Vector3d> normalsA = {
-                    wallsA_in[pair0.indexA].normal_World,
-                    wallsA_in[pair1.indexA].normal_World,
-                    wallsA_in[pair2.indexA].normal_World};
+                    wallsA_in[pair0.indexA].normal_world,
+                    wallsA_in[pair1.indexA].normal_world,
+                    wallsA_in[pair2.indexA].normal_world};
                 const std::vector<Eigen::Vector3d> normalsB = {
-                    wallsB_in[pair0.indexB].normal_World,
-                    wallsB_in[pair1.indexB].normal_World,
-                    wallsB_in[pair2.indexB].normal_World};
+                    wallsB_in[pair0.indexB].normal_world,
+                    wallsB_in[pair1.indexB].normal_world,
+                    wallsB_in[pair2.indexB].normal_world};
 
                 RotationFit rotationFit{};
                 if (fitRotationFromNormals(normalsA, normalsB, rotationFit) !=
@@ -210,13 +210,13 @@ SemanticVerifyStatus
                     const VerifyWallObservation &wallB =
                         wallsB_in[candidate.indexB];
                     const Eigen::Vector3d predictedNormal =
-                        rotationFit.rotation * wallA.normal_World;
+                        rotationFit.rotation * wallA.normal_world;
                     const double predictedOffset =
                         wallA.d -
                         predictedNormal.dot(translationFit.translation);
                     double normalAngle_rad{};
                     if (angleBetween_rad(predictedNormal,
-                                         wallB.normal_World,
+                                         wallB.normal_world,
                                          normalAngle_rad) !=
                         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
                     {
@@ -450,9 +450,9 @@ SemanticVerifyStatus
         }
 
         PlanePairMeasurement measurement;
-        measurement.n_A   = p_observationA->normal_World;
+        measurement.n_A   = p_observationA->normal_world;
         measurement.d_A   = p_observationA->d;
-        measurement.n_B   = p_observationB->normal_World;
+        measurement.n_B   = p_observationB->normal_world;
         measurement.d_B   = p_observationB->d;
         measurement.sigma = 1;
 
@@ -512,9 +512,9 @@ SemanticVerifyStatus
             continue;
         }
         inlierRotatedNormalsA.push_back(refinedRotation *
-                                        p_observationA->normal_World);
+                                        p_observationA->normal_world);
         inlierOffsetsA.push_back(p_observationA->d);
-        inlierNormalsB.push_back(p_observationB->normal_World);
+        inlierNormalsB.push_back(p_observationB->normal_world);
         inlierOffsetsB.push_back(p_observationB->d);
         angularResiduals.push_back(inlier.normalAngleResidual_rad);
         angularResidualSum += inlier.normalAngleResidual_rad;
@@ -571,9 +571,9 @@ SemanticVerifyStatus
 
     result.status                       = VerificationStatus::PASS;
     result.hasPassed                    = true;
-    result.transform_AToB               = Eigen::Isometry3d::Identity();
-    result.transform_AToB.linear()      = refinedRotation;
-    result.transform_AToB.translation() = refinedTranslation;
+    result.transform_aToB               = Eigen::Isometry3d::Identity();
+    result.transform_aToB.linear()      = refinedRotation;
+    result.transform_aToB.translation() = refinedTranslation;
     result.inliers                      = seed.inliers;
     result.rank                         = refinedFit.rank;
     result.conditionNumber              = refinedFit.conditionNumber;

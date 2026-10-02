@@ -61,7 +61,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
+    Eigen::Vector3d groundNormal_world = Eigen::Vector3d::Zero();
     bool            groundPlaneIsBad{};
     if ((p_groundPlane != nullptr) &&
         p_groundPlane->isBad(groundPlaneIsBad) !=
@@ -87,7 +87,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
         const double          groundNorm = groundEq.head<3>().norm();
         if (groundEq.allFinite() && groundNorm > 1e-8)
         {
-            groundNormal_World = groundEq.head<3>() / groundNorm;
+            groundNormal_world = groundEq.head<3>() / groundNorm;
         }
     }
 
@@ -233,9 +233,9 @@ SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                const Eigen::Vector3d knownSidePoint_World_m =
+                const Eigen::Vector3d knownSidePoint_world_m =
                     exemptPassageCentroid +
-                    (minimumSideDistance_m * 2.0) * knownSide.direction_World;
+                    (minimumSideDistance_m * 2.0) * knownSide.direction_world;
                 Eigen::Vector3d wallGetCentroid{};
                 if (p_wall->getCentroid(wallGetCentroid) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -248,10 +248,10 @@ SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
                 }
                 bool crossesPassageOpening{};
                 if (segmentCrossesPassageOpening(
-                        knownSidePoint_World_m,
+                        knownSidePoint_world_m,
                         wallGetCentroid.cast<double>(),
                         p_exemptPassage,
-                        groundNormal_World,
+                        groundNormal_world,
                         static_cast<double>(
                             p_sysParams->roomSeg.passagePartition
                                 .openingMargin_m),
@@ -332,7 +332,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
                 if (enforcePassageApertureBackstop(p_room,
                                                    p_wall,
                                                    allPassages,
-                                                   groundNormal_World,
+                                                   groundNormal_world,
                                                    outcome) !=
                     SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
                 {

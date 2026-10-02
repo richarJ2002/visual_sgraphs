@@ -152,8 +152,8 @@ class Plane
     struct GeometrySnapshot
     {
         pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr supportCloud;
-        Eigen::Vector4d equation_World{Eigen::Vector4d::Zero()};
-        Eigen::Vector3d centroid_World_m{Eigen::Vector3d::Zero()};
+        Eigen::Vector4d equation_world{Eigen::Vector4d::Zero()};
+        Eigen::Vector3d centroid_world_m{Eigen::Vector3d::Zero()};
         double          minPlaneU_m{0.0};
         double          maxPlaneU_m{0.0};
         double          minPlaneV_m{0.0};
@@ -291,7 +291,7 @@ class Plane
      *              stored sign, whereas re-deriving the sign from this point
      *              against the current equation stays correct.
      */
-    std::optional<Eigen::Vector3d> observationOrigin_World_m;
+    std::optional<Eigen::Vector3d> observationOrigin_world_m;
 
     /*!
      * @brief       Non-owning link to the opposite-facing Plane hypothesis
@@ -430,11 +430,11 @@ class Plane
      * cloud before the target equation is stored. This keeps all plane
      * representations mutually consistent after graph optimization.
      *
-     * @param[in] targetEquation_NewWorld_in Optimized plane equation in the
+     * @param[in] targetEquation_newWorld_in Optimized plane equation in the
      *            active map frame.
      */
     [[nodiscard]] PlaneStatus
-        alignGeometryToEquation(const g2o::Plane3D &targetEquation_NewWorld_in);
+        alignGeometryToEquation(const g2o::Plane3D &targetEquation_newWorld_in);
 
     /*!
      * @brief       Tranforms the plane equation from an old world frame to a
@@ -558,14 +558,14 @@ class Plane
      *              observed from. Intended to be called once, at creation.
      */
     [[nodiscard]] PlaneStatus
-        setObservationOrigin_World(const Eigen::Vector3d &origin_World_m_in);
+        setObservationOrigin_world(const Eigen::Vector3d &origin_world_m_in);
 
     /*!
      * @brief       Returns the world-frame camera position this face was first
      *              observed from, when one was stamped.
      */
-    [[nodiscard]] PlaneStatus getObservationOrigin_World(
-        std::optional<Eigen::Vector3d> &getObservationOrigin_World_out) const;
+    [[nodiscard]] PlaneStatus getObservationOrigin_world(
+        std::optional<Eigen::Vector3d> &getObservationOrigin_world_out) const;
 
     /*!
      * @brief       Returns the linked opposite-facing Plane hypothesis for
@@ -679,7 +679,7 @@ class Plane
 
     /*! Applies the association path's 75% observation-side consensus rule. */
     [[nodiscard]] PlaneStatus getObservationSideSnapshot(
-        const Eigen::Vector4d          &normalizedEquation_World_in,
+        const Eigen::Vector4d          &normalizedEquation_world_in,
         Plane::ObservationSideSnapshot &observationSideSnapshot_out) const;
 
     /*!
@@ -708,8 +708,8 @@ class Plane
      */
     [[nodiscard]] PlaneStatus
         completeMapCloudRefit(std::uint64_t          sourceCloudGeneration_in,
-                              const Eigen::Vector3d &centroid_World_m_in,
-                              const g2o::Plane3D    &equation_World_in,
+                              const Eigen::Vector3d &centroid_world_m_in,
+                              const g2o::Plane3D    &equation_world_in,
                               std::size_t            finitePointCount_in,
                               bool                  &wasRefitPublished_out);
 

@@ -463,7 +463,7 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     EXPECT_DOUBLE_EQ(full.width_m, 1.2);
     EXPECT_DOUBLE_EQ(full.height_m, 2.1);
     EXPECT_TRUE(full.hasKnownSideDirection);
-    EXPECT_TRUE(full.knownSideDirection_World.isApprox(
+    EXPECT_TRUE(full.knownSideDirection_world.isApprox(
         Eigen::Vector3d(-1.0, 0.0, 0.0)));
     EXPECT_TRUE(full.hasKnownSideRoom);
     int id2{};

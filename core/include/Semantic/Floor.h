@@ -59,7 +59,7 @@ class Floor
      * quality. */
     struct PlaneIdentity
     {
-        Eigen::Vector4d equation_World{Eigen::Vector4d::Zero()};
+        Eigen::Vector4d equation_world{Eigen::Vector4d::Zero()};
         std::size_t     finiteSupportCount{0U};
         std::size_t     observationCount{0U};
     };
@@ -133,7 +133,7 @@ class Floor
      * so a previously valid identity is never overwritten by missing data.
      */
     [[nodiscard]] FloorStatus
-        setPlaneIdentity(const Eigen::Vector4d &equation_World_in,
+        setPlaneIdentity(const Eigen::Vector4d &equation_world_in,
                          std::size_t            finiteSupportCount_in,
                          std::size_t            observationCount_in);
 
@@ -142,7 +142,7 @@ class Floor
 
     /*! Transforms an identity under the active old-world to new-world Sim3. */
     [[nodiscard]] static FloorStatus transformPlaneIdentity(
-        const PlaneIdentity                 &identity_OldWorld_in,
+        const PlaneIdentity                 &identity_oldWorld_in,
         const g2o::Sim3                     &transform_oldWorldToNewWorld_in,
         std::optional<Floor::PlaneIdentity> &transformedIdentity_out);
 

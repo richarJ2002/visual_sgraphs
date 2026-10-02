@@ -3872,7 +3872,7 @@ TEST(SemanticAxiomEvaluator, CompleteWithTooFewCornersIsFail)
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m(
+        (room.setBoundaryCorners_world_m(
             {Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 0.0, 0.0)})),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((p_map->addDetectedMapRoom(&room)),
@@ -3904,7 +3904,7 @@ TEST(SemanticAxiomEvaluator, CompleteWithNoWallEvidenceIsFail)
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -3949,7 +3949,7 @@ TEST(SemanticAxiomEvaluator, CompleteSelfIntersectingIsFail)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     /* A bowtie quadrilateral: edges (0->1) and (2->3) cross. */
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -3993,7 +3993,7 @@ TEST(SemanticAxiomEvaluator, CompleteWithObservationGapsIsUnknown)
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -4046,7 +4046,7 @@ TEST(SemanticAxiomEvaluator, CompleteWithVerifiedWallEvidenceIsUnknown)
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -4091,7 +4091,7 @@ TEST(SemanticAxiomEvaluator, NonFiniteCornerIsFail)
     test::makeRoom(room, 1, p_map, &wall);
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    ASSERT_EQ((room.setBoundaryCorners_World_m(
+    ASSERT_EQ((room.setBoundaryCorners_world_m(
                   {Eigen::Vector3d(0.0, 0.0, 0.0),
                    Eigen::Vector3d(1.0, 0.0, 0.0),
                    Eigen::Vector3d(1.0,
@@ -4139,7 +4139,7 @@ TEST(SemanticAxiomEvaluator, InfiniteCornerIsFail)
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m(
+        (room.setBoundaryCorners_world_m(
             {Eigen::Vector3d(0.0, 0.0, 0.0),
              Eigen::Vector3d(1.0, 0.0, 0.0),
              Eigen::Vector3d(1.0, std::numeric_limits<double>::infinity(), 0.0),
@@ -4189,7 +4189,7 @@ TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -4262,7 +4262,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -4327,7 +4327,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -4400,7 +4400,7 @@ TEST(SemanticAxiomEvaluator, NonemptyAllUnavailableWallEvidenceIsUnknownNotFail)
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -5220,7 +5220,7 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomCreationProvenanceUnavailable)
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -5490,7 +5490,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((known.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (known.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (known.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                            Eigen::Vector3d(1.0, 0.0, 0.0),
                                            Eigen::Vector3d(1.0, 1.0, 0.0),
                                            Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -5503,7 +5503,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((far.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (far.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 5.0, 0.0),
+        (far.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 5.0, 0.0),
                                          Eigen::Vector3d(1.0, 5.0, 0.0),
                                          Eigen::Vector3d(1.0, 6.0, 0.0),
                                          Eigen::Vector3d(0.0, 6.0, 0.0)})),
@@ -5563,7 +5563,7 @@ TEST(SemanticAxiomEvaluator, LegacyReproducesDoubleRegisteredRoomMultiplicity)
     ASSERT_EQ(
         (bothCollections.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    ASSERT_EQ((bothCollections.setBoundaryCorners_World_m(
+    ASSERT_EQ((bothCollections.setBoundaryCorners_world_m(
                   {Eigen::Vector3d(0.0, 0.0, 0.0),
                    Eigen::Vector3d(1.0, 0.0, 0.0),
                    Eigen::Vector3d(1.0, 1.0, 0.0),
@@ -5604,7 +5604,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((known.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (known.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (known.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                            Eigen::Vector3d(1.0, 0.0, 0.0),
                                            Eigen::Vector3d(1.0, 1.0, 0.0),
                                            Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -5616,7 +5616,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((far.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (far.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 5.0, 0.0),
+        (far.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 5.0, 0.0),
                                          Eigen::Vector3d(1.0, 5.0, 0.0),
                                          Eigen::Vector3d(1.0, 6.0, 0.0),
                                          Eigen::Vector3d(0.0, 6.0, 0.0)})),
@@ -5689,7 +5689,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((known.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (known.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (known.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                            Eigen::Vector3d(1.0, 0.0, 0.0),
                                            Eigen::Vector3d(1.0, 1.0, 0.0),
                                            Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -5701,7 +5701,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((far.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (far.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 5.0, 0.0),
+        (far.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 5.0, 0.0),
                                          Eigen::Vector3d(1.0, 5.0, 0.0),
                                          Eigen::Vector3d(1.0, 6.0, 0.0),
                                          Eigen::Vector3d(0.0, 6.0, 0.0)})),
@@ -6289,7 +6289,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),
@@ -6349,7 +6349,7 @@ TEST(SemanticAxiomEvaluator,
     ASSERT_EQ((room.setBoundaryStatus(Room::BoundaryStatus::COMPLETE)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ(
-        (room.setBoundaryCorners_World_m({Eigen::Vector3d(0.0, 0.0, 0.0),
+        (room.setBoundaryCorners_world_m({Eigen::Vector3d(0.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 0.0, 0.0),
                                           Eigen::Vector3d(1.0, 1.0, 0.0),
                                           Eigen::Vector3d(0.0, 1.0, 0.0)})),

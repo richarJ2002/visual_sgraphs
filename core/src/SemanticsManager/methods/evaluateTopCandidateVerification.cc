@@ -183,7 +183,7 @@ SemanticsManagerStatus SemanticsManager::evaluateTopCandidateVerification(
     if (result.hasPassed && p_floorA != nullptr && p_floorB != nullptr &&
         floorAHasPlaneIdentity && floorBHasPlaneIdentity)
     {
-        /* verify()'s transform_AToB maps room-A points into room B's frame,
+        /* verify()'s transform_aToB maps room-A points into room B's frame,
          * i.e. A is absorbed into B -- matches runFloorGate's
          * absorbed->surviving convention. */
         core::Map *p_roomBMap = nullptr;
@@ -208,7 +208,7 @@ SemanticsManagerStatus SemanticsManager::evaluateTopCandidateVerification(
         if (semantic::SemanticVerify::runFloorGate(result,
                                                    p_roomBMap,
                                                    p_roomAMap,
-                                                   result.transform_AToB,
+                                                   result.transform_aToB,
                                                    hasPassed2) !=
             semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {

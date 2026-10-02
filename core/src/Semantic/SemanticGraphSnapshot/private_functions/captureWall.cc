@@ -115,8 +115,8 @@ SemanticGraphSnapshotStatus
                      "status although it cannot fail; continuing as before.",
                      __func__);
     }
-    record.equation_World            = geometry.equation_World;
-    record.centroid_World_m          = geometry.centroid_World_m;
+    record.equation_world            = geometry.equation_world;
+    record.centroid_world_m          = geometry.centroid_world_m;
     record.minPlaneU_m               = geometry.minPlaneU_m;
     record.maxPlaneU_m               = geometry.maxPlaneU_m;
     record.minPlaneV_m               = geometry.minPlaneV_m;
@@ -126,8 +126,8 @@ SemanticGraphSnapshotStatus
     record.cloudGeneration           = geometry.cloudGeneration;
     record.successfulRefitGeneration = geometry.successfulRefitGeneration;
 
-    std::optional<Eigen::Vector3d> wallGetObservationOrigin_World{};
-    if (p_wall_in->getObservationOrigin_World(wallGetObservationOrigin_World) !=
+    std::optional<Eigen::Vector3d> wallObservationOrigin_world{};
+    if (p_wall_in->getObservationOrigin_world(wallObservationOrigin_world) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -135,7 +135,7 @@ SemanticGraphSnapshotStatus
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    record.observationOrigin_World_m = wallGetObservationOrigin_World;
+    record.observationOrigin_world_m = wallObservationOrigin_world;
     RawPlaneRef       rawPlaneRef2{};
     geometric::Plane *p_wallGetTwinFace = nullptr;
     if (p_wall_in->getTwinFace(p_wallGetTwinFace) !=

@@ -40,7 +40,7 @@ namespace core
 
 SystemStatus
     System::setSkeletonCluster(const std::vector<std::vector<Eigen::Vector3d>>
-                                   &skeletonClusterPoints_World_m_in)
+                                   &skeletonClusterPoints_world_m_in)
 {
     /* Keep asynchronous skeleton replacement atomic with map remerging. */
     std::unique_lock<std::mutex> semanticUpdateLock{};
@@ -54,7 +54,7 @@ SystemStatus
     }
 
     /* Add the skeleton cluster to the current semantic map. */
-    if (p_atlas->setSkeletonClusterPoints(skeletonClusterPoints_World_m_in) !=
+    if (p_atlas->setSkeletonClusterPoints(skeletonClusterPoints_world_m_in) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -36,7 +36,7 @@ std::unique_ptr<geometric::Plane>
                  Map                   *p_map_in,
                  double                 planeX_m_in,
                  double                 normalXSign_in,
-                 const Eigen::Vector3d &observationOrigin_World_in,
+                 const Eigen::Vector3d &observationOrigin_world_in,
                  double                 yMin_m_in,
                  double                 yMax_m_in,
                  double                 zMin_m_in,
@@ -89,7 +89,7 @@ std::unique_ptr<geometric::Plane>
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (wall->setObservationOrigin_World(observationOrigin_World_in) !=
+    if (wall->setObservationOrigin_world(observationOrigin_world_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -422,7 +422,7 @@ TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
                   g2o::Plane3D(Eigen::Vector4d(-1.0, 0.0, 0.0, 3.0)))),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ(
-        (faceB->setObservationOrigin_World(Eigen::Vector3d(-4.0, 0.0, 0.0))),
+        (faceB->setObservationOrigin_world(Eigen::Vector3d(-4.0, 0.0, 0.0))),
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     ASSERT_EQ((manager.reconcileWallFacePairsForTest()),

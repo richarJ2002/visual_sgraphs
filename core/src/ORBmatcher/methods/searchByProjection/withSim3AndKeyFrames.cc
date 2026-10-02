@@ -59,7 +59,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         Sophus::SE3f(similarity_worldToCamera_in.rotationMatrix(),
                      similarity_worldToCamera_in.translation() /
                          similarity_worldToCamera_in.scale());
-    Eigen::Vector3f cameraCenter_World =
+    Eigen::Vector3f cameraCenter_world =
         pose_worldToCamera.inverse().translation();
 
     // Set of MapPoints already found in the KeyFrame
@@ -150,7 +150,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
                 "although it cannot fail; continuing as before.",
                 __func__);
         }
-        Eigen::Vector3f PO       = p3Dw - cameraCenter_World;
+        Eigen::Vector3f PO       = p3Dw - cameraCenter_world;
         const float     distance = PO.norm();
 
         if (distance < minimumDistance || distance > maximumDistance)

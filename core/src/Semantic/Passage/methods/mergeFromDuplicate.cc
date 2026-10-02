@@ -187,13 +187,13 @@ PassageStatus Passage::mergeFromDuplicate(Passage *p_duplicate_inout,
         }
         if (replacedGeometry)
         {
-            knownSideProvenance.direction_World =
-                duplicateKnownSide.direction_World;
+            knownSideProvenance.direction_world =
+                duplicateKnownSide.direction_world;
         }
         else if (!knownSideHasDirection && duplicateHasDirection)
         {
-            knownSideProvenance.direction_World =
-                duplicateKnownSide.direction_World;
+            knownSideProvenance.direction_world =
+                duplicateKnownSide.direction_world;
         }
     }
 

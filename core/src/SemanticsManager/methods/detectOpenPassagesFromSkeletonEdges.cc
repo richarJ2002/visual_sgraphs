@@ -248,7 +248,7 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
     struct AcceptedCrossing
     {
-        Eigen::Vector3d point_World_m   = Eigen::Vector3d::Zero();
+        Eigen::Vector3d point_world_m   = Eigen::Vector3d::Zero();
         double          openingRadius_m = 0.0;
     };
 
@@ -295,7 +295,7 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         }
 
         /* Extract and normalise the wall equation */
-        Eigen::Vector4d wallEquation = wallGeometry.equation_World;
+        Eigen::Vector4d wallEquation = wallGeometry.equation_world;
 
         const double wallNormalNorm = wallEquation.head<3>().norm();
 
@@ -308,23 +308,23 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
         const Eigen::Vector3d wallNormal = wallEquation.head<3>();
 
-        const Eigen::Vector3d wallCentroid = wallGeometry.centroid_World_m;
+        const Eigen::Vector3d wallCentroid = wallGeometry.centroid_world_m;
 
-        Eigen::Vector3d horizontalWallTangent_World = Eigen::Vector3d::Zero();
+        Eigen::Vector3d horizontalWallTangent_world = Eigen::Vector3d::Zero();
         bool            hasHorizontalWallTangent    = false;
 
         if (hasValidGroundEquation)
         {
-            Eigen::Vector3d horizontalWallNormal_World =
+            Eigen::Vector3d horizontalWallNormal_world =
                 wallNormal - wallNormal.dot(groundNormal) * groundNormal;
 
-            if (horizontalWallNormal_World.norm() > 1e-8)
+            if (horizontalWallNormal_world.norm() > 1e-8)
             {
-                horizontalWallNormal_World.normalize();
-                horizontalWallTangent_World =
-                    groundNormal.cross(horizontalWallNormal_World).normalized();
+                horizontalWallNormal_world.normalize();
+                horizontalWallTangent_world =
+                    groundNormal.cross(horizontalWallNormal_world).normalized();
                 hasHorizontalWallTangent =
-                    horizontalWallTangent_World.allFinite();
+                    horizontalWallTangent_world.allFinite();
             }
         }
 
@@ -378,7 +378,7 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             if (hasHorizontalWallTangent)
             {
                 horizontalWallCoordinates_m.push_back(
-                    wallPoint.dot(horizontalWallTangent_World));
+                    wallPoint.dot(horizontalWallTangent_world));
             }
 
             validWallPointCount++;
@@ -507,7 +507,7 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             if (hasHorizontalWallTangent)
             {
                 const double crossingHorizontalCoordinate_m =
-                    crossingPoint.dot(horizontalWallTangent_World);
+                    crossingPoint.dot(horizontalWallTangent_world);
                 std::size_t lowerFlankPointCount = 0U;
                 std::size_t upperFlankPointCount = 0U;
                 double      minimumHorizontalCoordinate_m =
@@ -612,28 +612,28 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                  clusterIndex < crossingClusters.size();
                  clusterIndex++)
             {
-                Eigen::Vector3d clusterCentroid_World_m =
+                Eigen::Vector3d clusterCentroid_world_m =
                     Eigen::Vector3d::Zero();
 
                 for (const AcceptedCrossing &clusterCrossing :
                      crossingClusters[clusterIndex])
                 {
-                    clusterCentroid_World_m += clusterCrossing.point_World_m;
+                    clusterCentroid_world_m += clusterCrossing.point_world_m;
                 }
 
-                clusterCentroid_World_m /=
+                clusterCentroid_world_m /=
                     static_cast<double>(crossingClusters[clusterIndex].size());
 
-                Eigen::Vector3d separation_World_m =
-                    acceptedCrossing.point_World_m - clusterCentroid_World_m;
+                Eigen::Vector3d separation_world_m =
+                    acceptedCrossing.point_world_m - clusterCentroid_world_m;
 
                 if (hasValidGroundEquation)
                 {
-                    separation_World_m -=
-                        separation_World_m.dot(groundNormal) * groundNormal;
+                    separation_world_m -=
+                        separation_world_m.dot(groundNormal) * groundNormal;
                 }
 
-                const double clusterDistance_m = separation_World_m.norm();
+                const double clusterDistance_m = separation_world_m.norm();
 
                 if (clusterDistance_m < crossingClusterDistance &&
                     clusterDistance_m < nearestClusterDistance_m)
@@ -657,17 +657,17 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         for (const std::vector<AcceptedCrossing> &crossingCluster :
              crossingClusters)
         {
-            Eigen::Vector3d passageCentre_World_m  = Eigen::Vector3d::Zero();
+            Eigen::Vector3d passageCentre_world_m  = Eigen::Vector3d::Zero();
             double          maximumOpeningRadius_m = 0.0;
 
             for (const AcceptedCrossing &crossing : crossingCluster)
             {
-                passageCentre_World_m += crossing.point_World_m;
+                passageCentre_world_m += crossing.point_world_m;
                 maximumOpeningRadius_m =
                     std::max(maximumOpeningRadius_m, crossing.openingRadius_m);
             }
 
-            passageCentre_World_m /=
+            passageCentre_world_m /=
                 static_cast<double>(crossingCluster.size());
 
             double selectedPassageHeight_m = preferredPassageHeight;
@@ -683,7 +683,7 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 for (const AcceptedCrossing &crossing : crossingCluster)
                 {
                     const double measuredHeight_m =
-                        std::abs(groundNormal.dot(crossing.point_World_m) +
+                        std::abs(groundNormal.dot(crossing.point_world_m) +
                                  groundEquation(3));
 
                     minimumMeasuredHeight_m =
@@ -712,30 +712,30 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
                 if (std::abs(aboveGroundSign) < 1e-6)
                 {
-                    aboveGroundSign = groundNormal.dot(passageCentre_World_m) +
+                    aboveGroundSign = groundNormal.dot(passageCentre_world_m) +
                                       groundEquation(3);
                 }
 
                 aboveGroundSign = aboveGroundSign >= 0.0 ? 1.0 : -1.0;
 
                 const double currentSignedHeight_m =
-                    groundNormal.dot(passageCentre_World_m) + groundEquation(3);
+                    groundNormal.dot(passageCentre_world_m) + groundEquation(3);
                 const double desiredSignedHeight_m =
                     aboveGroundSign * selectedPassageHeight_m;
 
-                passageCentre_World_m +=
+                passageCentre_world_m +=
                     (desiredSignedHeight_m - currentSignedHeight_m) *
                     groundNormal;
             }
 
             const double finalPlaneResidual_m =
-                wallNormal.dot(passageCentre_World_m) + wallEquation(3);
+                wallNormal.dot(passageCentre_world_m) + wallEquation(3);
 
-            passageCentre_World_m -= finalPlaneResidual_m * wallNormal;
+            passageCentre_world_m -= finalPlaneResidual_m * wallNormal;
 
             PassageCandidate candidate;
             candidate.p_wall        = p_wall;
-            candidate.crossingPoint = passageCentre_World_m;
+            candidate.crossingPoint = passageCentre_world_m;
             candidate.openingRadius = maximumOpeningRadius_m;
             candidate.heightSpan_m  = measuredHeightSpan_m;
             candidate.crossingCount = crossingCluster.size();
@@ -776,16 +776,16 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 continue;
             }
 
-            Eigen::Vector3d separation_World_m =
-                evidence.centroid_World_m - candidate.crossingPoint;
+            Eigen::Vector3d separation_world_m =
+                evidence.centroid_world_m - candidate.crossingPoint;
 
             if (hasValidGroundEquation)
             {
-                separation_World_m -=
-                    separation_World_m.dot(groundNormal) * groundNormal;
+                separation_world_m -=
+                    separation_world_m.dot(groundNormal) * groundNormal;
             }
 
-            const double evidenceDistance_m = separation_World_m.norm();
+            const double evidenceDistance_m = separation_world_m.norm();
 
             if (evidenceDistance_m > duplicatePassageDistance ||
                 evidenceDistance_m >= nearestEvidenceDistance_m)
@@ -853,7 +853,7 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
             candidateWallEquation /= candidateWallNormalNorm;
 
             const double supportingWallSeparation_m = std::abs(
-                candidateWallEquation.head<3>().dot(evidence.centroid_World_m) +
+                candidateWallEquation.head<3>().dot(evidence.centroid_world_m) +
                 candidateWallEquation(3));
 
             if (supportingWallSeparation_m > 0.30)
@@ -883,8 +883,8 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         const double previousWeight = static_cast<double>(
             std::min<std::size_t>(previousConfirmationCount, 10U));
 
-        p_matchingEvidence->centroid_World_m =
-            (previousWeight * p_matchingEvidence->centroid_World_m +
+        p_matchingEvidence->centroid_world_m =
+            (previousWeight * p_matchingEvidence->centroid_world_m +
              candidate.crossingPoint) /
             (previousWeight + 1.0);
         p_matchingEvidence->p_supportingWall  = candidate.p_wall;
@@ -906,7 +906,7 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
                 skeletonFingerprint;
         }
 
-        candidate.crossingPoint     = p_matchingEvidence->centroid_World_m;
+        candidate.crossingPoint     = p_matchingEvidence->centroid_world_m;
         candidate.confirmationCount = p_matchingEvidence->confirmationCount;
         candidate.openingRadius     = p_matchingEvidence->openingRadius_m;
         candidate.heightSpan_m      = p_matchingEvidence->heightSpan_m;
@@ -934,7 +934,7 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
 
             candidate.crossingPoint -=
                 passagePlaneResidual_m * supportingWallEquation.head<3>();
-            p_matchingEvidence->centroid_World_m = candidate.crossingPoint;
+            p_matchingEvidence->centroid_world_m = candidate.crossingPoint;
         }
     }
 

@@ -44,19 +44,19 @@ bool isPassageRecordLessFullGeometry(const PassageRecord &lhs_in,
         return false;
     }
 
-    if (isVector4dLess(lhs_in.equation_World, rhs_in.equation_World))
+    if (isVector4dLess(lhs_in.equation_world, rhs_in.equation_world))
     {
         return true;
     }
-    if (isVector4dLess(rhs_in.equation_World, lhs_in.equation_World))
+    if (isVector4dLess(rhs_in.equation_world, lhs_in.equation_world))
     {
         return false;
     }
-    if (isVector3dLess(lhs_in.centroid_World_m, rhs_in.centroid_World_m))
+    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m))
     {
         return true;
     }
-    if (isVector3dLess(rhs_in.centroid_World_m, lhs_in.centroid_World_m))
+    if (isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
     {
         return false;
     }
@@ -76,20 +76,20 @@ bool isPassageRecordLessFullGeometry(const PassageRecord &lhs_in,
     {
         return false;
     }
-    if (lhs_in.knownSideDirection_World.has_value() !=
-        rhs_in.knownSideDirection_World.has_value())
+    if (lhs_in.knownSideDirection_world.has_value() !=
+        rhs_in.knownSideDirection_world.has_value())
     {
-        return lhs_in.knownSideDirection_World.has_value();
+        return lhs_in.knownSideDirection_world.has_value();
     }
-    if (lhs_in.knownSideDirection_World.has_value())
+    if (lhs_in.knownSideDirection_world.has_value())
     {
-        if (isVector3dLess(*lhs_in.knownSideDirection_World,
-                           *rhs_in.knownSideDirection_World))
+        if (isVector3dLess(*lhs_in.knownSideDirection_world,
+                           *rhs_in.knownSideDirection_world))
         {
             return true;
         }
-        if (isVector3dLess(*rhs_in.knownSideDirection_World,
-                           *lhs_in.knownSideDirection_World))
+        if (isVector3dLess(*rhs_in.knownSideDirection_world,
+                           *lhs_in.knownSideDirection_world))
         {
             return false;
         }

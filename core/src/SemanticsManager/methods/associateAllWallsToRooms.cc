@@ -159,7 +159,7 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
+    Eigen::Vector3d groundNormalForEvidence_world = Eigen::Vector3d::Zero();
     bool            groundPlaneForEvidenceIsBad{};
     if ((p_groundPlaneForEvidence != nullptr) &&
         p_groundPlaneForEvidence->isBad(groundPlaneForEvidenceIsBad) !=
@@ -187,7 +187,7 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
         const double groundEquationNormalNorm = groundEquation.head<3>().norm();
         if (groundEquation.allFinite() && groundEquationNormalNorm > 1e-8)
         {
-            groundNormalForEvidence_World =
+            groundNormalForEvidence_world =
                 groundEquation.head<3>() / groundEquationNormalNorm;
         }
     }
@@ -268,7 +268,7 @@ SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
         WallAdmissionEvidence admissionEvidence{};
         if (evaluateWallAdmissionEvidence(p_wall,
                                           p_sysParams,
-                                          groundNormalForEvidence_World,
+                                          groundNormalForEvidence_world,
                                           admissionEvidence) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {

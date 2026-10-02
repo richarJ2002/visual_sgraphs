@@ -114,7 +114,7 @@ SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    record.equation_World = passage_inGlobalEquation.coeffs();
+    record.equation_world = passage_inGlobalEquation.coeffs();
     Eigen::Vector3d passage_inCentroid{};
     if (p_passage_in->getCentroid(passage_inCentroid) !=
         PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -124,7 +124,7 @@ SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    record.centroid_World_m = passage_inCentroid;
+    record.centroid_world_m = passage_inCentroid;
     double passage_inWidth{};
     if (p_passage_in->getWidth(passage_inWidth) !=
         PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -230,7 +230,7 @@ SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
     }
     if (provenanceHasDirection)
     {
-        record.knownSideDirection_World = provenance.direction_World;
+        record.knownSideDirection_world = provenance.direction_world;
     }
 
     vs_graphs::core::semantic::Room *p_passage_inProspectiveRoom = nullptr;

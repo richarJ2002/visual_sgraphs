@@ -39,7 +39,7 @@ namespace core
 
 SystemStatus System::setSkeletonEdges(
     const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
-        &skeletonEdges_World_m_in)
+        &skeletonEdges_world_m_in)
 {
     /* Keep asynchronous skeleton replacement atomic with map remerging. */
     std::unique_lock<std::mutex> semanticUpdateLock{};
@@ -53,7 +53,7 @@ SystemStatus System::setSkeletonEdges(
     }
 
     /* Store the connected skeleton edges in the current semantic map. */
-    if (p_atlas->setSkeletonEdges(skeletonEdges_World_m_in) !=
+    if (p_atlas->setSkeletonEdges(skeletonEdges_world_m_in) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

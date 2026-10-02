@@ -68,10 +68,10 @@ struct PassageRecord
     Passage::PassageVariant passageType{Passage::PassageVariant::UNDEFINED};
 
     /*! @brief Passage::getGlobalEquation() at capture time. */
-    Eigen::Vector4d equation_World{Eigen::Vector4d::Zero()};
+    Eigen::Vector4d equation_world{Eigen::Vector4d::Zero()};
 
     /*! @brief Passage::getCentroid() at capture time. */
-    Eigen::Vector3d centroid_World_m{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d centroid_world_m{Eigen::Vector3d::Zero()};
 
     /*! @brief Passage::getWidth() at capture time. */
     double width_m{0.0};
@@ -101,7 +101,7 @@ struct PassageRecord
     /*! @brief Present only when Passage::KnownSideProvenance::
      *  hasDirection() was true at capture time (finite, near-unit norm);
      *  the struct's own check is trusted rather than re-derived here. */
-    std::optional<Eigen::Vector3d> knownSideDirection_World;
+    std::optional<Eigen::Vector3d> knownSideDirection_world;
 
     /*! @brief Passage::getProspectiveRoom(): the stable far-side room
      *  handle, present before AND after promotion to a confirmed Room

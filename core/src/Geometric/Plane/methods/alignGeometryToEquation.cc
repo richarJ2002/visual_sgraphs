@@ -41,12 +41,12 @@ namespace geometric
 {
 
 PlaneStatus Plane::alignGeometryToEquation(
-    const g2o::Plane3D &targetEquation_NewWorld_in)
+    const g2o::Plane3D &targetEquation_newWorld_in)
 {
     std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
 
     Eigen::Vector4d currentCoefficients = globalEquation.coeffs();
-    Eigen::Vector4d targetCoefficients  = targetEquation_NewWorld_in.coeffs();
+    Eigen::Vector4d targetCoefficients  = targetEquation_newWorld_in.coeffs();
 
     const double currentNormalNorm = currentCoefficients.head<3>().norm();
     const double targetNormalNorm  = targetCoefficients.head<3>().norm();
@@ -114,14 +114,14 @@ PlaneStatus Plane::alignGeometryToEquation(
     const double centroidSignedDistance_m =
         currentNormal.dot(centroid) + currentCoefficients(3);
 
-    const Eigen::Vector3d anchor_OldWorld_m =
+    const Eigen::Vector3d anchor_oldWorld_m =
         centroid - centroidSignedDistance_m * currentNormal;
 
     const Eigen::Matrix3d rotationMatrix =
         rotation_oldPlaneToOptimizedPlane.toRotationMatrix();
 
     const Eigen::Vector3d rotationTranslation_m =
-        anchor_OldWorld_m - rotationMatrix * anchor_OldWorld_m;
+        anchor_oldWorld_m - rotationMatrix * anchor_oldWorld_m;
 
     const double distanceAfterRotation_m =
         currentCoefficients(3) - targetNormal.dot(rotationTranslation_m);
@@ -137,13 +137,13 @@ PlaneStatus Plane::alignGeometryToEquation(
 
     for (pcl::PointXYZRGBA &point : planeCloud->points)
     {
-        Eigen::Vector3d point_NewWorld_m(point.x, point.y, point.z);
-        point_NewWorld_m = rotationMatrix * point_NewWorld_m +
+        Eigen::Vector3d point_newWorld_m(point.x, point.y, point.z);
+        point_newWorld_m = rotationMatrix * point_newWorld_m +
                            translation_oldPlaneToOptimizedPlane_m;
 
-        point.x = static_cast<float>(point_NewWorld_m.x());
-        point.y = static_cast<float>(point_NewWorld_m.y());
-        point.z = static_cast<float>(point_NewWorld_m.z());
+        point.x = static_cast<float>(point_newWorld_m.x());
+        point.y = static_cast<float>(point_newWorld_m.y());
+        point.z = static_cast<float>(point_newWorld_m.z());
     }
 
     globalEquation = g2o::Plane3D(targetCoefficients);

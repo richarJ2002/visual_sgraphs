@@ -1619,10 +1619,10 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
     if (inertialBundleAdjustmentRan)
     {
         /* Complete the post-BA pose map, including fixed deformation nodes. */
-        for (const auto &[p_keyFrame, poseBefore_WorldToCamera] :
+        for (const auto &[p_keyFrame, poseBefore_worldToCamera] :
              NonCorrectedSim3)
         {
-            (void)poseBefore_WorldToCamera;
+            (void)poseBefore_worldToCamera;
 
             bool keyFrameIsBad4{};
             if (!(p_keyFrame == nullptr) &&
@@ -1659,17 +1659,17 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            const Sophus::SE3d poseAfter_WorldToCamera =
+            const Sophus::SE3d poseAfter_worldToCamera =
                 keyFramePose2.cast<double>();
 
             CorrectedSim3.insert_or_assign(
                 p_keyFrame,
-                g2o::Sim3(poseAfter_WorldToCamera.unit_quaternion(),
-                          poseAfter_WorldToCamera.translation(),
+                g2o::Sim3(poseAfter_worldToCamera.unit_quaternion(),
+                          poseAfter_worldToCamera.translation(),
                           1.0));
         }
 
-        const g2o::Sim3 identityTransform_WorldToWorld(
+        const g2o::Sim3 identityTransform_worldToWorld(
             Eigen::Quaterniond::Identity(),
             Eigen::Vector3d::Zero(),
             1.0);
@@ -1678,7 +1678,7 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                 p_currentMap,
                 NonCorrectedSim3,
                 CorrectedSim3,
-                identityTransform_WorldToWorld) !=
+                identityTransform_worldToWorld) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(

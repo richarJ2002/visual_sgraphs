@@ -72,7 +72,7 @@ LoopClosingStatus
         if (betterIdentity.has_value())
         {
             if (p_retainedFloor_inout->setPlaneIdentity(
-                    betterIdentity->equation_World,
+                    betterIdentity->equation_world,
                     betterIdentity->finiteSupportCount,
                     betterIdentity->observationCount) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)

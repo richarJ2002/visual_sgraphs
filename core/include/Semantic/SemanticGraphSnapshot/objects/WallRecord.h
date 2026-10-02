@@ -72,11 +72,11 @@ struct WallRecord
     geometric::Plane::PlaneVariant planeType{
         geometric::Plane::PlaneVariant::WALL};
 
-    /*! @brief PlaneGeometryMetadataSnapshot::equation_World. */
-    Eigen::Vector4d equation_World{Eigen::Vector4d::Zero()};
+    /*! @brief PlaneGeometryMetadataSnapshot::equation_world. */
+    Eigen::Vector4d equation_world{Eigen::Vector4d::Zero()};
 
-    /*! @brief PlaneGeometryMetadataSnapshot::centroid_World_m. */
-    Eigen::Vector3d centroid_World_m{Eigen::Vector3d::Zero()};
+    /*! @brief PlaneGeometryMetadataSnapshot::centroid_world_m. */
+    Eigen::Vector3d centroid_world_m{Eigen::Vector3d::Zero()};
 
     /*! @brief PlaneGeometryMetadataSnapshot::minPlaneU_m. */
     double minPlaneU_m{0.0};
@@ -103,10 +103,10 @@ struct WallRecord
     std::uint64_t successfulRefitGeneration{0U};
 
     /*! @brief World-frame camera position this face was first observed
-     *  from, when Plane::setObservationOrigin_World() has been called
+     *  from, when Plane::setObservationOrigin_world() has been called
      *  (see Plane.h's documented rationale for why this, not a stored
      *  sign, distinguishes a physical wall's two faces). */
-    std::optional<Eigen::Vector3d> observationOrigin_World_m;
+    std::optional<Eigen::Vector3d> observationOrigin_world_m;
 
     /*! @brief The derived, per-keyframe observation-side consensus
      *  (Plane::getObservationSideSnapshot()) is intentionally NOT captured

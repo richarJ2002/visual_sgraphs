@@ -282,7 +282,7 @@ class Room
      *               meaningful while boundaryStatus == COMPLETE;
      *               empty otherwise.
      */
-    std::vector<Eigen::Vector3d> boundaryCorners_World_m;
+    std::vector<Eigen::Vector3d> boundaryCorners_world_m;
 
     /*!
      * @brief        Currently unobserved angular sectors around this
@@ -446,22 +446,22 @@ class Room
      *              to match these corners -- those bounds are owned
      *              by the measurement/refit pipeline.
      *
-     * @param[out] boundaryCorners_World_m_out Closed-loop corners in the world
+     * @param[out] boundaryCorners_world_m_out Closed-loop corners in the world
      * frame, or an empty vector when incomplete.
      * @return ROOM_STATUS_SUCCESS.
      */
-    [[nodiscard]] RoomStatus getBoundaryCorners_World_m(
-        std::vector<Eigen::Vector3d> &boundaryCorners_World_m_out) const;
+    [[nodiscard]] RoomStatus getBoundaryCorners_world_m(
+        std::vector<Eigen::Vector3d> &boundaryCorners_world_m_out) const;
 
     /*!
      * @brief        Sets the room's finite wall boundary corner
      *               points.
      *
-     * @param[in]    corners_World_m_in
+     * @param[in]    corners_world_m_in
      *               Closed-loop corners in the world frame.
      */
-    [[nodiscard]] RoomStatus setBoundaryCorners_World_m(
-        std::vector<Eigen::Vector3d> corners_World_m_in);
+    [[nodiscard]] RoomStatus setBoundaryCorners_world_m(
+        std::vector<Eigen::Vector3d> corners_world_m_in);
 
     /*!
      * @brief        Returns the room's currently unobserved angular
@@ -472,7 +472,7 @@ class Room
      *              validateRoomBoundaries() every cycle this room
      *              has a finite centroid, regardless of
      *              BoundaryStatus (unlike
-     *              getBoundaryCorners_World_m(), which is
+     *              getBoundaryCorners_world_m(), which is
      *              COMPLETE-only): this is precisely the "what's
      *              still missing" signal a COMPLETE room by
      *              definition no longer has. A room with zero walls
@@ -795,16 +795,16 @@ class Room
      *               Non-owning pointer to the wall plane whose normal is
      *               required.
      *
-     * @param[out] wallNormalTowardRoom_World_out Unit wall normal expressed in
+     * @param[out] wallNormalTowardRoom_world_out Unit wall normal expressed in
      * the world frame and pointing toward the room centroid, or `std::nullopt`
      * when the wall, plane equation, or room centroid is invalid. If the room
      * centroid lies exactly on the wall, the normalized stored normal direction
      * is returned.
      * @return ROOM_STATUS_SUCCESS.
      */
-    [[nodiscard]] RoomStatus getWallNormalTowardRoom_World(
+    [[nodiscard]] RoomStatus getWallNormalTowardRoom_world(
         const geometric::Plane         *p_wall_in,
-        std::optional<Eigen::Vector3d> &wallNormalTowardRoom_World_out) const;
+        std::optional<Eigen::Vector3d> &wallNormalTowardRoom_world_out) const;
 
     /*!
      * @brief        Removes all wall associations without deleting the planes.

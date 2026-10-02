@@ -38,7 +38,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
     SemanticsManager::ActiveMapBootstrapResult &bootstrapResult_out,
-    const std::optional<Eigen::Vector3d> &cameraPositionOverride_World_m_in)
+    const std::optional<Eigen::Vector3d> &cameraPositionOverride_world_m_in)
 {
     Map *p_atlasCurrentMap = nullptr;
     if ((p_atlas != nullptr) && p_atlas->getCurrentMap(p_atlasCurrentMap) !=
@@ -214,12 +214,12 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
         p_bootstrapRoom == nullptr && recoveryRoomId >= 0 ? atlasRoomContext
                                                           : std::nullopt;
 
-    Eigen::Vector3d cameraPosition_World_m  = Eigen::Vector3d::Zero();
+    Eigen::Vector3d cameraPosition_world_m  = Eigen::Vector3d::Zero();
     bool            hasUsableCameraPosition = false;
-    if (cameraPositionOverride_World_m_in.has_value() &&
-        cameraPositionOverride_World_m_in->allFinite())
+    if (cameraPositionOverride_world_m_in.has_value() &&
+        cameraPositionOverride_world_m_in->allFinite())
     {
-        cameraPosition_World_m  = *cameraPositionOverride_World_m_in;
+        cameraPosition_world_m  = *cameraPositionOverride_world_m_in;
         hasUsableCameraPosition = true;
     }
     else
@@ -263,7 +263,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            const Eigen::Vector3d candidatePosition_World_m =
+            const Eigen::Vector3d candidatePosition_world_m =
                 keyFrameCameraCenter.cast<double>();
             /* An exactly-zero center marks an uninitialized first-frame pose
              * (live-observed: brand-new map, identity pose, room planted at
@@ -272,10 +272,10 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
              * bootstrap room and poisons centroid-distance matching for the
              * cycles until walls correct it. Fall through to the snapshot
              * centroid, else yield and retry once poses exist. */
-            if (candidatePosition_World_m.allFinite() &&
-                !candidatePosition_World_m.isZero())
+            if (candidatePosition_world_m.allFinite() &&
+                !candidatePosition_world_m.isZero())
             {
-                cameraPosition_World_m  = candidatePosition_World_m;
+                cameraPosition_world_m  = candidatePosition_world_m;
                 hasUsableCameraPosition = true;
                 break;
             }
@@ -291,7 +291,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
         if (recoveryContext.has_value() &&
             recoveryContext->centroid.allFinite())
         {
-            cameraPosition_World_m  = recoveryContext->centroid;
+            cameraPosition_world_m  = recoveryContext->centroid;
             hasUsableCameraPosition = true;
         }
         else
@@ -325,7 +325,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
         if (GeoSemHelpers::createBlankRoomCandidate(
                 p_atlas,
                 p_blankRoomCandidate,
-                cameraPosition_World_m,
+                cameraPosition_world_m,
                 recoveryContext.has_value()
                     ? std::optional<int>(recoveryContext->roomId)
                     : std::nullopt) !=

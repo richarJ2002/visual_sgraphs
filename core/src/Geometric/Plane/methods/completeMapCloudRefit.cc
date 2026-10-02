@@ -41,8 +41,8 @@ namespace geometric
 
 PlaneStatus
     Plane::completeMapCloudRefit(const std::uint64_t sourceCloudGeneration_in,
-                                 const Eigen::Vector3d &centroid_World_m_in,
-                                 const g2o::Plane3D    &equation_World_in,
+                                 const Eigen::Vector3d &centroid_world_m_in,
+                                 const g2o::Plane3D    &equation_world_in,
                                  const std::size_t      finitePointCount_in,
                                  bool                  &wasRefitPublished_out)
 {
@@ -54,8 +54,8 @@ PlaneStatus
         return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
 
-    centroid                            = centroid_World_m_in;
-    globalEquation                      = equation_World_in;
+    centroid                            = centroid_world_m_in;
+    globalEquation                      = equation_world_in;
     lastSuccessfulRefitFinitePointCount = finitePointCount_in;
     successfulRefitGeneration           = sourceCloudGeneration_in;
 

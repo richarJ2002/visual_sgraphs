@@ -189,7 +189,7 @@ class GeoSemHelpers
      *              True when connected free-space evidence confirms that the
      *              opening is traversable.
      *
-     * @param[in]   passageCentroid_World_m_in
+     * @param[in]   passageCentroid_world_m_in
      *              Open-passage centroid in the active map frame, in metres.
      */
     [[nodiscard]] static GeoSemHelpersStatus createMapPassage(
@@ -197,7 +197,7 @@ class GeoSemHelpers
         vs_graphs::core::geometric::Plane *p_doorPlane_in,
         vs_graphs::core::geometric::Plane *p_wallPlane_in,
         bool                               isOpenPassage_in = false,
-        Eigen::Vector3d passageCentroid_World_m_in = Eigen::Vector3d::Zero());
+        Eigen::Vector3d passageCentroid_world_m_in = Eigen::Vector3d::Zero());
 
     /*!
      * @brief       Creates a blank room object (undefined variant) to be added

@@ -50,7 +50,7 @@ SemanticsManagerStatus
                               double                 minimumThickness_m_in,
                               double                 maximumThickness_m_in,
                               double                 minimumOverlapRatio_in,
-                              const Eigen::Vector3d &groundNormal_World_in,
+                              const Eigen::Vector3d &groundNormal_world_in,
                               bool &arePlausibleTwinWallFaces_out)
 {
     bool firstIsBad{};
@@ -152,7 +152,7 @@ SemanticsManagerStatus
      * so each face's observation origin must resolve to opposite sides of
      * the OTHER face's equation. */
     std::optional<Eigen::Vector3d> origin1{};
-    if (p_first_in->getObservationOrigin_World(origin1) !=
+    if (p_first_in->getObservationOrigin_world(origin1) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -161,7 +161,7 @@ SemanticsManagerStatus
                      __func__);
     }
     std::optional<Eigen::Vector3d> origin2{};
-    if (p_second_in->getObservationOrigin_World(origin2) !=
+    if (p_second_in->getObservationOrigin_world(origin2) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -212,34 +212,34 @@ SemanticsManagerStatus
     /* In-plane footprint overlap, projected onto one shared ground-anchored
      * tangent frame so the two planes' (possibly differently canonicalised)
      * own local U/V axes don't have to agree. */
-    const double    groundNormalNorm = groundNormal_World_in.norm();
-    Eigen::Vector3d axisU_World      = Eigen::Vector3d::Zero();
-    Eigen::Vector3d axisV_World      = Eigen::Vector3d::Zero();
+    const double    groundNormalNorm = groundNormal_world_in.norm();
+    Eigen::Vector3d axisU_world      = Eigen::Vector3d::Zero();
+    Eigen::Vector3d axisV_world      = Eigen::Vector3d::Zero();
     if (std::isfinite(groundNormalNorm) && groundNormalNorm > 1e-8)
     {
-        const Eigen::Vector3d unitGroundNormal_World =
-            groundNormal_World_in / groundNormalNorm;
-        const Eigen::Vector3d horizontalCandidate_World =
-            unitGroundNormal_World.cross(equation1.head<3>());
-        const double horizontalNorm = horizontalCandidate_World.norm();
+        const Eigen::Vector3d unitGroundNormal_world =
+            groundNormal_world_in / groundNormalNorm;
+        const Eigen::Vector3d horizontalCandidate_world =
+            unitGroundNormal_world.cross(equation1.head<3>());
+        const double horizontalNorm = horizontalCandidate_world.norm();
         if (std::isfinite(horizontalNorm) && horizontalNorm > 1e-3)
         {
-            axisU_World = horizontalCandidate_World / horizontalNorm;
-            axisV_World = axisU_World.cross(equation1.head<3>()).normalized();
+            axisU_world = horizontalCandidate_world / horizontalNorm;
+            axisV_world = axisU_world.cross(equation1.head<3>()).normalized();
         }
     }
-    if (axisU_World.squaredNorm() < 0.5 || axisV_World.squaredNorm() < 0.5)
+    if (axisU_world.squaredNorm() < 0.5 || axisV_world.squaredNorm() < 0.5)
     {
-        axisU_World = equation1.head<3>().unitOrthogonal().normalized();
-        axisV_World = equation1.head<3>().cross(axisU_World).normalized();
+        axisU_world = equation1.head<3>().unitOrthogonal().normalized();
+        axisV_world = equation1.head<3>().cross(axisU_world).normalized();
     }
 
     double minimumU1 = 0.0, maximumU1 = 0.0, minimumV1 = 0.0, maximumV1 = 0.0;
     double minimumU2 = 0.0, maximumU2 = 0.0, minimumV2 = 0.0, maximumV2 = 0.0;
     bool   isProjected{};
     if (projectPlaneFootprintOntoSharedAxes(p_first_in,
-                                            axisU_World,
-                                            axisV_World,
+                                            axisU_world,
+                                            axisV_world,
                                             minimumU1,
                                             maximumU1,
                                             minimumV1,
@@ -256,8 +256,8 @@ SemanticsManagerStatus
     bool isProjected2{};
     if (!(!isProjected) &&
         projectPlaneFootprintOntoSharedAxes(p_second_in,
-                                            axisU_World,
-                                            axisV_World,
+                                            axisU_world,
+                                            axisV_world,
                                             minimumU2,
                                             maximumU2,
                                             minimumV2,

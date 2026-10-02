@@ -33,13 +33,13 @@ namespace core
 
 SemanticsManagerStatus
     SemanticsManager::ensureActiveMapBootstrapHierarchyForTest(
-        const Eigen::Vector3d &cameraPosition_World_m_in,
+        const Eigen::Vector3d &cameraPosition_world_m_in,
         int                   &bootstrapResult_out)
 {
     pipelineSemanticCycle++;
     SemanticsManager::ActiveMapBootstrapResult bootstrapResult{};
     if (ensureActiveMapBootstrapHierarchy(bootstrapResult,
-                                          cameraPosition_World_m_in) !=
+                                          cameraPosition_world_m_in) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

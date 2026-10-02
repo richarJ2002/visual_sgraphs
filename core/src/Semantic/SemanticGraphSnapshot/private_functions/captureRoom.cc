@@ -115,7 +115,7 @@ SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    record.centroid_World_m = room_inCentroid;
+    record.centroid_world_m = room_inCentroid;
     Room::BoundaryStatus room_inBoundaryStatus{};
     if (p_room_in->getBoundaryStatus(room_inBoundaryStatus) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
@@ -126,8 +126,8 @@ SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
                      __func__);
     }
     record.boundaryStatus = room_inBoundaryStatus;
-    std::vector<Eigen::Vector3d> room_inBoundaryCorners_World_m{};
-    if (p_room_in->getBoundaryCorners_World_m(room_inBoundaryCorners_World_m) !=
+    std::vector<Eigen::Vector3d> roomBoundaryCorners_world_m{};
+    if (p_room_in->getBoundaryCorners_world_m(roomBoundaryCorners_world_m) !=
         RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -135,7 +135,7 @@ SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    record.boundaryCorners_World_m = room_inBoundaryCorners_World_m;
+    record.boundaryCorners_world_m = roomBoundaryCorners_world_m;
     std::vector<Room::ObservationGap> room_inObservationGaps{};
     if (p_room_in->getObservationGaps(room_inObservationGaps) !=
         RoomStatus::ROOM_STATUS_SUCCESS)

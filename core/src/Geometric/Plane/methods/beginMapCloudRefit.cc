@@ -56,8 +56,8 @@ PlaneStatus Plane::beginMapCloudRefit(
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_cloudCopy(
         new pcl::PointCloud<pcl::PointXYZRGBA>(*planeCloud));
     snapshot.supportCloud              = p_cloudCopy;
-    snapshot.equation_World            = globalEquation.coeffs();
-    snapshot.centroid_World_m          = centroid;
+    snapshot.equation_world            = globalEquation.coeffs();
+    snapshot.centroid_world_m          = centroid;
     snapshot.minPlaneU_m               = minPlaneU;
     snapshot.maxPlaneU_m               = maxPlaneU;
     snapshot.minPlaneV_m               = minPlaneV;

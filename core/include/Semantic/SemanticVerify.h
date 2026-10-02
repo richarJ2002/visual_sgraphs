@@ -66,7 +66,7 @@ enum class SemanticMergeReason
 };
 
 /*! One wall's plane equation and centroid, already resolved through verified
- * getters (Room::getWalls(), Room::getWallNormalTowardRoom_World(),
+ * getters (Room::getWalls(), Room::getWallNormalTowardRoom_world(),
  * Plane::getGlobalEquation(), Plane::getCentroid(),
  * Plane::getGeometrySnapshot()) and expressed in the SOURCE room's own map
  * frame. Never compared raw against another map's frame before a hypothesis
@@ -75,20 +75,20 @@ struct VerifyWallObservation
 {
     int wallId{0};
 
-    /*! Canonically oriented via getWallNormalTowardRoom_World
+    /*! Canonically oriented via getWallNormalTowardRoom_world
      * (n.c_room + d > 0). */
-    Eigen::Vector3d normal_World{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d normal_world{Eigen::Vector3d::Zero()};
 
-    /*! Plane equation offset paired with normal_World: getGlobalEquation()
+    /*! Plane equation offset paired with normal_world: getGlobalEquation()
      * .coeffs()(3), i.e. n^T x + d = 0 -- NOT g2o::Plane3D::distance(),
      * which returns -d (Plane::transformPlaneEquation, Plane.cc:441-442). */
     double d{0.0};
 
-    Eigen::Vector3d centroid_World{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d centroid_world{Eigen::Vector3d::Zero()};
 
     /*! Bounded, deterministic stride-sampled points from
      * Plane::getGeometrySnapshot().supportCloud. */
-    std::vector<Eigen::Vector3d> supportSample_World;
+    std::vector<Eigen::Vector3d> supportSample_world;
 };
 
 struct SemanticVerifyConfig
@@ -164,7 +164,7 @@ struct SemanticVerifyResult
     bool               hasPassed{false};
 
     /*! Maps room-A-frame points into room B's frame: x_B = R x_A + t. */
-    Eigen::Isometry3d transform_AToB{Eigen::Isometry3d::Identity()};
+    Eigen::Isometry3d transform_aToB{Eigen::Isometry3d::Identity()};
 
     std::vector<WallInlierPair> inliers;
     std::size_t                 candidateWallPairCount{0U};

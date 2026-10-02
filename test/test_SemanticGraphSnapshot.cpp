@@ -99,7 +99,7 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
     ASSERT_NE(p_mapSnapshot, nullptr);
     ASSERT_EQ(p_mapSnapshot->rooms.size(), 1U);
     ASSERT_EQ(p_mapSnapshot->walls.size(), 1U);
-    EXPECT_EQ(p_mapSnapshot->rooms[0].centroid_World_m,
+    EXPECT_EQ(p_mapSnapshot->rooms[0].centroid_world_m,
               Eigen::Vector3d(1.0, 0.0, 1.0));
     EXPECT_EQ(p_mapSnapshot->walls[0].planeType,
               geometric::Plane::PlaneVariant::WALL);
@@ -1227,12 +1227,12 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
                   p_capture->maps[0].rooms[1].key);
         /* Value-based canonical order: isLive/isDetectedMember/
          * isMarkerBasedMember/declaredMapId/variant are equal for both
-         * rooms, so centroid_World_m is the first differentiator --
+         * rooms, so centroid_world_m is the first differentiator --
          * (1,0,0) sorts before (2,0,0) regardless of which object was
          * constructed or registered first. */
-        EXPECT_EQ(p_capture->maps[0].rooms[0].centroid_World_m,
+        EXPECT_EQ(p_capture->maps[0].rooms[0].centroid_world_m,
                   Eigen::Vector3d(1.0, 0.0, 0.0));
-        EXPECT_EQ(p_capture->maps[0].rooms[1].centroid_World_m,
+        EXPECT_EQ(p_capture->maps[0].rooms[1].centroid_world_m,
                   Eigen::Vector3d(2.0, 0.0, 0.0));
     }
 }
@@ -1329,8 +1329,8 @@ TEST(SemanticGraphSnapshot,
     {
         ASSERT_EQ(p_records->size(), 2U);
         EXPECT_EQ((*p_records)[0].key, (*p_records)[1].key);
-        /* isLive, declaredMapId, passageType, equation_World, and
-         * centroid_World_m are all equal defaults for both; width_m is the
+        /* isLive, declaredMapId, passageType, equation_world, and
+         * centroid_world_m are all equal defaults for both; width_m is the
          * first differentiator. */
         EXPECT_DOUBLE_EQ((*p_records)[0].width_m, 0.5);
         EXPECT_DOUBLE_EQ((*p_records)[1].width_m, 1.5);
@@ -1346,7 +1346,7 @@ TEST(SemanticGraphSnapshot,
         (makeKey(EntityKind::FLOOR, 1U, 7, key2)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     lowerFloor.key              = key2;
-    lowerFloor.centroid_World_m = Eigen::Vector3d(0.0, 0.0, 0.0);
+    lowerFloor.centroid_world_m = Eigen::Vector3d(0.0, 0.0, 0.0);
 
     FloorRecord higherFloor;
     EntityKey   key3{};
@@ -1354,7 +1354,7 @@ TEST(SemanticGraphSnapshot,
         (makeKey(EntityKind::FLOOR, 1U, 7, key3)),
         SemanticGraphSnapshotStatus::SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS);
     higherFloor.key              = key3;
-    higherFloor.centroid_World_m = Eigen::Vector3d(0.0, 0.0, 3.0);
+    higherFloor.centroid_world_m = Eigen::Vector3d(0.0, 0.0, 3.0);
 
     std::vector<FloorRecord> ascending  = {lowerFloor, higherFloor};
     std::vector<FloorRecord> descending = {higherFloor, lowerFloor};
@@ -1369,9 +1369,9 @@ TEST(SemanticGraphSnapshot,
     {
         ASSERT_EQ(p_records->size(), 2U);
         EXPECT_EQ((*p_records)[0].key, (*p_records)[1].key);
-        EXPECT_EQ((*p_records)[0].centroid_World_m,
+        EXPECT_EQ((*p_records)[0].centroid_world_m,
                   Eigen::Vector3d(0.0, 0.0, 0.0));
-        EXPECT_EQ((*p_records)[1].centroid_World_m,
+        EXPECT_EQ((*p_records)[1].centroid_world_m,
                   Eigen::Vector3d(0.0, 0.0, 3.0));
     }
 }
@@ -2361,8 +2361,8 @@ TEST(SemanticGraphSnapshot,
     ASSERT_EQ((wall.getGeometryMetadataSnapshot(metadata)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
-    EXPECT_EQ(metadata.equation_World, fullSnapshot.equation_World);
-    EXPECT_EQ(metadata.centroid_World_m, fullSnapshot.centroid_World_m);
+    EXPECT_EQ(metadata.equation_world, fullSnapshot.equation_world);
+    EXPECT_EQ(metadata.centroid_world_m, fullSnapshot.centroid_world_m);
     EXPECT_DOUBLE_EQ(metadata.minPlaneU_m, fullSnapshot.minPlaneU_m);
     EXPECT_DOUBLE_EQ(metadata.maxPlaneU_m, fullSnapshot.maxPlaneU_m);
     EXPECT_DOUBLE_EQ(metadata.minPlaneV_m, fullSnapshot.minPlaneV_m);
@@ -2393,8 +2393,8 @@ TEST(SemanticGraphSnapshot,
      * just a convenient subset -- a field-swap bug touching any single one of
      * these (e.g. minPlaneV_m/maxPlaneV_m, observationCount, or
      * successfulRefitGeneration) must fail this test. */
-    EXPECT_EQ(p_wallRecord->equation_World, metadata.equation_World);
-    EXPECT_EQ(p_wallRecord->centroid_World_m, metadata.centroid_World_m);
+    EXPECT_EQ(p_wallRecord->equation_world, metadata.equation_world);
+    EXPECT_EQ(p_wallRecord->centroid_world_m, metadata.centroid_world_m);
     EXPECT_DOUBLE_EQ(p_wallRecord->minPlaneU_m, metadata.minPlaneU_m);
     EXPECT_DOUBLE_EQ(p_wallRecord->maxPlaneU_m, metadata.maxPlaneU_m);
     EXPECT_DOUBLE_EQ(p_wallRecord->minPlaneV_m, metadata.minPlaneV_m);

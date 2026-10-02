@@ -257,10 +257,10 @@ TEST(SemanticBootstrapPhase1,
               AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_NE(p_recoveryMap, p_departedMap);
 
-    const Eigen::Vector3d recoveredCameraPosition_World_m(8.0, 2.0, 1.0);
+    const Eigen::Vector3d recoveredCameraPosition_world_m(8.0, 2.0, 1.0);
     int                   bootstrapResult{};
     ASSERT_EQ((manager.ensureActiveMapBootstrapHierarchyForTest(
-                  recoveredCameraPosition_World_m,
+                  recoveredCameraPosition_world_m,
                   bootstrapResult)),
               SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_GE(bootstrapResult, 0);
@@ -285,7 +285,7 @@ TEST(SemanticBootstrapPhase1,
     Eigen::Vector3d centroid{};
     ASSERT_EQ((p_recoveredRoom->getCentroid(centroid)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    EXPECT_TRUE(centroid.isApprox(recoveredCameraPosition_World_m));
+    EXPECT_TRUE(centroid.isApprox(recoveredCameraPosition_world_m));
     std::vector<vs_graphs::core::geometric::Plane *> walls{};
     ASSERT_EQ((p_recoveredRoom->getWalls(walls)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -442,13 +442,13 @@ TEST(SemanticBootstrapPhase1,
                   vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
         EXPECT_FALSE(hasPlaneIdentity2);
 
-        const Eigen::Vector3d recoveredCameraPosition_World_m(
+        const Eigen::Vector3d recoveredCameraPosition_world_m(
             8.0 + static_cast<double>(resetIndex),
             2.0,
             1.0);
         int bootstrapResult{};
         ASSERT_EQ((manager.ensureActiveMapBootstrapHierarchyForTest(
-                      recoveredCameraPosition_World_m,
+                      recoveredCameraPosition_world_m,
                       bootstrapResult)),
                   SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
         EXPECT_GE(bootstrapResult, 0);
@@ -725,7 +725,7 @@ TEST(SemanticBootstrapPhase1,
     ASSERT_EQ((canonicalPassage.getKnownSideProvenance(knownSideProvenance)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     EXPECT_TRUE(
-        knownSideProvenance.direction_World.isApprox(Eigen::Vector3d::UnitX()));
+        knownSideProvenance.direction_world.isApprox(Eigen::Vector3d::UnitX()));
 }
 
 TEST(SemanticBootstrapPhase1,
@@ -787,7 +787,7 @@ TEST(SemanticBootstrapPhase1,
     ASSERT_EQ((canonicalPassage.getKnownSideProvenance(knownSideProvenance)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     EXPECT_TRUE(
-        knownSideProvenance.direction_World.isApprox(Eigen::Vector3d::UnitY()));
+        knownSideProvenance.direction_world.isApprox(Eigen::Vector3d::UnitY()));
     std::vector<vs_graphs::core::geometric::Plane *> associateWalls{};
     ASSERT_EQ((canonicalPassage.getAssociateWalls(associateWalls)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);

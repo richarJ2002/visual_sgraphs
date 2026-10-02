@@ -71,13 +71,13 @@ class Passage
          * Unit world-frame direction from the passage toward the observing
          * side. It is independent of the arbitrary sign of the plane equation.
          */
-        Eigen::Vector3d direction_World{Eigen::Vector3d::Zero()};
+        Eigen::Vector3d direction_world{Eigen::Vector3d::Zero()};
 
         [[nodiscard]] KnownSideProvenanceStatus
             hasDirection(bool &hasDirection_out) const
         {
-            hasDirection_out = direction_World.allFinite() &&
-                               direction_World.squaredNorm() > 0.99;
+            hasDirection_out = direction_world.allFinite() &&
+                               direction_world.squaredNorm() > 0.99;
             return KnownSideProvenanceStatus::
                 KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS;
         }
@@ -314,7 +314,7 @@ class Passage
 
     /*! Stores a normalized, sign-stable observing-side direction. */
     [[nodiscard]] PassageStatus
-        setKnownSideDirection(const Eigen::Vector3d &direction_World_in);
+        setKnownSideDirection(const Eigen::Vector3d &direction_world_in);
 
     /*! Links the persisted known side to a room without changing its direction.
      */

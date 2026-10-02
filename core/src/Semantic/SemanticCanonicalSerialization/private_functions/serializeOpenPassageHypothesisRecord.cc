@@ -46,7 +46,7 @@ nlohmann::json serializeOpenPassageHypothesisRecord(
 
     if (includeGeometry_in)
     {
-        json["centroid_World_m"] = serializeVector3d(value_in.centroid_World_m);
+        json["centroid_World_m"] = serializeVector3d(value_in.centroid_world_m);
         json["openingRadius_m"]  = serializeDouble(value_in.openingRadius_m);
         json["heightSpan_m"]     = serializeDouble(value_in.heightSpan_m);
     }

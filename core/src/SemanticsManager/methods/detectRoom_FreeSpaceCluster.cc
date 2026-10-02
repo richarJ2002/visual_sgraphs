@@ -94,7 +94,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
+    Eigen::Vector3d groundNormalForEvidence_world = Eigen::Vector3d::Zero();
     bool            groundPlaneForEvidenceIsBad{};
     if ((p_groundPlaneForEvidence != nullptr) &&
         p_groundPlaneForEvidence->isBad(groundPlaneForEvidenceIsBad) !=
@@ -122,7 +122,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
         const double groundNorm = groundEq.head<3>().norm();
         if (groundEq.allFinite() && groundNorm > 1e-8)
         {
-            groundNormalForEvidence_World = groundEq.head<3>() / groundNorm;
+            groundNormalForEvidence_world = groundEq.head<3>() / groundNorm;
         }
     }
 
@@ -149,7 +149,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
         WallAdmissionEvidence admissionEvidence{};
         if (evaluateWallAdmissionEvidence(p_plane,
                                           p_sysParams,
-                                          groundNormalForEvidence_World,
+                                          groundNormalForEvidence_world,
                                           admissionEvidence) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
@@ -243,7 +243,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
             }
 
             /* Extract the centroid of the wall */
-            const Eigen::Vector3d wallCentroid = wallGeometry.centroid_World_m;
+            const Eigen::Vector3d wallCentroid = wallGeometry.centroid_world_m;
 
             /* Find the distance from the wall centroid and cluster centroid */
             const double centroidDistance =
@@ -321,18 +321,18 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     continue;
                 }
 
-                const Eigen::Vector3d wallPoint_World_m(
+                const Eigen::Vector3d wallPoint_world_m(
                     static_cast<double>(point.x),
                     static_cast<double>(point.y),
                     static_cast<double>(point.z));
 
-                const Eigen::Vector3d wallPointRelToCentroid_World_m =
-                    wallPoint_World_m - wallCentroid;
+                const Eigen::Vector3d wallPointRelToCentroid_world_m =
+                    wallPoint_world_m - wallCentroid;
 
                 const double wallPointU_m =
-                    wallPointRelToCentroid_World_m.dot(axisU);
+                    wallPointRelToCentroid_world_m.dot(axisU);
                 const double wallPointV_m =
-                    wallPointRelToCentroid_World_m.dot(axisV);
+                    wallPointRelToCentroid_world_m.dot(axisV);
 
                 minimumWallU_m = std::min(minimumWallU_m, wallPointU_m);
                 maximumWallU_m = std::max(maximumWallU_m, wallPointU_m);
@@ -626,20 +626,20 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Vector4d passageEquation_World =
+            Eigen::Vector4d passageEquation_world =
                 passageGlobalEquation.coeffs();
             const double passageNormalNorm =
-                passageEquation_World.head<3>().norm();
+                passageEquation_world.head<3>().norm();
 
-            if (!passageEquation_World.allFinite() || passageNormalNorm < 1e-8)
+            if (!passageEquation_world.allFinite() || passageNormalNorm < 1e-8)
             {
                 continue;
             }
 
-            passageEquation_World /= passageNormalNorm;
+            passageEquation_world /= passageNormalNorm;
 
-            Eigen::Vector3d prospectiveCentroid_World_m{};
-            if (p_prospective->getCentroid(prospectiveCentroid_World_m) !=
+            Eigen::Vector3d prospectiveCentroid_world_m{};
+            if (p_prospective->getCentroid(prospectiveCentroid_world_m) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -648,16 +648,16 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                              __func__);
             }
             const double prospectiveSide_m =
-                passageEquation_World.head<3>().dot(
-                    prospectiveCentroid_World_m) +
-                passageEquation_World(3);
+                passageEquation_world.head<3>().dot(
+                    prospectiveCentroid_world_m) +
+                passageEquation_world(3);
             const double clusterSide_m =
-                passageEquation_World.head<3>().dot(clusterCentroid) +
-                passageEquation_World(3);
+                passageEquation_world.head<3>().dot(clusterCentroid) +
+                passageEquation_world(3);
             const double centroidDistance_m =
-                (prospectiveCentroid_World_m - clusterCentroid).norm();
+                (prospectiveCentroid_world_m - clusterCentroid).norm();
 
-            if (!prospectiveCentroid_World_m.allFinite() ||
+            if (!prospectiveCentroid_world_m.allFinite() ||
                 prospectiveSide_m * clusterSide_m <= 0.0 ||
                 std::abs(prospectiveSide_m) <= 0.20 ||
                 std::abs(clusterSide_m) <= 0.20 ||
@@ -763,8 +763,8 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
             vs_graphs::core::semantic::Room *p_wallOwnerRoom = nullptr;
 
             std::vector<vs_graphs::core::semantic::Room *>
-                existingRooms_World{};
-            if (p_atlas->getAllRooms(existingRooms_World) !=
+                existingRooms_world{};
+            if (p_atlas->getAllRooms(existingRooms_world) !=
                 AtlasStatus::ATLAS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -792,7 +792,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 }
 
                 for (vs_graphs::core::semantic::Room *p_existingRoom :
-                     existingRooms_World)
+                     existingRooms_world)
                 {
                     bool existingRoomIsBad{};
                     if (!(p_existingRoom == nullptr) &&
@@ -1127,7 +1127,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
+                Eigen::Vector3d groundNormal_world = Eigen::Vector3d::Zero();
                 bool            groundPlaneIsBad{};
                 if ((p_groundPlane != nullptr) &&
                     p_groundPlane->isBad(groundPlaneIsBad) !=
@@ -1156,7 +1156,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     const double groundNorm = groundEq.head<3>().norm();
                     if (groundEq.allFinite() && groundNorm > 1e-8)
                     {
-                        groundNormal_World = groundEq.head<3>() / groundNorm;
+                        groundNormal_world = groundEq.head<3>() / groundNorm;
                     }
                 }
 
@@ -1206,7 +1206,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             roomCentroid,
                             wallGetCentroid.cast<double>(),
                             p_passage,
-                            groundNormal_World,
+                            groundNormal_world,
                             static_cast<double>(
                                 p_sysParams->roomSeg.passagePartition
                                     .openingMargin_m),
@@ -1515,10 +1515,10 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                 roomCentroid2,
                                 wallGetCentroid2.cast<double>(),
                                 evidence.p_supportingWall,
-                                evidence.centroid_World_m,
+                                evidence.centroid_world_m,
                                 evidence.openingRadius_m,
                                 evidence.heightSpan_m,
-                                groundNormal_World,
+                                groundNormal_world,
                                 static_cast<double>(
                                     p_sysParams->roomSeg.passagePartition
                                         .openingMargin_m),
@@ -1741,14 +1741,14 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Vector4d wallEquation_World =
+                Eigen::Vector4d wallEquation_world =
                     wallGetGlobalEquation2.coeffs();
                 const double wallNormalNorm =
-                    wallEquation_World.head<3>().norm();
+                    wallEquation_world.head<3>().norm();
 
-                if (wallEquation_World.allFinite() && wallNormalNorm > 1e-8)
+                if (wallEquation_world.allFinite() && wallNormalNorm > 1e-8)
                 {
-                    wallEquation_World /= wallNormalNorm;
+                    wallEquation_world /= wallNormalNorm;
 
                     constexpr double maximumProvisionalPlaneDistance_m = 0.20;
                     Eigen::Vector3d  existingWallOwnerCentroid{};
@@ -1763,9 +1763,9 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             __func__);
                     }
                     const double ownerPlaneDistance_m =
-                        std::abs(wallEquation_World.head<3>().dot(
+                        std::abs(wallEquation_world.head<3>().dot(
                                      existingWallOwnerCentroid) +
-                                 wallEquation_World(3));
+                                 wallEquation_world(3));
 
                     semantic::Room::RoomVariant existingWallOwnerRoomVariant{};
                     if (p_existingWallOwner->getRoomVariant(
@@ -1814,7 +1814,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Vector3d meanObservationPosition_World_m =
+                Eigen::Vector3d meanObservationPosition_world_m =
                     Eigen::Vector3d::Zero();
                 std::size_t validObservationCount = 0U;
 
@@ -1860,12 +1860,12 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    const Eigen::Vector3d cameraCentre_World_m =
+                    const Eigen::Vector3d cameraCentre_world_m =
                         keyFrameCameraCenter.cast<double>();
 
-                    if (cameraCentre_World_m.allFinite())
+                    if (cameraCentre_world_m.allFinite())
                     {
-                        meanObservationPosition_World_m += cameraCentre_World_m;
+                        meanObservationPosition_world_m += cameraCentre_world_m;
                         validObservationCount++;
                     }
                 }
@@ -1885,7 +1885,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     validObservationCount > 0U && p_groundPlane != nullptr &&
                     !groundPlaneIsBad2)
                 {
-                    meanObservationPosition_World_m /=
+                    meanObservationPosition_world_m /=
                         static_cast<double>(validObservationCount);
 
                     g2o::Plane3D groundPlaneGetGlobalEquation2{};
@@ -1899,16 +1899,16 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    Eigen::Vector4d groundEquation_World =
+                    Eigen::Vector4d groundEquation_world =
                         groundPlaneGetGlobalEquation2.coeffs();
                     const double groundNormalNorm =
-                        groundEquation_World.head<3>().norm();
+                        groundEquation_world.head<3>().norm();
 
-                    if (groundEquation_World.allFinite() &&
+                    if (groundEquation_world.allFinite() &&
                         groundNormalNorm > 1e-8)
                     {
-                        const Eigen::Vector3d groundNormal_World =
-                            groundEquation_World.head<3>() / groundNormalNorm;
+                        const Eigen::Vector3d groundNormal_world =
+                            groundEquation_world.head<3>() / groundNormalNorm;
 
                         std::vector<vs_graphs::core::semantic::Passage *>
                             atlasAllPassages3{};
@@ -1940,7 +1940,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                     existingWallOwnerCentroid2,
                                     clusterCentroid,
                                     p_passage,
-                                    groundNormal_World,
+                                    groundNormal_world,
                                     p_sysParams->roomSeg.passagePartition
                                         .openingMargin_m,
                                     p_sysParams->roomSeg.passagePartition
@@ -1969,26 +1969,26 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                 // getGlobalEquation cannot fail; continue as
                                 // before.
                             }
-                            Eigen::Vector4d passageEquation_World =
+                            Eigen::Vector4d passageEquation_world =
                                 passageGlobalEquation2.coeffs();
                             const double passageNormalNorm =
-                                passageEquation_World.head<3>().norm();
+                                passageEquation_world.head<3>().norm();
 
-                            if (!passageEquation_World.allFinite() ||
+                            if (!passageEquation_world.allFinite() ||
                                 passageNormalNorm < 1e-8)
                             {
                                 continue;
                             }
 
-                            passageEquation_World /= passageNormalNorm;
+                            passageEquation_world /= passageNormalNorm;
                             const double candidateSide_m =
-                                passageEquation_World.head<3>().dot(
+                                passageEquation_world.head<3>().dot(
                                     clusterCentroid) +
-                                passageEquation_World(3);
+                                passageEquation_world(3);
                             const double observationSide_m =
-                                passageEquation_World.head<3>().dot(
-                                    meanObservationPosition_World_m) +
-                                passageEquation_World(3);
+                                passageEquation_world.head<3>().dot(
+                                    meanObservationPosition_world_m) +
+                                passageEquation_world(3);
 
                             constexpr double minimumEvidenceSideDistance_m =
                                 0.10;
@@ -2281,7 +2281,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
         /*!
          * The semantic room centre is the mean of each wall's centroid
          * nudged INWARD along that wall's own room-facing normal
-         * (Room::getWallNormalTowardRoom_World(), oriented against the
+         * (Room::getWallNormalTowardRoom_world(), oriented against the
          * room's own current centroid before this update replaces it) by
          * a fixed offset, not the raw wall centroids themselves. A plain
          * mean of wall centroids is NOT guaranteed to land inside the room:
@@ -2297,7 +2297,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
         if (!roomWalls.empty())
         {
             constexpr double centroidInwardOffset_m   = 0.10;
-            Eigen::Vector3d  wallMeanCentroid_World_m = Eigen::Vector3d::Zero();
+            Eigen::Vector3d  wallMeanCentroid_world_m = Eigen::Vector3d::Zero();
             std::size_t      validWallCount           = 0U;
 
             for (vs_graphs::core::geometric::Plane *p_roomWall : roomWalls)
@@ -2327,37 +2327,37 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                const Eigen::Vector3d wallCentroid_World_m =
+                const Eigen::Vector3d wallCentroid_world_m =
                     roomWallGetCentroid.cast<double>();
 
-                if (!wallCentroid_World_m.allFinite())
+                if (!wallCentroid_world_m.allFinite())
                 {
                     continue;
                 }
 
-                std::optional<Eigen::Vector3d> inwardNormal_World{};
-                if (p_room->getWallNormalTowardRoom_World(p_roomWall,
-                                                          inwardNormal_World) !=
+                std::optional<Eigen::Vector3d> inwardNormal_world{};
+                if (p_room->getWallNormalTowardRoom_world(p_roomWall,
+                                                          inwardNormal_world) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getWallNormalTowardRoom_World cannot fail; continue as
+                    // getWallNormalTowardRoom_world cannot fail; continue as
                     // before.
                 }
 
-                const Eigen::Vector3d nudgedCentroid_World_m =
-                    inwardNormal_World
-                        ? wallCentroid_World_m +
-                              centroidInwardOffset_m * (*inwardNormal_World)
-                        : wallCentroid_World_m;
+                const Eigen::Vector3d nudgedCentroid_world_m =
+                    inwardNormal_world
+                        ? wallCentroid_world_m +
+                              centroidInwardOffset_m * (*inwardNormal_world)
+                        : wallCentroid_world_m;
 
-                wallMeanCentroid_World_m += nudgedCentroid_World_m;
+                wallMeanCentroid_world_m += nudgedCentroid_world_m;
                 validWallCount++;
             }
 
             if (validWallCount > 0U)
             {
-                const Eigen::Vector3d correctedCentroid_World_m =
-                    wallMeanCentroid_World_m /
+                const Eigen::Vector3d correctedCentroid_world_m =
+                    wallMeanCentroid_world_m /
                     static_cast<double>(validWallCount);
 
                 /*!
@@ -2378,8 +2378,8 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                  * several cycles, but one cycle's wall churn can no longer
                  * swing it far enough to flip another wall's side test.
                  */
-                Eigen::Vector3d previousCentroid_World_m{};
-                if (p_room->getCentroid(previousCentroid_World_m) !=
+                Eigen::Vector3d previousCentroid_world_m{};
+                if (p_room->getCentroid(previousCentroid_world_m) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -2389,14 +2389,14 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         __func__);
                 }
                 constexpr double      centroidDampingWeight = 0.25;
-                const Eigen::Vector3d dampedCentroid_World_m =
-                    previousCentroid_World_m.allFinite()
-                        ? (centroidDampingWeight * correctedCentroid_World_m +
+                const Eigen::Vector3d dampedCentroid_world_m =
+                    previousCentroid_world_m.allFinite()
+                        ? (centroidDampingWeight * correctedCentroid_world_m +
                            (1.0 - centroidDampingWeight) *
-                               previousCentroid_World_m)
-                        : correctedCentroid_World_m;
+                               previousCentroid_world_m)
+                        : correctedCentroid_world_m;
 
-                if (p_room->setCentroid(dampedCentroid_World_m) !=
+                if (p_room->setCentroid(dampedCentroid_world_m) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(

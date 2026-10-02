@@ -36,17 +36,17 @@ namespace semantic
 {
 
 PassageStatus
-    Passage::setKnownSideDirection(const Eigen::Vector3d &direction_World_in)
+    Passage::setKnownSideDirection(const Eigen::Vector3d &direction_world_in)
 {
-    const double directionNorm = direction_World_in.norm();
-    if (!direction_World_in.allFinite() || !std::isfinite(directionNorm) ||
+    const double directionNorm = direction_world_in.norm();
+    if (!direction_world_in.allFinite() || !std::isfinite(directionNorm) ||
         directionNorm < 1e-8)
     {
         return PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT;
     }
 
     std::lock_guard<std::mutex> lock(geometryMutex);
-    knownSideProvenance.direction_World = direction_World_in / directionNorm;
+    knownSideProvenance.direction_world = direction_world_in / directionNorm;
     return PassageStatus::PASSAGE_STATUS_SUCCESS;
 }
 

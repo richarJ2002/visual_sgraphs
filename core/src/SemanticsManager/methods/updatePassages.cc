@@ -323,8 +323,8 @@ SemanticsManagerStatus
                 }
             }
 
-            Eigen::Vector3d passageCentroid_World_m{};
-            if (passage->getCentroid(passageCentroid_World_m) !=
+            Eigen::Vector3d passageCentroid_world_m{};
+            if (passage->getCentroid(passageCentroid_world_m) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -360,10 +360,10 @@ SemanticsManagerStatus
 
                 /* The mid-plane offset keeps the face centroids symmetric. */
                 const double nearFaceDistance_m =
-                    firstFace.head<3>().dot(passageCentroid_World_m) +
+                    firstFace.head<3>().dot(passageCentroid_world_m) +
                     firstFace(3);
                 const double farFaceDistance_m =
-                    secondFace.head<3>().dot(passageCentroid_World_m) +
+                    secondFace.head<3>().dot(passageCentroid_world_m) +
                     secondFace(3);
 
                 const double midPlaneDistance_m =
@@ -373,7 +373,7 @@ SemanticsManagerStatus
                 midPlaneEquation.head<3>() = firstFace.head<3>();
                 midPlaneEquation(3) =
                     midPlaneDistance_m -
-                    firstFace.head<3>().dot(passageCentroid_World_m);
+                    firstFace.head<3>().dot(passageCentroid_world_m);
 
                 vs_graphs::core::geometric::Plane passagePlane;
                 if (passagePlane.setGlobalEquation(
@@ -418,17 +418,17 @@ SemanticsManagerStatus
                     /* Mid-plane deviates from vertical; fall back to the
                      * single-face anchoring for this cycle. */
                     Eigen::Vector4d referenceEquation = validFaceEquations[0];
-                    Eigen::Vector3d anchoredCentroid_World_m =
-                        passageCentroid_World_m;
+                    Eigen::Vector3d anchoredCentroid_world_m =
+                        passageCentroid_world_m;
                     const double wallResidual_m =
                         referenceEquation.head<3>().dot(
-                            anchoredCentroid_World_m) +
+                            anchoredCentroid_world_m) +
                         referenceEquation(3);
 
-                    anchoredCentroid_World_m -=
+                    anchoredCentroid_world_m -=
                         wallResidual_m * referenceEquation.head<3>();
 
-                    if (passage->setCentroid(anchoredCentroid_World_m) !=
+                    if (passage->setCentroid(anchoredCentroid_world_m) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -456,16 +456,16 @@ SemanticsManagerStatus
                  * Anchor the passage plane to that face.
                  */
                 Eigen::Vector4d referenceEquation = validFaceEquations[0];
-                Eigen::Vector3d anchoredCentroid_World_m =
-                    passageCentroid_World_m;
+                Eigen::Vector3d anchoredCentroid_world_m =
+                    passageCentroid_world_m;
                 const double wallResidual_m =
-                    referenceEquation.head<3>().dot(anchoredCentroid_World_m) +
+                    referenceEquation.head<3>().dot(anchoredCentroid_world_m) +
                     referenceEquation(3);
 
-                anchoredCentroid_World_m -=
+                anchoredCentroid_world_m -=
                     wallResidual_m * referenceEquation.head<3>();
 
-                if (passage->setCentroid(anchoredCentroid_World_m) !=
+                if (passage->setCentroid(anchoredCentroid_world_m) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(

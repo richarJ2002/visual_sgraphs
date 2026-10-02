@@ -42,13 +42,13 @@ namespace core
  *              and opening size come from, never in how the crossing test
  *              itself works.
  *
- * @param[in]   segmentStart_World_m_in     First endpoint, in metres.
- * @param[in]   segmentEnd_World_m_in       Second endpoint, in metres.
- * @param[in]   apertureEquation_World_in   Plane of the aperture.
- * @param[in]   apertureCentroid_World_m_in Centre of the aperture, in metres.
+ * @param[in]   segmentStart_world_m_in     First endpoint, in metres.
+ * @param[in]   segmentEnd_world_m_in       Second endpoint, in metres.
+ * @param[in]   apertureEquation_world_in   Plane of the aperture.
+ * @param[in]   apertureCentroid_world_m_in Centre of the aperture, in metres.
  * @param[in]   apertureWidth_m_in          Width of the opening, in metres.
  * @param[in]   apertureHeight_m_in         Height of the opening, in metres.
- * @param[in]   groundNormal_World_in       Unit ground normal.
+ * @param[in]   groundNormal_world_in       Unit ground normal.
  * @param[in]   openingMargin_m_in          Aperture expansion used for noisy
  *                                          geometry, in metres.
  * @param[in]   minimumSideDistance_m_in    Required endpoint distance from the
@@ -58,42 +58,42 @@ namespace core
  * @return      SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus
-    segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
-                           const Eigen::Vector3d &segmentEnd_World_m_in,
-                           const Eigen::Vector4d &apertureEquation_World_in,
-                           const Eigen::Vector3d &apertureCentroid_World_m_in,
+    segmentCrossesAperture(const Eigen::Vector3d &segmentStart_world_m_in,
+                           const Eigen::Vector3d &segmentEnd_world_m_in,
+                           const Eigen::Vector4d &apertureEquation_world_in,
+                           const Eigen::Vector3d &apertureCentroid_world_m_in,
                            const double           apertureWidth_m_in,
                            const double           apertureHeight_m_in,
-                           const Eigen::Vector3d &groundNormal_World_in,
+                           const Eigen::Vector3d &groundNormal_world_in,
                            const double           openingMargin_m_in,
                            const double           minimumSideDistance_m_in,
                            bool                  &crossesAperture_out)
 {
-    if (!segmentStart_World_m_in.allFinite() ||
-        !segmentEnd_World_m_in.allFinite() ||
-        !apertureCentroid_World_m_in.allFinite())
+    if (!segmentStart_world_m_in.allFinite() ||
+        !segmentEnd_world_m_in.allFinite() ||
+        !apertureCentroid_world_m_in.allFinite())
     {
         crossesAperture_out = false;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    Eigen::Vector4d apertureEquation_World = apertureEquation_World_in;
-    const double apertureNormalNorm = apertureEquation_World.head<3>().norm();
+    Eigen::Vector4d apertureEquation_world = apertureEquation_world_in;
+    const double apertureNormalNorm = apertureEquation_world.head<3>().norm();
 
-    if (!apertureEquation_World.allFinite() || apertureNormalNorm < 1e-8)
+    if (!apertureEquation_world.allFinite() || apertureNormalNorm < 1e-8)
     {
         crossesAperture_out = false;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    apertureEquation_World /= apertureNormalNorm;
-    const Eigen::Vector3d apertureNormal_World =
-        apertureEquation_World.head<3>();
+    apertureEquation_world /= apertureNormalNorm;
+    const Eigen::Vector3d apertureNormal_world =
+        apertureEquation_world.head<3>();
     const double startSide_m =
-        apertureNormal_World.dot(segmentStart_World_m_in) +
-        apertureEquation_World(3);
-    const double endSide_m = apertureNormal_World.dot(segmentEnd_World_m_in) +
-                             apertureEquation_World(3);
+        apertureNormal_world.dot(segmentStart_world_m_in) +
+        apertureEquation_world(3);
+    const double endSide_m = apertureNormal_world.dot(segmentEnd_world_m_in) +
+                             apertureEquation_world(3);
 
     if (startSide_m * endSide_m >= 0.0 ||
         std::abs(startSide_m) < minimumSideDistance_m_in ||
@@ -112,22 +112,22 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    const Eigen::Vector3d intersection_World_m =
-        segmentStart_World_m_in +
-        interpolation * (segmentEnd_World_m_in - segmentStart_World_m_in);
+    const Eigen::Vector3d intersection_world_m =
+        segmentStart_world_m_in +
+        interpolation * (segmentEnd_world_m_in - segmentStart_world_m_in);
 
-    Eigen::Vector3d apertureOffset_World_m =
-        intersection_World_m - apertureCentroid_World_m_in;
-    apertureOffset_World_m -=
-        apertureOffset_World_m.dot(apertureNormal_World) * apertureNormal_World;
+    Eigen::Vector3d apertureOffset_world_m =
+        intersection_world_m - apertureCentroid_world_m_in;
+    apertureOffset_world_m -=
+        apertureOffset_world_m.dot(apertureNormal_world) * apertureNormal_world;
 
     const double verticalOffset_m =
-        std::abs(apertureOffset_World_m.dot(groundNormal_World_in));
-    const Eigen::Vector3d horizontalOffset_World_m =
-        apertureOffset_World_m -
-        apertureOffset_World_m.dot(groundNormal_World_in) *
-            groundNormal_World_in;
-    const double horizontalOffset_m = horizontalOffset_World_m.norm();
+        std::abs(apertureOffset_world_m.dot(groundNormal_world_in));
+    const Eigen::Vector3d horizontalOffset_world_m =
+        apertureOffset_world_m -
+        apertureOffset_world_m.dot(groundNormal_world_in) *
+            groundNormal_world_in;
+    const double horizontalOffset_m = horizontalOffset_world_m.norm();
 
     crossesAperture_out =
         horizontalOffset_m <= 0.5 * apertureWidth_m_in + openingMargin_m_in &&

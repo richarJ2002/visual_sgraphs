@@ -85,7 +85,7 @@ struct RoomRecord
      *  pre-existing, mutex-protected, non-racy characteristic shared by
      *  every other centroid consumer in this codebase, not a defect
      *  introduced by capture. */
-    Eigen::Vector3d centroid_World_m{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d centroid_world_m{Eigen::Vector3d::Zero()};
 
     /*! @brief Room::getBoundaryStatus() at capture time. */
     Room::BoundaryStatus boundaryStatus{Room::BoundaryStatus::UNOBSERVED};
@@ -94,7 +94,7 @@ struct RoomRecord
      *  only while boundaryStatus == COMPLETE, but this snapshot copies
      *  whatever is present without gating on status -- interpretation is
      *  the evaluator's responsibility. */
-    std::vector<Eigen::Vector3d> boundaryCorners_World_m;
+    std::vector<Eigen::Vector3d> boundaryCorners_world_m;
 
     /*! @brief Populated every cycle regardless of boundaryStatus. */
     std::vector<Room::ObservationGap> observationGaps;

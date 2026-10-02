@@ -191,8 +191,8 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            Eigen::Vector3f cameraCenter_World{};
-            if (keyFrames[keyFrameIndex]->getCameraCenter(cameraCenter_World) !=
+            Eigen::Vector3f cameraCenter_world{};
+            if (keyFrames[keyFrameIndex]->getCameraCenter(cameraCenter_world) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -210,8 +210,8 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                 {
                     if ((*vit)->id < keyFrames[keyFrameIndex]->id)
                         continue;
-                    Eigen::Vector3f cameraCenter2_World{};
-                    if ((*vit)->getCameraCenter(cameraCenter2_World) !=
+                    Eigen::Vector3f cameraCenter2_world{};
+                    if ((*vit)->getCameraCenter(cameraCenter2_world) !=
                         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -220,12 +220,12 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    glVertex3f(cameraCenter_World(0),
-                               cameraCenter_World(1),
-                               cameraCenter_World(2));
-                    glVertex3f(cameraCenter2_World(0),
-                               cameraCenter2_World(1),
-                               cameraCenter2_World(2));
+                    glVertex3f(cameraCenter_world(0),
+                               cameraCenter_world(1),
+                               cameraCenter_world(2));
+                    glVertex3f(cameraCenter2_world(0),
+                               cameraCenter2_world(1),
+                               cameraCenter2_world(2));
                 }
             }
 
@@ -251,9 +251,9 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                glVertex3f(cameraCenter_World(0),
-                           cameraCenter_World(1),
-                           cameraCenter_World(2));
+                glVertex3f(cameraCenter_world(0),
+                           cameraCenter_world(1),
+                           cameraCenter_world(2));
                 glVertex3f(Owp(0), Owp(1), Owp(2));
             }
 
@@ -284,9 +284,9 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                glVertex3f(cameraCenter_World(0),
-                           cameraCenter_World(1),
-                           cameraCenter_World(2));
+                glVertex3f(cameraCenter_world(0),
+                           cameraCenter_world(1),
+                           cameraCenter_world(2));
                 glVertex3f(Owl(0), Owl(1), Owl(2));
             }
         }
@@ -315,8 +315,8 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
              keyFrameIndex++)
         {
             KeyFrame       *p_drawnKeyFrame = keyFrames[keyFrameIndex];
-            Eigen::Vector3f cameraCenter_World{};
-            if (p_drawnKeyFrame->getCameraCenter(cameraCenter_World) !=
+            Eigen::Vector3f cameraCenter_world{};
+            if (p_drawnKeyFrame->getCameraCenter(cameraCenter_world) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -337,9 +337,9 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                glVertex3f(cameraCenter_World(0),
-                           cameraCenter_World(1),
-                           cameraCenter_World(2));
+                glVertex3f(cameraCenter_world(0),
+                           cameraCenter_world(1),
+                           cameraCenter_world(2));
                 glVertex3f(Owp(0), Owp(1), Owp(2));
             }
         }

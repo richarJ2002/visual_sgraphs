@@ -59,7 +59,7 @@ namespace
 
 /*! Builds a wall `geometric::Plane` with a genuine, production-computed
  * geometry snapshot: a flat rectangular grid of points, spanning [-halfU,
- * halfU] along axisU_World and [-halfV, halfV] along axisV_World, offset from
+ * halfU] along axisU_world and [-halfV, halfV] along axisV_world, offset from
  * the plane's own centroid, all exactly on-plane. Mirrors
  * test_RoomContextPersist.cpp's makeRefitWallPlane pattern (feed a synthetic
  * cloud through the real `geometric::Plane::updateSizeOfPlane()` path, the same
@@ -68,9 +68,9 @@ namespace
 void makeWallWithGridCloud(geometric::Plane      &wall_inout,
                            int                    id_in,
                            Map                   *p_map_in,
-                           const Eigen::Vector4d &equation_World_in,
-                           const Eigen::Vector3d &axisU_World_in,
-                           const Eigen::Vector3d &axisV_World_in,
+                           const Eigen::Vector4d &equation_world_in,
+                           const Eigen::Vector3d &axisU_world_in,
+                           const Eigen::Vector3d &axisV_world_in,
                            double                 halfU_m_in,
                            double                 halfV_m_in)
 {
@@ -87,7 +87,7 @@ void makeWallWithGridCloud(geometric::Plane      &wall_inout,
     ASSERT_EQ((wall_inout.castWeightedVote(geometric::Plane::PlaneVariant::WALL,
                                            1.0)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    ASSERT_EQ((wall_inout.setGlobalEquation(g2o::Plane3D(equation_World_in))),
+    ASSERT_EQ((wall_inout.setGlobalEquation(g2o::Plane3D(equation_world_in))),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ((wall_inout.setCentroid(Eigen::Vector3d::Zero())),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
@@ -105,13 +105,13 @@ void makeWallWithGridCloud(geometric::Plane      &wall_inout,
             const double v = -halfV_m_in + (2.0 * halfV_m_in) *
                                                static_cast<double>(vIndex) /
                                                static_cast<double>(steps - 1);
-            const Eigen::Vector3d point_World =
-                u * axisU_World_in + v * axisV_World_in;
+            const Eigen::Vector3d point_world =
+                u * axisU_world_in + v * axisV_world_in;
 
             pcl::PointXYZRGBA pclPoint;
-            pclPoint.x = static_cast<float>(point_World.x());
-            pclPoint.y = static_cast<float>(point_World.y());
-            pclPoint.z = static_cast<float>(point_World.z());
+            pclPoint.x = static_cast<float>(point_world.x());
+            pclPoint.y = static_cast<float>(point_world.y());
+            pclPoint.z = static_cast<float>(point_world.z());
             cloud->push_back(pclPoint);
         }
     }
@@ -200,29 +200,29 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostOnObliqueWall)
     ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
-    const Eigen::Vector3d normal_World(0.8, 0.6, 0.0);
-    const Eigen::Vector3d groundNormal_World(0.0, 0.0, 1.0);
-    const Eigen::Vector3d horizontalTangent_World =
-        groundNormal_World.cross(normal_World).normalized();
-    const Eigen::Vector3d vertical_World(0.0, 0.0, 1.0);
+    const Eigen::Vector3d normal_world(0.8, 0.6, 0.0);
+    const Eigen::Vector3d groundNormal_world(0.0, 0.0, 1.0);
+    const Eigen::Vector3d horizontalTangent_world =
+        groundNormal_world.cross(normal_world).normalized();
+    const Eigen::Vector3d vertical_world(0.0, 0.0, 1.0);
 
     geometric::Plane wall;
     makeWallWithGridCloud(wall,
                           1,
                           p_map,
-                          Eigen::Vector4d(normal_World.x(),
-                                          normal_World.y(),
-                                          normal_World.z(),
+                          Eigen::Vector4d(normal_world.x(),
+                                          normal_world.y(),
+                                          normal_world.z(),
                                           0.0),
-                          horizontalTangent_World,
-                          vertical_World,
+                          horizontalTangent_world,
+                          vertical_world,
                           0.04,
                           1.1);
 
     bool admissible{};
     ASSERT_EQ((manager.evaluateWallAdmissionEvidenceAdmissibleForTest(
                   &wall,
-                  groundNormal_World,
+                  groundNormal_world,
                   admissible)),
               SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_FALSE(admissible);
@@ -231,7 +231,7 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostOnObliqueWall)
 TEST(WallAdmission,
      EvidenceGateStillAdmitsGenerouslySizedWallWithoutGroundPlane)
 {
-    /* Early in a mission, no ground plane may exist yet: groundNormal_World
+    /* Early in a mission, no ground plane may exist yet: groundNormal_world
      * is the zero vector, and the gate must fall back to its previous
      * behaviour rather than reject every wall outright. A generously-sized
      * (2 m x 2 m) cloud clears the width/height thresholds under any
@@ -268,13 +268,13 @@ TEST(WallAdmission,
 namespace
 {
 
-/*! A default-constructed KeyFrame positioned at cameraCenter_World via
+/*! A default-constructed KeyFrame positioned at cameraCenter_world via
  * setPose(). Only isBad()/getCameraCenter() are exercised by the code under
  * test, both safe on a default-constructed KeyFrame (KeyFrame's default
  * constructor is a plain member-initialiser list; SetPose/GetCameraCenter
  * only touch mTcw/mTwc under poseMutex). */
 std::unique_ptr<KeyFrame>
-    makeKeyFrameAt(const Eigen::Vector3d &cameraCenter_World_in)
+    makeKeyFrameAt(const Eigen::Vector3d &cameraCenter_world_in)
 {
     /* setPose() takes Tcw (world-to-camera): with identity rotation,
      * getCameraCenter() (== Twc.translation()) works out to -Tcw.translation.
@@ -282,7 +282,7 @@ std::unique_ptr<KeyFrame>
      * actually asked for. */
     std::unique_ptr<KeyFrame> keyFrame = std::make_unique<KeyFrame>();
     if (keyFrame->setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                                       -cameraCenter_World_in.cast<float>())) !=
+                                       -cameraCenter_world_in.cast<float>())) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -334,11 +334,11 @@ TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
 
     /* Four keyframes, all confidently on the +X side (x=1.0, well past the
      * 0.10 m reliable-side-distance floor). isWallFaceForeignToRoom() reads
-     * face identity from the single stamped observationOrigin_World_m (the
+     * face identity from the single stamped observationOrigin_world_m (the
      * 2026-09-04 rewrite), not from observation history -- stamp it here to
      * match what GeoSemHelpers::createMapPlane() does in production. */
     ASSERT_EQ(
-        (wall->setObservationOrigin_World(Eigen::Vector3d(1.0, 0.0, 0.0))),
+        (wall->setObservationOrigin_world(Eigen::Vector3d(1.0, 0.0, 0.0))),
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     std::vector<std::unique_ptr<KeyFrame>> keyFrames;
     for (int index = 0; index < 4; ++index)
@@ -382,7 +382,7 @@ TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
 
     /* Same four keyframes' side as the room this time. */
     ASSERT_EQ(
-        (wall->setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+        (wall->setObservationOrigin_world(Eigen::Vector3d(-1.0, 0.0, 0.0))),
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     std::vector<std::unique_ptr<KeyFrame>> keyFrames;
     for (int index = 0; index < 4; ++index)
@@ -687,13 +687,13 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
 }
 
 /*! Builds a long, admissible WALL `geometric::Plane` whose horizontal
- * (in-plane) span runs along axisAlong_World_in through the origin, at a given
+ * (in-plane) span runs along axisAlong_world_in through the origin, at a given
  * normal direction, wide enough to produce a decisive interior crossing. */
 std::unique_ptr<geometric::Plane>
     makeLongWallThroughOrigin(int                    id_in,
                               Map                   *p_map_in,
-                              const Eigen::Vector3d &normal_World_in,
-                              const Eigen::Vector3d &axisAlong_World_in)
+                              const Eigen::Vector3d &normal_world_in,
+                              const Eigen::Vector3d &axisAlong_world_in)
 {
     std::unique_ptr<geometric::Plane> wall =
         std::make_unique<geometric::Plane>();
@@ -728,9 +728,9 @@ std::unique_ptr<geometric::Plane>
                      __func__);
     }
     if (wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(
-            normal_World_in.x(),
-            normal_World_in.y(),
-            normal_World_in.z(),
+            normal_world_in.x(),
+            normal_world_in.y(),
+            normal_world_in.z(),
             0.0))) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -758,12 +758,12 @@ std::unique_ptr<geometric::Plane>
         {
             const double height = 1.0 + 1.0 * static_cast<double>(heightIndex) /
                                             static_cast<double>(steps - 1);
-            const Eigen::Vector3d point_World =
-                along * axisAlong_World_in + Eigen::Vector3d(0.0, 0.0, height);
+            const Eigen::Vector3d point_world =
+                along * axisAlong_world_in + Eigen::Vector3d(0.0, 0.0, height);
             pcl::PointXYZRGBA pclPoint;
-            pclPoint.x = static_cast<float>(point_World.x());
-            pclPoint.y = static_cast<float>(point_World.y());
-            pclPoint.z = static_cast<float>(point_World.z());
+            pclPoint.x = static_cast<float>(point_world.x());
+            pclPoint.y = static_cast<float>(point_world.y());
+            pclPoint.z = static_cast<float>(point_world.z());
             cloud->push_back(pclPoint);
         }
     }
@@ -910,7 +910,7 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
     ASSERT_EQ((wall.setCentroid(Eigen::Vector3d(1.5, 0.0, 0.0))),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ(
-        (wall.setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+        (wall.setObservationOrigin_world(Eigen::Vector3d(-1.0, 0.0, 0.0))),
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     /* Pre-place the wall as the aperture backstop would have routed it. */
@@ -985,7 +985,7 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     ASSERT_EQ((wall.setCentroid(Eigen::Vector3d(1.5, 0.0, 0.0))),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ(
-        (wall.setObservationOrigin_World(Eigen::Vector3d(-1.0, 0.0, 0.0))),
+        (wall.setObservationOrigin_world(Eigen::Vector3d(-1.0, 0.0, 0.0))),
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
     ASSERT_EQ((prospective.setWalls(&wall)),

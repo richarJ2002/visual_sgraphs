@@ -56,7 +56,7 @@ struct FiniteWallSegment2d
      * @frame       World, projected onto the two ground axes
      * @units       metres
      */
-    Eigen::Vector2d start_World_m = Eigen::Vector2d::Zero();
+    Eigen::Vector2d start_world_m = Eigen::Vector2d::Zero();
 
     /*!
      * @brief       Second end of the wall on the ground plane.
@@ -64,7 +64,7 @@ struct FiniteWallSegment2d
      * @frame       World, projected onto the two ground axes
      * @units       metres
      */
-    Eigen::Vector2d end_World_m = Eigen::Vector2d::Zero();
+    Eigen::Vector2d end_world_m = Eigen::Vector2d::Zero();
 
     /*!
      * @brief       Distance between the two ends.
@@ -136,20 +136,20 @@ struct WallAdmissionEvidence
 struct WallLoopClosure
 {
     bool                         hasOpenBoundary = true;
-    std::vector<Eigen::Vector2d> corners_World_m;
+    std::vector<Eigen::Vector2d> corners_world_m;
 };
 
 [[nodiscard]] SemanticsManagerStatus hasSeparatingFiniteWall(
-    const std::vector<geometric::Plane *> &wallList_World_in,
-    const Eigen::Vector3d                 &firstPoint_World_m_in,
-    const Eigen::Vector3d                 &secondPoint_World_m_in,
+    const std::vector<geometric::Plane *> &wallList_world_in,
+    const Eigen::Vector3d                 &firstPoint_world_m_in,
+    const Eigen::Vector3d                 &secondPoint_world_m_in,
     const double                           finiteBoundsMargin_m_in,
     bool                                  &hasSeparatingFiniteWall_out);
 
 [[nodiscard]] SemanticsManagerStatus
     evaluateWallAdmissionEvidence(geometric::Plane          *p_wall_in,
                                   const types::SystemParams *p_systemParams_in,
-                                  const Eigen::Vector3d &groundNormal_World_in,
+                                  const Eigen::Vector3d &groundNormal_world_in,
                                   WallAdmissionEvidence &admissionEvidence_out);
 
 [[nodiscard]] SemanticsManagerStatus
@@ -159,9 +159,9 @@ struct WallLoopClosure
 
 [[nodiscard]] SemanticsManagerStatus
     buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
-                             const Eigen::Vector3d &groundNormal_World_in,
-                             const Eigen::Vector3d &groundAxisU_World_in,
-                             const Eigen::Vector3d &groundAxisV_World_in,
+                             const Eigen::Vector3d &groundNormal_world_in,
+                             const Eigen::Vector3d &groundAxisU_world_in,
+                             const Eigen::Vector3d &groundAxisV_world_in,
                              const double           endpointTrimRatio_in,
                              const double           minimumWallLength_m_in,
                              FiniteWallSegment2d   &segment_inout,
@@ -170,13 +170,13 @@ struct WallLoopClosure
 [[nodiscard]] SemanticsManagerStatus
     intersectSupportingLines(const FiniteWallSegment2d &firstSegment_in,
                              const FiniteWallSegment2d &secondSegment_in,
-                             Eigen::Vector2d &intersection_World_m_out,
+                             Eigen::Vector2d &intersection_world_m_out,
                              double          &firstParameter_out,
                              double          &secondParameter_out,
                              bool            &hasIntersection_out);
 
 [[nodiscard]] SemanticsManagerStatus
-    pointToSegmentDistance_m(const Eigen::Vector2d     &point_World_m_in,
+    pointToSegmentDistance_m(const Eigen::Vector2d     &point_world_m_in,
                              const FiniteWallSegment2d &segment_in,
                              double                    &distance_m_out);
 
@@ -198,51 +198,51 @@ struct WallLoopClosure
     double gapThreshold_rad_in = 100.0 * M_PI / 180.0);
 
 [[nodiscard]] SemanticsManagerStatus computePolygonArea_m2(
-    const std::vector<Eigen::Vector2d> &polygonVertices_World_m_in,
+    const std::vector<Eigen::Vector2d> &polygonVertices_world_m_in,
     double                             &polygonArea_m2_out);
 
 [[nodiscard]] SemanticsManagerStatus
-    segmentCrossesAperture(const Eigen::Vector3d &segmentStart_World_m_in,
-                           const Eigen::Vector3d &segmentEnd_World_m_in,
-                           const Eigen::Vector4d &apertureEquation_World_in,
-                           const Eigen::Vector3d &apertureCentroid_World_m_in,
+    segmentCrossesAperture(const Eigen::Vector3d &segmentStart_world_m_in,
+                           const Eigen::Vector3d &segmentEnd_world_m_in,
+                           const Eigen::Vector4d &apertureEquation_world_in,
+                           const Eigen::Vector3d &apertureCentroid_world_m_in,
                            const double           apertureWidth_m_in,
                            const double           apertureHeight_m_in,
-                           const Eigen::Vector3d &groundNormal_World_in,
+                           const Eigen::Vector3d &groundNormal_world_in,
                            const double           openingMargin_m_in,
                            const double           minimumSideDistance_m_in,
                            bool                  &crossesAperture_out);
 
 [[nodiscard]] SemanticsManagerStatus
-    segmentCrossesPassageOpening(const Eigen::Vector3d &segmentStart_World_m_in,
-                                 const Eigen::Vector3d &segmentEnd_World_m_in,
+    segmentCrossesPassageOpening(const Eigen::Vector3d &segmentStart_world_m_in,
+                                 const Eigen::Vector3d &segmentEnd_world_m_in,
                                  semantic::Passage     *p_passage_in,
-                                 const Eigen::Vector3d &groundNormal_World_in,
+                                 const Eigen::Vector3d &groundNormal_world_in,
                                  const double           openingMargin_m_in,
                                  const double minimumSideDistance_m_in,
                                  bool        &crossesPassageOpening_out,
                                  const bool   requirePassable_in = true);
 
 [[nodiscard]] SemanticsManagerStatus segmentCrossesOpenPassageEvidence(
-    const Eigen::Vector3d &segmentStart_World_m_in,
-    const Eigen::Vector3d &segmentEnd_World_m_in,
+    const Eigen::Vector3d &segmentStart_world_m_in,
+    const Eigen::Vector3d &segmentEnd_world_m_in,
     geometric::Plane      *p_evidenceSupportingWall_in,
-    const Eigen::Vector3d &evidenceCentroid_World_m_in,
+    const Eigen::Vector3d &evidenceCentroid_world_m_in,
     const double           evidenceOpeningRadius_m_in,
     const double           evidenceHeightSpan_m_in,
-    const Eigen::Vector3d &groundNormal_World_in,
+    const Eigen::Vector3d &groundNormal_world_in,
     const double           openingMargin_m_in,
     const double           minimumSideDistance_m_in,
     bool                  &crossesOpenPassageEvidence_out);
 
 [[nodiscard]] SemanticsManagerStatus segmentCrossesForeignWall(
-    const Eigen::Vector3d &segmentStart_World_m_in,
-    const Eigen::Vector3d &segmentEnd_World_m_in,
+    const Eigen::Vector3d &segmentStart_world_m_in,
+    const Eigen::Vector3d &segmentEnd_world_m_in,
     const std::vector<vs_graphs::core::semantic::Room *> &excludedRooms_in,
     const std::vector<vs_graphs::core::semantic::Room *> &allRooms_in,
-    const Eigen::Vector3d                                &groundAxisU_World_in,
-    const Eigen::Vector3d                                &groundAxisV_World_in,
-    const Eigen::Vector3d                                &groundNormal_World_in,
+    const Eigen::Vector3d                                &groundAxisU_world_in,
+    const Eigen::Vector3d                                &groundAxisV_world_in,
+    const Eigen::Vector3d                                &groundNormal_world_in,
     const double                                          endpointTrimRatio_in,
     const double minimumWallLength_m_in,
     bool        &crossesForeignWall_out);
@@ -254,8 +254,8 @@ struct WallLoopClosure
 
 [[nodiscard]] SemanticsManagerStatus
     projectPlaneFootprintOntoSharedAxes(geometric::Plane      *p_plane_in,
-                                        const Eigen::Vector3d &axisU_World_in,
-                                        const Eigen::Vector3d &axisV_World_in,
+                                        const Eigen::Vector3d &axisU_world_in,
+                                        const Eigen::Vector3d &axisV_world_in,
                                         double                &minimumU_m_out,
                                         double                &maximumU_m_out,
                                         double                &minimumV_m_out,
@@ -268,7 +268,7 @@ struct WallLoopClosure
                               double                 minimumThickness_m_in,
                               double                 maximumThickness_m_in,
                               double                 minimumOverlapRatio_in,
-                              const Eigen::Vector3d &groundNormal_World_in,
+                              const Eigen::Vector3d &groundNormal_world_in,
                               bool &arePlausibleTwinWallFaces_out);
 
 } // namespace core

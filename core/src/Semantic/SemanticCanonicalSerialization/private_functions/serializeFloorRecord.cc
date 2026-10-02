@@ -56,12 +56,12 @@ nlohmann::json serializeFloorRecord(const FloorRecord &value_in,
 
     if (includeGeometry_in)
     {
-        json["centroid_World_m"] = serializeVector3d(value_in.centroid_World_m);
+        json["centroid_World_m"] = serializeVector3d(value_in.centroid_world_m);
         if (value_in.planeIdentity.has_value())
         {
             nlohmann::json planeIdentityJson;
             planeIdentityJson["equation_World"] =
-                serializeVector4d(value_in.planeIdentity->equation_World);
+                serializeVector4d(value_in.planeIdentity->equation_world);
             planeIdentityJson["finiteSupportCount"] =
                 value_in.planeIdentity->finiteSupportCount;
             planeIdentityJson["observationCount"] =

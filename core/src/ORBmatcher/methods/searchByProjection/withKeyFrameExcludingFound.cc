@@ -57,7 +57,7 @@ ORBmatcherStatus
                      "fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector3f cameraCenter_World =
+    Eigen::Vector3f cameraCenter_world =
         pose_worldToCamera.inverse().translation();
 
     // Rotation Histogram (to check rotation consistency)
@@ -120,7 +120,7 @@ ORBmatcherStatus
                     continue;
 
                 // Compute predicted scale level
-                Eigen::Vector3f PO         = x3Dw - cameraCenter_World;
+                Eigen::Vector3f PO         = x3Dw - cameraCenter_world;
                 float           distance3d = PO.norm();
 
                 float maximumDistance{};

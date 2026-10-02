@@ -65,8 +65,8 @@ SemanticsManagerStatus
             std::lock_guard<std::mutex> currentRoomLock(currentRoomMutex);
             currentRoomId = -1;
         }
-        currentCameraCenter_World_m  = Eigen::Vector3d::Zero();
-        previousCameraCenter_World_m = Eigen::Vector3d::Zero();
+        currentCameraCenter_world_m  = Eigen::Vector3d::Zero();
+        previousCameraCenter_world_m = Eigen::Vector3d::Zero();
         hasCameraCenter              = false;
         p_cameraCenterMap            = p_activeMap_in;
         lastTraversalFrameId         = 0U;
@@ -123,12 +123,12 @@ SemanticsManagerStatus
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            const Eigen::Vector3d correctedCenter_World_m =
+            const Eigen::Vector3d correctedCenter_world_m =
                 keyFrameCameraCenter.cast<double>();
-            if (correctedCenter_World_m.allFinite())
+            if (correctedCenter_world_m.allFinite())
             {
-                currentCameraCenter_World_m  = correctedCenter_World_m;
-                previousCameraCenter_World_m = correctedCenter_World_m;
+                currentCameraCenter_world_m  = correctedCenter_world_m;
+                previousCameraCenter_world_m = correctedCenter_world_m;
                 hasCameraCenter              = true;
                 p_cameraCenterMap            = p_activeMap_in;
             }

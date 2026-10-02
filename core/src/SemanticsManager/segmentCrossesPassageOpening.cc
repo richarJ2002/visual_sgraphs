@@ -36,10 +36,10 @@ namespace core
 /*!
  * @brief Tests whether a segment crosses a passage aperture.
  *
- * @param[in] segmentStart_World_m_in First endpoint in the active map frame.
- * @param[in] segmentEnd_World_m_in Second endpoint in the active map frame.
+ * @param[in] segmentStart_world_m_in First endpoint in the active map frame.
+ * @param[in] segmentEnd_world_m_in Second endpoint in the active map frame.
  * @param[in] p_passage_in Passage defining the finite aperture.
- * @param[in] groundNormal_World_in Unit ground normal in the active map frame.
+ * @param[in] groundNormal_world_in Unit ground normal in the active map frame.
  * @param[in] openingMargin_m_in Aperture expansion used for noisy geometry.
  * @param[in] minimumSideDistance_m_in Required endpoint distance from plane.
  * @param[out] crossesPassageOpening_out True when the segment crosses inside
@@ -51,10 +51,10 @@ namespace core
  * @return SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus
-    segmentCrossesPassageOpening(const Eigen::Vector3d &segmentStart_World_m_in,
-                                 const Eigen::Vector3d &segmentEnd_World_m_in,
+    segmentCrossesPassageOpening(const Eigen::Vector3d &segmentStart_world_m_in,
+                                 const Eigen::Vector3d &segmentEnd_world_m_in,
                                  semantic::Passage     *p_passage_in,
-                                 const Eigen::Vector3d &groundNormal_World_in,
+                                 const Eigen::Vector3d &groundNormal_world_in,
                                  const double           openingMargin_m_in,
                                  const double minimumSideDistance_m_in,
                                  bool        &crossesPassageOpening_out,
@@ -114,13 +114,13 @@ SemanticsManagerStatus
                      __func__);
     }
     bool crossesAperture{};
-    if (segmentCrossesAperture(segmentStart_World_m_in,
-                               segmentEnd_World_m_in,
+    if (segmentCrossesAperture(segmentStart_world_m_in,
+                               segmentEnd_world_m_in,
                                passage_inGlobalEquation.coeffs(),
                                passage_inCentroid,
                                passage_inWidth,
                                passage_inHeight,
-                               groundNormal_World_in,
+                               groundNormal_world_in,
                                openingMargin_m_in,
                                minimumSideDistance_m_in,
                                crossesAperture) !=

@@ -44,7 +44,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
     vs_graphs::core::geometric::Plane *p_doorPlane_in,
     vs_graphs::core::geometric::Plane *p_wallPlane_in,
     bool                               isOpenPassage_in,
-    Eigen::Vector3d                    passageCentroid_World_m_in)
+    Eigen::Vector3d                    passageCentroid_world_m_in)
 {
     /* ---------------------------------------------------------------------- *
      * VALIDATE REQUIRED INPUTS
@@ -327,7 +327,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
          * No door exists. This is an open passage detected from the camera
          * trajectory crossing a wall plane.
          */
-        centroid = passageCentroid_World_m_in;
+        centroid = passageCentroid_world_m_in;
 
         /* Extract the plane coefficients of the wall */
         g2o::Plane3D wallPlaneGetGlobalEquation{};

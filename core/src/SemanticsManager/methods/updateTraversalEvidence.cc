@@ -133,7 +133,7 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                      __func__);
     }
 
-    Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
+    Eigen::Vector3d groundNormal_world = Eigen::Vector3d::Zero();
 
     bool hasValidGroundNormal = false;
 
@@ -165,7 +165,7 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
             groundNormalNorm > 1e-8)
         {
             groundEquation /= groundNormalNorm;
-            groundNormal_World   = groundEquation.head<3>();
+            groundNormal_world   = groundEquation.head<3>();
             hasValidGroundNormal = true;
         }
     }
@@ -207,8 +207,8 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    currentCameraCenter_World_m = seedKeyFrameCameraCenter.cast<double>();
-    if (!currentCameraCenter_World_m.allFinite())
+    currentCameraCenter_world_m = seedKeyFrameCameraCenter.cast<double>();
+    if (!currentCameraCenter_world_m.allFinite())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
@@ -230,19 +230,19 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const Eigen::Vector3d nextCameraCenter_World_m =
+        const Eigen::Vector3d nextCameraCenter_world_m =
             keyFrameCameraCenter.cast<double>();
 
         lastTraversalFrameId    = p_keyFrame->frameId;
         lastTraversalKeyFrameId = p_keyFrame->id;
 
-        if (!nextCameraCenter_World_m.allFinite())
+        if (!nextCameraCenter_world_m.allFinite())
         {
             continue;
         }
 
-        previousCameraCenter_World_m = currentCameraCenter_World_m;
-        currentCameraCenter_World_m  = nextCameraCenter_World_m;
+        previousCameraCenter_world_m = currentCameraCenter_world_m;
+        currentCameraCenter_world_m  = nextCameraCenter_world_m;
 
         for (vs_graphs::core::semantic::Passage *p_passage : passages)
         {
@@ -266,10 +266,10 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
              * the passage is passable, the UAV has flown through the opening:
              * record traversal evidence. */
             bool crossesPassageOpening{};
-            if (segmentCrossesPassageOpening(previousCameraCenter_World_m,
-                                             currentCameraCenter_World_m,
+            if (segmentCrossesPassageOpening(previousCameraCenter_world_m,
+                                             currentCameraCenter_world_m,
                                              p_passage,
-                                             groundNormal_World,
+                                             groundNormal_world,
                                              openingMargin_m,
                                              minimumSideDistance_m,
                                              crossesPassageOpening,
@@ -338,7 +338,7 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                         passageEquation /= normalNorm;
                         const double observationSide =
                             passageEquation.head<3>().dot(
-                                previousCameraCenter_World_m) +
+                                previousCameraCenter_world_m) +
                             passageEquation(3);
                         if (std::abs(observationSide) > minimumSideDistance_m)
                         {
@@ -389,11 +389,11 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    const Eigen::Vector3d startFromPassage_World_m =
-                        previousCameraCenter_World_m - passageCentroid;
+                    const Eigen::Vector3d startFromPassage_world_m =
+                        previousCameraCenter_world_m - passageCentroid;
                     traversalDirection =
-                        startFromPassage_World_m.dot(
-                            knownSide.direction_World) >= 0.0
+                        startFromPassage_world_m.dot(
+                            knownSide.direction_world) >= 0.0
                             ? semantic::Passage::TraversalDirection::
                                   KNOWN_TO_FAR
                             : semantic::Passage::TraversalDirection::

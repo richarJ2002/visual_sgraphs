@@ -73,7 +73,7 @@ SemanticsManagerStatus SemanticsManager::mergeOverlappingPassages(void)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
-    const Eigen::Vector3d groundNormal_World = groundEq.head<3>() / groundNorm;
+    const Eigen::Vector3d groundNormal_world = groundEq.head<3>() / groundNorm;
 
     std::vector<semantic::Passage *> allPassages{};
     if (p_atlas->getAllPassages(allPassages) !=
@@ -139,7 +139,7 @@ SemanticsManagerStatus SemanticsManager::mergeOverlappingPassages(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Vector4d firstEquation_World = firstGlobalEquation.coeffs();
+            Eigen::Vector4d firstEquation_world = firstGlobalEquation.coeffs();
             g2o::Plane3D    secondGlobalEquation{};
             if (p_second->getGlobalEquation(secondGlobalEquation) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -149,35 +149,35 @@ SemanticsManagerStatus SemanticsManager::mergeOverlappingPassages(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Vector4d secondEquation_World =
+            Eigen::Vector4d secondEquation_world =
                 secondGlobalEquation.coeffs();
-            const double firstNormalNorm = firstEquation_World.head<3>().norm();
+            const double firstNormalNorm = firstEquation_world.head<3>().norm();
             const double secondNormalNorm =
-                secondEquation_World.head<3>().norm();
-            if (!firstEquation_World.allFinite() ||
-                !secondEquation_World.allFinite() || firstNormalNorm < 1e-8 ||
+                secondEquation_world.head<3>().norm();
+            if (!firstEquation_world.allFinite() ||
+                !secondEquation_world.allFinite() || firstNormalNorm < 1e-8 ||
                 secondNormalNorm < 1e-8)
             {
                 continue;
             }
-            firstEquation_World /= firstNormalNorm;
-            secondEquation_World /= secondNormalNorm;
+            firstEquation_world /= firstNormalNorm;
+            secondEquation_world /= secondNormalNorm;
 
             constexpr double minimumCoplanarNormalAlignment = 0.90;
             constexpr double maximumCoplanarOffset_m        = 0.30;
-            const double normalAlignment = firstEquation_World.head<3>().dot(
-                secondEquation_World.head<3>());
+            const double normalAlignment = firstEquation_world.head<3>().dot(
+                secondEquation_world.head<3>());
             if (std::abs(normalAlignment) < minimumCoplanarNormalAlignment)
             {
                 continue;
             }
-            Eigen::Vector4d orientedSecondEquation_World = secondEquation_World;
+            Eigen::Vector4d orientedSecondEquation_world = secondEquation_world;
             if (normalAlignment < 0.0)
             {
-                orientedSecondEquation_World = -orientedSecondEquation_World;
+                orientedSecondEquation_world = -orientedSecondEquation_world;
             }
-            if (std::abs(firstEquation_World(3) -
-                         orientedSecondEquation_World(3)) >
+            if (std::abs(firstEquation_world(3) -
+                         orientedSecondEquation_world(3)) >
                 maximumCoplanarOffset_m)
             {
                 continue;
@@ -187,18 +187,18 @@ SemanticsManagerStatus SemanticsManager::mergeOverlappingPassages(void)
              * (ground normal x wall normal) for width, ground normal for
              * height -- same construction used for the ground-aligned wall
              * admission gate. */
-            Eigen::Vector3d axisU_World =
-                groundNormal_World.cross(firstEquation_World.head<3>());
-            const double axisUNorm = axisU_World.norm();
+            Eigen::Vector3d axisU_world =
+                groundNormal_world.cross(firstEquation_world.head<3>());
+            const double axisUNorm = axisU_world.norm();
             if (axisUNorm < 1e-3)
             {
                 continue;
             }
-            axisU_World /= axisUNorm;
-            const Eigen::Vector3d &axisV_World = groundNormal_World;
+            axisU_world /= axisUNorm;
+            const Eigen::Vector3d &axisV_world = groundNormal_world;
 
-            Eigen::Vector3d firstCentroid_World{};
-            if (p_first->getCentroid(firstCentroid_World) !=
+            Eigen::Vector3d firstCentroid_world{};
+            if (p_first->getCentroid(firstCentroid_world) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -206,8 +206,8 @@ SemanticsManagerStatus SemanticsManager::mergeOverlappingPassages(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Vector3d secondCentroid_World{};
-            if (p_second->getCentroid(secondCentroid_World) !=
+            Eigen::Vector3d secondCentroid_world{};
+            if (p_second->getCentroid(secondCentroid_world) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -215,16 +215,16 @@ SemanticsManagerStatus SemanticsManager::mergeOverlappingPassages(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (!firstCentroid_World.allFinite() ||
-                !secondCentroid_World.allFinite())
+            if (!firstCentroid_world.allFinite() ||
+                !secondCentroid_world.allFinite())
             {
                 continue;
             }
 
-            const double firstU  = firstCentroid_World.dot(axisU_World);
-            const double firstV  = firstCentroid_World.dot(axisV_World);
-            const double secondU = secondCentroid_World.dot(axisU_World);
-            const double secondV = secondCentroid_World.dot(axisV_World);
+            const double firstU  = firstCentroid_world.dot(axisU_world);
+            const double firstV  = firstCentroid_world.dot(axisV_world);
+            const double secondU = secondCentroid_world.dot(axisU_world);
+            const double secondV = secondCentroid_world.dot(axisV_world);
 
             double firstWidth{};
             if (p_first->getWidth(firstWidth) !=

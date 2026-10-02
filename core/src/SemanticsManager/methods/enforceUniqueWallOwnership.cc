@@ -66,7 +66,7 @@ SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
               allPassages.end(),
               semantic::isEntityIdLess<semantic::Passage>);
 
-    Eigen::Vector3d   groundNormal_World = Eigen::Vector3d::Zero();
+    Eigen::Vector3d   groundNormal_world = Eigen::Vector3d::Zero();
     geometric::Plane *p_groundPlane      = nullptr;
     if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -102,7 +102,7 @@ SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
         const double groundNormalNorm = groundEquation.head<3>().norm();
         if (groundEquation.allFinite() && groundNormalNorm > 1e-8)
         {
-            groundNormal_World = groundEquation.head<3>() / groundNormalNorm;
+            groundNormal_world = groundEquation.head<3>() / groundNormalNorm;
         }
     }
 
@@ -226,7 +226,7 @@ SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
                         nearOwnerCentroid,
                         wallGetCentroid.cast<double>(),
                         p_passage,
-                        groundNormal_World,
+                        groundNormal_world,
                         p_sysParams->roomSeg.passagePartition.openingMargin_m,
                         p_sysParams->roomSeg.passagePartition
                             .minimumSideDistance_m,
@@ -452,7 +452,7 @@ SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
          * owners only. */
         if (p_retainedOwner == nullptr)
         {
-            Eigen::Vector3d meanObservationPosition_World_m =
+            Eigen::Vector3d meanObservationPosition_world_m =
                 Eigen::Vector3d::Zero();
             std::size_t validObservationCount = 0U;
 
@@ -492,12 +492,12 @@ SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    const Eigen::Vector3d cameraCenter_World_m =
+                    const Eigen::Vector3d cameraCenter_world_m =
                         keyFrameCameraCenter.cast<double>();
 
-                    if (cameraCenter_World_m.allFinite())
+                    if (cameraCenter_world_m.allFinite())
                     {
-                        meanObservationPosition_World_m += cameraCenter_World_m;
+                        meanObservationPosition_world_m += cameraCenter_world_m;
                         validObservationCount++;
                     }
                 }
@@ -505,7 +505,7 @@ SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
 
             if (validObservationCount > 0U)
             {
-                meanObservationPosition_World_m /=
+                meanObservationPosition_world_m /=
                     static_cast<double>(validObservationCount);
                 double bestDistance_m = std::numeric_limits<double>::infinity();
 
@@ -527,7 +527,7 @@ SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
                             __func__);
                     }
                     const double distance_m =
-                        (ownerCentroid - meanObservationPosition_World_m)
+                        (ownerCentroid - meanObservationPosition_world_m)
                             .norm();
                     if (distance_m < bestDistance_m)
                     {

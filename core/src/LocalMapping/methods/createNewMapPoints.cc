@@ -100,8 +100,8 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
     Eigen::Matrix<float, 3, 3> rotation_camera1ToWorld =
         rotation_worldToCamera1.transpose();
     Eigen::Vector3f translation_worldToCamera1 = sophTcw1.translation();
-    Eigen::Vector3f cameraCenter1_World{};
-    if (p_currentKeyFrame->getCameraCenter(cameraCenter1_World) !=
+    Eigen::Vector3f cameraCenter1_world{};
+    if (p_currentKeyFrame->getCameraCenter(cameraCenter1_world) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -145,8 +145,8 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             *p_camera2 = p_neighborKeyFrame->p_camera;
 
         // Check first that baseline is not too short
-        Eigen::Vector3f cameraCenter2_World{};
-        if (p_neighborKeyFrame->getCameraCenter(cameraCenter2_World) !=
+        Eigen::Vector3f cameraCenter2_world{};
+        if (p_neighborKeyFrame->getCameraCenter(cameraCenter2_world) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -155,7 +155,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                          __func__);
         }
         Eigen::Vector3f baselineVector =
-            cameraCenter2_World - cameraCenter1_World;
+            cameraCenter2_world - cameraCenter1_world;
         const float baseline = baselineVector.norm();
 
         if (!isMonocular)
@@ -318,7 +318,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                                      "continuing as before.",
                                      __func__);
                     }
-                    cameraCenter1_World = currentKeyFrameRightCameraCenter;
+                    cameraCenter1_world = currentKeyFrameRightCameraCenter;
 
                     Sophus::SE3<float> neighborKeyFrameRightPose{};
                     if (p_neighborKeyFrame->getRightPose(
@@ -343,7 +343,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                                      "continuing as before.",
                                      __func__);
                     }
-                    cameraCenter2_World = neighborKeyFrameRightCameraCenter;
+                    cameraCenter2_world = neighborKeyFrameRightCameraCenter;
 
                     p_camera1 = p_currentKeyFrame->p_camera2;
                     p_camera2 = p_neighborKeyFrame->p_camera2;
@@ -374,7 +374,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                                      "continuing as before.",
                                      __func__);
                     }
-                    cameraCenter1_World = currentKeyFrameRightCameraCenter2;
+                    cameraCenter1_world = currentKeyFrameRightCameraCenter2;
 
                     Sophus::SE3f neighborKeyFramePose{};
                     if (p_neighborKeyFrame->getPose(neighborKeyFramePose) !=
@@ -398,7 +398,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    cameraCenter2_World = neighborKeyFrameCameraCenter;
+                    cameraCenter2_world = neighborKeyFrameCameraCenter;
 
                     p_camera1 = p_currentKeyFrame->p_camera2;
                     p_camera2 = p_neighborKeyFrame->p_camera;
@@ -428,7 +428,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    cameraCenter1_World = currentKeyFrameCameraCenter;
+                    cameraCenter1_world = currentKeyFrameCameraCenter;
 
                     Sophus::SE3<float> neighborKeyFrameRightPose2{};
                     if (p_neighborKeyFrame->getRightPose(
@@ -453,7 +453,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                                      "continuing as before.",
                                      __func__);
                     }
-                    cameraCenter2_World = neighborKeyFrameRightCameraCenter2;
+                    cameraCenter2_world = neighborKeyFrameRightCameraCenter2;
 
                     p_camera1 = p_currentKeyFrame->p_camera;
                     p_camera2 = p_neighborKeyFrame->p_camera2;
@@ -482,7 +482,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    cameraCenter1_World = currentKeyFrameCameraCenter2;
+                    cameraCenter1_world = currentKeyFrameCameraCenter2;
 
                     Sophus::SE3f neighborKeyFramePose2{};
                     if (p_neighborKeyFrame->getPose(neighborKeyFramePose2) !=
@@ -506,7 +506,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    cameraCenter2_World = neighborKeyFrameCameraCenter2;
+                    cameraCenter2_world = neighborKeyFrameCameraCenter2;
 
                     p_camera1 = p_currentKeyFrame->p_camera;
                     p_camera2 = p_neighborKeyFrame->p_camera;
@@ -718,11 +718,11 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
 
             // Check scale consistency
             Eigen::Vector3f pointViewVector1 =
-                triangulatedPoint - cameraCenter1_World;
+                triangulatedPoint - cameraCenter1_world;
             float pointDistance1 = pointViewVector1.norm();
 
             Eigen::Vector3f pointViewVector2 =
-                triangulatedPoint - cameraCenter2_World;
+                triangulatedPoint - cameraCenter2_world;
             float pointDistance2 = pointViewVector2.norm();
 
             if (pointDistance1 == 0 || pointDistance2 == 0)

@@ -131,10 +131,10 @@ SemanticVerifyStatus
             survivingPassage.hasKnownSideDirection)
         {
             const Eigen::Vector3d transformedDirection =
-                rotation * absorbedPassage.knownSideDirection_World;
+                rotation * absorbedPassage.knownSideDirection_world;
             const double directionAgreement =
                 transformedDirection.normalized().dot(
-                    survivingPassage.knownSideDirection_World.normalized());
+                    survivingPassage.knownSideDirection_world.normalized());
             if (!std::isfinite(directionAgreement) ||
                 directionAgreement < configuration_in.minAbsCosNormalAngle)
             {

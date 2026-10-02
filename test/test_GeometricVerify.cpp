@@ -134,9 +134,9 @@ semantic::SemanticMergeRoomEvidence
     {
         semantic::VerifyWallObservation observation;
         observation.wallId         = wall.id;
-        observation.normal_World   = wall.normal;
+        observation.normal_world   = wall.normal;
         observation.d              = wall.d;
-        observation.centroid_World = wall.centroid;
+        observation.centroid_world = wall.centroid;
         evidence.walls.push_back(observation);
     }
 
@@ -148,7 +148,7 @@ semantic::SemanticMergeRoomEvidence
     passage.hasFarSideRoom           = true;
     passage.secondaryRoomId          = farSideRoomId_in;
     passage.hasKnownSideDirection    = true;
-    passage.knownSideDirection_World = knownSideDirection_in;
+    passage.knownSideDirection_world = knownSideDirection_in;
     evidence.context.passageContexts.push_back(passage);
     return evidence;
 }
@@ -244,11 +244,11 @@ TEST(GeometricVerify, AcceptsGroundTruthCorrelatedRooms)
     EXPECT_TRUE(result.hasPassed);
     EXPECT_GE(result.inliers.size(), 3U);
     EXPECT_LT(
-        result.transform_AToB.translation().isApprox(translationTrue, 0.05)
+        result.transform_aToB.translation().isApprox(translationTrue, 0.05)
             ? 0.0
-            : (result.transform_AToB.translation() - translationTrue).norm(),
+            : (result.transform_aToB.translation() - translationTrue).norm(),
         0.05 + 1e-9);
-    EXPECT_LT(rotationAngle_deg(result.transform_AToB.linear(), rotationTrue),
+    EXPECT_LT(rotationAngle_deg(result.transform_aToB.linear(), rotationTrue),
               0.5);
 }
 
@@ -376,7 +376,7 @@ TEST(GeometricVerify, CorrectHypothesisWinsOverOutlierCorrespondences)
         EXPECT_NE(inlier.wallIdA, 50);
         EXPECT_NE(inlier.wallIdB, 150);
     }
-    EXPECT_LT(rotationAngle_deg(result.transform_AToB.linear(), rotationTrue),
+    EXPECT_LT(rotationAngle_deg(result.transform_aToB.linear(), rotationTrue),
               0.5);
 }
 
@@ -886,7 +886,7 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
     ASSERT_EQ((semantic::SemanticVerify::runFloorGate(result,
                                                       &survivingMap,
                                                       &absorbedMap,
-                                                      result.transform_AToB,
+                                                      result.transform_aToB,
                                                       hasPassed2)),
               vs_graphs::core::semantic::SemanticVerifyStatus::
                   SEMANTIC_VERIFY_STATUS_SUCCESS);
@@ -923,7 +923,7 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
     ASSERT_EQ((semantic::SemanticVerify::runFloorGate(mismatchedResult,
                                                       &survivingMap,
                                                       &mismatchedMap,
-                                                      result.transform_AToB,
+                                                      result.transform_aToB,
                                                       hasPassed3)),
               vs_graphs::core::semantic::SemanticVerifyStatus::
                   SEMANTIC_VERIFY_STATUS_SUCCESS);

@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            setBoundaryCorners_World_m.cc
+ * @file            getBoundaryCorners_world_m.cc
  *
- * @brief           Implements Room::setBoundaryCorners_World_m(), declared in
+ * @brief           Implements Room::getBoundaryCorners_world_m(), declared in
  *                  Semantic/Room.h.
  */
 
@@ -34,12 +34,11 @@ namespace core
 namespace semantic
 {
 
-RoomStatus Room::setBoundaryCorners_World_m(
-    std::vector<Eigen::Vector3d> corners_World_m_in)
+RoomStatus Room::getBoundaryCorners_world_m(
+    std::vector<Eigen::Vector3d> &boundaryCorners_world_m_out) const
 {
     std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
-    boundaryCorners_World_m = std::move(corners_World_m_in);
-
+    boundaryCorners_world_m_out = boundaryCorners_world_m;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 

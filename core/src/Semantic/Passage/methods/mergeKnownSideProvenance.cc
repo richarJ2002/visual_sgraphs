@@ -61,7 +61,7 @@ PassageStatus
     }
     if (!knownSideProvenanceHasDirection && provenanceHasDirection)
     {
-        knownSideProvenance.direction_World = provenance_in.direction_World;
+        knownSideProvenance.direction_world = provenance_in.direction_world;
     }
     if (knownSideProvenance.p_room == nullptr)
     {

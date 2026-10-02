@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            getWallNormalTowardRoom_World.cc
+ * @file            getWallNormalTowardRoom_world.cc
  *
- * @brief           Implements Room::getWallNormalTowardRoom_World(), declared
+ * @brief           Implements Room::getWallNormalTowardRoom_world(), declared
  *                  in Semantic/Room.h.
  */
 
@@ -37,14 +37,14 @@ namespace core
 namespace semantic
 {
 
-RoomStatus Room::getWallNormalTowardRoom_World(
+RoomStatus Room::getWallNormalTowardRoom_world(
     const geometric::Plane         *p_wall_in,
-    std::optional<Eigen::Vector3d> &wallNormalTowardRoom_World_out) const
+    std::optional<Eigen::Vector3d> &wallNormalTowardRoom_world_out) const
 {
     /* Reject a missing wall association. */
     if (p_wall_in == nullptr)
     {
-        wallNormalTowardRoom_World_out = std::nullopt;
+        wallNormalTowardRoom_world_out = std::nullopt;
         return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
@@ -58,23 +58,23 @@ RoomStatus Room::getWallNormalTowardRoom_World(
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector4d wallEquation_World = wallGetGlobalEquation.coeffs();
+    Eigen::Vector4d wallEquation_world = wallGetGlobalEquation.coeffs();
 
-    Eigen::Vector3d roomCentroid_World_m;
+    Eigen::Vector3d roomCentroid_world_m;
 
     {
         std::lock_guard<std::mutex> lock(mapMutex);
-        roomCentroid_World_m = centroid;
+        roomCentroid_world_m = centroid;
     }
 
     /* Reject non-finite geometry before evaluating its signed distance. */
-    if (!wallEquation_World.allFinite() || !roomCentroid_World_m.allFinite())
+    if (!wallEquation_world.allFinite() || !roomCentroid_world_m.allFinite())
     {
-        wallNormalTowardRoom_World_out = std::nullopt;
+        wallNormalTowardRoom_world_out = std::nullopt;
         return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
-    const double wallNormalNorm = wallEquation_World.head<3>().norm();
+    const double wallNormalNorm = wallEquation_world.head<3>().norm();
 
     /* A plane without a usable normal has no defined orientation. */
     constexpr double minimumWallNormalNorm = 1e-8;
@@ -82,32 +82,32 @@ RoomStatus Room::getWallNormalTowardRoom_World(
     if (!std::isfinite(wallNormalNorm) ||
         wallNormalNorm < minimumWallNormalNorm)
     {
-        wallNormalTowardRoom_World_out = std::nullopt;
+        wallNormalTowardRoom_world_out = std::nullopt;
         return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
     /* Normalize all coefficients so the signed value is measured in metres. */
-    wallEquation_World /= wallNormalNorm;
+    wallEquation_world /= wallNormalNorm;
 
-    Eigen::Vector3d wallNormalTowardRoom_World = wallEquation_World.head<3>();
+    Eigen::Vector3d wallNormalTowardRoom_world = wallEquation_world.head<3>();
 
     const double roomSignedDistanceToWall_m =
-        wallNormalTowardRoom_World.dot(roomCentroid_World_m) +
-        wallEquation_World(3);
+        wallNormalTowardRoom_world.dot(roomCentroid_world_m) +
+        wallEquation_world(3);
 
     if (!std::isfinite(roomSignedDistanceToWall_m))
     {
-        wallNormalTowardRoom_World_out = std::nullopt;
+        wallNormalTowardRoom_world_out = std::nullopt;
         return RoomStatus::ROOM_STATUS_SUCCESS;
     }
 
     /* Flip only the returned value when the stored normal points away. */
     if (roomSignedDistanceToWall_m < 0.0)
     {
-        wallNormalTowardRoom_World *= -1.0;
+        wallNormalTowardRoom_world *= -1.0;
     }
 
-    wallNormalTowardRoom_World_out = wallNormalTowardRoom_World;
+    wallNormalTowardRoom_world_out = wallNormalTowardRoom_world;
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 

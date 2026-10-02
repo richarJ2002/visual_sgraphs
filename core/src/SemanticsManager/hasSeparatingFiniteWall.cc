@@ -45,11 +45,11 @@ namespace core
  *              used as a veto when connected free-space evidence suggests two
  *              room hypotheses may describe the same physical room.
  *
- * @param[in]   wallList_World_in
+ * @param[in]   wallList_world_in
  *              Candidate wall surfaces expressed in the active map frame.
- * @param[in]   firstPoint_World_m_in
+ * @param[in]   firstPoint_world_m_in
  *              First position expressed in the active map frame, in metres.
- * @param[in]   secondPoint_World_m_in
+ * @param[in]   secondPoint_world_m_in
  *              Second position expressed in the active map frame, in metres.
  * @param[in]   finiteBoundsMargin_m_in
  *              Margin applied around the observed wall-cloud bounds.
@@ -60,15 +60,15 @@ namespace core
  * @return      SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus hasSeparatingFiniteWall(
-    const std::vector<geometric::Plane *> &wallList_World_in,
-    const Eigen::Vector3d                 &firstPoint_World_m_in,
-    const Eigen::Vector3d                 &secondPoint_World_m_in,
+    const std::vector<geometric::Plane *> &wallList_world_in,
+    const Eigen::Vector3d                 &firstPoint_world_m_in,
+    const Eigen::Vector3d                 &secondPoint_world_m_in,
     const double                           finiteBoundsMargin_m_in,
     bool                                  &hasSeparatingFiniteWall_out)
 {
     constexpr double minimumSideDistance_m = 0.10;
 
-    for (geometric::Plane *p_wall : wallList_World_in)
+    for (geometric::Plane *p_wall : wallList_world_in)
     {
         bool wallIsBad{};
         if (!(p_wall == nullptr) &&
@@ -105,22 +105,22 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
-        const double    wallNormalNorm = wallEquation_World.head<3>().norm();
+        Eigen::Vector4d wallEquation_world = wallGeometry.equation_world;
+        const double    wallNormalNorm = wallEquation_world.head<3>().norm();
 
-        if (!wallEquation_World.allFinite() || wallNormalNorm < 1e-8)
+        if (!wallEquation_world.allFinite() || wallNormalNorm < 1e-8)
         {
             continue;
         }
 
-        wallEquation_World /= wallNormalNorm;
+        wallEquation_world /= wallNormalNorm;
 
         const double firstSide_m =
-            wallEquation_World.head<3>().dot(firstPoint_World_m_in) +
-            wallEquation_World(3);
+            wallEquation_world.head<3>().dot(firstPoint_world_m_in) +
+            wallEquation_world(3);
         const double secondSide_m =
-            wallEquation_World.head<3>().dot(secondPoint_World_m_in) +
-            wallEquation_World(3);
+            wallEquation_world.head<3>().dot(secondPoint_world_m_in) +
+            wallEquation_world(3);
 
         if (firstSide_m * secondSide_m >= 0.0 ||
             std::abs(firstSide_m) < minimumSideDistance_m ||
@@ -130,9 +130,9 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
         }
 
         const double interpolation = firstSide_m / (firstSide_m - secondSide_m);
-        const Eigen::Vector3d intersection_World_m =
-            firstPoint_World_m_in +
-            interpolation * (secondPoint_World_m_in - firstPoint_World_m_in);
+        const Eigen::Vector3d intersection_world_m =
+            firstPoint_world_m_in +
+            interpolation * (secondPoint_world_m_in - firstPoint_world_m_in);
 
         const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallSupportCloud =
             wallGeometry.supportCloud;
@@ -142,12 +142,12 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
             continue;
         }
 
-        const Eigen::Vector3d wallCentroid_World_m =
-            wallGeometry.centroid_World_m;
-        const Eigen::Vector3d wallAxisU_World =
-            wallEquation_World.head<3>().unitOrthogonal().normalized();
-        const Eigen::Vector3d wallAxisV_World =
-            wallEquation_World.head<3>().cross(wallAxisU_World).normalized();
+        const Eigen::Vector3d wallCentroid_world_m =
+            wallGeometry.centroid_world_m;
+        const Eigen::Vector3d wallAxisU_world =
+            wallEquation_world.head<3>().unitOrthogonal().normalized();
+        const Eigen::Vector3d wallAxisV_world =
+            wallEquation_world.head<3>().cross(wallAxisU_world).normalized();
 
         double minimumWallU_m = std::numeric_limits<double>::infinity();
         double maximumWallU_m = -std::numeric_limits<double>::infinity();
@@ -161,15 +161,15 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
                 continue;
             }
 
-            const Eigen::Vector3d wallPoint_World_m(
+            const Eigen::Vector3d wallPoint_world_m(
                 static_cast<double>(wallPoint.x),
                 static_cast<double>(wallPoint.y),
                 static_cast<double>(wallPoint.z));
-            const Eigen::Vector3d wallOffset_World_m =
-                wallPoint_World_m - wallCentroid_World_m;
+            const Eigen::Vector3d wallOffset_world_m =
+                wallPoint_world_m - wallCentroid_world_m;
 
-            const double wallU_m = wallOffset_World_m.dot(wallAxisU_World);
-            const double wallV_m = wallOffset_World_m.dot(wallAxisV_World);
+            const double wallU_m = wallOffset_world_m.dot(wallAxisU_world);
+            const double wallV_m = wallOffset_world_m.dot(wallAxisV_world);
 
             minimumWallU_m = std::min(minimumWallU_m, wallU_m);
             maximumWallU_m = std::max(maximumWallU_m, wallU_m);
@@ -183,12 +183,12 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
             continue;
         }
 
-        const Eigen::Vector3d intersectionOffset_World_m =
-            intersection_World_m - wallCentroid_World_m;
+        const Eigen::Vector3d intersectionOffset_world_m =
+            intersection_world_m - wallCentroid_world_m;
         const double intersectionU_m =
-            intersectionOffset_World_m.dot(wallAxisU_World);
+            intersectionOffset_world_m.dot(wallAxisU_world);
         const double intersectionV_m =
-            intersectionOffset_World_m.dot(wallAxisV_World);
+            intersectionOffset_world_m.dot(wallAxisV_world);
 
         if (intersectionU_m >= minimumWallU_m - finiteBoundsMargin_m_in &&
             intersectionU_m <= maximumWallU_m + finiteBoundsMargin_m_in &&

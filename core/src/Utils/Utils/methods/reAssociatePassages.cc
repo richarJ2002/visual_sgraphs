@@ -175,8 +175,8 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                 continue;
             }
 
-            Eigen::Vector3d retainedCentroid_World_m{};
-            if (p_retainedPassage->getCentroid(retainedCentroid_World_m) !=
+            Eigen::Vector3d retainedCentroid_world_m{};
+            if (p_retainedPassage->getCentroid(retainedCentroid_world_m) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -184,8 +184,8 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Vector3d candidateCentroid_World_m{};
-            if (p_candidatePassage->getCentroid(candidateCentroid_World_m) !=
+            Eigen::Vector3d candidateCentroid_world_m{};
+            if (p_candidatePassage->getCentroid(candidateCentroid_world_m) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -194,9 +194,9 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                              __func__);
             }
 
-            if (!retainedCentroid_World_m.allFinite() ||
-                !candidateCentroid_World_m.allFinite() ||
-                (candidateCentroid_World_m - retainedCentroid_World_m).norm() >
+            if (!retainedCentroid_world_m.allFinite() ||
+                !candidateCentroid_world_m.allFinite() ||
+                (candidateCentroid_world_m - retainedCentroid_world_m).norm() >
                     maximumCentroidDistance_m)
             {
                 continue;
@@ -231,10 +231,10 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
             }
 
             const double retainedPlaneResidual_m = std::abs(
-                retainedEquation.head<3>().dot(candidateCentroid_World_m) +
+                retainedEquation.head<3>().dot(candidateCentroid_world_m) +
                 retainedEquation(3));
             const double candidatePlaneResidual_m = std::abs(
-                candidateEquation.head<3>().dot(retainedCentroid_World_m) +
+                candidateEquation.head<3>().dot(retainedCentroid_world_m) +
                 candidateEquation(3));
 
             if (retainedPlaneResidual_m > maximumSupportingPlaneSeparation_m ||
@@ -304,7 +304,7 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
             }
 
             const auto isProvenFarSide =
-                [&knownSide, &retainedCentroid_World_m](semantic::Room *p_room)
+                [&knownSide, &retainedCentroid_world_m](semantic::Room *p_room)
             {
                 Eigen::Vector3d roomCentroid{};
                 bool            knownSideHasDirection{};
@@ -342,8 +342,8 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                         __func__);
                 }
                 return p_room != nullptr && knownSideHasDirection2 &&
-                       knownSide.direction_World.dot(
-                           roomCentroid - retainedCentroid_World_m) < -0.20;
+                       knownSide.direction_world.dot(
+                           roomCentroid - retainedCentroid_world_m) < -0.20;
             };
 
             semantic::Room *p_survivingHandle = p_retainedHandle;
@@ -386,15 +386,15 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                 }
             }
 
-            Eigen::Vector3d fusedCentroid_World_m =
-                0.5 * (retainedCentroid_World_m + candidateCentroid_World_m);
+            Eigen::Vector3d fusedCentroid_world_m =
+                0.5 * (retainedCentroid_world_m + candidateCentroid_world_m);
             const double fusedCentroidResidual_m =
-                retainedEquation.head<3>().dot(fusedCentroid_World_m) +
+                retainedEquation.head<3>().dot(fusedCentroid_world_m) +
                 retainedEquation(3);
-            fusedCentroid_World_m -=
+            fusedCentroid_world_m -=
                 fusedCentroidResidual_m * retainedEquation.head<3>();
 
-            if (p_retainedPassage->setCentroid(fusedCentroid_World_m) !=
+            if (p_retainedPassage->setCentroid(fusedCentroid_world_m) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -257,8 +257,8 @@ void SemanticSegmentation::run()
             p_clsCloudPtrs[WALL_CLASS_INDEX]->size() <
                 WALL_SILENT_DROP_LOG_THRESHOLD)
         {
-            Eigen::Vector3f cameraCenter_World{};
-            if (p_thisKeyFrame->getCameraCenter(cameraCenter_World) !=
+            Eigen::Vector3f cameraCenter_world{};
+            if (p_thisKeyFrame->getCameraCenter(cameraCenter_world) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -269,8 +269,8 @@ void SemanticSegmentation::run()
             std::cout << "[SemSeg] KF#" << p_thisKeyFrame->id
                       << " wall-class points after confidence gating: "
                       << p_clsCloudPtrs[WALL_CLASS_INDEX]->size()
-                      << " (camera at " << cameraCenter_World.x() << ','
-                      << cameraCenter_World.y() << ',' << cameraCenter_World.z()
+                      << " (camera at " << cameraCenter_world.x() << ','
+                      << cameraCenter_world.y() << ',' << cameraCenter_world.z()
                       << ')' << std::endl;
         }
 

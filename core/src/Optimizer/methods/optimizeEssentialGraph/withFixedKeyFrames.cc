@@ -802,11 +802,11 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
      * planes from receiving a local correction while their rooms, passages,
      * floors, and topology receive only the coarse map transform.
      */
-    utils::utils::Utils::KeyFramePoseMap keyFramePosesBefore_WorldToCamera;
-    utils::utils::Utils::KeyFramePoseMap keyFramePosesAfter_WorldToCamera;
+    utils::utils::Utils::KeyFramePoseMap keyFramePosesBefore_worldToCamera;
+    utils::utils::Utils::KeyFramePoseMap keyFramePosesAfter_worldToCamera;
 
     const auto appendSemanticDeformationNodes =
-        [&keyFramePosesBefore_WorldToCamera, &keyFramePosesAfter_WorldToCamera](
+        [&keyFramePosesBefore_worldToCamera, &keyFramePosesAfter_worldToCamera](
             const std::vector<KeyFrame *> &keyFrames_in)
     {
         for (KeyFrame *p_keyFrame : keyFrames_in)
@@ -826,7 +826,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                 continue;
             }
 
-            const Sophus::SE3d poseBefore_WorldToCamera =
+            const Sophus::SE3d poseBefore_worldToCamera =
                 p_keyFrame->tcwBefMerge.cast<double>();
             Sophus::SE3f keyFramePose{};
             if (p_keyFrame->getPose(keyFramePose) !=
@@ -837,18 +837,18 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            const Sophus::SE3d poseAfter_WorldToCamera =
+            const Sophus::SE3d poseAfter_worldToCamera =
                 keyFramePose.cast<double>();
 
-            keyFramePosesBefore_WorldToCamera.insert_or_assign(
+            keyFramePosesBefore_worldToCamera.insert_or_assign(
                 p_keyFrame,
-                g2o::Sim3(poseBefore_WorldToCamera.unit_quaternion(),
-                          poseBefore_WorldToCamera.translation(),
+                g2o::Sim3(poseBefore_worldToCamera.unit_quaternion(),
+                          poseBefore_worldToCamera.translation(),
                           1.0));
-            keyFramePosesAfter_WorldToCamera.insert_or_assign(
+            keyFramePosesAfter_worldToCamera.insert_or_assign(
                 p_keyFrame,
-                g2o::Sim3(poseAfter_WorldToCamera.unit_quaternion(),
-                          poseAfter_WorldToCamera.translation(),
+                g2o::Sim3(poseAfter_worldToCamera.unit_quaternion(),
+                          poseAfter_worldToCamera.translation(),
                           1.0));
         }
     };
@@ -860,8 +860,8 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     {
         if (utils::utils::Utils::propagateSemanticPoseCorrections(
                 p_sourceMap_in,
-                keyFramePosesBefore_WorldToCamera,
-                keyFramePosesAfter_WorldToCamera,
+                keyFramePosesBefore_worldToCamera,
+                keyFramePosesAfter_worldToCamera,
                 transform_mergeWorldToCurrentWorld_in) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {

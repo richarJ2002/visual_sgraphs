@@ -1113,11 +1113,11 @@ void appendPassageMarkers(
 std::vector<Eigen::Vector3d>
     computeRoomCorners(const vs_graphs::core::semantic::Room *room_in)
 {
-    std::vector<Eigen::Vector3d> corners_World_m;
+    std::vector<Eigen::Vector3d> corners_world_m;
 
     if (room_in == nullptr)
     {
-        return corners_World_m;
+        return corners_world_m;
     }
 
     std::vector<vs_graphs::core::geometric::Plane *> walls{};
@@ -1132,12 +1132,12 @@ std::vector<Eigen::Vector3d>
 
     if (walls.size() < 3)
     {
-        return corners_World_m;
+        return corners_world_m;
     }
 
     /* Resolve the horizontal plane from the room's ground plane, falling back
      * to the world vertical axis when no ground surface is available. */
-    Eigen::Vector3d groundNormal_World_m = Eigen::Vector3d::UnitZ();
+    Eigen::Vector3d groundNormal_world_m = Eigen::Vector3d::UnitZ();
 
     vs_graphs::core::geometric::Plane *p_groundPlane = nullptr;
     if (room_in->getGroundPlane(p_groundPlane) !=
@@ -1173,29 +1173,29 @@ std::vector<Eigen::Vector3d>
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const Eigen::Vector4d groundEquation_World =
+        const Eigen::Vector4d groundEquation_world =
             groundPlaneGetGlobalEquation.coeffs();
-        const double groundNormalNorm = groundEquation_World.head<3>().norm();
+        const double groundNormalNorm = groundEquation_world.head<3>().norm();
 
-        if (groundEquation_World.allFinite() && groundNormalNorm > 1e-8)
+        if (groundEquation_world.allFinite() && groundNormalNorm > 1e-8)
         {
-            groundNormal_World_m =
-                groundEquation_World.head<3>() / groundNormalNorm;
+            groundNormal_world_m =
+                groundEquation_world.head<3>() / groundNormalNorm;
 
             /* The ground plane is n . x + d = 0, so a point on the floor has
              * coordinate -d / norm along the ground normal. */
             hasFloorPlane = true;
-            floorHeight_m = -groundEquation_World[3] / groundNormalNorm;
+            floorHeight_m = -groundEquation_world[3] / groundNormalNorm;
         }
     }
 
-    const Eigen::Vector3d axisU_World_m =
-        groundNormal_World_m.unitOrthogonal().normalized();
-    const Eigen::Vector3d axisV_World_m =
-        groundNormal_World_m.cross(axisU_World_m).normalized();
+    const Eigen::Vector3d axisU_world_m =
+        groundNormal_world_m.unitOrthogonal().normalized();
+    const Eigen::Vector3d axisV_world_m =
+        groundNormal_world_m.cross(axisU_world_m).normalized();
 
-    Eigen::Vector3d roomCentroid_World_m{};
-    if (room_in->getCentroid(roomCentroid_World_m) !=
+    Eigen::Vector3d roomCentroid_world_m{};
+    if (room_in->getCentroid(roomCentroid_world_m) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1204,9 +1204,9 @@ std::vector<Eigen::Vector3d>
                      __func__);
     }
 
-    if (!roomCentroid_World_m.allFinite())
+    if (!roomCentroid_world_m.allFinite())
     {
-        return corners_World_m;
+        return corners_world_m;
     }
 
     /* Record the two-dimensional wall with its horizontal normal and the
@@ -1247,32 +1247,32 @@ std::vector<Eigen::Vector3d>
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const Eigen::Vector4d wallEquation_World =
+        const Eigen::Vector4d wallEquation_world =
             wallGetGlobalEquation.coeffs();
-        const double wallNormalNorm = wallEquation_World.head<3>().norm();
+        const double wallNormalNorm = wallEquation_world.head<3>().norm();
 
-        if (!wallEquation_World.allFinite() || wallNormalNorm < 1e-8)
+        if (!wallEquation_world.allFinite() || wallNormalNorm < 1e-8)
         {
             continue;
         }
 
-        const Eigen::Vector3d wallNormal_World_m =
-            wallEquation_World.head<3>() / wallNormalNorm;
+        const Eigen::Vector3d wallNormal_world_m =
+            wallEquation_world.head<3>() / wallNormalNorm;
 
         /* Keep only the horizontal component of the wall normal. */
-        Eigen::Vector3d horizontalNormal_World_m =
-            wallNormal_World_m -
-            wallNormal_World_m.dot(groundNormal_World_m) * groundNormal_World_m;
+        Eigen::Vector3d horizontalNormal_world_m =
+            wallNormal_world_m -
+            wallNormal_world_m.dot(groundNormal_world_m) * groundNormal_world_m;
 
-        if (horizontalNormal_World_m.norm() < 1e-8)
+        if (horizontalNormal_world_m.norm() < 1e-8)
         {
             continue;
         }
 
-        horizontalNormal_World_m.normalize();
+        horizontalNormal_world_m.normalize();
 
-        Eigen::Vector3d wallCentroid2D_World_m{};
-        if (p_wall->getCentroid(wallCentroid2D_World_m) !=
+        Eigen::Vector3d wallCentroid2D_world_m{};
+        if (p_wall->getCentroid(wallCentroid2D_world_m) !=
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -1281,20 +1281,20 @@ std::vector<Eigen::Vector3d>
                          __func__);
         }
 
-        if (!wallCentroid2D_World_m.allFinite())
+        if (!wallCentroid2D_world_m.allFinite())
         {
             continue;
         }
 
         /* A point on the vertical wall projected onto the horizontal plane. */
-        Eigen::Vector3d wallPoint_World_m =
-            wallCentroid2D_World_m -
-            wallCentroid2D_World_m.dot(groundNormal_World_m) *
-                groundNormal_World_m;
+        Eigen::Vector3d wallPoint_world_m =
+            wallCentroid2D_world_m -
+            wallCentroid2D_world_m.dot(groundNormal_world_m) *
+                groundNormal_world_m;
 
         const Eigen::Vector2d normal2D(
-            horizontalNormal_World_m.dot(axisU_World_m),
-            horizontalNormal_World_m.dot(axisV_World_m));
+            horizontalNormal_world_m.dot(axisU_world_m),
+            horizontalNormal_world_m.dot(axisV_world_m));
 
         if (normal2D.norm() < 1e-8)
         {
@@ -1304,22 +1304,22 @@ std::vector<Eigen::Vector3d>
         HorizontalWall horizontalWall;
         horizontalWall.normal2D = normal2D;
         horizontalWall.offset2d =
-            normal2D.dot(Eigen::Vector2d(wallPoint_World_m.dot(axisU_World_m),
-                                         wallPoint_World_m.dot(axisV_World_m)));
-        horizontalWall.centroid2D = {wallCentroid2D_World_m.dot(axisU_World_m),
-                                     wallCentroid2D_World_m.dot(axisV_World_m)};
+            normal2D.dot(Eigen::Vector2d(wallPoint_world_m.dot(axisU_world_m),
+                                         wallPoint_world_m.dot(axisV_world_m)));
+        horizontalWall.centroid2D = {wallCentroid2D_world_m.dot(axisU_world_m),
+                                     wallCentroid2D_world_m.dot(axisV_world_m)};
 
         horizontalWalls.push_back(horizontalWall);
     }
 
     if (horizontalWalls.size() < 3)
     {
-        return corners_World_m;
+        return corners_world_m;
     }
 
     const Eigen::Vector2d roomCentroid2D(
-        roomCentroid_World_m.dot(axisU_World_m),
-        roomCentroid_World_m.dot(axisV_World_m));
+        roomCentroid_world_m.dot(axisU_world_m),
+        roomCentroid_world_m.dot(axisV_world_m));
 
     /* Order walls around the room centroid so adjacent walls are consecutive.
      */
@@ -1362,8 +1362,8 @@ std::vector<Eigen::Vector3d>
         if (!std::isfinite(determinant) || std::abs(determinant) < 1e-8)
         {
             /* Parallel consecutive walls have no well-defined corner. */
-            corners_World_m.clear();
-            return corners_World_m;
+            corners_world_m.clear();
+            return corners_world_m;
         }
 
         const Eigen::Vector2d offsets(currentWall.offset2d, nextWall.offset2d);
@@ -1372,8 +1372,8 @@ std::vector<Eigen::Vector3d>
 
         if (!corner2D.allFinite())
         {
-            corners_World_m.clear();
-            return corners_World_m;
+            corners_world_m.clear();
+            return corners_world_m;
         }
 
         corners2D.push_back(corner2D);
@@ -1383,22 +1383,22 @@ std::vector<Eigen::Vector3d>
      * is available, falling back to the room centroid height otherwise. */
     const double boundaryHeight_m =
         hasFloorPlane ? floorHeight_m
-                      : roomCentroid_World_m.dot(groundNormal_World_m);
+                      : roomCentroid_world_m.dot(groundNormal_world_m);
 
-    corners_World_m.reserve(corners2D.size());
+    corners_world_m.reserve(corners2D.size());
 
     for (const Eigen::Vector2d &corner2D : corners2D)
     {
-        corners_World_m.emplace_back(
-            corner2D.x() * axisU_World_m[0] + corner2D.y() * axisV_World_m[0] +
-                boundaryHeight_m * groundNormal_World_m[0],
-            corner2D.x() * axisU_World_m[1] + corner2D.y() * axisV_World_m[1] +
-                boundaryHeight_m * groundNormal_World_m[1],
-            corner2D.x() * axisU_World_m[2] + corner2D.y() * axisV_World_m[2] +
-                boundaryHeight_m * groundNormal_World_m[2]);
+        corners_world_m.emplace_back(
+            corner2D.x() * axisU_world_m[0] + corner2D.y() * axisV_world_m[0] +
+                boundaryHeight_m * groundNormal_world_m[0],
+            corner2D.x() * axisU_world_m[1] + corner2D.y() * axisV_world_m[1] +
+                boundaryHeight_m * groundNormal_world_m[1],
+            corner2D.x() * axisU_world_m[2] + corner2D.y() * axisV_world_m[2] +
+                boundaryHeight_m * groundNormal_world_m[2]);
     }
 
-    return corners_World_m;
+    return corners_world_m;
 }
 
 void appendRoomMarkers(
@@ -1880,11 +1880,11 @@ void appendRoomMarkers(
          * ROOM-BOUNDARY LOOP OUTLINE: closed corner polygon, only while the
          * validator has classed the wall loop COMPLETE (axiom (f)'s
          * corner-alignment result, exposed via
-         * Room::getBoundaryCorners_World_m()).
+         * Room::getBoundaryCorners_world_m()).
          * ------------------------------------------------------------------ */
 
-        std::vector<Eigen::Vector3d> boundaryCorners_World_m{};
-        if (mappedRoom->getBoundaryCorners_World_m(boundaryCorners_World_m) !=
+        std::vector<Eigen::Vector3d> boundaryCorners_world_m{};
+        if (mappedRoom->getBoundaryCorners_world_m(boundaryCorners_world_m) !=
             vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -1904,7 +1904,7 @@ void appendRoomMarkers(
                          __func__);
         }
         if (mappedRoomIsBoundaryComplete &&
-            boundaryCorners_World_m.size() >= 3U)
+            boundaryCorners_world_m.size() >= 3U)
         {
             visualization_msgs::msg::Marker roomBoundaryLoopMarker;
 
@@ -1932,14 +1932,14 @@ void appendRoomMarkers(
                 rclcpp::Duration::from_seconds(1.0);
 
             roomBoundaryLoopMarker.points.reserve(
-                boundaryCorners_World_m.size() + 1U);
-            for (const Eigen::Vector3d &corner_World_m :
-                 boundaryCorners_World_m)
+                boundaryCorners_world_m.size() + 1U);
+            for (const Eigen::Vector3d &corner_world_m :
+                 boundaryCorners_world_m)
             {
                 geometry_msgs::msg::Point cornerPoint;
-                cornerPoint.x = corner_World_m.x();
-                cornerPoint.y = corner_World_m.y();
-                cornerPoint.z = corner_World_m.z();
+                cornerPoint.x = corner_world_m.x();
+                cornerPoint.y = corner_world_m.y();
+                cornerPoint.z = corner_world_m.z();
                 roomBoundaryLoopMarker.points.push_back(cornerPoint);
             }
             /* Close the loop back to the first corner. */
@@ -3280,11 +3280,11 @@ void publishAllMappedFloors(
         floorData.has_plane_identity = planeIdentity.has_value();
         if (planeIdentity.has_value())
         {
-            floorData.normal.x = planeIdentity->equation_World.x();
-            floorData.normal.y = planeIdentity->equation_World.y();
-            floorData.normal.z = planeIdentity->equation_World.z();
+            floorData.normal.x = planeIdentity->equation_world.x();
+            floorData.normal.y = planeIdentity->equation_world.y();
+            floorData.normal.z = planeIdentity->equation_world.z();
             floorData.offset_d =
-                static_cast<float>(planeIdentity->equation_World.w());
+                static_cast<float>(planeIdentity->equation_world.w());
             floorData.finite_support_count =
                 static_cast<int32_t>(planeIdentity->finiteSupportCount);
             floorData.observation_count =
@@ -4064,11 +4064,11 @@ void maybeArchiveSGraph(
                 floorJson["has_plane_identity"] = identity.has_value();
                 if (identity.has_value())
                 {
-                    const Eigen::Vector3d normal_World_m =
-                        identity->equation_World.head<3>();
-                    floorJson["normal"] = archiveVector3(normal_World_m);
+                    const Eigen::Vector3d normal_world_m =
+                        identity->equation_world.head<3>();
+                    floorJson["normal"] = archiveVector3(normal_world_m);
                     floorJson["offset_d"] =
-                        sanitiseArchiveDouble(identity->equation_World[3]);
+                        sanitiseArchiveDouble(identity->equation_world[3]);
                     floorJson["finite_support_count"] =
                         identity->finiteSupportCount;
                     floorJson["observation_count"] = identity->observationCount;
@@ -4239,8 +4239,8 @@ void maybeArchiveSGraph(
                         // getGeometryMetadataSnapshot cannot fail; continue as
                         // before.
                     }
-                    g2o::Plane3D equation_World{};
-                    if (p_wall->getGlobalEquation(equation_World) !=
+                    g2o::Plane3D equation_world{};
+                    if (p_wall->getGlobalEquation(equation_world) !=
                         vs_graphs::core::geometric::PlaneStatus::
                             PLANE_STATUS_SUCCESS)
                     {
@@ -4250,10 +4250,10 @@ void maybeArchiveSGraph(
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    const Eigen::Vector3d normal_World_m(
-                        equation_World.normal().x(),
-                        equation_World.normal().y(),
-                        equation_World.normal().z());
+                    const Eigen::Vector3d normal_world_m(
+                        equation_world.normal().x(),
+                        equation_world.normal().y(),
+                        equation_world.normal().z());
 
                     Json wallJson;
                     int  wallGetId3{};
@@ -4269,7 +4269,7 @@ void maybeArchiveSGraph(
                     }
                     wallJson["wall_id"] = wallGetId3;
                     wallJson["wall_centroid"] =
-                        archiveVector3(geometry.centroid_World_m);
+                        archiveVector3(geometry.centroid_world_m);
                     Json wallLimits;
                     wallLimits["min_u_m"] =
                         sanitiseArchiveDouble(geometry.minPlaneU_m);
@@ -4283,9 +4283,9 @@ void maybeArchiveSGraph(
                         geometry.finiteSupportCount;
                     wallLimits["observation_count"] = geometry.observationCount;
                     wallJson["wall_limits"]         = std::move(wallLimits);
-                    wallJson["wall_normal"] = archiveVector3(normal_World_m);
+                    wallJson["wall_normal"] = archiveVector3(normal_world_m);
                     wallJson["wall_offset_d"] =
-                        sanitiseArchiveDouble(equation_World.coeffs()[3]);
+                        sanitiseArchiveDouble(equation_world.coeffs()[3]);
                     wallJson["wall_extent_u_m"] = sanitiseArchiveDouble(
                         geometry.maxPlaneU_m - geometry.minPlaneU_m);
                     wallJson["wall_extent_v_m"] = sanitiseArchiveDouble(
@@ -4612,9 +4612,9 @@ void publishAllPoints(std::vector<vs_graphs::core::MapPoint *> allMapPoints_in,
     pubAllMappoints->publish(cloud);
 }
 
-void publishBodyOdometry(const Sophus::SE3f    &robotPose_BodToWorld_in,
-                         const Eigen::Vector3f &linearVelocity_World_mps_in,
-                         const Eigen::Vector3f &angularVelocity_Bod_radps_in,
+void publishBodyOdometry(const Sophus::SE3f    &robotPose_bodyToWorld_in,
+                         const Eigen::Vector3f &linearVelocity_world_mps_in,
+                         const Eigen::Vector3f &angularVelocity_body_radps_in,
                          const rclcpp::Time    &msgTims_s_in)
 {
     /* Confirm that the odometry publisher has been initialised */
@@ -4628,10 +4628,10 @@ void publishBodyOdometry(const Sophus::SE3f    &robotPose_BodToWorld_in,
     }
 
     /* Extract the body position and orientation once */
-    const Eigen::Vector3f position_World_m =
-        robotPose_BodToWorld_in.translation();
-    const Eigen::Quaternionf orientation_WorldToBod =
-        robotPose_BodToWorld_in.unit_quaternion();
+    const Eigen::Vector3f position_world_m =
+        robotPose_bodyToWorld_in.translation();
+    const Eigen::Quaternionf orientation_bodyToWorld =
+        robotPose_bodyToWorld_in.unit_quaternion();
 
     /* Initialise the odometry message */
     nav_msgs::msg::Odometry odometryMessage;
@@ -4641,38 +4641,38 @@ void publishBodyOdometry(const Sophus::SE3f    &robotPose_BodToWorld_in,
     odometryMessage.child_frame_id  = frameImu;
 
     /* Set the body position in the world frame */
-    odometryMessage.pose.pose.position.x = position_World_m.x();
-    odometryMessage.pose.pose.position.y = position_World_m.y();
-    odometryMessage.pose.pose.position.z = position_World_m.z();
+    odometryMessage.pose.pose.position.x = position_world_m.x();
+    odometryMessage.pose.pose.position.y = position_world_m.y();
+    odometryMessage.pose.pose.position.z = position_world_m.z();
 
     /* Set the body orientation relative to the world frame */
-    odometryMessage.pose.pose.orientation.x = orientation_WorldToBod.x();
-    odometryMessage.pose.pose.orientation.y = orientation_WorldToBod.y();
-    odometryMessage.pose.pose.orientation.z = orientation_WorldToBod.z();
-    odometryMessage.pose.pose.orientation.w = orientation_WorldToBod.w();
+    odometryMessage.pose.pose.orientation.x = orientation_bodyToWorld.x();
+    odometryMessage.pose.pose.orientation.y = orientation_bodyToWorld.y();
+    odometryMessage.pose.pose.orientation.z = orientation_bodyToWorld.z();
+    odometryMessage.pose.pose.orientation.w = orientation_bodyToWorld.w();
 
     /* Set the body linear velocity */
-    odometryMessage.twist.twist.linear.x = linearVelocity_World_mps_in.x();
-    odometryMessage.twist.twist.linear.y = linearVelocity_World_mps_in.y();
-    odometryMessage.twist.twist.linear.z = linearVelocity_World_mps_in.z();
+    odometryMessage.twist.twist.linear.x = linearVelocity_world_mps_in.x();
+    odometryMessage.twist.twist.linear.y = linearVelocity_world_mps_in.y();
+    odometryMessage.twist.twist.linear.z = linearVelocity_world_mps_in.z();
 
     /* Set the body angular velocity */
-    odometryMessage.twist.twist.angular.x = angularVelocity_Bod_radps_in.x();
-    odometryMessage.twist.twist.angular.y = angularVelocity_Bod_radps_in.y();
-    odometryMessage.twist.twist.angular.z = angularVelocity_Bod_radps_in.z();
+    odometryMessage.twist.twist.angular.x = angularVelocity_body_radps_in.x();
+    odometryMessage.twist.twist.angular.y = angularVelocity_body_radps_in.y();
+    odometryMessage.twist.twist.angular.z = angularVelocity_body_radps_in.z();
 
     /* Publish the completed odometry message */
     pubOdometry->publish(odometryMessage);
 }
 
-void publishCameraPose(const Sophus::SE3f &cameraPose_World_in,
+void publishCameraPose(const Sophus::SE3f &cameraPose_world_in,
                        const rclcpp::Time &msgTime_s_in)
 {
     /* Extract the camera position and orientation once */
     const Eigen::Vector3f cameraPosition_world_m =
-        cameraPose_World_in.translation();
+        cameraPose_world_in.translation();
     const Eigen::Quaternionf cameraOrientation_world =
-        cameraPose_World_in.unit_quaternion();
+        cameraPose_world_in.unit_quaternion();
 
     /* Initialise the camera-pose message */
     geometry_msgs::msg::PoseStamped cameraPoseMessage;
@@ -4888,7 +4888,7 @@ void publishFiducialMarkers(
     }
 }
 
-void publishFramePointCloud(const Sophus::SE3f &cameraPose_CameraToWorld_in,
+void publishFramePointCloud(const Sophus::SE3f &cameraPose_cameraToWorld_in,
                             const sensor_msgs::msg::PointCloud2::ConstSharedPtr
                                                &pointCloudCameraMessage_in,
                             const rclcpp::Time &msgTime_s_in)
@@ -4910,8 +4910,8 @@ void publishFramePointCloud(const Sophus::SE3f &cameraPose_CameraToWorld_in,
     }
 
     /* Confirm that the camera transformation is valid */
-    if (!cameraPose_CameraToWorld_in.translation().allFinite() ||
-        !cameraPose_CameraToWorld_in.rotationMatrix().allFinite())
+    if (!cameraPose_cameraToWorld_in.translation().allFinite() ||
+        !cameraPose_cameraToWorld_in.rotationMatrix().allFinite())
     {
         RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
                     "Cannot publish Voxblox input cloud: camera pose contains "
@@ -4948,7 +4948,7 @@ void publishFramePointCloud(const Sophus::SE3f &cameraPose_CameraToWorld_in,
 }
 
 void publishFreeSpaceClusters(
-    const std::vector<std::vector<Eigen::Vector3d>> &freeSpaceClusters_World_in,
+    const std::vector<std::vector<Eigen::Vector3d>> &freeSpaceClusters_world_in,
     const rclcpp::Time                              &msgTime_s_in)
 {
     /* Confirm that the publisher has been initialised */
@@ -4962,7 +4962,7 @@ void publishFreeSpaceClusters(
     }
 
     /* Return when there are no free-space clusters to publish */
-    if (freeSpaceClusters_World_in.empty())
+    if (freeSpaceClusters_world_in.empty())
     {
         return;
     }
@@ -4984,7 +4984,7 @@ void publishFreeSpaceClusters(
     std::size_t totalPointCount = 0;
 
     for (const std::vector<Eigen::Vector3d> &cluster :
-         freeSpaceClusters_World_in)
+         freeSpaceClusters_world_in)
     {
         totalPointCount += cluster.size();
     }
@@ -5001,11 +5001,11 @@ void publishFreeSpaceClusters(
 
     /* Convert every free-space cluster into coloured PCL points */
     for (std::size_t clusterIndex = 0;
-         clusterIndex < freeSpaceClusters_World_in.size();
+         clusterIndex < freeSpaceClusters_world_in.size();
          clusterIndex++)
     {
         const std::vector<Eigen::Vector3d> &clusterPoints_world =
-            freeSpaceClusters_World_in[clusterIndex];
+            freeSpaceClusters_world_in[clusterIndex];
 
         const std::array<std::uint8_t, 3> &clusterColour =
             clusterColourPalette[clusterIndex % clusterColourPalette.size()];
@@ -6453,7 +6453,7 @@ void publishStructuralElements(
     }
 }
 
-void publishTFTransform(const Sophus::SE3f &transform_ParentToChild_in,
+void publishTFTransform(const Sophus::SE3f &transform_parentToChild_in,
                         const std::string  &parentFrameId_in,
                         const std::string  &childFrameId_in,
                         const rclcpp::Time &msgTime_s_in)
@@ -6488,8 +6488,8 @@ void publishTFTransform(const Sophus::SE3f &transform_ParentToChild_in,
     }
 
     /* Confirm that the supplied transformation contains valid values */
-    if (!transform_ParentToChild_in.translation().allFinite() ||
-        !transform_ParentToChild_in.rotationMatrix().allFinite())
+    if (!transform_parentToChild_in.translation().allFinite() ||
+        !transform_parentToChild_in.rotationMatrix().allFinite())
     {
         RCLCPP_ERROR(rclcpp::get_logger("visual_sgraphs"),
                      "Cannot publish TF transform: transformation contains "
@@ -6500,10 +6500,10 @@ void publishTFTransform(const Sophus::SE3f &transform_ParentToChild_in,
 
     /* Extract the translation and orientation once */
     const Eigen::Vector3f translation_parent_child_m =
-        transform_ParentToChild_in.translation();
+        transform_parentToChild_in.translation();
 
     Eigen::Quaternionf orientation_parent_child =
-        transform_ParentToChild_in.unit_quaternion();
+        transform_parentToChild_in.unit_quaternion();
 
     orientation_parent_child.normalize();
 
@@ -7898,9 +7898,9 @@ static void getMissionHealthService(
     if (snapshot.isPoseValid)
     {
         const Eigen::Vector3f translation =
-            snapshot.cameraPose_World.translation();
+            snapshot.cameraPose_world.translation();
         const Eigen::Quaternionf orientation =
-            snapshot.cameraPose_World.unit_quaternion();
+            snapshot.cameraPose_world.unit_quaternion();
         response_out->pose.position.x    = translation.x();
         response_out->pose.position.y    = translation.y();
         response_out->pose.position.z    = translation.z();

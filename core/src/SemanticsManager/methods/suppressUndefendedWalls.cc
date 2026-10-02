@@ -105,7 +105,7 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector3d groundNormalForEvidence_World = Eigen::Vector3d::Zero();
+    Eigen::Vector3d groundNormalForEvidence_world = Eigen::Vector3d::Zero();
     bool            groundPlaneForEvidenceIsBad{};
     if ((p_groundPlaneForEvidence != nullptr) &&
         p_groundPlaneForEvidence->isBad(groundPlaneForEvidenceIsBad) !=
@@ -133,7 +133,7 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
         const double groundNorm = groundEq.head<3>().norm();
         if (groundEq.allFinite() && groundNorm > 1e-8)
         {
-            groundNormalForEvidence_World = groundEq.head<3>() / groundNorm;
+            groundNormalForEvidence_world = groundEq.head<3>() / groundNorm;
         }
     }
 
@@ -261,7 +261,7 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
         WallAdmissionEvidence evidence{};
         if (evaluateWallAdmissionEvidence(p_wall,
                                           p_sysParams,
-                                          groundNormalForEvidence_World,
+                                          groundNormalForEvidence_world,
                                           evidence) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
@@ -281,15 +281,15 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
-        const double wallNormalNorm = wallEquation_World.head<3>().norm();
+        const Eigen::Vector4d wallEquation_world = wallGeometry.equation_world;
+        const double wallNormalNorm = wallEquation_world.head<3>().norm();
         bool         hasCompatibleLiveCluster = false;
-        if (wallGeometry.centroid_World_m.allFinite() &&
-            wallEquation_World.allFinite() && wallNormalNorm > 1e-8)
+        if (wallGeometry.centroid_world_m.allFinite() &&
+            wallEquation_world.allFinite() && wallNormalNorm > 1e-8)
         {
-            const Eigen::Vector3d wallNormal_World =
-                wallEquation_World.head<3>() / wallNormalNorm;
-            const double wallOffset_m = wallEquation_World(3) / wallNormalNorm;
+            const Eigen::Vector3d wallNormal_world =
+                wallEquation_world.head<3>() / wallNormalNorm;
+            const double wallOffset_m = wallEquation_world(3) / wallNormalNorm;
             const double maximumCentroidDistance_m =
                 2.0 * static_cast<double>(
                           p_sysParams->roomSeg
@@ -303,17 +303,17 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                 {
                     continue;
                 }
-                Eigen::Vector3d clusterCentroid_World_m{};
+                Eigen::Vector3d clusterCentroid_world_m{};
                 if (utils::utils::Utils::computeCentroidFromPoints(
                         cluster,
-                        clusterCentroid_World_m) !=
+                        clusterCentroid_world_m) !=
                     utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                 {
                     // computeCentroidFromPoints cannot fail; continue as
                     // before.
                 }
-                if (!clusterCentroid_World_m.allFinite() ||
-                    (clusterCentroid_World_m - wallGeometry.centroid_World_m)
+                if (!clusterCentroid_world_m.allFinite() ||
+                    (clusterCentroid_world_m - wallGeometry.centroid_world_m)
                             .norm() > maximumCentroidDistance_m)
                 {
                     continue;
@@ -321,11 +321,11 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                 hasCompatibleLiveCluster = std::any_of(
                     cluster.begin(),
                     cluster.end(),
-                    [&wallNormal_World, wallOffset_m, maximumPointDistance_m](
+                    [&wallNormal_world, wallOffset_m, maximumPointDistance_m](
                         const Eigen::Vector3d &point)
                     {
                         return point.allFinite() &&
-                               std::abs(wallNormal_World.dot(point) +
+                               std::abs(wallNormal_world.dot(point) +
                                         wallOffset_m) <= maximumPointDistance_m;
                     });
                 if (hasCompatibleLiveCluster)

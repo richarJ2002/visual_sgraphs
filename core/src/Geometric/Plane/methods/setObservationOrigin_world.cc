@@ -17,31 +17,38 @@
  */
 
 /*!
- * @file            getBoundaryCorners_World_m.cc
+ * @file            setObservationOrigin_world.cc
  *
- * @brief           Implements Room::getBoundaryCorners_World_m(), declared in
- *                  Semantic/Room.h.
+ * @brief           Implements Plane::setObservationOrigin_world(), declared in
+ *                  Geometric/Plane.h.
  */
 
-#include "Semantic/Room.h"
+#include "Geometric/Plane.h"
 #include <algorithm>
+#include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
 #include <cmath>
+#include <limits>
+#include <mutex>
+#include <pcl/octree/octree_search.h>
+#include <vector>
 
 namespace vs_graphs
 {
 namespace core
 {
-namespace semantic
+namespace geometric
 {
 
-RoomStatus Room::getBoundaryCorners_World_m(
-    std::vector<Eigen::Vector3d> &boundaryCorners_World_m_out) const
+PlaneStatus
+    Plane::setObservationOrigin_world(const Eigen::Vector3d &origin_world_m_in)
 {
-    std::lock_guard<std::mutex> boundaryStatusLock(boundaryStatusMutex);
-    boundaryCorners_World_m_out = boundaryCorners_World_m;
-    return RoomStatus::ROOM_STATUS_SUCCESS;
+    std::unique_lock<std::mutex> lock(positionMutex);
+    observationOrigin_world_m = origin_world_m_in;
+
+    return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
-} // namespace semantic
+} // namespace geometric
 } // namespace core
 } // namespace vs_graphs

@@ -20,7 +20,7 @@ set(VS_GRAPHS_GEOMETRIC_PLANE_SOURCES
   core/src/Geometric/Plane/methods/getMapClouds.cc
   core/src/Geometric/Plane/methods/getMapPoints.cc
   core/src/Geometric/Plane/methods/getObservationCount.cc
-  core/src/Geometric/Plane/methods/getObservationOrigin_World.cc
+  core/src/Geometric/Plane/methods/getObservationOrigin_world.cc
   core/src/Geometric/Plane/methods/getObservationSideSnapshot.cc
   core/src/Geometric/Plane/methods/getObservations.cc
   core/src/Geometric/Plane/methods/getOpId.cc
@@ -42,7 +42,7 @@ set(VS_GRAPHS_GEOMETRIC_PLANE_SOURCES
   core/src/Geometric/Plane/methods/setMap.cc
   core/src/Geometric/Plane/methods/setMapClouds.cc
   core/src/Geometric/Plane/methods/setMapPoints.cc
-  core/src/Geometric/Plane/methods/setObservationOrigin_World.cc
+  core/src/Geometric/Plane/methods/setObservationOrigin_world.cc
   core/src/Geometric/Plane/methods/setOpId.cc
   core/src/Geometric/Plane/methods/setOpIdG.cc
   core/src/Geometric/Plane/methods/setPlaneType.cc

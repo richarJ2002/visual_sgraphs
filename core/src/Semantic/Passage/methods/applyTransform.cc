@@ -80,11 +80,11 @@ PassageStatus
     {
         const Eigen::Vector3d transformedDirection =
             transform_oldWorldToNewWorld_in.rotation().toRotationMatrix() *
-            knownSideProvenance.direction_World;
+            knownSideProvenance.direction_world;
         if (transformedDirection.allFinite() &&
             transformedDirection.norm() > 1e-8)
         {
-            knownSideProvenance.direction_World =
+            knownSideProvenance.direction_world =
                 transformedDirection.normalized();
         }
     }

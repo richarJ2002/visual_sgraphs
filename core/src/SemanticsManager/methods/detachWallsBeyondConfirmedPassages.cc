@@ -83,17 +83,17 @@ SemanticsManagerStatus
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    const Eigen::Vector4d groundEquation_World =
+    const Eigen::Vector4d groundEquation_world =
         groundPlaneGetGlobalEquation.coeffs();
-    const double groundNormalNorm = groundEquation_World.head<3>().norm();
+    const double groundNormalNorm = groundEquation_world.head<3>().norm();
 
-    if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)
+    if (!groundEquation_world.allFinite() || groundNormalNorm < 1e-8)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    const Eigen::Vector3d groundNormal_World =
-        groundEquation_World.head<3>() / groundNormalNorm;
+    const Eigen::Vector3d groundNormal_world =
+        groundEquation_world.head<3>() / groundNormalNorm;
     const double openingMargin_m =
         static_cast<double>(partitionParameters.openingMargin_m);
     const double minimumSideDistance_m = static_cast<double>(
@@ -163,8 +163,8 @@ SemanticsManagerStatus
             continue;
         }
 
-        Eigen::Vector3d roomCentroid_World_m{};
-        if (p_room->getCentroid(roomCentroid_World_m) !=
+        Eigen::Vector3d roomCentroid_world_m{};
+        if (p_room->getCentroid(roomCentroid_world_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -173,7 +173,7 @@ SemanticsManagerStatus
                          __func__);
         }
 
-        if (!roomCentroid_World_m.allFinite())
+        if (!roomCentroid_world_m.allFinite())
         {
             continue;
         }
@@ -213,10 +213,10 @@ SemanticsManagerStatus
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            const Eigen::Vector3d wallCentroid_World_m =
+            const Eigen::Vector3d wallCentroid_world_m =
                 wallGetCentroid.cast<double>();
 
-            if (!wallCentroid_World_m.allFinite())
+            if (!wallCentroid_world_m.allFinite())
             {
                 continue;
             }
@@ -232,10 +232,10 @@ SemanticsManagerStatus
                  * different wall reached only through that opening.
                  */
                 bool crossesPassageOpening{};
-                if (segmentCrossesPassageOpening(roomCentroid_World_m,
-                                                 wallCentroid_World_m,
+                if (segmentCrossesPassageOpening(roomCentroid_world_m,
+                                                 wallCentroid_world_m,
                                                  p_passage,
-                                                 groundNormal_World,
+                                                 groundNormal_world,
                                                  openingMargin_m,
                                                  minimumSideDistance_m,
                                                  crossesPassageOpening) !=

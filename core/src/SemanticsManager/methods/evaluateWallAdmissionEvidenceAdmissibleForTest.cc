@@ -36,13 +36,13 @@ namespace core
 SemanticsManagerStatus
     SemanticsManager::evaluateWallAdmissionEvidenceAdmissibleForTest(
         geometric::Plane      *p_wall_in,
-        const Eigen::Vector3d &groundNormal_World_in,
+        const Eigen::Vector3d &groundNormal_world_in,
         bool                  &isAdmissible_out) const
 {
     WallAdmissionEvidence admissionEvidence{};
     if (evaluateWallAdmissionEvidence(p_wall_in,
                                       p_sysParams,
-                                      groundNormal_World_in,
+                                      groundNormal_world_in,
                                       admissionEvidence) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
     {

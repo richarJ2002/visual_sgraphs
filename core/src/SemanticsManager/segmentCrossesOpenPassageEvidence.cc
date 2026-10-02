@@ -63,13 +63,13 @@ namespace core
  *              is still ambiguous.
  */
 SemanticsManagerStatus segmentCrossesOpenPassageEvidence(
-    const Eigen::Vector3d &segmentStart_World_m_in,
-    const Eigen::Vector3d &segmentEnd_World_m_in,
+    const Eigen::Vector3d &segmentStart_world_m_in,
+    const Eigen::Vector3d &segmentEnd_world_m_in,
     geometric::Plane      *p_evidenceSupportingWall_in,
-    const Eigen::Vector3d &evidenceCentroid_World_m_in,
+    const Eigen::Vector3d &evidenceCentroid_world_m_in,
     const double           evidenceOpeningRadius_m_in,
     const double           evidenceHeightSpan_m_in,
-    const Eigen::Vector3d &groundNormal_World_in,
+    const Eigen::Vector3d &groundNormal_world_in,
     const double           openingMargin_m_in,
     const double           minimumSideDistance_m_in,
     bool                  &crossesOpenPassageEvidence_out)
@@ -105,13 +105,13 @@ SemanticsManagerStatus segmentCrossesOpenPassageEvidence(
     }
     bool crossesAperture{};
     if (segmentCrossesAperture(
-            segmentStart_World_m_in,
-            segmentEnd_World_m_in,
+            segmentStart_world_m_in,
+            segmentEnd_world_m_in,
             evidenceSupportingWallGetGlobalEquation.coeffs(),
-            evidenceCentroid_World_m_in,
+            evidenceCentroid_world_m_in,
             2.0 * evidenceOpeningRadius_m_in,
             std::max(evidenceHeightSpan_m_in, defaultOpenPassageHeight_m),
-            groundNormal_World_in,
+            groundNormal_world_in,
             openingMargin_m_in,
             minimumSideDistance_m_in,
             crossesAperture) !=

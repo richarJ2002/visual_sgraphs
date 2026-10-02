@@ -56,15 +56,15 @@ bool isValueLessForCollisionTiebreak(const PassageRecord &lhs_in,
     {
         return lhs_in.passageType < rhs_in.passageType;
     }
-    if (isVector4dLess(lhs_in.equation_World, rhs_in.equation_World) ||
-        isVector4dLess(rhs_in.equation_World, lhs_in.equation_World))
+    if (isVector4dLess(lhs_in.equation_world, rhs_in.equation_world) ||
+        isVector4dLess(rhs_in.equation_world, lhs_in.equation_world))
     {
-        return isVector4dLess(lhs_in.equation_World, rhs_in.equation_World);
+        return isVector4dLess(lhs_in.equation_world, rhs_in.equation_world);
     }
-    if (isVector3dLess(lhs_in.centroid_World_m, rhs_in.centroid_World_m) ||
-        isVector3dLess(rhs_in.centroid_World_m, lhs_in.centroid_World_m))
+    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m) ||
+        isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
     {
-        return isVector3dLess(lhs_in.centroid_World_m, rhs_in.centroid_World_m);
+        return isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m);
     }
     if (isDoubleLess(lhs_in.width_m, rhs_in.width_m) ||
         isDoubleLess(rhs_in.width_m, lhs_in.width_m))
@@ -110,19 +110,19 @@ bool isValueLessForCollisionTiebreak(const PassageRecord &lhs_in,
         return isEntityRefLess(lhs_in.knownSideRoomRef,
                                rhs_in.knownSideRoomRef);
     }
-    if (lhs_in.knownSideDirection_World.has_value() !=
-        rhs_in.knownSideDirection_World.has_value())
+    if (lhs_in.knownSideDirection_world.has_value() !=
+        rhs_in.knownSideDirection_world.has_value())
     {
-        return lhs_in.knownSideDirection_World.has_value();
+        return lhs_in.knownSideDirection_world.has_value();
     }
-    if (lhs_in.knownSideDirection_World.has_value() &&
-        (isVector3dLess(*lhs_in.knownSideDirection_World,
-                        *rhs_in.knownSideDirection_World) ||
-         isVector3dLess(*rhs_in.knownSideDirection_World,
-                        *lhs_in.knownSideDirection_World)))
+    if (lhs_in.knownSideDirection_world.has_value() &&
+        (isVector3dLess(*lhs_in.knownSideDirection_world,
+                        *rhs_in.knownSideDirection_world) ||
+         isVector3dLess(*rhs_in.knownSideDirection_world,
+                        *lhs_in.knownSideDirection_world)))
     {
-        return isVector3dLess(*lhs_in.knownSideDirection_World,
-                              *rhs_in.knownSideDirection_World);
+        return isVector3dLess(*lhs_in.knownSideDirection_world,
+                              *rhs_in.knownSideDirection_world);
     }
     if (isEntityRefLess(lhs_in.prospectiveRoomRef, rhs_in.prospectiveRoomRef) ||
         isEntityRefLess(rhs_in.prospectiveRoomRef, lhs_in.prospectiveRoomRef))

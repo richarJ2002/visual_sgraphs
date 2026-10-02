@@ -68,31 +68,31 @@ bool isValueLessForCollisionTiebreak(const RoomRecord &lhs_in,
     {
         return lhs_in.variant < rhs_in.variant;
     }
-    if (isVector3dLess(lhs_in.centroid_World_m, rhs_in.centroid_World_m) ||
-        isVector3dLess(rhs_in.centroid_World_m, lhs_in.centroid_World_m))
+    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m) ||
+        isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
     {
-        return isVector3dLess(lhs_in.centroid_World_m, rhs_in.centroid_World_m);
+        return isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m);
     }
     if (lhs_in.boundaryStatus != rhs_in.boundaryStatus)
     {
         return lhs_in.boundaryStatus < rhs_in.boundaryStatus;
     }
-    if (std::lexicographical_compare(lhs_in.boundaryCorners_World_m.begin(),
-                                     lhs_in.boundaryCorners_World_m.end(),
-                                     rhs_in.boundaryCorners_World_m.begin(),
-                                     rhs_in.boundaryCorners_World_m.end(),
+    if (std::lexicographical_compare(lhs_in.boundaryCorners_world_m.begin(),
+                                     lhs_in.boundaryCorners_world_m.end(),
+                                     rhs_in.boundaryCorners_world_m.begin(),
+                                     rhs_in.boundaryCorners_world_m.end(),
                                      &isVector3dLess) ||
-        std::lexicographical_compare(rhs_in.boundaryCorners_World_m.begin(),
-                                     rhs_in.boundaryCorners_World_m.end(),
-                                     lhs_in.boundaryCorners_World_m.begin(),
-                                     lhs_in.boundaryCorners_World_m.end(),
+        std::lexicographical_compare(rhs_in.boundaryCorners_world_m.begin(),
+                                     rhs_in.boundaryCorners_world_m.end(),
+                                     lhs_in.boundaryCorners_world_m.begin(),
+                                     lhs_in.boundaryCorners_world_m.end(),
                                      &isVector3dLess))
     {
         return std::lexicographical_compare(
-            lhs_in.boundaryCorners_World_m.begin(),
-            lhs_in.boundaryCorners_World_m.end(),
-            rhs_in.boundaryCorners_World_m.begin(),
-            rhs_in.boundaryCorners_World_m.end(),
+            lhs_in.boundaryCorners_world_m.begin(),
+            lhs_in.boundaryCorners_world_m.end(),
+            rhs_in.boundaryCorners_world_m.begin(),
+            rhs_in.boundaryCorners_world_m.end(),
             &isVector3dLess);
     }
     const auto isObservationGapLess = [](const Room::ObservationGap &lhsGap_in,

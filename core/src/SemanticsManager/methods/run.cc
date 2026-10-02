@@ -487,7 +487,7 @@ void SemanticsManager::run(void)
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    const Eigen::Vector4d passageEquation_World =
+                    const Eigen::Vector4d passageEquation_world =
                         passageGlobalEquation.coeffs();
 
                     Eigen::Vector3d passageCentroid{};
@@ -501,8 +501,8 @@ void SemanticsManager::run(void)
                             __func__);
                     }
                     if (!passageCentroid.allFinite() ||
-                        !passageEquation_World.allFinite() ||
-                        passageEquation_World.head<3>().norm() < 1e-8)
+                        !passageEquation_world.allFinite() ||
+                        passageEquation_world.head<3>().norm() < 1e-8)
                     {
                         hasValidGeometry = false;
                         break;
@@ -961,7 +961,7 @@ void SemanticsManager::run(void)
         geometric::Plane *p_pipelineGround =
             p_pipelineMap != nullptr ? p_pipelineMapBiggestGroundPlane
                                      : nullptr;
-        Eigen::Vector3d pipelineGroundNormal_World = Eigen::Vector3d::Zero();
+        Eigen::Vector3d pipelineGroundNormal_world = Eigen::Vector3d::Zero();
         bool            pipelineGroundIsBad{};
         if ((p_pipelineGround != nullptr) &&
             p_pipelineGround->isBad(pipelineGroundIsBad) !=
@@ -988,7 +988,7 @@ void SemanticsManager::run(void)
                 pipelineGroundGetGlobalEquation.coeffs();
             if (equation.allFinite() && equation.head<3>().norm() > 1e-8)
             {
-                pipelineGroundNormal_World = equation.head<3>().normalized();
+                pipelineGroundNormal_world = equation.head<3>().normalized();
             }
         }
         for (geometric::Plane *p_plane : pipelinePlanes)
@@ -1022,7 +1022,7 @@ void SemanticsManager::run(void)
             WallAdmissionEvidence admissionEvidence{};
             if (evaluateWallAdmissionEvidence(p_plane,
                                               p_sysParams,
-                                              pipelineGroundNormal_World,
+                                              pipelineGroundNormal_world,
                                               admissionEvidence) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {

@@ -198,10 +198,10 @@ AtlasStatus Atlas::copyRoomContextForMap(
                 continue;
             }
             std::optional<Eigen::Vector3d> normal{};
-            if (p_room->getWallNormalTowardRoom_World(p_wall, normal) !=
+            if (p_room->getWallNormalTowardRoom_world(p_wall, normal) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWallNormalTowardRoom_World cannot fail; continue as
+                // getWallNormalTowardRoom_world cannot fail; continue as
                 // before.
             }
             if (normal)
@@ -362,7 +362,7 @@ AtlasStatus Atlas::copyRoomContextForMap(
             context.hasKnownSideDirection = knownSideHasDirection;
             if (context.hasKnownSideDirection)
             {
-                context.knownSideDirection_World = knownSide.direction_World;
+                context.knownSideDirection_world = knownSide.direction_world;
             }
             context.hasKnownSideRoom = knownSide.p_room != nullptr;
             if (context.hasKnownSideRoom)

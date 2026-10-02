@@ -48,25 +48,25 @@ namespace test
 
 /*!
  * @brief   Builds a deterministic, exactly-on-plane rectangular grid point
- *          cloud spanning [-halfU, halfU] along axisU_World and
- *          [-halfV, halfV] along axisV_World, centered on
- *          centroid_World_m_in.
+ *          cloud spanning [-halfU, halfU] along axisU_world and
+ *          [-halfV, halfV] along axisV_world, centered on
+ *          centroid_world_m_in.
  *
- * @param   centroid_World_m_in Grid center, world frame, meters.
- * @param   axisU_World_in      Unit in-plane axis; caller ensures orthogonality
- *                               with axisV_World_in.
- * @param   axisV_World_in      Unit in-plane axis; caller ensures orthogonality
- *                               with axisU_World_in.
- * @param   halfU_m_in          Half-extent along axisU_World_in, meters.
- * @param   halfV_m_in          Half-extent along axisV_World_in, meters.
+ * @param   centroid_world_m_in Grid center, world frame, meters.
+ * @param   axisU_world_in      Unit in-plane axis; caller ensures orthogonality
+ *                               with axisV_world_in.
+ * @param   axisV_world_in      Unit in-plane axis; caller ensures orthogonality
+ *                               with axisU_world_in.
+ * @param   halfU_m_in          Half-extent along axisU_world_in, meters.
+ * @param   halfV_m_in          Half-extent along axisV_world_in, meters.
  * @param   stepsPerSide_in     Grid points per side (>= 2).
  *
  * @return  A populated, owned point cloud; never null.
  */
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
-    makeGridCloud(const Eigen::Vector3d &centroid_World_m_in,
-                  const Eigen::Vector3d &axisU_World_in,
-                  const Eigen::Vector3d &axisV_World_in,
+    makeGridCloud(const Eigen::Vector3d &centroid_world_m_in,
+                  const Eigen::Vector3d &axisU_world_in,
+                  const Eigen::Vector3d &axisV_world_in,
                   double                 halfU_m_in,
                   double                 halfV_m_in,
                   int                    stepsPerSide_in = 20);
@@ -87,24 +87,24 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
  * is overwritten.
  * @param   id_in               geometric::Plane id.
  * @param   p_map_in            Owning map; non-owning, must outlive wall_inout.
- * @param   equation_World_in   geometric::Plane equation (nx, ny, nz, d), world
+ * @param   equation_world_in   geometric::Plane equation (nx, ny, nz, d), world
  * frame.
- * @param   axisU_World_in      In-plane grid axis U, world frame, unit length.
- * @param   axisV_World_in      In-plane grid axis V, world frame, unit length.
- * @param   halfU_m_in          Half-extent along axisU_World_in, meters.
- * @param   halfV_m_in          Half-extent along axisV_World_in, meters.
- * @param   centroid_World_m_in Grid/plane centroid, world frame, meters.
+ * @param   axisU_world_in      In-plane grid axis U, world frame, unit length.
+ * @param   axisV_world_in      In-plane grid axis V, world frame, unit length.
+ * @param   halfU_m_in          Half-extent along axisU_world_in, meters.
+ * @param   halfV_m_in          Half-extent along axisV_world_in, meters.
+ * @param   centroid_world_m_in Grid/plane centroid, world frame, meters.
  */
 void makeWallPlane(
     geometric::Plane      &wall_inout,
     int                    id_in,
     Map                   *p_map_in,
-    const Eigen::Vector4d &equation_World_in,
-    const Eigen::Vector3d &axisU_World_in,
-    const Eigen::Vector3d &axisV_World_in,
+    const Eigen::Vector4d &equation_world_in,
+    const Eigen::Vector3d &axisU_world_in,
+    const Eigen::Vector3d &axisV_world_in,
     double                 halfU_m_in,
     double                 halfV_m_in,
-    const Eigen::Vector3d &centroid_World_m_in = Eigen::Vector3d::Zero());
+    const Eigen::Vector3d &centroid_world_m_in = Eigen::Vector3d::Zero());
 
 /*!
  * @brief   Constructs a ground geometric::Plane from a flat, horizontal grid
@@ -137,7 +137,7 @@ bool makeGroundPlane(geometric::Plane &ground_inout,
  * @param   p_map_in            Owning map; non-owning, must outlive room_inout.
  * @param   p_wall_in           Wall face to attach; may be null for a room
  *                               fixture that only needs a centroid.
- * @param   centroid_World_m_in semantic::Room centroid, world frame, meters.
+ * @param   centroid_world_m_in semantic::Room centroid, world frame, meters.
  * @param   variant_in          semantic::Room semantic variant.
  */
 void makeRoom(
@@ -145,7 +145,7 @@ void makeRoom(
     int                         id_in,
     Map                        *p_map_in,
     geometric::Plane           *p_wall_in,
-    const Eigen::Vector3d      &centroid_World_m_in = Eigen::Vector3d::Zero(),
+    const Eigen::Vector3d      &centroid_world_m_in = Eigen::Vector3d::Zero(),
     semantic::Room::RoomVariant variant_in = semantic::Room::RoomVariant::ROOM);
 
 /*!
@@ -157,11 +157,11 @@ void makeRoom(
  * @param   id_in                    semantic::Passage id.
  * @param   p_map_in                 Owning map; non-owning, must outlive
  *                                    passage_inout.
- * @param   equation_World_in        Aperture plane equation, world frame.
- * @param   centroid_World_m_in      Aperture centroid, world frame, meters.
+ * @param   equation_world_in        Aperture plane equation, world frame.
+ * @param   centroid_world_m_in      Aperture centroid, world frame, meters.
  * @param   p_knownSideRoom_in       Known/near-side room; non-owning, may be
  *                                    null.
- * @param   knownSideDirection_World_in Unit direction from the aperture
+ * @param   knownSideDirection_world_in Unit direction from the aperture
  *                                    toward the known-side room, world frame.
  * @param   p_farRoom_in             Prospective or confirmed far-side room;
  *                                    non-owning, may be null.
@@ -173,10 +173,10 @@ void makeRoom(
 void makePassage(semantic::Passage     &passage_inout,
                  int                    id_in,
                  Map                   *p_map_in,
-                 const Eigen::Vector4d &equation_World_in,
-                 const Eigen::Vector3d &centroid_World_m_in,
+                 const Eigen::Vector4d &equation_world_in,
+                 const Eigen::Vector3d &centroid_world_m_in,
                  semantic::Room        *p_knownSideRoom_in,
-                 const Eigen::Vector3d &knownSideDirection_World_in,
+                 const Eigen::Vector3d &knownSideDirection_world_in,
                  semantic::Room        *p_farRoom_in = nullptr,
                  bool                   passable_in  = true,
                  double                 width_m_in   = 1.0,
@@ -191,14 +191,14 @@ void makePassage(semantic::Passage     &passage_inout,
  * @param   p_map_in              Owning map; non-owning, must outlive
  *                                 floor_inout.
  * @param   rooms_in              Rooms this floor owns; non-owning pointers.
- * @param   centroidZ_World_m_in  semantic::Floor plane height, world frame,
+ * @param   centroidZ_world_m_in  semantic::Floor plane height, world frame,
  * meters.
  */
 void makeFloor(semantic::Floor                     &floor_inout,
                int                                  id_in,
                Map                                 *p_map_in,
                const std::vector<semantic::Room *> &rooms_in,
-               double                               centroidZ_World_m_in = 0.0);
+               double                               centroidZ_world_m_in = 0.0);
 
 /*!
  * @brief   Constructs a KeyFrame at the given world camera center with
@@ -209,12 +209,12 @@ void makeFloor(semantic::Floor                     &floor_inout,
  * @param   id_in                    KeyFrame id (KeyFrame::id).
  * @param   p_map_in                 Map to register the KeyFrame with; non-
  *                                    owning, may be null to skip registration.
- * @param   cameraCenter_World_m_in  Camera center, world frame, meters.
+ * @param   cameraCenter_world_m_in  Camera center, world frame, meters.
  */
 void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
                     unsigned long          id_in,
                     Map                   *p_map_in,
-                    const Eigen::Vector3f &cameraCenter_World_m_in);
+                    const Eigen::Vector3f &cameraCenter_world_m_in);
 
 /*!
  * @brief   Builds an arbitrary, non-trivial Sim3 old-world -> new-world
@@ -225,7 +225,7 @@ void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
  *
  * @param   rotationAngle_rad_in       Rotation angle about rotationAxis_in.
  * @param   rotationAxis_in            Rotation axis; normalized internally.
- * @param   translation_World_m_in     Translation applied in the new-world
+ * @param   translation_world_m_in     Translation applied in the new-world
  *                                      frame, meters.
  * @param   scale_in                   Uniform scale; must be > 0.
  *
@@ -234,7 +234,7 @@ void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
 g2o::Sim3 makeNonTrivialSim3(
     double                 rotationAngle_rad_in = 0.4,
     const Eigen::Vector3d &rotationAxis_in = Eigen::Vector3d(0.2, 0.7, 0.3),
-    const Eigen::Vector3d &translation_World_m_in = Eigen::Vector3d(1.5,
+    const Eigen::Vector3d &translation_world_m_in = Eigen::Vector3d(1.5,
                                                                     -0.8,
                                                                     0.4),
     double                 scale_in               = 1.2);

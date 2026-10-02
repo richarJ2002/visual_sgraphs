@@ -40,8 +40,8 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
     vs_graphs::core::semantic::Room    *p_retainedRoom_inout,
-    const std::vector<Eigen::Vector3d> &freeSpaceCluster_World_m_in,
-    const std::vector<vs_graphs::core::geometric::Plane *> &wallList_World_in)
+    const std::vector<Eigen::Vector3d> &freeSpaceCluster_world_m_in,
+    const std::vector<vs_graphs::core::geometric::Plane *> &wallList_world_in)
 {
     Map *p_currentMap = nullptr;
     if (p_atlas->getCurrentMap(p_currentMap) !=
@@ -64,7 +64,7 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                      __func__);
     }
     if (p_retainedRoom_inout == nullptr || retainedRoom_inoutIsBad ||
-        p_currentMap == nullptr || freeSpaceCluster_World_m_in.empty())
+        p_currentMap == nullptr || freeSpaceCluster_world_m_in.empty())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
@@ -73,8 +73,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         static_cast<double>(p_sysParams->roomSeg.centerDistanceThresh);
     const double finiteWallBoundsMargin_m =
         static_cast<double>(p_sysParams->roomSeg.finiteWallBoundsMargin_m);
-    Eigen::Vector3d retainedCentroid_World_m{};
-    if (p_retainedRoom_inout->getCentroid(retainedCentroid_World_m) !=
+    Eigen::Vector3d retainedCentroid_world_m{};
+    if (p_retainedRoom_inout->getCentroid(retainedCentroid_world_m) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -84,18 +84,18 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
     }
 
     const auto distanceToCluster_m =
-        [&freeSpaceCluster_World_m_in](const Eigen::Vector3d &point_World_m_in)
+        [&freeSpaceCluster_world_m_in](const Eigen::Vector3d &point_world_m_in)
     {
         double minimumDistance_m = std::numeric_limits<double>::infinity();
 
-        for (const Eigen::Vector3d &clusterPoint_World_m :
-             freeSpaceCluster_World_m_in)
+        for (const Eigen::Vector3d &clusterPoint_world_m :
+             freeSpaceCluster_world_m_in)
         {
-            if (clusterPoint_World_m.allFinite())
+            if (clusterPoint_world_m.allFinite())
             {
                 minimumDistance_m =
                     std::min(minimumDistance_m,
-                             (point_World_m_in - clusterPoint_World_m).norm());
+                             (point_world_m_in - clusterPoint_world_m).norm());
             }
         }
 
@@ -238,8 +238,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             continue;
         }
 
-        Eigen::Vector3d duplicateCentroid_World_m{};
-        if (p_duplicateRoom->getCentroid(duplicateCentroid_World_m) !=
+        Eigen::Vector3d duplicateCentroid_world_m{};
+        if (p_duplicateRoom->getCentroid(duplicateCentroid_world_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -248,7 +248,7 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                          __func__);
         }
         const double centroidDistance_m =
-            (duplicateCentroid_World_m - retainedCentroid_World_m).norm();
+            (duplicateCentroid_world_m - retainedCentroid_world_m).norm();
 
         /*
          * Do not impose a room-centroid separation limit here. One connected
@@ -257,15 +257,15 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
          * plus the finite-wall veto is the relevant topological evidence.
          */
         const bool isDuplicateOutsideCluster =
-            !duplicateCentroid_World_m.allFinite() ||
+            !duplicateCentroid_world_m.allFinite() ||
             !std::isfinite(centroidDistance_m) ||
-            distanceToCluster_m(duplicateCentroid_World_m) >
+            distanceToCluster_m(duplicateCentroid_world_m) >
                 maximumClusterSupportDistance_m;
         bool hasSeparatingFiniteWall2{};
         if (!(isDuplicateOutsideCluster) &&
-            hasSeparatingFiniteWall(wallList_World_in,
-                                    retainedCentroid_World_m,
-                                    duplicateCentroid_World_m,
+            hasSeparatingFiniteWall(wallList_world_in,
+                                    retainedCentroid_world_m,
+                                    duplicateCentroid_world_m,
                                     finiteWallBoundsMargin_m,
                                     hasSeparatingFiniteWall2) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
@@ -333,15 +333,15 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Vector4d groundEquation_World =
+            Eigen::Vector4d groundEquation_world =
                 groundPlaneGetGlobalEquation.coeffs();
             const double groundNormalNorm =
-                groundEquation_World.head<3>().norm();
+                groundEquation_world.head<3>().norm();
 
-            if (groundEquation_World.allFinite() && groundNormalNorm > 1e-8)
+            if (groundEquation_world.allFinite() && groundNormalNorm > 1e-8)
             {
-                const Eigen::Vector3d groundNormal_World =
-                    groundEquation_World.head<3>() / groundNormalNorm;
+                const Eigen::Vector3d groundNormal_world =
+                    groundEquation_world.head<3>() / groundNormalNorm;
                 std::vector<semantic::Passage *> confirmedPassages{};
                 if (p_atlas->getAllPassages(confirmedPassages) !=
                     AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -356,17 +356,17 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                 roomsSeparatedByConfirmedPassage = std::any_of(
                     confirmedPassages.begin(),
                     confirmedPassages.end(),
-                    [&retainedCentroid_World_m,
-                     &duplicateCentroid_World_m,
-                     &groundNormal_World,
+                    [&retainedCentroid_world_m,
+                     &duplicateCentroid_world_m,
+                     &groundNormal_world,
                      this](semantic::Passage *p_passage)
                     {
                         bool crossesPassageOpening{};
                         if (segmentCrossesPassageOpening(
-                                retainedCentroid_World_m,
-                                duplicateCentroid_World_m,
+                                retainedCentroid_world_m,
+                                duplicateCentroid_world_m,
                                 p_passage,
-                                groundNormal_World,
+                                groundNormal_world,
                                 p_sysParams->roomSeg.passagePartition
                                     .openingMargin_m,
                                 p_sysParams->roomSeg.passagePartition
@@ -405,8 +405,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
             retainedPassages.begin(),
             retainedPassages.end(),
             [&duplicatePassages,
-             &retainedCentroid_World_m,
-             &duplicateCentroid_World_m](semantic::Passage *p_sharedPassage_in)
+             &retainedCentroid_world_m,
+             &duplicateCentroid_world_m](semantic::Passage *p_sharedPassage_in)
             {
                 if (p_sharedPassage_in == nullptr ||
                     std::find(duplicatePassages.begin(),
@@ -427,29 +427,29 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Vector4d passageEquation_World =
+                Eigen::Vector4d passageEquation_world =
                     sharedPassage_inGlobalEquation.coeffs();
 
                 const double passageNormalNorm =
-                    passageEquation_World.head<3>().norm();
+                    passageEquation_world.head<3>().norm();
 
-                if (!passageEquation_World.allFinite() ||
+                if (!passageEquation_world.allFinite() ||
                     passageNormalNorm < 1e-8)
                 {
                     return false;
                 }
 
-                passageEquation_World /= passageNormalNorm;
+                passageEquation_world /= passageNormalNorm;
 
                 const double retainedSide_m =
-                    passageEquation_World.head<3>().dot(
-                        retainedCentroid_World_m) +
-                    passageEquation_World(3);
+                    passageEquation_world.head<3>().dot(
+                        retainedCentroid_world_m) +
+                    passageEquation_world(3);
 
                 const double duplicateSide_m =
-                    passageEquation_World.head<3>().dot(
-                        duplicateCentroid_World_m) +
-                    passageEquation_World(3);
+                    passageEquation_world.head<3>().dot(
+                        duplicateCentroid_world_m) +
+                    passageEquation_world(3);
 
                 return retainedSide_m * duplicateSide_m < 0.0 &&
                        std::abs(retainedSide_m) >=

@@ -101,7 +101,7 @@ SemanticAxiomEvaluatorStatus
     }
 
     RoomBoundaryGeometryStatus geometryStatus{};
-    if (checkRoomBoundaryGeometry(room_in.boundaryCorners_World_m,
+    if (checkRoomBoundaryGeometry(room_in.boundaryCorners_world_m,
                                   geometryStatus) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {

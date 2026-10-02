@@ -52,32 +52,32 @@ bool isRoomRecordLessFullGeometry(const RoomRecord &lhs_in,
         return false;
     }
 
-    if (isVector3dLess(lhs_in.centroid_World_m, rhs_in.centroid_World_m))
+    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m))
     {
         return true;
     }
-    if (isVector3dLess(rhs_in.centroid_World_m, lhs_in.centroid_World_m))
+    if (isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
     {
         return false;
     }
 
-    if (lhs_in.boundaryCorners_World_m.size() !=
-        rhs_in.boundaryCorners_World_m.size())
+    if (lhs_in.boundaryCorners_world_m.size() !=
+        rhs_in.boundaryCorners_world_m.size())
     {
-        return lhs_in.boundaryCorners_World_m.size() <
-               rhs_in.boundaryCorners_World_m.size();
+        return lhs_in.boundaryCorners_world_m.size() <
+               rhs_in.boundaryCorners_world_m.size();
     }
     for (std::size_t boundaryCornerIndex = 0U;
-         boundaryCornerIndex < lhs_in.boundaryCorners_World_m.size();
+         boundaryCornerIndex < lhs_in.boundaryCorners_world_m.size();
          ++boundaryCornerIndex)
     {
-        if (isVector3dLess(lhs_in.boundaryCorners_World_m[boundaryCornerIndex],
-                           rhs_in.boundaryCorners_World_m[boundaryCornerIndex]))
+        if (isVector3dLess(lhs_in.boundaryCorners_world_m[boundaryCornerIndex],
+                           rhs_in.boundaryCorners_world_m[boundaryCornerIndex]))
         {
             return true;
         }
-        if (isVector3dLess(rhs_in.boundaryCorners_World_m[boundaryCornerIndex],
-                           lhs_in.boundaryCorners_World_m[boundaryCornerIndex]))
+        if (isVector3dLess(rhs_in.boundaryCorners_world_m[boundaryCornerIndex],
+                           lhs_in.boundaryCorners_world_m[boundaryCornerIndex]))
         {
             return false;
         }

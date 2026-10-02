@@ -38,16 +38,16 @@ namespace core
 /*!
  * @brief Computes the unsigned area of an ordered horizontal polygon.
  *
- * @param[in]  polygonVertices_World_m_in Vertices in order, in metres; fewer
+ * @param[in]  polygonVertices_world_m_in Vertices in order, in metres; fewer
  *                                        than three give an area of 0.
  * @param[out] polygonArea_m2_out         Area, in square metres.
  * @return SEMANTICS_MANAGER_STATUS_SUCCESS.
  */
 SemanticsManagerStatus computePolygonArea_m2(
-    const std::vector<Eigen::Vector2d> &polygonVertices_World_m_in,
+    const std::vector<Eigen::Vector2d> &polygonVertices_world_m_in,
     double                             &polygonArea_m2_out)
 {
-    if (polygonVertices_World_m_in.size() < 3U)
+    if (polygonVertices_world_m_in.size() < 3U)
     {
         polygonArea_m2_out = 0.0;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
@@ -56,14 +56,14 @@ SemanticsManagerStatus computePolygonArea_m2(
     double signedTwiceArea_m2 = 0.0;
 
     for (std::size_t vertexIndex = 0U;
-         vertexIndex < polygonVertices_World_m_in.size();
+         vertexIndex < polygonVertices_world_m_in.size();
          ++vertexIndex)
     {
         const Eigen::Vector2d &currentVertex =
-            polygonVertices_World_m_in[vertexIndex];
+            polygonVertices_world_m_in[vertexIndex];
         const Eigen::Vector2d &nextVertex =
-            polygonVertices_World_m_in[(vertexIndex + 1U) %
-                                       polygonVertices_World_m_in.size()];
+            polygonVertices_world_m_in[(vertexIndex + 1U) %
+                                       polygonVertices_world_m_in.size()];
         double crossProduct{};
         if (crossProduct2d(currentVertex, nextVertex, crossProduct) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)

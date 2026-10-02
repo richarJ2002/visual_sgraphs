@@ -44,19 +44,19 @@ bool isWallRecordLessFullGeometry(const WallRecord &lhs_in,
         return false;
     }
 
-    if (isVector4dLess(lhs_in.equation_World, rhs_in.equation_World))
+    if (isVector4dLess(lhs_in.equation_world, rhs_in.equation_world))
     {
         return true;
     }
-    if (isVector4dLess(rhs_in.equation_World, lhs_in.equation_World))
+    if (isVector4dLess(rhs_in.equation_world, lhs_in.equation_world))
     {
         return false;
     }
-    if (isVector3dLess(lhs_in.centroid_World_m, rhs_in.centroid_World_m))
+    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m))
     {
         return true;
     }
-    if (isVector3dLess(rhs_in.centroid_World_m, lhs_in.centroid_World_m))
+    if (isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
     {
         return false;
     }
@@ -109,20 +109,20 @@ bool isWallRecordLessFullGeometry(const WallRecord &lhs_in,
         return lhs_in.successfulRefitGeneration <
                rhs_in.successfulRefitGeneration;
     }
-    if (lhs_in.observationOrigin_World_m.has_value() !=
-        rhs_in.observationOrigin_World_m.has_value())
+    if (lhs_in.observationOrigin_world_m.has_value() !=
+        rhs_in.observationOrigin_world_m.has_value())
     {
-        return lhs_in.observationOrigin_World_m.has_value();
+        return lhs_in.observationOrigin_world_m.has_value();
     }
-    if (lhs_in.observationOrigin_World_m.has_value())
+    if (lhs_in.observationOrigin_world_m.has_value())
     {
-        if (isVector3dLess(*lhs_in.observationOrigin_World_m,
-                           *rhs_in.observationOrigin_World_m))
+        if (isVector3dLess(*lhs_in.observationOrigin_world_m,
+                           *rhs_in.observationOrigin_world_m))
         {
             return true;
         }
-        if (isVector3dLess(*rhs_in.observationOrigin_World_m,
-                           *lhs_in.observationOrigin_World_m))
+        if (isVector3dLess(*rhs_in.observationOrigin_world_m,
+                           *lhs_in.observationOrigin_world_m))
         {
             return false;
         }

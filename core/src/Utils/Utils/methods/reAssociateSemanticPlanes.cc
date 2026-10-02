@@ -192,33 +192,33 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    Eigen::Vector4d candidateEquation_World =
-                        candidateGeometry.equation_World;
-                    Eigen::Vector4d otherEquation_World =
-                        otherGeometry.equation_World;
+                    Eigen::Vector4d candidateEquation_world =
+                        candidateGeometry.equation_world;
+                    Eigen::Vector4d otherEquation_world =
+                        otherGeometry.equation_world;
 
                     const double candidateNormalNorm =
-                        candidateEquation_World.head<3>().norm();
+                        candidateEquation_world.head<3>().norm();
                     const double otherNormalNorm =
-                        otherEquation_World.head<3>().norm();
+                        otherEquation_world.head<3>().norm();
 
-                    if (candidateEquation_World.allFinite() &&
-                        otherEquation_World.allFinite() &&
+                    if (candidateEquation_world.allFinite() &&
+                        otherEquation_world.allFinite() &&
                         candidateNormalNorm >= 1e-8 && otherNormalNorm >= 1e-8)
                     {
-                        candidateEquation_World /= candidateNormalNorm;
-                        otherEquation_World /= otherNormalNorm;
+                        candidateEquation_world /= candidateNormalNorm;
+                        otherEquation_world /= otherNormalNorm;
 
-                        if (candidateEquation_World.head<3>().dot(
-                                otherEquation_World.head<3>()) < 0.0)
+                        if (candidateEquation_world.head<3>().dot(
+                                otherEquation_world.head<3>()) < 0.0)
                         {
-                            otherEquation_World *= -1.0;
+                            otherEquation_world *= -1.0;
                         }
 
                         ObservationSideEvidence candidateObservationSide{};
-                        if (getMedianObservationSide_World_m(
+                        if (getMedianObservationSide_world_m(
                                 p_candidatePlane,
-                                candidateEquation_World,
+                                candidateEquation_world,
                                 candidateObservationSide) !=
                             UtilsStatus::UTILS_STATUS_SUCCESS)
                         {
@@ -230,9 +230,9 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                                 __func__);
                         }
                         ObservationSideEvidence otherObservationSide{};
-                        if (getMedianObservationSide_World_m(
+                        if (getMedianObservationSide_world_m(
                                 p_otherPlane,
-                                otherEquation_World,
+                                otherEquation_world,
                                 otherObservationSide) !=
                             UtilsStatus::UTILS_STATUS_SUCCESS)
                         {
@@ -319,7 +319,7 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             }
             if (associatePlanes(
                     compatiblePlanes,
-                    g2o::Plane3D(candidateAssociationGeometry.equation_World),
+                    g2o::Plane3D(candidateAssociationGeometry.equation_world),
                     candidateAssociationGeometry.supportCloud,
                     Eigen::Matrix4d::Identity(),
                     candidatePlanePlaneType5,

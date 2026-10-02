@@ -109,7 +109,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
      * observed it. Only the side turned toward a camera can ever be seen, so
      * this position permanently identifies the face -- and therefore which
      * room it bounds -- without any later re-derivation from observation
-     * history (see Plane::observationOrigin_World_m). */
+     * history (see Plane::observationOrigin_world_m). */
     if (p_keyFrame_inout != nullptr)
     {
         Eigen::Vector3f keyFrameCameraCenter{};
@@ -121,13 +121,13 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const Eigen::Vector3d observationOrigin_World_m =
+        const Eigen::Vector3d observationOrigin_world_m =
             keyFrameCameraCenter.cast<double>();
 
-        if (observationOrigin_World_m.allFinite())
+        if (observationOrigin_world_m.allFinite())
         {
-            if (p_newMapPlane->setObservationOrigin_World(
-                    observationOrigin_World_m) !=
+            if (p_newMapPlane->setObservationOrigin_world(
+                    observationOrigin_world_m) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
@@ -219,7 +219,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     }
 
     /* Get the global equation of the plane */
-    g2o::Plane3D globalEquation_World{};
+    g2o::Plane3D globalEquation_world{};
     Sophus::SE3f keyFramePoseInverse{};
     if (p_keyFrame_inout->getPoseInverse(keyFramePoseInverse) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -232,7 +232,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     if (utils::utils::Utils::applyPoseToPlane(
             keyFramePoseInverse.matrix().cast<double>(),
             estimatedPlane_in,
-            globalEquation_World) !=
+            globalEquation_world) !=
         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -242,7 +242,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPlane(
     }
 
     /* Set the global equation of the plane in the map world plane */
-    if (p_newMapPlane->setGlobalEquation(globalEquation_World) !=
+    if (p_newMapPlane->setGlobalEquation(globalEquation_world) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

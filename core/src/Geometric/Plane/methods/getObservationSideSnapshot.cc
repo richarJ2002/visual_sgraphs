@@ -42,12 +42,12 @@ namespace geometric
 {
 
 PlaneStatus Plane::getObservationSideSnapshot(
-    const Eigen::Vector4d          &normalizedEquation_World_in,
+    const Eigen::Vector4d          &normalizedEquation_world_in,
     Plane::ObservationSideSnapshot &observationSideSnapshot_out) const
 {
     ObservationSideSnapshot snapshot;
-    if (!normalizedEquation_World_in.allFinite() ||
-        std::abs(normalizedEquation_World_in.head<3>().norm() - 1.0) > 1e-3)
+    if (!normalizedEquation_world_in.allFinite() ||
+        std::abs(normalizedEquation_world_in.head<3>().norm() - 1.0) > 1e-3)
     {
         observationSideSnapshot_out = snapshot;
         return PlaneStatus::PLANE_STATUS_SUCCESS;
@@ -92,12 +92,12 @@ PlaneStatus Plane::getObservationSideSnapshot(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const Eigen::Vector3d cameraCenter_World_m =
+        const Eigen::Vector3d cameraCenter_world_m =
             keyFrameCameraCenter.cast<double>();
         const double signedDistance_m =
-            normalizedEquation_World_in.head<3>().dot(cameraCenter_World_m) +
-            normalizedEquation_World_in(3);
-        if (cameraCenter_World_m.allFinite() &&
+            normalizedEquation_world_in.head<3>().dot(cameraCenter_world_m) +
+            normalizedEquation_world_in(3);
+        if (cameraCenter_world_m.allFinite() &&
             std::isfinite(signedDistance_m) &&
             std::abs(signedDistance_m) >= minimumReliableSideDistance_m)
         {

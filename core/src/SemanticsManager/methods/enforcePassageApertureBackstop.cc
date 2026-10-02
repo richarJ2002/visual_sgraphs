@@ -41,7 +41,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
     semantic::Room                                  *p_room_inout,
     geometric::Plane                                *p_wall_in,
     const std::vector<semantic::Passage *>          &allPassages_in,
-    const Eigen::Vector3d                           &groundNormal_World_in,
+    const Eigen::Vector3d                           &groundNormal_world_in,
     SemanticsManager::PassageSideEnforcementOutcome &outcome_out)
 {
     bool room_inoutIsBad{};
@@ -106,8 +106,8 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
          * WRONG side as the right one -- worse than the original silent
          * no-crossing report, not better. With no known side yet, this
          * degenerate case is left exactly as before the fix. */
-        Eigen::Vector3d segmentStart_World_m{};
-        if (p_room_inout->getCentroid(segmentStart_World_m) !=
+        Eigen::Vector3d segmentStart_world_m{};
+        if (p_room_inout->getCentroid(segmentStart_world_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -124,16 +124,16 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector4d passageEquation_World = passageGlobalEquation.coeffs();
-        const double passageNormalNorm = passageEquation_World.head<3>().norm();
-        if (passageEquation_World.allFinite() && passageNormalNorm > 1e-8)
+        Eigen::Vector4d passageEquation_world = passageGlobalEquation.coeffs();
+        const double passageNormalNorm = passageEquation_world.head<3>().norm();
+        if (passageEquation_world.allFinite() && passageNormalNorm > 1e-8)
         {
-            passageEquation_World /= passageNormalNorm;
-            const Eigen::Vector3d passageNormal_World =
-                passageEquation_World.head<3>();
+            passageEquation_world /= passageNormalNorm;
+            const Eigen::Vector3d passageNormal_world =
+                passageEquation_world.head<3>();
             const double roomCentroidSide_m =
-                passageNormal_World.dot(segmentStart_World_m) +
-                passageEquation_World(3);
+                passageNormal_world.dot(segmentStart_world_m) +
+                passageEquation_world(3);
 
             if (std::abs(roomCentroidSide_m) < minimumSideDistance_m)
             {
@@ -170,9 +170,9 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    segmentStart_World_m =
+                    segmentStart_world_m =
                         passageCentroid + (minimumSideDistance_m * 2.0) *
-                                              knownSide.direction_World;
+                                              knownSide.direction_world;
                 }
             }
         }
@@ -188,10 +188,10 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
         }
         bool crossesPassageOpening{};
         if (segmentCrossesPassageOpening(
-                segmentStart_World_m,
+                segmentStart_world_m,
                 wallGetCentroid.cast<double>(),
                 p_passage,
-                groundNormal_World_in,
+                groundNormal_world_in,
                 static_cast<double>(
                     p_sysParams->roomSeg.passagePartition.openingMargin_m),
                 minimumSideDistance_m,
@@ -461,10 +461,10 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                 room_inoutCentroid,
                 wallGetCentroid2.cast<double>(),
                 evidence.p_supportingWall,
-                evidence.centroid_World_m,
+                evidence.centroid_world_m,
                 evidence.openingRadius_m,
                 evidence.heightSpan_m,
-                groundNormal_World_in,
+                groundNormal_world_in,
                 static_cast<double>(
                     p_sysParams->roomSeg.passagePartition.openingMargin_m),
                 static_cast<double>(p_sysParams->roomSeg.passagePartition

@@ -84,33 +84,33 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector4d groundEquation_World =
+    Eigen::Vector4d groundEquation_world =
         groundPlaneGetGlobalEquation.coeffs();
-    const double groundNormalNorm = groundEquation_World.head<3>().norm();
+    const double groundNormalNorm = groundEquation_world.head<3>().norm();
 
-    if (!groundEquation_World.allFinite() || groundNormalNorm < 1e-8)
+    if (!groundEquation_world.allFinite() || groundNormalNorm < 1e-8)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    const Eigen::Vector3d groundNormal_World =
-        groundEquation_World.head<3>() / groundNormalNorm;
-    const Eigen::Vector3d groundAxisU_World =
-        groundNormal_World.unitOrthogonal().normalized();
-    const Eigen::Vector3d groundAxisV_World =
-        groundNormal_World.cross(groundAxisU_World).normalized();
+    const Eigen::Vector3d groundNormal_world =
+        groundEquation_world.head<3>() / groundNormalNorm;
+    const Eigen::Vector3d groundAxisU_world =
+        groundNormal_world.unitOrthogonal().normalized();
+    const Eigen::Vector3d groundAxisV_world =
+        groundNormal_world.cross(groundAxisU_world).normalized();
 
     const auto updateBoundaryStatus =
         [](semantic::Room                      *p_room_in,
            const semantic::Room::BoundaryStatus boundaryStatus_in,
-           const std::vector<Eigen::Vector3d>  &corners_World_m_in = {})
+           const std::vector<Eigen::Vector3d>  &corners_world_m_in = {})
     {
         /* Refresh stored corners every cycle the loop is COMPLETE (even when
          * the status itself didn't change -- wall positions can still
          * drift), and clear them the moment it stops being COMPLETE. */
-        if (p_room_in->setBoundaryCorners_World_m(
+        if (p_room_in->setBoundaryCorners_world_m(
                 boundaryStatus_in == semantic::Room::BoundaryStatus::COMPLETE
-                    ? corners_World_m_in
+                    ? corners_world_m_in
                     : std::vector<Eigen::Vector3d>{}) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
@@ -238,9 +238,9 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                 bool isBuilt{};
                 if (buildFiniteWallSegment2d(
                         p_wall,
-                        groundNormal_World,
-                        groundAxisU_World,
-                        groundAxisV_World,
+                        groundNormal_world,
+                        groundAxisU_world,
+                        groundAxisV_world,
                         topologyParameters.endpointTrimRatio,
                         topologyParameters.minimumWallLength_m,
                         wallSegment,
@@ -300,14 +300,14 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                      secondWallIndex < wallSegments.size();
                      ++secondWallIndex)
                 {
-                    Eigen::Vector2d intersection_World_m;
+                    Eigen::Vector2d intersection_world_m;
                     double          firstParameter  = 0.0;
                     double          secondParameter = 0.0;
 
                     bool hasIntersection{};
                     if (intersectSupportingLines(wallSegments[firstWallIndex],
                                                  wallSegments[secondWallIndex],
-                                                 intersection_World_m,
+                                                 intersection_world_m,
                                                  firstParameter,
                                                  secondParameter,
                                                  hasIntersection) !=
@@ -432,8 +432,8 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
          * the CONFLICTING/INCOMPLETE/UNOBSERVED branches below so it isn't
          * skipped by any of their early `continue`s. */
         {
-            Eigen::Vector3d gapCentroid_World_m{};
-            if (p_room->getCentroid(gapCentroid_World_m) !=
+            Eigen::Vector3d gapCentroid_world_m{};
+            if (p_room->getCentroid(gapCentroid_world_m) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -441,11 +441,11 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            if (gapCentroid_World_m.allFinite())
+            if (gapCentroid_world_m.allFinite())
             {
                 const Eigen::Vector2d gapCentroidGround_m(
-                    gapCentroid_World_m.dot(groundAxisU_World),
-                    gapCentroid_World_m.dot(groundAxisV_World));
+                    gapCentroid_world_m.dot(groundAxisU_world),
+                    gapCentroid_world_m.dot(groundAxisV_world));
                 std::vector<semantic::Room::ObservationGap>
                     roomObservationGaps{};
                 if (computeRoomObservationGaps(wallSegments,
@@ -497,8 +497,8 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
             continue;
         }
 
-        Eigen::Vector3d roomCentroid_World_m{};
-        if (p_room->getCentroid(roomCentroid_World_m) !=
+        Eigen::Vector3d roomCentroid_world_m{};
+        if (p_room->getCentroid(roomCentroid_world_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -507,7 +507,7 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                          __func__);
         }
 
-        if (!roomCentroid_World_m.allFinite())
+        if (!roomCentroid_world_m.allFinite())
         {
             updateBoundaryStatus(p_room,
                                  semantic::Room::BoundaryStatus::UNOBSERVED);
@@ -515,8 +515,8 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
         }
 
         const Eigen::Vector2d roomCentroidGround_m(
-            roomCentroid_World_m.dot(groundAxisU_World),
-            roomCentroid_World_m.dot(groundAxisV_World));
+            roomCentroid_world_m.dot(groundAxisU_world),
+            roomCentroid_world_m.dot(groundAxisV_world));
 
         WallLoopClosure closure{};
         if (tryCloseWallLoop(wallSegments,
@@ -637,31 +637,31 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
             continue;
         }
 
-        std::vector<Eigen::Vector2d> boundaryCorners_World_m =
-            closure.corners_World_m;
+        std::vector<Eigen::Vector2d> boundaryCorners_world_m =
+            closure.corners_world_m;
 
         bool polygonSelfIntersects = false;
 
         for (std::size_t firstEdgeIndex = 0U;
-             firstEdgeIndex < boundaryCorners_World_m.size() &&
+             firstEdgeIndex < boundaryCorners_world_m.size() &&
              !polygonSelfIntersects;
              ++firstEdgeIndex)
         {
             FiniteWallSegment2d firstBoundaryEdge;
-            firstBoundaryEdge.start_World_m =
-                boundaryCorners_World_m[firstEdgeIndex];
-            firstBoundaryEdge.end_World_m =
-                boundaryCorners_World_m[(firstEdgeIndex + 1U) %
-                                        boundaryCorners_World_m.size()];
+            firstBoundaryEdge.start_world_m =
+                boundaryCorners_world_m[firstEdgeIndex];
+            firstBoundaryEdge.end_world_m =
+                boundaryCorners_world_m[(firstEdgeIndex + 1U) %
+                                        boundaryCorners_world_m.size()];
 
             for (std::size_t secondEdgeIndex = firstEdgeIndex + 1U;
-                 secondEdgeIndex < boundaryCorners_World_m.size();
+                 secondEdgeIndex < boundaryCorners_world_m.size();
                  ++secondEdgeIndex)
             {
                 const bool edgesAreAdjacent =
                     secondEdgeIndex == firstEdgeIndex + 1U ||
                     (firstEdgeIndex == 0U &&
-                     secondEdgeIndex + 1U == boundaryCorners_World_m.size());
+                     secondEdgeIndex + 1U == boundaryCorners_world_m.size());
 
                 if (edgesAreAdjacent)
                 {
@@ -669,20 +669,20 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                 }
 
                 FiniteWallSegment2d secondBoundaryEdge;
-                secondBoundaryEdge.start_World_m =
-                    boundaryCorners_World_m[secondEdgeIndex];
-                secondBoundaryEdge.end_World_m =
-                    boundaryCorners_World_m[(secondEdgeIndex + 1U) %
-                                            boundaryCorners_World_m.size()];
+                secondBoundaryEdge.start_world_m =
+                    boundaryCorners_world_m[secondEdgeIndex];
+                secondBoundaryEdge.end_world_m =
+                    boundaryCorners_world_m[(secondEdgeIndex + 1U) %
+                                            boundaryCorners_world_m.size()];
 
-                Eigen::Vector2d intersection_World_m;
+                Eigen::Vector2d intersection_world_m;
                 double          firstParameter  = 0.0;
                 double          secondParameter = 0.0;
 
                 bool hasIntersection2{};
                 if (intersectSupportingLines(firstBoundaryEdge,
                                              secondBoundaryEdge,
-                                             intersection_World_m,
+                                             intersection_world_m,
                                              firstParameter,
                                              secondParameter,
                                              hasIntersection2) !=
@@ -705,7 +705,7 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
         }
 
         double enclosedArea_m2{};
-        if (computePolygonArea_m2(boundaryCorners_World_m, enclosedArea_m2) !=
+        if (computePolygonArea_m2(boundaryCorners_world_m, enclosedArea_m2) !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -724,7 +724,7 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
         }
         std::cout << "[SemMgr] semantic::Room#" << roomId4
                   << " boundary validation: walls=" << wallSegments.size()
-                  << ", corners=" << boundaryCorners_World_m.size()
+                  << ", corners=" << boundaryCorners_world_m.size()
                   << ", selfIntersects="
                   << (polygonSelfIntersects ? "true" : "false")
                   << ", area=" << enclosedArea_m2 << " m2"
@@ -750,10 +750,10 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
              * own 2D coordinates were built from), and each corner's height
              * is the mean of its two meeting walls' own position along the
              * ground normal. */
-            std::vector<Eigen::Vector3d> boundaryCorners3d_World_m;
-            boundaryCorners3d_World_m.reserve(boundaryCorners_World_m.size());
+            std::vector<Eigen::Vector3d> boundaryCorners3d_world_m;
+            boundaryCorners3d_world_m.reserve(boundaryCorners_world_m.size());
             for (std::size_t cornerIndex = 0U;
-                 cornerIndex < boundaryCorners_World_m.size();
+                 cornerIndex < boundaryCorners_world_m.size();
                  ++cornerIndex)
             {
                 const geometric::Plane *p_currentCornerWall =
@@ -789,20 +789,20 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                     }
                     height_m =
                         0.5 * (currentCornerWallGetCentroid.cast<double>().dot(
-                                   groundNormal_World) +
+                                   groundNormal_world) +
                                nextCornerWallGetCentroid.cast<double>().dot(
-                                   groundNormal_World));
+                                   groundNormal_world));
                 }
-                boundaryCorners3d_World_m.push_back(
-                    boundaryCorners_World_m[cornerIndex].x() *
-                        groundAxisU_World +
-                    boundaryCorners_World_m[cornerIndex].y() *
-                        groundAxisV_World +
-                    height_m * groundNormal_World);
+                boundaryCorners3d_world_m.push_back(
+                    boundaryCorners_world_m[cornerIndex].x() *
+                        groundAxisU_world +
+                    boundaryCorners_world_m[cornerIndex].y() *
+                        groundAxisV_world +
+                    height_m * groundNormal_world);
             }
             updateBoundaryStatus(p_room,
                                  semantic::Room::BoundaryStatus::COMPLETE,
-                                 boundaryCorners3d_World_m);
+                                 boundaryCorners3d_world_m);
 
             /* User rule: once a room's boundary is a genuine closed loop,
              * any wall it still owns that is NOT one of that loop's own

@@ -208,11 +208,11 @@ SystemStatus
     lastFrameTimestamp      = timestamp_in;
     trackedMapPoints        = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn      = p_tracker->currentFrame.keyPointsUndistorted;
-    currentCameraPose_World = pose_worldToCamera.inverse();
+    currentCameraPose_world = pose_worldToCamera.inverse();
     isCurrentCameraPoseValid =
         trackingState == Tracking::OK &&
-        currentCameraPose_World.translation().allFinite() &&
-        currentCameraPose_World.rotationMatrix().allFinite();
+        currentCameraPose_world.translation().allFinite() &&
+        currentCameraPose_world.rotationMatrix().allFinite();
 
     cameraPose_out = pose_worldToCamera;
     return SystemStatus::SYSTEM_STATUS_SUCCESS;

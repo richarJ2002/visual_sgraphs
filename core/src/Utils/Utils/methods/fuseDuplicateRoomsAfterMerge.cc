@@ -84,8 +84,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
      * segments are common in office environments.
      */
     const auto hasSeparatingFiniteWall =
-        [p_map_inout](const Eigen::Vector3d &firstCentroid_World_m_in,
-                      const Eigen::Vector3d &secondCentroid_World_m_in)
+        [p_map_inout](const Eigen::Vector3d &firstCentroid_world_m_in,
+                      const Eigen::Vector3d &secondCentroid_world_m_in)
     {
         std::vector<geometric::Plane *> mapAllPlanes{};
         if (p_map_inout->getAllPlanes(mapAllPlanes) !=
@@ -134,24 +134,24 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
+            Eigen::Vector4d wallEquation_world = wallGeometry.equation_world;
 
-            const double wallNormalNorm = wallEquation_World.head<3>().norm();
+            const double wallNormalNorm = wallEquation_world.head<3>().norm();
 
-            if (!wallEquation_World.allFinite() || wallNormalNorm < 1e-8)
+            if (!wallEquation_world.allFinite() || wallNormalNorm < 1e-8)
             {
                 continue;
             }
 
-            wallEquation_World /= wallNormalNorm;
+            wallEquation_world /= wallNormalNorm;
 
             const double firstSignedDistance_m =
-                wallEquation_World.head<3>().dot(firstCentroid_World_m_in) +
-                wallEquation_World(3);
+                wallEquation_world.head<3>().dot(firstCentroid_world_m_in) +
+                wallEquation_world(3);
 
             const double secondSignedDistance_m =
-                wallEquation_World.head<3>().dot(secondCentroid_World_m_in) +
-                wallEquation_World(3);
+                wallEquation_world.head<3>().dot(secondCentroid_world_m_in) +
+                wallEquation_world(3);
 
             if (firstSignedDistance_m * secondSignedDistance_m >= 0.0 ||
                 std::abs(firstSignedDistance_m) < minimumRoomSideDistance_m ||
@@ -169,10 +169,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 continue;
             }
 
-            const Eigen::Vector3d intersection_World_m =
-                firstCentroid_World_m_in +
+            const Eigen::Vector3d intersection_world_m =
+                firstCentroid_world_m_in +
                 interpolation *
-                    (secondCentroid_World_m_in - firstCentroid_World_m_in);
+                    (secondCentroid_world_m_in - firstCentroid_world_m_in);
 
             const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallCloud =
                 wallGeometry.supportCloud;
@@ -182,14 +182,14 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 continue;
             }
 
-            const Eigen::Vector3d wallCentroid_World_m =
-                wallGeometry.centroid_World_m;
+            const Eigen::Vector3d wallCentroid_world_m =
+                wallGeometry.centroid_world_m;
 
-            const Eigen::Vector3d wallAxisU_World =
-                wallEquation_World.head<3>().unitOrthogonal().normalized();
+            const Eigen::Vector3d wallAxisU_world =
+                wallEquation_world.head<3>().unitOrthogonal().normalized();
 
-            const Eigen::Vector3d wallAxisV_World = wallEquation_World.head<3>()
-                                                        .cross(wallAxisU_World)
+            const Eigen::Vector3d wallAxisV_world = wallEquation_world.head<3>()
+                                                        .cross(wallAxisU_world)
                                                         .normalized();
 
             double      minimumWallU_m = std::numeric_limits<double>::max();
@@ -205,19 +205,19 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                     continue;
                 }
 
-                const Eigen::Vector3d wallPoint_World_m(
+                const Eigen::Vector3d wallPoint_world_m(
                     static_cast<double>(wallPoint.x),
                     static_cast<double>(wallPoint.y),
                     static_cast<double>(wallPoint.z));
 
-                const Eigen::Vector3d wallPointRelToCentroid_World_m =
-                    wallPoint_World_m - wallCentroid_World_m;
+                const Eigen::Vector3d wallPointRelToCentroid_world_m =
+                    wallPoint_world_m - wallCentroid_world_m;
 
                 const double wallPointU_m =
-                    wallPointRelToCentroid_World_m.dot(wallAxisU_World);
+                    wallPointRelToCentroid_world_m.dot(wallAxisU_world);
 
                 const double wallPointV_m =
-                    wallPointRelToCentroid_World_m.dot(wallAxisV_World);
+                    wallPointRelToCentroid_world_m.dot(wallAxisV_world);
 
                 minimumWallU_m = std::min(minimumWallU_m, wallPointU_m);
                 maximumWallU_m = std::max(maximumWallU_m, wallPointU_m);
@@ -231,14 +231,14 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 continue;
             }
 
-            const Eigen::Vector3d intersectionRelToWallCentroid_World_m =
-                intersection_World_m - wallCentroid_World_m;
+            const Eigen::Vector3d intersectionRelToWallCentroid_world_m =
+                intersection_world_m - wallCentroid_world_m;
 
             const double intersectionU_m =
-                intersectionRelToWallCentroid_World_m.dot(wallAxisU_World);
+                intersectionRelToWallCentroid_world_m.dot(wallAxisU_world);
 
             const double intersectionV_m =
-                intersectionRelToWallCentroid_World_m.dot(wallAxisV_World);
+                intersectionRelToWallCentroid_world_m.dot(wallAxisV_world);
 
             const bool intersectionInsideFiniteWall =
                 intersectionU_m >= minimumWallU_m - finiteWallBoundsMargin_m &&
@@ -288,8 +288,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             continue;
         }
 
-        Eigen::Vector3d importedCentroid_World_m{};
-        if (p_importedRoom->getCentroid(importedCentroid_World_m) !=
+        Eigen::Vector3d importedCentroid_world_m{};
+        if (p_importedRoom->getCentroid(importedCentroid_world_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -298,7 +298,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          __func__);
         }
 
-        if (!importedCentroid_World_m.allFinite())
+        if (!importedCentroid_world_m.allFinite())
         {
             continue;
         }
@@ -414,7 +414,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                         __func__);
                 }
                 bestCentroidDistance_m =
-                    (candidateRoomCentroid - importedCentroid_World_m).norm();
+                    (candidateRoomCentroid - importedCentroid_world_m).norm();
                 break;
             }
 
@@ -490,8 +490,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 continue;
             }
 
-            Eigen::Vector3d candidateCentroid_World_m{};
-            if (p_candidateRoom->getCentroid(candidateCentroid_World_m) !=
+            Eigen::Vector3d candidateCentroid_world_m{};
+            if (p_candidateRoom->getCentroid(candidateCentroid_world_m) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -501,9 +501,9 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
 
             const double centroidDistance_m =
-                (candidateCentroid_World_m - importedCentroid_World_m).norm();
+                (candidateCentroid_world_m - importedCentroid_world_m).norm();
 
-            if (!candidateCentroid_World_m.allFinite() ||
+            if (!candidateCentroid_world_m.allFinite() ||
                 !std::isfinite(centroidDistance_m) ||
                 centroidDistance_m > maximumRoomCentroidDistance_m ||
                 centroidDistance_m >= bestCentroidDistance_m)
@@ -562,26 +562,26 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Vector4d wallEquation_World =
+                Eigen::Vector4d wallEquation_world =
                     importedWallGetGlobalEquation.coeffs();
 
                 const double wallNormalNorm =
-                    wallEquation_World.head<3>().norm();
+                    wallEquation_world.head<3>().norm();
 
-                if (!wallEquation_World.allFinite() || wallNormalNorm < 1e-8)
+                if (!wallEquation_world.allFinite() || wallNormalNorm < 1e-8)
                 {
                     continue;
                 }
 
-                wallEquation_World /= wallNormalNorm;
+                wallEquation_world /= wallNormalNorm;
 
                 const double importedSide_m =
-                    wallEquation_World.head<3>().dot(importedCentroid_World_m) +
-                    wallEquation_World(3);
+                    wallEquation_world.head<3>().dot(importedCentroid_world_m) +
+                    wallEquation_world(3);
 
-                const double candidateSide_m = wallEquation_World.head<3>().dot(
-                                                   candidateCentroid_World_m) +
-                                               wallEquation_World(3);
+                const double candidateSide_m = wallEquation_world.head<3>().dot(
+                                                   candidateCentroid_world_m) +
+                                               wallEquation_world(3);
 
                 if (importedSide_m * candidateSide_m < 0.0 &&
                     std::abs(importedSide_m) >= minimumRoomSideDistance_m &&
@@ -595,8 +595,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
 
             if (hasOppositeSideSharedWall || sameSideSharedWallCount == 0U ||
-                hasSeparatingFiniteWall(importedCentroid_World_m,
-                                        candidateCentroid_World_m))
+                hasSeparatingFiniteWall(importedCentroid_world_m,
+                                        candidateCentroid_world_m))
             {
                 continue;
             }
@@ -668,7 +668,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
         }
 
-        Eigen::Vector3d mergeGroundNormal_World = Eigen::Vector3d::Zero();
+        Eigen::Vector3d mergeGroundNormal_world = Eigen::Vector3d::Zero();
         if (p_mergeGroundPlane != nullptr)
         {
             g2o::Plane3D mergeGroundPlaneGetGlobalEquation{};
@@ -686,7 +686,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             const double groundNormalNorm = groundEq.head<3>().norm();
             if (groundEq.allFinite() && groundNormalNorm > 1e-8)
             {
-                mergeGroundNormal_World = groundEq.head<3>() / groundNormalNorm;
+                mergeGroundNormal_world = groundEq.head<3>() / groundNormalNorm;
             }
         }
 
@@ -703,8 +703,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                           .minimumSideDistance_m)
                 : 0.30;
 
-        Eigen::Vector3d retainedCentroid_World_m{};
-        if (p_bestRetainedRoom->getCentroid(retainedCentroid_World_m) !=
+        Eigen::Vector3d retainedCentroid_world_m{};
+        if (p_bestRetainedRoom->getCentroid(retainedCentroid_world_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -725,17 +725,17 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
         const bool roomsAreSeparatedByPassage = std::any_of(
             mergePassages.begin(),
             mergePassages.end(),
-            [&retainedCentroid_World_m,
-             &importedCentroid_World_m,
-             &mergeGroundNormal_World,
+            [&retainedCentroid_world_m,
+             &importedCentroid_world_m,
+             &mergeGroundNormal_world,
              mergeOpeningMargin_m,
              mergeMinimumSideDistance_m](semantic::Passage *p_passage)
             {
                 bool crossesOpening{};
-                if (crossesPassablePassageOpening(retainedCentroid_World_m,
-                                                  importedCentroid_World_m,
+                if (crossesPassablePassageOpening(retainedCentroid_world_m,
+                                                  importedCentroid_world_m,
                                                   p_passage,
-                                                  mergeGroundNormal_World,
+                                                  mergeGroundNormal_world,
                                                   mergeOpeningMargin_m,
                                                   mergeMinimumSideDistance_m,
                                                   crossesOpening) !=
@@ -822,7 +822,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            const Eigen::Vector3d importedWallCentroid_World_m =
+            const Eigen::Vector3d importedWallCentroid_world_m =
                 importedWallGetCentroid.cast<double>();
 
             vs_graphs::core::semantic::Passage *p_separatingPassage = nullptr;
@@ -831,10 +831,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             {
                 bool crossesOpening{};
                 if ((p_passage != nullptr) &&
-                    crossesPassablePassageOpening(retainedCentroid_World_m,
-                                                  importedWallCentroid_World_m,
+                    crossesPassablePassageOpening(retainedCentroid_world_m,
+                                                  importedWallCentroid_world_m,
                                                   p_passage,
-                                                  mergeGroundNormal_World,
+                                                  mergeGroundNormal_world,
                                                   mergeOpeningMargin_m,
                                                   mergeMinimumSideDistance_m,
                                                   crossesOpening) !=
@@ -1090,12 +1090,12 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        const Eigen::Vector3d fusedCentroid_World_m =
+        const Eigen::Vector3d fusedCentroid_world_m =
             (retainedWeight * bestRetainedRoomCentroid +
-             importedWeight * importedCentroid_World_m) /
+             importedWeight * importedCentroid_world_m) /
             (retainedWeight + importedWeight);
 
-        if (p_bestRetainedRoom->setCentroid(fusedCentroid_World_m) !=
+        if (p_bestRetainedRoom->setCentroid(fusedCentroid_world_m) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

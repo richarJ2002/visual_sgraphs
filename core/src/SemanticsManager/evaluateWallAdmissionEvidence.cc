@@ -48,7 +48,7 @@ namespace core
  *                  Thresholds for the fit, the extent and the observation
  *                  count; shall be non-null.
  *
- * @param[in]       groundNormal_World_in
+ * @param[in]       groundNormal_world_in
  *                  Ground normal in the world frame, used to measure the wall's
  *                  width and height along the ground; a zero vector falls back
  *                  to arbitrary in-plane axes.
@@ -61,7 +61,7 @@ namespace core
 SemanticsManagerStatus
     evaluateWallAdmissionEvidence(geometric::Plane          *p_wall_in,
                                   const types::SystemParams *p_systemParams_in,
-                                  const Eigen::Vector3d &groundNormal_World_in,
+                                  const Eigen::Vector3d &groundNormal_world_in,
                                   WallAdmissionEvidence &admissionEvidence_out)
 {
     WallAdmissionEvidence evidence;
@@ -102,21 +102,21 @@ SemanticsManagerStatus
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector4d equation_World = geometry.equation_World;
-    const double    normalNorm     = equation_World.head<3>().norm();
+    Eigen::Vector4d equation_world = geometry.equation_world;
+    const double    normalNorm     = equation_world.head<3>().norm();
 
-    if (!equation_World.allFinite() || !std::isfinite(normalNorm) ||
+    if (!equation_world.allFinite() || !std::isfinite(normalNorm) ||
         normalNorm < 1e-8)
     {
         admissionEvidence_out = evidence;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    equation_World /= normalNorm;
-    const Eigen::Vector3d normal_World = equation_World.head<3>();
+    equation_world /= normalNorm;
+    const Eigen::Vector3d normal_world = equation_world.head<3>();
 
-    if (!equation_World.allFinite() ||
-        std::abs(normal_World.norm() - 1.0) > 1e-6)
+    if (!equation_world.allFinite() ||
+        std::abs(normal_world.norm() - 1.0) > 1e-6)
     {
         admissionEvidence_out = evidence;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
@@ -142,28 +142,28 @@ SemanticsManagerStatus
      * direction: orthogonal to both the ground normal and the wall normal.
      * Falls back to the previous arbitrary-orthogonal axes when no ground
      * plane is available yet (early in a mission) or the wall is itself
-     * near-horizontal (groundNormal parallel to normal_World).
+     * near-horizontal (groundNormal parallel to normal_world).
      */
-    const double    groundNormalNorm = groundNormal_World_in.norm();
-    Eigen::Vector3d axisU_World      = Eigen::Vector3d::Zero();
-    Eigen::Vector3d axisV_World      = Eigen::Vector3d::Zero();
+    const double    groundNormalNorm = groundNormal_world_in.norm();
+    Eigen::Vector3d axisU_world      = Eigen::Vector3d::Zero();
+    Eigen::Vector3d axisV_world      = Eigen::Vector3d::Zero();
     if (std::isfinite(groundNormalNorm) && groundNormalNorm > 1e-8)
     {
-        const Eigen::Vector3d unitGroundNormal_World =
-            groundNormal_World_in / groundNormalNorm;
-        const Eigen::Vector3d horizontalCandidate_World =
-            unitGroundNormal_World.cross(normal_World);
-        const double horizontalNorm = horizontalCandidate_World.norm();
+        const Eigen::Vector3d unitGroundNormal_world =
+            groundNormal_world_in / groundNormalNorm;
+        const Eigen::Vector3d horizontalCandidate_world =
+            unitGroundNormal_world.cross(normal_world);
+        const double horizontalNorm = horizontalCandidate_world.norm();
         if (std::isfinite(horizontalNorm) && horizontalNorm > 1e-3)
         {
-            axisU_World = horizontalCandidate_World / horizontalNorm;
-            axisV_World = axisU_World.cross(normal_World).normalized();
+            axisU_world = horizontalCandidate_world / horizontalNorm;
+            axisV_world = axisU_world.cross(normal_world).normalized();
         }
     }
-    if (axisU_World.squaredNorm() < 0.5 || axisV_World.squaredNorm() < 0.5)
+    if (axisU_world.squaredNorm() < 0.5 || axisV_world.squaredNorm() < 0.5)
     {
-        axisU_World = normal_World.unitOrthogonal().normalized();
-        axisV_World = normal_World.cross(axisU_World).normalized();
+        axisU_world = normal_world.unitOrthogonal().normalized();
+        axisV_world = normal_world.cross(axisU_world).normalized();
     }
     double minimumU_m = std::numeric_limits<double>::infinity();
     double maximumU_m = -std::numeric_limits<double>::infinity();
@@ -177,19 +177,19 @@ SemanticsManagerStatus
             continue;
         }
 
-        const Eigen::Vector3d point_World_m(point.x, point.y, point.z);
+        const Eigen::Vector3d point_world_m(point.x, point.y, point.z);
         evidence.finitePointCount++;
 
         const double fitDistance_m =
-            std::abs(normal_World.dot(point_World_m) + equation_World(3));
+            std::abs(normal_world.dot(point_world_m) + equation_world(3));
 
         if (fitDistance_m > p_systemParams_in->seg.ransac.distanceThresh)
         {
             continue;
         }
 
-        const double pointU_m = point_World_m.dot(axisU_World);
-        const double pointV_m = point_World_m.dot(axisV_World);
+        const double pointU_m = point_world_m.dot(axisU_world);
+        const double pointV_m = point_world_m.dot(axisV_world);
         minimumU_m            = std::min(minimumU_m, pointU_m);
         maximumU_m            = std::max(maximumU_m, pointU_m);
         minimumV_m            = std::min(minimumV_m, pointV_m);

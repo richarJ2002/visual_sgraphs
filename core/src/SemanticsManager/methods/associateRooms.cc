@@ -38,9 +38,9 @@ namespace core
 {
 
 SemanticsManagerStatus SemanticsManager::associateRooms(
-    const Eigen::Vector3d clusterCentroid_World_in,
-    const std::vector<vs_graphs::core::geometric::Plane *> &wallList_World_in,
-    const std::vector<Eigen::Vector3d> &freeSpaceCluster_World_m_in,
+    const Eigen::Vector3d clusterCentroid_world_in,
+    const std::vector<vs_graphs::core::geometric::Plane *> &wallList_world_in,
+    const std::vector<Eigen::Vector3d> &freeSpaceCluster_world_m_in,
     const std::unordered_set<int>      &excludedRoomIds_in,
     vs_graphs::core::semantic::Room   *&p_room_out)
 {
@@ -62,8 +62,8 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
     double nearestDistance    = std::numeric_limits<double>::max();
 
     /* Get a list of all rooms within map */
-    std::vector<vs_graphs::core::semantic::Room *> allRooms_World{};
-    if (p_atlas->getAllRooms(allRooms_World) !=
+    std::vector<vs_graphs::core::semantic::Room *> allRooms_world{};
+    if (p_atlas->getAllRooms(allRooms_world) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -73,12 +73,12 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
     }
 
     /* Evaluate every room once against the complete cluster wall set. */
-    for (vs_graphs::core::semantic::Room *p_room_World : allRooms_World)
+    for (vs_graphs::core::semantic::Room *p_room_world : allRooms_world)
     {
         /* Skip room if invalid */
-        bool room_WorldIsBad{};
-        if (!(p_room_World == nullptr) &&
-            p_room_World->isBad(room_WorldIsBad) !=
+        bool isRoomBad{};
+        if (!(p_room_world == nullptr) &&
+            p_room_world->isBad(isRoomBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -86,14 +86,14 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_room_World == nullptr || room_WorldIsBad)
+        if (p_room_world == nullptr || isRoomBad)
         {
             continue;
         }
 
         /* Skip rooms already matched to another cluster in this cycle */
-        int room_WorldId{};
-        if (p_room_World->getId(room_WorldId) !=
+        int roomId{};
+        if (p_room_world->getId(roomId) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -101,14 +101,14 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (excludedRoomIds_in.count(room_WorldId) > 0)
+        if (excludedRoomIds_in.count(roomId) > 0)
         {
             continue;
         }
 
         /* Extract room centroid */
-        Eigen::Vector3d roomCenter_World{};
-        if (p_room_World->getCentroid(roomCenter_World) !=
+        Eigen::Vector3d roomCenter_world{};
+        if (p_room_world->getCentroid(roomCenter_world) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -119,7 +119,7 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
 
         /* Find the distance from the cluster center to the room center */
         const double roomCenterRelClusterCenterDistance =
-            (roomCenter_World - clusterCentroid_World_in).norm();
+            (roomCenter_world - clusterCentroid_world_in).norm();
 
         std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
         if (p_atlas->getAllPlanes(atlasAllPlanes) !=
@@ -133,8 +133,8 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
         bool roomSeparatedFromCluster{};
         if (hasSeparatingFiniteWall(
                 atlasAllPlanes,
-                roomCenter_World,
-                clusterCentroid_World_in,
+                roomCenter_world,
+                clusterCentroid_world_in,
                 static_cast<double>(
                     p_sysParams->roomSeg.finiteWallBoundsMargin_m),
                 roomSeparatedFromCluster) !=
@@ -149,7 +149,7 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
 
         /* Extract the walls from the room */
         std::vector<vs_graphs::core::geometric::Plane *> roomWallsList{};
-        if (p_room_World->getWalls(roomWallsList) !=
+        if (p_room_world->getWalls(roomWallsList) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -202,7 +202,7 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
 
         /* Iterate through walls in room and see if they share walls */
         for (vs_graphs::core::geometric::Plane *p_candidateWall :
-             wallList_World_in)
+             wallList_world_in)
         {
             /* Skip invalid walls */
             bool candidateWallIsBad{};
@@ -266,12 +266,12 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
 
             /* Caldaulte the side of the cluster */
             const double clusterSide =
-                candidateWallEquation.head<3>().dot(clusterCentroid_World_in) +
+                candidateWallEquation.head<3>().dot(clusterCentroid_world_in) +
                 candidateWallEquation(3);
 
             /* Caldaulte the side of the room */
             const double roomSide =
-                candidateWallEquation.head<3>().dot(roomCenter_World) +
+                candidateWallEquation.head<3>().dot(roomCenter_world) +
                 candidateWallEquation(3);
 
             /*!
@@ -308,7 +308,7 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
 
                 bestSharedDistance = roomCenterRelClusterCenterDistance;
 
-                p_bestSharedRoom = p_room_World;
+                p_bestSharedRoom = p_room_world;
             }
         }
 
@@ -324,14 +324,14 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
         double nearestFreeSpacePointDistance_m =
             std::numeric_limits<double>::infinity();
 
-        for (const Eigen::Vector3d &freeSpacePoint_World_m :
-             freeSpaceCluster_World_m_in)
+        for (const Eigen::Vector3d &freeSpacePoint_world_m :
+             freeSpaceCluster_world_m_in)
         {
-            if (freeSpacePoint_World_m.allFinite())
+            if (freeSpacePoint_world_m.allFinite())
             {
                 nearestFreeSpacePointDistance_m = std::min(
                     nearestFreeSpacePointDistance_m,
-                    (roomCenter_World - freeSpacePoint_World_m).norm());
+                    (roomCenter_world - freeSpacePoint_world_m).norm());
             }
         }
 
@@ -349,7 +349,7 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
         {
             nearestDistance = roomCenterRelClusterCenterDistance;
 
-            p_nearestRoom = p_room_World;
+            p_nearestRoom = p_room_world;
         }
     }
 

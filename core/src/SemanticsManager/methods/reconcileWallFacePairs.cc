@@ -47,7 +47,7 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector3d groundNormal_World = Eigen::Vector3d::Zero();
+    Eigen::Vector3d groundNormal_world = Eigen::Vector3d::Zero();
     bool            groundPlaneIsBad{};
     if ((p_groundPlane != nullptr) &&
         p_groundPlane->isBad(groundPlaneIsBad) !=
@@ -73,7 +73,7 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
         const double          groundNorm = groundEq.head<3>().norm();
         if (groundEq.allFinite() && groundNorm > 1e-8)
         {
-            groundNormal_World = groundEq.head<3>() / groundNorm;
+            groundNormal_world = groundEq.head<3>() / groundNorm;
         }
     }
 
@@ -174,7 +174,7 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                                           minimumThickness_m,
                                           maximumThickness_m,
                                           minimumOverlapRatio,
-                                          groundNormal_World,
+                                          groundNormal_world,
                                           arePlausibleTwinWallFaces2) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
@@ -257,7 +257,7 @@ SemanticsManagerStatus SemanticsManager::reconcileWallFacePairs(void)
                                           minimumThickness_m,
                                           maximumThickness_m,
                                           minimumOverlapRatio,
-                                          groundNormal_World,
+                                          groundNormal_world,
                                           arePlausibleTwinWallFaces3) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {

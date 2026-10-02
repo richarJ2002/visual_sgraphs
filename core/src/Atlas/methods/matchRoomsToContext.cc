@@ -216,11 +216,11 @@ AtlasStatus Atlas::matchRoomsToContext(Map *p_newMap_in)
             }
 
             std::optional<Eigen::Vector3d> newRoomNormal{};
-            if (p_room->getWallNormalTowardRoom_World(roomWalls[0],
+            if (p_room->getWallNormalTowardRoom_world(roomWalls[0],
                                                       newRoomNormal) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWallNormalTowardRoom_World cannot fail; continue as
+                // getWallNormalTowardRoom_world cannot fail; continue as
                 // before.
             }
             if (!newRoomNormal)

@@ -116,8 +116,8 @@ void Viewer::run()
 
     pangolin::OpenGlMatrix pose_cameraToWorld, Twr;
     pose_cameraToWorld.SetIdentity();
-    pangolin::OpenGlMatrix cameraCenter_World; // Oriented with g in the z axis
-    cameraCenter_World.SetIdentity();
+    pangolin::OpenGlMatrix cameraCenter_world; // Oriented with g in the z axis
+    cameraCenter_world.SetIdentity();
     cv::namedWindow("ORB-SLAM3: Current Frame");
 
     bool isFollowing        = true;
@@ -148,7 +148,7 @@ void Viewer::run()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (p_mapDrawer->getCurrentOpenGLCameraMatrix(pose_cameraToWorld,
-                                                      cameraCenter_World) !=
+                                                      cameraCenter_world) !=
             MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -169,7 +169,7 @@ void Viewer::run()
             if (isCameraView)
                 camera.Follow(pose_cameraToWorld);
             else
-                camera.Follow(cameraCenter_World);
+                camera.Follow(cameraCenter_world);
         }
         else if (menuFollowCamera && !isFollowing)
         {
@@ -214,7 +214,7 @@ void Viewer::run()
                                                                     0.0,
                                                                     0.0,
                                                                     1.0));
-                camera.Follow(cameraCenter_World);
+                camera.Follow(cameraCenter_world);
             }
             isFollowing = true;
         }
@@ -271,7 +271,7 @@ void Viewer::run()
                                                                   10000));
             camera.SetModelViewMatrix(
                 pangolin::ModelViewLookAt(0, 0.01, 50, 0, 0, 0, 0.0, 0.0, 1.0));
-            camera.Follow(cameraCenter_World);
+            camera.Follow(cameraCenter_world);
         }
 
         if (menuLocalizationMode && !isLocalizationMode)

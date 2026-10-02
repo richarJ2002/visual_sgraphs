@@ -56,7 +56,7 @@ SystemStatus System::getMissionHealthSnapshot(
         snapshot.trackingState    = trackingState;
         snapshot.trackingInliers  = trackingInliers;
         snapshot.isPoseValid      = isCurrentCameraPoseValid;
-        snapshot.cameraPose_World = currentCameraPose_World;
+        snapshot.cameraPose_world = currentCameraPose_world;
     }
 
     std::unique_lock<std::mutex> semanticUpdateLock;
@@ -266,10 +266,10 @@ SystemStatus System::getMissionHealthSnapshot(
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            snapshot.latestKeyFramePose_World = latestKeyFramePoseInverse;
+            snapshot.latestKeyFramePose_world = latestKeyFramePoseInverse;
             snapshot.isLatestKeyFramePoseValid =
-                snapshot.latestKeyFramePose_World.translation().allFinite() &&
-                snapshot.latestKeyFramePose_World.rotationMatrix().allFinite();
+                snapshot.latestKeyFramePose_world.translation().allFinite() &&
+                snapshot.latestKeyFramePose_world.rotationMatrix().allFinite();
         }
 
         if (includeSemantics_in)

@@ -126,14 +126,14 @@ PlaneStatus Plane::updatePlaneBoundsWithoutLock(void)
         }
 
         /* Convert PCL to Eigen */
-        const Eigen::Vector3d point_World(static_cast<double>(point.x),
+        const Eigen::Vector3d point_world(static_cast<double>(point.x),
                                           static_cast<double>(point.y),
                                           static_cast<double>(point.z));
 
         /* Emit actual canonical world projections, not centroid-relative
          * extents. */
-        projectionsU.push_back(point_World.dot(axisU));
-        projectionsV.push_back(point_World.dot(axisV));
+        projectionsU.push_back(point_world.dot(axisU));
+        projectionsV.push_back(point_world.dot(axisV));
 
         /* Set flag to indicate that a valid point is linked with the plane */
         foundValidPoint = true;

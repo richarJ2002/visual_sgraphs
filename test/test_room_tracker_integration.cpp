@@ -252,11 +252,11 @@ class ProductionCrossingScene
     {
         std::unique_ptr<KeyFrame> p_keyFrame(new KeyFrame());
         p_keyFrame->id = keyFrameId_in;
-        const Eigen::Vector3f cameraCenter_World_m =
+        const Eigen::Vector3f cameraCenter_world_m =
             farSide_in ? Eigen::Vector3f(1.0F, 0.0F, 1.0F)
                        : Eigen::Vector3f(-1.0F, 0.0F, 1.0F);
         ASSERT_EQ((p_keyFrame->setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                                                    -cameraCenter_World_m))),
+                                                    -cameraCenter_world_m))),
                   KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
         ASSERT_EQ((p_map->addKeyFrame(p_keyFrame.get())),
                   MapStatus::MAP_STATUS_SUCCESS);
@@ -286,12 +286,12 @@ class ProductionCrossingScene
   private:
     void addKeyFrame(KeyFrame              &keyFrame_inout,
                      unsigned long          keyFrameId_in,
-                     const Eigen::Vector3f &cameraCenter_World_m_in) const
+                     const Eigen::Vector3f &cameraCenter_world_m_in) const
     {
         keyFrame_inout.id = keyFrameId_in;
         ASSERT_EQ(
             (keyFrame_inout.setPose(Sophus::SE3f(Eigen::Matrix3f::Identity(),
-                                                 -cameraCenter_World_m_in))),
+                                                 -cameraCenter_world_m_in))),
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
         ASSERT_EQ((p_map->addKeyFrame(&keyFrame_inout)),
                   MapStatus::MAP_STATUS_SUCCESS);

@@ -1260,12 +1260,12 @@ OptimizerStatus Optimizer::bundleAdjustment(
                 continue;
             }
 
-            const g2o::SE3Quat markerPose_MarkerToWorld =
+            const g2o::SE3Quat markerPose_markerToWorld =
                 p_markerVertex->estimate();
 
             if (p_marker->setGlobalPose(Sophus::SE3f(
-                    markerPose_MarkerToWorld.rotation().cast<float>(),
-                    markerPose_MarkerToWorld.translation().cast<float>())) !=
+                    markerPose_markerToWorld.rotation().cast<float>(),
+                    markerPose_markerToWorld.translation().cast<float>())) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

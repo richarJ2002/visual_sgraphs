@@ -100,8 +100,8 @@ nlohmann::json serializeWallRecord(const WallRecord &value_in,
 
     if (includeGeometry_in)
     {
-        json["equation_World"]   = serializeVector4d(value_in.equation_World);
-        json["centroid_World_m"] = serializeVector3d(value_in.centroid_World_m);
+        json["equation_World"]   = serializeVector4d(value_in.equation_world);
+        json["centroid_World_m"] = serializeVector3d(value_in.centroid_world_m);
         json["minPlaneU_m"]      = serializeDouble(value_in.minPlaneU_m);
         json["maxPlaneU_m"]      = serializeDouble(value_in.maxPlaneU_m);
         json["minPlaneV_m"]      = serializeDouble(value_in.minPlaneV_m);
@@ -110,10 +110,10 @@ nlohmann::json serializeWallRecord(const WallRecord &value_in,
         json["observationCount"]          = value_in.observationCount;
         json["cloudGeneration"]           = value_in.cloudGeneration;
         json["successfulRefitGeneration"] = value_in.successfulRefitGeneration;
-        if (value_in.observationOrigin_World_m.has_value())
+        if (value_in.observationOrigin_world_m.has_value())
         {
             json["observationOrigin_World_m"] =
-                serializeVector3d(*value_in.observationOrigin_World_m);
+                serializeVector3d(*value_in.observationOrigin_world_m);
         }
     }
 

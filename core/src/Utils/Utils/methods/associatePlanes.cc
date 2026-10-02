@@ -53,7 +53,7 @@ UtilsStatus Utils::associatePlanes(
     const float                                  threshold_in,
     int                                         &matchedPlaneId_out,
     const float                           maximumFiniteCloudDistance_m_in,
-    const std::optional<Eigen::Vector3d> &observationOrigin_World_m_in)
+    const std::optional<Eigen::Vector3d> &observationOrigin_world_m_in)
 {
     /* Return no association when no mapped planes are available */
     if (mappedPlanes_in.empty())
@@ -245,7 +245,7 @@ UtilsStatus Utils::associatePlanes(
          */
         g2o::Plane3D mappedPlaneInGivenFrame{};
         if (Utils::applyPoseToPlane(keyframePose_in,
-                                    g2o::Plane3D(mappedGeometry.equation_World),
+                                    g2o::Plane3D(mappedGeometry.equation_world),
                                     mappedPlaneInGivenFrame) !=
             UtilsStatus::UTILS_STATUS_SUCCESS)
         {
@@ -277,22 +277,22 @@ UtilsStatus Utils::associatePlanes(
 
         /* Keep observations from opposite sides as distinct wall faces. */
         if (observedPlaneType_in == geometric::Plane::PlaneVariant::WALL &&
-            observationOrigin_World_m_in.has_value() &&
-            observationOrigin_World_m_in->allFinite())
+            observationOrigin_world_m_in.has_value() &&
+            observationOrigin_world_m_in->allFinite())
         {
             ObservationSideEvidence mappedObservationSide{};
-            if (getMedianObservationSide_World_m(p_mappedPlane,
+            if (getMedianObservationSide_world_m(p_mappedPlane,
                                                  mappedEquation,
                                                  mappedObservationSide) !=
                 UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // getMedianObservationSide_World_m cannot fail; continue as
+                // getMedianObservationSide_world_m cannot fail; continue as
                 // before.
             }
 
             const double givenObservationSide_m =
                 mappedEquation.head<3>().dot(
-                    observationOrigin_World_m_in.value()) +
+                    observationOrigin_world_m_in.value()) +
                 mappedEquation(3);
 
             constexpr double minimumReliableSideDistance_m = 0.10;
@@ -359,7 +359,7 @@ UtilsStatus Utils::associatePlanes(
             useWallExtension && areCompatible;
 
         /* Extract the global mapped-plane centroid */
-        const Eigen::Vector3d mappedCentroid = mappedGeometry.centroid_World_m;
+        const Eigen::Vector3d mappedCentroid = mappedGeometry.centroid_world_m;
 
         /* Calculate the global centroid distance */
         const double centroidDistance = (givenCentroid - mappedCentroid).norm();

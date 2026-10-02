@@ -112,22 +112,22 @@ SemanticsManagerStatus SemanticsManager::recomputeRoomCentroidsFromWalls(void)
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            const Eigen::Vector3d wallCentroid_World_m =
+            const Eigen::Vector3d wallCentroid_world_m =
                 wallGetCentroid.cast<double>();
-            std::optional<Eigen::Vector3d> inwardNormal_World{};
-            if (p_room->getWallNormalTowardRoom_World(p_wall,
-                                                      inwardNormal_World) !=
+            std::optional<Eigen::Vector3d> inwardNormal_world{};
+            if (p_room->getWallNormalTowardRoom_world(p_wall,
+                                                      inwardNormal_world) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWallNormalTowardRoom_World cannot fail; continue as
+                // getWallNormalTowardRoom_world cannot fail; continue as
                 // before.
             }
 
             wallCentroidSum +=
-                inwardNormal_World
-                    ? wallCentroid_World_m +
-                          centroidInwardOffset_m * (*inwardNormal_World)
-                    : wallCentroid_World_m;
+                inwardNormal_world
+                    ? wallCentroid_world_m +
+                          centroidInwardOffset_m * (*inwardNormal_world)
+                    : wallCentroid_world_m;
             wallCount++;
         }
 

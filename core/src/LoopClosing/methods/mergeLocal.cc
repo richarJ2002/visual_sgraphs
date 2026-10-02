@@ -2145,12 +2145,12 @@ LoopClosingStatus
      */
     if (!semanticGeometryWasOptimized)
     {
-        KeyFrameAndPose finalKeyFramePoses_WorldToCamera;
+        KeyFrameAndPose finalKeyFramePoses_worldToCamera;
 
-        for (const auto &[p_keyFrame, poseBefore_WorldToCamera] :
+        for (const auto &[p_keyFrame, poseBefore_worldToCamera] :
              vNonCorrectedSim3)
         {
-            (void)poseBefore_WorldToCamera;
+            (void)poseBefore_worldToCamera;
 
             bool keyFrameIsBad8{};
             if (!(p_keyFrame == nullptr) &&
@@ -2176,7 +2176,7 @@ LoopClosingStatus
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            const Sophus::SE3d poseAfter_WorldToCamera =
+            const Sophus::SE3d poseAfter_worldToCamera =
                 keyFramePose5.cast<double>();
 
             /*
@@ -2199,18 +2199,18 @@ LoopClosingStatus
                 poseAfterScale = correctedPoseIterator->second.scale();
             }
 
-            finalKeyFramePoses_WorldToCamera.insert_or_assign(
+            finalKeyFramePoses_worldToCamera.insert_or_assign(
                 p_keyFrame,
-                g2o::Sim3(poseAfter_WorldToCamera.unit_quaternion(),
+                g2o::Sim3(poseAfter_worldToCamera.unit_quaternion(),
                           poseAfterScale *
-                              poseAfter_WorldToCamera.translation(),
+                              poseAfter_worldToCamera.translation(),
                           poseAfterScale));
         }
 
         if (utils::utils::Utils::propagateSemanticPoseCorrections(
                 p_mergeMap,
                 vNonCorrectedSim3,
-                finalKeyFramePoses_WorldToCamera,
+                finalKeyFramePoses_worldToCamera,
                 g2oSwCurrentWMerge) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {

@@ -70,19 +70,19 @@ struct ObservationSideEvidence
  * @param[in]    p_plane_in
  *               Plane whose observing keyframes provide the camera
  *               positions.
- * @param[in]    planeEquation_World_in
+ * @param[in]    planeEquation_world_in
  *               Normalized plane equation expressed in the active map
  *               frame.
  *
- * @param[out] medianObservationSide_World_m_out Median signed camera distance
+ * @param[out] medianObservationSide_world_m_out Median signed camera distance
  * in metres, or no value when the available observations do not establish a
  * side.
  * @return UTILS_STATUS_SUCCESS.
  */
-[[nodiscard]] UtilsStatus getMedianObservationSide_World_m(
+[[nodiscard]] UtilsStatus getMedianObservationSide_world_m(
     geometric::Plane        *p_plane_in,
-    const Eigen::Vector4d   &planeEquation_World_in,
-    ObservationSideEvidence &medianObservationSide_World_m_out);
+    const Eigen::Vector4d   &planeEquation_world_in,
+    ObservationSideEvidence &medianObservationSide_world_m_out);
 
 /*!
  * @brief Finite ranges of a cloud projected onto two plane-tangent axes.
@@ -102,9 +102,9 @@ struct ProjectedPlaneBounds
  *
  * @param[in]    p_planeCloud_in
  *               Plane support cloud expressed in the active map frame.
- * @param[in]    tangentU_World_in
+ * @param[in]    tangentU_world_in
  *               First unit tangent of the common plane.
- * @param[in]    tangentV_World_in
+ * @param[in]    tangentV_world_in
  *               Second unit tangent of the common plane.
  *
  * @param[out] planeBounds_out Finite projected bounds, or invalid bounds for an
@@ -113,8 +113,8 @@ struct ProjectedPlaneBounds
  */
 [[nodiscard]] UtilsStatus projectPlaneBounds(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_planeCloud_in,
-    const Eigen::Vector3d                              &tangentU_World_in,
-    const Eigen::Vector3d                              &tangentV_World_in,
+    const Eigen::Vector3d                              &tangentU_world_in,
+    const Eigen::Vector3d                              &tangentV_world_in,
     ProjectedPlaneBounds                               &planeBounds_out);
 
 /*!
@@ -125,7 +125,7 @@ struct ProjectedPlaneBounds
  *               First finite plane support cloud.
  * @param[in]    p_secondCloud_in
  *               Second finite plane support cloud.
- * @param[in]    commonNormal_World_in
+ * @param[in]    commonNormal_world_in
  *               Unit normal shared by the already equation-compatible
  *               planes.
  * @param[in]    maximumInPlaneGap_m_in
@@ -140,7 +140,7 @@ struct ProjectedPlaneBounds
 [[nodiscard]] UtilsStatus finiteWallExtentsAreCompatible(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_firstCloud_in,
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_secondCloud_in,
-    const Eigen::Vector3d                              &commonNormal_World_in,
+    const Eigen::Vector3d                              &commonNormal_world_in,
     const double                                        maximumInPlaneGap_m_in,
     const double minimumOrthogonalOverlap_m_in,
     bool        &areCompatible_out);
@@ -154,13 +154,13 @@ struct ProjectedPlaneBounds
  *               the same rule when imported walls are copied into a
  *               retained room.
  *
- * @param[in]    segmentStart_World_m_in
+ * @param[in]    segmentStart_world_m_in
  *               First endpoint in the active map frame.
- * @param[in]    segmentEnd_World_m_in
+ * @param[in]    segmentEnd_world_m_in
  *               Second endpoint in the active map frame.
  * @param[in]    p_passage_in
  *               Passable passage defining the finite aperture.
- * @param[in]    groundNormal_World_in
+ * @param[in]    groundNormal_world_in
  *               Unit ground normal in the active map frame.
  * @param[in]    openingMargin_m_in
  *               Aperture expansion used for noisy geometry.
@@ -172,10 +172,10 @@ struct ProjectedPlaneBounds
  * @return UTILS_STATUS_SUCCESS.
  */
 [[nodiscard]] UtilsStatus crossesPassablePassageOpening(
-    const Eigen::Vector3d              &segmentStart_World_m_in,
-    const Eigen::Vector3d              &segmentEnd_World_m_in,
+    const Eigen::Vector3d              &segmentStart_world_m_in,
+    const Eigen::Vector3d              &segmentEnd_world_m_in,
     vs_graphs::core::semantic::Passage *p_passage_in,
-    const Eigen::Vector3d              &groundNormal_World_in,
+    const Eigen::Vector3d              &groundNormal_world_in,
     const double                        openingMargin_m_in,
     const double                        minimumSideDistance_m_in,
     bool                               &crossesOpening_out);

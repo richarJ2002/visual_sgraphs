@@ -281,16 +281,16 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector4d passageEquation_World = passageGlobalEquation.coeffs();
+        Eigen::Vector4d passageEquation_world = passageGlobalEquation.coeffs();
 
-        const double passageNormalNorm = passageEquation_World.head<3>().norm();
+        const double passageNormalNorm = passageEquation_world.head<3>().norm();
 
         if (!std::isfinite(passageNormalNorm) || passageNormalNorm < 1e-8)
         {
             continue;
         }
 
-        passageEquation_World /= passageNormalNorm;
+        passageEquation_world /= passageNormalNorm;
 
         /* Extract the passage centroid in double precision */
         Eigen::Vector3d passageCentroid2{};
@@ -302,7 +302,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        const Eigen::Vector3d passageCentroid_World_m =
+        const Eigen::Vector3d passageCentroid_world_m =
             passageCentroid2.cast<double>();
 
         semantic::Passage::KnownSideProvenance knownSide{};
@@ -329,7 +329,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
             /* Which side the passage was seen from is a property of the
              * observation that produced its supporting wall face, so take it
              * from that face's stamped observation origin
-             * (Plane::getObservationOrigin_World()). Deriving it instead from
+             * (Plane::getObservationOrigin_world()). Deriving it instead from
              * a median over the wall's whole observation history would
              * migrate to the far side once the UAV flew through this very
              * passage -- inverting the passage's own notion of which side it
@@ -352,29 +352,29 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                     continue;
                 }
 
-                std::optional<Eigen::Vector3d> observationOrigin_World_m{};
-                if (p_supportingWall->getObservationOrigin_World(
-                        observationOrigin_World_m) !=
+                std::optional<Eigen::Vector3d> observationOrigin_world_m{};
+                if (p_supportingWall->getObservationOrigin_world(
+                        observationOrigin_world_m) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getObservationOrigin_World cannot fail; continue as
+                    // getObservationOrigin_world cannot fail; continue as
                     // before.
                 }
 
                 std::optional<double> observedSide_m;
 
-                if (observationOrigin_World_m.has_value() &&
-                    observationOrigin_World_m->allFinite())
+                if (observationOrigin_world_m.has_value() &&
+                    observationOrigin_world_m->allFinite())
                 {
-                    observedSide_m = passageEquation_World.head<3>().dot(
-                                         observationOrigin_World_m.value()) +
-                                     passageEquation_World(3);
+                    observedSide_m = passageEquation_world.head<3>().dot(
+                                         observationOrigin_world_m.value()) +
+                                     passageEquation_world(3);
                 }
                 else
                 {
                     geometric::Plane::ObservationSideSnapshot sideSnapshot{};
                     if (p_supportingWall->getObservationSideSnapshot(
-                            passageEquation_World,
+                            passageEquation_world,
                             sideSnapshot) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
@@ -392,9 +392,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
 
                 if (p_passage->setKnownSideDirection(
                         observedSide_m.value() > 0.0
-                            ? Eigen::Vector3d(passageEquation_World.head<3>())
+                            ? Eigen::Vector3d(passageEquation_world.head<3>())
                             : Eigen::Vector3d(
-                                  -passageEquation_World.head<3>())) !=
+                                  -passageEquation_world.head<3>())) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
                     RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
@@ -504,7 +504,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             __func__);
                     }
                     Eigen::Vector4d roomWallEquation =
-                        roomWallGeometry.equation_World;
+                        roomWallGeometry.equation_world;
 
                     const double roomWallNormalNorm =
                         roomWallEquation.head<3>().norm();
@@ -519,11 +519,11 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
 
                     const double normalAlignment =
                         std::abs(roomWallEquation.head<3>().dot(
-                            passageEquation_World.head<3>()));
+                            passageEquation_world.head<3>()));
 
                     const double passagePlaneDistance_m =
                         std::abs(roomWallEquation.head<3>().dot(
-                                     passageCentroid_World_m) +
+                                     passageCentroid_world_m) +
                                  roomWallEquation(3));
 
                     if (normalAlignment < minimumNormalAlignment ||
@@ -552,22 +552,22 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             continue;
                         }
 
-                        const Eigen::Vector3d wallPoint_World_m(
+                        const Eigen::Vector3d wallPoint_world_m(
                             static_cast<double>(wallPoint.x),
                             static_cast<double>(wallPoint.y),
                             static_cast<double>(wallPoint.z));
 
-                        Eigen::Vector3d openingOffset_World_m =
-                            wallPoint_World_m - passageCentroid_World_m;
+                        Eigen::Vector3d openingOffset_world_m =
+                            wallPoint_world_m - passageCentroid_world_m;
 
-                        openingOffset_World_m -=
-                            openingOffset_World_m.dot(
+                        openingOffset_world_m -=
+                            openingOffset_world_m.dot(
                                 roomWallEquation.head<3>()) *
                             roomWallEquation.head<3>();
 
                         nearestOpeningEdgeDistance_m =
                             std::min(nearestOpeningEdgeDistance_m,
-                                     openingOffset_World_m.norm());
+                                     openingOffset_world_m.norm());
                     }
 
                     return nearestOpeningEdgeDistance_m <=
@@ -688,8 +688,8 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
             }
 
             /* Extract the room centroid */
-            Eigen::Vector3d roomCentroid_World_m{};
-            if (p_room->getCentroid(roomCentroid_World_m) !=
+            Eigen::Vector3d roomCentroid_world_m{};
+            if (p_room->getCentroid(roomCentroid_world_m) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -700,8 +700,8 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
 
             /* Determine which side of the passage plane contains the room */
             const double roomSide_m =
-                passageEquation_World.head<3>().dot(roomCentroid_World_m) +
-                passageEquation_World(3);
+                passageEquation_world.head<3>().dot(roomCentroid_world_m) +
+                passageEquation_world(3);
 
             /*!
              * A wall-centred provisional SE does not yet provide enough
@@ -727,7 +727,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
 
             /* Find the distance from the room to the passage */
             const double roomDistance_m =
-                (roomCentroid_World_m - passageCentroid_World_m).norm();
+                (roomCentroid_world_m - passageCentroid_world_m).norm();
 
             /* The centroid of a sparse room can lie on its only known wall.
              * Exact ownership of the passage's supporting wall is still
@@ -749,8 +749,8 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                 }
                 const double knownSideSign =
                     knownSideHasDirection2
-                        ? knownSide.direction_World.dot(
-                              passageEquation_World.head<3>())
+                        ? knownSide.direction_world.dot(
+                              passageEquation_world.head<3>())
                         : 0.0;
                 if (knownSideSign >= 0.0 &&
                     roomDistance_m < positiveRoomDistance_m)
@@ -1207,9 +1207,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
         }
         const double knownSideSign =
             knownSideHasDirection3
-                ? knownSide.direction_World.dot(passageEquation_World.head<3>())
+                ? knownSide.direction_world.dot(passageEquation_world.head<3>())
                 : 0.0;
-        const auto roomIsOnKnownSide = [&passageEquation_World,
+        const auto roomIsOnKnownSide = [&passageEquation_world,
                                         &knownSide,
                                         knownSideSign](semantic::Room *p_room)
         {
@@ -1239,8 +1239,8 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                              __func__);
             }
             const double roomSide_m =
-                passageEquation_World.head<3>().dot(roomCentroid) +
-                passageEquation_World(3);
+                passageEquation_world.head<3>().dot(roomCentroid) +
+                passageEquation_world(3);
             return roomSide_m * knownSideSign > 0.0;
         };
 
@@ -1555,7 +1555,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         __func__);
                 }
                 if (p_passage->setKnownSideDirection(
-                        -passageEquation_World.head<3>()) !=
+                        -passageEquation_world.head<3>()) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
                     RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
@@ -1578,7 +1578,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         __func__);
                 }
                 if (p_passage->setKnownSideDirection(
-                        passageEquation_World.head<3>()) !=
+                        passageEquation_world.head<3>()) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
                     RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
@@ -1777,7 +1777,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             __func__);
                     }
                     Eigen::Vector3d knownSideDirection =
-                        knownSideHasDirection7 ? knownSide.direction_World
+                        knownSideHasDirection7 ? knownSide.direction_world
                                                : Eigen::Vector3d::Zero();
                     bool knownSideHasDirection8{};
                     if (knownSide.hasDirection(knownSideHasDirection8) !=
@@ -1899,15 +1899,15 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         if (anteChurnGroundEq.allFinite() &&
                             anteChurnGroundNorm > 1e-8)
                         {
-                            const Eigen::Vector3d anteChurnGroundNormal_World =
+                            const Eigen::Vector3d anteChurnGroundNormal_world =
                                 anteChurnGroundEq.head<3>() /
                                 anteChurnGroundNorm;
-                            const Eigen::Vector3d anteChurnGroundAxisU_World =
-                                anteChurnGroundNormal_World.unitOrthogonal()
+                            const Eigen::Vector3d anteChurnGroundAxisU_world =
+                                anteChurnGroundNormal_world.unitOrthogonal()
                                     .normalized();
-                            const Eigen::Vector3d anteChurnGroundAxisV_World =
-                                anteChurnGroundNormal_World
-                                    .cross(anteChurnGroundAxisU_World)
+                            const Eigen::Vector3d anteChurnGroundAxisV_world =
+                                anteChurnGroundNormal_world
+                                    .cross(anteChurnGroundAxisU_world)
                                     .normalized();
                             const types::SystemParams::RoomSeg::PassagePartition
                                 &anteChurnPartitionParameters =
@@ -1986,7 +1986,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         knownRoomCentroid,
                                         otherRoomCentroid,
                                         p_passage,
-                                        anteChurnGroundNormal_World,
+                                        anteChurnGroundNormal_world,
                                         anteChurnOpeningMargin_m,
                                         anteChurnMinimumSideDistance_m,
                                         crossesPassageOpening) !=
@@ -2019,9 +2019,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         otherRoomCentroid2,
                                         anteChurnExcludedRooms,
                                         allRooms,
-                                        anteChurnGroundAxisU_World,
-                                        anteChurnGroundAxisV_World,
-                                        anteChurnGroundNormal_World,
+                                        anteChurnGroundAxisU_world,
+                                        anteChurnGroundAxisV_world,
+                                        anteChurnGroundNormal_world,
                                         anteChurnTopologyParameters
                                             .endpointTrimRatio,
                                         anteChurnTopologyParameters
@@ -2801,20 +2801,20 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    const Eigen::Vector4d groundEquation_World =
+                    const Eigen::Vector4d groundEquation_world =
                         groundPlaneGetGlobalEquation.coeffs();
                     const double groundNormalNorm =
-                        groundEquation_World.head<3>().norm();
+                        groundEquation_world.head<3>().norm();
 
-                    if (groundEquation_World.allFinite() &&
+                    if (groundEquation_world.allFinite() &&
                         groundNormalNorm > 1e-8)
                     {
-                        const Eigen::Vector3d groundNormal_World =
-                            groundEquation_World.head<3>() / groundNormalNorm;
-                        const Eigen::Vector3d groundAxisU_World =
-                            groundNormal_World.unitOrthogonal().normalized();
-                        const Eigen::Vector3d groundAxisV_World =
-                            groundNormal_World.cross(groundAxisU_World)
+                        const Eigen::Vector3d groundNormal_world =
+                            groundEquation_world.head<3>() / groundNormalNorm;
+                        const Eigen::Vector3d groundAxisU_world =
+                            groundNormal_world.unitOrthogonal().normalized();
+                        const Eigen::Vector3d groundAxisV_world =
+                            groundNormal_world.cross(groundAxisU_world)
                                 .normalized();
                         const types::SystemParams::RoomSeg::PassagePartition
                             &partitionParameters =
@@ -2893,7 +2893,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                     prospectiveCentroid,
                                     otherRoomCentroid3,
                                     p_passage,
-                                    groundNormal_World,
+                                    groundNormal_world,
                                     openingMargin_m,
                                     minimumSideDistance_m,
                                     crossesPassageOpening2) !=
@@ -2940,9 +2940,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                     otherRoomCentroid4,
                                     excludedRooms,
                                     allRooms,
-                                    groundAxisU_World,
-                                    groundAxisV_World,
-                                    groundNormal_World,
+                                    groundAxisU_world,
+                                    groundAxisV_world,
+                                    groundNormal_world,
                                     topologyParameters.endpointTrimRatio,
                                     topologyParameters.minimumWallLength_m,
                                     crossesForeignWall2) !=

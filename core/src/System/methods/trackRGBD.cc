@@ -162,11 +162,11 @@ SystemStatus System::trackRGBD(
     trackedMapPoints   = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn = p_tracker->currentFrame.keyPointsUndistorted;
 
-    currentCameraPose_World = pose_worldToCamera.inverse();
+    currentCameraPose_world = pose_worldToCamera.inverse();
     isCurrentCameraPoseValid =
         trackingState == Tracking::OK &&
-        currentCameraPose_World.translation().allFinite() &&
-        currentCameraPose_World.rotationMatrix().allFinite();
+        currentCameraPose_world.translation().allFinite() &&
+        currentCameraPose_world.rotationMatrix().allFinite();
 
     /* Feed the real per-frame tracking state to SemanticsManager's reset
      * anchor (lastKnownRoomId via onTrackingLost()/onTrackingRecovered()).

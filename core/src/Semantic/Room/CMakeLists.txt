@@ -3,7 +3,7 @@ set(VS_GRAPHS_SEMANTIC_ROOM_SOURCES
   core/src/Semantic/Room/methods/applyTransform.cc
   core/src/Semantic/Room/methods/clearPassages.cc
   core/src/Semantic/Room/methods/clearWalls.cc
-  core/src/Semantic/Room/methods/getBoundaryCorners_World_m.cc
+  core/src/Semantic/Room/methods/getBoundaryCorners_world_m.cc
   core/src/Semantic/Room/methods/getBoundaryStatus.cc
   core/src/Semantic/Room/methods/getCentroid.cc
   core/src/Semantic/Room/methods/getFloor.cc
@@ -21,7 +21,7 @@ set(VS_GRAPHS_SEMANTIC_ROOM_SOURCES
   core/src/Semantic/Room/methods/getPassages.cc
   core/src/Semantic/Room/methods/getRoomTag.cc
   core/src/Semantic/Room/methods/getRoomVariant.cc
-  core/src/Semantic/Room/methods/getWallNormalTowardRoom_World.cc
+  core/src/Semantic/Room/methods/getWallNormalTowardRoom_world.cc
   core/src/Semantic/Room/methods/getWalls.cc
   core/src/Semantic/Room/methods/hasPreviouslyVisited.cc
   core/src/Semantic/Room/methods/hasRoomTag.cc
@@ -35,7 +35,7 @@ set(VS_GRAPHS_SEMANTIC_ROOM_SOURCES
   core/src/Semantic/Room/methods/replacePassageAssociation.cc
   core/src/Semantic/Room/methods/replaceWall.cc
   core/src/Semantic/Room/methods/setBad.cc
-  core/src/Semantic/Room/methods/setBoundaryCorners_World_m.cc
+  core/src/Semantic/Room/methods/setBoundaryCorners_world_m.cc
   core/src/Semantic/Room/methods/setBoundaryStatus.cc
   core/src/Semantic/Room/methods/setCentroid.cc
   core/src/Semantic/Room/methods/setDoorways.cc

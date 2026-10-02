@@ -1141,15 +1141,15 @@ extern void
  *              The published message uses frameWorld as the parent frame and
  *              frameImu as the child frame.
  *
- * @param[in]   robotPose_BodToWorld_in
+ * @param[in]   robotPose_bodyToWorld_in
  *              Transformation describing the pose of the body frame relative
  *              to the world frame.
  *
- * @param[in]   linearVelocity_World_mps_in
+ * @param[in]   linearVelocity_world_mps_in
  *              Linear velocity of the body expressed in the world frame, in
  *              metres per second.
  *
- * @param[in]   angularVelocity_Bod_radps_in
+ * @param[in]   angularVelocity_body_radps_in
  *              Angular velocity of the body expressed in the body frame, in
  *              radians per second.
  *
@@ -1157,9 +1157,9 @@ extern void
  *              ROS timestamp associated with the odometry estimate.
  */
 extern void
-    publishBodyOdometry(const Sophus::SE3f    &robotPose_BodToWorld_in,
-                        const Eigen::Vector3f &linearVelocity_World_mps_in,
-                        const Eigen::Vector3f &angularVelocity_Bod_radps_in,
+    publishBodyOdometry(const Sophus::SE3f    &robotPose_bodyToWorld_in,
+                        const Eigen::Vector3f &linearVelocity_world_mps_in,
+                        const Eigen::Vector3f &angularVelocity_body_radps_in,
                         const rclcpp::Time    &msgTims_s_in);
 
 /*!
@@ -1170,14 +1170,14 @@ extern void
  *              to the world frame. Both the pose message and visualisation
  *              marker are therefore published in frameWorld.
  *
- * @param[in]   cameraPose_World_in
+ * @param[in]   cameraPose_world_in
  *              Transformation describing the pose of the camera frame relative
  *              to the world frame.
  *
  * @param[in]   msgTime_s_in
  *              ROS timestamp associated with the camera-pose estimate.
  */
-extern void publishCameraPose(const Sophus::SE3f &cameraPose_World_in,
+extern void publishCameraPose(const Sophus::SE3f &cameraPose_world_in,
                               const rclcpp::Time &msgTime_s_in);
 
 /*!
@@ -1207,7 +1207,7 @@ extern void publishFiducialMarkers(
  *              to the world frame. The input point-cloud coordinates are
  *              assumed to be expressed in the camera frame.
  *
- * @param[in]   cameraPose_CameraToWorld_in
+ * @param[in]   cameraPose_cameraToWorld_in
  *              Transformation from the camera frame to the world frame.
  *
  * @param[in]   pointCloudCameraMessage_in
@@ -1219,7 +1219,7 @@ extern void publishFiducialMarkers(
  *              cloud.
  */
 extern void
-    publishFramePointCloud(const Sophus::SE3f &cameraPose_CameraToWorld_in,
+    publishFramePointCloud(const Sophus::SE3f &cameraPose_cameraToWorld_in,
                            const sensor_msgs::msg::PointCloud2::ConstSharedPtr
                                               &pointCloudCameraMessage_in,
                            const rclcpp::Time &msgTime_s_in);
@@ -1233,7 +1233,7 @@ extern void
  *              cluster points are expected to already be expressed in the
  *              world frame.
  *
- * @param[in]   freeSpaceClusters_World_in
+ * @param[in]   freeSpaceClusters_world_in
  *              Collection of connected free-space clusters. Each cluster
  *              contains three-dimensional points expressed in the world frame,
  *              in metres.
@@ -1242,7 +1242,7 @@ extern void
  *              ROS timestamp assigned to the published point-cloud message.
  */
 extern void publishFreeSpaceClusters(
-    const std::vector<std::vector<Eigen::Vector3d>> &freeSpaceClusters_World_in,
+    const std::vector<std::vector<Eigen::Vector3d>> &freeSpaceClusters_world_in,
     const rclcpp::Time                              &msgTime_s_in);
 
 /*!
@@ -1409,7 +1409,7 @@ extern void publishStructuralElements(
  *              orientation are copied into a TransformStamped message and
  *              broadcast through tfBroadcaster.
  *
- * @param[in]   transform_ParentToChild_in
+ * @param[in]   transform_parentToChild_in
  *              Transformation describing the child frame relative to the
  *              parent frame.
  *
@@ -1422,7 +1422,7 @@ extern void publishStructuralElements(
  * @param[in]   msgTime_s_in
  *              ROS timestamp assigned to the published transformation.
  */
-extern void publishTFTransform(const Sophus::SE3f &transform_ParentToChild_in,
+extern void publishTFTransform(const Sophus::SE3f &transform_parentToChild_in,
                                const std::string  &parentFrameId_in,
                                const std::string  &childFrameId_in,
                                const rclcpp::Time &msgTime_s_in);

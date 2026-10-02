@@ -43,13 +43,13 @@ namespace core
  * @param[in]       p_wall_in
  *                  Wall whose observed cloud defines the finite extent.
  *
- * @param[in]       groundNormal_World_in
+ * @param[in]       groundNormal_world_in
  *                  Unit ground normal in the world frame.
  *
- * @param[in]       groundAxisU_World_in
+ * @param[in]       groundAxisU_world_in
  *                  First horizontal ground axis.
  *
- * @param[in]       groundAxisV_World_in
+ * @param[in]       groundAxisV_world_in
  *                  Second horizontal ground axis.
  *
  * @param[in]       endpointTrimRatio_in
@@ -69,9 +69,9 @@ namespace core
  */
 SemanticsManagerStatus
     buildFiniteWallSegment2d(geometric::Plane      *p_wall_in,
-                             const Eigen::Vector3d &groundNormal_World_in,
-                             const Eigen::Vector3d &groundAxisU_World_in,
-                             const Eigen::Vector3d &groundAxisV_World_in,
+                             const Eigen::Vector3d &groundNormal_world_in,
+                             const Eigen::Vector3d &groundAxisU_world_in,
+                             const Eigen::Vector3d &groundAxisV_world_in,
                              const double           endpointTrimRatio_in,
                              const double           minimumWallLength_m_in,
                              FiniteWallSegment2d   &segment_inout,
@@ -102,23 +102,23 @@ SemanticsManagerStatus
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector4d wallEquation_World = wallGeometry.equation_World;
-    const double    wallNormalNorm     = wallEquation_World.head<3>().norm();
+    Eigen::Vector4d wallEquation_world = wallGeometry.equation_world;
+    const double    wallNormalNorm     = wallEquation_world.head<3>().norm();
 
-    if (!wallEquation_World.allFinite() || wallNormalNorm < 1e-8)
+    if (!wallEquation_world.allFinite() || wallNormalNorm < 1e-8)
     {
         isBuilt_out = false;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    wallEquation_World /= wallNormalNorm;
+    wallEquation_world /= wallNormalNorm;
 
-    Eigen::Vector3d horizontalWallNormal_World =
-        wallEquation_World.head<3>() -
-        wallEquation_World.head<3>().dot(groundNormal_World_in) *
-            groundNormal_World_in;
+    Eigen::Vector3d horizontalWallNormal_world =
+        wallEquation_world.head<3>() -
+        wallEquation_world.head<3>().dot(groundNormal_world_in) *
+            groundNormal_world_in;
 
-    const double horizontalWallNormalNorm = horizontalWallNormal_World.norm();
+    const double horizontalWallNormalNorm = horizontalWallNormal_world.norm();
 
     if (!std::isfinite(horizontalWallNormalNorm) ||
         horizontalWallNormalNorm < 1e-8)
@@ -127,10 +127,10 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    horizontalWallNormal_World /= horizontalWallNormalNorm;
+    horizontalWallNormal_world /= horizontalWallNormalNorm;
 
-    const Eigen::Vector3d wallTangent_World =
-        groundNormal_World_in.cross(horizontalWallNormal_World).normalized();
+    const Eigen::Vector3d wallTangent_world =
+        groundNormal_world_in.cross(horizontalWallNormal_world).normalized();
 
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_wallSupportCloud =
         wallGeometry.supportCloud;
@@ -151,13 +151,13 @@ SemanticsManagerStatus
             continue;
         }
 
-        const Eigen::Vector3d wallPoint_World_m(
+        const Eigen::Vector3d wallPoint_world_m(
             static_cast<double>(wallPoint.x),
             static_cast<double>(wallPoint.y),
             static_cast<double>(wallPoint.z));
 
         wallPointCoordinates_m.push_back(
-            wallPoint_World_m.dot(wallTangent_World));
+            wallPoint_world_m.dot(wallTangent_world));
     }
 
     if (wallPointCoordinates_m.size() < 2U)
@@ -189,31 +189,31 @@ SemanticsManagerStatus
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    const Eigen::Vector3d wallCentroid_World_m = wallGetCentroid.cast<double>();
+    const Eigen::Vector3d wallCentroid_world_m = wallGetCentroid.cast<double>();
 
-    if (!wallCentroid_World_m.allFinite())
+    if (!wallCentroid_world_m.allFinite())
     {
         isBuilt_out = false;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const double centroidCoordinate_m =
-        wallCentroid_World_m.dot(wallTangent_World);
-    const Eigen::Vector3d segmentStart_World_m =
-        wallCentroid_World_m +
-        (minimumWallCoordinate_m - centroidCoordinate_m) * wallTangent_World;
-    const Eigen::Vector3d segmentEnd_World_m =
-        wallCentroid_World_m +
-        (maximumWallCoordinate_m - centroidCoordinate_m) * wallTangent_World;
+        wallCentroid_world_m.dot(wallTangent_world);
+    const Eigen::Vector3d segmentStart_world_m =
+        wallCentroid_world_m +
+        (minimumWallCoordinate_m - centroidCoordinate_m) * wallTangent_world;
+    const Eigen::Vector3d segmentEnd_world_m =
+        wallCentroid_world_m +
+        (maximumWallCoordinate_m - centroidCoordinate_m) * wallTangent_world;
 
     segment_inout.p_wall        = p_wall_in;
-    segment_inout.start_World_m = {
-        segmentStart_World_m.dot(groundAxisU_World_in),
-        segmentStart_World_m.dot(groundAxisV_World_in)};
-    segment_inout.end_World_m = {segmentEnd_World_m.dot(groundAxisU_World_in),
-                                 segmentEnd_World_m.dot(groundAxisV_World_in)};
+    segment_inout.start_world_m = {
+        segmentStart_world_m.dot(groundAxisU_world_in),
+        segmentStart_world_m.dot(groundAxisV_world_in)};
+    segment_inout.end_world_m = {segmentEnd_world_m.dot(groundAxisU_world_in),
+                                 segmentEnd_world_m.dot(groundAxisV_world_in)};
     segment_inout.length_m =
-        (segment_inout.end_World_m - segment_inout.start_World_m).norm();
+        (segment_inout.end_world_m - segment_inout.start_world_m).norm();
     std::size_t wallGetObservationCount{};
     if (p_wall_in->getObservationCount(wallGetObservationCount) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -229,8 +229,8 @@ SemanticsManagerStatus
             1U)) *
         std::sqrt(std::max(segment_inout.length_m, 0.0));
 
-    isBuilt_out = segment_inout.start_World_m.allFinite() &&
-                  segment_inout.end_World_m.allFinite() &&
+    isBuilt_out = segment_inout.start_world_m.allFinite() &&
+                  segment_inout.end_world_m.allFinite() &&
                   std::isfinite(segment_inout.length_m) &&
                   segment_inout.length_m >= minimumWallLength_m_in;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

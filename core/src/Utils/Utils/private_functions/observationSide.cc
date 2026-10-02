@@ -19,7 +19,7 @@
 /*!
  * @file            observationSide.cc
  *
- * @brief           Implements getMedianObservationSide_World_m(),
+ * @brief           Implements getMedianObservationSide_world_m(),
  *                  declared in Utils/Utils/private_functions.h.
  */
 
@@ -35,18 +35,18 @@ namespace utils
 namespace utils
 {
 
-UtilsStatus getMedianObservationSide_World_m(
+UtilsStatus getMedianObservationSide_world_m(
     geometric::Plane        *p_plane_in,
-    const Eigen::Vector4d   &planeEquation_World_in,
-    ObservationSideEvidence &medianObservationSide_World_m_out)
+    const Eigen::Vector4d   &planeEquation_world_in,
+    ObservationSideEvidence &medianObservationSide_world_m_out)
 {
     if (p_plane_in == nullptr)
     {
-        medianObservationSide_World_m_out = {};
+        medianObservationSide_world_m_out = {};
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
     geometric::Plane::ObservationSideSnapshot snapshot{};
-    if (p_plane_in->getObservationSideSnapshot(planeEquation_World_in,
+    if (p_plane_in->getObservationSideSnapshot(planeEquation_world_in,
                                                snapshot) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
@@ -55,7 +55,7 @@ UtilsStatus getMedianObservationSide_World_m(
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    medianObservationSide_World_m_out = {
+    medianObservationSide_world_m_out = {
         snapshot.medianSignedDistance_m,
         snapshot.face ==
             geometric::Plane::ObservationSideSnapshot::Face::AMBIGUOUS};

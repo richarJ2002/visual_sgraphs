@@ -106,16 +106,16 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
 }
 
 /*! Builds an admissible WALL geometric::Plane on the plane {normal . p + d = 0}
- * passing through pointOnPlane_World_in, with a genuine on-plane point
- * cloud running along axisAlong_World_in (must be horizontal) for
+ * passing through pointOnPlane_world_in, with a genuine on-plane point
+ * cloud running along axisAlong_world_in (must be horizontal) for
  * [-halfLength_m_in, halfLength_m_in] and vertically for [zMin_m_in,
  * zMax_m_in]. */
 std::unique_ptr<geometric::Plane>
     makeWallSegmentPlane(int                    id_in,
                          Map                   *p_map_in,
-                         const Eigen::Vector3d &normal_World_in,
-                         const Eigen::Vector3d &pointOnPlane_World_in,
-                         const Eigen::Vector3d &axisAlong_World_in,
+                         const Eigen::Vector3d &normal_world_in,
+                         const Eigen::Vector3d &pointOnPlane_world_in,
+                         const Eigen::Vector3d &axisAlong_world_in,
                          double                 halfLength_m_in,
                          double                 zMin_m_in,
                          double                 zMax_m_in)
@@ -153,11 +153,11 @@ std::unique_ptr<geometric::Plane>
                      __func__);
     }
 
-    const double d = -normal_World_in.dot(pointOnPlane_World_in);
+    const double d = -normal_world_in.dot(pointOnPlane_world_in);
     if (wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(
-            normal_World_in.x(),
-            normal_World_in.y(),
-            normal_World_in.z(),
+            normal_world_in.x(),
+            normal_world_in.y(),
+            normal_world_in.z(),
             d))) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -165,7 +165,7 @@ std::unique_ptr<geometric::Plane>
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    if (wall->setCentroid(pointOnPlane_World_in) !=
+    if (wall->setCentroid(pointOnPlane_world_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -189,10 +189,10 @@ std::unique_ptr<geometric::Plane>
                                              static_cast<double>(heightIndex) /
                                              static_cast<double>(steps - 1);
             pcl::PointXYZRGBA point;
-            point.x = static_cast<float>(pointOnPlane_World_in.x() +
-                                         t * axisAlong_World_in.x());
-            point.y = static_cast<float>(pointOnPlane_World_in.y() +
-                                         t * axisAlong_World_in.y());
+            point.x = static_cast<float>(pointOnPlane_world_in.x() +
+                                         t * axisAlong_world_in.x());
+            point.y = static_cast<float>(pointOnPlane_world_in.y() +
+                                         t * axisAlong_world_in.y());
             point.z = static_cast<float>(z);
             cloud->push_back(point);
         }
@@ -308,10 +308,10 @@ TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
     ASSERT_EQ((room.getBoundaryStatus(boundaryStatus)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     EXPECT_EQ(boundaryStatus, semantic::Room::BoundaryStatus::COMPLETE);
-    std::vector<Eigen::Vector3d> boundaryCorners_World_m{};
-    ASSERT_EQ((room.getBoundaryCorners_World_m(boundaryCorners_World_m)),
+    std::vector<Eigen::Vector3d> boundaryCorners_world_m{};
+    ASSERT_EQ((room.getBoundaryCorners_world_m(boundaryCorners_world_m)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    EXPECT_GE(boundaryCorners_World_m.size(), 3U);
+    EXPECT_GE(boundaryCorners_world_m.size(), 3U);
 
     std::vector<geometric::Plane *> remainingWalls{};
     ASSERT_EQ((room.getWalls(remainingWalls)),

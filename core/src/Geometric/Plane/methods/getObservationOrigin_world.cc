@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file            setObservationOrigin_World.cc
+ * @file            getObservationOrigin_world.cc
  *
- * @brief           Implements Plane::setObservationOrigin_World(), declared in
+ * @brief           Implements Plane::getObservationOrigin_world(), declared in
  *                  Geometric/Plane.h.
  */
 
@@ -40,12 +40,11 @@ namespace core
 namespace geometric
 {
 
-PlaneStatus
-    Plane::setObservationOrigin_World(const Eigen::Vector3d &origin_World_m_in)
+PlaneStatus Plane::getObservationOrigin_world(
+    std::optional<Eigen::Vector3d> &getObservationOrigin_world_out) const
 {
     std::unique_lock<std::mutex> lock(positionMutex);
-    observationOrigin_World_m = origin_World_m_in;
-
+    getObservationOrigin_world_out = observationOrigin_world_m;
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 

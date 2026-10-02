@@ -36,27 +36,27 @@ namespace core
  * @brief Returns the Euclidean distance from a point to a finite segment.
  */
 SemanticsManagerStatus
-    pointToSegmentDistance_m(const Eigen::Vector2d     &point_World_m_in,
+    pointToSegmentDistance_m(const Eigen::Vector2d     &point_world_m_in,
                              const FiniteWallSegment2d &segment_in,
                              double                    &distance_m_out)
 {
     const Eigen::Vector2d segmentDirection =
-        segment_in.end_World_m - segment_in.start_World_m;
+        segment_in.end_world_m - segment_in.start_world_m;
     const double squaredLength = segmentDirection.squaredNorm();
 
     if (squaredLength < 1e-12)
     {
-        distance_m_out = (point_World_m_in - segment_in.start_World_m).norm();
+        distance_m_out = (point_world_m_in - segment_in.start_world_m).norm();
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
     const double interpolation = std::clamp(
-        (point_World_m_in - segment_in.start_World_m).dot(segmentDirection) /
+        (point_world_m_in - segment_in.start_world_m).dot(segmentDirection) /
             squaredLength,
         0.0,
         1.0);
 
-    distance_m_out = (point_World_m_in - (segment_in.start_World_m +
+    distance_m_out = (point_world_m_in - (segment_in.start_world_m +
                                           interpolation * segmentDirection))
                          .norm();
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

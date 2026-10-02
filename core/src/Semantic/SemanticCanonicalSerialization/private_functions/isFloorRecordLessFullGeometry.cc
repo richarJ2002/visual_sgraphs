@@ -44,11 +44,11 @@ bool isFloorRecordLessFullGeometry(const FloorRecord &lhs_in,
         return false;
     }
 
-    if (isVector3dLess(lhs_in.centroid_World_m, rhs_in.centroid_World_m))
+    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m))
     {
         return true;
     }
-    if (isVector3dLess(rhs_in.centroid_World_m, lhs_in.centroid_World_m))
+    if (isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
     {
         return false;
     }
@@ -61,11 +61,11 @@ bool isFloorRecordLessFullGeometry(const FloorRecord &lhs_in,
     {
         const Floor::PlaneIdentity &lhsPlane = *lhs_in.planeIdentity;
         const Floor::PlaneIdentity &rhsPlane = *rhs_in.planeIdentity;
-        if (isVector4dLess(lhsPlane.equation_World, rhsPlane.equation_World))
+        if (isVector4dLess(lhsPlane.equation_world, rhsPlane.equation_world))
         {
             return true;
         }
-        if (isVector4dLess(rhsPlane.equation_World, lhsPlane.equation_World))
+        if (isVector4dLess(rhsPlane.equation_world, lhsPlane.equation_world))
         {
             return false;
         }

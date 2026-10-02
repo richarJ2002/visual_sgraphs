@@ -78,7 +78,7 @@ SemanticVerifyStatus
             normalsB_in[index].transpose();
         /* n_B^T t = sigma*d_A - d_B; sigma is always +1 here because both
          * sides are independently canonicalised via
-         * Room::getWallNormalTowardRoom_World before this function ever
+         * Room::getWallNormalTowardRoom_world before this function ever
          * sees them (sign search is therefore a no-op). */
         b(static_cast<Eigen::Index>(index)) =
             offsetsA_in[index] - offsetsB_in[index];

@@ -203,10 +203,10 @@ SemanticVerifyStatus checkConsecutivePassageTopology(
                             transform_in.rotation()
                                 .toRotationMatrix()
                                 .cast<double>() *
-                            absorbedPassage.knownSideDirection_World;
+                            absorbedPassage.knownSideDirection_world;
                         const double directionAgreement =
                             transformedDirection.normalized().dot(
-                                p_surviving->knownSideDirection_World
+                                p_surviving->knownSideDirection_world
                                     .normalized());
                         if (!std::isfinite(directionAgreement) ||
                             directionAgreement <
@@ -225,13 +225,13 @@ SemanticVerifyStatus checkConsecutivePassageTopology(
                     }
                     Eigen::Vector3d mappedCentroid = Eigen::Vector3d::Zero();
                     if (!(transformAbsorbedPoint(transform_in,
-                                                 absorbedPassage.centroid_World,
+                                                 absorbedPassage.centroid_world,
                                                  mappedCentroid) ==
                           SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS))
                     {
                         hasIncompletePassage = true;
                     }
-                    else if ((mappedCentroid - p_surviving->centroid_World)
+                    else if ((mappedCentroid - p_surviving->centroid_world)
                                  .norm() > maximumCentroidDistance_m_in)
                     {
                         contradictionReason_out =

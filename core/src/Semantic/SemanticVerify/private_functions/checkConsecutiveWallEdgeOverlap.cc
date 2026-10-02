@@ -52,14 +52,14 @@ SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
     {
         for (const VerifyWallObservation &absorbedWall : pair.p_absorbed->walls)
         {
-            if (absorbedWall.supportSample_World.size() < 2U ||
-                !absorbedWall.normal_World.allFinite() ||
+            if (absorbedWall.supportSample_world.size() < 2U ||
+                !absorbedWall.normal_world.allFinite() ||
                 !std::isfinite(absorbedWall.d) ||
-                !absorbedWall.centroid_World.allFinite())
+                !absorbedWall.centroid_world.allFinite())
             {
                 continue;
             }
-            const double absorbedNormalNorm = absorbedWall.normal_World.norm();
+            const double absorbedNormalNorm = absorbedWall.normal_world.norm();
             if (!std::isfinite(absorbedNormalNorm) || absorbedNormalNorm < 1e-8)
             {
                 continue;
@@ -79,7 +79,7 @@ SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
                 continue;
             }
             const Eigen::Vector3d mappedNormal =
-                absorbedRotation * absorbedWall.normal_World;
+                absorbedRotation * absorbedWall.normal_world;
             const double mappedOffset = absorbedScale * absorbedWall.d -
                                         mappedNormal.dot(absorbedTranslation);
             bool hasOverlapPartner = false;
@@ -87,22 +87,22 @@ SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
             for (const VerifyWallObservation &survivingWall :
                  pair.p_surviving->walls)
             {
-                if (survivingWall.supportSample_World.size() < 2U ||
-                    !survivingWall.normal_World.allFinite() ||
+                if (survivingWall.supportSample_world.size() < 2U ||
+                    !survivingWall.normal_world.allFinite() ||
                     !std::isfinite(survivingWall.d) ||
-                    !survivingWall.centroid_World.allFinite())
+                    !survivingWall.centroid_world.allFinite())
                 {
                     continue;
                 }
                 const double survivingNormalNorm =
-                    survivingWall.normal_World.norm();
+                    survivingWall.normal_world.norm();
                 if (!std::isfinite(survivingNormalNorm) ||
                     survivingNormalNorm < 1e-8)
                 {
                     continue;
                 }
                 const double cosine = std::clamp(
-                    mappedNormal.dot(survivingWall.normal_World) /
+                    mappedNormal.dot(survivingWall.normal_world) /
                         std::max(mappedNormal.norm() * survivingNormalNorm,
                                  1e-9),
                     -1.0,
@@ -121,10 +121,10 @@ SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
                  * near-vertical by admission (maxTiltWall), so normal x
                  * world-Z spans the wall length. */
                 Eigen::Vector3d axis =
-                    survivingWall.normal_World.cross(Eigen::Vector3d::UnitZ());
+                    survivingWall.normal_world.cross(Eigen::Vector3d::UnitZ());
                 if (axis.squaredNorm() < 1e-8)
                 {
-                    axis = survivingWall.normal_World.cross(
+                    axis = survivingWall.normal_world.cross(
                         Eigen::Vector3d::UnitX());
                 }
                 if (axis.squaredNorm() < 1e-8)
@@ -137,7 +137,7 @@ SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
                 bool   hasFiniteSample{};
                 if (wallSamplesSpanInterval(survivingWall,
                                             axis,
-                                            survivingWall.centroid_World,
+                                            survivingWall.centroid_world,
                                             survivingMinimum,
                                             survivingMaximum,
                                             hasFiniteSample) !=
@@ -159,7 +159,7 @@ SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
                 double mappedMinimum = std::numeric_limits<double>::infinity();
                 double mappedMaximum = -std::numeric_limits<double>::infinity();
                 for (const Eigen::Vector3d &sample :
-                     absorbedWall.supportSample_World)
+                     absorbedWall.supportSample_world)
                 {
                     Eigen::Vector3d mappedSample = Eigen::Vector3d::Zero();
                     if (!(transformAbsorbedPoint(transform_in,
@@ -170,7 +170,7 @@ SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
                         continue;
                     }
                     const double coordinate =
-                        (mappedSample - survivingWall.centroid_World).dot(axis);
+                        (mappedSample - survivingWall.centroid_world).dot(axis);
                     mappedMinimum   = std::min(mappedMinimum, coordinate);
                     mappedMaximum   = std::max(mappedMaximum, coordinate);
                     hasMappedSample = true;
