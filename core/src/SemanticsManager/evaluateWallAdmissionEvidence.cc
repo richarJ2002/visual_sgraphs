@@ -37,27 +37,6 @@ namespace vs_graphs
 namespace core
 {
 
-/*!
- * @brief           Decides whether a wall has enough evidence to join a room,
- *                  and records the evidence behind that decision.
- *
- * @param[in]       p_wall_in
- *                  Wall to judge; a null or bad wall gets no evidence.
- *
- * @param[in]       p_systemParams_in
- *                  Thresholds for the fit, the extent and the observation
- *                  count; shall be non-null.
- *
- * @param[in]       groundNormal_world_in
- *                  Ground normal in the world frame, used to measure the wall's
- *                  width and height along the ground; a zero vector falls back
- *                  to arbitrary in-plane axes.
- *
- * @param[out]      admissionEvidence_out
- *                  The evidence and the decision (isAdmissible).
- *
- * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
 SemanticsManagerStatus
     evaluateWallAdmissionEvidence(geometric::Plane          *p_wall_in,
                                   const types::SystemParams *p_systemParams_in,

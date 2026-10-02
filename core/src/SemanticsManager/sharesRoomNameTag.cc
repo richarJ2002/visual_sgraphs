@@ -33,26 +33,6 @@ namespace vs_graphs
 namespace core
 {
 
-/*!
- * @brief       Tests whether two maps observe a common tagged room name.
- *
- *              A new map is a deterministic merge candidate for the current
- *              map only when at least one non-empty room tag collected from
- *              the other map's detected and marker-based rooms also appears
- *              among the current map's tagged rooms. Room tags originate from
- *              context snapshots and are propagated by matchRoomsToContext,
- *              so they are a stable correspondences key between maps.
- *
- * @param[in]   p_firstMap_in
- *              Map whose detected and marker-based room tags are collected.
- * @param[in]   p_secondMap_in
- *              Map whose tagged rooms are tested against the collected tags.
- *
- * @param[out]  sharesRoomNameTag_out
- *              True when both maps observe at least one shared room tag.
- *
- * @return      SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
 SemanticsManagerStatus sharesRoomNameTag(Map  *p_firstMap_in,
                                          Map  *p_secondMap_in,
                                          bool &sharesRoomNameTag_out)

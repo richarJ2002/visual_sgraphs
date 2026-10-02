@@ -35,14 +35,6 @@ namespace vs_graphs
 namespace core
 {
 
-/*!
- * @brief Computes the unsigned area of an ordered horizontal polygon.
- *
- * @param[in]  polygonVertices_world_m_in Vertices in order, in metres; fewer
- *                                        than three give an area of 0.
- * @param[out] polygonArea_m2_out         Area, in square metres.
- * @return SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
 SemanticsManagerStatus computePolygonArea_m2(
     const std::vector<Eigen::Vector2d> &polygonVertices_world_m_in,
     double                             &polygonArea_m2_out)

@@ -37,14 +37,6 @@ namespace vs_graphs
 namespace core
 {
 
-/*!
- * @brief Attempts to close the given wall segments (sorted here by angle
- *        from the room centroid) into one ordered loop, exactly as
- *        validateRoomBoundaries() always did for a room's full wall set.
- *        Factored out so the caller can retry on a reduced subset when the
- *        full set doesn't close (see validateRoomBoundaries()'s single-
- *        outlier-exclusion retry).
- */
 SemanticsManagerStatus tryCloseWallLoop(
     std::vector<FiniteWallSegment2d> wallSegments_in,
     const Eigen::Vector2d           &roomCentroidGround_m_in,

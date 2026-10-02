@@ -32,9 +32,6 @@ namespace vs_graphs
 namespace core
 {
 
-/*!
- * @brief Returns the Euclidean distance from a point to a finite segment.
- */
 SemanticsManagerStatus
     pointToSegmentDistance_m(const Eigen::Vector2d     &point_world_m_in,
                              const FiniteWallSegment2d &segment_in,

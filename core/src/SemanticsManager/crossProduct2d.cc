@@ -32,14 +32,6 @@ namespace vs_graphs
 namespace core
 {
 
-/*!
- * @brief Computes the scalar two-dimensional cross product.
- *
- * @param[in] firstVector_in First vector.
- * @param[in] secondVector_in Second vector.
- * @param[out] crossProduct_out Signed scalar cross product.
- * @return SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
 SemanticsManagerStatus crossProduct2d(const Eigen::Vector2d &firstVector_in,
                                       const Eigen::Vector2d &secondVector_in,
                                       double                &crossProduct_out)

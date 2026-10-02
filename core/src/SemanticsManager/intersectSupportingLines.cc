@@ -35,30 +35,6 @@ namespace vs_graphs
 namespace core
 {
 
-/*!
- * @brief           Intersects the infinite lines supporting two finite wall
- *                  segments.
- *
- * @param[in]       firstSegment_in
- *                  First wall segment.
- *
- * @param[in]       secondSegment_in
- *                  Second wall segment.
- *
- * @param[out]      intersection_world_m_out
- *                  Intersection in horizontal world axes.
- *
- * @param[out]      firstParameter_out
- *                  Parametric coordinate on the first segment.
- *
- * @param[out]      secondParameter_out
- *                  Parametric coordinate on the second segment.
- *
- * @param[out]      hasIntersection_out
- *                  False when the supporting lines are parallel.
- *
- * @return          SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
 SemanticsManagerStatus
     intersectSupportingLines(const FiniteWallSegment2d &firstSegment_in,
                              const FiniteWallSegment2d &secondSegment_in,

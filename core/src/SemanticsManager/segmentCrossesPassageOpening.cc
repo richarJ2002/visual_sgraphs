@@ -33,23 +33,6 @@ namespace vs_graphs
 namespace core
 {
 
-/*!
- * @brief Tests whether a segment crosses a passage aperture.
- *
- * @param[in] segmentStart_world_m_in First endpoint in the active map frame.
- * @param[in] segmentEnd_world_m_in Second endpoint in the active map frame.
- * @param[in] p_passage_in Passage defining the finite aperture.
- * @param[in] groundNormal_world_in Unit ground normal in the active map frame.
- * @param[in] openingMargin_m_in Aperture expansion used for noisy geometry.
- * @param[in] minimumSideDistance_m_in Required endpoint distance from plane.
- * @param[out] crossesPassageOpening_out True when the segment crosses inside
- *              the finite opening.
- * @param[in] requirePassable_in True when the passage must already be passable
- *              before the geometric test may fire. Far-side wall routing may
- *              pass false so the aperture geometry alone drives the decision
- *              even while the passage is still being confirmed.
- * @return SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
 SemanticsManagerStatus
     segmentCrossesPassageOpening(const Eigen::Vector3d &segmentStart_world_m_in,
                                  const Eigen::Vector3d &segmentEnd_world_m_in,

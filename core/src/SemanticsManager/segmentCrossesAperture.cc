@@ -34,29 +34,6 @@ namespace vs_graphs
 namespace core
 {
 
-/*!
- * @brief       Core aperture-crossing math shared by both a confirmed
- *              Passage and a still-unconfirmed OpenPassageEvidence
- *              hypothesis (see segmentCrossesOpenPassageEvidence below) --
- *              the two differ only in where the plane equation, centroid,
- *              and opening size come from, never in how the crossing test
- *              itself works.
- *
- * @param[in]   segmentStart_world_m_in     First endpoint, in metres.
- * @param[in]   segmentEnd_world_m_in       Second endpoint, in metres.
- * @param[in]   apertureEquation_world_in   Plane of the aperture.
- * @param[in]   apertureCentroid_world_m_in Centre of the aperture, in metres.
- * @param[in]   apertureWidth_m_in          Width of the opening, in metres.
- * @param[in]   apertureHeight_m_in         Height of the opening, in metres.
- * @param[in]   groundNormal_world_in       Unit ground normal.
- * @param[in]   openingMargin_m_in          Aperture expansion used for noisy
- *                                          geometry, in metres.
- * @param[in]   minimumSideDistance_m_in    Required endpoint distance from the
- *                                          plane, in metres.
- * @param[out]  crossesAperture_out         True when the segment crosses
- *                                          inside the opening.
- * @return      SEMANTICS_MANAGER_STATUS_SUCCESS.
- */
 SemanticsManagerStatus
     segmentCrossesAperture(const Eigen::Vector3d &segmentStart_world_m_in,
                            const Eigen::Vector3d &segmentEnd_world_m_in,
