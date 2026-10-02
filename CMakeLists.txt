@@ -1019,6 +1019,14 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
+  # DBParser::getEnvironmentRooms on an in-memory JSON document.
+  ament_add_gtest(test_DatabaseParser
+    test/test_DatabaseParser.cpp
+  )
+  target_link_libraries(test_DatabaseParser
+    ${PROJECT_NAME}_lib
+  )
+
   # Skeleton fault-injection registry + probe-macro test. Test-only
   # TU (never linked into ${PROJECT_NAME}_lib); the toggle is enabled for
   # this target only so production builds keep zero-cost disabled probes.

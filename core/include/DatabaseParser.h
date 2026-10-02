@@ -74,7 +74,8 @@ class DBParser
      *               JSON data.
      *
      *               Replaces any previously retained rooms with one
-     *               room per entry of the "rooms" object.
+     *               room per entry of the "rooms" array; a room's id is
+     *               its index in that array.
      *
      * @param[in]    environmentData_in
      *               Parsed JSON document holding the rooms data.

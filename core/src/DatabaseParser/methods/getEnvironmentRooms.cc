@@ -26,6 +26,7 @@
 #include "DatabaseParser.h"
 
 #include "System.h"
+#include <cstddef>
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -40,12 +41,15 @@ DBParserStatus DBParser::getEnvironmentRooms(
     environmentRooms.clear();
 
     // Check if the JSON file contains rooms
-    if (environmentData_in["rooms"].size() != 0)
+    Json &roomsData = environmentData_in["rooms"];
+    if (roomsData.size() != 0)
     {
-        // items() yields a library-internal proxy type with no public name
-        // (docs/design/auto_policy.md, section 5), so it is deduced here.
-        for (const auto &environmentDatum : environmentData_in["rooms"].items())
+        // "rooms" is an array: each room's id is its index in it.
+        for (std::size_t roomIndex = 0; roomIndex < roomsData.size();
+             ++roomIndex)
         {
+            Json &environmentDatum = roomsData[roomIndex];
+
             // Initialization
             semantic::Room *p_environmentRoom = new semantic::Room();
 
@@ -66,7 +70,7 @@ DBParserStatus DBParser::getEnvironmentRooms(
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            if (p_environmentRoom->setId(std::stoi(environmentDatum.key())) !=
+            if (p_environmentRoom->setId(static_cast<int>(roomIndex)) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -74,7 +78,7 @@ DBParserStatus DBParser::getEnvironmentRooms(
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            if (p_environmentRoom->setName(environmentDatum.value()["name"]) !=
+            if (p_environmentRoom->setName(environmentDatum["name"]) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -83,7 +87,7 @@ DBParserStatus DBParser::getEnvironmentRooms(
                              __func__);
             }
             if (p_environmentRoom->setMetaMarkerId(
-                    environmentDatum.value()["metaMarker"]) !=
+                    environmentDatum["metaMarker"]) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
