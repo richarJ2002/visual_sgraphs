@@ -1403,15 +1403,10 @@ std::vector<Eigen::Vector3d>
 
 void appendRoomMarkers(
     const std::vector<vs_graphs::core::semantic::Room *>    &mappedRooms_in,
-    const std::vector<vs_graphs::core::semantic::Floor *>   &mappedFloors_in,
     const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
     const rclcpp::Time                                      &msgTime_s_in,
     visualization_msgs::msg::MarkerArray &structuralElementMarkerArray_out)
 {
-    /* Room-to-floor green lines were removed (operator: passages are the
-     * only room links); the floor list is kept for signature stability. */
-    (void)mappedFloors_in;
-
     constexpr double textOffset_m = -0.5;
 
     /* A live passage prospective renders as the same room object with
@@ -6432,7 +6427,6 @@ void publishStructuralElements(
 
     /* Append the room markers */
     appendRoomMarkers(mappedRooms_in,
-                      mappedFloors_in,
                       mappedPassages_in,
                       msgTime_s_in,
                       structuralElementMarkerArray);
