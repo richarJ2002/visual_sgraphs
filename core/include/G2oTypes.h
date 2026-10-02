@@ -320,7 +320,7 @@ class ImuCamPose
             tcw[1]     = Trl.block<3, 3>(0, 0) * tcw[0] + Trl.block<3, 1>(0, 3);
             tcb[1]     = Trl.block<3, 3>(0, 0) * tcb[0] + Trl.block<3, 1>(0, 3);
             Rcb[1]     = Trl.block<3, 3>(0, 0) * Rcb[0];
-            Rbc[1]     = Rbc[1].transpose();
+            Rbc[1]     = Rcb[1].transpose();
             tbc[1]     = -Rbc[1] * tcb[1];
             pCamera[1] = p_pF_inout->p_camera2;
         }

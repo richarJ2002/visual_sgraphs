@@ -1027,6 +1027,14 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
+  # ImuCamPose rotations built from a two-camera (stereo-inertial) frame.
+  ament_add_gtest(test_G2oTypes
+    test/test_G2oTypes.cpp
+  )
+  target_link_libraries(test_G2oTypes
+    ${PROJECT_NAME}_lib
+  )
+
   # Skeleton fault-injection registry + probe-macro test. Test-only
   # TU (never linked into ${PROJECT_NAME}_lib); the toggle is enabled for
   # this target only so production builds keep zero-cost disabled probes.
