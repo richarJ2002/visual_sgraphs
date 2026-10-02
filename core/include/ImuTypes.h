@@ -247,8 +247,8 @@ class Calib
     /*!
      * @brief        Creates a calibration and marks it valid.
      *
-     * @param[in]    Tbc_in
-     *               Body-to-camera transform.
+     * @param[in]    poseCameraToBody_in
+     *               Camera-to-body (IMU) transform.
      * @param[in]    gyroscopeNoiseDensity_in
      *               Gyroscope noise density.
      * @param[in]    accelerometerNoiseDensity_in
@@ -258,13 +258,13 @@ class Calib
      * @param[in]    accelerometerRandomWalkDensity_in
      *               Accelerometer random-walk density.
      */
-    Calib(const Sophus::SE3<float> &Tbc_in,
+    Calib(const Sophus::SE3<float> &poseCameraToBody_in,
           const float              &gyroscopeNoiseDensity_in,
           const float              &accelerometerNoiseDensity_in,
           const float              &gyroscopeRandomWalkDensity_in,
           const float              &accelerometerRandomWalkDensity_in)
     {
-        if (setCalibration(Tbc_in,
+        if (setCalibration(poseCameraToBody_in,
                            gyroscopeNoiseDensity_in,
                            accelerometerNoiseDensity_in,
                            gyroscopeRandomWalkDensity_in,
@@ -292,8 +292,8 @@ class Calib
      * @brief        Stores the transform and noise densities
      *               and marks the calibration valid.
      *
-     * @param[in]    sophTbc_in
-     *               Body-to-camera transform.
+     * @param[in]    poseCameraToBody_in
+     *               Camera-to-body (IMU) transform.
      * @param[in]    ng_in
      *               Gyroscope noise density.
      * @param[in]    na_in
@@ -304,7 +304,7 @@ class Calib
      *               Accelerometer random-walk density.
      */
     [[nodiscard]] CalibStatus
-        setCalibration(const Sophus::SE3<float> &sophTbc_in,
+        setCalibration(const Sophus::SE3<float> &poseCameraToBody_in,
                        const float              &ng_in,
                        const float              &na_in,
                        const float              &ngw_in,

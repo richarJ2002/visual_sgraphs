@@ -50,14 +50,16 @@ namespace vs_graphs
 namespace core
 {
 
-FrameStatus Frame::setImuPoseVelocity(const Eigen::Matrix3f &Rwb_in,
-                                      const Eigen::Vector3f &twb_in,
-                                      const Eigen::Vector3f &Vwb_in)
+FrameStatus
+    Frame::setImuPoseVelocity(const Eigen::Matrix3f &rotationBodyToWorld_in,
+                              const Eigen::Vector3f &translationBodyToWorld_in,
+                              const Eigen::Vector3f &Vwb_in)
 {
     velocityVw          = Vwb_in;
     isVelocityAvailable = true;
 
-    Sophus::SE3f poseBodyToWorld(Rwb_in, twb_in);
+    Sophus::SE3f poseBodyToWorld(rotationBodyToWorld_in,
+                                 translationBodyToWorld_in);
     Sophus::SE3f poseWorldToBody = poseBodyToWorld.inverse();
 
     poseTcw = imuCalibration.mTcb * poseWorldToBody;

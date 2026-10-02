@@ -308,7 +308,7 @@ class Sim3Solver
     [[nodiscard]] Sim3SolverStatus project(
         const std::vector<Eigen::Vector3f>              &vP3Dw_in,
         std::vector<Eigen::Vector2f>                    &points2D_out,
-        Eigen::Matrix4f                                  Tcw_in,
+        Eigen::Matrix4f                                  poseWorldToCamera_in,
         camera_models::geometriccamera::GeometricCamera *p_camera_inout);
     [[nodiscard]] Sim3SolverStatus fromCameraToImage(
         const std::vector<Eigen::Vector3f>              &vP3Dc_in,

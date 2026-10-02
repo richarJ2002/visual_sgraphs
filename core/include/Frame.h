@@ -178,7 +178,8 @@ class Frame
     [[nodiscard]] FrameStatus computeBagOfWords();
 
     // Set the camera pose. (Imu pose is not modified!)
-    [[nodiscard]] FrameStatus setPose(const Sophus::SE3<float> &Tcw_in);
+    [[nodiscard]] FrameStatus
+        setPose(const Sophus::SE3<float> &poseWorldToCamera_in);
 
     // Set IMU velocity
     [[nodiscard]] FrameStatus setVelocity(Eigen::Vector3f Vw_in);
@@ -187,9 +188,10 @@ class Frame
         getVelocity(Eigen::Vector3f &getVelocity_out) const;
 
     // Set IMU pose and velocity (implicitly changes camera pose)
-    [[nodiscard]] FrameStatus setImuPoseVelocity(const Eigen::Matrix3f &Rwb_in,
-                                                 const Eigen::Vector3f &twb_in,
-                                                 const Eigen::Vector3f &Vwb_in);
+    [[nodiscard]] FrameStatus
+        setImuPoseVelocity(const Eigen::Matrix3f &rotationBodyToWorld_in,
+                           const Eigen::Vector3f &translationBodyToWorld_in,
+                           const Eigen::Vector3f &Vwb_in);
 
     [[nodiscard]] FrameStatus
         getImuPosition(Eigen::Matrix<float, 3, 1> &getImuPosition_out) const;
@@ -274,7 +276,7 @@ class Frame
 
     // Returns the camera-to-world rotation.
     [[nodiscard]] FrameStatus
-        getRotationRwc(Eigen::Matrix3f &getRotationRwc_out) const;
+        getRotationRwc(Eigen::Matrix3f &rotationCameraToWorld_out) const;
 
     [[nodiscard]] FrameStatus hasVelocity(bool &hasVelocity_out) const;
 

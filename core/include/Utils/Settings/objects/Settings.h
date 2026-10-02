@@ -371,14 +371,17 @@ class Settings
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
-     * @brief        Returns the body-to-camera transform.
+     * @brief        Returns the camera-to-body (IMU) transform read from
+     *               IMU.T_b_c1.
      *
-     * @param[out] Tbc_out Extrinsic in single precision.
-     * @return SETTINGS_STATUS_SUCCESS.
+     * @param[out]   poseCameraToBody_out
+     *               Extrinsic in single precision.
+     *
+     * @return       SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus Tbc(Sophus::SE3f &Tbc_out)
+    [[nodiscard]] SettingsStatus Tbc(Sophus::SE3f &poseCameraToBody_out)
     {
-        Tbc_out = bodyToCamera;
+        poseCameraToBody_out = bodyToCamera;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!

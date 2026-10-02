@@ -89,7 +89,8 @@ class KeyFrame
              KeyFrameDatabase *p_keyFrameDatabase_in);
 
     // Pose functions
-    [[nodiscard]] KeyFrameStatus setPose(const Sophus::SE3f &Tcw_in);
+    [[nodiscard]] KeyFrameStatus
+        setPose(const Sophus::SE3f &poseWorldToCamera_in);
     [[nodiscard]] KeyFrameStatus setVelocity(const Eigen::Vector3f &Vw_in);
 
     [[nodiscard]] KeyFrameStatus getPose(Sophus::SE3f &pose_out);

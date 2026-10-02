@@ -38,17 +38,17 @@ namespace vs_graphs
 namespace core
 {
 
-ImuCamPoseStatus
-    ImuCamPose::setParam(const std::vector<Eigen::Matrix3d> &Rcw_in,
-                         const std::vector<Eigen::Vector3d> &tcw_in,
-                         const std::vector<Eigen::Matrix3d> &Rbc_in,
-                         const std::vector<Eigen::Vector3d> &tbc_in,
-                         const double &baselineFocalProduct_in)
+ImuCamPoseStatus ImuCamPose::setParam(
+    const std::vector<Eigen::Matrix3d> &rotationsWorldToCamera_in,
+    const std::vector<Eigen::Vector3d> &translationsWorldToCamera_in,
+    const std::vector<Eigen::Matrix3d> &rotationsCameraToBody_in,
+    const std::vector<Eigen::Vector3d> &translationsCameraToBody_in,
+    const double                       &baselineFocalProduct_in)
 {
-    Rbc                   = Rbc_in;
-    tbc                   = tbc_in;
-    Rcw                   = Rcw_in;
-    tcw                   = tcw_in;
+    Rbc                   = rotationsCameraToBody_in;
+    tbc                   = translationsCameraToBody_in;
+    Rcw                   = rotationsWorldToCamera_in;
+    tcw                   = translationsWorldToCamera_in;
     const int cameraCount = Rbc.size();
     Rcb.resize(cameraCount);
     tcb.resize(cameraCount);

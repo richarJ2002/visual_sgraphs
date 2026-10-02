@@ -40,11 +40,13 @@ namespace core
 Sim3SolverStatus Sim3Solver::project(
     const std::vector<Eigen::Vector3f>              &vP3Dw_in,
     std::vector<Eigen::Vector2f>                    &points2D_out,
-    Eigen::Matrix4f                                  Tcw_in,
+    Eigen::Matrix4f                                  poseWorldToCamera_in,
     camera_models::geometriccamera::GeometricCamera *p_camera_inout)
 {
-    Eigen::Matrix3f rotationWorldToCamera    = Tcw_in.block<3, 3>(0, 0);
-    Eigen::Vector3f translationWorldToCamera = Tcw_in.block<3, 1>(0, 3);
+    Eigen::Matrix3f rotationWorldToCamera =
+        poseWorldToCamera_in.block<3, 3>(0, 0);
+    Eigen::Vector3f translationWorldToCamera =
+        poseWorldToCamera_in.block<3, 1>(0, 3);
 
     points2D_out.clear();
     points2D_out.reserve(vP3Dw_in.size());

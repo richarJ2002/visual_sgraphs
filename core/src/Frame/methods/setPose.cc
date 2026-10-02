@@ -50,9 +50,9 @@ namespace vs_graphs
 namespace core
 {
 
-FrameStatus Frame::setPose(const Sophus::SE3<float> &Tcw_in)
+FrameStatus Frame::setPose(const Sophus::SE3<float> &poseWorldToCamera_in)
 {
-    poseTcw = Tcw_in;
+    poseTcw = poseWorldToCamera_in;
 
     if (updatePoseMatrices() != FrameStatus::FRAME_STATUS_SUCCESS)
     {

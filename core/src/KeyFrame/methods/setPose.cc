@@ -41,11 +41,11 @@ namespace vs_graphs
 namespace core
 {
 
-KeyFrameStatus KeyFrame::setPose(const Sophus::SE3f &Tcw_in)
+KeyFrameStatus KeyFrame::setPose(const Sophus::SE3f &poseWorldToCamera_in)
 {
     std::unique_lock<std::mutex> lock(poseMutex);
 
-    poseTcw     = Tcw_in;
+    poseTcw     = poseWorldToCamera_in;
     rotationRcw = poseTcw.rotationMatrix();
     twc         = poseTcw.inverse();
     rotationRwc = twc.rotationMatrix();

@@ -41,8 +41,8 @@ namespace vs_graphs
 namespace core
 {
 
-MapDrawerStatus
-    MapDrawer::drawCurrentCamera(pangolin::OpenGlMatrix &Twc_in) const
+MapDrawerStatus MapDrawer::drawCurrentCamera(
+    pangolin::OpenGlMatrix &poseCameraToWorld_in) const
 {
     const float &w = cameraSize;
     const float  h = w * 0.75;
@@ -53,7 +53,7 @@ MapDrawerStatus
 #ifdef HAVE_GLES
     glMultMatrixf(Twc.m);
 #else
-    glMultMatrixd(Twc_in.m);
+    glMultMatrixd(poseCameraToWorld_in.m);
 #endif
 
     glLineWidth(cameraLineWidth);
