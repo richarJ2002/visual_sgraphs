@@ -39,16 +39,16 @@ namespace core
 {
 
 ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
-                                  const std::vector<MapPoint *> &vpMapPoints,
+                                  const std::vector<MapPoint *> &mapPoints_in,
                                   int                           &fusedCount_out,
-                                  const float                    th,
-                                  const bool                     bRight)
+                                  const float                    threshold_in,
+                                  const bool                     right_in)
 {
     camera_models::geometriccamera::GeometricCamera *p_camera;
     Sophus::SE3f                                     poseWorldToCamera;
     Eigen::Vector3f                                  cameraCenter_World;
 
-    if (bRight)
+    if (right_in)
     {
         Sophus::SE3<float> keyframeRightPose{};
         if (p_keyframe_inout->getRightPose(keyframeRightPose) !=
@@ -99,7 +99,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
 
     int          fusedCount    = 0;
     const float &bf            = p_keyframe_inout->mbf;
-    const int    mapPointCount = vpMapPoints.size();
+    const int    mapPointCount = mapPoints_in.size();
 
     // For debbuging
     int notMapPointCount = 0, badCount = 0, isinKeyFrameCount = 0,
@@ -107,7 +107,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
         notidxCount = 0, thcheckCount = 0;
     for (int mapPointIndex = 0; mapPointIndex < mapPointCount; mapPointIndex++)
     {
-        MapPoint *p_mapPoint = vpMapPoints[mapPointIndex];
+        MapPoint *p_mapPoint = mapPoints_in[mapPointIndex];
 
         if (!p_mapPoint)
         {
@@ -249,11 +249,11 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
 
         // Search in a radius
         const float radius =
-            th * p_keyframe_inout->scaleFactors[predictedLevelCount];
+            threshold_in * p_keyframe_inout->scaleFactors[predictedLevelCount];
 
         std::vector<size_t> indices{};
         if (p_keyframe_inout
-                ->getFeaturesInArea(uv(0), uv(1), radius, indices, bRight) !=
+                ->getFeaturesInArea(uv(0), uv(1), radius, indices, right_in) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -291,8 +291,8 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
             const cv::KeyPoint &keyPoint =
                 (p_keyframe_inout->leftKeyPointCount == -1)
                     ? p_keyframe_inout->keyPointsUndistorted[featureIndex]
-                : (!bRight) ? p_keyframe_inout->keyPoints[featureIndex]
-                            : p_keyframe_inout->keyPointsRight[featureIndex];
+                : (!right_in) ? p_keyframe_inout->keyPoints[featureIndex]
+                              : p_keyframe_inout->keyPointsRight[featureIndex];
 
             const int &keyPointLevel = keyPoint.octave;
 
@@ -328,7 +328,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                     continue;
             }
 
-            if (bRight)
+            if (right_in)
                 featureIndex += p_keyframe_inout->leftKeyPointCount;
 
             const cv::Mat &keyFrameDescriptor =

@@ -38,22 +38,23 @@ namespace vs_graphs
 namespace core
 {
 
-ORBmatcherStatus
-    ORBmatcher::searchBySim3(KeyFrame                *pKF1,
-                             KeyFrame                *pKF2,
-                             std::vector<MapPoint *> &matches12_inout,
-                             const Sophus::Sim3f     &S12,
-                             const float              th,
-                             int                     &bySim3_out)
+ORBmatcherStatus ORBmatcher::searchBySim3(
+    KeyFrame                *p_keyframe1_in,
+    KeyFrame                *p_keyframe2_in,
+    std::vector<MapPoint *> &matches12_inout,
+    const Sophus::Sim3f     &similarity_camera2ToCamera1_in,
+    const float              threshold_in,
+    int                     &bySim3_out)
 {
-    const float &fx = pKF1->fx;
-    const float &fy = pKF1->fy;
-    const float &cx = pKF1->cx;
-    const float &cy = pKF1->cy;
+    const float &fx = p_keyframe1_in->fx;
+    const float &fy = p_keyframe1_in->fy;
+    const float &cx = p_keyframe1_in->cx;
+    const float &cy = p_keyframe1_in->cy;
 
     // Camera 1 & 2 from world
     Sophus::SE3f T1w{};
-    if (pKF1->getPose(T1w) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    if (p_keyframe1_in->getPose(T1w) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getPose returned a failure status although it cannot "
@@ -61,7 +62,8 @@ ORBmatcherStatus
                      __func__);
     }
     Sophus::SE3f T2w{};
-    if (pKF2->getPose(T2w) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    if (p_keyframe2_in->getPose(T2w) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getPose returned a failure status although it cannot "
@@ -70,10 +72,10 @@ ORBmatcherStatus
     }
 
     // Transformation between cameras
-    Sophus::Sim3f S21 = S12.inverse();
+    Sophus::Sim3f S21 = similarity_camera2ToCamera1_in.inverse();
 
     std::vector<MapPoint *> mapPoints1{};
-    if (pKF1->getMapPointMatches(mapPoints1) !=
+    if (p_keyframe1_in->getMapPointMatches(mapPoints1) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -84,7 +86,7 @@ ORBmatcherStatus
     const int N1 = mapPoints1.size();
 
     std::vector<MapPoint *> mapPoints2{};
-    if (pKF2->getMapPointMatches(mapPoints2) !=
+    if (p_keyframe2_in->getMapPointMatches(mapPoints2) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -104,7 +106,8 @@ ORBmatcherStatus
         {
             alreadyMatched1Flags[keyPointIndex1] = true;
             std::tuple<int, int> mapPointIndexInKeyFrame{};
-            if (p_mapPoint->getIndexInKeyFrame(pKF2, mapPointIndexInKeyFrame) !=
+            if (p_mapPoint->getIndexInKeyFrame(p_keyframe2_in,
+                                               mapPointIndexInKeyFrame) !=
                 MapPointStatus::MAP_POINT_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -166,7 +169,7 @@ ORBmatcherStatus
 
         // Point must be inside the image
         bool pKF2IsInImage{};
-        if (pKF2->isInImage(u, v, pKF2IsInImage) !=
+        if (p_keyframe2_in->isInImage(u, v, pKF2IsInImage) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -205,7 +208,9 @@ ORBmatcherStatus
 
         // Compute predicted octave
         int predictedLevelCount{};
-        if (p_mapPoint->predictScale(distance3d, pKF2, predictedLevelCount) !=
+        if (p_mapPoint->predictScale(distance3d,
+                                     p_keyframe2_in,
+                                     predictedLevelCount) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -215,10 +220,11 @@ ORBmatcherStatus
         }
 
         // Search in a radius
-        const float radius = th * pKF2->scaleFactors[predictedLevelCount];
+        const float radius =
+            threshold_in * p_keyframe2_in->scaleFactors[predictedLevelCount];
 
         std::vector<size_t> indices{};
-        if (pKF2->getFeaturesInArea(u, v, radius, indices) !=
+        if (p_keyframe2_in->getFeaturesInArea(u, v, radius, indices) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -251,14 +257,14 @@ ORBmatcherStatus
             const size_t featureIndex = *vit;
 
             const cv::KeyPoint &keyPoint =
-                pKF2->keyPointsUndistorted[featureIndex];
+                p_keyframe2_in->keyPointsUndistorted[featureIndex];
 
             if (keyPoint.octave < predictedLevelCount - 1 ||
                 keyPoint.octave > predictedLevelCount)
                 continue;
 
             const cv::Mat &keyFrameDescriptor =
-                pKF2->descriptors.row(featureIndex);
+                p_keyframe2_in->descriptors.row(featureIndex);
 
             int distance{};
             if (computeDescriptorDistance(mapPointDescriptor,
@@ -316,7 +322,7 @@ ORBmatcherStatus
                          __func__);
         }
         Eigen::Vector3f p3Dc2 = T2w * p3Dw;
-        Eigen::Vector3f p3Dc1 = S12 * p3Dc2;
+        Eigen::Vector3f p3Dc1 = similarity_camera2ToCamera1_in * p3Dc2;
 
         // Depth must be positive
         if (p3Dc1(2) < 0.0)
@@ -331,7 +337,7 @@ ORBmatcherStatus
 
         // Point must be inside the image
         bool pKF1IsInImage{};
-        if (pKF1->isInImage(u, v, pKF1IsInImage) !=
+        if (p_keyframe1_in->isInImage(u, v, pKF1IsInImage) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -370,7 +376,9 @@ ORBmatcherStatus
 
         // Compute predicted octave
         int predictedLevelCount{};
-        if (p_mapPoint->predictScale(distance3d, pKF1, predictedLevelCount) !=
+        if (p_mapPoint->predictScale(distance3d,
+                                     p_keyframe1_in,
+                                     predictedLevelCount) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -380,10 +388,11 @@ ORBmatcherStatus
         }
 
         // Search in a radius of 2.5*sigma(ScaleLevel)
-        const float radius = th * pKF1->scaleFactors[predictedLevelCount];
+        const float radius =
+            threshold_in * p_keyframe1_in->scaleFactors[predictedLevelCount];
 
         std::vector<size_t> indices{};
-        if (pKF1->getFeaturesInArea(u, v, radius, indices) !=
+        if (p_keyframe1_in->getFeaturesInArea(u, v, radius, indices) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -416,14 +425,14 @@ ORBmatcherStatus
             const size_t featureIndex = *vit;
 
             const cv::KeyPoint &keyPoint =
-                pKF1->keyPointsUndistorted[featureIndex];
+                p_keyframe1_in->keyPointsUndistorted[featureIndex];
 
             if (keyPoint.octave < predictedLevelCount - 1 ||
                 keyPoint.octave > predictedLevelCount)
                 continue;
 
             const cv::Mat &keyFrameDescriptor =
-                pKF1->descriptors.row(featureIndex);
+                p_keyframe1_in->descriptors.row(featureIndex);
 
             int distance{};
             if (computeDescriptorDistance(mapPointDescriptor,

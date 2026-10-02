@@ -1123,12 +1123,12 @@ extern void maybeArchiveSGraph(
  * @param[in]   allMapPoints_in
  *              Vector of mapped points
  *
- * @param[in]   msgTime_in
+ * @param[in]   msgTime_s_in
  *              Ros time msg
  */
 extern void
     publishAllPoints(std::vector<vs_graphs::core::MapPoint *> allMapPoints_in,
-                     rclcpp::Time                             msgTime_in);
+                     rclcpp::Time                             msgTime_s_in);
 
 /*!
  * @brief       Publishes the estimated body pose and velocity as a ROS

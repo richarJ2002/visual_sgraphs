@@ -39,15 +39,17 @@ namespace core
 {
 
 ORBmatcherStatus ORBmatcher::fuse(KeyFrame      *p_keyframe_inout,
-                                  Sophus::Sim3f &Scw,
-                                  const std::vector<MapPoint *> &vpPoints,
-                                  float                          th,
+                                  Sophus::Sim3f &similarity_worldToCamera_in,
+                                  const std::vector<MapPoint *> &points_in,
+                                  float                          threshold_in,
                                   std::vector<MapPoint *> &replacePoints_inout,
                                   int                     &fusedCount_out)
 {
     // Decompose Scw
     Sophus::SE3f poseWorldToCamera =
-        Sophus::SE3f(Scw.rotationMatrix(), Scw.translation() / Scw.scale());
+        Sophus::SE3f(similarity_worldToCamera_in.rotationMatrix(),
+                     similarity_worldToCamera_in.translation() /
+                         similarity_worldToCamera_in.scale());
     Eigen::Vector3f cameraCenter_World =
         poseWorldToCamera.inverse().translation();
 
@@ -64,12 +66,12 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame      *p_keyframe_inout,
 
     int fusedCount = 0;
 
-    const int pointCount = vpPoints.size();
+    const int pointCount = points_in.size();
 
     // For each candidate MapPoint project and match
     for (int mapPointIndex = 0; mapPointIndex < pointCount; mapPointIndex++)
     {
-        MapPoint *p_mapPoint = vpPoints[mapPointIndex];
+        MapPoint *p_mapPoint = points_in[mapPointIndex];
 
         // Discard Bad MapPoints and already found
         bool mapPointIsBad{};
@@ -174,7 +176,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame      *p_keyframe_inout,
 
         // Search in a radius
         const float radius =
-            th * p_keyframe_inout->scaleFactors[predictedLevelCount];
+            threshold_in * p_keyframe_inout->scaleFactors[predictedLevelCount];
 
         std::vector<size_t> indices{};
         if (p_keyframe_inout->getFeaturesInArea(uv(0),

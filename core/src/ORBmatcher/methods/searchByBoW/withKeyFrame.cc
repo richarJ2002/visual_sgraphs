@@ -38,16 +38,16 @@ namespace vs_graphs
 namespace core
 {
 
-ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
-                                         KeyFrame                *pKF2,
-                                         std::vector<MapPoint *> &vpMatches12,
+ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame *p_keyframe1_in,
+                                         KeyFrame *p_keyframe2_in,
+                                         std::vector<MapPoint *> &matches12_out,
                                          int                     &byBoW_out)
 {
     const std::vector<cv::KeyPoint> &undistortedKeyPoints1 =
-        pKF1->keyPointsUndistorted;
-    const DBoW2::FeatureVector &featureVector1 = pKF1->featureVector;
+        p_keyframe1_in->keyPointsUndistorted;
+    const DBoW2::FeatureVector &featureVector1 = p_keyframe1_in->featureVector;
     std::vector<MapPoint *>     mapPoints1{};
-    if (pKF1->getMapPointMatches(mapPoints1) !=
+    if (p_keyframe1_in->getMapPointMatches(mapPoints1) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -55,13 +55,13 @@ ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    const cv::Mat &descriptors1 = pKF1->descriptors;
+    const cv::Mat &descriptors1 = p_keyframe1_in->descriptors;
 
     const std::vector<cv::KeyPoint> &undistortedKeyPoints2 =
-        pKF2->keyPointsUndistorted;
-    const DBoW2::FeatureVector &featureVector2 = pKF2->featureVector;
+        p_keyframe2_in->keyPointsUndistorted;
+    const DBoW2::FeatureVector &featureVector2 = p_keyframe2_in->featureVector;
     std::vector<MapPoint *>     mapPoints2{};
-    if (pKF2->getMapPointMatches(mapPoints2) !=
+    if (p_keyframe2_in->getMapPointMatches(mapPoints2) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -69,10 +69,10 @@ ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    const cv::Mat &descriptors2 = pKF2->descriptors;
+    const cv::Mat &descriptors2 = p_keyframe2_in->descriptors;
 
-    vpMatches12 = std::vector<MapPoint *>(mapPoints1.size(),
-                                          static_cast<MapPoint *>(nullptr));
+    matches12_out = std::vector<MapPoint *>(mapPoints1.size(),
+                                            static_cast<MapPoint *>(nullptr));
     std::vector<bool> matched2Flags(mapPoints2.size(), false);
 
     std::vector<int> rotHist[HISTO_LENGTH];
@@ -102,8 +102,8 @@ ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
                  i1++)
             {
                 const size_t index1 = firstFeatureIt->second[i1];
-                if (pKF1->leftKeyPointCount != -1 &&
-                    index1 >= pKF1->keyPointsUndistorted.size())
+                if (p_keyframe1_in->leftKeyPointCount != -1 &&
+                    index1 >= p_keyframe1_in->keyPointsUndistorted.size())
                 {
                     continue;
                 }
@@ -135,8 +135,8 @@ ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
                 {
                     const size_t index2 = secondFeatureIt->second[i2];
 
-                    if (pKF2->leftKeyPointCount != -1 &&
-                        index2 >= pKF2->keyPointsUndistorted.size())
+                    if (p_keyframe2_in->leftKeyPointCount != -1 &&
+                        index2 >= p_keyframe2_in->keyPointsUndistorted.size())
                     {
                         continue;
                     }
@@ -190,7 +190,7 @@ ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
                         nearestNeighborRatio *
                             static_cast<float>(bestDistance2))
                     {
-                        vpMatches12[index1]       = mapPoints2[bestIndex2];
+                        matches12_out[index1]     = mapPoints2[bestIndex2];
                         matched2Flags[bestIndex2] = true;
 
                         if (shouldCheckOrientation)
@@ -249,7 +249,7 @@ ORBmatcherStatus ORBmatcher::searchByBoW(KeyFrame                *pKF1,
                  binEntryIndex < jend;
                  binEntryIndex++)
             {
-                vpMatches12[rotHist[histogramBinIndex][binEntryIndex]] =
+                matches12_out[rotHist[histogramBinIndex][binEntryIndex]] =
                     static_cast<MapPoint *>(nullptr);
                 nmatches--;
             }

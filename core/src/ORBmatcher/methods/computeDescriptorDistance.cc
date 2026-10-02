@@ -38,12 +38,12 @@ namespace core
 {
 
 ORBmatcherStatus
-    ORBmatcher::computeDescriptorDistance(const cv::Mat &a,
-                                          const cv::Mat &b,
+    ORBmatcher::computeDescriptorDistance(const cv::Mat &descriptor1_in,
+                                          const cv::Mat &descriptor2_in,
                                           int           &descriptorDistance_out)
 {
-    const int *pa = a.ptr<int32_t>();
-    const int *pb = b.ptr<int32_t>();
+    const int *pa = descriptor1_in.ptr<int32_t>();
+    const int *pb = descriptor2_in.ptr<int32_t>();
 
     int distance = 0;
 

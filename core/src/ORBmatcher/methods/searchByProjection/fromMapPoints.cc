@@ -38,27 +38,27 @@ namespace vs_graphs
 namespace core
 {
 
-ORBmatcherStatus
-    ORBmatcher::searchByProjection(Frame                         &F,
-                                   const std::vector<MapPoint *> &vpMapPoints,
-                                   int                        &byProjection_out,
-                                   const float                 th,
-                                   const bool                  bFarPoints,
-                                   const float                 thFarPoints,
-                                   const std::optional<float> &thDepth)
+ORBmatcherStatus ORBmatcher::searchByProjection(
+    Frame                         &frame_inout,
+    const std::vector<MapPoint *> &mapPoints_in,
+    int                           &byProjection_out,
+    const float                    threshold_in,
+    const bool                     farPoints_in,
+    const float                    farPointsThreshold_in,
+    const std::optional<float>    &depthThreshold_in)
 {
     int nmatches = 0, left = 0, right = 0;
 
-    const bool isThresholdScaled = th != 1.0;
+    const bool isThresholdScaled = threshold_in != 1.0;
 
-    for (size_t mapPointIndex = 0; mapPointIndex < vpMapPoints.size();
+    for (size_t mapPointIndex = 0; mapPointIndex < mapPoints_in.size();
          mapPointIndex++)
     {
-        MapPoint *p_mapPoint = vpMapPoints[mapPointIndex];
+        MapPoint *p_mapPoint = mapPoints_in[mapPointIndex];
         if (!p_mapPoint->isTrackedInView && !p_mapPoint->isTrackedInRightView)
             continue;
 
-        if (bFarPoints && p_mapPoint->trackDepth > thFarPoints)
+        if (farPoints_in && p_mapPoint->trackDepth > farPointsThreshold_in)
             continue;
 
         bool mapPointIsBad{};
@@ -89,26 +89,26 @@ ORBmatcherStatus
             }
 
             if (isThresholdScaled)
-                r *= th;
+                r *= threshold_in;
 
             // Depth-guided search: a tighter window for close points helps
             // in repetitive corridors where visual ambiguity is high
-            if (thDepth.has_value() && p_mapPoint->trackDepth > 0)
+            if (depthThreshold_in.has_value() && p_mapPoint->trackDepth > 0)
             {
-                if (p_mapPoint->trackDepth < *thDepth)
+                if (p_mapPoint->trackDepth < *depthThreshold_in)
                     r *= 0.7f;
                 else
                     r *= 1.2f;
             }
 
             std::vector<size_t> indices{};
-            if (F.getFeaturesInArea(p_mapPoint->trackProjX,
-                                    p_mapPoint->trackProjY,
-                                    r * F.scaleFactors[predictedLevelCount],
-                                    indices,
-                                    predictedLevelCount - 1,
-                                    predictedLevelCount) !=
-                FrameStatus::FRAME_STATUS_SUCCESS)
+            if (frame_inout.getFeaturesInArea(
+                    p_mapPoint->trackProjX,
+                    p_mapPoint->trackProjY,
+                    r * frame_inout.scaleFactors[predictedLevelCount],
+                    indices,
+                    predictedLevelCount - 1,
+                    predictedLevelCount) != FrameStatus::FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                              "%s: getFeaturesInArea returned a failure status "
@@ -143,11 +143,11 @@ ORBmatcherStatus
                 {
                     const size_t featureIndex = *vit;
 
-                    if (F.mapPoints[featureIndex])
+                    if (frame_inout.mapPoints[featureIndex])
                     {
                         int observationCount{};
-                        if (F.mapPoints[featureIndex]->getObservationCount(
-                                observationCount) !=
+                        if (frame_inout.mapPoints[featureIndex]
+                                ->getObservationCount(observationCount) !=
                             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -162,15 +162,19 @@ ORBmatcherStatus
                         }
                     }
 
-                    if (F.leftKeyPointCount == -1 && F.uRight[featureIndex] > 0)
+                    if (frame_inout.leftKeyPointCount == -1 &&
+                        frame_inout.uRight[featureIndex] > 0)
                     {
-                        const float er = std::fabs(p_mapPoint->trackProjXR -
-                                                   F.uRight[featureIndex]);
-                        if (er > r * F.scaleFactors[predictedLevelCount])
+                        const float er =
+                            std::fabs(p_mapPoint->trackProjXR -
+                                      frame_inout.uRight[featureIndex]);
+                        if (er >
+                            r * frame_inout.scaleFactors[predictedLevelCount])
                             continue;
                     }
 
-                    const cv::Mat &d = F.descriptors.row(featureIndex);
+                    const cv::Mat &d =
+                        frame_inout.descriptors.row(featureIndex);
 
                     int distance{};
                     if (computeDescriptorDistance(mapPointDescriptor,
@@ -191,26 +195,34 @@ ORBmatcherStatus
                         bestDistance  = distance;
                         bestLevel2    = bestLevel;
                         bestLevel =
-                            (F.leftKeyPointCount == -1)
-                                ? F.keyPointsUndistorted[featureIndex].octave
+                            (frame_inout.leftKeyPointCount == -1)
+                                ? frame_inout.keyPointsUndistorted[featureIndex]
+                                      .octave
                             : (featureIndex <
-                               static_cast<size_t>(F.leftKeyPointCount))
-                                ? F.keyPoints[featureIndex].octave
-                                : F.keyPointsRight[featureIndex -
-                                                   F.leftKeyPointCount]
+                               static_cast<size_t>(
+                                   frame_inout.leftKeyPointCount))
+                                ? frame_inout.keyPoints[featureIndex].octave
+                                : frame_inout
+                                      .keyPointsRight[featureIndex -
+                                                      frame_inout
+                                                          .leftKeyPointCount]
                                       .octave;
                         bestIndex = featureIndex;
                     }
                     else if (distance < bestDistance2)
                     {
                         bestLevel2 =
-                            (F.leftKeyPointCount == -1)
-                                ? F.keyPointsUndistorted[featureIndex].octave
+                            (frame_inout.leftKeyPointCount == -1)
+                                ? frame_inout.keyPointsUndistorted[featureIndex]
+                                      .octave
                             : (featureIndex <
-                               static_cast<size_t>(F.leftKeyPointCount))
-                                ? F.keyPoints[featureIndex].octave
-                                : F.keyPointsRight[featureIndex -
-                                                   F.leftKeyPointCount]
+                               static_cast<size_t>(
+                                   frame_inout.leftKeyPointCount))
+                                ? frame_inout.keyPoints[featureIndex].octave
+                                : frame_inout
+                                      .keyPointsRight[featureIndex -
+                                                      frame_inout
+                                                          .leftKeyPointCount]
                                       .octave;
                         bestDistance2 = distance;
                     }
@@ -227,14 +239,15 @@ ORBmatcherStatus
                     if (bestLevel != bestLevel2 ||
                         bestDistance <= nearestNeighborRatio * bestDistance2)
                     {
-                        F.mapPoints[bestIndex] = p_mapPoint;
+                        frame_inout.mapPoints[bestIndex] = p_mapPoint;
 
-                        if (F.leftKeyPointCount != -1 &&
-                            F.leftToRightMatches[bestIndex] != -1)
+                        if (frame_inout.leftKeyPointCount != -1 &&
+                            frame_inout.leftToRightMatches[bestIndex] != -1)
                         { // Also match with the stereo observation at right
                           // camera
-                            F.mapPoints[F.leftToRightMatches[bestIndex] +
-                                        F.leftKeyPointCount] = p_mapPoint;
+                            frame_inout.mapPoints
+                                [frame_inout.leftToRightMatches[bestIndex] +
+                                 frame_inout.leftKeyPointCount] = p_mapPoint;
                             nmatches++;
                             right++;
                         }
@@ -246,7 +259,8 @@ ORBmatcherStatus
             }
         }
 
-        if (F.leftKeyPointCount != -1 && p_mapPoint->isTrackedInRightView)
+        if (frame_inout.leftKeyPointCount != -1 &&
+            p_mapPoint->isTrackedInRightView)
         {
             const int &predictedLevelCount = p_mapPoint->trackScaleLevelR;
             if (predictedLevelCount != -1)
@@ -262,23 +276,24 @@ ORBmatcherStatus
                         __func__);
                 }
 
-                if (thDepth.has_value() && p_mapPoint->trackDepthR > 0)
+                if (depthThreshold_in.has_value() &&
+                    p_mapPoint->trackDepthR > 0)
                 {
-                    if (p_mapPoint->trackDepthR < *thDepth)
+                    if (p_mapPoint->trackDepthR < *depthThreshold_in)
                         r *= 0.7f;
                     else
                         r *= 1.2f;
                 }
 
                 std::vector<size_t> indices{};
-                if (F.getFeaturesInArea(p_mapPoint->trackProjXR,
-                                        p_mapPoint->trackProjYR,
-                                        r * F.scaleFactors[predictedLevelCount],
-                                        indices,
-                                        predictedLevelCount - 1,
-                                        predictedLevelCount,
-                                        true) !=
-                    FrameStatus::FRAME_STATUS_SUCCESS)
+                if (frame_inout.getFeaturesInArea(
+                        p_mapPoint->trackProjXR,
+                        p_mapPoint->trackProjYR,
+                        r * frame_inout.scaleFactors[predictedLevelCount],
+                        indices,
+                        predictedLevelCount - 1,
+                        predictedLevelCount,
+                        true) != FrameStatus::FRAME_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
                         rclcpp::get_logger("vs_graphs"),
@@ -315,10 +330,13 @@ ORBmatcherStatus
                 {
                     const size_t featureIndex = *vit;
 
-                    if (F.mapPoints[featureIndex + F.leftKeyPointCount])
+                    if (frame_inout.mapPoints[featureIndex +
+                                              frame_inout.leftKeyPointCount])
                     {
                         int observationCount2{};
-                        if (F.mapPoints[featureIndex + F.leftKeyPointCount]
+                        if (frame_inout
+                                .mapPoints[featureIndex +
+                                           frame_inout.leftKeyPointCount]
                                 ->getObservationCount(observationCount2) !=
                             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
                         {
@@ -334,8 +352,8 @@ ORBmatcherStatus
                         }
                     }
 
-                    const cv::Mat &d =
-                        F.descriptors.row(featureIndex + F.leftKeyPointCount);
+                    const cv::Mat &d = frame_inout.descriptors.row(
+                        featureIndex + frame_inout.leftKeyPointCount);
 
                     int distance{};
                     if (computeDescriptorDistance(mapPointDescriptor,
@@ -355,12 +373,14 @@ ORBmatcherStatus
                         bestDistance2 = bestDistance;
                         bestDistance  = distance;
                         bestLevel2    = bestLevel;
-                        bestLevel     = F.keyPointsRight[featureIndex].octave;
-                        bestIndex     = featureIndex;
+                        bestLevel =
+                            frame_inout.keyPointsRight[featureIndex].octave;
+                        bestIndex = featureIndex;
                     }
                     else if (distance < bestDistance2)
                     {
-                        bestLevel2    = F.keyPointsRight[featureIndex].octave;
+                        bestLevel2 =
+                            frame_inout.keyPointsRight[featureIndex].octave;
                         bestDistance2 = distance;
                     }
                 }
@@ -373,16 +393,19 @@ ORBmatcherStatus
                         bestDistance > nearestNeighborRatio * bestDistance2)
                         continue;
 
-                    if (F.leftKeyPointCount != -1 &&
-                        F.rightToLeftMatches[bestIndex] != -1)
+                    if (frame_inout.leftKeyPointCount != -1 &&
+                        frame_inout.rightToLeftMatches[bestIndex] != -1)
                     { // Also match with the stereo observation at right camera
-                        F.mapPoints[F.rightToLeftMatches[bestIndex]] =
+                        frame_inout.mapPoints
+                            [frame_inout.rightToLeftMatches[bestIndex]] =
                             p_mapPoint;
                         nmatches++;
                         left++;
                     }
 
-                    F.mapPoints[bestIndex + F.leftKeyPointCount] = p_mapPoint;
+                    frame_inout
+                        .mapPoints[bestIndex + frame_inout.leftKeyPointCount] =
+                        p_mapPoint;
                     nmatches++;
                     right++;
                 }

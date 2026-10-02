@@ -153,8 +153,8 @@ class Floor
                              const PlaneIdentity &secondIdentity_in,
                              double               maximumNormalAngle_deg_in,
                              double               maximumOffset_m_in,
-                             double              &normalAngle_deg_inout,
-                             double              &offset_m_inout,
+                             double              &normalAngle_deg_out,
+                             double              &offset_m_out,
                              bool                &isMatch_out);
 
     /*! Selects the valid identity with most finite support, then observations.

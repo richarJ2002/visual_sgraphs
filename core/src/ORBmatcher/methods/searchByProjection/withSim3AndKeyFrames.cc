@@ -39,24 +39,26 @@ namespace core
 {
 
 ORBmatcherStatus ORBmatcher::searchByProjection(
-    KeyFrame                      *pKF,
-    Sophus::Sim3<float>           &Scw,
-    const std::vector<MapPoint *> &vpPoints,
-    const std::vector<KeyFrame *> &vpPointsKFs,
+    KeyFrame                      *p_keyframe_in,
+    Sophus::Sim3<float>           &similarity_worldToCamera_in,
+    const std::vector<MapPoint *> &points_in,
+    const std::vector<KeyFrame *> &pointsKeyframes_in,
     std::vector<MapPoint *>       &matched_inout,
     std::vector<KeyFrame *>       &matchedKeyframes_inout,
-    int                            th,
+    int                            threshold_in,
     int                           &byProjection_out,
-    float                          ratioHamming)
+    float                          hammingRatio_in)
 {
     // Get Calibration Parameters for later projection
-    const float &fx = pKF->fx;
-    const float &fy = pKF->fy;
-    const float &cx = pKF->cx;
-    const float &cy = pKF->cy;
+    const float &fx = p_keyframe_in->fx;
+    const float &fy = p_keyframe_in->fy;
+    const float &cx = p_keyframe_in->cx;
+    const float &cy = p_keyframe_in->cy;
 
     Sophus::SE3f poseWorldToCamera =
-        Sophus::SE3f(Scw.rotationMatrix(), Scw.translation() / Scw.scale());
+        Sophus::SE3f(similarity_worldToCamera_in.rotationMatrix(),
+                     similarity_worldToCamera_in.translation() /
+                         similarity_worldToCamera_in.scale());
     Eigen::Vector3f cameraCenter_World =
         poseWorldToCamera.inverse().translation();
 
@@ -68,12 +70,12 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
     int nmatches = 0;
 
     // For each Candidate MapPoint Project and Match
-    for (int mapPointIndex = 0, iendMapPoint = vpPoints.size();
+    for (int mapPointIndex = 0, iendMapPoint = points_in.size();
          mapPointIndex < iendMapPoint;
          mapPointIndex++)
     {
-        MapPoint *p_mapPoint = vpPoints[mapPointIndex];
-        KeyFrame *p_keyFrame = vpPointsKFs[mapPointIndex];
+        MapPoint *p_mapPoint = points_in[mapPointIndex];
+        KeyFrame *p_keyFrame = pointsKeyframes_in[mapPointIndex];
 
         // Discard Bad MapPoints and already found
         bool mapPointIsBad{};
@@ -116,7 +118,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
 
         // Point must be inside the image
         bool pKFIsInImage{};
-        if (pKF->isInImage(u, v, pKFIsInImage) !=
+        if (p_keyframe_in->isInImage(u, v, pKFIsInImage) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -169,7 +171,9 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
             continue;
 
         int predictedLevelCount{};
-        if (p_mapPoint->predictScale(distance, pKF, predictedLevelCount) !=
+        if (p_mapPoint->predictScale(distance,
+                                     p_keyframe_in,
+                                     predictedLevelCount) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -179,10 +183,11 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         }
 
         // Search in a radius
-        const float radius = th * pKF->scaleFactors[predictedLevelCount];
+        const float radius =
+            threshold_in * p_keyframe_in->scaleFactors[predictedLevelCount];
 
         std::vector<size_t> indices{};
-        if (pKF->getFeaturesInArea(u, v, radius, indices) !=
+        if (p_keyframe_in->getFeaturesInArea(u, v, radius, indices) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -217,14 +222,14 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
                 continue;
 
             const int &keyPointLevel =
-                pKF->keyPointsUndistorted[featureIndex].octave;
+                p_keyframe_in->keyPointsUndistorted[featureIndex].octave;
 
             if (keyPointLevel < predictedLevelCount - 1 ||
                 keyPointLevel > predictedLevelCount)
                 continue;
 
             const cv::Mat &keyFrameDescriptor =
-                pKF->descriptors.row(featureIndex);
+                p_keyframe_in->descriptors.row(featureIndex);
 
             int descriptorDistance{};
             if (computeDescriptorDistance(mapPointDescriptor,
@@ -246,7 +251,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
             }
         }
 
-        if (bestDistance <= TH_LOW * ratioHamming)
+        if (bestDistance <= TH_LOW * hammingRatio_in)
         {
             matched_inout[bestIndex]          = p_mapPoint;
             matchedKeyframes_inout[bestIndex] = p_keyFrame;

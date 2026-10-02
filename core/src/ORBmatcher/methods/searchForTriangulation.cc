@@ -39,19 +39,20 @@ namespace core
 {
 
 ORBmatcherStatus ORBmatcher::searchForTriangulation(
-    KeyFrame                               *pKF1,
-    KeyFrame                               *pKF2,
-    std::vector<std::pair<size_t, size_t>> &vMatchedPairs,
-    const bool                              bOnlyStereo,
+    KeyFrame                               *p_keyframe1_in,
+    KeyFrame                               *p_keyframe2_in,
+    std::vector<std::pair<size_t, size_t>> &matchedPairs_out,
+    const bool                              stereoOnly_in,
     int                                    &forTriangulation_out,
-    const bool                              bCoarse)
+    const bool                              coarse_in)
 {
-    const DBoW2::FeatureVector &featureVector1 = pKF1->featureVector;
-    const DBoW2::FeatureVector &featureVector2 = pKF2->featureVector;
+    const DBoW2::FeatureVector &featureVector1 = p_keyframe1_in->featureVector;
+    const DBoW2::FeatureVector &featureVector2 = p_keyframe2_in->featureVector;
 
     // Compute epipole in second image
     Sophus::SE3f T1w{};
-    if (pKF1->getPose(T1w) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    if (p_keyframe1_in->getPose(T1w) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getPose returned a failure status although it cannot "
@@ -59,7 +60,8 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                      __func__);
     }
     Sophus::SE3f T2w{};
-    if (pKF2->getPose(T2w) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    if (p_keyframe2_in->getPose(T2w) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getPose returned a failure status although it cannot "
@@ -67,7 +69,8 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                      __func__);
     }
     Sophus::SE3f Tw2{};
-    if (pKF2->getPoseInverse(Tw2) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    if (p_keyframe2_in->getPoseInverse(Tw2) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getPoseInverse returned a failure status although it "
@@ -75,7 +78,8 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                      __func__);
     } // for convenience
     Eigen::Vector3f Cw{};
-    if (pKF1->getCameraCenter(Cw) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    if (p_keyframe1_in->getCameraCenter(Cw) !=
+        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getCameraCenter returned a failure status although "
@@ -84,16 +88,17 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
     }
     Eigen::Vector3f C2 = T2w * Cw;
 
-    Eigen::Vector2f ep = pKF2->p_camera->project(C2);
+    Eigen::Vector2f ep = p_keyframe2_in->p_camera->project(C2);
     Sophus::SE3f    T12;
     Sophus::SE3f    Tll, Tlr, Trl, Trr;
     Eigen::Matrix3f R12; // for fastest computation
     Eigen::Vector3f t12; // for fastest computation
 
-    camera_models::geometriccamera::GeometricCamera *p_camera1 = pKF1->p_camera,
-                                                    *p_camera2 = pKF2->p_camera;
+    camera_models::geometriccamera::GeometricCamera
+        *p_camera1 = p_keyframe1_in->p_camera,
+        *p_camera2 = p_keyframe2_in->p_camera;
 
-    if (!pKF1->p_camera2 && !pKF2->p_camera2)
+    if (!p_keyframe1_in->p_camera2 && !p_keyframe2_in->p_camera2)
     {
         T12 = T1w * Tw2;
         R12 = T12.rotationMatrix();
@@ -102,7 +107,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
     else
     {
         Sophus::SE3f Tr1w{};
-        if (pKF1->getRightPose(Tr1w) !=
+        if (p_keyframe1_in->getRightPose(Tr1w) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -111,7 +116,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                          __func__);
         }
         Sophus::SE3f Twr2{};
-        if (pKF2->getRightPoseInverse(Twr2) !=
+        if (p_keyframe2_in->getRightPoseInverse(Twr2) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -134,8 +139,8 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
     // Matching speed-up by ORB Vocabulary
     // Compare only ORB that share the same node
     int               nmatches = 0;
-    std::vector<bool> matched2Flags(pKF2->keyPointCount, false);
-    std::vector<int>  matches12(pKF1->keyPointCount, -1);
+    std::vector<bool> matched2Flags(p_keyframe2_in->keyPointCount, false);
+    std::vector<int>  matches12(p_keyframe1_in->keyPointCount, -1);
 
     std::vector<int> rotHist[HISTO_LENGTH];
     for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
@@ -164,7 +169,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                 const size_t index1 = firstFeatureIt->second[i1];
 
                 MapPoint *p_mapPoint1 = nullptr;
-                if (pKF1->getMapPoint(index1, p_mapPoint1) !=
+                if (p_keyframe1_in->getMapPoint(index1, p_mapPoint1) !=
                     KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -180,28 +185,30 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                     continue;
                 }
 
-                const bool isStereo1 =
-                    (!pKF1->p_camera2 && pKF1->uRight[index1] >= 0);
+                const bool isStereo1 = (!p_keyframe1_in->p_camera2 &&
+                                        p_keyframe1_in->uRight[index1] >= 0);
 
-                if (bOnlyStereo)
+                if (stereoOnly_in)
                     if (!isStereo1)
                         continue;
 
                 const cv::KeyPoint &keyPoint1 =
-                    (pKF1->leftKeyPointCount == -1)
-                        ? pKF1->keyPointsUndistorted[index1]
-                    : (index1 < static_cast<size_t>(pKF1->leftKeyPointCount))
-                        ? pKF1->keyPoints[index1]
-                        : pKF1->keyPointsRight[index1 -
-                                               pKF1->leftKeyPointCount];
+                    (p_keyframe1_in->leftKeyPointCount == -1)
+                        ? p_keyframe1_in->keyPointsUndistorted[index1]
+                    : (index1 <
+                       static_cast<size_t>(p_keyframe1_in->leftKeyPointCount))
+                        ? p_keyframe1_in->keyPoints[index1]
+                        : p_keyframe1_in->keyPointsRight
+                              [index1 - p_keyframe1_in->leftKeyPointCount];
 
                 const bool isRightCamera1 =
-                    (pKF1->leftKeyPointCount == -1 ||
-                     index1 < static_cast<size_t>(pKF1->leftKeyPointCount))
+                    (p_keyframe1_in->leftKeyPointCount == -1 ||
+                     index1 <
+                         static_cast<size_t>(p_keyframe1_in->leftKeyPointCount))
                         ? false
                         : true;
 
-                const cv::Mat &d1 = pKF1->descriptors.row(index1);
+                const cv::Mat &d1 = p_keyframe1_in->descriptors.row(index1);
 
                 int bestDistance = TH_LOW;
                 int bestIndex2   = -1;
@@ -213,7 +220,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                     size_t index2 = secondFeatureIt->second[i2];
 
                     MapPoint *p_mapPoint2 = nullptr;
-                    if (pKF2->getMapPoint(index2, p_mapPoint2) !=
+                    if (p_keyframe2_in->getMapPoint(index2, p_mapPoint2) !=
                         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -228,13 +235,14 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                         continue;
 
                     const bool isStereo2 =
-                        (!pKF2->p_camera2 && pKF2->uRight[index2] >= 0);
+                        (!p_keyframe2_in->p_camera2 &&
+                         p_keyframe2_in->uRight[index2] >= 0);
 
-                    if (bOnlyStereo)
+                    if (stereoOnly_in)
                         if (!isStereo2)
                             continue;
 
-                    const cv::Mat &d2 = pKF2->descriptors.row(index2);
+                    const cv::Mat &d2 = p_keyframe2_in->descriptors.row(index2);
 
                     int distance{};
                     if (computeDescriptorDistance(d1, d2, distance) !=
@@ -251,31 +259,33 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                         continue;
 
                     const cv::KeyPoint &keyPoint2 =
-                        (pKF2->leftKeyPointCount == -1)
-                            ? pKF2->keyPointsUndistorted[index2]
-                        : (index2 <
-                           static_cast<size_t>(pKF2->leftKeyPointCount))
-                            ? pKF2->keyPoints[index2]
-                            : pKF2->keyPointsRight[index2 -
-                                                   pKF2->leftKeyPointCount];
+                        (p_keyframe2_in->leftKeyPointCount == -1)
+                            ? p_keyframe2_in->keyPointsUndistorted[index2]
+                        : (index2 < static_cast<size_t>(
+                                        p_keyframe2_in->leftKeyPointCount))
+                            ? p_keyframe2_in->keyPoints[index2]
+                            : p_keyframe2_in->keyPointsRight
+                                  [index2 - p_keyframe2_in->leftKeyPointCount];
                     const bool isRightCamera2 =
-                        (pKF2->leftKeyPointCount == -1 ||
-                         index2 < static_cast<size_t>(pKF2->leftKeyPointCount))
+                        (p_keyframe2_in->leftKeyPointCount == -1 ||
+                         index2 < static_cast<size_t>(
+                                      p_keyframe2_in->leftKeyPointCount))
                             ? false
                             : true;
 
-                    if (!isStereo1 && !isStereo2 && !pKF1->p_camera2)
+                    if (!isStereo1 && !isStereo2 && !p_keyframe1_in->p_camera2)
                     {
                         const float distex = ep(0) - keyPoint2.pt.x;
                         const float distey = ep(1) - keyPoint2.pt.y;
                         if (distex * distex + distey * distey <
-                            100 * pKF2->scaleFactors[keyPoint2.octave])
+                            100 *
+                                p_keyframe2_in->scaleFactors[keyPoint2.octave])
                         {
                             continue;
                         }
                     }
 
-                    if (pKF1->p_camera2 && pKF2->p_camera2)
+                    if (p_keyframe1_in->p_camera2 && p_keyframe2_in->p_camera2)
                     {
                         if (isRightCamera1 && isRightCamera2)
                         {
@@ -283,8 +293,8 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                             t12 = trr;
                             T12 = Trr;
 
-                            p_camera1 = pKF1->p_camera2;
-                            p_camera2 = pKF2->p_camera2;
+                            p_camera1 = p_keyframe1_in->p_camera2;
+                            p_camera2 = p_keyframe2_in->p_camera2;
                         }
                         else if (isRightCamera1 && !isRightCamera2)
                         {
@@ -292,8 +302,8 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                             t12 = trl;
                             T12 = Trl;
 
-                            p_camera1 = pKF1->p_camera2;
-                            p_camera2 = pKF2->p_camera;
+                            p_camera1 = p_keyframe1_in->p_camera2;
+                            p_camera2 = p_keyframe2_in->p_camera;
                         }
                         else if (!isRightCamera1 && isRightCamera2)
                         {
@@ -301,8 +311,8 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                             t12 = tlr;
                             T12 = Tlr;
 
-                            p_camera1 = pKF1->p_camera;
-                            p_camera2 = pKF2->p_camera2;
+                            p_camera1 = p_keyframe1_in->p_camera;
+                            p_camera2 = p_keyframe2_in->p_camera2;
                         }
                         else
                         {
@@ -310,20 +320,20 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                             t12 = tll;
                             T12 = Tll;
 
-                            p_camera1 = pKF1->p_camera;
-                            p_camera2 = pKF2->p_camera;
+                            p_camera1 = p_keyframe1_in->p_camera;
+                            p_camera2 = p_keyframe2_in->p_camera;
                         }
                     }
 
-                    if (bCoarse ||
+                    if (coarse_in ||
                         p_camera1->epipolarConstrain(
                             p_camera2,
                             keyPoint1,
                             keyPoint2,
                             R12,
                             t12,
-                            pKF1->levelSigmaSquared[keyPoint1.octave],
-                            pKF2->levelSigmaSquared
+                            p_keyframe1_in->levelSigmaSquared[keyPoint1.octave],
+                            p_keyframe2_in->levelSigmaSquared
                                 [keyPoint2.octave])) // MODIFICATION_2
                     {
                         bestIndex2   = index2;
@@ -334,12 +344,13 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                 if (bestIndex2 >= 0)
                 {
                     const cv::KeyPoint &keyPoint2 =
-                        (pKF2->leftKeyPointCount == -1)
-                            ? pKF2->keyPointsUndistorted[bestIndex2]
-                        : (bestIndex2 < pKF2->leftKeyPointCount)
-                            ? pKF2->keyPoints[bestIndex2]
-                            : pKF2->keyPointsRight[bestIndex2 -
-                                                   pKF2->leftKeyPointCount];
+                        (p_keyframe2_in->leftKeyPointCount == -1)
+                            ? p_keyframe2_in->keyPointsUndistorted[bestIndex2]
+                        : (bestIndex2 < p_keyframe2_in->leftKeyPointCount)
+                            ? p_keyframe2_in->keyPoints[bestIndex2]
+                            : p_keyframe2_in->keyPointsRight
+                                  [bestIndex2 -
+                                   p_keyframe2_in->leftKeyPointCount];
                     matches12[index1] = bestIndex2;
                     nmatches++;
 
@@ -402,8 +413,8 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
         }
     }
 
-    vMatchedPairs.clear();
-    vMatchedPairs.reserve(nmatches);
+    matchedPairs_out.clear();
+    matchedPairs_out.reserve(nmatches);
 
     for (size_t histogramBinIndex = 0, iend = matches12.size();
          histogramBinIndex < iend;
@@ -411,7 +422,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
     {
         if (matches12[histogramBinIndex] < 0)
             continue;
-        vMatchedPairs.push_back(
+        matchedPairs_out.push_back(
             std::make_pair(histogramBinIndex, matches12[histogramBinIndex]));
     }
 

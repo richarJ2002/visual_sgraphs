@@ -39,15 +39,16 @@ namespace core
 {
 
 ORBmatcherStatus ORBmatcher::searchForInitialization(
-    Frame                    &F1,
-    Frame                    &F2,
+    Frame                    &frame1_inout,
+    Frame                    &frame2_inout,
     std::vector<cv::Point2f> &previousMatched_inout,
-    std::vector<int>         &vnMatches12,
+    std::vector<int>         &matches12_out,
     int                      &forInitialization_out,
-    int                       windowSize)
+    int                       windowSize_in)
 {
     int nmatches = 0;
-    vnMatches12  = std::vector<int>(F1.keyPointsUndistorted.size(), -1);
+    matches12_out =
+        std::vector<int>(frame1_inout.keyPointsUndistorted.size(), -1);
 
     std::vector<int> rotHist[HISTO_LENGTH];
     for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
@@ -55,24 +56,28 @@ ORBmatcherStatus ORBmatcher::searchForInitialization(
         rotHist[histogramBinIndex].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
-    std::vector<int> matchedDistances(F2.keyPointsUndistorted.size(), INT_MAX);
-    std::vector<int> matchIndices21(F2.keyPointsUndistorted.size(), -1);
+    std::vector<int> matchedDistances(frame2_inout.keyPointsUndistorted.size(),
+                                      INT_MAX);
+    std::vector<int> matchIndices21(frame2_inout.keyPointsUndistorted.size(),
+                                    -1);
 
-    for (size_t i1 = 0, iend1 = F1.keyPointsUndistorted.size(); i1 < iend1;
+    for (size_t i1 = 0, iend1 = frame1_inout.keyPointsUndistorted.size();
+         i1 < iend1;
          i1++)
     {
-        cv::KeyPoint keyPoint1 = F1.keyPointsUndistorted[i1];
+        cv::KeyPoint keyPoint1 = frame1_inout.keyPointsUndistorted[i1];
         int          level1    = keyPoint1.octave;
         if (level1 > 0)
             continue;
 
         std::vector<size_t> indices2{};
-        if (F2.getFeaturesInArea(previousMatched_inout[i1].x,
-                                 previousMatched_inout[i1].y,
-                                 windowSize,
-                                 indices2,
-                                 level1,
-                                 level1) != FrameStatus::FRAME_STATUS_SUCCESS)
+        if (frame2_inout.getFeaturesInArea(previousMatched_inout[i1].x,
+                                           previousMatched_inout[i1].y,
+                                           windowSize_in,
+                                           indices2,
+                                           level1,
+                                           level1) !=
+            FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: getFeaturesInArea returned a failure status "
@@ -83,7 +88,7 @@ ORBmatcherStatus ORBmatcher::searchForInitialization(
         if (indices2.empty())
             continue;
 
-        cv::Mat d1 = F1.descriptors.row(i1);
+        cv::Mat d1 = frame1_inout.descriptors.row(i1);
 
         int bestDistance  = INT_MAX;
         int bestDistance2 = INT_MAX;
@@ -95,7 +100,7 @@ ORBmatcherStatus ORBmatcher::searchForInitialization(
         {
             size_t i2 = *vit;
 
-            cv::Mat d2 = F2.descriptors.row(i2);
+            cv::Mat d2 = frame2_inout.descriptors.row(i2);
 
             int distance{};
             if (computeDescriptorDistance(d1, d2, distance) !=
@@ -130,18 +135,19 @@ ORBmatcherStatus ORBmatcher::searchForInitialization(
             {
                 if (matchIndices21[bestIndex2] >= 0)
                 {
-                    vnMatches12[matchIndices21[bestIndex2]] = -1;
+                    matches12_out[matchIndices21[bestIndex2]] = -1;
                     nmatches--;
                 }
-                vnMatches12[i1]              = bestIndex2;
+                matches12_out[i1]            = bestIndex2;
                 matchIndices21[bestIndex2]   = i1;
                 matchedDistances[bestIndex2] = bestDistance;
                 nmatches++;
 
                 if (shouldCheckOrientation)
                 {
-                    float rot = F1.keyPointsUndistorted[i1].angle -
-                                F2.keyPointsUndistorted[bestIndex2].angle;
+                    float rot =
+                        frame1_inout.keyPointsUndistorted[i1].angle -
+                        frame2_inout.keyPointsUndistorted[bestIndex2].angle;
                     if (rot < 0.0)
                         rot += 360.0f;
                     int bin = std::round(rot * factor);
@@ -181,9 +187,9 @@ ORBmatcherStatus ORBmatcher::searchForInitialization(
                  binEntryIndex++)
             {
                 int index1 = rotHist[histogramBinIndex][binEntryIndex];
-                if (vnMatches12[index1] >= 0)
+                if (matches12_out[index1] >= 0)
                 {
-                    vnMatches12[index1] = -1;
+                    matches12_out[index1] = -1;
                     nmatches--;
                 }
             }
@@ -191,10 +197,10 @@ ORBmatcherStatus ORBmatcher::searchForInitialization(
     }
 
     // Update prev matched
-    for (size_t i1 = 0, iend1 = vnMatches12.size(); i1 < iend1; i1++)
-        if (vnMatches12[i1] >= 0)
+    for (size_t i1 = 0, iend1 = matches12_out.size(); i1 < iend1; i1++)
+        if (matches12_out[i1] >= 0)
             previousMatched_inout[i1] =
-                F2.keyPointsUndistorted[vnMatches12[i1]].pt;
+                frame2_inout.keyPointsUndistorted[matches12_out[i1]].pt;
 
     forInitialization_out = nmatches;
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;

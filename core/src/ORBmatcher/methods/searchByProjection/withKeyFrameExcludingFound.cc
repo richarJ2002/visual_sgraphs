@@ -39,17 +39,17 @@ namespace core
 {
 
 ORBmatcherStatus
-    ORBmatcher::searchByProjection(Frame                      &CurrentFrame,
-                                   KeyFrame                   *pKF,
-                                   const std::set<MapPoint *> &sAlreadyFound,
-                                   const float                 th,
-                                   const int                   ORBdist,
+    ORBmatcher::searchByProjection(Frame    &currentFrame_inout,
+                                   KeyFrame *p_keyframe_in,
+                                   const std::set<MapPoint *> &alreadyFound_in,
+                                   const float                 threshold_in,
+                                   const int                   orbDistance_in,
                                    int                        &byProjection_out)
 {
     int nmatches = 0;
 
     Sophus::SE3f poseWorldToCamera{};
-    if (CurrentFrame.getPose(poseWorldToCamera) !=
+    if (currentFrame_inout.getPose(poseWorldToCamera) !=
         FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -68,7 +68,7 @@ ORBmatcherStatus
     const float factor = 1.0f / HISTO_LENGTH;
 
     std::vector<MapPoint *> mapPoints{};
-    if (pKF->getMapPointMatches(mapPoints) !=
+    if (p_keyframe_in->getMapPointMatches(mapPoints) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -94,7 +94,7 @@ ORBmatcherStatus
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            if (!mapPointIsBad && !sAlreadyFound.count(p_mapPoint))
+            if (!mapPointIsBad && !alreadyFound_in.count(p_mapPoint))
             {
                 // Project
                 Eigen::Vector3f x3Dw{};
@@ -109,13 +109,14 @@ ORBmatcherStatus
                 }
                 Eigen::Vector3f x3Dc = poseWorldToCamera * x3Dw;
 
-                const Eigen::Vector2f uv = CurrentFrame.p_camera->project(x3Dc);
+                const Eigen::Vector2f uv =
+                    currentFrame_inout.p_camera->project(x3Dc);
 
-                if (uv(0) < CurrentFrame.gridMinX ||
-                    uv(0) > CurrentFrame.gridMaxX)
+                if (uv(0) < currentFrame_inout.gridMinX ||
+                    uv(0) > currentFrame_inout.gridMaxX)
                     continue;
-                if (uv(1) < CurrentFrame.gridMinY ||
-                    uv(1) > CurrentFrame.gridMaxY)
+                if (uv(1) < currentFrame_inout.gridMinY ||
+                    uv(1) > currentFrame_inout.gridMaxY)
                     continue;
 
                 // Compute predicted scale level
@@ -150,7 +151,7 @@ ORBmatcherStatus
 
                 int predictedLevelCount{};
                 if (p_mapPoint->predictScale(distance3d,
-                                             &CurrentFrame,
+                                             &currentFrame_inout,
                                              predictedLevelCount) !=
                     MapPointStatus::MAP_POINT_STATUS_SUCCESS)
                 {
@@ -163,15 +164,17 @@ ORBmatcherStatus
 
                 // Search in a window
                 const float radius =
-                    th * CurrentFrame.scaleFactors[predictedLevelCount];
+                    threshold_in *
+                    currentFrame_inout.scaleFactors[predictedLevelCount];
 
                 std::vector<size_t> indices2{};
-                if (CurrentFrame.getFeaturesInArea(uv(0),
-                                                   uv(1),
-                                                   radius,
-                                                   indices2,
-                                                   predictedLevelCount - 1,
-                                                   predictedLevelCount + 1) !=
+                if (currentFrame_inout.getFeaturesInArea(
+                        uv(0),
+                        uv(1),
+                        radius,
+                        indices2,
+                        predictedLevelCount - 1,
+                        predictedLevelCount + 1) !=
                     FrameStatus::FRAME_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -203,10 +206,10 @@ ORBmatcherStatus
                      vit++)
                 {
                     const size_t i2 = *vit;
-                    if (CurrentFrame.mapPoints[i2])
+                    if (currentFrame_inout.mapPoints[i2])
                         continue;
 
-                    const cv::Mat &d = CurrentFrame.descriptors.row(i2);
+                    const cv::Mat &d = currentFrame_inout.descriptors.row(i2);
 
                     int distance{};
                     if (computeDescriptorDistance(mapPointDescriptor,
@@ -228,16 +231,19 @@ ORBmatcherStatus
                     }
                 }
 
-                if (bestDistance <= ORBdist)
+                if (bestDistance <= orbDistance_in)
                 {
-                    CurrentFrame.mapPoints[bestIndex2] = p_mapPoint;
+                    currentFrame_inout.mapPoints[bestIndex2] = p_mapPoint;
                     nmatches++;
 
                     if (shouldCheckOrientation)
                     {
                         float rot =
-                            pKF->keyPointsUndistorted[histogramBinIndex].angle -
-                            CurrentFrame.keyPointsUndistorted[bestIndex2].angle;
+                            p_keyframe_in
+                                ->keyPointsUndistorted[histogramBinIndex]
+                                .angle -
+                            currentFrame_inout.keyPointsUndistorted[bestIndex2]
+                                .angle;
                         if (rot < 0.0)
                             rot += 360.0f;
                         int bin = std::round(rot * factor);
@@ -277,7 +283,7 @@ ORBmatcherStatus
                      binEntryIndex < jend;
                      binEntryIndex++)
                 {
-                    CurrentFrame
+                    currentFrame_inout
                         .mapPoints[rotHist[histogramBinIndex][binEntryIndex]] =
                         nullptr;
                     nmatches--;

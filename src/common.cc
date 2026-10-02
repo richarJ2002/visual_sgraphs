@@ -5154,7 +5154,7 @@ void publishKeyFrameImages(
 
 void publishKeyFrameMarkers(
     const std::vector<vs_graphs::core::KeyFrame *> &keyFrames_in,
-    const rclcpp::Time                             &messageTimestamp_in)
+    const rclcpp::Time                             &msgTime_s_in)
 {
     /* Return when neither output publisher has been initialised */
     if (pubKeyFrameMarker == nullptr && pubKeyFrameList == nullptr)
@@ -5215,7 +5215,7 @@ void publishKeyFrameMarkers(
     visualization_msgs::msg::Marker keyFramePositionMarker;
 
     keyFramePositionMarker.header.frame_id = frameWorld;
-    keyFramePositionMarker.header.stamp    = messageTimestamp_in;
+    keyFramePositionMarker.header.stamp    = msgTime_s_in;
 
     keyFramePositionMarker.ns   = "keyframe_positions";
     keyFramePositionMarker.id   = 0;
@@ -5243,7 +5243,7 @@ void publishKeyFrameMarkers(
     nav_msgs::msg::Path keyFramePathMessage;
 
     keyFramePathMessage.header.frame_id = frameWorld;
-    keyFramePathMessage.header.stamp    = messageTimestamp_in;
+    keyFramePathMessage.header.stamp    = msgTime_s_in;
     keyFramePathMessage.poses.reserve(orderedKeyFrames.size());
 
     /* Add every valid keyframe pose to the marker and path */
