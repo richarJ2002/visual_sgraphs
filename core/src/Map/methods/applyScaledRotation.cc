@@ -54,28 +54,33 @@ namespace vs_graphs
 namespace core
 {
 
-MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
-                                   const float         s_in,
-                                   const bool          isScaledVelocity_in)
+MapStatus Map::applyScaledRotation(
+    const Sophus::SE3f &alignmentPose_oldWorldToNewWorld_in,
+    const float         alignmentScale_in,
+    const bool          isScaledVelocity_in)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
 
     // Body position (IMU) of first keyframe is fixed to (0,0,0)
-    Sophus::SE3f    Tyw = T_in;
-    Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
-    Eigen::Vector3f tyw = Tyw.translation();
+    Sophus::SE3f alignmentPose_oldWorldToNewWorld =
+        alignmentPose_oldWorldToNewWorld_in;
+    Eigen::Matrix3f alignmentRotation_oldWorldToNewWorld =
+        alignmentPose_oldWorldToNewWorld.rotationMatrix();
+    Eigen::Vector3f alignmentTranslation_oldWorldToNewWorld =
+        alignmentPose_oldWorldToNewWorld.translation();
 
-    const g2o::Sim3 transform_oldWorldToNewWorld(Ryw.cast<double>(),
-                                                 tyw.cast<double>(),
-                                                 static_cast<double>(s_in));
+    const g2o::Sim3 alignmentTransform_oldWorldToNewWorld(
+        alignmentRotation_oldWorldToNewWorld.cast<double>(),
+        alignmentTranslation_oldWorldToNewWorld.cast<double>(),
+        static_cast<double>(alignmentScale_in));
 
     for (std::set<KeyFrame *>::iterator sit = keyFrames.begin();
          sit != keyFrames.end();
          sit++)
     {
         KeyFrame    *p_keyFrame = *sit;
-        Sophus::SE3f pose_cameraToWorld{};
-        if (p_keyFrame->getPoseInverse(pose_cameraToWorld) !=
+        Sophus::SE3f cameraPose_cameraToWorld{};
+        if (p_keyFrame->getPoseInverse(cameraPose_cameraToWorld) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -83,10 +88,12 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        pose_cameraToWorld.translation() *= s_in;
-        Sophus::SE3f Tyc = Tyw * pose_cameraToWorld;
-        Sophus::SE3f Tcy = Tyc.inverse();
-        if (p_keyFrame->setPose(Tcy) !=
+        cameraPose_cameraToWorld.translation() *= alignmentScale_in;
+        Sophus::SE3f keyFramePose_cameraToNewWorld =
+            alignmentPose_oldWorldToNewWorld * cameraPose_cameraToWorld;
+        Sophus::SE3f keyFramePose_newWorldToCamera =
+            keyFramePose_cameraToNewWorld.inverse();
+        if (p_keyFrame->setPose(keyFramePose_newWorldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -105,7 +112,8 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
         }
         if (!isScaledVelocity_in)
         {
-            if (p_keyFrame->setVelocity(Ryw * Vw) !=
+            if (p_keyFrame->setVelocity(alignmentRotation_oldWorldToNewWorld *
+                                        Vw) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -116,7 +124,8 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
         }
         else
         {
-            if (p_keyFrame->setVelocity(Ryw * Vw * s_in) !=
+            if (p_keyFrame->setVelocity(alignmentRotation_oldWorldToNewWorld *
+                                        Vw * alignmentScale_in) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -141,7 +150,10 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_mapPoint->setWorldPos(s_in * Ryw * mapPointWorldPos + tyw) !=
+        if (p_mapPoint->setWorldPos(alignmentScale_in *
+                                        alignmentRotation_oldWorldToNewWorld *
+                                        mapPointWorldPos +
+                                    alignmentTranslation_oldWorldToNewWorld) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -173,7 +185,8 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
         }
         if (p_plane != nullptr && !planeIsBad)
         {
-            if (p_plane->applyTransform(transform_oldWorldToNewWorld) !=
+            if (p_plane->applyTransform(
+                    alignmentTransform_oldWorldToNewWorld) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -188,7 +201,8 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
     {
         if (p_marker != nullptr)
         {
-            if (p_marker->applyTransform(transform_oldWorldToNewWorld) !=
+            if (p_marker->applyTransform(
+                    alignmentTransform_oldWorldToNewWorld) !=
                 semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -203,7 +217,8 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
     {
         if (p_passage != nullptr)
         {
-            if (p_passage->applyTransform(transform_oldWorldToNewWorld) !=
+            if (p_passage->applyTransform(
+                    alignmentTransform_oldWorldToNewWorld) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -228,7 +243,7 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
         }
         if (p_room != nullptr && !roomIsBad)
         {
-            if (p_room->applyTransform(transform_oldWorldToNewWorld) !=
+            if (p_room->applyTransform(alignmentTransform_oldWorldToNewWorld) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -253,7 +268,7 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
         }
         if (p_room != nullptr && !roomIsBad2)
         {
-            if (p_room->applyTransform(transform_oldWorldToNewWorld) !=
+            if (p_room->applyTransform(alignmentTransform_oldWorldToNewWorld) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -268,7 +283,8 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
     {
         if (p_floor != nullptr)
         {
-            if (p_floor->applyTransform(transform_oldWorldToNewWorld) !=
+            if (p_floor->applyTransform(
+                    alignmentTransform_oldWorldToNewWorld) !=
                 semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -279,11 +295,13 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
         }
     }
 
-    for (std::vector<Eigen::Vector3d> &cluster_world : skeletonClusterPoints)
+    for (std::vector<Eigen::Vector3d> &skeletonCluster_world :
+         skeletonClusterPoints)
     {
-        for (Eigen::Vector3d &point_world_m : cluster_world)
+        for (Eigen::Vector3d &clusterPoint_world_m : skeletonCluster_world)
         {
-            point_world_m = transform_oldWorldToNewWorld.map(point_world_m);
+            clusterPoint_world_m =
+                alignmentTransform_oldWorldToNewWorld.map(clusterPoint_world_m);
         }
     }
 
@@ -291,9 +309,9 @@ MapStatus Map::applyScaledRotation(const Sophus::SE3f &T_in,
          skeletonEdges)
     {
         skeletonEdge_world.first =
-            transform_oldWorldToNewWorld.map(skeletonEdge_world.first);
-        skeletonEdge_world.second =
-            transform_oldWorldToNewWorld.map(skeletonEdge_world.second);
+            alignmentTransform_oldWorldToNewWorld.map(skeletonEdge_world.first);
+        skeletonEdge_world.second = alignmentTransform_oldWorldToNewWorld.map(
+            skeletonEdge_world.second);
     }
 
     mapChange++;

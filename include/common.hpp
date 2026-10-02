@@ -1410,7 +1410,7 @@ extern void publishStructuralElements(
  *              orientation are copied into a TransformStamped message and
  *              broadcast through tfBroadcaster.
  *
- * @param[in]   transform_parentToChild_in
+ * @param[in]   tfTransform_parentToChild_in
  *              Transformation describing the child frame relative to the
  *              parent frame.
  *
@@ -1423,7 +1423,7 @@ extern void publishStructuralElements(
  * @param[in]   msgTime_s_in
  *              ROS timestamp assigned to the published transformation.
  */
-extern void publishTFTransform(const Sophus::SE3f &transform_parentToChild_in,
+extern void publishTFTransform(const Sophus::SE3f &tfTransform_parentToChild_in,
                                const std::string  &parentFrameId_in,
                                const std::string  &childFrameId_in,
                                const rclcpp::Time &msgTime_s_in);

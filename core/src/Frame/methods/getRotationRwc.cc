@@ -36,10 +36,10 @@ namespace vs_graphs
 namespace core
 {
 
-FrameStatus
-    Frame::getRotationRwc(Eigen::Matrix3f &rotation_cameraToWorld_out) const
+FrameStatus Frame::getRotationRwc(
+    Eigen::Matrix3f &cameraRotation_cameraToWorld_out) const
 {
-    rotation_cameraToWorld_out = rotationRwc;
+    cameraRotation_cameraToWorld_out = rotationRwc;
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 

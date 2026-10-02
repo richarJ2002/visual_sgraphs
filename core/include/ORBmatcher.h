@@ -169,7 +169,7 @@ class ORBmatcher
      * @param[in]    p_keyframe_in
      *               Non-owning keyframe receiving projections;
      *               shall be non-null.
-     * @param[in]    similarity_worldToCamera_in
+     * @param[in]    cameraSimilarity_worldToCamera_in
      *                Similarity mapping points into the
      *                keyframe.
      * @param[in]    points_in
@@ -185,14 +185,14 @@ class ORBmatcher
      * @param[out] byProjection_out Number of matches found.
      * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    [[nodiscard]] ORBmatcherStatus
-        searchByProjection(KeyFrame            *p_keyframe_in,
-                           Sophus::Sim3<float> &similarity_worldToCamera_in,
-                           const std::vector<MapPoint *> &points_in,
-                           std::vector<MapPoint *>       &matched_inout,
-                           int                            threshold_in,
-                           int                           &byProjection_out,
-                           float hammingRatio_in = 1.0);
+    [[nodiscard]] ORBmatcherStatus searchByProjection(
+        KeyFrame                      *p_keyframe_in,
+        Sophus::Sim3<float>           &cameraSimilarity_worldToCamera_in,
+        const std::vector<MapPoint *> &points_in,
+        std::vector<MapPoint *>       &matched_inout,
+        int                            threshold_in,
+        int                           &byProjection_out,
+        float                          hammingRatio_in = 1.0);
 
     /*!
      * @brief        Matches map points under a similarity
@@ -201,7 +201,7 @@ class ORBmatcher
      * @param[in]    p_keyframe_in
      *               Non-owning keyframe receiving projections;
      *               shall be non-null.
-     * @param[in]    similarity_worldToCamera_in
+     * @param[in]    cameraSimilarity_worldToCamera_in
      *                Similarity mapping points into the
      *                keyframe.
      * @param[in]    points_in
@@ -221,16 +221,16 @@ class ORBmatcher
      * @param[out] byProjection_out Number of matches found.
      * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    [[nodiscard]] ORBmatcherStatus
-        searchByProjection(KeyFrame            *p_keyframe_in,
-                           Sophus::Sim3<float> &similarity_worldToCamera_in,
-                           const std::vector<MapPoint *> &points_in,
-                           const std::vector<KeyFrame *> &pointsKeyframes_in,
-                           std::vector<MapPoint *>       &matched_inout,
-                           std::vector<KeyFrame *> &matchedKeyframes_inout,
-                           int                      threshold_in,
-                           int                     &byProjection_out,
-                           float                    hammingRatio_in = 1.0);
+    [[nodiscard]] ORBmatcherStatus searchByProjection(
+        KeyFrame                      *p_keyframe_in,
+        Sophus::Sim3<float>           &cameraSimilarity_worldToCamera_in,
+        const std::vector<MapPoint *> &points_in,
+        const std::vector<KeyFrame *> &pointsKeyframes_in,
+        std::vector<MapPoint *>       &matched_inout,
+        std::vector<KeyFrame *>       &matchedKeyframes_inout,
+        int                            threshold_in,
+        int                           &byProjection_out,
+        float                          hammingRatio_in = 1.0);
 
     /*!
      * @brief        Matches keyframe map points against frame
@@ -345,7 +345,7 @@ class ORBmatcher
      *               non-null.
      * @param[in,out] matches12_inout
      *               Matched map point per first-keyframe point.
-     * @param[in]    similarity_camera2ToCamera1_in
+     * @param[in]    relativeSimilarity_camera2ToCamera1_in
      *               Similarity mapping second-keyframe camera points
      *               into the first keyframe's camera frame.
      * @param[in]    threshold_in
@@ -354,13 +354,13 @@ class ORBmatcher
      * @param[out] bySim3_out Number of matches found.
      * @return ORBMATCHER_STATUS_SUCCESS.
      */
-    [[nodiscard]] ORBmatcherStatus
-        searchBySim3(KeyFrame                *p_keyframe1_in,
-                     KeyFrame                *p_keyframe2_in,
-                     std::vector<MapPoint *> &matches12_inout,
-                     const Sophus::Sim3f     &similarity_camera2ToCamera1_in,
-                     const float              threshold_in,
-                     int                     &bySim3_out);
+    [[nodiscard]] ORBmatcherStatus searchBySim3(
+        KeyFrame                *p_keyframe1_in,
+        KeyFrame                *p_keyframe2_in,
+        std::vector<MapPoint *> &matches12_inout,
+        const Sophus::Sim3f     &relativeSimilarity_camera2ToCamera1_in,
+        const float              threshold_in,
+        int                     &bySim3_out);
 
     /*!
      * @brief        Fuses duplicated map points projected into
@@ -393,7 +393,7 @@ class ORBmatcher
      * @param[in,out] p_keyframe_inout
      *               Non-owning keyframe receiving projections;
      *               shall be non-null.
-     * @param[in]    similarity_worldToCamera_in
+     * @param[in]    cameraSimilarity_worldToCamera_in
      *                Similarity mapping points into the
      *                keyframe.
      * @param[in]    points_in
@@ -408,7 +408,7 @@ class ORBmatcher
      */
     [[nodiscard]] ORBmatcherStatus
         fuse(KeyFrame                      *p_keyframe_inout,
-             Sophus::Sim3f                 &similarity_worldToCamera_in,
+             Sophus::Sim3f                 &cameraSimilarity_worldToCamera_in,
              const std::vector<MapPoint *> &points_in,
              float                          threshold_in,
              std::vector<MapPoint *>       &replacePoints_inout,

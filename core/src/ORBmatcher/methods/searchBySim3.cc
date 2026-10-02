@@ -42,7 +42,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
     KeyFrame                *p_keyframe1_in,
     KeyFrame                *p_keyframe2_in,
     std::vector<MapPoint *> &matches12_inout,
-    const Sophus::Sim3f     &similarity_camera2ToCamera1_in,
+    const Sophus::Sim3f     &relativeSimilarity_camera2ToCamera1_in,
     const float              threshold_in,
     int                     &bySim3_out)
 {
@@ -72,7 +72,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
     }
 
     // Transformation between cameras
-    Sophus::Sim3f S21 = similarity_camera2ToCamera1_in.inverse();
+    Sophus::Sim3f S21 = relativeSimilarity_camera2ToCamera1_in.inverse();
 
     std::vector<MapPoint *> mapPoints1{};
     if (p_keyframe1_in->getMapPointMatches(mapPoints1) !=
@@ -322,7 +322,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
                          __func__);
         }
         Eigen::Vector3f p3Dc2 = T2w * p3Dw;
-        Eigen::Vector3f p3Dc1 = similarity_camera2ToCamera1_in * p3Dc2;
+        Eigen::Vector3f p3Dc1 = relativeSimilarity_camera2ToCamera1_in * p3Dc2;
 
         // Depth must be positive
         if (p3Dc1(2) < 0.0)

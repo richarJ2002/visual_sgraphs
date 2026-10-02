@@ -109,7 +109,7 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
 std::unique_ptr<geometric::Plane>
     makeWallSegmentPlane(int                    id_in,
                          Map                   *p_map_in,
-                         const Eigen::Vector3d &normal_world_in,
+                         const Eigen::Vector3d &wallNormal_world_in,
                          const Eigen::Vector3d &pointOnPlane_world_in,
                          const Eigen::Vector3d &axisAlong_world_in,
                          double                 halfLength_m_in,
@@ -149,11 +149,11 @@ std::unique_ptr<geometric::Plane>
                      __func__);
     }
 
-    const double d = -normal_world_in.dot(pointOnPlane_world_in);
+    const double d = -wallNormal_world_in.dot(pointOnPlane_world_in);
     if (wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(
-            normal_world_in.x(),
-            normal_world_in.y(),
-            normal_world_in.z(),
+            wallNormal_world_in.x(),
+            wallNormal_world_in.y(),
+            wallNormal_world_in.z(),
             d))) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

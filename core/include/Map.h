@@ -302,10 +302,10 @@ class Map
     [[nodiscard]] MapStatus isImuInitialized(bool &isImuInitialized_out);
     [[nodiscard]] MapStatus setImuInitialized();
 
-    [[nodiscard]] MapStatus
-        applyScaledRotation(const Sophus::SE3f &T_in,
-                            const float         s_in,
-                            const bool          isScaledVelocity_in = false);
+    [[nodiscard]] MapStatus applyScaledRotation(
+        const Sophus::SE3f &alignmentPose_oldWorldToNewWorld_in,
+        const float         alignmentScale_in,
+        const bool          isScaledVelocity_in = false);
 
     [[nodiscard]] MapStatus isInertial(bool &isInertial_out);
     [[nodiscard]] MapStatus setInertialBA1();

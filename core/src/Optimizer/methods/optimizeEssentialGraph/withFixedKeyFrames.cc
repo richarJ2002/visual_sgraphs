@@ -51,7 +51,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     std::vector<vs_graphs::core::KeyFrame *> &fixedCorrectedKeyFrames_in,
     std::vector<vs_graphs::core::KeyFrame *> &nonFixedKeyFrames_in,
     std::vector<vs_graphs::core::MapPoint *> &nonCorrectedMapPoints_in,
-    const g2o::Sim3 &transform_mergeWorldToCurrentWorld_in)
+    const g2o::Sim3 &mergeTransform_mergeWorldToCurrentWorld_in)
 {
     // Variables
     g2o::SparseOptimizer optimizer;
@@ -152,9 +152,10 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3d pose_worldToCamera = fixedKeyFramePose.cast<double>();
-        g2o::Sim3    Siw(pose_worldToCamera.unit_quaternion(),
-                      pose_worldToCamera.translation(),
+        Sophus::SE3d cameraPose_worldToCamera =
+            fixedKeyFramePose.cast<double>();
+        g2o::Sim3 Siw(cameraPose_worldToCamera.unit_quaternion(),
+                      cameraPose_worldToCamera.translation(),
                       1.0);
 
         vCorrectedSwc[idCount] = Siw.inverse();
@@ -202,9 +203,10 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3d pose_worldToCamera = fixedKeyFramePose2.cast<double>();
-        g2o::Sim3    Siw(pose_worldToCamera.unit_quaternion(),
-                      pose_worldToCamera.translation(),
+        Sophus::SE3d cameraPose_worldToCamera =
+            fixedKeyFramePose2.cast<double>();
+        g2o::Sim3 Siw(cameraPose_worldToCamera.unit_quaternion(),
+                      cameraPose_worldToCamera.translation(),
                       1.0);
 
         vCorrectedSwc[idCount] = Siw.inverse();
@@ -261,9 +263,10 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3d pose_worldToCamera = fixedKeyFramePose3.cast<double>();
-        g2o::Sim3    Siw(pose_worldToCamera.unit_quaternion(),
-                      pose_worldToCamera.translation(),
+        Sophus::SE3d cameraPose_worldToCamera =
+            fixedKeyFramePose3.cast<double>();
+        g2o::Sim3 Siw(cameraPose_worldToCamera.unit_quaternion(),
+                      cameraPose_worldToCamera.translation(),
                       1.0);
 
         vScw[idCount] = Siw;
@@ -567,8 +570,8 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         g2o::Sim3 CorrectedSiw = p_sim3Vertex->estimate();
         vCorrectedSwc[idCount] = CorrectedSiw.inverse();
         double       s         = CorrectedSiw.scale();
-        Sophus::SE3d Tiw(CorrectedSiw.rotation(),
-                         CorrectedSiw.translation() / s);
+        Sophus::SE3d keyFramePose_worldToCamera(CorrectedSiw.rotation(),
+                                                CorrectedSiw.translation() / s);
 
         Sophus::SE3f fixedKeyFramePose4{};
         if (p_fixedKeyFrame->getPose(fixedKeyFramePose4) !=
@@ -590,7 +593,8 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          __func__);
         }
         p_fixedKeyFrame->twcBefMerge = fixedKeyFramePoseInverse;
-        if (p_fixedKeyFrame->setPose(Tiw.cast<float>()) !=
+        if (p_fixedKeyFrame->setPose(
+                keyFramePose_worldToCamera.cast<float>()) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -692,8 +696,9 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         else
         {
             Sophus::SE3f TNonCorrectedwr = p_referenceKeyFrame->twcBefMerge;
-            Sophus::SE3f Twr{};
-            if (p_referenceKeyFrame->getPoseInverse(Twr) !=
+            Sophus::SE3f referenceKeyFramePose_cameraToWorld{};
+            if (p_referenceKeyFrame->getPoseInverse(
+                    referenceKeyFramePose_cameraToWorld) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -712,7 +717,8 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                              __func__);
             }
             Eigen::Vector3f eigCorrectedP3Dw =
-                Twr * TNonCorrectedwr.inverse() * mapPointWorldPos;
+                referenceKeyFramePose_cameraToWorld *
+                TNonCorrectedwr.inverse() * mapPointWorldPos;
             if (p_mapPoint->setWorldPos(eigCorrectedP3Dw) !=
                 MapPointStatus::MAP_POINT_STATUS_SUCCESS)
             {
@@ -761,7 +767,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
             }
 
             if (p_mapPoint->setWorldPos(
-                    transform_mergeWorldToCurrentWorld_in
+                    mergeTransform_mergeWorldToCurrentWorld_in
                         .map(position_mergeWorld_m.cast<double>())
                         .cast<float>()) !=
                 MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -773,7 +779,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
             }
 
             if (p_mapPoint->setNormalVector(
-                    transform_mergeWorldToCurrentWorld_in.rotation()
+                    mergeTransform_mergeWorldToCurrentWorld_in.rotation()
                         .cast<float>() *
                     normal_mergeWorld) !=
                 MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -862,7 +868,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                 p_sourceMap_in,
                 keyFramePosesBefore_worldToCamera,
                 keyFramePosesAfter_worldToCamera,
-                transform_mergeWorldToCurrentWorld_in) !=
+                mergeTransform_mergeWorldToCurrentWorld_in) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(

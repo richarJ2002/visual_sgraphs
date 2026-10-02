@@ -44,7 +44,7 @@
  *                  see serializeMapSnapshot.cc.
  *
  *                  The JSON keys keep their original spelling (for example
- *                  "centroid_World_m" for the member centroid_world_m)
+ *                  "centroid_World_m" for RoomRecord::roomCentroid_world_m)
  *                  because saved snapshots and their digests use them.
  */
 
@@ -98,26 +98,26 @@ nlohmann::json serializeEntityRef(const EntityRef &value_in);
 nlohmann::json serializeRawPlaneRef(const RawPlaneRef &value_in);
 
 /*! @brief Serializes one RoomRecord. Every geometric field
- *  (centroid_world_m, boundaryCorners_world_m, observationGaps) is omitted
+ *  (roomCentroid_world_m, boundaryCorners_world_m, observationGaps) is omitted
  *  unless \p includeGeometry_in. */
 nlohmann::json serializeRoomRecord(const RoomRecord &value_in,
                                    bool              includeGeometry_in);
 
-/*! @brief Serializes one WallRecord. Every geometric field (equation_world,
- *  centroid_world_m, minPlaneU_m/maxPlaneU_m/minPlaneV_m/maxPlaneV_m,
- *  finiteSupportCount, observationCount, cloudGeneration,
- *  successfulRefitGeneration, observationOrigin_world_m) is omitted unless
- *  \p includeGeometry_in. */
+/*! @brief Serializes one WallRecord. Every geometric field
+ * (planeEquation_world, planeCentroid_world_m,
+ * minPlaneU_m/maxPlaneU_m/minPlaneV_m/maxPlaneV_m, finiteSupportCount,
+ * observationCount, cloudGeneration, successfulRefitGeneration,
+ * observationOrigin_world_m) is omitted unless \p includeGeometry_in. */
 nlohmann::json serializeWallRecord(const WallRecord &value_in,
                                    bool              includeGeometry_in);
 
 /*! @brief Serializes one PassageRecord. Every geometric field
- *  (equation_world, centroid_world_m, width_m, height_m,
+ *  (planeEquation_world, passageCentroid_world_m, width_m, height_m,
  *  knownSideDirection_world) is omitted unless \p includeGeometry_in. */
 nlohmann::json serializePassageRecord(const PassageRecord &value_in,
                                       bool                 includeGeometry_in);
 
-/*! @brief Serializes one FloorRecord. centroid_world_m and planeIdentity
+/*! @brief Serializes one FloorRecord. floorCentroid_world_m and planeIdentity
  *  are omitted unless \p includeGeometry_in. */
 nlohmann::json serializeFloorRecord(const FloorRecord &value_in,
                                     bool               includeGeometry_in);
@@ -154,7 +154,7 @@ nlohmann::json
     serializeMapCompletenessResult(const MapCompletenessResult &value_in);
 
 /*! @brief Serializes one OpenPassageHypothesisRecord. Every geometric field
- *  (centroid_world_m, openingRadius_m, heightSpan_m) is omitted unless
+ *  (openingCentroid_world_m, openingRadius_m, heightSpan_m) is omitted unless
  *  \p includeGeometry_in. */
 nlohmann::json serializeOpenPassageHypothesisRecord(
     const OpenPassageHypothesisRecord &value_in,
@@ -204,14 +204,14 @@ bool isMapCompletenessResultLessTotalOrder(const MapCompletenessResult &lhs_in,
  *  lexicographic via isEntityRefLess() over a sorted copy), floorRef (via
  *  isEntityRefLess()), groundPlaneRef (via isRawPlaneRefLess()),
  *  creationProvenanceReason). Deliberately never inspects a geometric
- *  field (centroid_world_m, boundaryCorners_world_m, observationGaps), so
+ *  field (roomCentroid_world_m, boundaryCorners_world_m, observationGaps), so
  *  a geometry-only perturbation of otherwise key-colliding records can
  *  never reorder or alter the topology-only projection's bytes. */
 bool isRoomRecordLessTopologyOnly(const RoomRecord &lhs_in,
                                   const RoomRecord &rhs_in);
 
 /*! @brief Same as isRoomRecordLessTopologyOnly(), additionally comparing
- *  every field the full-geometry projection emits (centroid_world_m,
+ *  every field the full-geometry projection emits (roomCentroid_world_m,
  *  boundaryCorners_world_m size/lexicographic via isVector3dLess(),
  *  observationGaps size/lexicographic by startAngle_rad then
  *  spanAngle_rad via isDoubleLess()) after the topology-only fields. */
@@ -227,7 +227,7 @@ bool isWallRecordLessTopologyOnly(const WallRecord &lhs_in,
                                   const WallRecord &rhs_in);
 
 /*! @brief Same as isRoomRecordLessFullGeometry(), for WallRecord's
- *  geometric fields (equation_world, centroid_world_m, minPlaneU_m,
+ *  geometric fields (planeEquation_world, planeCentroid_world_m, minPlaneU_m,
  *  maxPlaneU_m, minPlaneV_m, maxPlaneV_m, finiteSupportCount,
  *  observationCount, cloudGeneration, successfulRefitGeneration,
  *  observationOrigin_world_m presence/value), appended after the
@@ -245,8 +245,8 @@ bool isPassageRecordLessTopologyOnly(const PassageRecord &lhs_in,
                                      const PassageRecord &rhs_in);
 
 /*! @brief Same as isRoomRecordLessFullGeometry(), for PassageRecord's
- *  geometric fields (equation_world, centroid_world_m, width_m, height_m,
- *  knownSideDirection_world presence/value), appended after the
+ *  geometric fields (planeEquation_world, passageCentroid_world_m, width_m,
+ * height_m, knownSideDirection_world presence/value), appended after the
  *  topology-only fields. */
 bool isPassageRecordLessFullGeometry(const PassageRecord &lhs_in,
                                      const PassageRecord &rhs_in);
@@ -258,8 +258,8 @@ bool isFloorRecordLessTopologyOnly(const FloorRecord &lhs_in,
                                    const FloorRecord &rhs_in);
 
 /*! @brief Same as isRoomRecordLessFullGeometry(), for FloorRecord's
- *  geometric fields (centroid_world_m, planeIdentity presence, then
- *  equation_world/finiteSupportCount/observationCount), appended after
+ *  geometric fields (floorCentroid_world_m, planeIdentity presence, then
+ *  planeEquation_world/finiteSupportCount/observationCount), appended after
  *  the topology-only fields. */
 bool isFloorRecordLessFullGeometry(const FloorRecord &lhs_in,
                                    const FloorRecord &rhs_in);
@@ -279,16 +279,16 @@ bool isMapSnapshotLessTotalOrder(const MapSnapshot &lhs_in,
  *  field the topology-only projection emits (supportingWallRef via
  *  isRawPlaneRefLess(), confirmationCount, missedUpdateCount,
  *  lastConfirmedSkeletonFingerprint). Deliberately never inspects a
- *  geometric field (centroid_world_m, openingRadius_m, heightSpan_m), so a
- *  geometry-only perturbation of otherwise colliding records can never
- *  reorder or alter the topology-only projection's bytes. */
+ *  geometric field (openingCentroid_world_m, openingRadius_m, heightSpan_m), so
+ * a geometry-only perturbation of otherwise colliding records can never reorder
+ * or alter the topology-only projection's bytes. */
 bool isOpenPassageHypothesisRecordLessTopologyOnly(
     const OpenPassageHypothesisRecord &lhs_in,
     const OpenPassageHypothesisRecord &rhs_in);
 
 /*! @brief Same as isOpenPassageHypothesisRecordLessTopologyOnly(),
  *  additionally comparing every field the full-geometry projection emits
- *  (centroid_world_m via isVector3dLess(), openingRadius_m, heightSpan_m
+ *  (openingCentroid_world_m via isVector3dLess(), openingRadius_m, heightSpan_m
  *  via isDoubleLess()) after the topology-only fields. */
 bool isOpenPassageHypothesisRecordLessFullGeometry(
     const OpenPassageHypothesisRecord &lhs_in,

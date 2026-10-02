@@ -41,7 +41,7 @@ namespace geometric
 
 PlaneStatus Plane::transformPlaneEquation(
     const g2o::Plane3D &plane_in,
-    const g2o::Sim3    &transform_oldWorldToNewWorld_in,
+    const g2o::Sim3    &alignmentTransform_oldWorldToNewWorld_in,
     g2o::Plane3D       &transformedEquation_out)
 {
     /*!
@@ -59,14 +59,15 @@ PlaneStatus Plane::transformPlaneEquation(
      *
      */
 
-    const Eigen::Matrix3d rotation = transform_oldWorldToNewWorld_in.rotation()
-                                         .toRotationMatrix()
-                                         .cast<double>();
+    const Eigen::Matrix3d rotation =
+        alignmentTransform_oldWorldToNewWorld_in.rotation()
+            .toRotationMatrix()
+            .cast<double>();
 
     const Eigen::Vector3d translation =
-        transform_oldWorldToNewWorld_in.translation().cast<double>();
+        alignmentTransform_oldWorldToNewWorld_in.translation().cast<double>();
 
-    const double scale = transform_oldWorldToNewWorld_in.scale();
+    const double scale = alignmentTransform_oldWorldToNewWorld_in.scale();
 
     /* Original plane parameters */
     const Eigen::Vector3d normal = plane_in.normal().cast<double>();

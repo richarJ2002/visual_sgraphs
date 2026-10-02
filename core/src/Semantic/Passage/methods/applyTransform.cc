@@ -36,12 +36,12 @@ namespace core
 namespace semantic
 {
 
-PassageStatus
-    Passage::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
+PassageStatus Passage::applyTransform(
+    const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in)
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
 
-    centroid = transform_oldWorldToNewWorld_in.map(centroid);
+    centroid = alignmentTransform_oldWorldToNewWorld_in.map(centroid);
 
     Eigen::Vector4d passageEquation = globalEquation.coeffs();
     const double    normalNorm      = passageEquation.head<3>().norm();
@@ -51,14 +51,16 @@ PassageStatus
         passageEquation /= normalNorm;
 
         const Eigen::Vector3d transformedNormal =
-            transform_oldWorldToNewWorld_in.rotation().toRotationMatrix() *
+            alignmentTransform_oldWorldToNewWorld_in.rotation()
+                .toRotationMatrix() *
             passageEquation.head<3>();
 
         const Eigen::Vector3d translation =
-            transform_oldWorldToNewWorld_in.translation();
+            alignmentTransform_oldWorldToNewWorld_in.translation();
 
         const double transformedDistance =
-            transform_oldWorldToNewWorld_in.scale() * passageEquation(3) -
+            alignmentTransform_oldWorldToNewWorld_in.scale() *
+                passageEquation(3) -
             transformedNormal.dot(translation);
 
         globalEquation = g2o::Plane3D(Eigen::Vector4d(transformedNormal.x(),
@@ -79,18 +81,19 @@ PassageStatus
     if (knownSideProvenanceHasDirection)
     {
         const Eigen::Vector3d transformedDirection =
-            transform_oldWorldToNewWorld_in.rotation().toRotationMatrix() *
-            knownSideProvenance.direction_world;
+            alignmentTransform_oldWorldToNewWorld_in.rotation()
+                .toRotationMatrix() *
+            knownSideProvenance.knownSideDirection_world;
         if (transformedDirection.allFinite() &&
             transformedDirection.norm() > 1e-8)
         {
-            knownSideProvenance.direction_world =
+            knownSideProvenance.knownSideDirection_world =
                 transformedDirection.normalized();
         }
     }
 
     const double absoluteScale =
-        std::abs(transform_oldWorldToNewWorld_in.scale());
+        std::abs(alignmentTransform_oldWorldToNewWorld_in.scale());
 
     width *= absoluteScale;
     height *= absoluteScale;

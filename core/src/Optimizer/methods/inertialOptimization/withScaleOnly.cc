@@ -234,7 +234,8 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
     optimizer.activeRobustChi2();
     // Recover optimized data
     scale_inout = p_scaleVertex->estimate();
-    Rwg_inout   = p_gravityDirectionVertex->estimate().Rwg;
+    Rwg_inout =
+        p_gravityDirectionVertex->estimate().gravityRotation_gravityToWorld;
 
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }

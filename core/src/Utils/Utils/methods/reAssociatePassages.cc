@@ -342,7 +342,7 @@ UtilsStatus Utils::reAssociatePassages(Atlas *p_atlas_in)
                         __func__);
                 }
                 return p_room != nullptr && knownSideHasDirection2 &&
-                       knownSide.direction_world.dot(
+                       knownSide.knownSideDirection_world.dot(
                            roomCentroid - retainedCentroid_world_m) < -0.20;
             };
 

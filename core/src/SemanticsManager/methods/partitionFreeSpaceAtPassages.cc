@@ -167,32 +167,36 @@ SemanticsManagerStatus SemanticsManager::partitionFreeSpaceAtPassages(
         std::max<std::size_t>(p_sysParams->roomSeg.minClusterVertices, 1U);
     std::vector<std::vector<Eigen::Vector3d>> partitionedClusters_world_m;
 
-    for (const std::vector<Eigen::Vector3d> &cluster_world_m :
+    for (const std::vector<Eigen::Vector3d> &freeSpaceCluster_world_m :
          freeSpaceClusters_world_m_in)
     {
-        if (cluster_world_m.size() < minimumClusterVertexCount)
+        if (freeSpaceCluster_world_m.size() < minimumClusterVertexCount)
         {
             continue;
         }
 
-        std::vector<std::vector<std::size_t>> adjacency(cluster_world_m.size());
-        std::vector<bool> graphVertexWasObserved(cluster_world_m.size(), false);
-        std::size_t       cutEdgeCount = 0U;
+        std::vector<std::vector<std::size_t>> adjacency(
+            freeSpaceCluster_world_m.size());
+        std::vector<bool> graphVertexWasObserved(
+            freeSpaceCluster_world_m.size(),
+            false);
+        std::size_t cutEdgeCount = 0U;
 
         const auto findNearestClusterVertex =
-            [&cluster_world_m, maximumAssociationSquaredDistance_m2](
+            [&freeSpaceCluster_world_m, maximumAssociationSquaredDistance_m2](
                 const Eigen::Vector3d &edgePoint_world_m_in) -> std::size_t
         {
-            std::size_t nearestVertexIndex = cluster_world_m.size();
+            std::size_t nearestVertexIndex = freeSpaceCluster_world_m.size();
             double      nearestSquaredDistance_m2 =
                 maximumAssociationSquaredDistance_m2;
 
             for (std::size_t vertexIndex = 0U;
-                 vertexIndex < cluster_world_m.size();
+                 vertexIndex < freeSpaceCluster_world_m.size();
                  ++vertexIndex)
             {
                 const double squaredDistance_m2 =
-                    (cluster_world_m[vertexIndex] - edgePoint_world_m_in)
+                    (freeSpaceCluster_world_m[vertexIndex] -
+                     edgePoint_world_m_in)
                         .squaredNorm();
 
                 if (squaredDistance_m2 <= nearestSquaredDistance_m2)
@@ -213,8 +217,8 @@ SemanticsManagerStatus SemanticsManager::partitionFreeSpaceAtPassages(
             const std::size_t endVertexIndex =
                 findNearestClusterVertex(skeletonEdge_world_m.second);
 
-            if (startVertexIndex >= cluster_world_m.size() ||
-                endVertexIndex >= cluster_world_m.size() ||
+            if (startVertexIndex >= freeSpaceCluster_world_m.size() ||
+                endVertexIndex >= freeSpaceCluster_world_m.size() ||
                 startVertexIndex == endVertexIndex)
             {
                 continue;
@@ -268,7 +272,7 @@ SemanticsManagerStatus SemanticsManager::partitionFreeSpaceAtPassages(
                                                 true));
         const double graphCoverageRatio =
             static_cast<double>(observedGraphVertexCount) /
-            static_cast<double>(cluster_world_m.size());
+            static_cast<double>(freeSpaceCluster_world_m.size());
 
         /*
          * Preserve the upstream connected component when edge-to-vertex
@@ -277,16 +281,17 @@ SemanticsManagerStatus SemanticsManager::partitionFreeSpaceAtPassages(
         if (graphCoverageRatio < minimumGraphCoverageRatio ||
             cutEdgeCount == 0U)
         {
-            partitionedClusters_world_m.push_back(cluster_world_m);
+            partitionedClusters_world_m.push_back(freeSpaceCluster_world_m);
             continue;
         }
 
-        std::vector<bool> vertexWasVisited(cluster_world_m.size(), false);
+        std::vector<bool> vertexWasVisited(freeSpaceCluster_world_m.size(),
+                                           false);
         const std::size_t outputClusterCountBeforePartition =
             partitionedClusters_world_m.size();
 
         for (std::size_t seedVertexIndex = 0U;
-             seedVertexIndex < cluster_world_m.size();
+             seedVertexIndex < freeSpaceCluster_world_m.size();
              ++seedVertexIndex)
         {
             if (vertexWasVisited[seedVertexIndex] ||
@@ -296,14 +301,15 @@ SemanticsManagerStatus SemanticsManager::partitionFreeSpaceAtPassages(
             }
 
             std::vector<std::size_t>     pendingVertexIndices{seedVertexIndex};
-            std::vector<Eigen::Vector3d> component_world_m;
+            std::vector<Eigen::Vector3d> connectedComponent_world_m;
             vertexWasVisited[seedVertexIndex] = true;
 
             while (!pendingVertexIndices.empty())
             {
                 const std::size_t vertexIndex = pendingVertexIndices.back();
                 pendingVertexIndices.pop_back();
-                component_world_m.push_back(cluster_world_m[vertexIndex]);
+                connectedComponent_world_m.push_back(
+                    freeSpaceCluster_world_m[vertexIndex]);
 
                 for (const std::size_t neighbourIndex : adjacency[vertexIndex])
                 {
@@ -315,10 +321,10 @@ SemanticsManagerStatus SemanticsManager::partitionFreeSpaceAtPassages(
                 }
             }
 
-            if (component_world_m.size() >= minimumClusterVertexCount)
+            if (connectedComponent_world_m.size() >= minimumClusterVertexCount)
             {
                 partitionedClusters_world_m.push_back(
-                    std::move(component_world_m));
+                    std::move(connectedComponent_world_m));
             }
         }
 
@@ -331,7 +337,7 @@ SemanticsManagerStatus SemanticsManager::partitionFreeSpaceAtPassages(
         if (partitionedClusters_world_m.size() ==
             outputClusterCountBeforePartition)
         {
-            partitionedClusters_world_m.push_back(cluster_world_m);
+            partitionedClusters_world_m.push_back(freeSpaceCluster_world_m);
         }
     }
 

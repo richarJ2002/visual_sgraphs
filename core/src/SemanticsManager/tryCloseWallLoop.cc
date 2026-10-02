@@ -58,18 +58,19 @@ SemanticsManagerStatus tryCloseWallLoop(
                                    const FiniteWallSegment2d &secondSegment)
         {
             const Eigen::Vector2d firstMidpoint =
-                0.5 * (firstSegment.start_world_m + firstSegment.end_world_m) -
+                0.5 * (firstSegment.wallStart_world_m +
+                       firstSegment.wallEnd_world_m) -
                 roomCentroidGround_m_in;
             const Eigen::Vector2d secondMidpoint =
-                0.5 *
-                    (secondSegment.start_world_m + secondSegment.end_world_m) -
+                0.5 * (secondSegment.wallStart_world_m +
+                       secondSegment.wallEnd_world_m) -
                 roomCentroidGround_m_in;
 
             return std::atan2(firstMidpoint.y(), firstMidpoint.x()) <
                    std::atan2(secondMidpoint.y(), secondMidpoint.x());
         });
 
-    result.corners_world_m.reserve(wallSegments_in.size());
+    result.loopCorners_world_m.reserve(wallSegments_in.size());
 
     for (std::size_t wallIndex = 0U; wallIndex < wallSegments_in.size();
          ++wallIndex)
@@ -77,14 +78,14 @@ SemanticsManagerStatus tryCloseWallLoop(
         const FiniteWallSegment2d &currentWall = wallSegments_in[wallIndex];
         const FiniteWallSegment2d &nextWall =
             wallSegments_in[(wallIndex + 1U) % wallSegments_in.size()];
-        Eigen::Vector2d corner_world_m;
+        Eigen::Vector2d loopCorner_world_m;
         double          currentParameter = 0.0;
         double          nextParameter    = 0.0;
 
         bool hasIntersection{};
         if (intersectSupportingLines(currentWall,
                                      nextWall,
-                                     corner_world_m,
+                                     loopCorner_world_m,
                                      currentParameter,
                                      nextParameter,
                                      hasIntersection) !=
@@ -99,7 +100,7 @@ SemanticsManagerStatus tryCloseWallLoop(
         if (hasIntersection)
         {
             double currentCornerGap_m{};
-            if (pointToSegmentDistance_m(corner_world_m,
+            if (pointToSegmentDistance_m(loopCorner_world_m,
                                          currentWall,
                                          currentCornerGap_m) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
@@ -111,7 +112,7 @@ SemanticsManagerStatus tryCloseWallLoop(
                     __func__);
             }
             double nextCornerGap_m{};
-            if (pointToSegmentDistance_m(corner_world_m,
+            if (pointToSegmentDistance_m(loopCorner_world_m,
                                          nextWall,
                                          nextCornerGap_m) !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
@@ -127,17 +128,17 @@ SemanticsManagerStatus tryCloseWallLoop(
                     topologyParameters_in.maximumCornerGap_m &&
                 nextCornerGap_m <= topologyParameters_in.maximumCornerGap_m)
             {
-                result.corners_world_m.push_back(corner_world_m);
+                result.loopCorners_world_m.push_back(loopCorner_world_m);
                 continue;
             }
         }
 
         const std::array<std::pair<Eigen::Vector2d, Eigen::Vector2d>, 4>
             endpointPairs = {
-                {{currentWall.start_world_m, nextWall.start_world_m},
-                 {currentWall.start_world_m, nextWall.end_world_m},
-                 {currentWall.end_world_m, nextWall.start_world_m},
-                 {currentWall.end_world_m, nextWall.end_world_m}}};
+                {{currentWall.wallStart_world_m, nextWall.wallStart_world_m},
+                 {currentWall.wallStart_world_m, nextWall.wallEnd_world_m},
+                 {currentWall.wallEnd_world_m, nextWall.wallStart_world_m},
+                 {currentWall.wallEnd_world_m, nextWall.wallEnd_world_m}}};
 
         const std::pair<Eigen::Vector2d, Eigen::Vector2d>
             *p_nearestEndpointPair = std::min_element(
@@ -152,24 +153,24 @@ SemanticsManagerStatus tryCloseWallLoop(
         if ((p_nearestEndpointPair->first - p_nearestEndpointPair->second)
                 .norm() <= topologyParameters_in.maximumCornerGap_m)
         {
-            result.corners_world_m.push_back(
+            result.loopCorners_world_m.push_back(
                 0.5 *
                 (p_nearestEndpointPair->first + p_nearestEndpointPair->second));
             continue;
         }
 
-        result.corners_world_m.clear();
+        result.loopCorners_world_m.clear();
         closure_out = result;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    if (result.corners_world_m.size() == wallSegments_in.size())
+    if (result.loopCorners_world_m.size() == wallSegments_in.size())
     {
         result.hasOpenBoundary = false;
     }
     else
     {
-        result.corners_world_m.clear();
+        result.loopCorners_world_m.clear();
     }
 
     closure_out = result;

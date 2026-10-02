@@ -314,12 +314,12 @@ class Room
      *              equations so that the plane remains consistent
      *              with the merged map frame.
      *
-     * @param[in]    transform_oldWorldToNewWorld_in
+     * @param[in]    alignmentTransform_oldWorldToNewWorld_in
      *               Transform from the current plane frame to the
      *               new map frame.
      */
-    [[nodiscard]] RoomStatus
-        applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] RoomStatus applyTransform(
+        const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in);
 
     /*!
      * @brief        Returns the room identifier assigned by the atlas.
@@ -457,11 +457,11 @@ class Room
      * @brief        Sets the room's finite wall boundary corner
      *               points.
      *
-     * @param[in]    corners_world_m_in
+     * @param[in]    boundaryCorners_world_m_in
      *               Closed-loop corners in the world frame.
      */
     [[nodiscard]] RoomStatus setBoundaryCorners_world_m(
-        std::vector<Eigen::Vector3d> corners_world_m_in);
+        std::vector<Eigen::Vector3d> boundaryCorners_world_m_in);
 
     /*!
      * @brief        Returns the room's currently unobserved angular

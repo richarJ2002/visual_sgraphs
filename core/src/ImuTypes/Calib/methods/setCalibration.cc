@@ -30,12 +30,12 @@ namespace core
 namespace IMU
 {
 
-CalibStatus
-    Calib::setCalibration(const Sophus::SE3<float> &pose_cameraToBody_in,
-                          const float              &ng_in,
-                          const float              &na_in,
-                          const float              &ngw_in,
-                          const float              &naw_in)
+CalibStatus Calib::setCalibration(
+    const Sophus::SE3<float> &extrinsicPose_cameraToBody_in,
+    const float              &ng_in,
+    const float              &na_in,
+    const float              &ngw_in,
+    const float              &naw_in)
 {
     isCalibrationSet = true;
     const float ng2  = ng_in * ng_in;
@@ -44,7 +44,7 @@ CalibStatus
     const float naw2 = naw_in * naw_in;
 
     // Sophus/Eigen
-    mTbc = pose_cameraToBody_in;
+    mTbc = extrinsicPose_cameraToBody_in;
     mTcb = mTbc.inverse();
     Cov.diagonal() << ng2, ng2, ng2, na2, na2, na2;
     CovWalk.diagonal() << ngw2, ngw2, ngw2, naw2, naw2, naw2;

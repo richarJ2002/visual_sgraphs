@@ -41,17 +41,17 @@ namespace core
 
 bool VertexPose::write(std::ostream &outputStream_out) const
 {
-    std::vector<Eigen::Matrix<double, 3, 3>> rotation_worldToCamera =
+    std::vector<Eigen::Matrix<double, 3, 3>> cameraRotation_worldToCamera =
         _estimate.Rcw;
-    std::vector<Eigen::Matrix<double, 3, 1>> translation_worldToCamera =
+    std::vector<Eigen::Matrix<double, 3, 1>> cameraTranslation_worldToCamera =
         _estimate.tcw;
 
-    std::vector<Eigen::Matrix<double, 3, 3>> rotation_cameraToBody =
+    std::vector<Eigen::Matrix<double, 3, 3>> extrinsicRotation_cameraToBody =
         _estimate.Rbc;
-    std::vector<Eigen::Matrix<double, 3, 1>> translation_cameraToBody =
+    std::vector<Eigen::Matrix<double, 3, 1>> extrinsicTranslation_cameraToBody =
         _estimate.tbc;
 
-    const int cameraCount = translation_worldToCamera.size();
+    const int cameraCount = cameraTranslation_worldToCamera.size();
 
     for (int cameraIndex = 0; cameraIndex < cameraCount; cameraIndex++)
     {
@@ -59,29 +59,30 @@ bool VertexPose::write(std::ostream &outputStream_out) const
         {
             for (int columnIndex = 0; columnIndex < 3; columnIndex++)
                 outputStream_out
-                    << rotation_worldToCamera[cameraIndex](componentIndex,
-                                                           columnIndex)
+                    << cameraRotation_worldToCamera[cameraIndex](componentIndex,
+                                                                 columnIndex)
                     << " ";
         }
         for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
             outputStream_out
-                << translation_worldToCamera[cameraIndex](componentIndex)
+                << cameraTranslation_worldToCamera[cameraIndex](componentIndex)
                 << " ";
         }
 
         for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
             for (int columnIndex = 0; columnIndex < 3; columnIndex++)
-                outputStream_out
-                    << rotation_cameraToBody[cameraIndex](componentIndex,
-                                                          columnIndex)
-                    << " ";
+                outputStream_out << extrinsicRotation_cameraToBody[cameraIndex](
+                                        componentIndex,
+                                        columnIndex)
+                                 << " ";
         }
         for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
-            outputStream_out
-                << translation_cameraToBody[cameraIndex](componentIndex) << " ";
+            outputStream_out << extrinsicTranslation_cameraToBody[cameraIndex](
+                                    componentIndex)
+                             << " ";
         }
 
         size_t size2{};

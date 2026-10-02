@@ -71,13 +71,13 @@ class Passage
          * Unit world-frame direction from the passage toward the observing
          * side. It is independent of the arbitrary sign of the plane equation.
          */
-        Eigen::Vector3d direction_world{Eigen::Vector3d::Zero()};
+        Eigen::Vector3d knownSideDirection_world{Eigen::Vector3d::Zero()};
 
         [[nodiscard]] KnownSideProvenanceStatus
             hasDirection(bool &hasDirection_out) const
         {
-            hasDirection_out = direction_world.allFinite() &&
-                               direction_world.squaredNorm() > 0.99;
+            hasDirection_out = knownSideDirection_world.allFinite() &&
+                               knownSideDirection_world.squaredNorm() > 0.99;
             return KnownSideProvenanceStatus::
                 KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS;
         }
@@ -147,11 +147,11 @@ class Passage
      *              Updates the centroid, point cloud and plane equations so
      *              that the plane remains consistent with the merged map frame.
      *
-     * @param[in]   transform_oldWorldToNewWorld_in
+     * @param[in]   alignmentTransform_oldWorldToNewWorld_in
      *              Transform from the current plane frame to the new map frame.
      */
-    [[nodiscard]] PassageStatus
-        applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] PassageStatus applyTransform(
+        const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in);
 
     [[nodiscard]] PassageStatus getId(int &id_out) const;
     [[nodiscard]] PassageStatus setId(int value_in);
@@ -313,8 +313,8 @@ class Passage
         Passage::KnownSideProvenance &knownSideProvenance_out) const;
 
     /*! Stores a normalized, sign-stable observing-side direction. */
-    [[nodiscard]] PassageStatus
-        setKnownSideDirection(const Eigen::Vector3d &direction_world_in);
+    [[nodiscard]] PassageStatus setKnownSideDirection(
+        const Eigen::Vector3d &knownSideDirection_world_in);
 
     /*! Links the persisted known side to a room without changing its direction.
      */

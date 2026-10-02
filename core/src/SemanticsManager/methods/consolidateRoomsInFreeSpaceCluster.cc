@@ -84,7 +84,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
     }
 
     const auto distanceToCluster_m =
-        [&freeSpaceCluster_world_m_in](const Eigen::Vector3d &point_world_m_in)
+        [&freeSpaceCluster_world_m_in](
+            const Eigen::Vector3d &clusterPoint_world_m_in)
     {
         double minimumDistance_m = std::numeric_limits<double>::infinity();
 
@@ -93,9 +94,9 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
         {
             if (clusterPoint_world_m.allFinite())
             {
-                minimumDistance_m =
-                    std::min(minimumDistance_m,
-                             (point_world_m_in - clusterPoint_world_m).norm());
+                minimumDistance_m = std::min(
+                    minimumDistance_m,
+                    (clusterPoint_world_m_in - clusterPoint_world_m).norm());
             }
         }
 

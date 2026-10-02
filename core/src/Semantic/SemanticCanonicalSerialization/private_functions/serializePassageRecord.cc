@@ -83,10 +83,12 @@ nlohmann::json serializePassageRecord(const PassageRecord &value_in,
 
     if (includeGeometry_in)
     {
-        json["equation_World"]   = serializeVector4d(value_in.equation_world);
-        json["centroid_World_m"] = serializeVector3d(value_in.centroid_world_m);
-        json["width_m"]          = serializeDouble(value_in.width_m);
-        json["height_m"]         = serializeDouble(value_in.height_m);
+        json["equation_World"] =
+            serializeVector4d(value_in.planeEquation_world);
+        json["centroid_World_m"] =
+            serializeVector3d(value_in.passageCentroid_world_m);
+        json["width_m"]  = serializeDouble(value_in.width_m);
+        json["height_m"] = serializeDouble(value_in.height_m);
         if (value_in.knownSideDirection_world.has_value())
         {
             json["knownSideDirection_World"] =

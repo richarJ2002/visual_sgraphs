@@ -304,7 +304,8 @@ OptimizerStatus Optimizer::inertialOptimization(
     scale_inout = p_scaleVertex->estimate();
 
     IMU::Bias b(vb[3], vb[4], vb[5], vb[0], vb[1], vb[2]);
-    Rwg_inout = p_gravityDirectionVertex->estimate().Rwg;
+    Rwg_inout =
+        p_gravityDirectionVertex->estimate().gravityRotation_gravityToWorld;
 
     // Keyframes velocities and biases
     const size_t N = keyFrames.size();

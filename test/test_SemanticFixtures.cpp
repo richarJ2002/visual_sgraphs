@@ -182,7 +182,7 @@ TEST(SemanticFixtures, MakePassageWiresKnownAndFarSide)
         knownSideProvenance2{};
     ASSERT_EQ((passage.getKnownSideProvenance(knownSideProvenance2)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    EXPECT_TRUE(knownSideProvenance2.direction_world.isApprox(
+    EXPECT_TRUE(knownSideProvenance2.knownSideDirection_world.isApprox(
         Eigen::Vector3d(-1.0, 0.0, 0.0)));
     vs_graphs::core::semantic::Room *p_prospectiveRoom = nullptr;
     ASSERT_EQ((passage.getProspectiveRoom(p_prospectiveRoom)),

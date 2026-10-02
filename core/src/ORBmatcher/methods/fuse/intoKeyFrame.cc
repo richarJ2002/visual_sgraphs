@@ -45,7 +45,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                                   const bool                     right_in)
 {
     camera_models::geometriccamera::GeometricCamera *p_camera;
-    Sophus::SE3f                                     pose_worldToCamera;
+    Sophus::SE3f                                     cameraPose_worldToCamera;
     Eigen::Vector3f                                  cameraCenter_world;
 
     if (right_in)
@@ -59,7 +59,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        pose_worldToCamera = keyframeRightPose;
+        cameraPose_worldToCamera = keyframeRightPose;
         Eigen::Vector3f keyframeRightCameraCenter{};
         if (p_keyframe_inout->getRightCameraCenter(keyframeRightCameraCenter) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -83,7 +83,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        pose_worldToCamera = keyframePose;
+        cameraPose_worldToCamera = keyframePose;
         Eigen::Vector3f keyframeCameraCenter{};
         if (p_keyframe_inout->getCameraCenter(keyframeCameraCenter) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -157,7 +157,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector3f p3Dc = pose_worldToCamera * p3Dw;
+        Eigen::Vector3f p3Dc = cameraPose_worldToCamera * p3Dw;
 
         // Depth must be positive
         if (p3Dc(2) < 0.0f)

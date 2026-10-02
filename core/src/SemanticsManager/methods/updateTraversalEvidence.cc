@@ -393,7 +393,7 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                         previousCameraCenter_world_m - passageCentroid;
                     traversalDirection =
                         startFromPassage_world_m.dot(
-                            knownSide.direction_world) >= 0.0
+                            knownSide.knownSideDirection_world) >= 0.0
                             ? semantic::Passage::TraversalDirection::
                                   KNOWN_TO_FAR
                             : semantic::Passage::TraversalDirection::

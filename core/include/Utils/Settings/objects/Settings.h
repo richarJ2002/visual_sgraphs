@@ -374,14 +374,15 @@ class Settings
      * @brief        Returns the camera-to-body (IMU) transform read from
      *               IMU.T_b_c1.
      *
-     * @param[out]   pose_cameraToBody_out
+     * @param[out]   extrinsicPose_cameraToBody_out
      *               Extrinsic in single precision.
      *
      * @return       SETTINGS_STATUS_SUCCESS.
      */
-    [[nodiscard]] SettingsStatus Tbc(Sophus::SE3f &pose_cameraToBody_out)
+    [[nodiscard]] SettingsStatus
+        Tbc(Sophus::SE3f &extrinsicPose_cameraToBody_out)
     {
-        pose_cameraToBody_out = extrinsic_cameraToBody;
+        extrinsicPose_cameraToBody_out = extrinsicPose_cameraToBody;
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
@@ -919,7 +920,7 @@ class Settings
      *               stereo-inertial it is re-expressed for the rectified
      *               camera 1.
      */
-    Sophus::SE3f extrinsic_cameraToBody;
+    Sophus::SE3f extrinsicPose_cameraToBody;
     /*!
      * @brief        True to insert keyframes while lost.
      */

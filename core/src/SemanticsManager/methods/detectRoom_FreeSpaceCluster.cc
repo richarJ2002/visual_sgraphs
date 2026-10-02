@@ -243,7 +243,8 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
             }
 
             /* Extract the centroid of the wall */
-            const Eigen::Vector3d wallCentroid = wallGeometry.centroid_world_m;
+            const Eigen::Vector3d wallCentroid =
+                wallGeometry.planeCentroid_world_m;
 
             /* Find the distance from the wall centroid and cluster centroid */
             const double centroidDistance =
@@ -1515,7 +1516,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                 roomCentroid2,
                                 wallGetCentroid2.cast<double>(),
                                 evidence.p_supportingWall,
-                                evidence.centroid_world_m,
+                                evidence.openingCentroid_world_m,
                                 evidence.openingRadius_m,
                                 evidence.heightSpan_m,
                                 groundNormal_world,

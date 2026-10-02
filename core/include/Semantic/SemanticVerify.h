@@ -77,14 +77,14 @@ struct VerifyWallObservation
 
     /*! Canonically oriented via getWallNormalTowardRoom_world
      * (n.c_room + d > 0). */
-    Eigen::Vector3d normal_world{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d wallNormal_world{Eigen::Vector3d::Zero()};
 
-    /*! Plane equation offset paired with normal_world: getGlobalEquation()
+    /*! Plane equation offset paired with wallNormal_world: getGlobalEquation()
      * .coeffs()(3), i.e. n^T x + d = 0 -- NOT g2o::Plane3D::distance(),
      * which returns -d (Plane::transformPlaneEquation, Plane.cc:441-442). */
     double d{0.0};
 
-    Eigen::Vector3d centroid_world{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d wallCentroid_world{Eigen::Vector3d::Zero()};
 
     /*! Bounded, deterministic stride-sampled points from
      * Plane::getGeometrySnapshot().supportCloud. */
@@ -164,7 +164,7 @@ struct SemanticVerifyResult
     bool               hasPassed{false};
 
     /*! Maps room-A-frame points into room B's frame: x_B = R x_A + t. */
-    Eigen::Isometry3d transform_aToB{Eigen::Isometry3d::Identity()};
+    Eigen::Isometry3d roomTransform_roomAToRoomB{Eigen::Isometry3d::Identity()};
 
     std::vector<WallInlierPair> inliers;
     std::size_t                 candidateWallPairCount{0U};
@@ -244,12 +244,12 @@ class SemanticVerify
      * it, hasFloorGatePassed stays at its default false and
      * toVerificationVerdict() reports a false negative even when both gates
      * genuinely passed. */
-    [[nodiscard]] static SemanticVerifyStatus
-        runFloorGate(SemanticVerifyResult    &result_inout,
-                     Map                     *p_survivingMap_in,
-                     Map                     *p_absorbedMap_in,
-                     const Eigen::Isometry3d &transform_absorbedToSurviving_in,
-                     bool                    &hasPassed_out);
+    [[nodiscard]] static SemanticVerifyStatus runFloorGate(
+        SemanticVerifyResult    &result_inout,
+        Map                     *p_survivingMap_in,
+        Map                     *p_absorbedMap_in,
+        const Eigen::Isometry3d &mergeTransform_absorbedToSurviving_in,
+        bool                    &hasPassed_out);
 
     /*! Evaluates copied room evidence under a proposed absorbed-to-surviving
      * map transform. Contradictory stable topology rejects, incomplete
@@ -258,7 +258,7 @@ class SemanticVerify
     [[nodiscard]] static SemanticVerifyStatus evaluateMergeAlignment(
         const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
         const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
-        const g2o::Sim3            &transform_absorbedToSurviving_in,
+        const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
         SemanticMergeGateResult    &result_out,
         const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
 
@@ -267,7 +267,7 @@ class SemanticVerify
     [[nodiscard]] static SemanticVerifyStatus evaluateMapMergeGate(
         Map                        *p_survivingMap_in,
         Map                        *p_absorbedMap_in,
-        const g2o::Sim3            &transform_absorbedToSurviving_in,
+        const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
         SemanticMergeGateResult    &result_out,
         const SemanticVerifyConfig &configuration_in = SemanticVerifyConfig());
 
@@ -304,7 +304,7 @@ class SemanticVerify
     [[nodiscard]] static SemanticVerifyStatus evaluateConsecutiveMergeGate(
         Map                     *p_survivingMap_in,
         Map                     *p_absorbedMap_in,
-        const g2o::Sim3         &transform_absorbedToSurviving_in,
+        const g2o::Sim3         &mergeTransform_absorbedToSurviving_in,
         SemanticMergeGateResult &result_out,
         const MapMergeConfig    &configuration_in);
 

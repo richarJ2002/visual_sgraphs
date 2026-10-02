@@ -44,19 +44,21 @@ bool isWallRecordLessFullGeometry(const WallRecord &lhs_in,
         return false;
     }
 
-    if (isVector4dLess(lhs_in.equation_world, rhs_in.equation_world))
+    if (isVector4dLess(lhs_in.planeEquation_world, rhs_in.planeEquation_world))
     {
         return true;
     }
-    if (isVector4dLess(rhs_in.equation_world, lhs_in.equation_world))
+    if (isVector4dLess(rhs_in.planeEquation_world, lhs_in.planeEquation_world))
     {
         return false;
     }
-    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m))
+    if (isVector3dLess(lhs_in.planeCentroid_world_m,
+                       rhs_in.planeCentroid_world_m))
     {
         return true;
     }
-    if (isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
+    if (isVector3dLess(rhs_in.planeCentroid_world_m,
+                       lhs_in.planeCentroid_world_m))
     {
         return false;
     }

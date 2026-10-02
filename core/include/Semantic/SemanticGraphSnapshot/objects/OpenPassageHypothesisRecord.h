@@ -57,8 +57,8 @@ struct OpenPassageHypothesisRecord
      *  pointer was null. */
     RawPlaneRef supportingWallRef;
 
-    /*! @brief OpenPassageEvidence::centroid_world_m at capture time. */
-    Eigen::Vector3d centroid_world_m{Eigen::Vector3d::Zero()};
+    /*! @brief OpenPassageEvidence::openingCentroid_world_m at capture time. */
+    Eigen::Vector3d openingCentroid_world_m{Eigen::Vector3d::Zero()};
 
     /*! @brief OpenPassageEvidence::confirmationCount at capture time. */
     std::size_t confirmationCount{0U};

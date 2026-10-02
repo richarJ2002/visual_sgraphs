@@ -73,12 +73,12 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
     }
 
     /* Evaluate every room once against the complete cluster wall set. */
-    for (vs_graphs::core::semantic::Room *p_room_world : allRooms_world)
+    for (vs_graphs::core::semantic::Room *p_mappedRoom : allRooms_world)
     {
         /* Skip room if invalid */
         bool isRoomBad{};
-        if (!(p_room_world == nullptr) &&
-            p_room_world->isBad(isRoomBad) !=
+        if (!(p_mappedRoom == nullptr) &&
+            p_mappedRoom->isBad(isRoomBad) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -86,14 +86,14 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_room_world == nullptr || isRoomBad)
+        if (p_mappedRoom == nullptr || isRoomBad)
         {
             continue;
         }
 
         /* Skip rooms already matched to another cluster in this cycle */
         int roomId{};
-        if (p_room_world->getId(roomId) !=
+        if (p_mappedRoom->getId(roomId) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -108,7 +108,7 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
 
         /* Extract room centroid */
         Eigen::Vector3d roomCenter_world{};
-        if (p_room_world->getCentroid(roomCenter_world) !=
+        if (p_mappedRoom->getCentroid(roomCenter_world) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -149,7 +149,7 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
 
         /* Extract the walls from the room */
         std::vector<vs_graphs::core::geometric::Plane *> roomWallsList{};
-        if (p_room_world->getWalls(roomWallsList) !=
+        if (p_mappedRoom->getWalls(roomWallsList) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -308,7 +308,7 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
 
                 bestSharedDistance = roomCenterRelClusterCenterDistance;
 
-                p_bestSharedRoom = p_room_world;
+                p_bestSharedRoom = p_mappedRoom;
             }
         }
 
@@ -349,7 +349,7 @@ SemanticsManagerStatus SemanticsManager::associateRooms(
         {
             nearestDistance = roomCenterRelClusterCenterDistance;
 
-            p_nearestRoom = p_room_world;
+            p_nearestRoom = p_mappedRoom;
         }
     }
 

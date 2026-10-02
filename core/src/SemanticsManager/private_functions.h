@@ -56,7 +56,7 @@ struct FiniteWallSegment2d
      * @frame       World, projected onto the two ground axes
      * @units       metres
      */
-    Eigen::Vector2d start_world_m = Eigen::Vector2d::Zero();
+    Eigen::Vector2d wallStart_world_m = Eigen::Vector2d::Zero();
 
     /*!
      * @brief       Second end of the wall on the ground plane.
@@ -64,7 +64,7 @@ struct FiniteWallSegment2d
      * @frame       World, projected onto the two ground axes
      * @units       metres
      */
-    Eigen::Vector2d end_world_m = Eigen::Vector2d::Zero();
+    Eigen::Vector2d wallEnd_world_m = Eigen::Vector2d::Zero();
 
     /*!
      * @brief       Distance between the two ends.
@@ -136,7 +136,7 @@ struct WallAdmissionEvidence
 struct WallLoopClosure
 {
     bool                         hasOpenBoundary = true;
-    std::vector<Eigen::Vector2d> corners_world_m;
+    std::vector<Eigen::Vector2d> loopCorners_world_m;
 };
 
 /*!
@@ -259,7 +259,7 @@ struct WallLoopClosure
  * @param[in]       secondSegment_in
  *                  Second wall segment.
  *
- * @param[out]      intersection_world_m_out
+ * @param[out]      lineIntersection_world_m_out
  *                  Intersection in horizontal world axes.
  *
  * @param[out]      firstParameter_out
@@ -276,7 +276,7 @@ struct WallLoopClosure
 [[nodiscard]] SemanticsManagerStatus
     intersectSupportingLines(const FiniteWallSegment2d &firstSegment_in,
                              const FiniteWallSegment2d &secondSegment_in,
-                             Eigen::Vector2d &intersection_world_m_out,
+                             Eigen::Vector2d &lineIntersection_world_m_out,
                              double          &firstParameter_out,
                              double          &secondParameter_out,
                              bool            &hasIntersection_out);
@@ -285,7 +285,7 @@ struct WallLoopClosure
  * @brief Returns the Euclidean distance from a point to a finite segment.
  */
 [[nodiscard]] SemanticsManagerStatus
-    pointToSegmentDistance_m(const Eigen::Vector2d     &point_world_m_in,
+    pointToSegmentDistance_m(const Eigen::Vector2d     &queryPoint_world_m_in,
                              const FiniteWallSegment2d &segment_in,
                              double                    &distance_m_out);
 

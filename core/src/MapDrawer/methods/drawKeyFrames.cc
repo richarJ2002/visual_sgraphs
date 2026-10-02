@@ -92,11 +92,12 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Matrix4f pose_cameraToWorld = keyFramePoseInverse.matrix();
+            Eigen::Matrix4f cameraPose_cameraToWorld =
+                keyFramePoseInverse.matrix();
 
             glPushMatrix();
 
-            glMultMatrixf(pose_cameraToWorld.data());
+            glMultMatrixf(cameraPose_cameraToWorld.data());
 
             KeyFrame *p_keyFrameParent = nullptr;
             if (p_keyFrame->getParent(p_keyFrameParent) !=
@@ -387,13 +388,13 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Matrix4f pose_cameraToWorld =
+                Eigen::Matrix4f cameraPose_cameraToWorld =
                     keyFramePoseInverse2.matrix();
                 unsigned int indexColor = p_keyFrame->originMapId;
 
                 glPushMatrix();
 
-                glMultMatrixf(pose_cameraToWorld.data());
+                glMultMatrixf(cameraPose_cameraToWorld.data());
 
                 KeyFrame *p_parent2 = nullptr;
                 if (mapKeyFrames[keyFrameIndex]->getParent(p_parent2) !=

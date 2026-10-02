@@ -80,8 +80,8 @@ SystemStatus System::saveKeyFrameTrajectoryTUM(const std::string &filename_in)
         if (keyFrameIsBad)
             continue;
 
-        Sophus::SE3f pose_cameraToWorld{};
-        if (p_keyFrame->getPoseInverse(pose_cameraToWorld) !=
+        Sophus::SE3f cameraPose_cameraToWorld{};
+        if (p_keyFrame->getPoseInverse(cameraPose_cameraToWorld) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -89,8 +89,8 @@ SystemStatus System::saveKeyFrameTrajectoryTUM(const std::string &filename_in)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Quaternionf q = pose_cameraToWorld.unit_quaternion();
-        Eigen::Vector3f    t = pose_cameraToWorld.translation();
+        Eigen::Quaternionf q = cameraPose_cameraToWorld.unit_quaternion();
+        Eigen::Vector3f    t = cameraPose_cameraToWorld.translation();
         f << std::setprecision(6) << p_keyFrame->timeStamp
           << std::setprecision(7) << " " << t(0) << " " << t(1) << " " << t(2)
           << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()

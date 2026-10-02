@@ -174,8 +174,9 @@ class Tracking
     }
 
     [[nodiscard]] TrackingStatus
-        getCamTwc(Sophus::SE3f &pose_cameraToWorld_out) const;
-    [[nodiscard]] TrackingStatus getImuTwb(Sophus::SE3f &pose_bodyToWorld_out);
+        getCamTwc(Sophus::SE3f &cameraPose_cameraToWorld_out) const;
+    [[nodiscard]] TrackingStatus
+        getImuTwb(Sophus::SE3f &bodyPose_bodyToWorld_out);
     [[nodiscard]] TrackingStatus getImuVwb(Eigen::Vector3f &imuVwb_out) const;
     [[nodiscard]] TrackingStatus
         isImuPreintegrated(bool &isImuPreintegrated_out) const;

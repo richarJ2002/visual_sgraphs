@@ -66,8 +66,8 @@ SystemStatus System::saveTrajectoryKITTI(const std::string &filename_in)
 
     // Transform all keyframes so that the first keyframe is at the origin.
     // After a loop closure the first keyframe might not be at the origin.
-    Sophus::SE3f Tow{};
-    if (keyFrames[0]->getPoseInverse(Tow) !=
+    Sophus::SE3f firstKeyFramePose_cameraToWorld{};
+    if (keyFrames[0]->getPoseInverse(firstKeyFramePose_cameraToWorld) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -98,7 +98,7 @@ SystemStatus System::saveTrajectoryKITTI(const std::string &filename_in)
     {
         vs_graphs::core::KeyFrame *p_keyFrame = *rits;
 
-        Sophus::SE3f Trw;
+        Sophus::SE3f referenceKeyFramePose_firstKeyFrameToCamera;
 
         if (!p_keyFrame)
             continue;
@@ -118,7 +118,8 @@ SystemStatus System::saveTrajectoryKITTI(const std::string &filename_in)
             {
                 break;
             }
-            Trw                        = Trw * p_keyFrame->tcp;
+            referenceKeyFramePose_firstKeyFrameToCamera =
+                referenceKeyFramePose_firstKeyFrameToCamera * p_keyFrame->tcp;
             KeyFrame *p_keyFrameParent = nullptr;
             if (p_keyFrame->getParent(p_keyFrameParent) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -140,24 +141,31 @@ SystemStatus System::saveTrajectoryKITTI(const std::string &filename_in)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Trw = Trw * keyFramePose * Tow;
+        referenceKeyFramePose_firstKeyFrameToCamera =
+            referenceKeyFramePose_firstKeyFrameToCamera * keyFramePose *
+            firstKeyFramePose_cameraToWorld;
 
-        Sophus::SE3f    pose_worldToCamera = (*lit) * Trw;
-        Sophus::SE3f    pose_cameraToWorld = pose_worldToCamera.inverse();
-        Eigen::Matrix3f rotation_cameraToWorld =
-            pose_cameraToWorld.rotationMatrix();
-        Eigen::Vector3f translation_cameraToWorld =
-            pose_cameraToWorld.translation();
+        Sophus::SE3f cameraPose_worldToCamera =
+            (*lit) * referenceKeyFramePose_firstKeyFrameToCamera;
+        Sophus::SE3f cameraPose_cameraToWorld =
+            cameraPose_worldToCamera.inverse();
+        Eigen::Matrix3f cameraRotation_cameraToWorld =
+            cameraPose_cameraToWorld.rotationMatrix();
+        Eigen::Vector3f cameraTranslation_cameraToWorld =
+            cameraPose_cameraToWorld.translation();
 
-        f << std::setprecision(9) << rotation_cameraToWorld(0, 0) << " "
-          << rotation_cameraToWorld(0, 1) << " " << rotation_cameraToWorld(0, 2)
-          << " " << translation_cameraToWorld(0) << " "
-          << rotation_cameraToWorld(1, 0) << " " << rotation_cameraToWorld(1, 1)
-          << " " << rotation_cameraToWorld(1, 2) << " "
-          << translation_cameraToWorld(1) << " " << rotation_cameraToWorld(2, 0)
-          << " " << rotation_cameraToWorld(2, 1) << " "
-          << rotation_cameraToWorld(2, 2) << " " << translation_cameraToWorld(2)
-          << std::endl;
+        f << std::setprecision(9) << cameraRotation_cameraToWorld(0, 0) << " "
+          << cameraRotation_cameraToWorld(0, 1) << " "
+          << cameraRotation_cameraToWorld(0, 2) << " "
+          << cameraTranslation_cameraToWorld(0) << " "
+          << cameraRotation_cameraToWorld(1, 0) << " "
+          << cameraRotation_cameraToWorld(1, 1) << " "
+          << cameraRotation_cameraToWorld(1, 2) << " "
+          << cameraTranslation_cameraToWorld(1) << " "
+          << cameraRotation_cameraToWorld(2, 0) << " "
+          << cameraRotation_cameraToWorld(2, 1) << " "
+          << cameraRotation_cameraToWorld(2, 2) << " "
+          << cameraTranslation_cameraToWorld(2) << std::endl;
     }
     f.close();
 

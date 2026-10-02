@@ -115,8 +115,8 @@ SemanticGraphSnapshotStatus
                      "status although it cannot fail; continuing as before.",
                      __func__);
     }
-    record.equation_world            = geometry.equation_world;
-    record.centroid_world_m          = geometry.centroid_world_m;
+    record.planeEquation_world       = geometry.planeEquation_world;
+    record.planeCentroid_world_m     = geometry.planeCentroid_world_m;
     record.minPlaneU_m               = geometry.minPlaneU_m;
     record.maxPlaneU_m               = geometry.maxPlaneU_m;
     record.minPlaneV_m               = geometry.minPlaneV_m;

@@ -53,7 +53,7 @@ SemanticVerifyStatus
     for (const Eigen::Vector3d &pointA : wallA_in.supportSample_world)
     {
         const Eigen::Vector3d pointB = rotation_in * pointA + translation_in;
-        sum += std::abs(wallB_in.normal_world.dot(pointB) + wallB_in.d);
+        sum += std::abs(wallB_in.wallNormal_world.dot(pointB) + wallB_in.d);
         ++count;
     }
     const Eigen::Matrix3d rotationInverse = rotation_in.transpose();
@@ -63,7 +63,7 @@ SemanticVerifyStatus
     {
         const Eigen::Vector3d pointA =
             rotationInverse * pointB + translationInverse;
-        sum += std::abs(wallA_in.normal_world.dot(pointA) + wallA_in.d);
+        sum += std::abs(wallA_in.wallNormal_world.dot(pointA) + wallA_in.d);
         ++count;
     }
     distance_out = count == 0U ? 0.0 : sum / static_cast<double>(count);

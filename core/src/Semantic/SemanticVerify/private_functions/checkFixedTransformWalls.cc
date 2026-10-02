@@ -70,7 +70,7 @@ SemanticVerifyStatus checkFixedTransformWalls(
     for (const VerifyWallObservation &absorbedWall : absorbedWalls_in)
     {
         const Eigen::Vector3d transformedNormal =
-            rotation * absorbedWall.normal_world;
+            rotation * absorbedWall.wallNormal_world;
         const double transformedOffset =
             scale * absorbedWall.d - transformedNormal.dot(translation);
         if (!transformedNormal.allFinite() || !std::isfinite(transformedOffset))
@@ -88,10 +88,10 @@ SemanticVerifyStatus checkFixedTransformWalls(
             }
             const VerifyWallObservation &survivingWall =
                 survivingWalls_in[index];
-            const double cosine =
-                std::clamp(transformedNormal.dot(survivingWall.normal_world),
-                           -1.0,
-                           1.0);
+            const double cosine = std::clamp(
+                transformedNormal.dot(survivingWall.wallNormal_world),
+                -1.0,
+                1.0);
             const double angle_deg =
                 std::acos(cosine) * 180.0 / std::acos(-1.0);
             const double offset_m =

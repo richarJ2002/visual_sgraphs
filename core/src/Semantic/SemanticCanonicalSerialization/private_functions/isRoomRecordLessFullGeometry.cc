@@ -52,11 +52,13 @@ bool isRoomRecordLessFullGeometry(const RoomRecord &lhs_in,
         return false;
     }
 
-    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m))
+    if (isVector3dLess(lhs_in.roomCentroid_world_m,
+                       rhs_in.roomCentroid_world_m))
     {
         return true;
     }
-    if (isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
+    if (isVector3dLess(rhs_in.roomCentroid_world_m,
+                       lhs_in.roomCentroid_world_m))
     {
         return false;
     }

@@ -53,11 +53,12 @@ SemanticsManagerStatus segmentCrossesForeignWall(
     }
 
     FiniteWallSegment2d testSegment;
-    testSegment.start_world_m = {
+    testSegment.wallStart_world_m = {
         segmentStart_world_m_in.dot(groundAxisU_world_in),
         segmentStart_world_m_in.dot(groundAxisV_world_in)};
-    testSegment.end_world_m = {segmentEnd_world_m_in.dot(groundAxisU_world_in),
-                               segmentEnd_world_m_in.dot(groundAxisV_world_in)};
+    testSegment.wallEnd_world_m = {
+        segmentEnd_world_m_in.dot(groundAxisU_world_in),
+        segmentEnd_world_m_in.dot(groundAxisV_world_in)};
 
     for (vs_graphs::core::semantic::Room *p_room : allRooms_in)
     {
@@ -114,14 +115,14 @@ SemanticsManagerStatus segmentCrossesForeignWall(
                 continue;
             }
 
-            Eigen::Vector2d intersection_world_m;
+            Eigen::Vector2d lineIntersection_world_m;
             double          testParameter = 0.0;
             double          wallParameter = 0.0;
 
             bool hasIntersection{};
             if (intersectSupportingLines(testSegment,
                                          wallSegment,
-                                         intersection_world_m,
+                                         lineIntersection_world_m,
                                          testParameter,
                                          wallParameter,
                                          hasIntersection) !=

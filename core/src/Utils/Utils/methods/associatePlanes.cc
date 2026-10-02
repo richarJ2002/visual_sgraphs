@@ -244,10 +244,10 @@ UtilsStatus Utils::associatePlanes(
          * identity.
          */
         g2o::Plane3D mappedPlaneInGivenFrame{};
-        if (Utils::applyPoseToPlane(keyframePose_in,
-                                    g2o::Plane3D(mappedGeometry.equation_world),
-                                    mappedPlaneInGivenFrame) !=
-            UtilsStatus::UTILS_STATUS_SUCCESS)
+        if (Utils::applyPoseToPlane(
+                keyframePose_in,
+                g2o::Plane3D(mappedGeometry.planeEquation_world),
+                mappedPlaneInGivenFrame) != UtilsStatus::UTILS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                          "%s: applyPoseToPlane returned a failure status "
@@ -359,7 +359,8 @@ UtilsStatus Utils::associatePlanes(
             useWallExtension && areCompatible;
 
         /* Extract the global mapped-plane centroid */
-        const Eigen::Vector3d mappedCentroid = mappedGeometry.centroid_world_m;
+        const Eigen::Vector3d mappedCentroid =
+            mappedGeometry.planeCentroid_world_m;
 
         /* Calculate the global centroid distance */
         const double centroidDistance = (givenCentroid - mappedCentroid).norm();

@@ -38,14 +38,15 @@ SemanticVerifyStatus SemanticVerify::runFloorGate(
     SemanticVerifyResult    &result_inout,
     core::Map               *p_survivingMap_in,
     core::Map               *p_absorbedMap_in,
-    const Eigen::Isometry3d &transform_absorbedToSurviving_in,
+    const Eigen::Isometry3d &mergeTransform_absorbedToSurviving_in,
     bool                    &hasPassed_out)
 {
-    const g2o::Sim3 transform(transform_absorbedToSurviving_in.linear(),
-                              transform_absorbedToSurviving_in.translation(),
-                              1.0);
-    std::string     resultText;
-    bool            passed{};
+    const g2o::Sim3 transform(
+        mergeTransform_absorbedToSurviving_in.linear(),
+        mergeTransform_absorbedToSurviving_in.translation(),
+        1.0);
+    std::string resultText;
+    bool        passed{};
     if (verifyLoopMergeFloors(p_survivingMap_in,
                               p_absorbedMap_in,
                               transform,

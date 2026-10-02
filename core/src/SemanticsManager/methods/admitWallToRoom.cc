@@ -361,14 +361,14 @@ SemanticsManagerStatus
             continue;
         }
 
-        Eigen::Vector2d intersection_world_m;
+        Eigen::Vector2d lineIntersection_world_m;
         double          candidateParameter = 0.0;
         double          existingParameter  = 0.0;
 
         bool hasIntersection{};
         if (intersectSupportingLines(candidateSegment,
                                      existingSegment,
-                                     intersection_world_m,
+                                     lineIntersection_world_m,
                                      candidateParameter,
                                      existingParameter,
                                      hasIntersection) !=

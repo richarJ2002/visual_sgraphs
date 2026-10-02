@@ -130,12 +130,13 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
         {
             vScw[idCount]       = correctedPoseIt->second;
             const g2o::Sim3 Swc = correctedPoseIt->second.inverse();
-            Eigen::Matrix3d rotation_cameraToWorld =
+            Eigen::Matrix3d cameraRotation_cameraToWorld =
                 Swc.rotation().toRotationMatrix();
-            Eigen::Vector3d translation_cameraToWorld = Swc.translation();
-            p_pose4DofVertex = new VertexPose4DoF(rotation_cameraToWorld,
-                                                  translation_cameraToWorld,
-                                                  p_keyFrame);
+            Eigen::Vector3d cameraTranslation_cameraToWorld = Swc.translation();
+            p_pose4DofVertex =
+                new VertexPose4DoF(cameraRotation_cameraToWorld,
+                                   cameraTranslation_cameraToWorld,
+                                   p_keyFrame);
         }
         else
         {
@@ -148,9 +149,9 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            Sophus::SE3d pose_worldToCamera = keyFramePose.cast<double>();
-            g2o::Sim3    Siw(pose_worldToCamera.unit_quaternion(),
-                          pose_worldToCamera.translation(),
+            Sophus::SE3d cameraPose_worldToCamera = keyFramePose.cast<double>();
+            g2o::Sim3    Siw(cameraPose_worldToCamera.unit_quaternion(),
+                          cameraPose_worldToCamera.translation(),
                           1.0);
 
             vScw[idCount]    = Siw;
@@ -212,12 +213,15 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
 
             const g2o::Sim3 Sjw = vScw[loopKeyFrameId];
             const g2o::Sim3 Sij = Siw * Sjw.inverse();
-            Eigen::Matrix4d Tij;
-            Tij.block<3, 3>(0, 0) = Sij.rotation().toRotationMatrix();
-            Tij.block<3, 1>(0, 3) = Sij.translation();
-            Tij(3, 3)             = 1.;
+            Eigen::Matrix4d relativePose_loopConnectedKeyFrameToKeyFrame;
+            relativePose_loopConnectedKeyFrameToKeyFrame.block<3, 3>(0, 0) =
+                Sij.rotation().toRotationMatrix();
+            relativePose_loopConnectedKeyFrameToKeyFrame.block<3, 1>(0, 3) =
+                Sij.translation();
+            relativePose_loopConnectedKeyFrameToKeyFrame(3, 3) = 1.;
 
-            Edge4DoF *e = new Edge4DoF(Tij);
+            Edge4DoF *e =
+                new Edge4DoF(relativePose_loopConnectedKeyFrameToKeyFrame);
             e->setVertex(1,
                          dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                              optimizer.vertex(loopKeyFrameId)));
@@ -271,12 +275,14 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
                 Swj = vScw[loopKeyFrameId].inverse();
 
             g2o::Sim3       Sij = Siw * Swj;
-            Eigen::Matrix4d Tij;
-            Tij.block<3, 3>(0, 0) = Sij.rotation().toRotationMatrix();
-            Tij.block<3, 1>(0, 3) = Sij.translation();
-            Tij(3, 3)             = 1.;
+            Eigen::Matrix4d relativePose_parentKeyFrameToKeyFrame;
+            relativePose_parentKeyFrameToKeyFrame.block<3, 3>(0, 0) =
+                Sij.rotation().toRotationMatrix();
+            relativePose_parentKeyFrameToKeyFrame.block<3, 1>(0, 3) =
+                Sij.translation();
+            relativePose_parentKeyFrameToKeyFrame(3, 3) = 1.;
 
-            Edge4DoF *e = new Edge4DoF(Tij);
+            Edge4DoF *e = new Edge4DoF(relativePose_parentKeyFrameToKeyFrame);
             e->setVertex(0,
                          dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                              optimizer.vertex(idCount)));
@@ -304,12 +310,14 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
                 Swj = vScw[loopKeyFrameId].inverse();
 
             g2o::Sim3       Sij = Siw * Swj;
-            Eigen::Matrix4d Tij;
-            Tij.block<3, 3>(0, 0) = Sij.rotation().toRotationMatrix();
-            Tij.block<3, 1>(0, 3) = Sij.translation();
-            Tij(3, 3)             = 1.;
+            Eigen::Matrix4d relativePose_previousKeyFrameToKeyFrame;
+            relativePose_previousKeyFrameToKeyFrame.block<3, 3>(0, 0) =
+                Sij.rotation().toRotationMatrix();
+            relativePose_previousKeyFrameToKeyFrame.block<3, 1>(0, 3) =
+                Sij.translation();
+            relativePose_previousKeyFrameToKeyFrame(3, 3) = 1.;
 
-            Edge4DoF *e = new Edge4DoF(Tij);
+            Edge4DoF *e = new Edge4DoF(relativePose_previousKeyFrameToKeyFrame);
             e->setVertex(0,
                          dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                              optimizer.vertex(idCount)));
@@ -349,12 +357,15 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
                     Swl = vScw[p_loopKeyFrame->id].inverse();
 
                 g2o::Sim3       Sil = Siw * Swl;
-                Eigen::Matrix4d Til;
-                Til.block<3, 3>(0, 0) = Sil.rotation().toRotationMatrix();
-                Til.block<3, 1>(0, 3) = Sil.translation();
-                Til(3, 3)             = 1.;
+                Eigen::Matrix4d relativePose_loopEdgeKeyFrameToKeyFrame;
+                relativePose_loopEdgeKeyFrameToKeyFrame.block<3, 3>(0, 0) =
+                    Sil.rotation().toRotationMatrix();
+                relativePose_loopEdgeKeyFrameToKeyFrame.block<3, 1>(0, 3) =
+                    Sil.translation();
+                relativePose_loopEdgeKeyFrameToKeyFrame(3, 3) = 1.;
 
-                Edge4DoF *e = new Edge4DoF(Til);
+                Edge4DoF *e =
+                    new Edge4DoF(relativePose_loopEdgeKeyFrameToKeyFrame);
                 e->setVertex(0,
                              dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                  optimizer.vertex(idCount)));
@@ -425,11 +436,14 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
                         Swn = vScw[pKFn->id].inverse();
 
                     g2o::Sim3       Sin = Siw * Swn;
-                    Eigen::Matrix4d Tin;
-                    Tin.block<3, 3>(0, 0) = Sin.rotation().toRotationMatrix();
-                    Tin.block<3, 1>(0, 3) = Sin.translation();
-                    Tin(3, 3)             = 1.;
-                    Edge4DoF *e           = new Edge4DoF(Tin);
+                    Eigen::Matrix4d relativePose_covisibleKeyFrameToKeyFrame;
+                    relativePose_covisibleKeyFrameToKeyFrame.block<3, 3>(0, 0) =
+                        Sin.rotation().toRotationMatrix();
+                    relativePose_covisibleKeyFrameToKeyFrame.block<3, 1>(0, 3) =
+                        Sin.translation();
+                    relativePose_covisibleKeyFrameToKeyFrame(3, 3) = 1.;
+                    Edge4DoF *e =
+                        new Edge4DoF(relativePose_covisibleKeyFrameToKeyFrame);
                     e->setVertex(0,
                                  dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                      optimizer.vertex(idCount)));
@@ -465,8 +479,9 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
         g2o::Sim3 CorrectedSiw = g2o::Sim3(Ri, ti, 1.);
         vCorrectedSwc[idCount] = CorrectedSiw.inverse();
 
-        Sophus::SE3d Tiw(CorrectedSiw.rotation(), CorrectedSiw.translation());
-        if (p_mapKeyFrame->setPose(Tiw.cast<float>()) !=
+        Sophus::SE3d keyFramePose_worldToCamera(CorrectedSiw.rotation(),
+                                                CorrectedSiw.translation());
+        if (p_mapKeyFrame->setPose(keyFramePose_worldToCamera.cast<float>()) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

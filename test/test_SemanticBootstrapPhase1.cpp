@@ -724,8 +724,8 @@ TEST(SemanticBootstrapPhase1,
         knownSideProvenance{};
     ASSERT_EQ((canonicalPassage.getKnownSideProvenance(knownSideProvenance)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    EXPECT_TRUE(
-        knownSideProvenance.direction_world.isApprox(Eigen::Vector3d::UnitX()));
+    EXPECT_TRUE(knownSideProvenance.knownSideDirection_world.isApprox(
+        Eigen::Vector3d::UnitX()));
 }
 
 TEST(SemanticBootstrapPhase1,
@@ -786,8 +786,8 @@ TEST(SemanticBootstrapPhase1,
         knownSideProvenance{};
     ASSERT_EQ((canonicalPassage.getKnownSideProvenance(knownSideProvenance)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
-    EXPECT_TRUE(
-        knownSideProvenance.direction_world.isApprox(Eigen::Vector3d::UnitY()));
+    EXPECT_TRUE(knownSideProvenance.knownSideDirection_world.isApprox(
+        Eigen::Vector3d::UnitY()));
     std::vector<vs_graphs::core::geometric::Plane *> associateWalls{};
     ASSERT_EQ((canonicalPassage.getAssociateWalls(associateWalls)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);

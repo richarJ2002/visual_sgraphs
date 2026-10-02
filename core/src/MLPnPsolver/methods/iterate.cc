@@ -163,16 +163,18 @@ MLPnPsolverStatus MLPnPsolver::iterate(int   iterationCount_in,
                 bestInlierFlags = inlierFlags;
                 bestInlierCount = inlierCount;
 
-                cv::Mat rotation_worldToCamera(3, 3, CV_64F, mRi);
-                cv::Mat translation_worldToCamera(3, 1, CV_64F, mti);
-                rotation_worldToCamera.convertTo(rotation_worldToCamera,
-                                                 CV_32F);
-                translation_worldToCamera.convertTo(translation_worldToCamera,
-                                                    CV_32F);
+                cv::Mat cameraRotation_worldToCamera(3, 3, CV_64F, mRi);
+                cv::Mat cameraTranslation_worldToCamera(3, 1, CV_64F, mti);
+                cameraRotation_worldToCamera.convertTo(
+                    cameraRotation_worldToCamera,
+                    CV_32F);
+                cameraTranslation_worldToCamera.convertTo(
+                    cameraTranslation_worldToCamera,
+                    CV_32F);
                 mBestTcw.setIdentity();
                 Eigen::Matrix<float, 3, 3> matrix3f{};
                 if (utils::converter::Converter::toMatrix3f(
-                        rotation_worldToCamera,
+                        cameraRotation_worldToCamera,
                         matrix3f) !=
                     utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
                 {
@@ -185,7 +187,7 @@ MLPnPsolverStatus MLPnPsolver::iterate(int   iterationCount_in,
                 mBestTcw.block<3, 3>(0, 0) = matrix3f;
                 Eigen::Matrix<float, 3, 1> vector3f{};
                 if (utils::converter::Converter::toVector3f(
-                        translation_worldToCamera,
+                        cameraTranslation_worldToCamera,
                         vector3f) !=
                     utils::converter::ConverterStatus::CONVERTER_STATUS_SUCCESS)
                 {

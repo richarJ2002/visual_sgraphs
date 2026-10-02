@@ -155,8 +155,8 @@ OptimizerStatus Optimizer::bundleAdjustment(
         if (keyFrameIsBad)
             continue;
         g2o::VertexSE3Expmap *p_keyFramePoseVertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>    pose_worldToCamera{};
-        if (p_keyFrame->getPose(pose_worldToCamera) !=
+        Sophus::SE3<float>    cameraPose_worldToCamera{};
+        if (p_keyFrame->getPose(cameraPose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -164,9 +164,9 @@ OptimizerStatus Optimizer::bundleAdjustment(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_keyFramePoseVertex->setEstimate(
-            g2o::SE3Quat(pose_worldToCamera.unit_quaternion().cast<double>(),
-                         pose_worldToCamera.translation().cast<double>()));
+        p_keyFramePoseVertex->setEstimate(g2o::SE3Quat(
+            cameraPose_worldToCamera.unit_quaternion().cast<double>(),
+            cameraPose_worldToCamera.translation().cast<double>()));
         p_keyFramePoseVertex->setId(p_keyFrame->id);
         unsigned long mapInitKeyFrameId{};
         if (p_map->getInitKeyFrameId(mapInitKeyFrameId) !=
@@ -394,8 +394,9 @@ OptimizerStatus Optimizer::bundleAdjustment(
                     p_edge->setRobustKernel(p_robustKernel);
                     p_robustKernel->setDelta(huberThreshold2D);
 
-                    Sophus::SE3f Trl{};
-                    if (p_keyFrame->getRelativePoseTrl(Trl) !=
+                    Sophus::SE3f stereoPose_leftCameraToRightCamera{};
+                    if (p_keyFrame->getRelativePoseTrl(
+                            stereoPose_leftCameraToRightCamera) !=
                         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                     {
                         RCLCPP_ERROR(
@@ -404,9 +405,11 @@ OptimizerStatus Optimizer::bundleAdjustment(
                             "although it cannot fail; continuing as before.",
                             __func__);
                     }
-                    p_edge->mTrl =
-                        g2o::SE3Quat(Trl.unit_quaternion().cast<double>(),
-                                     Trl.translation().cast<double>());
+                    p_edge->mTrl = g2o::SE3Quat(
+                        stereoPose_leftCameraToRightCamera.unit_quaternion()
+                            .cast<double>(),
+                        stereoPose_leftCameraToRightCamera.translation()
+                            .cast<double>());
 
                     p_edge->p_camera = p_keyFrame->p_camera2;
 

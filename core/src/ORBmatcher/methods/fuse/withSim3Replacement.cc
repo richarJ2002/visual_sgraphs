@@ -38,20 +38,21 @@ namespace vs_graphs
 namespace core
 {
 
-ORBmatcherStatus ORBmatcher::fuse(KeyFrame      *p_keyframe_inout,
-                                  Sophus::Sim3f &similarity_worldToCamera_in,
-                                  const std::vector<MapPoint *> &points_in,
-                                  float                          threshold_in,
-                                  std::vector<MapPoint *> &replacePoints_inout,
-                                  int                     &fusedCount_out)
+ORBmatcherStatus
+    ORBmatcher::fuse(KeyFrame      *p_keyframe_inout,
+                     Sophus::Sim3f &cameraSimilarity_worldToCamera_in,
+                     const std::vector<MapPoint *> &points_in,
+                     float                          threshold_in,
+                     std::vector<MapPoint *>       &replacePoints_inout,
+                     int                           &fusedCount_out)
 {
     // Decompose Scw
-    Sophus::SE3f pose_worldToCamera =
-        Sophus::SE3f(similarity_worldToCamera_in.rotationMatrix(),
-                     similarity_worldToCamera_in.translation() /
-                         similarity_worldToCamera_in.scale());
+    Sophus::SE3f cameraPose_worldToCamera =
+        Sophus::SE3f(cameraSimilarity_worldToCamera_in.rotationMatrix(),
+                     cameraSimilarity_worldToCamera_in.translation() /
+                         cameraSimilarity_worldToCamera_in.scale());
     Eigen::Vector3f cameraCenter_world =
-        pose_worldToCamera.inverse().translation();
+        cameraPose_worldToCamera.inverse().translation();
 
     // Set of MapPoints already found in the KeyFrame
     std::set<MapPoint *> alreadyFounds{};
@@ -98,7 +99,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame      *p_keyframe_inout,
         }
 
         // Transform into Camera Coords.
-        Eigen::Vector3f p3Dc = pose_worldToCamera * p3Dw;
+        Eigen::Vector3f p3Dc = cameraPose_worldToCamera * p3Dw;
 
         // Depth must be positive
         if (p3Dc(2) < 0.0f)

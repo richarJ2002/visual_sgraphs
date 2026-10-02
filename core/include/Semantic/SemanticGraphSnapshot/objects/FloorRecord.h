@@ -61,7 +61,7 @@ struct FloorRecord
     std::optional<long unsigned int> declaredMapId;
 
     /*! @brief Floor::getCentroid() at capture time. */
-    Eigen::Vector3d centroid_world_m{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d floorCentroid_world_m{Eigen::Vector3d::Zero()};
 
     /*! @brief A single Floor::getPlaneIdentity() read; absent means the
      *  returned optional was empty (equivalently, Floor::hasPlaneIdentity()

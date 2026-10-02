@@ -147,9 +147,9 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        observation.wallId       = wallGetId;
-        observation.normal_world = coeffs.head<3>();
-        observation.d            = coeffs(3);
+        observation.wallId           = wallGetId;
+        observation.wallNormal_world = coeffs.head<3>();
+        observation.d                = coeffs(3);
         Eigen::Vector3d wallGetCentroid{};
         if (p_wall->getCentroid(wallGetCentroid) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -159,9 +159,9 @@ SemanticVerifyStatus SemanticVerify::collectWallObservations(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        observation.centroid_world = wallGetCentroid;
+        observation.wallCentroid_world = wallGetCentroid;
         bool isFiniteVector3{};
-        if (isFiniteVector(observation.centroid_world, isFiniteVector3) !=
+        if (isFiniteVector(observation.wallCentroid_world, isFiniteVector3) !=
             SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

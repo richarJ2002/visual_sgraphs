@@ -171,8 +171,9 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                             __func__);
                     }
                     segmentStart_world_m =
-                        passageCentroid + (minimumSideDistance_m * 2.0) *
-                                              knownSide.direction_world;
+                        passageCentroid +
+                        (minimumSideDistance_m * 2.0) *
+                            knownSide.knownSideDirection_world;
                 }
             }
         }
@@ -461,7 +462,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                 room_inoutCentroid,
                 wallGetCentroid2.cast<double>(),
                 evidence.p_supportingWall,
-                evidence.centroid_world_m,
+                evidence.openingCentroid_world_m,
                 evidence.openingRadius_m,
                 evidence.heightSpan_m,
                 groundNormal_world_in,

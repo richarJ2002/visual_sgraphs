@@ -152,8 +152,8 @@ class Plane
     struct GeometrySnapshot
     {
         pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr supportCloud;
-        Eigen::Vector4d equation_world{Eigen::Vector4d::Zero()};
-        Eigen::Vector3d centroid_world_m{Eigen::Vector3d::Zero()};
+        Eigen::Vector4d planeEquation_world{Eigen::Vector4d::Zero()};
+        Eigen::Vector3d planeCentroid_world_m{Eigen::Vector3d::Zero()};
         double          minPlaneU_m{0.0};
         double          maxPlaneU_m{0.0};
         double          minPlaneV_m{0.0};
@@ -416,11 +416,11 @@ class Plane
      *              Updates the centroid, point cloud and plane equations so
      *              that the plane remains consistent with the merged map frame.
      *
-     * @param[in]   transform_oldWorldToNewWorld_in
+     * @param[in]   alignmentTransform_oldWorldToNewWorld_in
      *              Transform from the current plane frame to the new map frame.
      */
-    [[nodiscard]] PlaneStatus
-        applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] PlaneStatus applyTransform(
+        const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in);
 
     /*!
      * @brief Aligns the complete finite plane geometry with an optimized
@@ -443,7 +443,7 @@ class Plane
      * @param[in]   plane_in
      *              The plane to be transfromed, passed by reference.
      *
-     * @param[in]   transform_oldWorldToNewWorld_in
+     * @param[in]   alignmentTransform_oldWorldToNewWorld_in
      *              The transform from the old world frame to the new world
      *              frame, passed by reference.
      *
@@ -451,10 +451,10 @@ class Plane
      * the new frame.
      * @return PLANE_STATUS_SUCCESS.
      */
-    [[nodiscard]] PlaneStatus
-        transformPlaneEquation(const g2o::Plane3D &plane_in,
-                               const g2o::Sim3 &transform_oldWorldToNewWorld_in,
-                               g2o::Plane3D    &transformedEquation_out);
+    [[nodiscard]] PlaneStatus transformPlaneEquation(
+        const g2o::Plane3D &plane_in,
+        const g2o::Sim3    &alignmentTransform_oldWorldToNewWorld_in,
+        g2o::Plane3D       &transformedEquation_out);
 
     /*!
      * @brief       Returns the atlas-assigned plane identifier.
@@ -557,8 +557,8 @@ class Plane
      * @brief       Stamps the world-frame camera position this face was first
      *              observed from. Intended to be called once, at creation.
      */
-    [[nodiscard]] PlaneStatus
-        setObservationOrigin_world(const Eigen::Vector3d &origin_world_m_in);
+    [[nodiscard]] PlaneStatus setObservationOrigin_world(
+        const Eigen::Vector3d &observationOrigin_world_m_in);
 
     /*!
      * @brief       Returns the world-frame camera position this face was first
@@ -708,8 +708,8 @@ class Plane
      */
     [[nodiscard]] PlaneStatus
         completeMapCloudRefit(std::uint64_t          sourceCloudGeneration_in,
-                              const Eigen::Vector3d &centroid_world_m_in,
-                              const g2o::Plane3D    &equation_world_in,
+                              const Eigen::Vector3d &planeCentroid_world_m_in,
+                              const g2o::Plane3D    &planeEquation_world_in,
                               std::size_t            finitePointCount_in,
                               bool                  &wasRefitPublished_out);
 

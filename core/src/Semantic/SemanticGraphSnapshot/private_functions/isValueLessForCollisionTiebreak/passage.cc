@@ -56,15 +56,20 @@ bool isValueLessForCollisionTiebreak(const PassageRecord &lhs_in,
     {
         return lhs_in.passageType < rhs_in.passageType;
     }
-    if (isVector4dLess(lhs_in.equation_world, rhs_in.equation_world) ||
-        isVector4dLess(rhs_in.equation_world, lhs_in.equation_world))
+    if (isVector4dLess(lhs_in.planeEquation_world,
+                       rhs_in.planeEquation_world) ||
+        isVector4dLess(rhs_in.planeEquation_world, lhs_in.planeEquation_world))
     {
-        return isVector4dLess(lhs_in.equation_world, rhs_in.equation_world);
+        return isVector4dLess(lhs_in.planeEquation_world,
+                              rhs_in.planeEquation_world);
     }
-    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m) ||
-        isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
+    if (isVector3dLess(lhs_in.passageCentroid_world_m,
+                       rhs_in.passageCentroid_world_m) ||
+        isVector3dLess(rhs_in.passageCentroid_world_m,
+                       lhs_in.passageCentroid_world_m))
     {
-        return isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m);
+        return isVector3dLess(lhs_in.passageCentroid_world_m,
+                              rhs_in.passageCentroid_world_m);
     }
     if (isDoubleLess(lhs_in.width_m, rhs_in.width_m) ||
         isDoubleLess(rhs_in.width_m, lhs_in.width_m))

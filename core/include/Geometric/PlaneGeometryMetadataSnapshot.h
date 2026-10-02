@@ -51,10 +51,10 @@ struct PlaneGeometryMetadataSnapshot
 {
   public:
     /*! @brief World-frame plane equation (nx, ny, nz, d). */
-    Eigen::Vector4d equation_world{Eigen::Vector4d::Zero()};
+    Eigen::Vector4d planeEquation_world{Eigen::Vector4d::Zero()};
 
     /*! @brief World-frame plane centroid, meters. */
-    Eigen::Vector3d centroid_world_m{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d planeCentroid_world_m{Eigen::Vector3d::Zero()};
 
     /*! @brief Minimum in-plane grid coordinate along axis U, meters. */
     double minPlaneU_m{0.0};

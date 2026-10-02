@@ -124,8 +124,8 @@ LoopClosingStatus LoopClosing::correctLoop()
 
     KeyFrameAndPose CorrectedSim3, NonCorrectedSim3;
     CorrectedSim3[p_currentKF] = mg2oLoopScw;
-    Sophus::SE3f pose_cameraToWorld{};
-    if (p_currentKF->getPoseInverse(pose_cameraToWorld) !=
+    Sophus::SE3f cameraPose_cameraToWorld{};
+    if (p_currentKF->getPoseInverse(cameraPose_cameraToWorld) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -133,8 +133,8 @@ LoopClosingStatus LoopClosing::correctLoop()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    Sophus::SE3f pose_worldToCamera{};
-    if (p_currentKF->getPose(pose_worldToCamera) !=
+    Sophus::SE3f cameraPose_worldToCamera{};
+    if (p_currentKF->getPose(cameraPose_worldToCamera) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -142,8 +142,8 @@ LoopClosingStatus LoopClosing::correctLoop()
                      "fail; continuing as before.",
                      __func__);
     }
-    g2o::Sim3 g2oScw(pose_worldToCamera.unit_quaternion().cast<double>(),
-                     pose_worldToCamera.translation().cast<double>(),
+    g2o::Sim3 g2oScw(cameraPose_worldToCamera.unit_quaternion().cast<double>(),
+                     cameraPose_worldToCamera.translation().cast<double>(),
                      1.0);
     NonCorrectedSim3[p_currentKF] = g2oScw;
 
@@ -199,8 +199,8 @@ LoopClosingStatus LoopClosing::correctLoop()
 
             if (p_keyFrame != p_currentKF)
             {
-                Sophus::SE3f Tiw{};
-                if (p_keyFrame->getPose(Tiw) !=
+                Sophus::SE3f connectedKeyFramePose_worldToCamera{};
+                if (p_keyFrame->getPose(connectedKeyFramePose_worldToCamera) !=
                     KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -209,8 +209,15 @@ LoopClosingStatus LoopClosing::correctLoop()
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Sophus::SE3d Tic = (Tiw * pose_cameraToWorld).cast<double>();
-                g2o::Sim3 g2oSic(Tic.unit_quaternion(), Tic.translation(), 1.0);
+                Sophus::SE3d relativePose_currentKeyFrameToConnectedKeyFrame =
+                    (connectedKeyFramePose_worldToCamera *
+                     cameraPose_cameraToWorld)
+                        .cast<double>();
+                g2o::Sim3 g2oSic(relativePose_currentKeyFrameToConnectedKeyFrame
+                                     .unit_quaternion(),
+                                 relativePose_currentKeyFrameToConnectedKeyFrame
+                                     .translation(),
+                                 1.0);
                 g2o::Sim3 g2oCorrectedSiw = g2oSic * mg2oLoopScw;
                 // Pose corrected with the Sim3 of the loop closure
                 CorrectedSim3[p_keyFrame] = g2oCorrectedSiw;
@@ -231,9 +238,12 @@ LoopClosingStatus LoopClosing::correctLoop()
                 }
 
                 // Pose without correction
-                g2o::Sim3 g2oSiw(Tiw.unit_quaternion().cast<double>(),
-                                 Tiw.translation().cast<double>(),
-                                 1.0);
+                g2o::Sim3 g2oSiw(
+                    connectedKeyFramePose_worldToCamera.unit_quaternion()
+                        .cast<double>(),
+                    connectedKeyFramePose_worldToCamera.translation()
+                        .cast<double>(),
+                    1.0);
                 NonCorrectedSim3[p_keyFrame] = g2oSiw;
             }
         }

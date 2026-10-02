@@ -71,7 +71,7 @@ SemanticsManagerStatus
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector4d wallEquation_world = wallGeometry.equation_world;
+    Eigen::Vector4d wallEquation_world = wallGeometry.planeEquation_world;
     const double    wallNormalNorm     = wallEquation_world.head<3>().norm();
 
     if (!wallEquation_world.allFinite() || wallNormalNorm < 1e-8)
@@ -175,14 +175,16 @@ SemanticsManagerStatus
         wallCentroid_world_m +
         (maximumWallCoordinate_m - centroidCoordinate_m) * wallTangent_world;
 
-    segment_inout.p_wall        = p_wall_in;
-    segment_inout.start_world_m = {
+    segment_inout.p_wall            = p_wall_in;
+    segment_inout.wallStart_world_m = {
         segmentStart_world_m.dot(groundAxisU_world_in),
         segmentStart_world_m.dot(groundAxisV_world_in)};
-    segment_inout.end_world_m = {segmentEnd_world_m.dot(groundAxisU_world_in),
-                                 segmentEnd_world_m.dot(groundAxisV_world_in)};
+    segment_inout.wallEnd_world_m = {
+        segmentEnd_world_m.dot(groundAxisU_world_in),
+        segmentEnd_world_m.dot(groundAxisV_world_in)};
     segment_inout.length_m =
-        (segment_inout.end_world_m - segment_inout.start_world_m).norm();
+        (segment_inout.wallEnd_world_m - segment_inout.wallStart_world_m)
+            .norm();
     std::size_t wallGetObservationCount{};
     if (p_wall_in->getObservationCount(wallGetObservationCount) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -198,8 +200,8 @@ SemanticsManagerStatus
             1U)) *
         std::sqrt(std::max(segment_inout.length_m, 0.0));
 
-    isBuilt_out = segment_inout.start_world_m.allFinite() &&
-                  segment_inout.end_world_m.allFinite() &&
+    isBuilt_out = segment_inout.wallStart_world_m.allFinite() &&
+                  segment_inout.wallEnd_world_m.allFinite() &&
                   std::isfinite(segment_inout.length_m) &&
                   segment_inout.length_m >= minimumWallLength_m_in;
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

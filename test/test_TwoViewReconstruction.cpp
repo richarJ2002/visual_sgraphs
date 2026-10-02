@@ -66,13 +66,13 @@ struct PlanarTwoViewScene
     Eigen::Matrix3f calibrationMatrix;
 
     /*! Plane-induced pixel homography mapping view 1 into view 2. */
-    Eigen::Matrix3f homography_view1ToView2;
+    Eigen::Matrix3f relativeHomography_view1ToView2;
 
     /*! Ground-truth rotation of the second view relative to the first. */
-    Eigen::Matrix3f rotation_view1ToView2;
+    Eigen::Matrix3f relativeRotation_view1ToView2;
 
     /*! Ground-truth translation of the second view, in the second frame. */
-    Eigen::Vector3f translation_view1ToView2_m;
+    Eigen::Vector3f relativeTranslation_view1ToView2_m;
 
     /*! Keypoints of the reference view. */
     std::vector<cv::KeyPoint> keypointsView1;
@@ -113,21 +113,22 @@ PlanarTwoViewScene buildPlanarTwoViewScene()
      * verges back onto the scene centre so the plane stays in view. */
     const float vergenceAngle_rad =
         std::atan2(-CAMERA_BASELINE_M, PLANE_DISTANCE_M);
-    Eigen::Matrix3f rotation_view2ToView1;
-    rotation_view2ToView1 << std::cos(vergenceAngle_rad), 0.0F,
+    Eigen::Matrix3f relativeRotation_view2ToView1;
+    relativeRotation_view2ToView1 << std::cos(vergenceAngle_rad), 0.0F,
         std::sin(vergenceAngle_rad), 0.0F, 1.0F, 0.0F,
         -std::sin(vergenceAngle_rad), 0.0F, std::cos(vergenceAngle_rad);
     const Eigen::Vector3f cameraCentreView2_m(CAMERA_BASELINE_M, 0.0F, 0.0F);
 
-    scene.rotation_view1ToView2 = rotation_view2ToView1.transpose();
-    scene.translation_view1ToView2_m =
-        -scene.rotation_view1ToView2 * cameraCentreView2_m;
+    scene.relativeRotation_view1ToView2 =
+        relativeRotation_view2ToView1.transpose();
+    scene.relativeTranslation_view1ToView2_m =
+        -scene.relativeRotation_view1ToView2 * cameraCentreView2_m;
 
-    scene.homography_view1ToView2 =
+    scene.relativeHomography_view1ToView2 =
         scene.calibrationMatrix *
-        (scene.rotation_view1ToView2 + scene.translation_view1ToView2_m *
-                                           planeNormal.transpose() /
-                                           PLANE_DISTANCE_M) *
+        (scene.relativeRotation_view1ToView2 +
+         scene.relativeTranslation_view1ToView2_m * planeNormal.transpose() /
+             PLANE_DISTANCE_M) *
         inverseCalibrationMatrix;
 
     /* Back-project a regular pixel grid of view 1 onto the plane, then
@@ -158,8 +159,8 @@ PlanarTwoViewScene buildPlanarTwoViewScene()
             const Eigen::Vector3f pointView1_m =
                 viewingRay * (PLANE_DISTANCE_M / rayPlaneProjection);
             const Eigen::Vector3f pointView2_m =
-                scene.rotation_view1ToView2 * pointView1_m +
-                scene.translation_view1ToView2_m;
+                scene.relativeRotation_view1ToView2 * pointView1_m +
+                scene.relativeTranslation_view1ToView2_m;
             if (pointView2_m(2) <= 0.0F)
             {
                 continue;
@@ -279,9 +280,9 @@ TEST(TwoViewReconstruction, HomographyBranchPublishesTriangulatedStructure)
     loadSceneCorrespondences(scene, reconstruction);
 
     std::vector<bool> matchInliers(scene.matchesView1ToView2.size(), true);
-    Eigen::Matrix3f   homography        = scene.homography_view1ToView2;
+    Eigen::Matrix3f   homography        = scene.relativeHomography_view1ToView2;
     Eigen::Matrix3f   calibrationMatrix = scene.calibrationMatrix;
-    Sophus::SE3f      pose_view1ToView2;
+    Sophus::SE3f      relativePose_view1ToView2;
     std::vector<cv::Point3f> pointsView1_m;
     std::vector<bool>        triangulatedFlags;
 
@@ -291,7 +292,7 @@ TEST(TwoViewReconstruction, HomographyBranchPublishesTriangulatedStructure)
           getReconstructH(ReconstructHAccess{}))(matchInliers,
                                                  homography,
                                                  calibrationMatrix,
-                                                 pose_view1ToView2,
+                                                 relativePose_view1ToView2,
                                                  pointsView1_m,
                                                  triangulatedFlags,
                                                  MIN_PARALLAX_DEG,
@@ -361,9 +362,9 @@ TEST(TwoViewReconstruction, HomographyBranchRejectsAnEmptyInlierSet)
     loadSceneCorrespondences(scene, reconstruction);
 
     std::vector<bool> matchInliers(scene.matchesView1ToView2.size(), false);
-    Eigen::Matrix3f   homography        = scene.homography_view1ToView2;
+    Eigen::Matrix3f   homography        = scene.relativeHomography_view1ToView2;
     Eigen::Matrix3f   calibrationMatrix = scene.calibrationMatrix;
-    Sophus::SE3f      pose_view1ToView2;
+    Sophus::SE3f      relativePose_view1ToView2;
     std::vector<cv::Point3f> pointsView1_m;
     std::vector<bool>        triangulatedFlags;
 
@@ -373,7 +374,7 @@ TEST(TwoViewReconstruction, HomographyBranchRejectsAnEmptyInlierSet)
           getReconstructH(ReconstructHAccess{}))(matchInliers,
                                                  homography,
                                                  calibrationMatrix,
-                                                 pose_view1ToView2,
+                                                 relativePose_view1ToView2,
                                                  pointsView1_m,
                                                  triangulatedFlags,
                                                  MIN_PARALLAX_DEG,

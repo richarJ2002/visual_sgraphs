@@ -68,10 +68,10 @@ struct PassageRecord
     Passage::PassageVariant passageType{Passage::PassageVariant::UNDEFINED};
 
     /*! @brief Passage::getGlobalEquation() at capture time. */
-    Eigen::Vector4d equation_world{Eigen::Vector4d::Zero()};
+    Eigen::Vector4d planeEquation_world{Eigen::Vector4d::Zero()};
 
     /*! @brief Passage::getCentroid() at capture time. */
-    Eigen::Vector3d centroid_world_m{Eigen::Vector3d::Zero()};
+    Eigen::Vector3d passageCentroid_world_m{Eigen::Vector3d::Zero()};
 
     /*! @brief Passage::getWidth() at capture time. */
     double width_m{0.0};

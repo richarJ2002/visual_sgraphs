@@ -55,19 +55,20 @@ UtilsStatus finiteWallExtentsAreCompatible(
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    const Eigen::Vector3d normal_world = commonNormal_world_in.normalized();
+    const Eigen::Vector3d planeNormal_world =
+        commonNormal_world_in.normalized();
 
     Eigen::Vector3d referenceAxis_world = Eigen::Vector3d::UnitX();
 
-    if (std::abs(normal_world.dot(referenceAxis_world)) > 0.90)
+    if (std::abs(planeNormal_world.dot(referenceAxis_world)) > 0.90)
     {
         referenceAxis_world = Eigen::Vector3d::UnitY();
     }
 
     const Eigen::Vector3d tangentU_world =
-        normal_world.cross(referenceAxis_world).normalized();
+        planeNormal_world.cross(referenceAxis_world).normalized();
     const Eigen::Vector3d tangentV_world =
-        normal_world.cross(tangentU_world).normalized();
+        planeNormal_world.cross(tangentU_world).normalized();
 
     ProjectedPlaneBounds firstBounds{};
     if (projectPlaneBounds(p_firstCloud_in,

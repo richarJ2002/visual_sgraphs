@@ -123,7 +123,7 @@ template <typename RecordT>
  * @brief       Strict weak "less than" comparing every RoomRecord field
  *              other than \p key, in this fixed canonical order: isLive,
  *              isDetectedMember, isMarkerBasedMember, declaredMapId
- *              presence/value, variant, centroid_world_m,
+ *              presence/value, variant, roomCentroid_world_m,
  *              boundaryStatus, boundaryCorners_world_m (size, then
  *              lexicographic), observationGaps (size, then lexicographic
  *              by startAngle_rad then spanAngle_rad), wallRefs (size, then
@@ -146,8 +146,8 @@ bool isValueLessForCollisionTiebreak(const RoomRecord &lhs_in,
 
 /*!
  * @brief       Same as the RoomRecord overload, for WallRecord: isLive,
- *              declaredMapId presence/value, planeType, equation_world,
- *              centroid_world_m, minPlaneU_m, maxPlaneU_m, minPlaneV_m,
+ *              declaredMapId presence/value, planeType, planeEquation_world,
+ *              planeCentroid_world_m, minPlaneU_m, maxPlaneU_m, minPlaneV_m,
  *              maxPlaneV_m, finiteSupportCount, observationCount,
  *              cloudGeneration, successfulRefitGeneration,
  *              observationOrigin_world_m presence/value,
@@ -161,8 +161,8 @@ bool isValueLessForCollisionTiebreak(const WallRecord &lhs_in,
 
 /*!
  * @brief       Same as the RoomRecord overload, for PassageRecord: isLive,
- *              declaredMapId presence/value, passageType, equation_world,
- *              centroid_world_m, width_m, height_m, passable,
+ *              declaredMapId presence/value, passageType, planeEquation_world,
+ *              passageCentroid_world_m, width_m, height_m, passable,
  *              associateWallRefs (size, then lexicographic via
  *              isRawPlaneRefLess()), associateDoorRef (via
  *              isRawPlaneRefLess()), knownSideRoomRef (via
@@ -176,8 +176,8 @@ bool isValueLessForCollisionTiebreak(const PassageRecord &lhs_in,
 
 /*!
  * @brief       Same as the RoomRecord overload, for FloorRecord:
- *              declaredMapId presence/value, centroid_world_m,
- *              planeIdentity presence/value (equation_world,
+ *              declaredMapId presence/value, floorCentroid_world_m,
+ *              planeIdentity presence/value (planeEquation_world,
  *              finiteSupportCount, observationCount), roomRefs (size, then
  *              lexicographic via isEntityRefLess()).
  */

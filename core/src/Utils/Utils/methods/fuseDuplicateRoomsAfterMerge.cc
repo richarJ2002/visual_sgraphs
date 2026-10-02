@@ -134,7 +134,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                     "although it cannot fail; continuing as before.",
                     __func__);
             }
-            Eigen::Vector4d wallEquation_world = wallGeometry.equation_world;
+            Eigen::Vector4d wallEquation_world =
+                wallGeometry.planeEquation_world;
 
             const double wallNormalNorm = wallEquation_world.head<3>().norm();
 
@@ -169,7 +170,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                 continue;
             }
 
-            const Eigen::Vector3d intersection_world_m =
+            const Eigen::Vector3d lineIntersection_world_m =
                 firstCentroid_world_m_in +
                 interpolation *
                     (secondCentroid_world_m_in - firstCentroid_world_m_in);
@@ -183,7 +184,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
 
             const Eigen::Vector3d wallCentroid_world_m =
-                wallGeometry.centroid_world_m;
+                wallGeometry.planeCentroid_world_m;
 
             const Eigen::Vector3d wallAxisU_world =
                 wallEquation_world.head<3>().unitOrthogonal().normalized();
@@ -232,7 +233,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
             }
 
             const Eigen::Vector3d intersectionRelToWallCentroid_world_m =
-                intersection_world_m - wallCentroid_world_m;
+                lineIntersection_world_m - wallCentroid_world_m;
 
             const double intersectionU_m =
                 intersectionRelToWallCentroid_world_m.dot(wallAxisU_world);

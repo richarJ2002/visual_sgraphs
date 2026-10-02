@@ -90,7 +90,10 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
 
     Eigen::Vector2f ep = p_keyframe2_in->p_camera->project(C2);
     Sophus::SE3f    T12;
-    Sophus::SE3f    Tll, Tlr, Trl, Trr;
+    Sophus::SE3f    relativePose_leftCamera2ToLeftCamera1,
+        relativePose_rightCamera2ToLeftCamera1,
+        relativePose_leftCamera2ToRightCamera1,
+        relativePose_rightCamera2ToRightCamera1;
     Eigen::Matrix3f R12; // for fastest computation
     Eigen::Vector3f t12; // for fastest computation
 
@@ -115,8 +118,9 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3f Twr2{};
-        if (p_keyframe2_in->getRightPoseInverse(Twr2) !=
+        Sophus::SE3f rightCameraPose_rightCamera2ToWorld{};
+        if (p_keyframe2_in->getRightPoseInverse(
+                rightCameraPose_rightCamera2ToWorld) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -124,16 +128,31 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Tll = T1w * Tw2;
-        Tlr = T1w * Twr2;
-        Trl = Tr1w * Tw2;
-        Trr = Tr1w * Twr2;
+        relativePose_leftCamera2ToLeftCamera1 = T1w * Tw2;
+        relativePose_rightCamera2ToLeftCamera1 =
+            T1w * rightCameraPose_rightCamera2ToWorld;
+        relativePose_leftCamera2ToRightCamera1 = Tr1w * Tw2;
+        relativePose_rightCamera2ToRightCamera1 =
+            Tr1w * rightCameraPose_rightCamera2ToWorld;
     }
 
-    Eigen::Matrix3f Rll = Tll.rotationMatrix(), Rlr = Tlr.rotationMatrix(),
-                    Rrl = Trl.rotationMatrix(), Rrr = Trr.rotationMatrix();
-    Eigen::Vector3f tll = Tll.translation(), tlr = Tlr.translation(),
-                    trl = Trl.translation(), trr = Trr.translation();
+    Eigen::Matrix3f relativeRotation_leftCamera2ToLeftCamera1 =
+                        relativePose_leftCamera2ToLeftCamera1.rotationMatrix(),
+                    relativeRotation_rightCamera2ToLeftCamera1 =
+                        relativePose_rightCamera2ToLeftCamera1.rotationMatrix(),
+                    relativeRotation_leftCamera2ToRightCamera1 =
+                        relativePose_leftCamera2ToRightCamera1.rotationMatrix(),
+                    relativeRotation_rightCamera2ToRightCamera1 =
+                        relativePose_rightCamera2ToRightCamera1
+                            .rotationMatrix();
+    Eigen::Vector3f relativeTranslation_leftCamera2ToLeftCamera1 =
+                        relativePose_leftCamera2ToLeftCamera1.translation(),
+                    relativeTranslation_rightCamera2ToLeftCamera1 =
+                        relativePose_rightCamera2ToLeftCamera1.translation(),
+                    relativeTranslation_leftCamera2ToRightCamera1 =
+                        relativePose_leftCamera2ToRightCamera1.translation(),
+                    relativeTranslation_rightCamera2ToRightCamera1 =
+                        relativePose_rightCamera2ToRightCamera1.translation();
 
     // Find matches between not tracked keypoints
     // Matching speed-up by ORB Vocabulary
@@ -289,36 +308,37 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                     {
                         if (isRightCamera1 && isRightCamera2)
                         {
-                            R12 = Rrr;
-                            t12 = trr;
-                            T12 = Trr;
+                            R12 = relativeRotation_rightCamera2ToRightCamera1;
+                            t12 =
+                                relativeTranslation_rightCamera2ToRightCamera1;
+                            T12 = relativePose_rightCamera2ToRightCamera1;
 
                             p_camera1 = p_keyframe1_in->p_camera2;
                             p_camera2 = p_keyframe2_in->p_camera2;
                         }
                         else if (isRightCamera1 && !isRightCamera2)
                         {
-                            R12 = Rrl;
-                            t12 = trl;
-                            T12 = Trl;
+                            R12 = relativeRotation_leftCamera2ToRightCamera1;
+                            t12 = relativeTranslation_leftCamera2ToRightCamera1;
+                            T12 = relativePose_leftCamera2ToRightCamera1;
 
                             p_camera1 = p_keyframe1_in->p_camera2;
                             p_camera2 = p_keyframe2_in->p_camera;
                         }
                         else if (!isRightCamera1 && isRightCamera2)
                         {
-                            R12 = Rlr;
-                            t12 = tlr;
-                            T12 = Tlr;
+                            R12 = relativeRotation_rightCamera2ToLeftCamera1;
+                            t12 = relativeTranslation_rightCamera2ToLeftCamera1;
+                            T12 = relativePose_rightCamera2ToLeftCamera1;
 
                             p_camera1 = p_keyframe1_in->p_camera;
                             p_camera2 = p_keyframe2_in->p_camera2;
                         }
                         else
                         {
-                            R12 = Rll;
-                            t12 = tll;
-                            T12 = Tll;
+                            R12 = relativeRotation_leftCamera2ToLeftCamera1;
+                            t12 = relativeTranslation_leftCamera2ToLeftCamera1;
+                            T12 = relativePose_leftCamera2ToLeftCamera1;
 
                             p_camera1 = p_keyframe1_in->p_camera;
                             p_camera2 = p_keyframe2_in->p_camera;

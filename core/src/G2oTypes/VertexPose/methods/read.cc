@@ -41,10 +41,10 @@ namespace core
 
 bool VertexPose::read(std::istream &inputStream_inout)
 {
-    std::vector<Eigen::Matrix<double, 3, 3>> rotation_worldToCamera;
-    std::vector<Eigen::Matrix<double, 3, 1>> translation_worldToCamera;
-    std::vector<Eigen::Matrix<double, 3, 3>> rotation_cameraToBody;
-    std::vector<Eigen::Matrix<double, 3, 1>> translation_cameraToBody;
+    std::vector<Eigen::Matrix<double, 3, 3>> cameraRotation_worldToCamera;
+    std::vector<Eigen::Matrix<double, 3, 1>> cameraTranslation_worldToCamera;
+    std::vector<Eigen::Matrix<double, 3, 3>> extrinsicRotation_cameraToBody;
+    std::vector<Eigen::Matrix<double, 3, 1>> extrinsicTranslation_cameraToBody;
 
     const int cameraCount = _estimate.Rbc.size();
     for (int cameraIndex = 0; cameraIndex < cameraCount; cameraIndex++)
@@ -53,26 +53,26 @@ bool VertexPose::read(std::istream &inputStream_inout)
         {
             for (int columnIndex = 0; columnIndex < 3; columnIndex++)
                 inputStream_inout >>
-                    rotation_worldToCamera[cameraIndex](componentIndex,
-                                                        columnIndex);
+                    cameraRotation_worldToCamera[cameraIndex](componentIndex,
+                                                              columnIndex);
         }
         for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
             inputStream_inout >>
-                translation_worldToCamera[cameraIndex](componentIndex);
+                cameraTranslation_worldToCamera[cameraIndex](componentIndex);
         }
 
         for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
             for (int columnIndex = 0; columnIndex < 3; columnIndex++)
                 inputStream_inout >>
-                    rotation_cameraToBody[cameraIndex](componentIndex,
-                                                       columnIndex);
+                    extrinsicRotation_cameraToBody[cameraIndex](componentIndex,
+                                                                columnIndex);
         }
         for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
             inputStream_inout >>
-                translation_cameraToBody[cameraIndex](componentIndex);
+                extrinsicTranslation_cameraToBody[cameraIndex](componentIndex);
         }
 
         float  nextParam;
@@ -105,10 +105,10 @@ bool VertexPose::read(std::istream &inputStream_inout)
 
     double baselineFocalProduct;
     inputStream_inout >> baselineFocalProduct;
-    if (_estimate.setParam(rotation_worldToCamera,
-                           translation_worldToCamera,
-                           rotation_cameraToBody,
-                           translation_cameraToBody,
+    if (_estimate.setParam(cameraRotation_worldToCamera,
+                           cameraTranslation_worldToCamera,
+                           extrinsicRotation_cameraToBody,
+                           extrinsicTranslation_cameraToBody,
                            baselineFocalProduct) !=
         ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS)
     {

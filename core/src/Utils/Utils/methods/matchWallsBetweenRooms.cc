@@ -87,21 +87,21 @@ UtilsStatus Utils::matchWallsBetweenRooms(
                 continue;
             }
 
-            std::optional<Eigen::Vector3d> normal_world{};
+            std::optional<Eigen::Vector3d> wallNormal_world{};
             if (p_room_in->getWallNormalTowardRoom_world(p_wall,
-                                                         normal_world) !=
+                                                         wallNormal_world) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
                 // getWallNormalTowardRoom_world cannot fail; continue as
                 // before.
             }
 
-            if (!normal_world.has_value())
+            if (!wallNormal_world.has_value())
             {
                 continue;
             }
 
-            validWalls.emplace_back(p_wall, normal_world.value());
+            validWalls.emplace_back(p_wall, wallNormal_world.value());
         }
 
         std::sort(

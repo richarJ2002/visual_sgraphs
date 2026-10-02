@@ -50,9 +50,9 @@ namespace test
  * @brief   Builds a deterministic, exactly-on-plane rectangular grid point
  *          cloud spanning [-halfU, halfU] along axisU_world and
  *          [-halfV, halfV] along axisV_world, centered on
- *          centroid_world_m_in.
+ *          gridCentroid_world_m_in.
  *
- * @param   centroid_world_m_in Grid center, world frame, meters.
+ * @param   gridCentroid_world_m_in Grid center, world frame, meters.
  * @param   axisU_world_in      Unit in-plane axis; caller ensures orthogonality
  *                               with axisV_world_in.
  * @param   axisV_world_in      Unit in-plane axis; caller ensures orthogonality
@@ -64,7 +64,7 @@ namespace test
  * @return  A populated, owned point cloud; never null.
  */
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
-    makeGridCloud(const Eigen::Vector3d &centroid_world_m_in,
+    makeGridCloud(const Eigen::Vector3d &gridCentroid_world_m_in,
                   const Eigen::Vector3d &axisU_world_in,
                   const Eigen::Vector3d &axisV_world_in,
                   double                 halfU_m_in,
@@ -87,24 +87,24 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
  * is overwritten.
  * @param   id_in               geometric::Plane id.
  * @param   p_map_in            Owning map; non-owning, must outlive wall_inout.
- * @param   equation_world_in   geometric::Plane equation (nx, ny, nz, d), world
- * frame.
+ * @param   wallEquation_world_in   geometric::Plane equation (nx, ny, nz, d),
+ * world frame.
  * @param   axisU_world_in      In-plane grid axis U, world frame, unit length.
  * @param   axisV_world_in      In-plane grid axis V, world frame, unit length.
  * @param   halfU_m_in          Half-extent along axisU_world_in, meters.
  * @param   halfV_m_in          Half-extent along axisV_world_in, meters.
- * @param   centroid_world_m_in Grid/plane centroid, world frame, meters.
+ * @param   wallCentroid_world_m_in Grid/plane centroid, world frame, meters.
  */
 void makeWallPlane(
     geometric::Plane      &wall_inout,
     int                    id_in,
     Map                   *p_map_in,
-    const Eigen::Vector4d &equation_world_in,
+    const Eigen::Vector4d &wallEquation_world_in,
     const Eigen::Vector3d &axisU_world_in,
     const Eigen::Vector3d &axisV_world_in,
     double                 halfU_m_in,
     double                 halfV_m_in,
-    const Eigen::Vector3d &centroid_world_m_in = Eigen::Vector3d::Zero());
+    const Eigen::Vector3d &wallCentroid_world_m_in = Eigen::Vector3d::Zero());
 
 /*!
  * @brief   Constructs a ground geometric::Plane from a flat, horizontal grid
@@ -137,15 +137,16 @@ bool makeGroundPlane(geometric::Plane &ground_inout,
  * @param   p_map_in            Owning map; non-owning, must outlive room_inout.
  * @param   p_wall_in           Wall face to attach; may be null for a room
  *                               fixture that only needs a centroid.
- * @param   centroid_world_m_in semantic::Room centroid, world frame, meters.
+ * @param   roomCentroid_world_m_in semantic::Room centroid, world frame,
+ * meters.
  * @param   variant_in          semantic::Room semantic variant.
  */
 void makeRoom(
-    semantic::Room             &room_inout,
-    int                         id_in,
-    Map                        *p_map_in,
-    geometric::Plane           *p_wall_in,
-    const Eigen::Vector3d      &centroid_world_m_in = Eigen::Vector3d::Zero(),
+    semantic::Room        &room_inout,
+    int                    id_in,
+    Map                   *p_map_in,
+    geometric::Plane      *p_wall_in,
+    const Eigen::Vector3d &roomCentroid_world_m_in = Eigen::Vector3d::Zero(),
     semantic::Room::RoomVariant variant_in = semantic::Room::RoomVariant::ROOM);
 
 /*!
@@ -157,8 +158,10 @@ void makeRoom(
  * @param   id_in                    semantic::Passage id.
  * @param   p_map_in                 Owning map; non-owning, must outlive
  *                                    passage_inout.
- * @param   equation_world_in        Aperture plane equation, world frame.
- * @param   centroid_world_m_in      Aperture centroid, world frame, meters.
+ * @param   passageEquation_world_in        Aperture plane equation, world
+ * frame.
+ * @param   passageCentroid_world_m_in      Aperture centroid, world frame,
+ * meters.
  * @param   p_knownSideRoom_in       Known/near-side room; non-owning, may be
  *                                    null.
  * @param   knownSideDirection_world_in Unit direction from the aperture
@@ -173,8 +176,8 @@ void makeRoom(
 void makePassage(semantic::Passage     &passage_inout,
                  int                    id_in,
                  Map                   *p_map_in,
-                 const Eigen::Vector4d &equation_world_in,
-                 const Eigen::Vector3d &centroid_world_m_in,
+                 const Eigen::Vector4d &passageEquation_world_in,
+                 const Eigen::Vector3d &passageCentroid_world_m_in,
                  semantic::Room        *p_knownSideRoom_in,
                  const Eigen::Vector3d &knownSideDirection_world_in,
                  semantic::Room        *p_farRoom_in = nullptr,
@@ -225,8 +228,8 @@ void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
  *
  * @param   rotationAngle_rad_in       Rotation angle about rotationAxis_in.
  * @param   rotationAxis_in            Rotation axis; normalized internally.
- * @param   translation_world_m_in     Translation applied in the new-world
- *                                      frame, meters.
+ * @param   correctionTranslation_world_m_in     Translation applied in the
+ * new-world frame, meters.
  * @param   scale_in                   Uniform scale; must be > 0.
  *
  * @return  The requested old-world -> new-world Sim3 transform.
@@ -234,10 +237,9 @@ void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
 g2o::Sim3 makeNonTrivialSim3(
     double                 rotationAngle_rad_in = 0.4,
     const Eigen::Vector3d &rotationAxis_in = Eigen::Vector3d(0.2, 0.7, 0.3),
-    const Eigen::Vector3d &translation_world_m_in = Eigen::Vector3d(1.5,
-                                                                    -0.8,
-                                                                    0.4),
-    double                 scale_in               = 1.2);
+    const Eigen::Vector3d &correctionTranslation_world_m_in =
+        Eigen::Vector3d(1.5, -0.8, 0.4),
+    double scale_in = 1.2);
 
 } // namespace test
 } // namespace core

@@ -72,11 +72,11 @@ PlaneStatus Plane::alignGeometryToEquation(
     const double normalDotProduct =
         std::clamp(currentNormal.dot(targetNormal), -1.0, 1.0);
 
-    Eigen::Quaterniond rotation_oldPlaneToOptimizedPlane;
+    Eigen::Quaterniond planeRotation_oldPlaneToOptimizedPlane;
 
     if (normalDotProduct > 1.0 - 1e-12)
     {
-        rotation_oldPlaneToOptimizedPlane = Eigen::Quaterniond::Identity();
+        planeRotation_oldPlaneToOptimizedPlane = Eigen::Quaterniond::Identity();
     }
     else if (normalDotProduct < -1.0 + 1e-12)
     {
@@ -86,14 +86,14 @@ PlaneStatus Plane::alignGeometryToEquation(
         const Eigen::Vector3d rotationAxis =
             currentNormal.cross(referenceAxis).normalized();
 
-        rotation_oldPlaneToOptimizedPlane = Eigen::Quaterniond(
+        planeRotation_oldPlaneToOptimizedPlane = Eigen::Quaterniond(
             Eigen::AngleAxisd(std::acos(-1.0), rotationAxis));
     }
     else
     {
         const Eigen::Vector3d rotationAxis = currentNormal.cross(targetNormal);
 
-        rotation_oldPlaneToOptimizedPlane =
+        planeRotation_oldPlaneToOptimizedPlane =
             Eigen::Quaterniond(1.0 + normalDotProduct,
                                rotationAxis.x(),
                                rotationAxis.y(),
@@ -101,7 +101,7 @@ PlaneStatus Plane::alignGeometryToEquation(
                 .normalized();
     }
 
-    if (!rotation_oldPlaneToOptimizedPlane.coeffs().allFinite())
+    if (!planeRotation_oldPlaneToOptimizedPlane.coeffs().allFinite())
     {
         return PlaneStatus::PLANE_STATUS_SUCCESS;
     }
@@ -114,14 +114,14 @@ PlaneStatus Plane::alignGeometryToEquation(
     const double centroidSignedDistance_m =
         currentNormal.dot(centroid) + currentCoefficients(3);
 
-    const Eigen::Vector3d anchor_oldWorld_m =
+    const Eigen::Vector3d planeAnchor_oldWorld_m =
         centroid - centroidSignedDistance_m * currentNormal;
 
     const Eigen::Matrix3d rotationMatrix =
-        rotation_oldPlaneToOptimizedPlane.toRotationMatrix();
+        planeRotation_oldPlaneToOptimizedPlane.toRotationMatrix();
 
     const Eigen::Vector3d rotationTranslation_m =
-        anchor_oldWorld_m - rotationMatrix * anchor_oldWorld_m;
+        planeAnchor_oldWorld_m - rotationMatrix * planeAnchor_oldWorld_m;
 
     const double distanceAfterRotation_m =
         currentCoefficients(3) - targetNormal.dot(rotationTranslation_m);
@@ -129,21 +129,21 @@ PlaneStatus Plane::alignGeometryToEquation(
     const Eigen::Vector3d normalTranslation_m =
         (distanceAfterRotation_m - targetCoefficients(3)) * targetNormal;
 
-    const Eigen::Vector3d translation_oldPlaneToOptimizedPlane_m =
+    const Eigen::Vector3d planeTranslation_oldPlaneToOptimizedPlane_m =
         rotationTranslation_m + normalTranslation_m;
 
     centroid =
-        rotationMatrix * centroid + translation_oldPlaneToOptimizedPlane_m;
+        rotationMatrix * centroid + planeTranslation_oldPlaneToOptimizedPlane_m;
 
     for (pcl::PointXYZRGBA &point : planeCloud->points)
     {
-        Eigen::Vector3d point_newWorld_m(point.x, point.y, point.z);
-        point_newWorld_m = rotationMatrix * point_newWorld_m +
-                           translation_oldPlaneToOptimizedPlane_m;
+        Eigen::Vector3d cloudPoint_newWorld_m(point.x, point.y, point.z);
+        cloudPoint_newWorld_m = rotationMatrix * cloudPoint_newWorld_m +
+                                planeTranslation_oldPlaneToOptimizedPlane_m;
 
-        point.x = static_cast<float>(point_newWorld_m.x());
-        point.y = static_cast<float>(point_newWorld_m.y());
-        point.z = static_cast<float>(point_newWorld_m.z());
+        point.x = static_cast<float>(cloudPoint_newWorld_m.x());
+        point.y = static_cast<float>(cloudPoint_newWorld_m.y());
+        point.z = static_cast<float>(cloudPoint_newWorld_m.z());
     }
 
     globalEquation = g2o::Plane3D(targetCoefficients);

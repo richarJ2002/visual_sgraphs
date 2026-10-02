@@ -58,7 +58,7 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         KeyFrame       *p_keyFrame;
         g2o::Sim3       poseBefore_worldToCamera;
         g2o::Sim3       poseAfter_worldToCamera;
-        g2o::Sim3       correction_oldWorldToNewWorld;
+        g2o::Sim3       poseCorrection_oldWorldToNewWorld;
         Eigen::Vector3d cameraCenter_oldWorld_m;
     };
 
@@ -101,13 +101,13 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             continue;
         }
 
-        const g2o::Sim3 correction_oldWorldToNewWorld =
+        const g2o::Sim3 poseCorrection_oldWorldToNewWorld =
             poseAfterIterator->second.inverse() * poseBefore_worldToCamera;
 
         const Eigen::Vector3d cameraCenter_oldWorld_m =
             poseBefore_worldToCamera.inverse().map(Eigen::Vector3d::Zero());
 
-        if (!isFiniteSim3(correction_oldWorldToNewWorld) ||
+        if (!isFiniteSim3(poseCorrection_oldWorldToNewWorld) ||
             !cameraCenter_oldWorld_m.allFinite())
         {
             continue;
@@ -116,7 +116,7 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         correctionNodes.push_back({p_keyFrame,
                                    poseBefore_worldToCamera,
                                    poseAfterIterator->second,
-                                   correction_oldWorldToNewWorld,
+                                   poseCorrection_oldWorldToNewWorld,
                                    cameraCenter_oldWorld_m});
     }
 
@@ -147,10 +147,10 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
     };
 
     const auto findNearestNode =
-        [&correctionNodes](const Eigen::Vector3d &point_oldWorld_m)
+        [&correctionNodes](const Eigen::Vector3d &semanticPoint_oldWorld_m)
         -> const PoseCorrectionNode *
     {
-        if (!point_oldWorld_m.allFinite())
+        if (!semanticPoint_oldWorld_m.allFinite())
         {
             return nullptr;
         }
@@ -162,7 +162,8 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         for (const PoseCorrectionNode &node : correctionNodes)
         {
             const double squaredDistance_m2 =
-                (node.cameraCenter_oldWorld_m - point_oldWorld_m).squaredNorm();
+                (node.cameraCenter_oldWorld_m - semanticPoint_oldWorld_m)
+                    .squaredNorm();
 
             if (squaredDistance_m2 < nearestSquaredDistance_m2)
             {
@@ -176,13 +177,14 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
 
     const auto selectCorrectionForPoint =
         [&findNearestNode, &fallbackTransform_oldWorldToNewWorld_in](
-            const Eigen::Vector3d &point_oldWorld_m) -> const g2o::Sim3 &
+            const Eigen::Vector3d &semanticPoint_oldWorld_m)
+        -> const g2o::Sim3 &
     {
         const PoseCorrectionNode *p_nearestNode =
-            findNearestNode(point_oldWorld_m);
+            findNearestNode(semanticPoint_oldWorld_m);
 
         return p_nearestNode != nullptr
-                   ? p_nearestNode->correction_oldWorldToNewWorld
+                   ? p_nearestNode->poseCorrection_oldWorldToNewWorld
                    : fallbackTransform_oldWorldToNewWorld_in;
     };
 
@@ -272,12 +274,12 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
             }
         }
 
-        const g2o::Sim3 &correction_oldWorldToNewWorld =
+        const g2o::Sim3 &poseCorrection_oldWorldToNewWorld =
             p_selectedNode != nullptr
-                ? p_selectedNode->correction_oldWorldToNewWorld
+                ? p_selectedNode->poseCorrection_oldWorldToNewWorld
                 : selectCorrectionForPoint(planeCentroid_oldWorld_m);
 
-        if (p_plane->applyTransform(correction_oldWorldToNewWorld) !=
+        if (p_plane->applyTransform(poseCorrection_oldWorldToNewWorld) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -287,7 +289,7 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
         }
         planeCorrections_oldWorldToNewWorld.insert_or_assign(
             p_plane,
-            correction_oldWorldToNewWorld);
+            poseCorrection_oldWorldToNewWorld);
     }
 
     std::map<semantic::Marker *, g2o::Sim3>
@@ -361,7 +363,7 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
 
         const g2o::Sim3 &markerCorrection_oldWorldToNewWorld =
             p_selectedNode != nullptr
-                ? p_selectedNode->correction_oldWorldToNewWorld
+                ? p_selectedNode->poseCorrection_oldWorldToNewWorld
                 : selectCorrectionForPoint(
                       markerPose_markerToOldWorld.translation().cast<double>());
 
@@ -744,29 +746,31 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                      __func__);
     }
 
-    for (std::vector<Eigen::Vector3d> &cluster_oldWorld_m :
+    for (std::vector<Eigen::Vector3d> &skeletonCluster_oldWorld_m :
          skeletonClusters_oldWorld_m)
     {
-        if (cluster_oldWorld_m.empty())
+        if (skeletonCluster_oldWorld_m.empty())
         {
             continue;
         }
 
         Eigen::Vector3d clusterCentroid_oldWorld_m = Eigen::Vector3d::Zero();
-        for (const Eigen::Vector3d &point_oldWorld_m : cluster_oldWorld_m)
+        for (const Eigen::Vector3d &semanticPoint_oldWorld_m :
+             skeletonCluster_oldWorld_m)
         {
-            clusterCentroid_oldWorld_m += point_oldWorld_m;
+            clusterCentroid_oldWorld_m += semanticPoint_oldWorld_m;
         }
         clusterCentroid_oldWorld_m /=
-            static_cast<double>(cluster_oldWorld_m.size());
+            static_cast<double>(skeletonCluster_oldWorld_m.size());
 
         const g2o::Sim3 &clusterCorrection_oldWorldToNewWorld =
             selectCorrectionForPoint(clusterCentroid_oldWorld_m);
 
-        for (Eigen::Vector3d &point_oldWorld_m : cluster_oldWorld_m)
+        for (Eigen::Vector3d &semanticPoint_oldWorld_m :
+             skeletonCluster_oldWorld_m)
         {
-            point_oldWorld_m =
-                clusterCorrection_oldWorldToNewWorld.map(point_oldWorld_m);
+            semanticPoint_oldWorld_m = clusterCorrection_oldWorldToNewWorld.map(
+                semanticPoint_oldWorld_m);
         }
     }
 
@@ -790,17 +794,18 @@ UtilsStatus Utils::propagateSemanticPoseCorrections(
                      __func__);
     }
 
-    for (std::pair<Eigen::Vector3d, Eigen::Vector3d> &edge_oldWorld_m :
+    for (std::pair<Eigen::Vector3d, Eigen::Vector3d> &skeletonEdge_oldWorld_m :
          skeletonEdges_oldWorld_m)
     {
-        const Eigen::Vector3d firstEndpoint_oldWorld_m = edge_oldWorld_m.first;
+        const Eigen::Vector3d firstEndpoint_oldWorld_m =
+            skeletonEdge_oldWorld_m.first;
         const Eigen::Vector3d secondEndpoint_oldWorld_m =
-            edge_oldWorld_m.second;
+            skeletonEdge_oldWorld_m.second;
 
-        edge_oldWorld_m.first =
+        skeletonEdge_oldWorld_m.first =
             selectCorrectionForPoint(firstEndpoint_oldWorld_m)
                 .map(firstEndpoint_oldWorld_m);
-        edge_oldWorld_m.second =
+        skeletonEdge_oldWorld_m.second =
             selectCorrectionForPoint(secondEndpoint_oldWorld_m)
                 .map(secondEndpoint_oldWorld_m);
     }

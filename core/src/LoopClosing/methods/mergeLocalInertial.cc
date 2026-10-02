@@ -1303,8 +1303,11 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            Sophus::SE3d Tiw = (keyFramePose).cast<double>();
-            g2o::Sim3    g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
+            Sophus::SE3d keyFramePose_worldToCamera =
+                (keyFramePose).cast<double>();
+            g2o::Sim3 g2oSiw(keyFramePose_worldToCamera.unit_quaternion(),
+                             keyFramePose_worldToCamera.translation(),
+                             1.0);
             NonCorrectedSim3[p_keyFrame] = g2oSiw;
         }
     }

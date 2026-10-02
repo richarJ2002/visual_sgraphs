@@ -51,11 +51,11 @@ namespace core
 
 FrameStatus Frame::updatePoseMatrices()
 {
-    Sophus::SE3<float> pose_cameraToWorld = poseTcw.inverse();
-    rotationRwc                           = pose_cameraToWorld.rotationMatrix();
-    centerOw                              = pose_cameraToWorld.translation();
-    rotationRcw                           = poseTcw.rotationMatrix();
-    translationTcw                        = poseTcw.translation();
+    Sophus::SE3<float> cameraPose_cameraToWorld = poseTcw.inverse();
+    rotationRwc    = cameraPose_cameraToWorld.rotationMatrix();
+    centerOw       = cameraPose_cameraToWorld.translation();
+    rotationRcw    = poseTcw.rotationMatrix();
+    translationTcw = poseTcw.translation();
 
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }

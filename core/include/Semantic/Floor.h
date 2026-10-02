@@ -59,7 +59,7 @@ class Floor
      * quality. */
     struct PlaneIdentity
     {
-        Eigen::Vector4d equation_world{Eigen::Vector4d::Zero()};
+        Eigen::Vector4d planeEquation_world{Eigen::Vector4d::Zero()};
         std::size_t     finiteSupportCount{0U};
         std::size_t     observationCount{0U};
     };
@@ -98,11 +98,11 @@ class Floor
      *              Updates the centroid, point cloud and plane equations so
      *              that the plane remains consistent with the merged map frame.
      *
-     * @param[in]   transform_oldWorldToNewWorld_in
+     * @param[in]   alignmentTransform_oldWorldToNewWorld_in
      *              Transform from the current plane frame to the new map frame.
      */
-    [[nodiscard]] FloorStatus
-        applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] FloorStatus applyTransform(
+        const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in);
 
     [[nodiscard]] FloorStatus getId(int &id_out) const;
     [[nodiscard]] FloorStatus setId(int value_in);
@@ -133,7 +133,7 @@ class Floor
      * so a previously valid identity is never overwritten by missing data.
      */
     [[nodiscard]] FloorStatus
-        setPlaneIdentity(const Eigen::Vector4d &equation_world_in,
+        setPlaneIdentity(const Eigen::Vector4d &planeEquation_world_in,
                          std::size_t            finiteSupportCount_in,
                          std::size_t            observationCount_in);
 
@@ -142,8 +142,8 @@ class Floor
 
     /*! Transforms an identity under the active old-world to new-world Sim3. */
     [[nodiscard]] static FloorStatus transformPlaneIdentity(
-        const PlaneIdentity                 &identity_oldWorld_in,
-        const g2o::Sim3                     &transform_oldWorldToNewWorld_in,
+        const PlaneIdentity &planeIdentity_oldWorld_in,
+        const g2o::Sim3     &alignmentTransform_oldWorldToNewWorld_in,
         std::optional<Floor::PlaneIdentity> &transformedIdentity_out);
 
     /*! Compares normalized planes with sign-invariant angle and offset tests.

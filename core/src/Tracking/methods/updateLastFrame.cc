@@ -43,7 +43,7 @@ TrackingStatus Tracking::updateLastFrame()
 {
     // Update pose according to reference keyframe
     KeyFrame    *p_reference = lastFrame.p_referenceKeyFrame;
-    Sophus::SE3f Tlr =
+    Sophus::SE3f relativePose_referenceKeyFrameToLastFrame =
         relativeFramePoses.empty() ? Sophus::SE3f() : relativeFramePoses.back();
     Sophus::SE3f referencePose{};
     if (p_reference->getPose(referencePose) !=
@@ -54,8 +54,8 @@ TrackingStatus Tracking::updateLastFrame()
                      "fail; continuing as before.",
                      __func__);
     }
-    if (lastFrame.setPose(Tlr * referencePose) !=
-        FrameStatus::FRAME_STATUS_SUCCESS)
+    if (lastFrame.setPose(relativePose_referenceKeyFrameToLastFrame *
+                          referencePose) != FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: setPose returned a failure status although it cannot "

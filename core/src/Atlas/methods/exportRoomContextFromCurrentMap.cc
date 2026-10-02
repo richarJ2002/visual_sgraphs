@@ -371,7 +371,8 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
             context.hasKnownSideDirection = knownSideHasDirection;
             if (context.hasKnownSideDirection)
             {
-                context.knownSideDirection_world = knownSide.direction_world;
+                context.knownSideDirection_world =
+                    knownSide.knownSideDirection_world;
             }
             context.hasKnownSideRoom = knownSide.p_room != nullptr;
             if (context.hasKnownSideRoom)

@@ -54,21 +54,21 @@ KeyFrameStatus KeyFrame::computeSceneMedianDepth(const int q_in,
     }
 
     std::vector<MapPoint *> keyFrameMapPoints;
-    Eigen::Matrix3f         rotation_worldToCamera;
-    Eigen::Vector3f         translation_worldToCamera;
+    Eigen::Matrix3f         cameraRotation_worldToCamera;
+    Eigen::Vector3f         cameraTranslation_worldToCamera;
     {
         std::unique_lock<std::mutex> lock(featuresMutex);
         std::unique_lock<std::mutex> lock2(poseMutex);
-        keyFrameMapPoints         = mapPoints;
-        translation_worldToCamera = poseTcw.translation();
-        rotation_worldToCamera    = rotationRcw;
+        keyFrameMapPoints               = mapPoints;
+        cameraTranslation_worldToCamera = poseTcw.translation();
+        cameraRotation_worldToCamera    = rotationRcw;
     }
 
     std::vector<float> mapPointDepths;
     mapPointDepths.reserve(keyPointCount);
-    Eigen::Matrix<float, 1, 3> rotation_worldToCamera2 =
-        rotation_worldToCamera.row(2);
-    float zcw = translation_worldToCamera(2);
+    Eigen::Matrix<float, 1, 3> cameraRotation_worldToCamera2 =
+        cameraRotation_worldToCamera.row(2);
+    float zcw = cameraTranslation_worldToCamera(2);
     for (int keyPointIndex = 0; keyPointIndex < keyPointCount; keyPointIndex++)
     {
         if (mapPoints[keyPointIndex])
@@ -83,7 +83,7 @@ KeyFrameStatus KeyFrame::computeSceneMedianDepth(const int q_in,
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            float z = rotation_worldToCamera2.dot(x3Dw) + zcw;
+            float z = cameraRotation_worldToCamera2.dot(x3Dw) + zcw;
             mapPointDepths.push_back(z);
         }
     }

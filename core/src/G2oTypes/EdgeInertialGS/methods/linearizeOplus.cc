@@ -77,19 +77,21 @@ void EdgeInertialGS::linearizeOplus()
     Eigen::Vector3d deltaGyroBias;
     deltaGyroBias << deltaBias.bwx, deltaBias.bwy, deltaBias.bwz;
 
-    const Eigen::Matrix3d rotation_body1ToWorld =
+    const Eigen::Matrix3d bodyRotation_body1ToWorld =
         p_previousPoseVertex->estimate().Rwb;
-    const Eigen::Matrix3d rotation_worldToBody1 =
-        rotation_body1ToWorld.transpose();
-    const Eigen::Matrix3d rotation_body2ToWorld =
+    const Eigen::Matrix3d bodyRotation_worldToBody1 =
+        bodyRotation_body1ToWorld.transpose();
+    const Eigen::Matrix3d bodyRotation_body2ToWorld =
         p_currentPoseVertex->estimate().Rwb;
-    const Eigen::Matrix3d Rwg = p_gravityDirectionVertex->estimate().Rwg;
-    Eigen::MatrixXd       gravityBasisMatrix = Eigen::MatrixXd::Zero(3, 2);
-    gravityBasisMatrix(0, 1)                 = -IMU::GRAVITY_VALUE;
-    gravityBasisMatrix(1, 0)                 = IMU::GRAVITY_VALUE;
-    const double          scaleEstimate      = p_scaleVertex->estimate();
-    const Eigen::MatrixXd gravityDirectionJacobian = Rwg * gravityBasisMatrix;
-    Eigen::Matrix3f       preintegratedDeltaRotation{};
+    const Eigen::Matrix3d gravityRotation_gravityToWorld =
+        p_gravityDirectionVertex->estimate().gravityRotation_gravityToWorld;
+    Eigen::MatrixXd gravityBasisMatrix  = Eigen::MatrixXd::Zero(3, 2);
+    gravityBasisMatrix(0, 1)            = -IMU::GRAVITY_VALUE;
+    gravityBasisMatrix(1, 0)            = IMU::GRAVITY_VALUE;
+    const double          scaleEstimate = p_scaleVertex->estimate();
+    const Eigen::MatrixXd gravityDirectionJacobian =
+        gravityRotation_gravityToWorld * gravityBasisMatrix;
+    Eigen::Matrix3f preintegratedDeltaRotation{};
     if (p_preintegrated->getDeltaRotation(biasEstimate,
                                           preintegratedDeltaRotation) !=
         IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS)
@@ -102,8 +104,8 @@ void EdgeInertialGS::linearizeOplus()
     const Eigen::Matrix3d deltaRotation =
         preintegratedDeltaRotation.cast<double>();
     const Eigen::Matrix3d rotationErrorMatrix = deltaRotation.transpose() *
-                                                rotation_worldToBody1 *
-                                                rotation_body2ToWorld;
+                                                bodyRotation_worldToBody1 *
+                                                bodyRotation_body2ToWorld;
     Eigen::Vector3d rotationError{};
     if (logSO3(rotationErrorMatrix, rotationError) !=
         G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS)
@@ -126,16 +128,16 @@ void EdgeInertialGS::linearizeOplus()
     // Jacobians wrt Pose 1
     _jacobianOplus[0].setZero();
     // rotation
-    _jacobianOplus[0].block<3, 3>(0, 0) = -inverseRightJacobian *
-                                          rotation_body2ToWorld.transpose() *
-                                          rotation_body1ToWorld;
+    _jacobianOplus[0].block<3, 3>(0, 0) =
+        -inverseRightJacobian * bodyRotation_body2ToWorld.transpose() *
+        bodyRotation_body1ToWorld;
     _jacobianOplus[0].block<3, 3>(3, 0) = Sophus::SO3d::hat(
-        rotation_worldToBody1 *
+        bodyRotation_worldToBody1 *
         (scaleEstimate * (p_currentVelocityVertex->estimate() -
                           p_previousVelocityVertex->estimate()) -
          g * dt));
     _jacobianOplus[0].block<3, 3>(6, 0) = Sophus::SO3d::hat(
-        rotation_worldToBody1 *
+        bodyRotation_worldToBody1 *
         (scaleEstimate * (p_currentPoseVertex->estimate().twb -
                           p_previousPoseVertex->estimate().twb -
                           p_previousVelocityVertex->estimate() * dt) -
@@ -149,9 +151,9 @@ void EdgeInertialGS::linearizeOplus()
     // Jacobians wrt Velocity 1
     _jacobianOplus[1].setZero();
     _jacobianOplus[1].block<3, 3>(3, 0) =
-        -scaleEstimate * rotation_worldToBody1;
+        -scaleEstimate * bodyRotation_worldToBody1;
     _jacobianOplus[1].block<3, 3>(6, 0) =
-        -scaleEstimate * rotation_worldToBody1 * dt;
+        -scaleEstimate * bodyRotation_worldToBody1 * dt;
 
     // Jacobians wrt Gyro bias
     _jacobianOplus[2].setZero();
@@ -181,28 +183,29 @@ void EdgeInertialGS::linearizeOplus()
     _jacobianOplus[4].block<3, 3>(0, 0) = inverseRightJacobian;
     // translation
     _jacobianOplus[4].block<3, 3>(6, 3) =
-        scaleEstimate * rotation_worldToBody1 * rotation_body2ToWorld;
+        scaleEstimate * bodyRotation_worldToBody1 * bodyRotation_body2ToWorld;
 
     // Jacobians wrt Velocity 2
     _jacobianOplus[5].setZero();
-    _jacobianOplus[5].block<3, 3>(3, 0) = scaleEstimate * rotation_worldToBody1;
+    _jacobianOplus[5].block<3, 3>(3, 0) =
+        scaleEstimate * bodyRotation_worldToBody1;
 
     // Jacobians wrt Gravity direction
     _jacobianOplus[6].setZero();
     _jacobianOplus[6].block<3, 2>(3, 0) =
-        -rotation_worldToBody1 * gravityDirectionJacobian * dt;
+        -bodyRotation_worldToBody1 * gravityDirectionJacobian * dt;
     _jacobianOplus[6].block<3, 2>(6, 0) =
-        -0.5 * rotation_worldToBody1 * gravityDirectionJacobian * dt * dt;
+        -0.5 * bodyRotation_worldToBody1 * gravityDirectionJacobian * dt * dt;
 
     // Jacobians wrt scale factor
     _jacobianOplus[7].setZero();
     _jacobianOplus[7].block<3, 1>(3, 0) =
-        rotation_worldToBody1 * (p_currentVelocityVertex->estimate() -
-                                 p_previousVelocityVertex->estimate());
+        bodyRotation_worldToBody1 * (p_currentVelocityVertex->estimate() -
+                                     p_previousVelocityVertex->estimate());
     _jacobianOplus[7].block<3, 1>(6, 0) =
-        rotation_worldToBody1 * (p_currentPoseVertex->estimate().twb -
-                                 p_previousPoseVertex->estimate().twb -
-                                 p_previousVelocityVertex->estimate() * dt);
+        bodyRotation_worldToBody1 * (p_currentPoseVertex->estimate().twb -
+                                     p_previousPoseVertex->estimate().twb -
+                                     p_previousVelocityVertex->estimate() * dt);
 }
 
 } // namespace core

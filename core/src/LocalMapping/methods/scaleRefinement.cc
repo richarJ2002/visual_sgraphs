@@ -149,9 +149,12 @@ LocalMappingStatus LocalMapping::scaleRefinement()
     std::unique_lock<std::mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
     if ((fabs(scale - 1.f) > 0.002) || !isMonocular)
     {
-        Sophus::SE3f Tgw(mRwg.cast<float>().transpose(),
-                         Eigen::Vector3f::Zero());
-        if (p_activeMap->applyScaledRotation(Tgw, scale, true) !=
+        Sophus::SE3f alignmentPose_worldToGravity(
+            mRwg.cast<float>().transpose(),
+            Eigen::Vector3f::Zero());
+        if (p_activeMap->applyScaledRotation(alignmentPose_worldToGravity,
+                                             scale,
+                                             true) !=
             MapStatus::MAP_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

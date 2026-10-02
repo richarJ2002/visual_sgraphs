@@ -89,12 +89,12 @@ SemanticsManagerStatus
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    const Eigen::Vector3d intersection_world_m =
+    const Eigen::Vector3d planeIntersection_world_m =
         segmentStart_world_m_in +
         interpolation * (segmentEnd_world_m_in - segmentStart_world_m_in);
 
     Eigen::Vector3d apertureOffset_world_m =
-        intersection_world_m - apertureCentroid_world_m_in;
+        planeIntersection_world_m - apertureCentroid_world_m_in;
     apertureOffset_world_m -=
         apertureOffset_world_m.dot(apertureNormal_world) * apertureNormal_world;
 

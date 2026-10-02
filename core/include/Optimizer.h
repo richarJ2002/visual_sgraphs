@@ -152,7 +152,7 @@ class Optimizer
      * @param fixedCorrectedKeyFrames_in Corrected Fixed KeyFrames
      * @param nonFixedKeyFrames_in Non-Fixed KeyFrames
      * @param nonCorrectedMapPoints_in Non-Corrected MapPoints
-     * @param[in] transform_mergeWorldToCurrentWorld_in Baseline similarity
+     * @param[in] mergeTransform_mergeWorldToCurrentWorld_in Baseline similarity
      * transform used when a semantic object has no valid reference
      * keyframe.
      */
@@ -163,7 +163,7 @@ class Optimizer
         std::vector<vs_graphs::core::KeyFrame *> &fixedCorrectedKeyFrames_in,
         std::vector<vs_graphs::core::KeyFrame *> &nonFixedKeyFrames_in,
         std::vector<vs_graphs::core::MapPoint *> &nonCorrectedMapPoints_in,
-        const g2o::Sim3 &transform_mergeWorldToCurrentWorld_in);
+        const g2o::Sim3 &mergeTransform_mergeWorldToCurrentWorld_in);
 
     // For inertial loopclosing
     [[nodiscard]] static OptimizerStatus optimizeEssentialGraph4DoF(

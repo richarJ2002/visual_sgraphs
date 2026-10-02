@@ -177,7 +177,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
     }
     if (!isImuInitialized2)
     {
-        Eigen::Matrix3f Rwg;
+        Eigen::Matrix3f gravityRotation_gravityToWorld;
         Eigen::Vector3f gravityDirection;
         gravityDirection.setZero();
         for (std::vector<KeyFrame *>::iterator orderedKeyFrameIt =
@@ -263,8 +263,9 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         if (rotationAxisNorm != 0 && !std::isnan(gravityCosine) &&
             !std::isnan(rotationAngle))
             rotationVector = rotationAxis * rotationAngle / rotationAxisNorm;
-        Rwg                     = Sophus::SO3f::exp(rotationVector).matrix();
-        mRwg                    = Rwg.cast<double>();
+        gravityRotation_gravityToWorld =
+            Sophus::SO3f::exp(rotationVector).matrix();
+        mRwg                    = gravityRotation_gravityToWorld.cast<double>();
         initializationStartTime = p_currentKeyFrame->timeStamp - firstTimestamp;
     }
     else
@@ -372,9 +373,12 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         std::unique_lock<std::mutex> mapUpdateLock(p_activeMap->mapUpdateMutex);
         if ((fabs(scale - 1.f) > 0.00001) || !isMonocular)
         {
-            Sophus::SE3f Twg(mRwg.cast<float>().transpose(),
-                             Eigen::Vector3f::Zero());
-            if (p_activeMap->applyScaledRotation(Twg, scale, true) !=
+            Sophus::SE3f alignmentPose_worldToGravity(
+                mRwg.cast<float>().transpose(),
+                Eigen::Vector3f::Zero());
+            if (p_activeMap->applyScaledRotation(alignmentPose_worldToGravity,
+                                                 scale,
+                                                 true) !=
                 MapStatus::MAP_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(
@@ -606,8 +610,8 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3f pose_cameraToWorld{};
-        if (p_correctionKeyFrame->getPoseInverse(pose_cameraToWorld) !=
+        Sophus::SE3f cameraPose_cameraToWorld{};
+        if (p_correctionKeyFrame->getPoseInverse(cameraPose_cameraToWorld) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -646,7 +650,8 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Sophus::SE3f Tchildc = childKeyFramePose * pose_cameraToWorld;
+                Sophus::SE3f Tchildc =
+                    childKeyFramePose * cameraPose_cameraToWorld;
                 p_childKeyFrame->tcwGBA =
                     Tchildc * p_correctionKeyFrame->tcwGBA;
 

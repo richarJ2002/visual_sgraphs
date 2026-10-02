@@ -221,12 +221,18 @@ class ImuCamPose
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Matrix4d Trl =
+            Eigen::Matrix4d stereoPose_leftCameraToRightCamera =
                 keyFrameRelativePoseTrl.matrix().cast<double>();
-            Rcw[1]     = Trl.block<3, 3>(0, 0) * Rcw[0];
-            tcw[1]     = Trl.block<3, 3>(0, 0) * tcw[0] + Trl.block<3, 1>(0, 3);
-            tcb[1]     = Trl.block<3, 3>(0, 0) * tcb[0] + Trl.block<3, 1>(0, 3);
-            Rcb[1]     = Trl.block<3, 3>(0, 0) * Rcb[0];
+            Rcw[1] =
+                stereoPose_leftCameraToRightCamera.block<3, 3>(0, 0) * Rcw[0];
+            tcw[1] =
+                stereoPose_leftCameraToRightCamera.block<3, 3>(0, 0) * tcw[0] +
+                stereoPose_leftCameraToRightCamera.block<3, 1>(0, 3);
+            tcb[1] =
+                stereoPose_leftCameraToRightCamera.block<3, 3>(0, 0) * tcb[0] +
+                stereoPose_leftCameraToRightCamera.block<3, 1>(0, 3);
+            Rcb[1] =
+                stereoPose_leftCameraToRightCamera.block<3, 3>(0, 0) * Rcb[0];
             Rbc[1]     = Rcb[1].transpose();
             tbc[1]     = -Rbc[1] * tcb[1];
             pCamera[1] = p_keyFrame_inout->p_camera2;
@@ -315,11 +321,18 @@ class ImuCamPose
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            Eigen::Matrix4d Trl = pFRelativePoseTrl.matrix().cast<double>();
-            Rcw[1]              = Trl.block<3, 3>(0, 0) * Rcw[0];
-            tcw[1]     = Trl.block<3, 3>(0, 0) * tcw[0] + Trl.block<3, 1>(0, 3);
-            tcb[1]     = Trl.block<3, 3>(0, 0) * tcb[0] + Trl.block<3, 1>(0, 3);
-            Rcb[1]     = Trl.block<3, 3>(0, 0) * Rcb[0];
+            Eigen::Matrix4d stereoPose_leftCameraToRightCamera =
+                pFRelativePoseTrl.matrix().cast<double>();
+            Rcw[1] =
+                stereoPose_leftCameraToRightCamera.block<3, 3>(0, 0) * Rcw[0];
+            tcw[1] =
+                stereoPose_leftCameraToRightCamera.block<3, 3>(0, 0) * tcw[0] +
+                stereoPose_leftCameraToRightCamera.block<3, 1>(0, 3);
+            tcb[1] =
+                stereoPose_leftCameraToRightCamera.block<3, 3>(0, 0) * tcb[0] +
+                stereoPose_leftCameraToRightCamera.block<3, 1>(0, 3);
+            Rcb[1] =
+                stereoPose_leftCameraToRightCamera.block<3, 3>(0, 0) * Rcb[0];
             Rbc[1]     = Rcb[1].transpose();
             tbc[1]     = -Rbc[1] * tcb[1];
             pCamera[1] = p_pF_inout->p_camera2;
@@ -329,8 +342,8 @@ class ImuCamPose
         Rwb0 = Rwb;
         DR.setIdentity();
     }
-    ImuCamPose(Eigen::Matrix3d &rotation_cameraToWorld_inout,
-               Eigen::Vector3d &translation_cameraToWorld_inout,
+    ImuCamPose(Eigen::Matrix3d &cameraRotation_cameraToWorld_inout,
+               Eigen::Vector3d &cameraTranslation_cameraToWorld_inout,
                KeyFrame        *p_keyFrame_inout) :
         its(0)
     {
@@ -350,11 +363,11 @@ class ImuCamPose
         Rbc[0] = Rcb[0].transpose();
         tbc[0] =
             p_keyFrame_inout->imuCalibration.mTbc.translation().cast<double>();
-        twb = rotation_cameraToWorld_inout * tcb[0] +
-              translation_cameraToWorld_inout;
-        Rwb        = rotation_cameraToWorld_inout * Rcb[0];
-        Rcw[0]     = rotation_cameraToWorld_inout.transpose();
-        tcw[0]     = -Rcw[0] * translation_cameraToWorld_inout;
+        twb = cameraRotation_cameraToWorld_inout * tcb[0] +
+              cameraTranslation_cameraToWorld_inout;
+        Rwb        = cameraRotation_cameraToWorld_inout * Rcb[0];
+        Rcw[0]     = cameraRotation_cameraToWorld_inout.transpose();
+        tcw[0]     = -Rcw[0] * cameraTranslation_cameraToWorld_inout;
         pCamera[0] = p_keyFrame_inout->p_camera;
         bf         = p_keyFrame_inout->mbf;
 
@@ -364,11 +377,12 @@ class ImuCamPose
     }
 
     [[nodiscard]] ImuCamPoseStatus setParam(
-        const std::vector<Eigen::Matrix3d> &rotations_worldToCamera_in,
-        const std::vector<Eigen::Vector3d> &translations_worldToCamera_in,
-        const std::vector<Eigen::Matrix3d> &rotations_cameraToBody_in,
-        const std::vector<Eigen::Vector3d> &translations_cameraToBody_in,
-        const double                       &baselineFocalProduct_in);
+        const std::vector<Eigen::Matrix3d> &cameraRotations_worldToCamera_in,
+        const std::vector<Eigen::Vector3d> &cameraTranslations_worldToCamera_in,
+        const std::vector<Eigen::Matrix3d> &extrinsicRotations_cameraToBody_in,
+        const std::vector<Eigen::Vector3d>
+                     &extrinsicTranslations_cameraToBody_in,
+        const double &baselineFocalProduct_in);
 
     [[nodiscard]] ImuCamPoseStatus
         update(const double *p_updateVector_in); // update in the imu reference
@@ -483,13 +497,13 @@ class VertexPose4DoF : public g2o::BaseVertex<4, ImuCamPose>
     {
         setEstimate(ImuCamPose(p_pF_inout));
     }
-    VertexPose4DoF(Eigen::Matrix3d &rotation_cameraToWorld_inout,
-                   Eigen::Vector3d &translation_cameraToWorld_inout,
+    VertexPose4DoF(Eigen::Matrix3d &cameraRotation_cameraToWorld_inout,
+                   Eigen::Vector3d &cameraTranslation_cameraToWorld_inout,
                    KeyFrame        *p_keyFrame_inout)
     {
 
-        setEstimate(ImuCamPose(rotation_cameraToWorld_inout,
-                               translation_cameraToWorld_inout,
+        setEstimate(ImuCamPose(cameraRotation_cameraToWorld_inout,
+                               cameraTranslation_cameraToWorld_inout,
                                p_keyFrame_inout));
     }
 
@@ -672,14 +686,16 @@ class GDirection
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     GDirection() :
-        Rwg(Eigen::Matrix3d::Identity()),
-        Rgw(Eigen::Matrix3d::Identity()),
+        gravityRotation_gravityToWorld(Eigen::Matrix3d::Identity()),
+        gravityRotation_worldToGravity(Eigen::Matrix3d::Identity()),
         its(0)
     {}
 
-    explicit GDirection(const Eigen::Matrix3d &rotation_worldToGravity_in) :
-        Rwg(rotation_worldToGravity_in),
-        Rgw(rotation_worldToGravity_in.transpose()),
+    explicit GDirection(
+        const Eigen::Matrix3d &gravityRotation_gravityToWorld_in) :
+        gravityRotation_gravityToWorld(gravityRotation_gravityToWorld_in),
+        gravityRotation_worldToGravity(
+            gravityRotation_gravityToWorld_in.transpose()),
         its(0)
     {}
 
@@ -694,13 +710,16 @@ class GDirection
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Rwg = Rwg * rotation;
-        Rgw = Rwg.transpose();
+        gravityRotation_gravityToWorld =
+            gravityRotation_gravityToWorld * rotation;
+        gravityRotation_worldToGravity =
+            gravityRotation_gravityToWorld.transpose();
 
         return GDirectionStatus::GDIRECTION_STATUS_SUCCESS;
     }
 
-    Eigen::Matrix3d Rwg, Rgw;
+    Eigen::Matrix3d gravityRotation_gravityToWorld,
+        gravityRotation_worldToGravity;
 
     int its;
 };
@@ -1415,14 +1434,14 @@ class ConstraintPoseImu
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    ConstraintPoseImu(const Eigen::Matrix3d &rotation_bodyToWorld_in,
-                      const Eigen::Vector3d &translation_bodyToWorld_in,
+    ConstraintPoseImu(const Eigen::Matrix3d &bodyRotation_bodyToWorld_in,
+                      const Eigen::Vector3d &bodyTranslation_bodyToWorld_in,
                       const Eigen::Vector3d &vwb_in,
                       const Eigen::Vector3d &bg_in,
                       const Eigen::Vector3d &ba_in,
                       const Matrix15d       &H_in) :
-        Rwb(rotation_bodyToWorld_in),
-        twb(translation_bodyToWorld_in),
+        Rwb(bodyRotation_bodyToWorld_in),
+        twb(bodyTranslation_bodyToWorld_in),
         vwb(vwb_in),
         bg(bg_in),
         ba(ba_in),

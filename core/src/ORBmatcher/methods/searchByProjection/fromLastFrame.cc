@@ -53,8 +53,8 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
         rotHist[histogramBinIndex].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
-    Sophus::SE3f pose_worldToCamera{};
-    if (currentFrame_inout.getPose(pose_worldToCamera) !=
+    Sophus::SE3f cameraPose_worldToCamera{};
+    if (currentFrame_inout.getPose(cameraPose_worldToCamera) !=
         FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -62,18 +62,20 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
                      "fail; continuing as before.",
                      __func__);
     }
-    const Eigen::Vector3f translation_cameraToWorld =
-        pose_worldToCamera.inverse().translation();
+    const Eigen::Vector3f cameraTranslation_cameraToWorld =
+        cameraPose_worldToCamera.inverse().translation();
 
-    Sophus::SE3f Tlw{};
-    if (lastFrame_in.getPose(Tlw) != FrameStatus::FRAME_STATUS_SUCCESS)
+    Sophus::SE3f lastFramePose_worldToCamera{};
+    if (lastFrame_in.getPose(lastFramePose_worldToCamera) !=
+        FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
                      "%s: getPose returned a failure status although it cannot "
                      "fail; continuing as before.",
                      __func__);
     }
-    const Eigen::Vector3f tlc = Tlw * translation_cameraToWorld;
+    const Eigen::Vector3f tlc =
+        lastFramePose_worldToCamera * cameraTranslation_cameraToWorld;
 
     const bool isMovingForward  = tlc(2) > currentFrame_inout.mb && !mono_in;
     const bool isMovingBackward = -tlc(2) > currentFrame_inout.mb && !mono_in;
@@ -98,7 +100,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                Eigen::Vector3f x3Dc = pose_worldToCamera * x3Dw;
+                Eigen::Vector3f x3Dc = cameraPose_worldToCamera * x3Dw;
 
                 const float invzc = 1.0 / x3Dc(2);
 

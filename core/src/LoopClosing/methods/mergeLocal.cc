@@ -352,12 +352,14 @@ LoopClosingStatus
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    const Sophus::SE3d pose_cameraToWorld = currentKFPoseInverse.cast<double>();
-    const g2o::Sim3    g2oNonCorrectedSwc(pose_cameraToWorld.unit_quaternion(),
-                                       pose_cameraToWorld.translation(),
-                                       1.0);
-    const g2o::Sim3    g2oSwCurrentWMerge = g2oNonCorrectedSwc * mg2oMergeScw;
-    const g2o::Sim3    g2oSwMergeWCurrent = g2oSwCurrentWMerge.inverse();
+    const Sophus::SE3d cameraPose_cameraToWorld =
+        currentKFPoseInverse.cast<double>();
+    const g2o::Sim3 g2oNonCorrectedSwc(
+        cameraPose_cameraToWorld.unit_quaternion(),
+        cameraPose_cameraToWorld.translation(),
+        1.0);
+    const g2o::Sim3 g2oSwCurrentWMerge = g2oNonCorrectedSwc * mg2oMergeScw;
+    const g2o::Sim3 g2oSwMergeWCurrent = g2oSwCurrentWMerge.inverse();
 
     semantic::SemanticVerifyConfig configuration2{};
     if (semantic::SemanticVerify::configFromSystemParams(configuration2) !=

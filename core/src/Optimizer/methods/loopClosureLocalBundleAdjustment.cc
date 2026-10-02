@@ -128,8 +128,8 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
 
         // Create a new vertex for the KeyFrame
         g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>    pose_worldToCamera{};
-        if (p_adjustKeyFrame->getPose(pose_worldToCamera) !=
+        Sophus::SE3<float>    cameraPose_worldToCamera{};
+        if (p_adjustKeyFrame->getPose(cameraPose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -137,9 +137,9 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_se3Vertex->setEstimate(
-            g2o::SE3Quat(pose_worldToCamera.unit_quaternion().cast<double>(),
-                         pose_worldToCamera.translation().cast<double>()));
+        p_se3Vertex->setEstimate(g2o::SE3Quat(
+            cameraPose_worldToCamera.unit_quaternion().cast<double>(),
+            cameraPose_worldToCamera.translation().cast<double>()));
         p_se3Vertex->setId(p_adjustKeyFrame->id);
         p_se3Vertex->setFixed(true);
         optimizer.addVertex(p_se3Vertex);
@@ -228,8 +228,8 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         p_adjustKeyFrame->baLocalMergeId = p_mainKeyFrame_in->id;
 
         g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
-        Sophus::SE3<float>    pose_worldToCamera{};
-        if (p_adjustKeyFrame->getPose(pose_worldToCamera) !=
+        Sophus::SE3<float>    cameraPose_worldToCamera{};
+        if (p_adjustKeyFrame->getPose(cameraPose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -237,9 +237,9 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_se3Vertex->setEstimate(
-            g2o::SE3Quat(pose_worldToCamera.unit_quaternion().cast<double>(),
-                         pose_worldToCamera.translation().cast<double>()));
+        p_se3Vertex->setEstimate(g2o::SE3Quat(
+            cameraPose_worldToCamera.unit_quaternion().cast<double>(),
+            cameraPose_worldToCamera.translation().cast<double>()));
         p_se3Vertex->setId(p_adjustKeyFrame->id);
         optimizer.addVertex(p_se3Vertex);
         if (p_adjustKeyFrame->id > maximumKeyFrameId)
@@ -776,8 +776,9 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         g2o::VertexSE3Expmap *p_se3Vertex = static_cast<g2o::VertexSE3Expmap *>(
             optimizer.vertex(p_adjustKeyFrame->id));
         g2o::SE3Quat poseEstimate = p_se3Vertex->estimate();
-        Sophus::SE3f Tiw(poseEstimate.rotation().cast<float>(),
-                         poseEstimate.translation().cast<float>());
+        Sophus::SE3f keyFramePose_worldToCamera(
+            poseEstimate.rotation().cast<float>(),
+            poseEstimate.translation().cast<float>());
 
         int monoBadPointCount = 0, monoOptPointCount = 0;
         int stereoBadPointCount = 0, stereoOptPointCount = 0;
@@ -878,7 +879,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
             }
         }
 
-        if (p_adjustKeyFrame->setPose(Tiw) !=
+        if (p_adjustKeyFrame->setPose(keyFramePose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -281,10 +281,11 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const Eigen::Vector4d wallEquation_world = wallGeometry.equation_world;
+        const Eigen::Vector4d wallEquation_world =
+            wallGeometry.planeEquation_world;
         const double wallNormalNorm = wallEquation_world.head<3>().norm();
         bool         hasCompatibleLiveCluster = false;
-        if (wallGeometry.centroid_world_m.allFinite() &&
+        if (wallGeometry.planeCentroid_world_m.allFinite() &&
             wallEquation_world.allFinite() && wallNormalNorm > 1e-8)
         {
             const Eigen::Vector3d wallNormal_world =
@@ -313,7 +314,8 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                     // before.
                 }
                 if (!clusterCentroid_world_m.allFinite() ||
-                    (clusterCentroid_world_m - wallGeometry.centroid_world_m)
+                    (clusterCentroid_world_m -
+                     wallGeometry.planeCentroid_world_m)
                             .norm() > maximumCentroidDistance_m)
                 {
                     continue;

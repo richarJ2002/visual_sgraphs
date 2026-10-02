@@ -67,21 +67,24 @@ FrameStatus Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
     }
 
     Eigen::Matrix3f mR;
-    Eigen::Vector3f mt, translation_cameraToWorld;
+    Eigen::Vector3f mt, cameraTranslation_cameraToWorld;
     if (isRightCamera_in)
     {
-        Eigen::Matrix3f Rrl = poseTrl.rotationMatrix();
-        Eigen::Vector3f trl = poseTrl.translation();
-        mR                  = Rrl * rotationRcw;
-        mt                  = Rrl * translationTcw + trl;
-        translation_cameraToWorld =
+        Eigen::Matrix3f stereoRotation_leftCameraToRightCamera =
+            poseTrl.rotationMatrix();
+        Eigen::Vector3f stereoTranslation_leftCameraToRightCamera =
+            poseTrl.translation();
+        mR = stereoRotation_leftCameraToRightCamera * rotationRcw;
+        mt = stereoRotation_leftCameraToRightCamera * translationTcw +
+             stereoTranslation_leftCameraToRightCamera;
+        cameraTranslation_cameraToWorld =
             rotationRwc * poseTlr.translation() + centerOw;
     }
     else
     {
-        mR                        = rotationRcw;
-        mt                        = translationTcw;
-        translation_cameraToWorld = centerOw;
+        mR                              = rotationRcw;
+        mt                              = translationTcw;
+        cameraTranslation_cameraToWorld = centerOw;
     }
 
     // 3D in camera coordinates
@@ -133,7 +136,7 @@ FrameStatus Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    const Eigen::Vector3f PO       = P - translation_cameraToWorld;
+    const Eigen::Vector3f PO       = P - cameraTranslation_cameraToWorld;
     const float           distance = PO.norm();
 
     if (distance < minimumDistance || distance > maximumDistance)

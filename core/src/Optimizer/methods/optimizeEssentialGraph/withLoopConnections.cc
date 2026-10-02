@@ -147,9 +147,9 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            Sophus::SE3d pose_worldToCamera = keyFramePose.cast<double>();
-            g2o::Sim3    Siw(pose_worldToCamera.unit_quaternion(),
-                          pose_worldToCamera.translation(),
+            Sophus::SE3d cameraPose_worldToCamera = keyFramePose.cast<double>();
+            g2o::Sim3    Siw(cameraPose_worldToCamera.unit_quaternion(),
+                          cameraPose_worldToCamera.translation(),
                           1.0);
             vScw[idCount] = Siw;
             p_sim3Vertex->setEstimate(Siw);
@@ -458,9 +458,10 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         double s               = CorrectedSiw.scale();
         s                      = (s == 0.0) ? 1.0 : s;
 
-        Sophus::SE3f Tiw(CorrectedSiw.rotation().cast<float>(),
-                         CorrectedSiw.translation().cast<float>() / s);
-        if (p_mapKeyFrame->setPose(Tiw) !=
+        Sophus::SE3f keyFramePose_worldToCamera(
+            CorrectedSiw.rotation().cast<float>(),
+            CorrectedSiw.translation().cast<float>() / s);
+        if (p_mapKeyFrame->setPose(keyFramePose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

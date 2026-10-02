@@ -44,7 +44,7 @@ namespace core
 LoopClosingStatus verifyLoopMergeFloors(
     Map             *p_survivingMap_in,
     Map             *p_absorbedMap_in,
-    const g2o::Sim3 &transform_absorbedWorldToSurvivingWorld_in,
+    const g2o::Sim3 &mergeTransform_absorbedWorldToSurvivingWorld_in,
     std::string     &result_out,
     bool            &isVerified_out)
 {
@@ -147,7 +147,7 @@ LoopClosingStatus verifyLoopMergeFloors(
     std::optional<semantic::Floor::PlaneIdentity> transformedAbsorbedIdentity{};
     if (semantic::Floor::transformPlaneIdentity(
             *absorbedIdentity,
-            transform_absorbedWorldToSurvivingWorld_in,
+            mergeTransform_absorbedWorldToSurvivingWorld_in,
             transformedAbsorbedIdentity) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {

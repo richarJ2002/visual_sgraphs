@@ -183,8 +183,8 @@ SemanticsManagerStatus SemanticsManager::evaluateTopCandidateVerification(
     if (result.hasPassed && p_floorA != nullptr && p_floorB != nullptr &&
         floorAHasPlaneIdentity && floorBHasPlaneIdentity)
     {
-        /* verify()'s transform_aToB maps room-A points into room B's frame,
-         * i.e. A is absorbed into B -- matches runFloorGate's
+        /* verify()'s roomTransform_roomAToRoomB maps room-A points into room
+         * B's frame, i.e. A is absorbed into B -- matches runFloorGate's
          * absorbed->surviving convention. */
         core::Map *p_roomBMap = nullptr;
         if (p_roomB->getMap(p_roomBMap) !=
@@ -205,11 +205,12 @@ SemanticsManagerStatus SemanticsManager::evaluateTopCandidateVerification(
                          __func__);
         }
         bool hasPassed2{};
-        if (semantic::SemanticVerify::runFloorGate(result,
-                                                   p_roomBMap,
-                                                   p_roomAMap,
-                                                   result.transform_aToB,
-                                                   hasPassed2) !=
+        if (semantic::SemanticVerify::runFloorGate(
+                result,
+                p_roomBMap,
+                p_roomAMap,
+                result.roomTransform_roomAToRoomB,
+                hasPassed2) !=
             semantic::SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

@@ -114,7 +114,7 @@ SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    record.equation_world = passage_inGlobalEquation.coeffs();
+    record.planeEquation_world = passage_inGlobalEquation.coeffs();
     Eigen::Vector3d passage_inCentroid{};
     if (p_passage_in->getCentroid(passage_inCentroid) !=
         PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -124,7 +124,7 @@ SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    record.centroid_world_m = passage_inCentroid;
+    record.passageCentroid_world_m = passage_inCentroid;
     double passage_inWidth{};
     if (p_passage_in->getWidth(passage_inWidth) !=
         PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -230,7 +230,7 @@ SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
     }
     if (provenanceHasDirection)
     {
-        record.knownSideDirection_world = provenance.direction_world;
+        record.knownSideDirection_world = provenance.knownSideDirection_world;
     }
 
     vs_graphs::core::semantic::Room *p_passage_inProspectiveRoom = nullptr;
@@ -253,9 +253,8 @@ SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
     }
     record.prospectiveRoomRef = entityRef2;
 
-    std::size_t passage_inTraversalKnownToFarCount{};
-    if (p_passage_in->getTraversalKnownToFarCount(
-            passage_inTraversalKnownToFarCount) !=
+    std::size_t traversalKnownToFarCount{};
+    if (p_passage_in->getTraversalKnownToFarCount(traversalKnownToFarCount) !=
         PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -263,10 +262,9 @@ SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
                      "status although it cannot fail; continuing as before.",
                      __func__);
     }
-    record.traversalKnownToFarCount = passage_inTraversalKnownToFarCount;
-    std::size_t passage_inTraversalFarToKnownCount{};
-    if (p_passage_in->getTraversalFarToKnownCount(
-            passage_inTraversalFarToKnownCount) !=
+    record.traversalKnownToFarCount = traversalKnownToFarCount;
+    std::size_t traversalFarToKnownCount{};
+    if (p_passage_in->getTraversalFarToKnownCount(traversalFarToKnownCount) !=
         PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -274,7 +272,7 @@ SemanticGraphSnapshotStatus capturePassage(Passage          *p_passage_in,
                      "status although it cannot fail; continuing as before.",
                      __func__);
     }
-    record.traversalFarToKnownCount = passage_inTraversalFarToKnownCount;
+    record.traversalFarToKnownCount = traversalFarToKnownCount;
     std::size_t passage_inTraversalUnknownCount{};
     if (p_passage_in->getTraversalUnknownCount(
             passage_inTraversalUnknownCount) !=

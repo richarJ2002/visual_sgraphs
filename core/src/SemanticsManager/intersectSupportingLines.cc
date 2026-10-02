@@ -38,15 +38,15 @@ namespace core
 SemanticsManagerStatus
     intersectSupportingLines(const FiniteWallSegment2d &firstSegment_in,
                              const FiniteWallSegment2d &secondSegment_in,
-                             Eigen::Vector2d &intersection_world_m_out,
+                             Eigen::Vector2d &lineIntersection_world_m_out,
                              double          &firstParameter_out,
                              double          &secondParameter_out,
                              bool            &hasIntersection_out)
 {
     const Eigen::Vector2d firstDirection =
-        firstSegment_in.end_world_m - firstSegment_in.start_world_m;
+        firstSegment_in.wallEnd_world_m - firstSegment_in.wallStart_world_m;
     const Eigen::Vector2d secondDirection =
-        secondSegment_in.end_world_m - secondSegment_in.start_world_m;
+        secondSegment_in.wallEnd_world_m - secondSegment_in.wallStart_world_m;
     double denominator{};
     if (crossProduct2d(firstDirection, secondDirection, denominator) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
@@ -64,7 +64,7 @@ SemanticsManagerStatus
     }
 
     const Eigen::Vector2d startOffset =
-        secondSegment_in.start_world_m - firstSegment_in.start_world_m;
+        secondSegment_in.wallStart_world_m - firstSegment_in.wallStart_world_m;
     double crossProduct{};
     if (crossProduct2d(startOffset, secondDirection, crossProduct) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
@@ -85,10 +85,10 @@ SemanticsManagerStatus
                      __func__);
     }
     secondParameter_out = crossProduct2 / denominator;
-    intersection_world_m_out =
-        firstSegment_in.start_world_m + firstParameter_out * firstDirection;
+    lineIntersection_world_m_out =
+        firstSegment_in.wallStart_world_m + firstParameter_out * firstDirection;
 
-    hasIntersection_out = intersection_world_m_out.allFinite() &&
+    hasIntersection_out = lineIntersection_world_m_out.allFinite() &&
                           std::isfinite(firstParameter_out) &&
                           std::isfinite(secondParameter_out);
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

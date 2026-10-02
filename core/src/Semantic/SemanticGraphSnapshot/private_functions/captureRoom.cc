@@ -115,7 +115,7 @@ SemanticGraphSnapshotStatus captureRoom(Room             *p_room_in,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    record.centroid_world_m = room_inCentroid;
+    record.roomCentroid_world_m = room_inCentroid;
     Room::BoundaryStatus room_inBoundaryStatus{};
     if (p_room_in->getBoundaryStatus(room_inBoundaryStatus) !=
         RoomStatus::ROOM_STATUS_SUCCESS)

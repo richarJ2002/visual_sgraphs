@@ -38,7 +38,7 @@ namespace vs_graphs
 namespace core
 {
 
-SystemStatus System::getCamTwc(Sophus::SE3f &pose_cameraToWorld_out)
+SystemStatus System::getCamTwc(Sophus::SE3f &cameraPose_cameraToWorld_out)
 {
     Sophus::SE3f trackerCamTwc{};
     if (p_tracker->getCamTwc(trackerCamTwc) !=
@@ -49,7 +49,7 @@ SystemStatus System::getCamTwc(Sophus::SE3f &pose_cameraToWorld_out)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    pose_cameraToWorld_out = trackerCamTwc;
+    cameraPose_cameraToWorld_out = trackerCamTwc;
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 

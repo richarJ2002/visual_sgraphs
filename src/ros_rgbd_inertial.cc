@@ -260,7 +260,7 @@ void ImageGrabber::SyncWithImu()
                                          imuTimestamp_seconds -
                                              lastConsumedImuTimestamp_seconds);
                         }
-                        const cv::Point3f acceleration_body_mPerSec2(
+                        const cv::Point3f imuAcceleration_body_mPerSec2(
                             static_cast<float>(
                                 p_imuMessage->linear_acceleration.x),
                             static_cast<float>(
@@ -285,7 +285,7 @@ void ImageGrabber::SyncWithImu()
                             imuContinuityOverflow        = true;
                         }
                         pendingImuMeasurements.emplace_back(
-                            acceleration_body_mPerSec2,
+                            imuAcceleration_body_mPerSec2,
                             angularVelocity_body_radPerSecCv,
                             imuTimestamp_seconds);
                         angularVelocity_body_radPerSec << static_cast<float>(

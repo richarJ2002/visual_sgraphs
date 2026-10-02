@@ -37,7 +37,8 @@ namespace vs_graphs
 namespace core
 {
 
-TrackingStatus Tracking::getCamTwc(Sophus::SE3f &pose_cameraToWorld_out) const
+TrackingStatus
+    Tracking::getCamTwc(Sophus::SE3f &cameraPose_cameraToWorld_out) const
 {
     Sophus::SE3<float> currentFrameGetPose{};
     if (currentFrame.getPose(currentFrameGetPose) !=
@@ -48,7 +49,7 @@ TrackingStatus Tracking::getCamTwc(Sophus::SE3f &pose_cameraToWorld_out) const
                      "fail; continuing as before.",
                      __func__);
     }
-    pose_cameraToWorld_out = (currentFrameGetPose).inverse();
+    cameraPose_cameraToWorld_out = (currentFrameGetPose).inverse();
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 

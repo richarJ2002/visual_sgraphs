@@ -20,7 +20,7 @@ namespace test
 {
 
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
-    makeGridCloud(const Eigen::Vector3d &centroid_world_m_in,
+    makeGridCloud(const Eigen::Vector3d &gridCentroid_world_m_in,
                   const Eigen::Vector3d &axisU_world_in,
                   const Eigen::Vector3d &axisV_world_in,
                   double                 halfU_m_in,
@@ -41,13 +41,14 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
             const double v = -halfV_m_in + (2.0 * halfV_m_in) *
                                                static_cast<double>(vIndex) /
                                                static_cast<double>(steps - 1);
-            const Eigen::Vector3d point_world =
-                centroid_world_m_in + u * axisU_world_in + v * axisV_world_in;
+            const Eigen::Vector3d gridPoint_world = gridCentroid_world_m_in +
+                                                    u * axisU_world_in +
+                                                    v * axisV_world_in;
 
             pcl::PointXYZRGBA pclPoint;
-            pclPoint.x = static_cast<float>(point_world.x());
-            pclPoint.y = static_cast<float>(point_world.y());
-            pclPoint.z = static_cast<float>(point_world.z());
+            pclPoint.x = static_cast<float>(gridPoint_world.x());
+            pclPoint.y = static_cast<float>(gridPoint_world.y());
+            pclPoint.z = static_cast<float>(gridPoint_world.z());
             cloud->push_back(pclPoint);
         }
     }
@@ -57,12 +58,12 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
 void makeWallPlane(geometric::Plane      &wall_inout,
                    int                    id_in,
                    Map                   *p_map_in,
-                   const Eigen::Vector4d &equation_world_in,
+                   const Eigen::Vector4d &wallEquation_world_in,
                    const Eigen::Vector3d &axisU_world_in,
                    const Eigen::Vector3d &axisV_world_in,
                    double                 halfU_m_in,
                    double                 halfV_m_in,
-                   const Eigen::Vector3d &centroid_world_m_in)
+                   const Eigen::Vector3d &wallCentroid_world_m_in)
 {
     if (wall_inout.setId(id_in) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
@@ -100,7 +101,7 @@ void makeWallPlane(geometric::Plane      &wall_inout,
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    if (wall_inout.setGlobalEquation(g2o::Plane3D(equation_world_in)) !=
+    if (wall_inout.setGlobalEquation(g2o::Plane3D(wallEquation_world_in)) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -108,7 +109,7 @@ void makeWallPlane(geometric::Plane      &wall_inout,
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    if (wall_inout.setCentroid(centroid_world_m_in) !=
+    if (wall_inout.setCentroid(wallCentroid_world_m_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -116,7 +117,7 @@ void makeWallPlane(geometric::Plane      &wall_inout,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (wall_inout.setMapClouds(makeGridCloud(centroid_world_m_in,
+    if (wall_inout.setMapClouds(makeGridCloud(wallCentroid_world_m_in,
                                               axisU_world_in,
                                               axisV_world_in,
                                               halfU_m_in,
@@ -207,7 +208,7 @@ void makeRoom(semantic::Room             &room_inout,
               int                         id_in,
               Map                        *p_map_in,
               geometric::Plane           *p_wall_in,
-              const Eigen::Vector3d      &centroid_world_m_in,
+              const Eigen::Vector3d      &roomCentroid_world_m_in,
               semantic::Room::RoomVariant variant_in)
 {
     if (room_inout.setId(id_in) !=
@@ -234,7 +235,7 @@ void makeRoom(semantic::Room             &room_inout,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (room_inout.setCentroid(centroid_world_m_in) !=
+    if (room_inout.setCentroid(roomCentroid_world_m_in) !=
         vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -258,8 +259,8 @@ void makeRoom(semantic::Room             &room_inout,
 void makePassage(semantic::Passage     &passage_inout,
                  int                    id_in,
                  Map                   *p_map_in,
-                 const Eigen::Vector4d &equation_world_in,
-                 const Eigen::Vector3d &centroid_world_m_in,
+                 const Eigen::Vector4d &passageEquation_world_in,
+                 const Eigen::Vector3d &passageCentroid_world_m_in,
                  semantic::Room        *p_knownSideRoom_in,
                  const Eigen::Vector3d &knownSideDirection_world_in,
                  semantic::Room        *p_farRoom_in,
@@ -307,7 +308,7 @@ void makePassage(semantic::Passage     &passage_inout,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (passage_inout.setCentroid(centroid_world_m_in) !=
+    if (passage_inout.setCentroid(passageCentroid_world_m_in) !=
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -315,7 +316,8 @@ void makePassage(semantic::Passage     &passage_inout,
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    if (passage_inout.setGlobalEquation(g2o::Plane3D(equation_world_in)) !=
+    if (passage_inout.setGlobalEquation(
+            g2o::Plane3D(passageEquation_world_in)) !=
         vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -427,16 +429,17 @@ void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
     }
 }
 
-g2o::Sim3 makeNonTrivialSim3(double                 rotationAngle_rad_in,
-                             const Eigen::Vector3d &rotationAxis_in,
-                             const Eigen::Vector3d &translation_world_m_in,
-                             double                 scale_in)
+g2o::Sim3
+    makeNonTrivialSim3(double                 rotationAngle_rad_in,
+                       const Eigen::Vector3d &rotationAxis_in,
+                       const Eigen::Vector3d &correctionTranslation_world_m_in,
+                       double                 scale_in)
 {
-    const Eigen::Matrix3d rotation_oldWorldToNewWorld =
+    const Eigen::Matrix3d alignmentRotation_oldWorldToNewWorld =
         Eigen::AngleAxisd(rotationAngle_rad_in, rotationAxis_in.normalized())
             .toRotationMatrix();
-    return g2o::Sim3(rotation_oldWorldToNewWorld,
-                     translation_world_m_in,
+    return g2o::Sim3(alignmentRotation_oldWorldToNewWorld,
+                     correctionTranslation_world_m_in,
                      scale_in);
 }
 

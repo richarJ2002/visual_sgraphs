@@ -181,10 +181,10 @@ class SemanticsManager
      */
     struct OpenPassageEvidence
     {
-        geometric::Plane *p_supportingWall  = nullptr;
-        Eigen::Vector3d   centroid_world_m  = Eigen::Vector3d::Zero();
-        std::size_t       confirmationCount = 0U;
-        std::size_t       missedUpdateCount = 0U;
+        geometric::Plane *p_supportingWall        = nullptr;
+        Eigen::Vector3d   openingCentroid_world_m = Eigen::Vector3d::Zero();
+        std::size_t       confirmationCount       = 0U;
+        std::size_t       missedUpdateCount       = 0U;
         std::uint64_t     lastConfirmedSkeletonFingerprint = 0U;
         /*! Best (largest) opening radius / vertical span observed across all
          *  cycles this hypothesis has been confirmed in -- the running size

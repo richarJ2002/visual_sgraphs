@@ -60,7 +60,7 @@ SemanticsManagerStatus computeRoomObservationGaps(
     for (const FiniteWallSegment2d &segment : wallSegments_in)
     {
         const Eigen::Vector2d midpointGround_m =
-            0.5 * (segment.start_world_m + segment.end_world_m) -
+            0.5 * (segment.wallStart_world_m + segment.wallEnd_world_m) -
             roomCentroidGround_m_in;
         if (!midpointGround_m.allFinite() ||
             midpointGround_m.squaredNorm() < 1e-12)

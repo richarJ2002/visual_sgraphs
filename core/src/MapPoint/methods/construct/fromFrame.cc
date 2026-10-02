@@ -105,8 +105,8 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
     }
     else
     {
-        Eigen::Matrix3f Rwl{};
-        if (p_frame_inout->getRotationRwc(Rwl) !=
+        Eigen::Matrix3f leftCameraRotation_cameraToWorld{};
+        if (p_frame_inout->getRotationRwc(leftCameraRotation_cameraToWorld) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -124,8 +124,8 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
                          __func__);
         }
         Eigen::Vector3f tlr = frameRelativePoseTlr.translation();
-        Eigen::Vector3f twl{};
-        if (p_frame_inout->getCameraCenter(twl) !=
+        Eigen::Vector3f leftCameraCenter_world{};
+        if (p_frame_inout->getCameraCenter(leftCameraCenter_world) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -134,7 +134,8 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
                          __func__);
         }
 
-        cameraCenter_world = Rwl * tlr + twl;
+        cameraCenter_world =
+            leftCameraRotation_cameraToWorld * tlr + leftCameraCenter_world;
     }
     normalVector = worldPos - cameraCenter_world;
     normalVector = normalVector / normalVector.norm();

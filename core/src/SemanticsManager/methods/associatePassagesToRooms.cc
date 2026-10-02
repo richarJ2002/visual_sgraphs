@@ -504,7 +504,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             __func__);
                     }
                     Eigen::Vector4d roomWallEquation =
-                        roomWallGeometry.equation_world;
+                        roomWallGeometry.planeEquation_world;
 
                     const double roomWallNormalNorm =
                         roomWallEquation.head<3>().norm();
@@ -749,7 +749,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                 }
                 const double knownSideSign =
                     knownSideHasDirection2
-                        ? knownSide.direction_world.dot(
+                        ? knownSide.knownSideDirection_world.dot(
                               passageEquation_world.head<3>())
                         : 0.0;
                 if (knownSideSign >= 0.0 &&
@@ -1206,9 +1206,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                          __func__);
         }
         const double knownSideSign =
-            knownSideHasDirection3
-                ? knownSide.direction_world.dot(passageEquation_world.head<3>())
-                : 0.0;
+            knownSideHasDirection3 ? knownSide.knownSideDirection_world.dot(
+                                         passageEquation_world.head<3>())
+                                   : 0.0;
         const auto roomIsOnKnownSide = [&passageEquation_world,
                                         &knownSide,
                                         knownSideSign](semantic::Room *p_room)
@@ -1777,8 +1777,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             __func__);
                     }
                     Eigen::Vector3d knownSideDirection =
-                        knownSideHasDirection7 ? knownSide.direction_world
-                                               : Eigen::Vector3d::Zero();
+                        knownSideHasDirection7
+                            ? knownSide.knownSideDirection_world
+                            : Eigen::Vector3d::Zero();
                     bool knownSideHasDirection8{};
                     if (knownSide.hasDirection(knownSideHasDirection8) !=
                         semantic::KnownSideProvenanceStatus::

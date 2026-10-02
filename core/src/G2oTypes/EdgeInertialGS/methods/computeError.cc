@@ -66,7 +66,8 @@ void EdgeInertialGS::computeError()
                                  p_gyroBiasVertex->estimate()[0],
                                  p_gyroBiasVertex->estimate()[1],
                                  p_gyroBiasVertex->estimate()[2]);
-    g = p_gravityDirectionVertex->estimate().Rwg * gI;
+    g = p_gravityDirectionVertex->estimate().gravityRotation_gravityToWorld *
+        gI;
     const double    scaleEstimate = p_scaleVertex->estimate();
     Eigen::Matrix3f preintegratedDeltaRotation{};
     if (p_preintegrated->getDeltaRotation(biasEstimate,

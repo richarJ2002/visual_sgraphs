@@ -68,10 +68,13 @@ bool isValueLessForCollisionTiebreak(const RoomRecord &lhs_in,
     {
         return lhs_in.variant < rhs_in.variant;
     }
-    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m) ||
-        isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
+    if (isVector3dLess(lhs_in.roomCentroid_world_m,
+                       rhs_in.roomCentroid_world_m) ||
+        isVector3dLess(rhs_in.roomCentroid_world_m,
+                       lhs_in.roomCentroid_world_m))
     {
-        return isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m);
+        return isVector3dLess(lhs_in.roomCentroid_world_m,
+                              rhs_in.roomCentroid_world_m);
     }
     if (lhs_in.boundaryStatus != rhs_in.boundaryStatus)
     {

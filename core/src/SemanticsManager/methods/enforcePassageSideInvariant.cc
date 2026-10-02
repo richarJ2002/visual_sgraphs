@@ -235,7 +235,8 @@ SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
                 }
                 const Eigen::Vector3d knownSidePoint_world_m =
                     exemptPassageCentroid +
-                    (minimumSideDistance_m * 2.0) * knownSide.direction_world;
+                    (minimumSideDistance_m * 2.0) *
+                        knownSide.knownSideDirection_world;
                 Eigen::Vector3d wallGetCentroid{};
                 if (p_wall->getCentroid(wallGetCentroid) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)

@@ -68,8 +68,8 @@ LoopClosingStatus LoopClosing::searchAndFuse(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3f pose_worldToCamera{};
-        if (p_keyFrame->getPose(pose_worldToCamera) !=
+        Sophus::SE3f cameraPose_worldToCamera{};
+        if (p_keyFrame->getPose(cameraPose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -77,8 +77,8 @@ LoopClosingStatus LoopClosing::searchAndFuse(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::Sim3f Scw(pose_worldToCamera.unit_quaternion(),
-                          pose_worldToCamera.translation());
+        Sophus::Sim3f Scw(cameraPose_worldToCamera.unit_quaternion(),
+                          cameraPose_worldToCamera.translation());
         Scw.setScale(1.f);
         /*std::cout << "These should be zeros: " <<
             Scw.rotationMatrix() - Tcw.rotationMatrix() << std::endl <<

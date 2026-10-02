@@ -88,7 +88,7 @@ enum class SemanticMergeDecision;
  * @param[in]    p_absorbedMap_in
  *               The map being merged into the surviving map.
  *
- * @param[in]    transform_absorbedWorldToSurvivingWorld_in
+ * @param[in]    mergeTransform_absorbedWorldToSurvivingWorld_in
  *               Verified Sim3 transform from the absorbed map's
  *               world frame to the surviving map's world frame.
  *
@@ -102,7 +102,7 @@ enum class SemanticMergeDecision;
 [[nodiscard]] LoopClosingStatus verifyLoopMergeFloors(
     Map             *p_survivingMap_in,
     Map             *p_absorbedMap_in,
-    const g2o::Sim3 &transform_absorbedWorldToSurvivingWorld_in,
+    const g2o::Sim3 &mergeTransform_absorbedWorldToSurvivingWorld_in,
     std::string     &result_out,
     bool            &isVerified_out);
 

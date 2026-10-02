@@ -97,20 +97,20 @@ SemanticsManagerStatus
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector4d equation_world = wallGetGlobalEquation.coeffs();
-    const double    normalNorm     = equation_world.head<3>().norm();
+    Eigen::Vector4d planeEquation_world = wallGetGlobalEquation.coeffs();
+    const double    normalNorm          = planeEquation_world.head<3>().norm();
 
-    if (!equation_world.allFinite() || normalNorm <= 1e-8)
+    if (!planeEquation_world.allFinite() || normalNorm <= 1e-8)
     {
         isWallFaceForeignToRoom_out = false;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    equation_world /= normalNorm;
+    planeEquation_world /= normalNorm;
 
     const double observedSide_m =
-        equation_world.head<3>().dot(observationOrigin_world_m.value()) +
-        equation_world(3);
+        planeEquation_world.head<3>().dot(observationOrigin_world_m.value()) +
+        planeEquation_world(3);
     Eigen::Vector3d room_inCentroid{};
     if (p_room_in->getCentroid(room_inCentroid) !=
         semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -121,8 +121,8 @@ SemanticsManagerStatus
                      __func__);
     }
     const double roomSide_m =
-        equation_world.head<3>().dot(room_inCentroid.cast<double>()) +
-        equation_world(3);
+        planeEquation_world.head<3>().dot(room_inCentroid.cast<double>()) +
+        planeEquation_world(3);
 
     if (!std::isfinite(observedSide_m) || !std::isfinite(roomSide_m))
     {

@@ -40,18 +40,18 @@ namespace core
 namespace geometric
 {
 
-PlaneStatus
-    Plane::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
+PlaneStatus Plane::applyTransform(
+    const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in)
 {
     std::scoped_lock lock(positionMutex, typeMutex, featuresMutex);
 
-    centroid = transform_oldWorldToNewWorld_in.map(centroid);
+    centroid = alignmentTransform_oldWorldToNewWorld_in.map(centroid);
 
     for (pcl::PointXYZRGBA &point : planeCloud->points)
     {
         Eigen::Vector3d pointVector(point.x, point.y, point.z);
 
-        pointVector = transform_oldWorldToNewWorld_in.map(pointVector);
+        pointVector = alignmentTransform_oldWorldToNewWorld_in.map(pointVector);
 
         point.x = static_cast<float>(pointVector.x());
         point.y = static_cast<float>(pointVector.y());
@@ -60,7 +60,7 @@ PlaneStatus
 
     g2o::Plane3D transformedEquation{};
     if (transformPlaneEquation(globalEquation,
-                               transform_oldWorldToNewWorld_in,
+                               alignmentTransform_oldWorldToNewWorld_in,
                                transformedEquation) !=
         PlaneStatus::PLANE_STATUS_SUCCESS)
     {

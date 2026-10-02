@@ -39,7 +39,7 @@ namespace semantic
 SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
     core::Map                  *p_survivingMap_in,
     core::Map                  *p_absorbedMap_in,
-    const g2o::Sim3            &transform_absorbedToSurviving_in,
+    const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
     SemanticMergeGateResult    &result_out,
     const SemanticVerifyConfig &configuration_in)
 {
@@ -56,7 +56,7 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
     bool isVerified{};
     if (verifyLoopMergeFloors(p_survivingMap_in,
                               p_absorbedMap_in,
-                              transform_absorbedToSurviving_in,
+                              mergeTransform_absorbedToSurviving_in,
                               result.floorDecision,
                               isVerified) !=
         LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
@@ -175,7 +175,7 @@ SemanticVerifyStatus SemanticVerify::evaluateMapMergeGate(
     SemanticMergeGateResult result2{};
     if (evaluateMergeAlignment(survivingRooms,
                                absorbedRooms,
-                               transform_absorbedToSurviving_in,
+                               mergeTransform_absorbedToSurviving_in,
                                result2,
                                configuration_in) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)

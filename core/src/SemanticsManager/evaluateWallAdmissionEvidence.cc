@@ -81,21 +81,21 @@ SemanticsManagerStatus
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    Eigen::Vector4d equation_world = geometry.equation_world;
-    const double    normalNorm     = equation_world.head<3>().norm();
+    Eigen::Vector4d planeEquation_world = geometry.planeEquation_world;
+    const double    normalNorm          = planeEquation_world.head<3>().norm();
 
-    if (!equation_world.allFinite() || !std::isfinite(normalNorm) ||
+    if (!planeEquation_world.allFinite() || !std::isfinite(normalNorm) ||
         normalNorm < 1e-8)
     {
         admissionEvidence_out = evidence;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
     }
 
-    equation_world /= normalNorm;
-    const Eigen::Vector3d normal_world = equation_world.head<3>();
+    planeEquation_world /= normalNorm;
+    const Eigen::Vector3d planeNormal_world = planeEquation_world.head<3>();
 
-    if (!equation_world.allFinite() ||
-        std::abs(normal_world.norm() - 1.0) > 1e-6)
+    if (!planeEquation_world.allFinite() ||
+        std::abs(planeNormal_world.norm() - 1.0) > 1e-6)
     {
         admissionEvidence_out = evidence;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
@@ -121,7 +121,7 @@ SemanticsManagerStatus
      * direction: orthogonal to both the ground normal and the wall normal.
      * Falls back to the previous arbitrary-orthogonal axes when no ground
      * plane is available yet (early in a mission) or the wall is itself
-     * near-horizontal (groundNormal parallel to normal_world).
+     * near-horizontal (groundNormal parallel to planeNormal_world).
      */
     const double    groundNormalNorm = groundNormal_world_in.norm();
     Eigen::Vector3d axisU_world      = Eigen::Vector3d::Zero();
@@ -131,18 +131,18 @@ SemanticsManagerStatus
         const Eigen::Vector3d unitGroundNormal_world =
             groundNormal_world_in / groundNormalNorm;
         const Eigen::Vector3d horizontalCandidate_world =
-            unitGroundNormal_world.cross(normal_world);
+            unitGroundNormal_world.cross(planeNormal_world);
         const double horizontalNorm = horizontalCandidate_world.norm();
         if (std::isfinite(horizontalNorm) && horizontalNorm > 1e-3)
         {
             axisU_world = horizontalCandidate_world / horizontalNorm;
-            axisV_world = axisU_world.cross(normal_world).normalized();
+            axisV_world = axisU_world.cross(planeNormal_world).normalized();
         }
     }
     if (axisU_world.squaredNorm() < 0.5 || axisV_world.squaredNorm() < 0.5)
     {
-        axisU_world = normal_world.unitOrthogonal().normalized();
-        axisV_world = normal_world.cross(axisU_world).normalized();
+        axisU_world = planeNormal_world.unitOrthogonal().normalized();
+        axisV_world = planeNormal_world.cross(axisU_world).normalized();
     }
     double minimumU_m = std::numeric_limits<double>::infinity();
     double maximumU_m = -std::numeric_limits<double>::infinity();
@@ -156,19 +156,19 @@ SemanticsManagerStatus
             continue;
         }
 
-        const Eigen::Vector3d point_world_m(point.x, point.y, point.z);
+        const Eigen::Vector3d cloudPoint_world_m(point.x, point.y, point.z);
         evidence.finitePointCount++;
 
-        const double fitDistance_m =
-            std::abs(normal_world.dot(point_world_m) + equation_world(3));
+        const double fitDistance_m = std::abs(
+            planeNormal_world.dot(cloudPoint_world_m) + planeEquation_world(3));
 
         if (fitDistance_m > p_systemParams_in->seg.ransac.distanceThresh)
         {
             continue;
         }
 
-        const double pointU_m = point_world_m.dot(axisU_world);
-        const double pointV_m = point_world_m.dot(axisV_world);
+        const double pointU_m = cloudPoint_world_m.dot(axisU_world);
+        const double pointV_m = cloudPoint_world_m.dot(axisV_world);
         minimumU_m            = std::min(minimumU_m, pointU_m);
         maximumU_m            = std::max(maximumU_m, pointU_m);
         minimumV_m            = std::min(minimumV_m, pointV_m);

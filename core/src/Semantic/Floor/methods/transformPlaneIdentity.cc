@@ -36,55 +36,57 @@ namespace semantic
 {
 
 FloorStatus Floor::transformPlaneIdentity(
-    const PlaneIdentity                 &identity_oldWorld_in,
-    const g2o::Sim3                     &transform_oldWorldToNewWorld_in,
+    const PlaneIdentity &planeIdentity_oldWorld_in,
+    const g2o::Sim3     &alignmentTransform_oldWorldToNewWorld_in,
     std::optional<Floor::PlaneIdentity> &transformedIdentity_out)
 {
-    Eigen::Vector4d equation_oldWorld = identity_oldWorld_in.equation_world;
-    const double    oldNormalNorm     = equation_oldWorld.head<3>().norm();
+    Eigen::Vector4d planeEquation_oldWorld =
+        planeIdentity_oldWorld_in.planeEquation_world;
+    const double oldNormalNorm = planeEquation_oldWorld.head<3>().norm();
 
-    if (!equation_oldWorld.allFinite() || !std::isfinite(oldNormalNorm) ||
+    if (!planeEquation_oldWorld.allFinite() || !std::isfinite(oldNormalNorm) ||
         oldNormalNorm < 1e-8)
     {
         transformedIdentity_out = std::nullopt;
         return FloorStatus::FLOOR_STATUS_SUCCESS;
     }
 
-    equation_oldWorld /= oldNormalNorm;
+    planeEquation_oldWorld /= oldNormalNorm;
 
-    const Eigen::Matrix3d rotation_oldWorldToNewWorld =
-        transform_oldWorldToNewWorld_in.rotation().toRotationMatrix();
-    const Eigen::Vector3d translation_newWorld =
-        transform_oldWorldToNewWorld_in.translation();
-    const double scale = transform_oldWorldToNewWorld_in.scale();
+    const Eigen::Matrix3d alignmentRotation_oldWorldToNewWorld =
+        alignmentTransform_oldWorldToNewWorld_in.rotation().toRotationMatrix();
+    const Eigen::Vector3d alignmentTranslation_oldWorldToNewWorld =
+        alignmentTransform_oldWorldToNewWorld_in.translation();
+    const double scale = alignmentTransform_oldWorldToNewWorld_in.scale();
 
-    if (!rotation_oldWorldToNewWorld.allFinite() ||
-        !translation_newWorld.allFinite() || !std::isfinite(scale))
+    if (!alignmentRotation_oldWorldToNewWorld.allFinite() ||
+        !alignmentTranslation_oldWorldToNewWorld.allFinite() ||
+        !std::isfinite(scale))
     {
         transformedIdentity_out = std::nullopt;
         return FloorStatus::FLOOR_STATUS_SUCCESS;
     }
 
-    const Eigen::Vector3d normal_newWorld =
-        rotation_oldWorldToNewWorld * equation_oldWorld.head<3>();
-    Eigen::Vector4d equation_newWorld;
-    equation_newWorld << normal_newWorld,
-        scale * equation_oldWorld(3) -
-            normal_newWorld.dot(translation_newWorld);
+    const Eigen::Vector3d planeNormal_newWorld =
+        alignmentRotation_oldWorldToNewWorld * planeEquation_oldWorld.head<3>();
+    Eigen::Vector4d planeEquation_newWorld;
+    planeEquation_newWorld << planeNormal_newWorld,
+        scale * planeEquation_oldWorld(3) -
+            planeNormal_newWorld.dot(alignmentTranslation_oldWorldToNewWorld);
 
-    const double newNormalNorm = equation_newWorld.head<3>().norm();
-    if (!equation_newWorld.allFinite() || !std::isfinite(newNormalNorm) ||
+    const double newNormalNorm = planeEquation_newWorld.head<3>().norm();
+    if (!planeEquation_newWorld.allFinite() || !std::isfinite(newNormalNorm) ||
         newNormalNorm < 1e-8)
     {
         transformedIdentity_out = std::nullopt;
         return FloorStatus::FLOOR_STATUS_SUCCESS;
     }
 
-    equation_newWorld /= newNormalNorm;
+    planeEquation_newWorld /= newNormalNorm;
     transformedIdentity_out =
-        PlaneIdentity{equation_newWorld,
-                      identity_oldWorld_in.finiteSupportCount,
-                      identity_oldWorld_in.observationCount};
+        PlaneIdentity{planeEquation_newWorld,
+                      planeIdentity_oldWorld_in.finiteSupportCount,
+                      planeIdentity_oldWorld_in.observationCount};
     return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 

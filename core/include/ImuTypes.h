@@ -247,7 +247,7 @@ class Calib
     /*!
      * @brief        Creates a calibration and marks it valid.
      *
-     * @param[in]    pose_cameraToBody_in
+     * @param[in]    extrinsicPose_cameraToBody_in
      *               Camera-to-body (IMU) transform.
      * @param[in]    gyroscopeNoiseDensity_in
      *               Gyroscope noise density.
@@ -258,13 +258,13 @@ class Calib
      * @param[in]    accelerometerRandomWalkDensity_in
      *               Accelerometer random-walk density.
      */
-    Calib(const Sophus::SE3<float> &pose_cameraToBody_in,
+    Calib(const Sophus::SE3<float> &extrinsicPose_cameraToBody_in,
           const float              &gyroscopeNoiseDensity_in,
           const float              &accelerometerNoiseDensity_in,
           const float              &gyroscopeRandomWalkDensity_in,
           const float              &accelerometerRandomWalkDensity_in)
     {
-        if (setCalibration(pose_cameraToBody_in,
+        if (setCalibration(extrinsicPose_cameraToBody_in,
                            gyroscopeNoiseDensity_in,
                            accelerometerNoiseDensity_in,
                            gyroscopeRandomWalkDensity_in,
@@ -292,7 +292,7 @@ class Calib
      * @brief        Stores the transform and noise densities
      *               and marks the calibration valid.
      *
-     * @param[in]    pose_cameraToBody_in
+     * @param[in]    extrinsicPose_cameraToBody_in
      *               Camera-to-body (IMU) transform.
      * @param[in]    ng_in
      *               Gyroscope noise density.
@@ -304,7 +304,7 @@ class Calib
      *               Accelerometer random-walk density.
      */
     [[nodiscard]] CalibStatus
-        setCalibration(const Sophus::SE3<float> &pose_cameraToBody_in,
+        setCalibration(const Sophus::SE3<float> &extrinsicPose_cameraToBody_in,
                        const float              &ng_in,
                        const float              &na_in,
                        const float              &ngw_in,

@@ -32,25 +32,26 @@ namespace core
 namespace semantic
 {
 
-MarkerStatus
-    Marker::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
+MarkerStatus Marker::applyTransform(
+    const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in)
 {
     std::lock_guard<std::mutex> lock(geometryMutex);
 
-    const Eigen::Matrix3f rotation_oldWorldToNewWorld =
-        transform_oldWorldToNewWorld_in.rotation()
+    const Eigen::Matrix3f alignmentRotation_oldWorldToNewWorld =
+        alignmentTransform_oldWorldToNewWorld_in.rotation()
             .toRotationMatrix()
             .cast<float>();
 
-    const Eigen::Matrix3f rotation_markerToNewWorld =
-        rotation_oldWorldToNewWorld * globalPose.rotationMatrix();
+    const Eigen::Matrix3f markerRotation_markerToNewWorld =
+        alignmentRotation_oldWorldToNewWorld * globalPose.rotationMatrix();
 
-    const Eigen::Vector3f position_newWorld_m =
-        transform_oldWorldToNewWorld_in
+    const Eigen::Vector3f markerPosition_newWorld_m =
+        alignmentTransform_oldWorldToNewWorld_in
             .map(globalPose.translation().cast<double>())
             .cast<float>();
 
-    globalPose = Sophus::SE3f(rotation_markerToNewWorld, position_newWorld_m);
+    globalPose = Sophus::SE3f(markerRotation_markerToNewWorld,
+                              markerPosition_newWorld_m);
 
     return MarkerStatus::MARKER_STATUS_SUCCESS;
 }

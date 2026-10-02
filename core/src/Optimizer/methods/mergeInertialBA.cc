@@ -790,10 +790,10 @@ OptimizerStatus
 
         VertexPose *p_poseVertex =
             static_cast<VertexPose *>(optimizer.vertex(p_keyFrame->id));
-        Sophus::SE3f pose_worldToCamera(
+        Sophus::SE3f cameraPose_worldToCamera(
             p_poseVertex->estimate().Rcw[0].cast<float>(),
             p_poseVertex->estimate().tcw[0].cast<float>());
-        if (p_keyFrame->setPose(pose_worldToCamera) !=
+        if (p_keyFrame->setPose(cameraPose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -811,8 +811,10 @@ OptimizerStatus
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3d Tiw = keyFramePose.cast<double>();
-        g2o::Sim3    g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
+        Sophus::SE3d keyFramePose_worldToCamera = keyFramePose.cast<double>();
+        g2o::Sim3    g2oSiw(keyFramePose_worldToCamera.unit_quaternion(),
+                         keyFramePose_worldToCamera.translation(),
+                         1.0);
         corrPoses_inout[p_keyFrame] = g2oSiw;
 
         if (p_keyFrame->isImu)
@@ -854,10 +856,10 @@ OptimizerStatus
 
         VertexPose *p_poseVertex =
             static_cast<VertexPose *>(optimizer.vertex(p_keyFrame->id));
-        Sophus::SE3f pose_worldToCamera(
+        Sophus::SE3f cameraPose_worldToCamera(
             p_poseVertex->estimate().Rcw[0].cast<float>(),
             p_poseVertex->estimate().tcw[0].cast<float>());
-        if (p_keyFrame->setPose(pose_worldToCamera) !=
+        if (p_keyFrame->setPose(cameraPose_worldToCamera) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -875,8 +877,10 @@ OptimizerStatus
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        Sophus::SE3d Tiw = keyFramePose2.cast<double>();
-        g2o::Sim3    g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
+        Sophus::SE3d keyFramePose_worldToCamera = keyFramePose2.cast<double>();
+        g2o::Sim3    g2oSiw(keyFramePose_worldToCamera.unit_quaternion(),
+                         keyFramePose_worldToCamera.translation(),
+                         1.0);
         corrPoses_inout[p_keyFrame] = g2oSiw;
 
         if (p_keyFrame->isImu)

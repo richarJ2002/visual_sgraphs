@@ -72,11 +72,11 @@ struct WallRecord
     geometric::Plane::PlaneVariant planeType{
         geometric::Plane::PlaneVariant::WALL};
 
-    /*! @brief PlaneGeometryMetadataSnapshot::equation_world. */
-    Eigen::Vector4d equation_world{Eigen::Vector4d::Zero()};
+    /*! @brief PlaneGeometryMetadataSnapshot::planeEquation_world. */
+    Eigen::Vector4d planeEquation_world{Eigen::Vector4d::Zero()};
 
-    /*! @brief PlaneGeometryMetadataSnapshot::centroid_world_m. */
-    Eigen::Vector3d centroid_world_m{Eigen::Vector3d::Zero()};
+    /*! @brief PlaneGeometryMetadataSnapshot::planeCentroid_world_m. */
+    Eigen::Vector3d planeCentroid_world_m{Eigen::Vector3d::Zero()};
 
     /*! @brief PlaneGeometryMetadataSnapshot::minPlaneU_m. */
     double minPlaneU_m{0.0};

@@ -39,7 +39,7 @@ SemanticVerifyStatus passageGeometryIsUsable(const PassageContext &context_in,
                                              bool                 &isUsable_out)
 {
     isUsable_out =
-        context_in.centroid_world.allFinite() &&
+        context_in.passageCentroid_world.allFinite() &&
         std::isfinite(context_in.width_m) && context_in.width_m > 0.0 &&
         std::isfinite(context_in.height_m) && context_in.height_m > 0.0;
     return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;

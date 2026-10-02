@@ -39,7 +39,7 @@ namespace semantic
 SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
     const std::vector<SemanticMergeRoomEvidence> &survivingRooms_in,
     const std::vector<SemanticMergeRoomEvidence> &absorbedRooms_in,
-    const g2o::Sim3            &transform_absorbedToSurviving_in,
+    const g2o::Sim3            &mergeTransform_absorbedToSurviving_in,
     SemanticMergeGateResult    &result_out,
     const SemanticVerifyConfig &configuration_in)
 {
@@ -84,7 +84,7 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
         AlignmentCheck wallCheck{};
         if (checkFixedTransformWalls(match->second->walls,
                                      absorbedRoom.walls,
-                                     transform_absorbedToSurviving_in,
+                                     mergeTransform_absorbedToSurviving_in,
                                      configuration_in,
                                      matchedWalls,
                                      wallCheck) !=
@@ -116,7 +116,7 @@ SemanticVerifyStatus SemanticVerify::evaluateMergeAlignment(
         AlignmentCheck topologyCheck{};
         if (checkPassageTopology(match->second->context,
                                  absorbedRoom.context,
-                                 transform_absorbedToSurviving_in,
+                                 mergeTransform_absorbedToSurviving_in,
                                  configuration_in,
                                  matchedPassages,
                                  topologyReason,

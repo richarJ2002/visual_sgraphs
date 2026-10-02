@@ -107,7 +107,7 @@ UtilsStatus crossesPassablePassageOpening(
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    const Eigen::Vector3d intersection_world_m =
+    const Eigen::Vector3d planeIntersection_world_m =
         segmentStart_world_m_in +
         interpolation * (segmentEnd_world_m_in - segmentStart_world_m_in);
     Eigen::Vector3d passageCentroid_world_m{};
@@ -127,7 +127,7 @@ UtilsStatus crossesPassablePassageOpening(
     }
 
     Eigen::Vector3d apertureOffset_world_m =
-        intersection_world_m - passageCentroid_world_m;
+        planeIntersection_world_m - passageCentroid_world_m;
     apertureOffset_world_m -=
         apertureOffset_world_m.dot(passageNormal_world) * passageNormal_world;
 

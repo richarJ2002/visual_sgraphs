@@ -42,8 +42,8 @@ FloorStatus Floor::planeIdentitiesMatch(const PlaneIdentity &firstIdentity_in,
                                         double      &offset_m_out,
                                         bool        &isMatch_out)
 {
-    Eigen::Vector4d firstEquation    = firstIdentity_in.equation_world;
-    Eigen::Vector4d secondEquation   = secondIdentity_in.equation_world;
+    Eigen::Vector4d firstEquation    = firstIdentity_in.planeEquation_world;
+    Eigen::Vector4d secondEquation   = secondIdentity_in.planeEquation_world;
     const double    firstNormalNorm  = firstEquation.head<3>().norm();
     const double    secondNormalNorm = secondEquation.head<3>().norm();
 

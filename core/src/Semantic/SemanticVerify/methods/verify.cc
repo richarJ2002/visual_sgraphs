@@ -128,13 +128,13 @@ SemanticVerifyStatus
                 ++hypothesesEvaluated;
 
                 const std::vector<Eigen::Vector3d> normalsA = {
-                    wallsA_in[pair0.indexA].normal_world,
-                    wallsA_in[pair1.indexA].normal_world,
-                    wallsA_in[pair2.indexA].normal_world};
+                    wallsA_in[pair0.indexA].wallNormal_world,
+                    wallsA_in[pair1.indexA].wallNormal_world,
+                    wallsA_in[pair2.indexA].wallNormal_world};
                 const std::vector<Eigen::Vector3d> normalsB = {
-                    wallsB_in[pair0.indexB].normal_world,
-                    wallsB_in[pair1.indexB].normal_world,
-                    wallsB_in[pair2.indexB].normal_world};
+                    wallsB_in[pair0.indexB].wallNormal_world,
+                    wallsB_in[pair1.indexB].wallNormal_world,
+                    wallsB_in[pair2.indexB].wallNormal_world};
 
                 RotationFit rotationFit{};
                 if (fitRotationFromNormals(normalsA, normalsB, rotationFit) !=
@@ -210,13 +210,13 @@ SemanticVerifyStatus
                     const VerifyWallObservation &wallB =
                         wallsB_in[candidate.indexB];
                     const Eigen::Vector3d predictedNormal =
-                        rotationFit.rotation * wallA.normal_world;
+                        rotationFit.rotation * wallA.wallNormal_world;
                     const double predictedOffset =
                         wallA.d -
                         predictedNormal.dot(translationFit.translation);
                     double normalAngle_rad{};
                     if (angleBetween_rad(predictedNormal,
-                                         wallB.normal_world,
+                                         wallB.wallNormal_world,
                                          normalAngle_rad) !=
                         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
                     {
@@ -450,9 +450,9 @@ SemanticVerifyStatus
         }
 
         PlanePairMeasurement measurement;
-        measurement.n_A   = p_observationA->normal_world;
+        measurement.n_A   = p_observationA->wallNormal_world;
         measurement.d_A   = p_observationA->d;
-        measurement.n_B   = p_observationB->normal_world;
+        measurement.n_B   = p_observationB->wallNormal_world;
         measurement.d_B   = p_observationB->d;
         measurement.sigma = 1;
 
@@ -512,9 +512,9 @@ SemanticVerifyStatus
             continue;
         }
         inlierRotatedNormalsA.push_back(refinedRotation *
-                                        p_observationA->normal_world);
+                                        p_observationA->wallNormal_world);
         inlierOffsetsA.push_back(p_observationA->d);
-        inlierNormalsB.push_back(p_observationB->normal_world);
+        inlierNormalsB.push_back(p_observationB->wallNormal_world);
         inlierOffsetsB.push_back(p_observationB->d);
         angularResiduals.push_back(inlier.normalAngleResidual_rad);
         angularResidualSum += inlier.normalAngleResidual_rad;
@@ -569,14 +569,14 @@ SemanticVerifyStatus
             : angularResiduals[angularResiduals.size() / 2U];
     static_cast<void>(angularResidualSum);
 
-    result.status                       = VerificationStatus::PASS;
-    result.hasPassed                    = true;
-    result.transform_aToB               = Eigen::Isometry3d::Identity();
-    result.transform_aToB.linear()      = refinedRotation;
-    result.transform_aToB.translation() = refinedTranslation;
-    result.inliers                      = seed.inliers;
-    result.rank                         = refinedFit.rank;
-    result.conditionNumber              = refinedFit.conditionNumber;
+    result.status                              = VerificationStatus::PASS;
+    result.hasPassed                           = true;
+    result.roomTransform_roomAToRoomB          = Eigen::Isometry3d::Identity();
+    result.roomTransform_roomAToRoomB.linear() = refinedRotation;
+    result.roomTransform_roomAToRoomB.translation() = refinedTranslation;
+    result.inliers                                  = seed.inliers;
+    result.rank                                     = refinedFit.rank;
+    result.conditionNumber = refinedFit.conditionNumber;
     result.normalisedConditionNumber =
         std::isfinite(refinedFit.conditionNumber)
             ? std::min(1.0,

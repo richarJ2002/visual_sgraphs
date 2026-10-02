@@ -35,12 +35,12 @@ namespace core
 namespace semantic
 {
 
-RoomStatus
-    Room::applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in)
+RoomStatus Room::applyTransform(
+    const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
 
-    centroid = transform_oldWorldToNewWorld_in.map(centroid);
+    centroid = alignmentTransform_oldWorldToNewWorld_in.map(centroid);
 
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }

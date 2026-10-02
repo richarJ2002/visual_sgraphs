@@ -68,7 +68,7 @@ namespace
 void makeWallWithGridCloud(geometric::Plane      &wall_inout,
                            int                    id_in,
                            Map                   *p_map_in,
-                           const Eigen::Vector4d &equation_world_in,
+                           const Eigen::Vector4d &wallEquation_world_in,
                            const Eigen::Vector3d &axisU_world_in,
                            const Eigen::Vector3d &axisV_world_in,
                            double                 halfU_m_in,
@@ -87,8 +87,9 @@ void makeWallWithGridCloud(geometric::Plane      &wall_inout,
     ASSERT_EQ((wall_inout.castWeightedVote(geometric::Plane::PlaneVariant::WALL,
                                            1.0)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
-    ASSERT_EQ((wall_inout.setGlobalEquation(g2o::Plane3D(equation_world_in))),
-              geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
+    ASSERT_EQ(
+        (wall_inout.setGlobalEquation(g2o::Plane3D(wallEquation_world_in))),
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ((wall_inout.setCentroid(Eigen::Vector3d::Zero())),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 
@@ -105,13 +106,13 @@ void makeWallWithGridCloud(geometric::Plane      &wall_inout,
             const double v = -halfV_m_in + (2.0 * halfV_m_in) *
                                                static_cast<double>(vIndex) /
                                                static_cast<double>(steps - 1);
-            const Eigen::Vector3d point_world =
+            const Eigen::Vector3d gridPoint_world =
                 u * axisU_world_in + v * axisV_world_in;
 
             pcl::PointXYZRGBA pclPoint;
-            pclPoint.x = static_cast<float>(point_world.x());
-            pclPoint.y = static_cast<float>(point_world.y());
-            pclPoint.z = static_cast<float>(point_world.z());
+            pclPoint.x = static_cast<float>(gridPoint_world.x());
+            pclPoint.y = static_cast<float>(gridPoint_world.y());
+            pclPoint.z = static_cast<float>(gridPoint_world.z());
             cloud->push_back(pclPoint);
         }
     }
@@ -200,22 +201,22 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostOnObliqueWall)
     ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     SemanticsManager manager(&atlas);
 
-    const Eigen::Vector3d normal_world(0.8, 0.6, 0.0);
+    const Eigen::Vector3d wallNormal_world(0.8, 0.6, 0.0);
     const Eigen::Vector3d groundNormal_world(0.0, 0.0, 1.0);
     const Eigen::Vector3d horizontalTangent_world =
-        groundNormal_world.cross(normal_world).normalized();
-    const Eigen::Vector3d vertical_world(0.0, 0.0, 1.0);
+        groundNormal_world.cross(wallNormal_world).normalized();
+    const Eigen::Vector3d verticalAxis_world(0.0, 0.0, 1.0);
 
     geometric::Plane wall;
     makeWallWithGridCloud(wall,
                           1,
                           p_map,
-                          Eigen::Vector4d(normal_world.x(),
-                                          normal_world.y(),
-                                          normal_world.z(),
+                          Eigen::Vector4d(wallNormal_world.x(),
+                                          wallNormal_world.y(),
+                                          wallNormal_world.z(),
                                           0.0),
                           horizontalTangent_world,
-                          vertical_world,
+                          verticalAxis_world,
                           0.04,
                           1.1);
 
@@ -692,7 +693,7 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
 std::unique_ptr<geometric::Plane>
     makeLongWallThroughOrigin(int                    id_in,
                               Map                   *p_map_in,
-                              const Eigen::Vector3d &normal_world_in,
+                              const Eigen::Vector3d &wallNormal_world_in,
                               const Eigen::Vector3d &axisAlong_world_in)
 {
     std::unique_ptr<geometric::Plane> wall =
@@ -728,9 +729,9 @@ std::unique_ptr<geometric::Plane>
                      __func__);
     }
     if (wall->setGlobalEquation(g2o::Plane3D(Eigen::Vector4d(
-            normal_world_in.x(),
-            normal_world_in.y(),
-            normal_world_in.z(),
+            wallNormal_world_in.x(),
+            wallNormal_world_in.y(),
+            wallNormal_world_in.z(),
             0.0))) != geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -758,12 +759,12 @@ std::unique_ptr<geometric::Plane>
         {
             const double height = 1.0 + 1.0 * static_cast<double>(heightIndex) /
                                             static_cast<double>(steps - 1);
-            const Eigen::Vector3d point_world =
+            const Eigen::Vector3d gridPoint_world =
                 along * axisAlong_world_in + Eigen::Vector3d(0.0, 0.0, height);
             pcl::PointXYZRGBA pclPoint;
-            pclPoint.x = static_cast<float>(point_world.x());
-            pclPoint.y = static_cast<float>(point_world.y());
-            pclPoint.z = static_cast<float>(point_world.z());
+            pclPoint.x = static_cast<float>(gridPoint_world.x());
+            pclPoint.y = static_cast<float>(gridPoint_world.y());
+            pclPoint.z = static_cast<float>(gridPoint_world.z());
             cloud->push_back(pclPoint);
         }
     }

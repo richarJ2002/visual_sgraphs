@@ -83,7 +83,7 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        Eigen::Vector4d wallEquation_world = wallGeometry.equation_world;
+        Eigen::Vector4d wallEquation_world = wallGeometry.planeEquation_world;
         const double    wallNormalNorm = wallEquation_world.head<3>().norm();
 
         if (!wallEquation_world.allFinite() || wallNormalNorm < 1e-8)
@@ -108,7 +108,7 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
         }
 
         const double interpolation = firstSide_m / (firstSide_m - secondSide_m);
-        const Eigen::Vector3d intersection_world_m =
+        const Eigen::Vector3d planeIntersection_world_m =
             firstPoint_world_m_in +
             interpolation * (secondPoint_world_m_in - firstPoint_world_m_in);
 
@@ -121,7 +121,7 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
         }
 
         const Eigen::Vector3d wallCentroid_world_m =
-            wallGeometry.centroid_world_m;
+            wallGeometry.planeCentroid_world_m;
         const Eigen::Vector3d wallAxisU_world =
             wallEquation_world.head<3>().unitOrthogonal().normalized();
         const Eigen::Vector3d wallAxisV_world =
@@ -162,7 +162,7 @@ SemanticsManagerStatus hasSeparatingFiniteWall(
         }
 
         const Eigen::Vector3d intersectionOffset_world_m =
-            intersection_world_m - wallCentroid_world_m;
+            planeIntersection_world_m - wallCentroid_world_m;
         const double intersectionU_m =
             intersectionOffset_world_m.dot(wallAxisU_world);
         const double intersectionV_m =

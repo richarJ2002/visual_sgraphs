@@ -47,10 +47,13 @@ bool isValueLessForCollisionTiebreak(const FloorRecord &lhs_in,
     {
         return *lhs_in.declaredMapId < *rhs_in.declaredMapId;
     }
-    if (isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m) ||
-        isVector3dLess(rhs_in.centroid_world_m, lhs_in.centroid_world_m))
+    if (isVector3dLess(lhs_in.floorCentroid_world_m,
+                       rhs_in.floorCentroid_world_m) ||
+        isVector3dLess(rhs_in.floorCentroid_world_m,
+                       lhs_in.floorCentroid_world_m))
     {
-        return isVector3dLess(lhs_in.centroid_world_m, rhs_in.centroid_world_m);
+        return isVector3dLess(lhs_in.floorCentroid_world_m,
+                              rhs_in.floorCentroid_world_m);
     }
     if (lhs_in.planeIdentity.has_value() != rhs_in.planeIdentity.has_value())
     {
@@ -60,13 +63,13 @@ bool isValueLessForCollisionTiebreak(const FloorRecord &lhs_in,
     {
         const Floor::PlaneIdentity &lhsIdentity = *lhs_in.planeIdentity;
         const Floor::PlaneIdentity &rhsIdentity = *rhs_in.planeIdentity;
-        if (isVector4dLess(lhsIdentity.equation_world,
-                           rhsIdentity.equation_world) ||
-            isVector4dLess(rhsIdentity.equation_world,
-                           lhsIdentity.equation_world))
+        if (isVector4dLess(lhsIdentity.planeEquation_world,
+                           rhsIdentity.planeEquation_world) ||
+            isVector4dLess(rhsIdentity.planeEquation_world,
+                           lhsIdentity.planeEquation_world))
         {
-            return isVector4dLess(lhsIdentity.equation_world,
-                                  rhsIdentity.equation_world);
+            return isVector4dLess(lhsIdentity.planeEquation_world,
+                                  rhsIdentity.planeEquation_world);
         }
         if (lhsIdentity.finiteSupportCount != rhsIdentity.finiteSupportCount)
         {

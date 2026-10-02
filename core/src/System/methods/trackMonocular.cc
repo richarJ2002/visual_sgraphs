@@ -123,13 +123,13 @@ SystemStatus
         }
     }
 
-    Sophus::SE3f pose_worldToCamera{};
+    Sophus::SE3f cameraPose_worldToCamera{};
     if (p_tracker->grabImageMonocular(imToFeed,
                                       timestamp_in,
                                       filename_in,
                                       markers_in,
                                       envRooms,
-                                      pose_worldToCamera) !=
+                                      cameraPose_worldToCamera) !=
         TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -143,7 +143,7 @@ SystemStatus
     trackedMapPoints   = p_tracker->currentFrame.mapPoints;
     trackedKeyPointsUn = p_tracker->currentFrame.keyPointsUndistorted;
 
-    cameraPose_out = pose_worldToCamera;
+    cameraPose_out = cameraPose_worldToCamera;
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 

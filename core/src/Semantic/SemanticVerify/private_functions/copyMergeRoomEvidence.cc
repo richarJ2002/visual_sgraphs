@@ -156,7 +156,7 @@ SemanticVerifyStatus
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-        context.centroid_world = passageCentroid;
+        context.passageCentroid_world = passageCentroid;
         double passageWidth{};
         if (p_passage->getWidth(passageWidth) !=
             PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -224,7 +224,8 @@ SemanticVerifyStatus
         context.hasKnownSideDirection = knownSideHasDirection;
         if (context.hasKnownSideDirection)
         {
-            context.knownSideDirection_world = knownSide.direction_world;
+            context.knownSideDirection_world =
+                knownSide.knownSideDirection_world;
         }
         std::optional<int> farSideRoomId{};
         if (p_passage->getProspectiveRoomId(farSideRoomId) !=

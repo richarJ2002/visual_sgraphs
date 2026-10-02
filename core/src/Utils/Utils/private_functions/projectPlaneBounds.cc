@@ -53,19 +53,21 @@ UtilsStatus projectPlaneBounds(
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    for (const pcl::PointXYZRGBA &point_world_m : p_planeCloud_in->points)
+    for (const pcl::PointXYZRGBA &cloudPoint_world_m : p_planeCloud_in->points)
     {
-        if (!pcl::isFinite(point_world_m))
+        if (!pcl::isFinite(cloudPoint_world_m))
         {
             continue;
         }
 
-        const Eigen::Vector3d position_world_m(point_world_m.x,
-                                               point_world_m.y,
-                                               point_world_m.z);
+        const Eigen::Vector3d pointPosition_world_m(cloudPoint_world_m.x,
+                                                    cloudPoint_world_m.y,
+                                                    cloudPoint_world_m.z);
 
-        const double coordinateU_m = tangentU_world_in.dot(position_world_m);
-        const double coordinateV_m = tangentV_world_in.dot(position_world_m);
+        const double coordinateU_m =
+            tangentU_world_in.dot(pointPosition_world_m);
+        const double coordinateV_m =
+            tangentV_world_in.dot(pointPosition_world_m);
 
         bounds.minimumU_m = std::min(bounds.minimumU_m, coordinateU_m);
         bounds.maximumU_m = std::max(bounds.maximumU_m, coordinateU_m);

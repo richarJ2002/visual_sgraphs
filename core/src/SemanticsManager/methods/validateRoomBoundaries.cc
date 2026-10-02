@@ -103,14 +103,14 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
     const auto updateBoundaryStatus =
         [](semantic::Room                      *p_room_in,
            const semantic::Room::BoundaryStatus boundaryStatus_in,
-           const std::vector<Eigen::Vector3d>  &corners_world_m_in = {})
+           const std::vector<Eigen::Vector3d>  &boundaryCorners_world_m_in = {})
     {
         /* Refresh stored corners every cycle the loop is COMPLETE (even when
          * the status itself didn't change -- wall positions can still
          * drift), and clear them the moment it stops being COMPLETE. */
         if (p_room_in->setBoundaryCorners_world_m(
                 boundaryStatus_in == semantic::Room::BoundaryStatus::COMPLETE
-                    ? corners_world_m_in
+                    ? boundaryCorners_world_m_in
                     : std::vector<Eigen::Vector3d>{}) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {
@@ -300,14 +300,14 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                      secondWallIndex < wallSegments.size();
                      ++secondWallIndex)
                 {
-                    Eigen::Vector2d intersection_world_m;
+                    Eigen::Vector2d lineIntersection_world_m;
                     double          firstParameter  = 0.0;
                     double          secondParameter = 0.0;
 
                     bool hasIntersection{};
                     if (intersectSupportingLines(wallSegments[firstWallIndex],
                                                  wallSegments[secondWallIndex],
-                                                 intersection_world_m,
+                                                 lineIntersection_world_m,
                                                  firstParameter,
                                                  secondParameter,
                                                  hasIntersection) !=
@@ -638,7 +638,7 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
         }
 
         std::vector<Eigen::Vector2d> boundaryCorners_world_m =
-            closure.corners_world_m;
+            closure.loopCorners_world_m;
 
         bool polygonSelfIntersects = false;
 
@@ -648,9 +648,9 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
              ++firstEdgeIndex)
         {
             FiniteWallSegment2d firstBoundaryEdge;
-            firstBoundaryEdge.start_world_m =
+            firstBoundaryEdge.wallStart_world_m =
                 boundaryCorners_world_m[firstEdgeIndex];
-            firstBoundaryEdge.end_world_m =
+            firstBoundaryEdge.wallEnd_world_m =
                 boundaryCorners_world_m[(firstEdgeIndex + 1U) %
                                         boundaryCorners_world_m.size()];
 
@@ -669,20 +669,20 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                 }
 
                 FiniteWallSegment2d secondBoundaryEdge;
-                secondBoundaryEdge.start_world_m =
+                secondBoundaryEdge.wallStart_world_m =
                     boundaryCorners_world_m[secondEdgeIndex];
-                secondBoundaryEdge.end_world_m =
+                secondBoundaryEdge.wallEnd_world_m =
                     boundaryCorners_world_m[(secondEdgeIndex + 1U) %
                                             boundaryCorners_world_m.size()];
 
-                Eigen::Vector2d intersection_world_m;
+                Eigen::Vector2d lineIntersection_world_m;
                 double          firstParameter  = 0.0;
                 double          secondParameter = 0.0;
 
                 bool hasIntersection2{};
                 if (intersectSupportingLines(firstBoundaryEdge,
                                              secondBoundaryEdge,
-                                             intersection_world_m,
+                                             lineIntersection_world_m,
                                              firstParameter,
                                              secondParameter,
                                              hasIntersection2) !=

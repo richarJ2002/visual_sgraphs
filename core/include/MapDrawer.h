@@ -111,10 +111,10 @@ class MapDrawer
                       const bool shouldDrawGraph_in,
                       const bool shouldDrawInertialGraph_in,
                       const bool shouldDrawOptimizedLba_in);
+    [[nodiscard]] MapDrawerStatus drawCurrentCamera(
+        pangolin::OpenGlMatrix &cameraPose_cameraToWorld_in) const;
     [[nodiscard]] MapDrawerStatus
-        drawCurrentCamera(pangolin::OpenGlMatrix &pose_cameraToWorld_in) const;
-    [[nodiscard]] MapDrawerStatus
-        setCurrentCameraPose(const Sophus::SE3f &pose_worldToCamera_in);
+        setCurrentCameraPose(const Sophus::SE3f &cameraPose_worldToCamera_in);
     [[nodiscard]] MapDrawerStatus
         getCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M_in,
                                      pangolin::OpenGlMatrix &MOw_inout);

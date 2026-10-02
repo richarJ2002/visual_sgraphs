@@ -224,14 +224,16 @@ SemanticVerifyStatus checkConsecutivePassageTopology(
                         hasIncompletePassage = true;
                     }
                     Eigen::Vector3d mappedCentroid = Eigen::Vector3d::Zero();
-                    if (!(transformAbsorbedPoint(transform_in,
-                                                 absorbedPassage.centroid_world,
-                                                 mappedCentroid) ==
+                    if (!(transformAbsorbedPoint(
+                              transform_in,
+                              absorbedPassage.passageCentroid_world,
+                              mappedCentroid) ==
                           SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS))
                     {
                         hasIncompletePassage = true;
                     }
-                    else if ((mappedCentroid - p_surviving->centroid_world)
+                    else if ((mappedCentroid -
+                              p_surviving->passageCentroid_world)
                                  .norm() > maximumCentroidDistance_m_in)
                     {
                         contradictionReason_out =

@@ -89,11 +89,11 @@ class Marker
     /*!
      * @brief       Applies a map-frame similarity transform to the marker.
      *
-     * @param[in]   transform_oldWorldToNewWorld_in
+     * @param[in]   alignmentTransform_oldWorldToNewWorld_in
      *              Transform from the old map frame to the surviving frame.
      */
-    [[nodiscard]] MarkerStatus
-        applyTransform(const g2o::Sim3 &transform_oldWorldToNewWorld_in);
+    [[nodiscard]] MarkerStatus applyTransform(
+        const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in);
 
     [[nodiscard]] MarkerStatus getId(int &id_out) const;
     [[nodiscard]] MarkerStatus setId(int id_in);

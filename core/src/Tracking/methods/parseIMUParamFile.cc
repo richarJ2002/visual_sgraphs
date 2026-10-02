@@ -73,7 +73,7 @@ TrackingStatus Tracking::parseIMUParamFile(cv::FileStorage &settings_in,
               << cvTbc << std::endl;
     Eigen::Matrix<float, 4, 4, Eigen::RowMajor> poseEigen_cameraToBody(
         cvTbc.ptr<float>(0));
-    Sophus::SE3f pose_cameraToBody(poseEigen_cameraToBody);
+    Sophus::SE3f extrinsicPose_cameraToBody(poseEigen_cameraToBody);
 
     node                          = settings_in["InsertKFsWhenLost"];
     shouldInsertKeyFramesWhenLost = true;
@@ -190,7 +190,7 @@ TrackingStatus Tracking::parseIMUParamFile(cv::FileStorage &settings_in,
     std::cout << "IMU accelerometer walk: " << awCount << " m/s^3/sqrt(Hz)"
               << std::endl;
 
-    p_imuCalibration = new IMU::Calib(pose_cameraToBody,
+    p_imuCalibration = new IMU::Calib(extrinsicPose_cameraToBody,
                                       Ng * sf,
                                       Na * sf,
                                       gwCount / sf,

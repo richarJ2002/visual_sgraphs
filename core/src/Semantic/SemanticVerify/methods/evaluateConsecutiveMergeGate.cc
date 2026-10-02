@@ -39,7 +39,7 @@ namespace semantic
 SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
     core::Map               *p_survivingMap_in,
     core::Map               *p_absorbedMap_in,
-    const g2o::Sim3         &transform_absorbedToSurviving_in,
+    const g2o::Sim3         &mergeTransform_absorbedToSurviving_in,
     SemanticMergeGateResult &result_out,
     const MapMergeConfig    &configuration_in)
 {
@@ -56,7 +56,7 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
     bool floorsMatch{};
     if (checkConsecutiveFloors(p_survivingMap_in,
                                p_absorbedMap_in,
-                               transform_absorbedToSurviving_in,
+                               mergeTransform_absorbedToSurviving_in,
                                configuration_in.floor_match_tolerance_m,
                                result.floorDecision,
                                floorsMatch) !=
@@ -307,7 +307,7 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
 
     AlignmentCheck centroidCheck{};
     if (checkAnchorRoomCentroids(anchorPairs,
-                                 transform_absorbedToSurviving_in,
+                                 mergeTransform_absorbedToSurviving_in,
                                  configuration_in.passage_match_tolerance_m,
                                  centroidCheck) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
@@ -340,7 +340,7 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
     if (checkConsecutivePassageTopology(
             survivingRooms,
             absorbedRooms,
-            transform_absorbedToSurviving_in,
+            mergeTransform_absorbedToSurviving_in,
             configuration_in.passage_match_tolerance_m,
             matchedPassages,
             topologyReason,
@@ -373,7 +373,7 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         AlignmentCheck wallCheck{};
         if (checkFixedTransformWalls(pair.p_surviving->walls,
                                      pair.p_absorbed->walls,
-                                     transform_absorbedToSurviving_in,
+                                     mergeTransform_absorbedToSurviving_in,
                                      verifyConfiguration,
                                      pairMatchedWalls,
                                      wallCheck) !=
@@ -402,7 +402,7 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
         AlignmentCheck alignmentCheck{};
         if (checkConsecutiveWallEdgeOverlap(
                 {pair},
-                transform_absorbedToSurviving_in,
+                mergeTransform_absorbedToSurviving_in,
                 configuration_in.wall_coplanar_angle_deg,
                 configuration_in.wall_edge_overlap_m,
                 alignmentCheck) !=

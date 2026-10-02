@@ -95,8 +95,8 @@ MapStatus
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        const double normalNorm = geometry.equation_world.head<3>().norm();
-        if (!geometry.equation_world.allFinite() ||
+        const double normalNorm = geometry.planeEquation_world.head<3>().norm();
+        if (!geometry.planeEquation_world.allFinite() ||
             !std::isfinite(normalNorm) || normalNorm < 1e-8)
         {
             continue;

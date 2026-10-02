@@ -193,9 +193,9 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                             __func__);
                     }
                     Eigen::Vector4d candidateEquation_world =
-                        candidateGeometry.equation_world;
+                        candidateGeometry.planeEquation_world;
                     Eigen::Vector4d otherEquation_world =
-                        otherGeometry.equation_world;
+                        otherGeometry.planeEquation_world;
 
                     const double candidateNormalNorm =
                         candidateEquation_world.head<3>().norm();
@@ -319,7 +319,8 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
             }
             if (associatePlanes(
                     compatiblePlanes,
-                    g2o::Plane3D(candidateAssociationGeometry.equation_world),
+                    g2o::Plane3D(
+                        candidateAssociationGeometry.planeEquation_world),
                     candidateAssociationGeometry.supportCloud,
                     Eigen::Matrix4d::Identity(),
                     candidatePlanePlaneType5,

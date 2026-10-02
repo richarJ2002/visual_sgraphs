@@ -360,8 +360,8 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
             // If a Camera Pose is computed, optimize
             if (bTcw)
             {
-                Sophus::SE3f pose_worldToCamera(poseEigen_worldToCamera);
-                if (currentFrame.setPose(pose_worldToCamera) !=
+                Sophus::SE3f cameraPose_worldToCamera(poseEigen_worldToCamera);
+                if (currentFrame.setPose(cameraPose_worldToCamera) !=
                     FrameStatus::FRAME_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(

@@ -161,7 +161,7 @@ GeoSemHelpersStatus GeoSemHelpers::refitMappedPlaneFromCloud(
      * Preserve the previous normal direction to prevent the plane equation
      * from changing sign between updates.
      */
-    Eigen::Vector4d previousEquation = geometrySnapshot->equation_world;
+    Eigen::Vector4d previousEquation = geometrySnapshot->planeEquation_world;
 
     const double previousNormalNorm = previousEquation.head<3>().norm();
 
