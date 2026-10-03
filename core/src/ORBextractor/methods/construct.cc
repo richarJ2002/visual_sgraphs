@@ -72,8 +72,10 @@ namespace vs_graphs
 namespace core
 {
 
-/* BRIEF test pattern: 256 tests, each two sampling points stored as
- * (x, y) integer pairs in pixels relative to the keypoint. */
+/*!
+ * @brief        BRIEF test pattern: 256 tests, each two sampling points stored
+ *               as (x, y) integer pairs in pixels relative to the keypoint.
+ */
 static const int orbBitPattern31[256 * 4] = {
     8,   -3,  9,   5 /*mean (0), correlation (0)*/,
     4,   2,   7,   -12 /*mean (1.12461e-05), correlation (0.0437584)*/,

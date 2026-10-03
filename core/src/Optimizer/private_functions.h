@@ -41,12 +41,34 @@ class VertexPose;
 class AtomicOptimizerStopBridge final : public g2o::HyperGraphAction
 {
   public:
+    /*!
+     * @brief        Binds the cancellation request to the g2o stop flag.
+     *
+     * @param[in]    p_stopRequested_in
+     *               Thread-safe cancellation request written by another
+     *               thread; may be null. Borrowed; shall outlive the bridge.
+     * @param[in,out] p_localStopFlag_inout
+     *               g2o's force-stop flag, set to true when a stop was
+     *               requested; may be null. Borrowed; shall outlive the
+     *               bridge.
+     */
     AtomicOptimizerStopBridge(const std::atomic_bool *p_stopRequested_in,
                               bool                   *p_localStopFlag_inout) :
         p_stopRequested(p_stopRequested_in),
         p_localStopFlag(p_localStopFlag_inout)
     {}
 
+    /*!
+     * @brief        Copies a pending stop request into the g2o stop flag;
+     *               g2o calls it before and after each iteration.
+     *
+     * @param[in]    p_graph_in
+     *               Graph being optimised; not used.
+     * @param[in,out] p_parameters_inout
+     *               Action parameters; not used.
+     *
+     * @return       This action, always.
+     */
     g2o::HyperGraphAction *
         operator()(const g2o::HyperGraph *p_graph_in,
                    Parameters            *p_parameters_inout = nullptr) override
@@ -64,10 +86,30 @@ class AtomicOptimizerStopBridge final : public g2o::HyperGraphAction
     }
 
   private:
+    /*!
+     * @brief        Cancellation request set from another thread; may be
+     *               null. Borrowed.
+     */
     const std::atomic_bool *p_stopRequested;
-    bool                   *p_localStopFlag;
+
+    /*!
+     * @brief        g2o's force-stop flag that this bridge sets; may be null.
+     *               Borrowed.
+     */
+    bool *p_localStopFlag;
 };
 
+/*!
+ * @brief        Orders map point entries by their integer value, ascending.
+ *
+ * @param[in]    firstEntry_in
+ *               Map point and its value.
+ * @param[in]    secondEntry_in
+ *               Map point and its value.
+ *
+ * @return       True when the first entry's value is smaller than the
+ *               second's.
+ */
 bool sortByVal(const std::pair<MapPoint *, int> &firstEntry_in,
                const std::pair<MapPoint *, int> &secondEntry_in);
 

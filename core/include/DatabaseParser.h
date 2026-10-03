@@ -34,6 +34,10 @@
 
 #include "Semantic/Room.h"
 
+/*!
+ * @brief        Alias for the nlohmann JSON document type used to read the
+ *               ground-truth environment files.
+ */
 using Json = nlohmann::json;
 
 namespace vs_graphs

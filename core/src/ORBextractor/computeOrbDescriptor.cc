@@ -66,6 +66,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 
+/*!
+ * @brief        Conversion factor from degrees to radians (pi / 180).
+ */
 const float factorPI = static_cast<float>(CV_PI / 180.f);
 
 namespace vs_graphs
@@ -76,7 +79,7 @@ namespace core
 ORBextractorStatus computeOrbDescriptor(const cv::KeyPoint &kpt_in,
                                         const cv::Mat      &image_in,
                                         const cv::Point    *p_briefPattern_in,
-                                        uchar              *p_descriptor_inout)
+                                        unsigned char      *p_descriptor_inout)
 {
     float angle = kpt_in.angle * factorPI;
     float a = std::cos(angle), b = std::sin(angle);

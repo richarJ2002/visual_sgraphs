@@ -57,15 +57,31 @@ void Pinhole::serialize(Archive                            &ar,
         *this);
 }
 
+/*!
+ * @brief        Reads the GeometricCamera base data from a binary input archive
+ *               (explicit instantiation of Pinhole::serialize).
+ */
 template void Pinhole::serialize<boost::archive::binary_iarchive>(
     boost::archive::binary_iarchive &,
     const unsigned int);
+/*!
+ * @brief        Writes the GeometricCamera base data to a binary output archive
+ *               (explicit instantiation of Pinhole::serialize).
+ */
 template void Pinhole::serialize<boost::archive::binary_oarchive>(
     boost::archive::binary_oarchive &,
     const unsigned int);
+/*!
+ * @brief        Reads the GeometricCamera base data from a text input archive
+ *               (explicit instantiation of Pinhole::serialize).
+ */
 template void Pinhole::serialize<boost::archive::text_iarchive>(
     boost::archive::text_iarchive &,
     const unsigned int);
+/*!
+ * @brief        Writes the GeometricCamera base data to a text output archive
+ *               (explicit instantiation of Pinhole::serialize).
+ */
 template void Pinhole::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,
     const unsigned int);

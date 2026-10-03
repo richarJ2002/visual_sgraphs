@@ -67,11 +67,33 @@ namespace vs_graphs
 {
 namespace core
 {
+/*!
+ * @brief        Estimates the camera pose of a frame from 2D-3D matches with
+ *               RANSAC and the MLPnP (maximum likelihood PnP) algorithm.
+ *
+ *               The solver is built from one frame and the map points that
+ *               frame matched. Each call to iterate() runs more RANSAC rounds;
+ *               poses are transforms from the world frame to the camera frame.
+ */
 class MLPnPsolver
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    /*!
+     * @brief        Collects the usable 2D-3D matches of a frame and sets the
+     *               default RANSAC parameters.
+     *
+     *               Matches whose map point is null, bad, or has no undistorted
+     *               key point are skipped.
+     *
+     * @param[in]    frame_in
+     *               Frame whose key points are the 2D observations. Its camera
+     *               model is borrowed and must outlive the solver.
+     * @param[in]    mapPointMatches_in
+     *               Map point matched to each key point of the frame, by key
+     *               point index; null entries mean no match.
+     */
     MLPnPsolver(const Frame                   &frame_in,
                 const std::vector<MapPoint *> &mapPointMatches_in) :
         inlierCount(0),
@@ -160,6 +182,31 @@ class MLPnPsolver
         }
     }
 
+    /*!
+     * @brief        Sets the RANSAC parameters and adapts them to the number
+     *               of usable correspondences.
+     *
+     *               The minimum inlier count is raised to at least epsilon
+     *               times the correspondence count and to at least the minimum
+     *               set size; the maximum iteration count is capped by the
+     *               count needed for the requested probability.
+     *
+     * @param[in]    probability_in
+     *               Desired probability of drawing one outlier-free sample.
+     * @param[in]    minimumInliers_in
+     *               Minimum inlier count to accept a pose.
+     * @param[in]    maximumIterations_in
+     *               Upper bound on RANSAC iterations.
+     * @param[in]    minimumSet_in
+     *               Number of correspondences drawn for each pose hypothesis.
+     * @param[in]    epsilon_in
+     *               Expected fraction of inliers among all correspondences.
+     * @param[in]    threshold2_in
+     *               Squared-error threshold, in sigma-squared units, that
+     *               separates inliers from outliers.
+     *
+     * @return       MLPN_PSOLVER_STATUS_SUCCESS always.
+     */
     [[nodiscard]] MLPnPsolverStatus
         setRansacParameters(double probability_in       = 0.99,
                             int    minimumInliers_in    = 8,
@@ -170,6 +217,28 @@ class MLPnPsolver
 
     // Find metod is necessary?
 
+    /*!
+     * @brief        Runs RANSAC rounds until a pose is found or the iteration
+     *               budget is spent.
+     *
+     * @param[in]    iterationCount_in
+     *               Minimum number of rounds to run in this call.
+     * @param[out]   areIterationsExhausted_out
+     *               True when the total iteration budget is used up, or when
+     *               there are fewer correspondences than the minimum inliers.
+     * @param[out]   inliersFlags_out
+     *               One flag per entry of the constructor's match list, true
+     *               for inliers; empty when no pose was found.
+     * @param[out]   inlierCount_out
+     *               Number of inliers of the returned pose, 0 when none.
+     * @param[out]   Tout_out
+     *               Camera pose as a world-to-camera 4x4 transform; identity
+     *               when no pose was found.
+     * @param[out]   isSolved_out
+     *               True when a pose with enough inliers was found.
+     *
+     * @return       MLPN_PSOLVER_STATUS_SUCCESS always.
+     */
     [[nodiscard]] MLPnPsolverStatus iterate(int   iterationCount_in,
                                             bool &areIterationsExhausted_out,
                                             std::vector<bool> &inliersFlags_out,
@@ -231,15 +300,52 @@ class MLPnPsolver
     typedef Eigen::Vector3d TranslationVector;
 
   private:
+    /*!
+     * @brief        Counts the correspondences that the current pose
+     *               estimate reprojects within their error threshold.
+     *
+     *               Reads the current estimate (mRi, mti) and updates
+     *               inlierFlags and inlierCount.
+     *
+     * @return       MLPN_PSOLVER_STATUS_SUCCESS always.
+     */
     [[nodiscard]] MLPnPsolverStatus checkInliers();
+
+    /*!
+     * @brief        Re-estimates the pose from the best inlier set and keeps
+     *               it when it still has enough inliers.
+     *
+     * @param[out]   isRefined_out
+     *               True when the refined pose has more inliers than the
+     *               minimum and was stored in mRefinedTcw.
+     *
+     * @return       MLPN_PSOLVER_STATUS_SUCCESS always.
+     */
     [[nodiscard]] MLPnPsolverStatus refine(bool &isRefined_out);
 
     // Functions from de original MLPnP code
 
-    /*
-     * Computes the camera pose given 3D points coordinates (in the camera
-     * reference system), the camera rays and (optionally) the covariance matrix
-     * of those camera rays. Result is stored in solution
+    /*!
+     * @brief        Computes the camera pose from bearing vectors and the
+     *               matching 3D points.
+     *
+     *               The linear MLPnP estimate is refined by Gauss-Newton. At
+     *               least six correspondences are required (asserted).
+     *
+     * @param[in]    f_in
+     *               Bearing vectors in the camera frame.
+     * @param[in]    p_in
+     *               3D points in the world frame, one per bearing vector.
+     * @param[in]    covMats_in
+     *               Bearing-vector covariances; used only when there is one
+     *               per selected correspondence.
+     * @param[in]    indices_in
+     *               Indices into f_in and p_in of the correspondences to use.
+     * @param[out]   result_inout
+     *               Pose as a 3x4 world-to-camera transform, rotation then
+     *               translation; fully overwritten.
+     *
+     * @return       MLPN_PSOLVER_STATUS_SUCCESS always.
      */
     [[nodiscard]] MLPnPsolverStatus
         computePose(const BearingVectors      &f_in,
@@ -248,6 +354,28 @@ class MLPnPsolver
                     const std::vector<int>    &indices_in,
                     TransformationMatrix      &result_inout);
 
+    /*!
+     * @brief        Refines a pose with at most five Gauss-Newton steps on the
+     *               MLPnP residuals.
+     *
+     *               Stops early when a step is implausibly large, which
+     *               indicates a bad linear estimate, or when the residual
+     *               change falls below 1e-5.
+     *
+     * @param[in,out] x_inout
+     *               Six-vector: Rodrigues rotation parameters, then
+     *               translation. Holds the initial guess and the result.
+     * @param[in]    points_in
+     *               3D points in the world frame.
+     * @param[in]    nullspaces_in
+     *               Two-column nullspace basis of each point's bearing vector.
+     * @param[in]    Kll_in
+     *               Observation weight matrix, 2 rows per point.
+     * @param[in]    shouldUseCovariance_in
+     *               True to weight the normal equations by Kll_in.
+     *
+     * @return       MLPN_PSOLVER_STATUS_SUCCESS always.
+     */
     [[nodiscard]] MLPnPsolverStatus
         mlpnp_gn(Eigen::VectorXd                    &x_inout,
                  const Points3                      &points_in,
@@ -255,6 +383,32 @@ class MLPnPsolver
                  const Eigen::SparseMatrix<double>   Kll_in,
                  bool                                shouldUseCovariance_in);
 
+    /*!
+     * @brief        Evaluates the MLPnP residuals and, optionally, their
+     *               Jacobian at a pose.
+     *
+     *               Each point contributes two residuals: its transformed unit
+     *               direction projected on the two nullspace vectors of its
+     *               bearing vector.
+     *
+     * @param[in]    x_in
+     *               Six-vector: Rodrigues rotation parameters, then
+     *               translation.
+     * @param[in]    points_in
+     *               3D points in the world frame.
+     * @param[in]    nullspaces_in
+     *               Two-column nullspace basis of each point's bearing vector.
+     * @param[out]   r_inout
+     *               Residuals, two per point; the caller sizes it and every
+     *               entry is overwritten.
+     * @param[out]   fjac_in
+     *               Jacobian, two rows by six columns per point; written only
+     *               when getJacs_in is true, and the caller sizes it.
+     * @param[in]    getJacs_in
+     *               True to also fill fjac_in.
+     *
+     * @return       MLPN_PSOLVER_STATUS_SUCCESS always.
+     */
     [[nodiscard]] MLPnPsolverStatus mlpnp_residuals_and_jacs(
         const Eigen::VectorXd              &x_in,
         const Points3                      &points_in,
@@ -263,6 +417,26 @@ class MLPnPsolver
         Eigen::MatrixXd                    &fjac_in,
         bool                                getJacs_in);
 
+    /*!
+     * @brief        Computes the 2x6 Jacobian of one point's two residuals
+     *               with respect to the rotation and translation.
+     *
+     * @param[in]    point_in
+     *               3D point in the world frame.
+     * @param[in]    nullspace_r
+     *               First nullspace vector of the point's bearing vector.
+     * @param[in]    nullspace_s_in
+     *               Second nullspace vector of the point's bearing vector.
+     * @param[in]    w_in
+     *               Rodrigues rotation parameters of the current pose.
+     * @param[in]    t_in
+     *               Translation of the current pose.
+     * @param[out]   jacs_in
+     *               2x6 Jacobian: columns 0-2 are the rotation parameters,
+     *               columns 3-5 the translation; the caller sizes it.
+     *
+     * @return       MLPN_PSOLVER_STATUS_SUCCESS always.
+     */
     [[nodiscard]] MLPnPsolverStatus
         mlpnpJacs(const Point3            &point_in,
                   const Eigen::Vector3d   &nullspace_r,
@@ -298,68 +472,172 @@ class MLPnPsolver
     //----------------------------------------------------
     // Fields of the solver
     //----------------------------------------------------
+    /*!
+     * @brief        Map point matched to each key point of the frame, by key
+     *               point index; null entries mean no match. Borrowed.
+     */
     std::vector<MapPoint *> mapPointMatches;
 
     // 2D Points
+    /*!
+     * @brief        Undistorted key point positions of the usable
+     *               correspondences, in pixels.
+     */
     std::vector<cv::Point2f> points2D;
-    // Substitued by bearing vectors
-    BearingVectors           bearingVectors;
 
+    /*!
+     * @brief        Bearing vector of each usable correspondence in the camera
+     *               frame, scaled so that z is 1.
+     */
+    BearingVectors bearingVectors;
+
+    /*!
+     * @brief        Squared measurement noise (sigma squared) of each usable
+     *               correspondence, taken from its key point's pyramid level.
+     */
     std::vector<float> sigmaSquared;
 
     // 3D Points
-    // vector<cv::Point3f> mvP3Dw;
+    /*!
+     * @brief        World-frame position of the map point of each usable
+     *               correspondence, in metres.
+     */
     Points3 points3Dw;
 
     // Index in Frame
+    /*!
+     * @brief        Key point index in the frame of each usable
+     *               correspondence.
+     */
     std::vector<size_t> keypointIndices;
 
     // Current Estimation
-    double            mRi[3][3];
-    double            mti[3];
-    Eigen::Matrix4f   mTcwi;
+    /*!
+     * @brief        Rotation of the current pose estimate, world to camera.
+     */
+    double mRi[3][3];
+
+    /*!
+     * @brief        Translation of the current pose estimate, world to camera.
+     */
+    double mti[3];
+
+    /*!
+     * @brief        Declared but never written or read.
+     */
+    Eigen::Matrix4f mTcwi;
+
+    /*!
+     * @brief        Inlier flag of each correspondence under the current pose
+     *               estimate.
+     */
     std::vector<bool> inlierFlags;
-    int               inlierCount;
+
+    /*!
+     * @brief        Number of inliers under the current pose estimate.
+     */
+    int inlierCount;
 
     // Current Ransac State
-    int               iterationCount;
+    /*!
+     * @brief        RANSAC iterations run so far, across all iterate() calls.
+     */
+    int iterationCount;
+
+    /*!
+     * @brief        Inlier flags of the best pose found so far.
+     */
     std::vector<bool> bestInlierFlags;
-    int               bestInlierCount;
-    Eigen::Matrix4f   mBestTcw;
+
+    /*!
+     * @brief        Inlier count of the best pose found so far.
+     */
+    int bestInlierCount;
+
+    /*!
+     * @brief        Best pose found so far as a world-to-camera 4x4 transform.
+     */
+    Eigen::Matrix4f mBestTcw;
 
     // Refined
-    Eigen::Matrix4f   mRefinedTcw;
+    /*!
+     * @brief        Refined pose as a world-to-camera 4x4 transform.
+     */
+    Eigen::Matrix4f mRefinedTcw;
+
+    /*!
+     * @brief        Inlier flags of the refined pose.
+     */
     std::vector<bool> refinedInlierFlags;
-    int               refinedInlierCount;
+
+    /*!
+     * @brief        Inlier count of the refined pose.
+     */
+    int refinedInlierCount;
 
     // Number of Correspondences
+    /*!
+     * @brief        Number of usable 2D-3D correspondences.
+     */
     int correspondenceCount;
 
     // Indices for random selection [0 .. N-1]
+    /*!
+     * @brief        Correspondence indices 0 to correspondenceCount - 1, the
+     *               pool that RANSAC samples from.
+     */
     std::vector<size_t> allIndices;
 
     // RANSAC probability
+    /*!
+     * @brief        Desired probability of drawing one outlier-free sample.
+     */
     double ransacProb;
 
     // RANSAC min inliers
+    /*!
+     * @brief        Minimum inlier count to accept a pose, after adaptation to
+     *               the correspondence count.
+     */
     int ransacMinInliers;
 
     // RANSAC max iterations
+    /*!
+     * @brief        Upper bound on RANSAC iterations, after adaptation.
+     */
     int ransacMaxIterations;
 
     // RANSAC expected inliers/total ratio
+    /*!
+     * @brief        Expected fraction of inliers among all correspondences.
+     */
     float ransacEpsilon;
 
     // RANSAC Threshold inlier/outlier. Max error e = dist(P1,T_12*P2)^2
+    /*!
+     * @brief        Declared but never written or read; the threshold is
+     *               applied through maxError.
+     */
     float ransacThreshold;
 
     // RANSAC Minimun Set used at each iteration
+    /*!
+     * @brief        Number of correspondences drawn for each pose hypothesis.
+     */
     int ransacMinSet;
 
     // Max square error associated with scale level. Max error =
     // th*th*sigma(level)*sigma(level)
+    /*!
+     * @brief        Largest squared reprojection error, in pixels squared,
+     *               that still counts as an inlier, per correspondence.
+     */
     std::vector<float> maxError;
 
+    /*!
+     * @brief        Camera model of the frame, used to project points.
+     *               Borrowed from the frame.
+     */
     camera_models::geometriccamera::GeometricCamera *p_camera;
 };
 

@@ -46,7 +46,27 @@ inline constexpr int EDGE_THRESHOLD = 19;
                                   float &intensityCentroidAngle_out);
 
 /*!
- * @brief        Computes the ORB descriptor of one keypoint.
+ * @brief        Computes the 256-bit ORB descriptor of one keypoint by
+ *               comparing the brightness of 256 pairs of pixels around it.
+ *
+ *               The sampling pattern is rotated by the keypoint orientation, so
+ *               the descriptor does not change when the image rotates. No
+ *               bounds check is done: the rotated pattern must stay inside the
+ *               image, which the keypoint border (EDGE_THRESHOLD) guarantees.
+ *
+ * @param[in]    kpt_in
+ *               Keypoint; its position is in pixels of image_in and its
+ *               angle in degrees.
+ * @param[in]    image_in
+ *               8-bit single-channel image of the keypoint's pyramid level.
+ * @param[in]    p_briefPattern_in
+ *               512 sampling points, two per test, as pixel offsets from the
+ *               keypoint. Borrowed; not modified.
+ * @param[in,out] p_descriptor_inout
+ *               Destination for the 32 descriptor bytes; the caller provides
+ *               room for 32 bytes and every byte is overwritten.
+ *
+ * @return       ORBEXTRACTOR_STATUS_SUCCESS always.
  */
 [[nodiscard]] ORBextractorStatus
     computeOrbDescriptor(const cv::KeyPoint &kpt_in,

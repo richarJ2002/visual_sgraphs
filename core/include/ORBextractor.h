@@ -70,11 +70,23 @@ class ExtractorNode
     /*!
      * @brief        Keypoints falling inside the node.
      */
-    std::vector<cv::KeyPoint> keys;
+    std::vector<cv::KeyPoint>          keys;
     /*!
      * @brief        Region corners in pixels.
      */
-    cv::Point2i               topLeft, topRight, bottomLeft, bottomRight;
+    cv::Point2i                        topLeft;
+    /*!
+     * @brief        Top-right corner of the node region, in pixels.
+     */
+    cv::Point2i                        topRight;
+    /*!
+     * @brief        Bottom-left corner of the node region, in pixels.
+     */
+    cv::Point2i                        bottomLeft;
+    /*!
+     * @brief        Bottom-right corner of the node region, in pixels.
+     */
+    cv::Point2i                        bottomRight;
     /*!
      * @brief        Position of the node in the level list.
      */

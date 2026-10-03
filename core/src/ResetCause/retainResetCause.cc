@@ -19,7 +19,17 @@ namespace core
  * namespace inside ResetCause.cc. They are defined once here with external
  * linkage so the split registry translation units share them; behavior is
  * unchanged (same mutex, same map, same lock discipline). */
-std::mutex                                            resetCauseMutex;
+/*!
+ * @brief        Mutex that guards resetCausesByOwner; held by retain, consume
+ *               and clear for the whole access.
+ */
+std::mutex resetCauseMutex;
+
+/*!
+ * @brief        Deferred reset cause of each owner, keyed by the owner's
+ *               address (used only as an identity, never dereferenced).
+ *               Guarded by resetCauseMutex.
+ */
 std::unordered_map<const void *, ResetCauseRetention> resetCausesByOwner;
 
 ResetCauseStatus retainResetCause(const void *const p_owner_in,
