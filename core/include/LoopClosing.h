@@ -106,6 +106,12 @@ enum class SemanticMergeDecision;
     std::string     &result_out,
     bool            &isVerified_out);
 
+/*!
+ * @brief        The loop-closing thread: finds places the camera has seen
+ *               before, checks them geometrically and corrects or merges the
+ *               maps. Connected to Tracking and LocalMapping by borrowed
+ *               pointers.
+ */
 class LoopClosing
 {
   private:
@@ -128,19 +134,62 @@ class LoopClosing
      */
     struct LoopCorrectionStatus
     {
+        /*!
+         * @brief        Number of loop events recorded so far (accepted or
+         *               rejected); a reader sees a new event when it grows.
+         */
         std::uint64_t sequence{0U};
+        /*!
+         * @brief        Number of loop events that were accepted.
+         */
         std::uint32_t acceptedCount{0U};
+        /*!
+         * @brief        Number of loop events that were rejected.
+         */
         std::uint32_t rejectedCount{0U};
+        /*!
+         * @brief        True once at least one event has been recorded.
+         */
         bool          hasEvent{false};
+        /*!
+         * @brief        True when the latest event was accepted.
+         */
         bool          wasLastAccepted{false};
+        /*!
+         * @brief        Id of the map holding the current key frame of the
+         *               latest event; unchanged when that key frame has no
+         *               map.
+         */
         unsigned long lastMapId{0U};
+        /*!
+         * @brief        Id of the key frame that detected the latest event.
+         */
         unsigned long lastCurrentKeyFrameId{0U};
+        /*!
+         * @brief        Id of the key frame matched to it in the latest event.
+         */
         unsigned long lastMatchedKeyFrameId{0U};
+        /*!
+         * @brief        Timestamp, seconds, of the key frame that detected
+         *               the latest event.
+         */
         double        lastCurrentTimestamp{0.0};
+        /*!
+         * @brief        Timestamp, seconds, of the matched key frame of the
+         *               latest event.
+         */
         double        lastMatchedTimestamp{0.0};
+        /*!
+         * @brief        Why the latest event was accepted or rejected.
+         */
         std::string   lastReason;
     };
 
+    /*!
+     * @brief        Similarity transform per key frame, ordered by pointer;
+     *               holds each key frame's world-to-camera pose before or
+     *               after a loop correction. Key frames are borrowed.
+     */
     typedef std::map<
         KeyFrame *,
         g2o::Sim3,
@@ -326,6 +375,11 @@ class LoopClosing
     [[nodiscard]] LoopClosingStatus getLoopCorrectionStatus(
         LoopClosing::LoopCorrectionStatus &getLoopCorrectionStatus_out) const;
 
+    /*!
+     * @brief        Viewer; borrowed. System::initialize() sets it only when
+     *               the viewer is enabled, and the loop closer never reads
+     *               it.
+     */
     Viewer *p_viewer;
 
 #ifdef REGISTER_TIMES
