@@ -1,13 +1,14 @@
 /*!
- * @file         construct.cc
+ * @file            construct.cc
  *
- * @brief        Implements FrameDrawer::FrameDrawer declared in FrameDrawer.h.
+ * @brief           Implements FrameDrawer::FrameDrawer declared in
+ *                  FrameDrawer.h.
  *
- * @note         Deviates from CPP_CODING_STANDARD §5.6 (constructor bodies
- *               in the header): the body names Tracking::SYSTEM_NOT_READY,
- *               but FrameDrawer.h and Tracking.h include each other, so the
- *               body cannot see a complete Tracking from every include
- *               order. Kept out-of-line to preserve all include orders.
+ * @note            Deviates from CPP_CODING_STANDARD §5.6 (constructor bodies
+ *                  in the header): the body names Tracking::SYSTEM_NOT_READY,
+ *                  but FrameDrawer.h and Tracking.h include each other, so the
+ *                  body cannot see a complete Tracking from every include
+ *                  order. Kept out-of-line to preserve all include orders.
  */
 
 #include "FrameDrawer.h"

@@ -33,12 +33,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a EdgeMono operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a EdgeMono operation. Values are fixed and never
+ *                  reordered.
  */
 enum class EdgeMonoStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     EDGE_MONO_STATUS_SUCCESS = 0U
 };
 

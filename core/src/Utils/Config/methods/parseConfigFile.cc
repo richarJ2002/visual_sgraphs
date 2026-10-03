@@ -24,10 +24,10 @@
  */
 
 /*!
- * @file         parseConfigFile.cc
+ * @file            parseConfigFile.cc
  *
- * @brief        Implements ConfigParser::parseConfigFile(), declared in
- *               Utils/Config/objects/Config.h.
+ * @brief           Implements ConfigParser::parseConfigFile(), declared in
+ *                  Utils/Config/objects/Config.h.
  */
 
 #include "Utils/Config/objects/Config.h"

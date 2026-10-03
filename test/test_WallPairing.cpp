@@ -1,9 +1,11 @@
 /*!
- * @file test_WallPairing.cpp
- * @brief Wall-pairing coverage: SemanticsManager::reconcileWallFacePairs()
- *        links the two opposite-facing geometric::Plane hypotheses of one
- *        physical wall (axiom (e)), and unlinks a pair that stops being
- *        plausible.
+ * @file            test_WallPairing.cpp
+ *
+ * @brief           Wall-pairing coverage:
+ *                  SemanticsManager::reconcileWallFacePairs() links the two
+ *                  opposite-facing geometric::Plane hypotheses of one physical
+ *                  wall (axiom (e)), and unlinks a pair that stops being
+ *                  plausible.
  */
 
 #include "Atlas.h"
@@ -25,12 +27,15 @@ namespace core
 namespace
 {
 
-/*! Builds a WALL geometric::Plane whose surface sits at x = planeX_m_in, with
- * normal along +/-X (normalXSign_in), an observation origin stamped along that
- * same axis, and a genuine on-plane point cloud spanning [yMin,yMax] x
- * [zMin,zMax]
- * -- exactly on the plane, so footprint projection is faithful regardless of
- * which in-plane basis reconcileWallFacePairs() happens to pick. */
+/*!
+ * @brief           Builds a WALL geometric::Plane whose surface sits at x =
+ *                  planeX_m_in, with normal along +/-X (normalXSign_in), an
+ *                  observation origin stamped along that same axis, and a
+ *                  genuine on-plane point cloud spanning [yMin,yMax] x
+ *                  [zMin,zMax] -- exactly on the plane, so footprint projection
+ *                  is faithful regardless of which in-plane basis
+ *                  reconcileWallFacePairs() happens to pick.
+ */
 std::unique_ptr<geometric::Plane>
     makeWallFace(int                    id_in,
                  Map                   *p_map_in,
@@ -132,9 +137,9 @@ std::unique_ptr<geometric::Plane>
 } // namespace
 
 /*!
- * @brief        Checks that two parallel wall faces 0.2 m apart, seen from
- *               opposite sides and with overlapping footprints, are linked as
- *               twins of each other.
+ * @brief           Checks that two parallel wall faces 0.2 m apart, seen from
+ *                  opposite sides and with overlapping footprints, are linked
+ *                  as twins of each other.
  */
 TEST(WallPairing, LinksAPlausibleTwinPairSymmetrically)
 {
@@ -186,8 +191,8 @@ TEST(WallPairing, LinksAPlausibleTwinPairSymmetrically)
 }
 
 /*!
- * @brief        Checks that two faces only 0.01 m apart, thinner than any
- *               plausible wall, are not linked as twins.
+ * @brief           Checks that two faces only 0.01 m apart, thinner than any
+ *                  plausible wall, are not linked as twins.
  */
 TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
 {
@@ -237,8 +242,8 @@ TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
 }
 
 /*!
- * @brief        Checks that two faces 3 m apart, too far to be two faces of one
- *               wall, are not linked as twins.
+ * @brief           Checks that two faces 3 m apart, too far to be two faces of
+ *                  one wall, are not linked as twins.
  */
 TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
 {
@@ -288,8 +293,8 @@ TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
 }
 
 /*!
- * @brief        Checks that two faces observed from the same side are not
- *               linked as twins, since twins are seen from opposite sides.
+ * @brief           Checks that two faces observed from the same side are not
+ *                  linked as twins, since twins are seen from opposite sides.
  */
 TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
 {
@@ -341,8 +346,8 @@ TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
 }
 
 /*!
- * @brief        Checks that two parallel faces of plausible thickness whose
- *               footprints do not overlap are not linked as twins.
+ * @brief           Checks that two parallel faces of plausible thickness whose
+ *                  footprints do not overlap are not linked as twins.
  */
 TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
 {
@@ -394,8 +399,9 @@ TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
 }
 
 /*!
- * @brief        Checks that a pair of linked twin faces is unlinked when a
- *               later refit moves one face too far away to be a plausible twin.
+ * @brief           Checks that a pair of linked twin faces is unlinked when a
+ *                  later refit moves one face too far away to be a plausible
+ *                  twin.
  */
 TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
 {

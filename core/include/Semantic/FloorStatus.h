@@ -35,16 +35,20 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a Floor operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a Floor operation. Values are fixed and never
+ *                  reordered.
  */
 enum class FloorStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     FLOOR_STATUS_SUCCESS = 0U,
 
-    /*! @brief An input was null, repeated or not finite; the object and the
-     * outputs were left unchanged. */
+    /*!
+     * @brief           An input was null, repeated or not finite; the object
+     *                  and the outputs were left unchanged.
+     */
     FLOOR_STATUS_INVALID_ARGUMENT = 1U
 };
 

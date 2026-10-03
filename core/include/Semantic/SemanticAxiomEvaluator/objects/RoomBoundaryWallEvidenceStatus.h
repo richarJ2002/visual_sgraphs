@@ -38,24 +38,33 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Typed validity of one RoomRecord::wallRefs entry as boundary
- *              support evidence for its owning room.
+ * @brief           Typed validity of one RoomRecord::wallRefs entry as boundary
+ *                  support evidence for its owning room.
  */
 enum class RoomBoundaryWallEvidenceStatus : std::uint8_t
 {
-    /*! @brief Present, WALL-typed, live, same-map, uniquely resolved, and
-     *  reciprocally owned by the room -- trustworthy boundary evidence. */
+    /*!
+     * @brief           Present, WALL-typed, live, same-map, uniquely resolved,
+     *                  and reciprocally owned by the room -- trustworthy
+     *                  boundary evidence.
+     */
     VALID = 0U,
 
-    /*! @brief No reference was attempted, or the referenced plane has no
-     *  map, or its WallRecord is not locatable among the captured maps: an
-     *  ordinary gap in positive evidence, not a proven contradiction. */
+    /*!
+     * @brief           No reference was attempted, or the referenced plane has
+     *                  no map, or its WallRecord is not locatable among the
+     *                  captured maps: an ordinary gap in positive evidence, not
+     *                  a proven contradiction.
+     */
     UNAVAILABLE = 1U,
 
-    /*! @brief The reference is provably wrong: wrong plane type, retired,
-     *  cross-map, an ambiguous duplicate-identity wall key, or a resolved
-     *  WallRecord that does not reciprocally own the room. A known
-     *  contradiction that must dominate any other VALID reference. */
+    /*!
+     * @brief           The reference is provably wrong: wrong plane type,
+     *                  retired, cross-map, an ambiguous duplicate-identity wall
+     *                  key, or a resolved WallRecord that does not reciprocally
+     *                  own the room. A known contradiction that must dominate
+     *                  any other VALID reference.
+     */
     INVALID = 2U
 };
 

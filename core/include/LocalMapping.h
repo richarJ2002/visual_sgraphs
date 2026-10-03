@@ -59,34 +59,35 @@ class LoopClosing;
 class Atlas;
 
 /*!
- * @brief        The local-mapping thread: takes key frames from the tracker,
- *               turns them into map points and keeps the nearby map
- *               consistent. Connected to Tracking and LoopClosing by borrowed
- *               pointers.
+ * @brief           The local-mapping thread: takes key frames from the tracker,
+ *                  turns them into map points and keeps the nearby map
+ *                  consistent. Connected to Tracking and LoopClosing by
+ *                  borrowed pointers.
  */
 class LocalMapping
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     /*!
-     * @brief        Creates the local mapper. Connect it with setTracker() and
-     *               setLoopCloser() before starting run() on its own thread.
+     * @brief           Creates the local mapper. Connect it with setTracker()
+     *                  and setLoopCloser() before starting run() on its own
+     *                  thread.
      *
-     * @param[in]    p_system_in
-     *               Owning system; borrowed, shall outlive the mapper.
+     * @param[in]       p_system_in
+     *                  Owning system; borrowed, shall outlive the mapper.
      *
-     * @param[in]    p_atlas_in
-     *               Atlas holding every map; borrowed, shall outlive the
-     *               mapper.
+     * @param[in]       p_atlas_in
+     *                  Atlas holding every map; borrowed, shall outlive the
+     *                  mapper.
      *
-     * @param[in]    monocular_in
-     *               Non-zero when the sensor is monocular.
+     * @param[in]       monocular_in
+     *                  Non-zero when the sensor is monocular.
      *
-     * @param[in]    inertial_in
-     *               True when an IMU is used.
+     * @param[in]       inertial_in
+     *                  True when an IMU is used.
      *
-     * @param[in]    sequenceName_in
-     *               Ignored; kept so the constructor signature is unchanged.
+     * @param[in]       sequenceName_in
+     *                  Ignored; kept so the constructor signature is unchanged.
      */
     LocalMapping(System            *p_system_in,
                  Atlas             *p_atlas_in,
@@ -95,192 +96,193 @@ class LocalMapping
                  const std::string &sequenceName_in = std::string());
 
     /*!
-     * @brief        Tells the mapper which loop closer to use.
+     * @brief           Tells the mapper which loop closer to use.
      *
-     * @param[in]    p_loopCloser_in
-     *               Loop closer; borrowed, shall outlive the mapper.
+     * @param[in]       p_loopCloser_in
+     *                  Loop closer; borrowed, shall outlive the mapper.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus
         setLoopCloser(LoopClosing *p_loopCloser_in);
 
     /*!
-     * @brief        Tells the mapper which tracker to use.
+     * @brief           Tells the mapper which tracker to use.
      *
-     * @param[in]    p_tracker_in
-     *               Tracker; borrowed, shall outlive the mapper.
+     * @param[in]       p_tracker_in
+     *                  Tracker; borrowed, shall outlive the mapper.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus setTracker(Tracking *p_tracker_in);
 
     // Main function
     /*!
-     * @brief        Thread body: repeatedly takes the next queued key frame,
-     *               creates and culls map points, runs local bundle
-     *               adjustment and, with an IMU, the inertial initialisation,
-     *               until a finish is requested.
+     * @brief           Thread body: repeatedly takes the next queued key frame,
+     *                  creates and culls map points, runs local bundle
+     *                  adjustment and, with an IMU, the inertial
+     *                  initialisation, until a finish is requested.
      */
     void run();
 
     /*!
-     * @brief        Queues a key frame for processing by run() and asks any
-     *               running bundle adjustment to abort.
+     * @brief           Queues a key frame for processing by run() and asks any
+     *                  running bundle adjustment to abort.
      *
-     * @param[in]    p_keyFrame_in
-     *               Key frame to process; borrowed from the caller.
+     * @param[in]       p_keyFrame_in
+     *                  Key frame to process; borrowed from the caller.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus insertKeyFrame(KeyFrame *p_keyFrame_in);
 
     /*!
-     * @brief        Processes every queued key frame immediately, without the
-     *               culling and optimisation steps of run().
+     * @brief           Processes every queued key frame immediately, without
+     *                  the culling and optimisation steps of run().
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus emptyQueue();
 
     // Thread Synch
     /*!
-     * @brief        Asks the thread to stop at its next safe point and aborts
-     *               a running bundle adjustment.
+     * @brief           Asks the thread to stop at its next safe point and
+     *                  aborts a running bundle adjustment.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus requestStop();
 
     /*!
-     * @brief        Asks the thread to clear its queue and reset, then blocks
-     *               until run() has done so.
+     * @brief           Asks the thread to clear its queue and reset, then
+     *                  blocks until run() has done so.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus requestReset();
 
     /*!
-     * @brief        Same as requestReset() but for one map; blocks until
-     *               run() has handled the request.
+     * @brief           Same as requestReset() but for one map; blocks until
+     *                  run() has handled the request.
      *
-     * @param[in]    p_map_in
-     *               Map to reset; borrowed. Stored in p_mapToReset.
+     * @param[in]       p_map_in
+     *                  Map to reset; borrowed. Stored in p_mapToReset.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus requestResetActiveMap(Map *p_map_in);
 
     /*!
-     * @brief        Stops the thread if a stop was requested and nothing
-     *               blocks it (see setNotStop()).
+     * @brief           Stops the thread if a stop was requested and nothing
+     *                  blocks it (see setNotStop()).
      *
-     * @param[out]   isStopped_out
-     *               True when the thread is now stopped.
+     * @param[out]      isStopped_out
+     *                  True when the thread is now stopped.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus stop(bool &isStopped_out);
 
     /*!
-     * @brief        Resumes a stopped thread and deletes the key frames still
-     *               queued. Does nothing once the thread has finished.
+     * @brief           Resumes a stopped thread and deletes the key frames
+     *                  still queued. Does nothing once the thread has finished.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus release();
 
     /*!
-     * @brief        Reports whether the thread is stopped.
+     * @brief           Reports whether the thread is stopped.
      *
-     * @param[out]   isStopped_out
-     *               True when stopped.
+     * @param[out]      isStopped_out
+     *                  True when stopped.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus isStopped(bool &isStopped_out);
 
     /*!
-     * @brief        Reports whether a stop has been requested.
+     * @brief           Reports whether a stop has been requested.
      *
-     * @param[out]   isStopRequested_out
-     *               True when requestStop() was called and not yet released.
+     * @param[out]      isStopRequested_out
+     *                  True when requestStop() was called and not yet released.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus stopRequested(bool &isStopRequested_out);
 
     /*!
-     * @brief        Reports whether the tracker may send new key frames now.
+     * @brief           Reports whether the tracker may send new key frames now.
      *
-     * @param[out]   isAcceptingKeyFrames_out
-     *               True when the mapper is idle and accepts key frames.
+     * @param[out]      isAcceptingKeyFrames_out
+     *                  True when the mapper is idle and accepts key frames.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus
         isAcceptingKeyFrames(bool &isAcceptingKeyFrames_out);
 
     /*!
-     * @brief        Sets whether new key frames are accepted. run() clears it
-     *               while busy so the tracker sees the mapper as occupied.
+     * @brief           Sets whether new key frames are accepted. run() clears
+     *                  it while busy so the tracker sees the mapper as
+     *                  occupied.
      *
-     * @param[in]    shouldAcceptKeyFrames_in
-     *               True to accept key frames.
+     * @param[in]       shouldAcceptKeyFrames_in
+     *                  True to accept key frames.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus
         setAcceptKeyFrames(bool shouldAcceptKeyFrames_in);
 
     /*!
-     * @brief        Blocks or unblocks stopping of the thread, so a caller can
-     *               keep the mapper running while it uses the map.
+     * @brief           Blocks or unblocks stopping of the thread, so a caller
+     *                  can keep the mapper running while it uses the map.
      *
-     * @param[in]    shouldPreventStop_in
-     *               True to block stopping, false to allow it again.
+     * @param[in]       shouldPreventStop_in
+     *                  True to block stopping, false to allow it again.
      *
-     * @param[out]   wasSet_out
-     *               False only when blocking was refused because the thread
-     *               is already stopped; true otherwise.
+     * @param[out]      wasSet_out
+     *                  False only when blocking was refused because the thread
+     *                  is already stopped; true otherwise.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus setNotStop(bool  shouldPreventStop_in,
                                                 bool &wasSet_out);
 
     /*!
-     * @brief        Asks a running local bundle adjustment to abort early.
+     * @brief           Asks a running local bundle adjustment to abort early.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus interruptBA();
 
     /*!
-     * @brief        Asks run() to leave its loop and finish.
+     * @brief           Asks run() to leave its loop and finish.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus requestFinish();
 
     /*!
-     * @brief        Reports whether run() has finished (true before run()
-     *               starts as well).
+     * @brief           Reports whether run() has finished (true before run()
+     *                  starts as well).
      *
-     * @param[out]   isFinished_out
-     *               True when the thread is finished.
+     * @param[out]      isFinished_out
+     *                  True when the thread is finished.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus isFinished(bool &isFinished_out);
 
     /*!
-     * @brief        Counts the key frames waiting to be processed.
+     * @brief           Counts the key frames waiting to be processed.
      *
-     * @param[out]   keyFrameCount_out
-     *               Number of queued key frames.
+     * @param[out]      keyFrameCount_out
+     *                  Number of queued key frames.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus keyframesInQueue(int &keyFrameCount_out)
     {
@@ -290,168 +292,169 @@ class LocalMapping
     }
 
     /*!
-     * @brief        Reports whether an IMU initialisation or scale refinement
-     *               is running.
+     * @brief           Reports whether an IMU initialisation or scale
+     *                  refinement is running.
      *
-     * @param[out]   isInitializing_out
-     *               True while one is running.
+     * @param[out]      isInitializing_out
+     *                  True while one is running.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus
         isInitializing(bool &isInitializing_out) const;
 
     /*!
-     * @brief        Returns the timestamp of the key frame being processed.
+     * @brief           Returns the timestamp of the key frame being processed.
      *
-     * @param[out]   currentKeyFrameTime_out
-     *               Timestamp in seconds; 0.0 when there is no current key
-     *               frame yet.
+     * @param[out]      currentKeyFrameTime_out
+     *                  Timestamp in seconds; 0.0 when there is no current key
+     *                  frame yet.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus
         getCurrentKeyFrameTime(double &currentKeyFrameTime_out);
 
     /*!
-     * @brief        Returns the key frame the thread is working on.
+     * @brief           Returns the key frame the thread is working on.
      *
-     * @param[out]   p_currentKeyFrame_out
-     *               Borrowed pointer; null before the first key frame. Read
-     *               without a lock, so it may change while the thread runs.
+     * @param[out]      p_currentKeyFrame_out
+     *                  Borrowed pointer; null before the first key frame. Read
+     *                  without a lock, so it may change while the thread runs.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus
         getCurrentKeyFrame(KeyFrame *&p_currentKeyFrame_out);
 
     /*!
-     * @brief        Mutex intended for IMU initialisation; its only use is a
-     *               commented-out lock, so nothing locks it.
+     * @brief           Mutex intended for IMU initialisation; its only use is a
+     *                  commented-out lock, so nothing locks it.
      */
     std::mutex imuInitMutex;
 
     /*!
-     * @brief        Covariance of the inertial initialisation, dumped by
-     *               System::saveDebugData(). Nothing assigns it, so it stays
-     *               empty.
+     * @brief           Covariance of the inertial initialisation, dumped by
+     *                  System::saveDebugData(). Nothing assigns it, so it stays
+     *                  empty.
      */
     Eigen::MatrixXd mcovInertial;
 
     /*!
-     * @brief        Rotation from the gravity-aligned frame to the world
-     *               frame, estimated by IMU initialisation; scale
-     *               refinement resets it to identity first.
+     * @brief           Rotation from the gravity-aligned frame to the world
+     *                  frame, estimated by IMU initialisation; scale
+     *                  refinement resets it to identity first.
      */
     Eigen::Matrix3d mRwg;
 
     /*!
-     * @brief        Gyroscope bias, rad/s, from the last IMU initialisation.
+     * @brief           Gyroscope bias, rad/s, from the last IMU initialisation.
      */
     Eigen::Vector3d mbg;
 
     /*!
-     * @brief        Accelerometer bias, m/s^2, from the last IMU
-     *               initialisation.
+     * @brief           Accelerometer bias, m/s^2, from the last IMU
+     *                  initialisation.
      */
     Eigen::Vector3d mba;
 
     /*!
-     * @brief        Metric scale factor found by the inertial optimisation;
-     *               1.0 means no correction.
+     * @brief           Metric scale factor found by the inertial optimisation;
+     *                  1.0 means no correction.
      */
     double scale;
 
     /*!
-     * @brief        Time span, seconds, between the first key frame and the
-     *               tracker's last frame at the last IMU initialisation.
+     * @brief           Time span, seconds, between the first key frame and the
+     *                  tracker's last frame at the last IMU initialisation.
      */
     double initTime;
 
     /*!
-     * @brief        Computation time of the initialisation, dumped by
-     *               System::saveDebugData(). Nothing assigns it.
+     * @brief           Computation time of the initialisation, dumped by
+     *                  System::saveDebugData(). Nothing assigns it.
      */
     double costTime;
 
     /*!
-     * @brief        Index of the initialisation section, used in the file
-     *               names written by System::saveDebugData(). Always 0.
+     * @brief           Index of the initialisation section, used in the file
+     *                  names written by System::saveDebugData(). Always 0.
      */
     unsigned int initSection;
 
     /*!
-     * @brief        Number of IMU initialisations completed; set back to 0
-     *               on a full reset.
+     * @brief           Number of IMU initialisations completed; set back to 0
+     *                  on a full reset.
      */
     unsigned int initIndex;
 
     /*!
-     * @brief        Number of key frames used by the last IMU initialisation.
+     * @brief           Number of key frames used by the last IMU
+     *                  initialisation.
      */
     unsigned int keyFrameCount;
 
     /*!
-     * @brief        Timestamp, seconds, of the first key frame of the
-     *               initialisation window.
+     * @brief           Timestamp, seconds, of the first key frame of the
+     *                  initialisation window.
      */
     double firstTimestamp;
 
     /*!
-     * @brief        Number of map points the tracker matched in the latest
-     *               frame; written by Tracking::trackLocalMap().
+     * @brief           Number of map points the tracker matched in the latest
+     *                  frame; written by Tracking::trackLocalMap().
      */
     int matchesInliers;
 
     /*!
-     * @brief        Index of the first frame, assigned by System::initialize()
-     *               from its initial-frame argument; the mapper does not read
-     *               it.
+     * @brief           Index of the first frame, assigned by
+     *                  System::initialize() from its initial-frame argument;
+     *                  the mapper does not read it.
      */
     int initFrame;
 
     /*!
-     * @brief        Zero-initialised in the constructor; never read or
-     *               changed afterwards.
+     * @brief           Zero-initialised in the constructor; never read or
+     *                  changed afterwards.
      */
     int iterationIndex;
 
     /*!
-     * @brief        Never assigned or read; always empty.
+     * @brief           Never assigned or read; always empty.
      */
     std::string sequence;
 
     /*!
-     * @brief        Set to true when the mapper is reset; nothing reads it.
+     * @brief           Set to true when the mapper is reset; nothing reads it.
      */
     bool isFirstImuBaPending;
 
     /*!
-     * @brief        Set to true when the mapper is reset; nothing reads it.
+     * @brief           Set to true when the mapper is reset; nothing reads it.
      */
     bool isSecondImuBaPending;
 
     /*!
-     * @brief        True when the IMU is flagged unusable; run() then skips
-     *               key-frame processing. Only a reset assigns it (false).
+     * @brief           True when the IMU is flagged unusable; run() then skips
+     *                  key-frame processing. Only a reset assigns it (false).
      */
     bool isImuBad;
 
     /*!
-     * @brief        Never assigned or read.
+     * @brief           Never assigned or read.
      */
     bool shouldWriteStats;
 
     /*!
-     * @brief        True to ignore far points (beyond farPointsThreshold)
-     *               when creating map points and matching local points. Set
-     *               by System::initialize().
+     * @brief           True to ignore far points (beyond farPointsThreshold)
+     *                  when creating map points and matching local points. Set
+     *                  by System::initialize().
      */
     bool shouldSkipFarPoints;
 
     /*!
-     * @brief        Distance beyond which a point counts as far, in map
-     *               units; from the settings file (thFarPoints).
+     * @brief           Distance beyond which a point counts as far, in map
+     *                  units; from the settings file (thFarPoints).
      */
     float farPointsThreshold;
 
@@ -474,237 +477,238 @@ class LocalMapping
 #endif
   protected:
     /*!
-     * @brief        Reports whether any key frame is queued.
+     * @brief           Reports whether any key frame is queued.
      *
-     * @param[out]   hasNewKeyFrames_out
-     *               True when the queue is not empty.
+     * @param[out]      hasNewKeyFrames_out
+     *                  True when the queue is not empty.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus
         checkNewKeyFrames(bool &hasNewKeyFrames_out);
 
     /*!
-     * @brief        Takes the next queued key frame as the current one,
-     *               computes its bag of words and links its map points to it.
+     * @brief           Takes the next queued key frame as the current one,
+     *                  computes its bag of words and links its map points to
+     *                  it.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus processNewKeyFrame();
 
     /*!
-     * @brief        Triangulates new map points between the current key frame
-     *               and its covisible neighbours.
+     * @brief           Triangulates new map points between the current key
+     *                  frame and its covisible neighbours.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus createNewMapPoints();
 
     /*!
-     * @brief        Removes recently created map points that too few key
-     *               frames observe.
+     * @brief           Removes recently created map points that too few key
+     *                  frames observe.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus mapPointCulling();
 
     /*!
-     * @brief        Matches map points between the current key frame and its
-     *               neighbours and fuses duplicates.
+     * @brief           Matches map points between the current key frame and its
+     *                  neighbours and fuses duplicates.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus searchInNeighbors();
 
     /*!
-     * @brief        Marks as bad the neighbouring key frames whose map points
-     *               are almost all seen by other key frames.
+     * @brief           Marks as bad the neighbouring key frames whose map
+     *                  points are almost all seen by other key frames.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus keyFrameCulling();
 
     /*!
-     * @brief        Owning system; borrowed. Stored by the constructor and
-     *               not used afterwards.
+     * @brief           Owning system; borrowed. Stored by the constructor and
+     *                  not used afterwards.
      */
     System *p_system;
 
     /*!
-     * @brief        True when the sensor is monocular (set from the
-     *               constructor's monocular_in).
+     * @brief           True when the sensor is monocular (set from the
+     *                  constructor's monocular_in).
      */
     bool isMonocular;
 
     /*!
-     * @brief        True when an IMU is used.
+     * @brief           True when an IMU is used.
      */
     bool isInertial;
 
     /*!
-     * @brief        Performs a pending reset: clears the key-frame queue and
-     *               recent map points and restarts IMU initialisation state.
+     * @brief           Performs a pending reset: clears the key-frame queue and
+     *                  recent map points and restarts IMU initialisation state.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus resetIfRequested();
 
     /*!
-     * @brief        True while a full reset is requested; guarded by
-     *               resetMutex.
+     * @brief           True while a full reset is requested; guarded by
+     *                  resetMutex.
      */
     bool isResetRequested;
 
     /*!
-     * @brief        True while a reset of one map is requested; guarded by
-     *               resetMutex.
+     * @brief           True while a reset of one map is requested; guarded by
+     *                  resetMutex.
      */
     bool isResetActiveMapRequested;
 
     /*!
-     * @brief        Map named by requestResetActiveMap(); borrowed. Guarded by
-     *               resetMutex.
+     * @brief           Map named by requestResetActiveMap(); borrowed. Guarded
+     *                  by resetMutex.
      */
     Map *p_mapToReset;
 
     /*!
-     * @brief        Guards the reset flags and p_mapToReset.
+     * @brief           Guards the reset flags and p_mapToReset.
      */
     std::mutex resetMutex;
 
     /*!
-     * @brief        Reports whether a finish was requested.
+     * @brief           Reports whether a finish was requested.
      *
-     * @param[out]   isFinishRequested_out
-     *               True when requestFinish() was called.
+     * @param[out]      isFinishRequested_out
+     *                  True when requestFinish() was called.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus checkFinish(bool &isFinishRequested_out);
 
     /*!
-     * @brief        Marks the thread finished and stopped.
+     * @brief           Marks the thread finished and stopped.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus setFinish();
 
     /*!
-     * @brief        True once requestFinish() was called; guarded by
-     *               finishMutex.
+     * @brief           True once requestFinish() was called; guarded by
+     *                  finishMutex.
      */
     bool isFinishRequested;
 
     /*!
-     * @brief        True when run() is not running (also before it starts);
-     *               guarded by finishMutex.
+     * @brief           True when run() is not running (also before it starts);
+     *                  guarded by finishMutex.
      */
     bool hasFinished;
 
     /*!
-     * @brief        Guards the finish flags.
+     * @brief           Guards the finish flags.
      */
     std::mutex finishMutex;
 
     /*!
-     * @brief        Atlas holding every map; borrowed from System.
+     * @brief           Atlas holding every map; borrowed from System.
      */
     Atlas *p_atlas;
 
     /*!
-     * @brief        Loop closer; borrowed, set by setLoopCloser().
+     * @brief           Loop closer; borrowed, set by setLoopCloser().
      */
     LoopClosing *p_loopCloser;
 
     /*!
-     * @brief        Tracker; borrowed, set by setTracker().
+     * @brief           Tracker; borrowed, set by setTracker().
      */
     Tracking *p_tracker;
 
     /*!
-     * @brief        Key frames waiting to be processed, oldest first; guarded
-     *               by newKeyFramesMutex.
+     * @brief           Key frames waiting to be processed, oldest first;
+     *                  guarded by newKeyFramesMutex.
      */
     std::list<KeyFrame *> newKeyFrames;
 
     /*!
-     * @brief        Key frame being processed; borrowed, null until the first
-     *               key frame is taken from the queue.
+     * @brief           Key frame being processed; borrowed, null until the
+     *                  first key frame is taken from the queue.
      */
     KeyFrame *p_currentKeyFrame;
 
     /*!
-     * @brief        Map points created recently, still checked by
-     *               mapPointCulling(); borrowed.
+     * @brief           Map points created recently, still checked by
+     *                  mapPointCulling(); borrowed.
      */
     std::list<MapPoint *> recentAddedMapPoints;
 
     /*!
-     * @brief        Guards newKeyFrames.
+     * @brief           Guards newKeyFrames.
      */
     std::mutex newKeyFramesMutex;
 
     /*!
-     * @brief        Never locked.
+     * @brief           Never locked.
      */
     std::mutex newRoomsMutex;
 
     /*!
-     * @brief        Set to true to make a running bundle adjustment give up;
-     *               cleared by run() before it starts one.
+     * @brief           Set to true to make a running bundle adjustment give up;
+     *                  cleared by run() before it starts one.
      */
     bool shouldAbortBa;
 
     /*!
-     * @brief        True while the thread is stopped or finished; guarded by
-     *               stopMutex.
+     * @brief           True while the thread is stopped or finished; guarded by
+     *                  stopMutex.
      */
     bool hasStopped;
 
     /*!
-     * @brief        True after requestStop() until release(); guarded by
-     *               stopMutex.
+     * @brief           True after requestStop() until release(); guarded by
+     *                  stopMutex.
      */
     bool isStopRequested;
 
     /*!
-     * @brief        True while setNotStop() blocks stopping; guarded by
-     *               stopMutex.
+     * @brief           True while setNotStop() blocks stopping; guarded by
+     *                  stopMutex.
      */
     bool isStopBlocked;
 
     /*!
-     * @brief        Guards the stop flags.
+     * @brief           Guards the stop flags.
      */
     std::mutex stopMutex;
 
     /*!
-     * @brief        True when the tracker may queue a key frame; guarded by
-     *               acceptMutex.
+     * @brief           True when the tracker may queue a key frame; guarded by
+     *                  acceptMutex.
      */
     bool shouldAcceptKeyFrames;
 
     /*!
-     * @brief        Guards shouldAcceptKeyFrames.
+     * @brief           Guards shouldAcceptKeyFrames.
      */
     std::mutex acceptMutex;
 
     /*!
-     * @brief        Estimates gravity direction, biases and scale from the
-     *               recent key frames and applies them to the map, once
-     *               enough time and motion are available.
+     * @brief           Estimates gravity direction, biases and scale from the
+     *                  recent key frames and applies them to the map, once
+     *                  enough time and motion are available.
      *
-     * @param[in]    gyroPriorWeight_in
-     *               Weight of the gyroscope-bias prior.
+     * @param[in]       gyroPriorWeight_in
+     *                  Weight of the gyroscope-bias prior.
      *
-     * @param[in]    accelPriorWeight_in
-     *               Weight of the accelerometer-bias prior.
+     * @param[in]       accelPriorWeight_in
+     *                  Weight of the accelerometer-bias prior.
      *
-     * @param[in]    shouldRunFullInertialBa_in
-     *               True to also run the full inertial bundle adjustment.
+     * @param[in]       shouldRunFullInertialBa_in
+     *                  True to also run the full inertial bundle adjustment.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always, including when it
-     *               returns early without initialising.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always, including when it
+     *                  returns early without initialising.
      */
     [[nodiscard]] LocalMappingStatus
         initializeIMU(float gyroPriorWeight_in         = 1e2,
@@ -712,51 +716,52 @@ class LocalMapping
                       bool  shouldRunFullInertialBa_in = false);
 
     /*!
-     * @brief        Re-estimates the metric scale and gravity rotation of the
-     *               current map from its key frames and applies the result.
+     * @brief           Re-estimates the metric scale and gravity rotation of
+     *                  the current map from its key frames and applies the
+     *                  result.
      *
-     * @return       LOCAL_MAPPING_STATUS_SUCCESS always, including when it
-     *               returns early because the scale is too small.
+     * @return          LOCAL_MAPPING_STATUS_SUCCESS always, including when it
+     *                  returns early because the scale is too small.
      */
     [[nodiscard]] LocalMappingStatus scaleRefinement();
 
     /*!
-     * @brief        True while initializeIMU() or scaleRefinement() is
-     *               running.
+     * @brief           True while initializeIMU() or scaleRefinement() is
+     *                  running.
      */
     bool isInitializationInProgress;
 
     /*!
-     * @brief        Information matrix of the inertial initialisation,
-     *               9 x 9, filled by the inertial optimisation.
+     * @brief           Information matrix of the inertial initialisation,
+     *                  9 x 9, filled by the inertial optimisation.
      */
     Eigen::MatrixXd infoInertial;
 
     /*!
-     * @brief        Set to 0 in the constructor; never read or changed
-     *               afterwards.
+     * @brief           Set to 0 in the constructor; never read or changed
+     *                  afterwards.
      */
     int localMappingCount;
 
     /*!
-     * @brief        Set to 0 in the constructor; never read or changed
-     *               afterwards.
+     * @brief           Set to 0 in the constructor; never read or changed
+     *                  afterwards.
      */
     int keyFrameCullingCount;
 
     /*!
-     * @brief        Seconds of usable motion since the IMU initialisation
-     *               window began; 0 after a reset.
+     * @brief           Seconds of usable motion since the IMU initialisation
+     *                  window began; 0 after a reset.
      */
     float initializationStartTime;
 
     /*!
-     * @brief        Never assigned or read.
+     * @brief           Never assigned or read.
      */
     int countRefinement;
 
     /*!
-     * @brief        Never opened or written.
+     * @brief           Never opened or written.
      */
     std::ofstream localMappingStatsFile;
 };

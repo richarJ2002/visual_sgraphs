@@ -24,9 +24,12 @@ namespace core
 namespace semantic
 {
 
-/*! Pads the shorter list of aperture pairs with (penalty,penalty), then sums
- * the pairwise Manhattan error |Δwidth|+|Δheight| divided by the longer
- * length. Mirrors paddedMeanL1's padding rule, generalised to 2D pairs. */
+/*!
+ * @brief           Pads the shorter list of aperture pairs with
+ *                  (penalty,penalty), then sums the pairwise Manhattan error
+ *                  |Δwidth|+|Δheight| divided by the longer length. Mirrors
+ *                  paddedMeanL1's padding rule, generalised to 2D pairs.
+ */
 SemanticCandidatesStatus pairedManhattanDistance(
     const std::vector<std::pair<double, double>> &left_in,
     const std::vector<std::pair<double, double>> &right_in,

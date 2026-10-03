@@ -20,9 +20,9 @@
  * @file            SemanticDiagnosticState.h
  *
  * @brief           Declares the caller-owned, opaque state
- *                   buildSemanticDiagnosticUpdate() reads and updates across
- *                   calls to detect finding/topology transitions and pace
- *                   the heartbeat.
+ *                  buildSemanticDiagnosticUpdate() reads and updates across
+ *                  calls to detect finding/topology transitions and pace the
+ *                  heartbeat.
  */
 
 #ifndef SEMANTIC_DIAGNOSTICS_STATE_H
@@ -41,30 +41,41 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Retained across calls to buildSemanticDiagnosticUpdate() so it
- *              can detect appeared/changed/resolved FAIL findings and a
- *              topology digest change relative to the last cycle it actually
- *              emitted, and pace the heartbeat. A default-constructed
- *              instance represents "no cycle logged yet."
+ * @brief           Retained across calls to buildSemanticDiagnosticUpdate() so
+ *                  it can detect appeared/changed/resolved FAIL findings and a
+ *                  topology digest change relative to the last cycle it
+ *                  actually emitted, and pace the heartbeat. A
+ *                  default-constructed instance represents "no cycle logged
+ *                  yet."
  */
 struct SemanticDiagnosticState
 {
   public:
-    /*! @brief Complete evaluation report as of the last emitted summary;
-     *  absent before the first call. */
+    /*!
+     * @brief           Complete evaluation report as of the last emitted
+     *                  summary; absent before the first call.
+     */
     std::optional<AxiomEvaluationReport> lastLoggedEvaluationReport;
 
-    /*! @brief Canonical topology digest as of the last emitted summary. */
+    /*!
+     * @brief           Canonical topology digest as of the last emitted
+     *                  summary.
+     */
     std::optional<std::string> lastLoggedTopologyDigest;
 
-    /*! @brief Canonical full-geometry digest as of the last emitted
-     *  summary. */
+    /*!
+     * @brief           Canonical full-geometry digest as of the last emitted
+     *                  summary.
+     */
     std::optional<std::string> lastLoggedFullGeometryDigest;
 
-    /*! @brief Number of calls, including the current one, since (and
-     *  including) the last emitted summary or heartbeat; a heartbeat is
-     *  emitted when this reaches kDiagnosticHeartbeatCycles (see
-     *  public_functions.h). Reset to 1 by every call that emits. */
+    /*!
+     * @brief           Number of calls, including the current one, since (and
+     *                  including) the last emitted summary or heartbeat; a
+     *                  heartbeat is emitted when this reaches
+     *                  kDiagnosticHeartbeatCycles (see public_functions.h).
+     *                  Reset to 1 by every call that emits.
+     */
     std::uint64_t cyclesSinceLastDiagnosticSummary{0U};
 };
 

@@ -45,50 +45,66 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       One axiom-evaluation finding.
+ * @brief           One axiom-evaluation finding.
  *
- *              \c id is deterministically derived from exactly \c axiomCode,
- *              \c reasonCode, and \c involvedKeys (already sorted ascending
- *              by EntityKey when this Finding is constructed via
- *              makeFinding(), the only production constructor) -- see
- *              makeFinding.cc for the exact, stable textual encoding. It
- *              never contains prose, wall-clock time, a pointer address, an
- *              unordered-iteration artifact, or an unstable hash.
+ *                  \c id is deterministically derived from exactly
+ *                  \c axiomCode, \c reasonCode, and \c involvedKeys (already
+ *                  sorted ascending by EntityKey when this Finding is
+ *                  constructed via makeFinding(), the only production
+ *                  constructor) -- see makeFinding.cc for the exact, stable
+ *                  textual encoding. It never contains prose, wall-clock time,
+ *                  a pointer address, an unordered-iteration artifact, or an
+ *                  unstable hash.
  */
 struct Finding
 {
   public:
-    /*! @brief Deterministic identity string; see makeFinding.cc. Two
-     *  findings with the same axiomCode, reasonCode, and involvedKeys
-     *  always have the same id, regardless of when or in what order they
-     *  were produced. */
+    /*!
+     * @brief           Deterministic identity string; see makeFinding.cc. Two
+     *                  findings with the same axiomCode, reasonCode, and
+     *                  involvedKeys always have the same id, regardless of when
+     *                  or in what order they were produced.
+     */
     std::string id;
 
-    /*! @brief Which of the sixteen Section-5 axiom codes this finding is
-     *  for. */
+    /*!
+     * @brief           Which of the sixteen Section-5 axiom codes this finding
+     *                  is for.
+     */
     AxiomCode axiomCode{AxiomCode::AX_FRAME_01};
 
-    /*! @brief The observed outcome for the specific clause reasonCode
-     *  names. */
+    /*!
+     * @brief           The observed outcome for the specific clause reasonCode
+     *                  names.
+     */
     AxiomResult result{AxiomResult::UNKNOWN};
 
-    /*! @brief Severity/classification of axiomCode (HARD for every code
-     *  except the DERIVED AX-COMP-01); duplicated here (rather than looked
-     *  up separately) so a Finding is self-describing. */
+    /*!
+     * @brief           Severity/classification of axiomCode (HARD for every
+     *                  code except the DERIVED AX-COMP-01); duplicated here
+     *                  (rather than looked up separately) so a Finding is
+     *                  self-describing.
+     */
     AxiomClass classification{AxiomClass::HARD};
 
-    /*! @brief Stable reason identifying which observable clause produced
-     *  result. */
+    /*!
+     * @brief           Stable reason identifying which observable clause
+     *                  produced result.
+     */
     ReasonCode reasonCode{ReasonCode::FRAME_TRANSITION_EVALUATION_REQUIRED};
 
-    /*! @brief Every entity this finding is about, sorted ascending by
-     *  EntityKey with no duplicates. May be empty for a finding that is
-     *  inherently snapshot-scoped rather than entity-specific (e.g. a
-     *  DEFERRED axiom's placeholder). */
+    /*!
+     * @brief           Every entity this finding is about, sorted ascending by
+     *                  EntityKey with no duplicates. May be empty for a finding
+     *                  that is inherently snapshot-scoped rather than
+     *                  entity-specific (e.g. a DEFERRED axiom's placeholder).
+     */
     std::vector<EntityKey> involvedKeys;
 
-    /*! @brief Bounded, typed evidence for result, interpreted per
-     *  reasonCode. */
+    /*!
+     * @brief           Bounded, typed evidence for result, interpreted per
+     *                  reasonCode.
+     */
     FindingEvidence evidence;
 };
 

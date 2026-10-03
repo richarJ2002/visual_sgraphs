@@ -38,49 +38,69 @@ namespace core
 namespace geometric
 {
 /*!
- * @brief       Immutable copy of the cheap scalar plane-geometry fields,
- *              without the point-cloud payload that
- *              Plane::getGeometrySnapshot() deep-copies.
+ * @brief           Immutable copy of the cheap scalar plane-geometry fields,
+ *                  without the point-cloud payload that
+ *                  Plane::getGeometrySnapshot() deep-copies.
  *
- *              A project-owned value type, not a nested member of Plane
- *              (CPP_CODING_STANDARD.md Section 5.2: one project-owned object
- *              type per header): a class shall not define a nested
- *              project-owned type merely because it uses that type.
+ *                  A project-owned value type, not a nested member of Plane
+ *                  (CPP_CODING_STANDARD.md Section 5.2: one project-owned
+ *                  object type per header): a class shall not define a nested
+ *                  project-owned type merely because it uses that type.
  */
 struct PlaneGeometryMetadataSnapshot
 {
   public:
-    /*! @brief World-frame plane equation (nx, ny, nz, d). */
+    /*!
+     * @brief           World-frame plane equation (nx, ny, nz, d).
+     */
     Eigen::Vector4d planeEquation_world{Eigen::Vector4d::Zero()};
 
-    /*! @brief World-frame plane centroid, meters. */
+    /*!
+     * @brief           World-frame plane centroid, meters.
+     */
     Eigen::Vector3d planeCentroid_world_m{Eigen::Vector3d::Zero()};
 
-    /*! @brief Minimum in-plane grid coordinate along axis U, meters. */
+    /*!
+     * @brief           Minimum in-plane grid coordinate along axis U, meters.
+     */
     double minPlaneU_m{0.0};
 
-    /*! @brief Maximum in-plane grid coordinate along axis U, meters. */
+    /*!
+     * @brief           Maximum in-plane grid coordinate along axis U, meters.
+     */
     double maxPlaneU_m{0.0};
 
-    /*! @brief Minimum in-plane grid coordinate along axis V, meters. */
+    /*!
+     * @brief           Minimum in-plane grid coordinate along axis V, meters.
+     */
     double minPlaneV_m{0.0};
 
-    /*! @brief Maximum in-plane grid coordinate along axis V, meters. */
+    /*!
+     * @brief           Maximum in-plane grid coordinate along axis V, meters.
+     */
     double maxPlaneV_m{0.0};
 
-    /*! @brief Count of finite-support grid cells from the last successful
-     *  refit. */
+    /*!
+     * @brief           Count of finite-support grid cells from the last
+     *                  successful refit.
+     */
     std::size_t finiteSupportCount{0U};
 
-    /*! @brief Total observation count accumulated for this plane. */
+    /*!
+     * @brief           Total observation count accumulated for this plane.
+     */
     std::size_t observationCount{0U};
 
-    /*! @brief Monotonic generation counter, incremented each time the
-     *  support cloud is regenerated. */
+    /*!
+     * @brief           Monotonic generation counter, incremented each time the
+     *                  support cloud is regenerated.
+     */
     std::uint64_t cloudGeneration{0U};
 
-    /*! @brief Monotonic generation counter, incremented each time a refit
-     *  succeeds. */
+    /*!
+     * @brief           Monotonic generation counter, incremented each time a
+     *                  refit succeeds.
+     */
     std::uint64_t successfulRefitGeneration{0U};
 };
 

@@ -20,7 +20,7 @@
  * @file            EdgeInertialGSStatus.h
  *
  * @brief           Declares the status returned by every EdgeInertialGS
- * operation.
+ *                  operation.
  */
 
 #ifndef EDGE_INERTIAL_GSSTATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a EdgeInertialGS operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a EdgeInertialGS operation. Values are fixed and
+ *                  never reordered.
  */
 enum class EdgeInertialGSStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     EDGE_INERTIAL_GSSTATUS_SUCCESS = 0U
 };
 

@@ -20,7 +20,7 @@
  * @file            VerificationVerdictStatus.h
  *
  * @brief           Declares the status returned by every VerificationVerdict
- * operation.
+ *                  operation.
  */
 
 #ifndef VERIFICATION_VERDICT_STATUS_H
@@ -36,12 +36,14 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a VerificationVerdict operation. Values are fixed and
- * never reordered.
+ * @brief           Result of a VerificationVerdict operation. Values are fixed
+ *                  and never reordered.
  */
 enum class VerificationVerdictStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     VERIFICATION_VERDICT_STATUS_SUCCESS = 0U
 };
 

@@ -1,7 +1,8 @@
 /*!
- * @file         drawTextInfo.cc
+ * @file            drawTextInfo.cc
  *
- * @brief        Implements FrameDrawer::drawTextInfo declared in FrameDrawer.h.
+ * @brief           Implements FrameDrawer::drawTextInfo declared in
+ *                  FrameDrawer.h.
  */
 
 #include "FrameDrawer.h"

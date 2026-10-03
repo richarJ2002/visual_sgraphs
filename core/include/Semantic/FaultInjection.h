@@ -64,6 +64,7 @@ std::unordered_map<std::string, FaultAction> &getFaultRegistry();
  *
  * @param[in]       name_in
  *                  Probe name (e.g. "Map::AddKeyFrame").
+ *
  * @param[in]       action_in
  *                  Action evaluated when the probe fires.
  */
@@ -98,6 +99,7 @@ class ScopedFault
      *
      * @param[in]       name_in
      *                  Probe name to arm.
+     *
      * @param[in]       action_in
      *                  Action evaluated when the probe fires.
      */
@@ -118,21 +120,21 @@ class ScopedFault
     ScopedFault(const ScopedFault &other_in)            = delete;
     ScopedFault &operator=(const ScopedFault &other_in) = delete;
     /*!
-     * @brief        Moves a scoped fault; the moved-from object still clears
-     *               the calling thread's probes when it is destroyed.
+     * @brief           Moves a scoped fault; the moved-from object still clears
+     *                  the calling thread's probes when it is destroyed.
      *
-     * @param[in,out] other_inout
-     *               Scoped fault to move from.
+     * @param[in,out]   other_inout
+     *                  Scoped fault to move from.
      */
     ScopedFault(ScopedFault &&other_inout) = default;
 
     /*!
-     * @brief        Move-assigns a scoped fault.
+     * @brief           Move-assigns a scoped fault.
      *
-     * @param[in,out] other_inout
-     *               Scoped fault to move from.
+     * @param[in,out]   other_inout
+     *                  Scoped fault to move from.
      *
-     * @return       Reference to this object.
+     * @return          Reference to this object.
      */
     ScopedFault &operator=(ScopedFault &&other_inout) = default;
 
@@ -149,12 +151,12 @@ class ScopedFault
 
 #ifdef VS_GRAPHS_ENABLE_FAULT_INJECTION
 /*!
- * @brief        Makes the enclosing function return false when the named
- *               probe is armed; does nothing when fault injection
- *               is disabled.
+ * @brief           Makes the enclosing function return false when the named
+ *                  probe is armed; does nothing when fault injection
+ *                  is disabled.
  *
- * @param[in]    name_in
- *               Probe name to check.
+ * @param[in]       name_in
+ *                  Probe name to check.
  */
 #define VS_GRAPHS_FAULT_INJECT(name_in)                                        \
     do                                                                         \
@@ -166,21 +168,21 @@ class ScopedFault
     }                                                                          \
     while (0)
 /*!
- * @brief        Evaluates to true when the named probe is armed; always false
- *               when fault injection is disabled.
+ * @brief           Evaluates to true when the named probe is armed; always
+ *                  false when fault injection is disabled.
  *
- * @param[in]    name_in
- *               Probe name to check.
+ * @param[in]       name_in
+ *                  Probe name to check.
  */
 #define VS_GRAPHS_FAULT_CHECK(name_in)                                         \
     (::vs_graphs::testing::checkFault(name_in))
 #else
 /*!
- * @brief        Fault injection is disabled: expands to nothing.
+ * @brief           Fault injection is disabled: expands to nothing.
  */
 #define VS_GRAPHS_FAULT_INJECT(name_in) ((void)0)
 /*!
- * @brief        Fault injection is disabled: always false.
+ * @brief           Fault injection is disabled: always false.
  */
 #define VS_GRAPHS_FAULT_CHECK(name_in)  (false)
 #endif

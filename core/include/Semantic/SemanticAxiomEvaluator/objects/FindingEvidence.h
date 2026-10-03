@@ -36,31 +36,38 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Bounded, typed evidence carried by one Finding, interpreted
- *              per its ReasonCode.
+ * @brief           Bounded, typed evidence carried by one Finding, interpreted
+ *                  per its ReasonCode.
  *
- *              Deliberately a small fixed-shape value, not free prose, a
- *              wall-clock timestamp, a pointer address, or an unstable hash:
- *              a count and/or a numeric value, both optional and populated
- *              only when the owning evaluator function's Doxygen documents
- *              their meaning for that specific ReasonCode. Entity identity
- *              beyond a Finding's own \c involvedKeys never belongs here --
- *              see Finding.h.
+ *                  Deliberately a small fixed-shape value, not free prose, a
+ *                  wall-clock timestamp, a pointer address, or an unstable
+ *                  hash: a count and/or a numeric value, both optional and
+ *                  populated only when the owning evaluator function's Doxygen
+ *                  documents their meaning for that specific ReasonCode. Entity
+ *                  identity beyond a Finding's own \c involvedKeys never
+ *                  belongs here -- see Finding.h.
  */
 struct FindingEvidence
 {
   public:
-    /*! @brief A bounded count relevant to the reason (e.g. observed owner
-     *  count, wall/corner count); meaning is reason-specific. */
+    /*!
+     * @brief           A bounded count relevant to the reason (e.g. observed
+     *                  owner count, wall/corner count); meaning is
+     *                  reason-specific.
+     */
     std::optional<std::size_t> observedCount{};
 
-    /*! @brief A second bounded count relevant to the reason (e.g. an
-     *  expected/reference count to compare observedCount against);
-     *  meaning is reason-specific. */
+    /*!
+     * @brief           A second bounded count relevant to the reason (e.g. an
+     *                  expected/reference count to compare observedCount
+     *                  against); meaning is reason-specific.
+     */
     std::optional<std::size_t> expectedCount{};
 
-    /*! @brief A bounded numeric value relevant to the reason (e.g. a
-     *  computed distance or angle); meaning is reason-specific. */
+    /*!
+     * @brief           A bounded numeric value relevant to the reason (e.g. a
+     *                  computed distance or angle); meaning is reason-specific.
+     */
     std::optional<double> numericValue{};
 };
 

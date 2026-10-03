@@ -547,7 +547,7 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
         /*!
          * Acquire both map-update mutexes without imposing an unsafe order.
          *
-         * @note        Get Merge Map Mutex and stop tracking.
+         * @note            Get Merge Map Mutex and stop tracking.
          */
         std::scoped_lock mapUpdateLocks(p_currentMap->mapUpdateMutex,
                                         p_mergeMap->mapUpdateMutex);

@@ -19,8 +19,8 @@
  * @file            writeCalibration.cc
  *
  * @brief           Implements the KannalaBrandt8 output stream operator,
- *                  declared in
- * CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h.
+ *                                   declared in
+ *                  CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h.
  */
 
 #include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"

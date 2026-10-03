@@ -44,9 +44,9 @@ bool DoBoolWork()
 } // namespace
 
 /*!
- * @brief        Checks that an injected fault makes the probe function return
- *               its injected-failure status; skipped when fault injection is
- *               compiled out.
+ * @brief           Checks that an injected fault makes the probe function
+ *                  return its injected-failure status; skipped when fault
+ *                  injection is compiled out.
  */
 TEST(FaultInjection, InjectedFailureTakesStatusPath)
 {
@@ -60,8 +60,8 @@ TEST(FaultInjection, InjectedFailureTakesStatusPath)
 }
 
 /*!
- * @brief        Checks that, with no fault armed, the probe functions take
- *               their normal success path.
+ * @brief           Checks that, with no fault armed, the probe functions take
+ *                  their normal success path.
  */
 TEST(FaultInjection, DisabledPathSucceeds)
 {

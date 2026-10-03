@@ -1,7 +1,7 @@
 /*!
- * @file         resetCauseToString.cc
+ * @file            resetCauseToString.cc
  *
- * @brief        Implements resetCauseToString declared in ResetCause.h.
+ * @brief           Implements resetCauseToString declared in ResetCause.h.
  */
 
 #include "ResetCause.h"

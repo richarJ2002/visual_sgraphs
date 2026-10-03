@@ -33,12 +33,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a MapPoint operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a MapPoint operation. Values are fixed and never
+ *                  reordered.
  */
 enum class MapPointStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     MAP_POINT_STATUS_SUCCESS = 0U
 };
 

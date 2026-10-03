@@ -489,8 +489,8 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
         /*!
          * If normal alignment is outside threshold skip.
          *
-         * @note        normalAlignment = cos(theta),
-         *              normalAlignment = 1 @ theta = 0
+         * @note            normalAlignment = cos(theta),
+         *                  normalAlignment = 1 @ theta = 0
          */
         if (normalAlignment < parallelNormalThreshold)
         {

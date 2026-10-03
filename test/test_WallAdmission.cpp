@@ -57,14 +57,18 @@ namespace core
 namespace
 {
 
-/*! Builds a wall `geometric::Plane` with a genuine, production-computed
- * geometry snapshot: a flat rectangular grid of points, spanning [-halfU,
- * halfU] along axisU_world and [-halfV, halfV] along axisV_world, offset from
- * the plane's own centroid, all exactly on-plane. Mirrors
- * test_RoomContextPersist.cpp's makeRefitWallPlane pattern (feed a synthetic
- * cloud through the real `geometric::Plane::updateSizeOfPlane()` path, the same
- * function evaluateWallAdmissionEvidence's
- * `geometric::Plane::getGeometrySnapshot()` call reads from). */
+/*!
+ * @brief           Builds a wall `geometric::Plane` with a genuine,
+ *                  production-computed geometry snapshot: a flat rectangular
+ *                  grid of points, spanning [-halfU, halfU] along axisU_world
+ *                  and [-halfV, halfV] along axisV_world, offset from the
+ *                  plane's own centroid, all exactly on-plane. Mirrors
+ *                  test_RoomContextPersist.cpp's makeRefitWallPlane pattern
+ *                  (feed a synthetic cloud through the real
+ *                  `geometric::Plane::updateSizeOfPlane()` path, the same
+ *                  function evaluateWallAdmissionEvidence's
+ *                  `geometric::Plane::getGeometrySnapshot()` call reads from).
+ */
 void makeWallWithGridCloud(geometric::Plane      &wall_inout,
                            int                    id_in,
                            Map                   *p_map_in,
@@ -129,9 +133,9 @@ void makeWallWithGridCloud(geometric::Plane      &wall_inout,
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that a 0.08 m wide, 2.2 m tall door-frame post is
- *               rejected by the wall evidence gate when the ground normal is
- *               known.
+ * @brief           Checks that a 0.08 m wide, 2.2 m tall door-frame post is
+ *                  rejected by the wall evidence gate when the ground normal is
+ *                  known.
  */
 TEST(WallAdmission, RejectsNarrowDoorFramePostWhenGroundAligned)
 {
@@ -164,8 +168,8 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostWhenGroundAligned)
 }
 
 /*!
- * @brief        Checks that a 2 m wide, 2.2 m tall wall panel passes the wall
- *               evidence gate when the ground normal is known.
+ * @brief           Checks that a 2 m wide, 2.2 m tall wall panel passes the
+ *                  wall evidence gate when the ground normal is known.
  */
 TEST(WallAdmission, AdmitsPhysicallyAdequateWallWhenGroundAligned)
 {
@@ -197,9 +201,10 @@ TEST(WallAdmission, AdmitsPhysicallyAdequateWallWhenGroundAligned)
 }
 
 /*!
- * @brief        Checks that a narrow door-frame post on a wall facing an
- *               arbitrary horizontal direction is still rejected, so the gate
- *               does not depend on the wall being aligned to a world axis.
+ * @brief           Checks that a narrow door-frame post on a wall facing an
+ *                  arbitrary horizontal direction is still rejected, so the
+ *                  gate does not depend on the wall being aligned to a world
+ *                  axis.
  */
 TEST(WallAdmission, RejectsNarrowDoorFramePostOnObliqueWall)
 {
@@ -244,9 +249,9 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostOnObliqueWall)
 }
 
 /*!
- * @brief        Checks that with no ground plane yet, a zero ground normal
- *               makes the gate fall back to its old behaviour and admit a
- *               generously sized wall.
+ * @brief           Checks that with no ground plane yet, a zero ground normal
+ *                  makes the gate fall back to its old behaviour and admit a
+ *                  generously sized wall.
  */
 TEST(WallAdmission,
      EvidenceGateStillAdmitsGenerouslySizedWallWithoutGroundPlane)
@@ -288,11 +293,15 @@ TEST(WallAdmission,
 namespace
 {
 
-/*! A default-constructed KeyFrame positioned at cameraCenter_world via
- * setPose(). Only isBad()/getCameraCenter() are exercised by the code under
- * test, both safe on a default-constructed KeyFrame (KeyFrame's default
- * constructor is a plain member-initialiser list; SetPose/GetCameraCenter
- * only touch mTcw/mTwc under poseMutex). */
+/*!
+ * @brief           A default-constructed KeyFrame positioned at
+ *                  cameraCenter_world via setPose(). Only
+ *                  isBad()/getCameraCenter() are exercised by the code under
+ *                  test, both safe on a default-constructed KeyFrame
+ *                  (KeyFrame's default constructor is a plain
+ *                  member-initialiser list; SetPose/GetCameraCenter only touch
+ *                  mTcw/mTwc under poseMutex).
+ */
 std::unique_ptr<KeyFrame>
     makeKeyFrameAt(const Eigen::Vector3d &cameraCenter_world_in)
 {
@@ -321,9 +330,12 @@ geometric::Plane::Observation makeMinimalObservation()
     return observation;
 }
 
-/*! A wide, admissible wall (passes evaluateWallAdmissionEvidence
- * unconditionally) at x=0, normal along +X, so the admission decision in
- * these tests turns entirely on the wrong-side gate. */
+/*!
+ * @brief           A wide, admissible wall (passes
+ *                  evaluateWallAdmissionEvidence unconditionally) at x=0,
+ *                  normal along +X, so the admission decision in these tests
+ *                  turns entirely on the wrong-side gate.
+ */
 std::unique_ptr<geometric::Plane> makeAdmissibleWallAtOrigin(int  id_in,
                                                              Map *p_map_in)
 {
@@ -343,9 +355,9 @@ std::unique_ptr<geometric::Plane> makeAdmissibleWallAtOrigin(int  id_in,
 } // namespace
 
 /*!
- * @brief        Checks that a wall whose observation origin and all observing
- *               key frames lie on the opposite side from the room's centroid is
- *               not admitted to the room.
+ * @brief           Checks that a wall whose observation origin and all
+ *                  observing key frames lie on the opposite side from the
+ *                  room's centroid is not admitted to the room.
  */
 TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
 {
@@ -396,8 +408,8 @@ TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
 }
 
 /*!
- * @brief        Checks that a wall observed from the same side as the room's
- *               centroid is admitted to the room.
+ * @brief           Checks that a wall observed from the same side as the room's
+ *                  centroid is admitted to the room.
  */
 TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
 {
@@ -442,8 +454,8 @@ TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
 }
 
 /*!
- * @brief        Checks that a wall with no observation evidence is admitted,
- *               because unknown side evidence must not cause a rejection.
+ * @brief           Checks that a wall with no observation evidence is admitted,
+ *                  because unknown side evidence must not cause a rejection.
  */
 TEST(WallAdmission, AdmitsWallWithNoObservationEvidenceRatherThanRejectingBlind)
 {
@@ -479,10 +491,10 @@ TEST(WallAdmission, AdmitsWallWithNoObservationEvidenceRatherThanRejectingBlind)
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that a wall beyond a passage is routed to the passage's
- *               far-side prospective room, not the admitting room, even when
- *               the admitting room's centroid sits on the passage plane,
- *               provided the passage knows its near side.
+ * @brief           Checks that a wall beyond a passage is routed to the
+ *                  passage's far-side prospective room, not the admitting room,
+ *                  even when the admitting room's centroid sits on the passage
+ *                  plane, provided the passage knows its near side.
  */
 TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
 {
@@ -570,9 +582,10 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
 }
 
 /*!
- * @brief        Checks that when the room centroid sits on the passage plane
- *               and the passage has no known side direction, the wall is
- *               neither admitted to the room nor routed to the far-side room.
+ * @brief           Checks that when the room centroid sits on the passage plane
+ *                  and the passage has no known side direction, the wall is
+ *                  neither admitted to the room nor routed to the far-side
+ *                  room.
  */
 TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
 {
@@ -654,9 +667,12 @@ TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
 namespace
 {
 
-/*! Builds a GROUND `geometric::Plane` at z=0 with a genuine, production-refit
- * geometry snapshot (Map::GetBiggestGroundPlane() requires cloudGeneration ==
- * successfulRefitGeneration and a finite support count). */
+/*!
+ * @brief           Builds a GROUND `geometric::Plane` at z=0 with a genuine,
+ *                  production-refit geometry snapshot
+ *                  (Map::GetBiggestGroundPlane() requires cloudGeneration ==
+ *                  successfulRefitGeneration and a finite support count).
+ */
 std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
                                                                Map *p_map_in)
 {
@@ -730,9 +746,12 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
     return ground;
 }
 
-/*! Builds a long, admissible WALL `geometric::Plane` whose horizontal
- * (in-plane) span runs along axisAlong_world_in through the origin, at a given
- * normal direction, wide enough to produce a decisive interior crossing. */
+/*!
+ * @brief           Builds a long, admissible WALL `geometric::Plane` whose
+ *                  horizontal (in-plane) span runs along axisAlong_world_in
+ *                  through the origin, at a given normal direction, wide enough
+ *                  to produce a decisive interior crossing.
+ */
 std::unique_ptr<geometric::Plane>
     makeLongWallThroughOrigin(int                    id_in,
                               Map                   *p_map_in,
@@ -825,9 +844,9 @@ std::unique_ptr<geometric::Plane>
 } // namespace
 
 /*!
- * @brief        Checks that a candidate wall whose finite extent clearly
- *               crosses a wall already owned by another room is rejected, and
- *               that the other room's wall is left in place.
+ * @brief           Checks that a candidate wall whose finite extent clearly
+ *                  crosses a wall already owned by another room is rejected,
+ *                  and that the other room's wall is left in place.
  */
 TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
 {
@@ -902,9 +921,9 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that the per-cycle passage-side sweep does not evict a
- *               far-side wall from the prospective room it was routed to when
- *               the passage knows its near side.
+ * @brief           Checks that the per-cycle passage-side sweep does not evict
+ *                  a far-side wall from the prospective room it was routed to
+ *                  when the passage knows its near side.
  */
 TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
 {
@@ -985,9 +1004,9 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
 }
 
 /*!
- * @brief        Checks that the passage-side sweep still evicts the routed wall
- *               from the prospective room when the passage has no known side
- *               direction.
+ * @brief           Checks that the passage-side sweep still evicts the routed
+ *                  wall from the prospective room when the passage has no known
+ *                  side direction.
  */
 TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
 {
@@ -1060,9 +1079,9 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
 }
 
 /*!
- * @brief        Checks that a few far-away stray points on a wall plane do not
- *               stretch the wall's in-plane bounds, which stay close to the
- *               real 3 m by 2 m grid.
+ * @brief           Checks that a few far-away stray points on a wall plane do
+ *                  not stretch the wall's in-plane bounds, which stay close to
+ *                  the real 3 m by 2 m grid.
  */
 TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)
 {

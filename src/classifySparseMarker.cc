@@ -1,6 +1,7 @@
 /*!
- * @file classifySparseMarker.cc
- * @brief Implements sparse-graph marker classification.
+ * @file            classifySparseMarker.cc
+ *
+ * @brief           Implements sparse-graph marker classification.
  */
 
 /* Matching Declaration Include */

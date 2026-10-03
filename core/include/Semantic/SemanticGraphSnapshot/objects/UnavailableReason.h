@@ -36,50 +36,63 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief        Explains why a reference field carries no valid
- *               value.
+ * @brief           Explains why a reference field carries no valid
+ *                  value.
  *
- *               A plain "no such reference at all" case (e.g. a room
- *               with no floor yet) is represented by
- *               UnavailableReason::NULL_REFERENCE, which is also
- *               every reference field's default value -- see
- *               EntityRef.h and RawPlaneRef.h for why NONE is never
- *               a valid default. Consumers interpret which values
- *               are ordinary versus a hard violation per field;
- *               this snapshot only reports what capture actually
- *               observed.
+ *                  A plain "no such reference at all" case (e.g. a room
+ *                  with no floor yet) is represented by
+ *                  UnavailableReason::NULL_REFERENCE, which is also
+ *                  every reference field's default value -- see
+ *                  EntityRef.h and RawPlaneRef.h for why NONE is never
+ *                  a valid default. Consumers interpret which values
+ *                  are ordinary versus a hard violation per field;
+ *                  this snapshot only reports what capture actually
+ *                  observed.
  *
- *               Whether a *present* reference is additionally bad or
- *               cross-map is an evaluator judgement made from the
- *               plain EntityKey/liveness data this snapshot already
- *               carries -- it is not decided at capture time and is
- *               not a value of this enum.
+ *                  Whether a *present* reference is additionally bad or
+ *                  cross-map is an evaluator judgement made from the
+ *                  plain EntityKey/liveness data this snapshot already
+ *                  carries -- it is not decided at capture time and is
+ *                  not a value of this enum.
  */
 enum class UnavailableReason : std::uint8_t
 {
-    /*! @brief A value is present; this reason is unused as a live value,
-     *  though it remains the type's required non-default-safe sentinel --
-     *  see EntityRef.h/RawPlaneRef.h. */
+    /*!
+     * @brief           A value is present; this reason is unused as a live
+     *                  value, though it remains the type's required
+     *                  non-default-safe sentinel -- see
+     *                  EntityRef.h/RawPlaneRef.h.
+     */
     NONE = 0U,
 
-    /*! @brief The underlying model pointer was nullptr at capture time. */
+    /*!
+     * @brief           The underlying model pointer was nullptr at capture
+     *                  time.
+     */
     NULL_REFERENCE = 1U,
 
-    /*! @brief The referenced object was non-null, but its own GetMap()/
-     *  getMap() returned nullptr, so no valid map-qualified key could be
-     *  formed for it (confirmed reachable: SemanticFixtures.h documents
-     *  "some tests intentionally exercise unregistered planes" that are
-     *  never given a map). */
+    /*!
+     * @brief           The referenced object was non-null, but its own
+     *                  GetMap()/ getMap() returned nullptr, so no valid
+     *                  map-qualified key could be formed for it (confirmed
+     *                  reachable: SemanticFixtures.h documents "some tests
+     *                  intentionally exercise unregistered planes" that are
+     *                  never given a map).
+     */
     ENTITY_HAS_NO_MAP = 2U,
 
-    /*! @brief No field on the current model class records this. */
+    /*!
+     * @brief           No field on the current model class records this.
+     */
     NOT_TRACKED_BY_CURRENT_SCHEMA = 3U,
 
-    /*! @brief No public Atlas/Map API exposes this state at all. */
+    /*!
+     * @brief           No public Atlas/Map API exposes this state at all.
+     */
     NOT_EXPOSED_BY_CURRENT_API = 4U,
 
     /*!
-     * @brief        Deferred to a later extension; not read here.
+     * @brief           Deferred to a later extension; not read here.
      */
     NOT_CAPTURED_IN_FOUNDATION_SLICE = 5U
 };

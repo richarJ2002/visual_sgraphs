@@ -67,9 +67,9 @@ SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
          * point along the z-axis is outside the thresholds of the system,
          * they are removed.
          *
-         * @note        Parameter for min and max distance are defined as
-         *              default values in:
-         *              `visual_sgraphs/core/include/Types/SystemParams.h`
+         * @note            Parameter for min and max distance are defined as
+         *                  default values in:
+         *                  `visual_sgraphs/core/include/Types/SystemParams.h`
          */
         if (utils::utils::Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(
                 p_classCloudPtrs_in[classCloudPtrIndex],

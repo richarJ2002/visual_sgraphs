@@ -35,8 +35,10 @@ namespace semantic
 
 namespace
 {
-/*! @brief Every axiom code, in the fixed presentation order the aggregate
- *  report and capability table both use. */
+/*!
+ * @brief           Every axiom code, in the fixed presentation order the
+ *                  aggregate report and capability table both use.
+ */
 constexpr AxiomCode ALL_AXIOM_CODES[16] = {AxiomCode::AX_FRAME_01,
                                            AxiomCode::AX_WALL_01,
                                            AxiomCode::AX_WALL_02,

@@ -26,8 +26,9 @@ namespace core
 {
 
 /*!
- * @brief        Checks that an unavailable semantic cache only adds the schema
- *               number and the availability flag to the schema-1 JSON.
+ * @brief           Checks that an unavailable semantic cache only adds the
+ *                  schema number and the availability flag to the schema-1
+ *                  JSON.
  */
 TEST(MissionHealthTopologyJson, CacheUnavailableOnlyAddsSchemaAndAvailability)
 {
@@ -50,8 +51,8 @@ TEST(MissionHealthTopologyJson, CacheUnavailableOnlyAddsSchemaAndAvailability)
 }
 
 /*!
- * @brief        Checks that every schema-1 field keeps its name, type and value
- *               after the semantic additions are merged in.
+ * @brief           Checks that every schema-1 field keeps its name, type and
+ *                  value after the semantic additions are merged in.
  */
 TEST(MissionHealthTopologyJson, PreservesEverySchema1FieldAndType)
 {
@@ -96,8 +97,8 @@ TEST(MissionHealthTopologyJson, PreservesEverySchema1FieldAndType)
 }
 
 /*!
- * @brief        Checks that an available cache adds the readable evaluator
- *               fields, and that map id 0 is kept as a real map.
+ * @brief           Checks that an available cache adds the readable evaluator
+ *                  fields, and that map id 0 is kept as a real map.
  */
 TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
 {
@@ -244,8 +245,8 @@ TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
 }
 
 /*!
- * @brief        Checks that completeness reasons and entity keys are serialized
- *               sorted, whatever order the input holds them in.
+ * @brief           Checks that completeness reasons and entity keys are
+ *                  serialized sorted, whatever order the input holds them in.
  */
 TEST(MissionHealthTopologyJson,
      CompletenessReasonsAndEntityKeysAreSortedRegardlessOfInputOrder)

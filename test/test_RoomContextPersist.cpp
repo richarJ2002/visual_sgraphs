@@ -42,10 +42,13 @@ namespace core
 namespace
 {
 
-/*! Builds a wall geometric::Plane with genuine, production-computed U/V bounds
- * by feeding a synthetic point cloud through the real
- * geometric::Plane::updateSizeOfPlane() path (the same function
- * geometric::Plane::getGeometrySnapshot() reads from). */
+/*!
+ * @brief           Builds a wall geometric::Plane with genuine,
+ *                  production-computed U/V bounds by feeding a synthetic point
+ *                  cloud through the real geometric::Plane::updateSizeOfPlane()
+ *                  path (the same function
+ *                  geometric::Plane::getGeometrySnapshot() reads from).
+ */
 void makeRefitWallPlane(geometric::Plane &wall_inout, int id_in, Map *p_map_in)
 {
     ASSERT_EQ((wall_inout.setId(id_in)),
@@ -82,8 +85,8 @@ void makeRefitWallPlane(geometric::Plane &wall_inout, int id_in, Map *p_map_in)
 } // namespace
 
 /*!
- * @brief        Checks that exporting room context with no current map succeeds
- *               and stores nothing.
+ * @brief           Checks that exporting room context with no current map
+ *                  succeeds and stores nothing.
  */
 TEST(RoomContextPersist, NullCurrentMapExportIsNoOp)
 {
@@ -101,8 +104,8 @@ TEST(RoomContextPersist, NullCurrentMapExportIsNoOp)
 }
 
 /*!
- * @brief        Checks that exporting a map that has no rooms succeeds and
- *               stores no history for that map.
+ * @brief           Checks that exporting a map that has no rooms succeeds and
+ *                  stores no history for that map.
  */
 TEST(RoomContextPersist, EmptyRoomCollectionExportIsNoOp)
 {
@@ -124,8 +127,8 @@ TEST(RoomContextPersist, EmptyRoomCollectionExportIsNoOp)
 }
 
 /*!
- * @brief        Checks that the exported room context keeps the names, types
- *               and values of its original fields.
+ * @brief           Checks that the exported room context keeps the names, types
+ *                  and values of its original fields.
  */
 TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
 {
@@ -201,8 +204,8 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
 }
 
 /*!
- * @brief        Checks that the exported snapshot carries the floor id of a
- *               room that belongs to a floor.
+ * @brief           Checks that the exported snapshot carries the floor id of a
+ *                  room that belongs to a floor.
  */
 TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
 {
@@ -256,8 +259,8 @@ TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
 }
 
 /*!
- * @brief        Checks that the snapshot wall bounds stay index-aligned with
- *               the walls when some walls are valid and others are not.
+ * @brief           Checks that the snapshot wall bounds stay index-aligned with
+ *                  the walls when some walls are valid and others are not.
  */
 TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
 {
@@ -333,8 +336,8 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
 }
 
 /*!
- * @brief        Checks that the snapshot passage contexts stay index-aligned
- *               with the passage getters, including invalid apertures.
+ * @brief           Checks that the snapshot passage contexts stay index-aligned
+ *                  with the passage getters, including invalid apertures.
  */
 TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
 {
@@ -520,8 +523,8 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
 }
 
 /*!
- * @brief        Checks that exporting a room with missing attributes does
- *               not crash and marks its wall bounds and aperture invalid.
+ * @brief           Checks that exporting a room with missing attributes does
+ *                  not crash and marks its wall bounds and aperture invalid.
  */
 TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
 {
@@ -577,8 +580,8 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
 }
 
 /*!
- * @brief        Checks that clearing a map bumps its big-change index, so
- *               revision tokens notice the reset.
+ * @brief           Checks that clearing a map bumps its big-change index, so
+ *                  revision tokens notice the reset.
  */
 TEST(RoomContextPersist, ClearMapBumpsRevisionGeneration)
 {
@@ -602,8 +605,8 @@ TEST(RoomContextPersist, ClearMapBumpsRevisionGeneration)
 }
 
 /*!
- * @brief        Checks that the visited flag of rooms survives the export into
- *               the room context history.
+ * @brief           Checks that the visited flag of rooms survives the export
+ *                  into the room context history.
  */
 TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
 {
@@ -667,8 +670,8 @@ TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
 }
 
 /*!
- * @brief        Checks that exported room context survives a real new-map
- *               lifecycle boundary and is recorded under the old map id.
+ * @brief           Checks that exported room context survives a real new-map
+ *                  lifecycle boundary and is recorded under the old map id.
  */
 TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
 {
@@ -726,9 +729,9 @@ TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
 }
 
 /*!
- * @brief        Checks that, in 100 fresh atlases, the room exported when a new
- *               map is created is recorded once under the old map id, with its
- *               id and one valid wall bound.
+ * @brief           Checks that, in 100 fresh atlases, the room exported when a
+ *                  new map is created is recorded once under the old map id,
+ *                  with its id and one valid wall bound.
  */
 TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
 {
@@ -783,8 +786,8 @@ TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
 }
 
 /*!
- * @brief        Checks that two worker threads copying exported room context at
- *               the same time cause no observable corruption.
+ * @brief           Checks that two worker threads copying exported room context
+ *                  at the same time cause no observable corruption.
  */
 TEST(RoomContextPersist,
      TwoWorkerExportCopyCharacterizationHasNoObservableCorruption)

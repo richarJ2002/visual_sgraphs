@@ -388,9 +388,9 @@ bool overlapProductionPublishAndConsume(ProductionCrossingScene &scene_inout,
 } // namespace
 
 /*!
- * @brief        Checks that two simultaneous tracking-lost notifications record
- *               a single lost event, and that a recovery, new map and second
- *               loss then bring the event history to five entries.
+ * @brief           Checks that two simultaneous tracking-lost notifications
+ *                  record a single lost event, and that a recovery, new map and
+ *                  second loss then bring the event history to five entries.
  */
 TEST(RoomTrackerProductionIntegration, LossIsOneEventPerRecoveredEpisode)
 {
@@ -470,10 +470,10 @@ TEST(RoomTrackerProductionIntegration, LossIsOneEventPerRecoveredEpisode)
 }
 
 /*!
- * @brief        Checks that a new-map event stays pending through unavailable
- *               and rejected verdicts and is only turned into a new-map room-
- *               match event, then a verified match to the last room, by passing
- *               verdicts.
+ * @brief           Checks that a new-map event stays pending through
+ *                  unavailable and rejected verdicts and is only turned into a
+ *                  new-map room-match event, then a verified match to the last
+ *                  room, by passing verdicts.
  */
 TEST(RoomTrackerProductionIntegration,
      NewMapEventSurvivesUnavailableAndRejectedVerdicts)
@@ -553,9 +553,9 @@ TEST(RoomTrackerProductionIntegration,
 }
 
 /*!
- * @brief        Checks that when eight threads race to consume one new-map
- *               event from the atlas, exactly one of them receives it and a
- *               later call finds none.
+ * @brief           Checks that when eight threads race to consume one new-map
+ *                  event from the atlas, exactly one of them receives it and a
+ *                  later call finds none.
  */
 TEST(RoomTrackerProductionIntegration, AtlasMapEventIsConsumedExactlyOnce)
 {
@@ -602,11 +602,11 @@ TEST(RoomTrackerProductionIntegration, AtlasMapEventIsConsumedExactlyOnce)
 }
 
 /*!
- * @brief        Checks that traversal evidence from the production crossing
- *               scene reaches the room tracker once per crossing: one crossing-
- *               detected and one traversal-complete event, no growth from
- *               repeated evidence, and no change to rooms, walls, passage or
- *               maps.
+ * @brief           Checks that traversal evidence from the production crossing
+ *                  scene reaches the room tracker once per crossing: one
+ *                  crossing-detected and one traversal-complete event, no
+ *                  growth from repeated evidence, and no change to rooms,
+ *                  walls, passage or maps.
  */
 TEST(RoomTrackerProductionIntegration,
      ProductionTraversalEvidenceReachesTrackerExactlyOnce)
@@ -786,11 +786,11 @@ TEST(RoomTrackerProductionIntegration,
 }
 
 /*!
- * @brief        Checks that evidence produced faster than the tracker consumes
- *               it, and one-cycle flickers of crossing evidence or of an
- *               unavailable verdict, do not complete a traversal until
- *               sustained evidence arrives, and the traversal then completes
- *               once.
+ * @brief           Checks that evidence produced faster than the tracker
+ *                  consumes it, and one-cycle flickers of crossing evidence or
+ *                  of an unavailable verdict, do not complete a traversal until
+ *                  sustained evidence arrives, and the traversal then completes
+ *                  once.
  */
 TEST(RoomTrackerProductionIntegration,
      ProducerRateMismatchAndOneCycleFlickerFailClosed)
@@ -918,10 +918,10 @@ TEST(RoomTrackerProductionIntegration,
 }
 
 /*!
- * @brief        Checks that over 16 repeated runs, with the evidence producer
- *               and the tracker consumer overlapping in separate threads, every
- *               crossing and both-sides handoff is accepted and no event is
- *               lost.
+ * @brief           Checks that over 16 repeated runs, with the evidence
+ *                  producer and the tracker consumer overlapping in separate
+ *                  threads, every crossing and both-sides handoff is accepted
+ *                  and no event is lost.
  */
 TEST(RoomTrackerProductionIntegration,
      ConcurrentCrossingAndBothSidesHandoffIsLossless)
@@ -1015,9 +1015,9 @@ TEST(RoomTrackerProductionIntegration,
 }
 
 /*!
- * @brief        Checks that completing a traversal into a room never entered
- *               before makes it the current room and marks it as previously
- *               visited.
+ * @brief           Checks that completing a traversal into a room never entered
+ *                  before makes it the current room and marks it as previously
+ *                  visited.
  */
 TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
 {
@@ -1165,9 +1165,9 @@ TEST(RoomTrackerProductionIntegration, TraversalMarksReachedRoomVisited)
 }
 
 /*!
- * @brief        Checks that seeding the current room from the active map with
- *               no entry evidence sets the current room but does not mark it as
- *               visited.
+ * @brief           Checks that seeding the current room from the active map
+ *                  with no entry evidence sets the current room but does not
+ *                  mark it as visited.
  */
 TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
 {

@@ -20,7 +20,7 @@
  * @file            KannalaBrandt8Status.h
  *
  * @brief           Declares the status returned by every KannalaBrandt8
- * operation.
+ *                  operation.
  */
 
 #ifndef KANNALA_BRANDT8_STATUS_H
@@ -38,12 +38,14 @@ namespace kannalabrandt8
 {
 
 /*!
- * @brief       Result of a KannalaBrandt8 operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a KannalaBrandt8 operation. Values are fixed and
+ *                  never reordered.
  */
 enum class KannalaBrandt8Status : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     KANNALA_BRANDT8_STATUS_SUCCESS = 0U
 };
 

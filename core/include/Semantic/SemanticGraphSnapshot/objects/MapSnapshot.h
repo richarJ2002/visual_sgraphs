@@ -39,33 +39,47 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Every entity captured from one Atlas map, live and bad
- *              alike -- see each record type's own isLive field. Neither
- *              this type nor any record vector it holds filters on
- *              liveness; a retired room, wall, or passage remains present
- *              here for the evaluator to judge.
+ * @brief           Every entity captured from one Atlas map, live and bad
+ *                  alike -- see each record type's own isLive field. Neither
+ *                  this type nor any record vector it holds filters on
+ *                  liveness; a retired room, wall, or passage remains present
+ *                  here for the evaluator to judge.
  */
 struct MapSnapshot
 {
   public:
-    /*! @brief Atlas::Map::GetId() of the captured map. */
+    /*!
+     * @brief           Atlas::Map::GetId() of the captured map.
+     */
     long unsigned int mapId{0U};
 
-    /*! @brief True for the single map SemanticGraphSnapshot::currentMapId
-     *  names at capture time -- only meaningful when currentMapStatus ==
-     *  AtlasCurrentMapStatus::CURRENT_MAP_ACTIVE; see its Doxygen. */
+    /*!
+     * @brief           True for the single map
+     *                  SemanticGraphSnapshot::currentMapId names at capture
+     *                  time -- only meaningful when currentMapStatus ==
+     *                  AtlasCurrentMapStatus::CURRENT_MAP_ACTIVE; see its
+     *                  Doxygen.
+     */
     bool isCurrentMap{false};
 
-    /*! @brief Sorted by RoomRecord::key. */
+    /*!
+     * @brief           Sorted by RoomRecord::key.
+     */
     std::vector<RoomRecord> rooms;
 
-    /*! @brief Sorted by WallRecord::key. */
+    /*!
+     * @brief           Sorted by WallRecord::key.
+     */
     std::vector<WallRecord> walls;
 
-    /*! @brief Sorted by PassageRecord::key. */
+    /*!
+     * @brief           Sorted by PassageRecord::key.
+     */
     std::vector<PassageRecord> passages;
 
-    /*! @brief Sorted by FloorRecord::key. */
+    /*!
+     * @brief           Sorted by FloorRecord::key.
+     */
     std::vector<FloorRecord> floors;
 };
 

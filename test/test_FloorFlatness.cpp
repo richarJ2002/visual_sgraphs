@@ -1,9 +1,10 @@
 /*!
- * @file test_FloorFlatness.cpp
- * @brief Front-end floor-flatness coverage:
- *        SemanticsManager::reconcileRoomGroundPlanes() re-points a room
- *        whose own ground plane disagrees with the just-refreshed canonical
- *        semantic::Floor identity.
+ * @file            test_FloorFlatness.cpp
+ *
+ * @brief           Front-end floor-flatness coverage:
+ *                  SemanticsManager::reconcileRoomGroundPlanes() re-points a
+ *                  room whose own ground plane disagrees with the
+ *                  just-refreshed canonical semantic::Floor identity.
  */
 
 #include "Atlas.h"
@@ -24,11 +25,15 @@ namespace core
 namespace
 {
 
-/*! Builds a GROUND geometric::Plane at height y = height_m_in with a genuine,
- * production-refit geometry snapshot (Map::GetBiggestGroundPlane() and
- * semantic::Floor::selectBestObservedFloor() both require cloudGeneration ==
- * successfulRefitGeneration and a finite support count, which only
- * geometric::Plane::completeMapCloudRefit() sets). */
+/*!
+ * @brief           Builds a GROUND geometric::Plane at height y = height_m_in
+ *                  with a genuine, production-refit geometry snapshot
+ *                  (Map::GetBiggestGroundPlane() and
+ *                  semantic::Floor::selectBestObservedFloor() both require
+ *                  cloudGeneration == successfulRefitGeneration and a finite
+ *                  support count, which only
+ *                  geometric::Plane::completeMapCloudRefit() sets).
+ */
 std::unique_ptr<geometric::Plane>
     makeRefitGroundPlane(int         id_in,
                          Map        *p_map_in,
@@ -108,9 +113,9 @@ std::unique_ptr<geometric::Plane>
 } // namespace
 
 /*!
- * @brief        Checks that reconciling room ground planes repoints a room onto
- *               the canonical floor ground plane when its own plane is the less
- *               observed one.
+ * @brief           Checks that reconciling room ground planes repoints a room
+ *                  onto the canonical floor ground plane when its own plane is
+ *                  the less observed one.
  */
 TEST(FloorFlatness, RepointsALessObservedRoomGroundPlaneToTheCanonicalOne)
 {
@@ -157,8 +162,8 @@ TEST(FloorFlatness, RepointsALessObservedRoomGroundPlaneToTheCanonicalOne)
 }
 
 /*!
- * @brief        Checks that reconciling room ground planes leaves a room alone
- *               when its ground plane already is the canonical one.
+ * @brief           Checks that reconciling room ground planes leaves a room
+ *                  alone when its ground plane already is the canonical one.
  */
 TEST(FloorFlatness, LeavesAnAgreeingRoomGroundPlaneUntouched)
 {

@@ -33,12 +33,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a G2oTypes operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a G2oTypes operation. Values are fixed and never
+ *                  reordered.
  */
 enum class G2oTypesStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     G2O_TYPES_STATUS_SUCCESS = 0U
 };
 

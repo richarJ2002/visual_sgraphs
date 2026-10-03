@@ -17,11 +17,11 @@
  */
 
 /*!
- * @file         AxiomCapabilityEntry.h
+ * @file            AxiomCapabilityEntry.h
  *
- * @brief        Declares one row of the fixed,
- *               snapshot-independent axiom capability/ownership
- *               table (computeAxiomCapabilityTable()).
+ * @brief           Declares one row of the fixed,
+ *                  snapshot-independent axiom capability/ownership
+ *                  table (computeAxiomCapabilityTable()).
  */
 
 #ifndef SEMANTIC_AXIOM_EVALUATOR_AXIOM_CAPABILITY_ENTRY_H
@@ -39,33 +39,37 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief        One axiom code's fixed capability classification
- *               and, when not FULL, the evidence area that owns
- *               supplying the missing proof. Every field is a
- *               property of this evaluator's current implementation
- *               against the current SemanticGraphSnapshot schema,
- *               not of any one evaluated snapshot.
+ * @brief           One axiom code's fixed capability classification
+ *                  and, when not FULL, the evidence area that owns
+ *                  supplying the missing proof. Every field is a
+ *                  property of this evaluator's current implementation
+ *                  against the current SemanticGraphSnapshot schema,
+ *                  not of any one evaluated snapshot.
  */
 struct AxiomCapabilityEntry
 {
   public:
-    /*! @brief Which of the sixteen axiom codes this row describes. */
+    /*!
+     * @brief           Which of the sixteen axiom codes this row describes.
+     */
     AxiomCode axiomCode{AxiomCode::AX_FRAME_01};
 
     /*!
-     * @brief        Fixed "Class" column value for axiomCode.
+     * @brief           Fixed "Class" column value for axiomCode.
      */
     AxiomClass classification{AxiomClass::HARD};
 
-    /*! @brief How completely this axiom code can be proven from the
-     *  current schema. */
+    /*!
+     * @brief           How completely this axiom code can be proven from the
+     *                  current schema.
+     */
     CapabilityLevel capability{CapabilityLevel::FULL};
 
     /*!
-     * @brief        MissingProofOwner::NONE when capability == FULL;
-     *               otherwise the evidence area (or
-     *               SCOPE_DECISION_REQUIRED) that owns the missing
-     *               evidence.
+     * @brief           MissingProofOwner::NONE when capability == FULL;
+     *                  otherwise the evidence area (or
+     *                  SCOPE_DECISION_REQUIRED) that owns the missing
+     *                  evidence.
      */
     MissingProofOwner owner{MissingProofOwner::NONE};
 };

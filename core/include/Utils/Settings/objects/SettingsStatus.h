@@ -37,12 +37,14 @@ namespace settings
 {
 
 /*!
- * @brief       Result of a Settings operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a Settings operation. Values are fixed and never
+ *                  reordered.
  */
 enum class SettingsStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SETTINGS_STATUS_SUCCESS = 0U
 };
 

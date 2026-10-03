@@ -20,7 +20,7 @@
  * @file            GeoSemHelpersStatus.h
  *
  * @brief           Declares the status returned by every GeoSemHelpers
- * operation.
+ *                  operation.
  */
 
 #ifndef GEO_SEM_HELPERS_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a GeoSemHelpers operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a GeoSemHelpers operation. Values are fixed and
+ *                  never reordered.
  */
 enum class GeoSemHelpersStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     GEO_SEM_HELPERS_STATUS_SUCCESS = 0U
 };
 

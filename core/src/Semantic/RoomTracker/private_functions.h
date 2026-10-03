@@ -30,31 +30,31 @@ namespace semantic
                                              std::string &formattedValue_out);
 
 /*!
- * @brief        Returns the fixed text name of a tracking state.
+ * @brief           Returns the fixed text name of a tracking state.
  *
- * @param[in]    state_in
- *               State to name.
+ * @param[in]       state_in
+ *                  State to name.
  *
- * @param[out]   p_stateLiteral_out
- *               Borrowed pointer to a static, null-terminated name.
- *               "UNKNOWN" for the UNKNOWN state or an unlisted value.
+ * @param[out]      p_stateLiteral_out
+ *                  Borrowed pointer to a static, null-terminated name.
+ *                  "UNKNOWN" for the UNKNOWN state or an unlisted value.
  *
- * @return       ROOM_TRACKER_STATUS_SUCCESS always.
+ * @return          ROOM_TRACKER_STATUS_SUCCESS always.
  */
 [[nodiscard]] RoomTrackerStatus stateLiteral(RoomTrackingState state_in,
                                              const char *&p_stateLiteral_out);
 
 /*!
- * @brief        Returns the fixed text name of a tracking event.
+ * @brief           Returns the fixed text name of a tracking event.
  *
- * @param[in]    event_in
- *               Event to name.
+ * @param[in]       event_in
+ *                  Event to name.
  *
- * @param[out]   p_eventLiteral_out
- *               Borrowed pointer to a static, null-terminated name.
- *               "UNKNOWN_EVENT" for an unlisted value.
+ * @param[out]      p_eventLiteral_out
+ *                  Borrowed pointer to a static, null-terminated name.
+ *                  "UNKNOWN_EVENT" for an unlisted value.
  *
- * @return       ROOM_TRACKER_STATUS_SUCCESS always.
+ * @return          ROOM_TRACKER_STATUS_SUCCESS always.
  */
 [[nodiscard]] RoomTrackerStatus eventLiteral(RoomTrackingEvent event_in,
                                              const char *&p_eventLiteral_out);

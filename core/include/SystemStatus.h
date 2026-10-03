@@ -33,21 +33,29 @@ namespace core
 {
 
 /*!
- * @brief       Result of a System operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a System operation. Values are fixed and never
+ *                  reordered.
  */
 enum class SystemStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SYSTEM_STATUS_SUCCESS = 0U,
 
-    /*! @brief The settings file could not be opened. */
+    /*!
+     * @brief           The settings file could not be opened.
+     */
     SYSTEM_STATUS_SETTINGS_UNREADABLE = 1U,
 
-    /*! @brief The ORB vocabulary file could not be loaded. */
+    /*!
+     * @brief           The ORB vocabulary file could not be loaded.
+     */
     SYSTEM_STATUS_VOCABULARY_UNREADABLE = 2U,
 
-    /*! @brief The saved map (Atlas) file could not be loaded. */
+    /*!
+     * @brief           The saved map (Atlas) file could not be loaded.
+     */
     SYSTEM_STATUS_ATLAS_UNREADABLE = 3U
 };
 

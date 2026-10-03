@@ -43,34 +43,36 @@ namespace core
 {
 
 /*!
- * @brief        Id written to a saved map for an absent link held in an
- *               unsigned id (a key frame's cameras, a map's initial and
- *               lowest-id key frames). ORB-SLAM3 stores -1, which an unsigned
- *               id holds as its largest value; the file format keeps that
- *               value, so a loaded id equals NO_SAVED_ID exactly when the
- *               link was absent.
+ * @brief           Id written to a saved map for an absent link held in an
+ *                  unsigned id (a key frame's cameras, a map's initial and
+ *                  lowest-id key frames). ORB-SLAM3 stores -1, which an
+ *                  unsigned id holds as its largest value; the file format
+ *                  keeps that value, so a loaded id equals NO_SAVED_ID exactly
+ *                  when the link was absent.
  *
- * @tparam       IdType
- *               Unsigned id type of the stored field.
+ * @tparam          IdType
+ *                  Unsigned id type of the stored field.
  */
 template <typename IdType>
 inline constexpr IdType NO_SAVED_ID = std::numeric_limits<IdType>::max();
 
 /*!
- * @brief        Saves or loads a Sophus rigid transform as a unit quaternion
- *               (w, x, y, z) followed by a translation, so the file does not
- *               depend on Sophus internals.
+ * @brief           Saves or loads a Sophus rigid transform as a unit quaternion
+ *                  (w, x, y, z) followed by a translation, so the file does not
+ *                  depend on Sophus internals.
  *
- * @tparam       Archive
- *               Boost archive type; saving or loading is read from it.
+ * @tparam          Archive
+ *                  Boost archive type; saving or loading is read from it.
  *
- * @param[in,out] ar
- *               Archive written when saving, read when loading.
- * @param[in,out] T
- *               Transform written when saving; replaced when
- *               loading.
- * @param[in]    version
- *               Archive version; currently unused.
+ * @param[in,out]   ar
+ *                  Archive written when saving, read when loading.
+ *
+ * @param[in,out]   T
+ *                  Transform written when saving; replaced when
+ *                  loading.
+ *
+ * @param[in]       version
+ *                  Archive version; currently unused.
  */
 template <class Archive>
 void serializeSophusSE3(Archive                            &ar,
@@ -122,19 +124,21 @@ const unsigned int version)
 }*/
 
 /*!
- * @brief        Saves or loads an OpenCV matrix as its size, type and
- *               continuity flag followed by the raw element bytes.
+ * @brief           Saves or loads an OpenCV matrix as its size, type and
+ *                  continuity flag followed by the raw element bytes.
  *
- * @tparam       Archive
- *               Boost archive type; saving or loading is read from it.
+ * @tparam          Archive
+ *                  Boost archive type; saving or loading is read from it.
  *
- * @param[in,out] ar
- *               Archive written when saving, read when loading.
- * @param[in,out] mat
- *               Matrix written when saving; re-created with the
- *               stored size and type and filled when loading.
- * @param[in]    version
- *               Archive version; currently unused.
+ * @param[in,out]   ar
+ *                  Archive written when saving, read when loading.
+ *
+ * @param[in,out]   mat
+ *                  Matrix written when saving; re-created with the
+ *                  stored size and type and filled when loading.
+ *
+ * @param[in]       version
+ *                  Archive version; currently unused.
  */
 template <class Archive>
 void serializeMatrix(Archive                            &ar,
@@ -175,20 +179,22 @@ void serializeMatrix(Archive                            &ar,
 }
 
 /*!
- * @brief        Saves or loads an OpenCV matrix held through a const reference;
- *               when loading, the result is written back into the referenced
- *               matrix by casting away const.
+ * @brief           Saves or loads an OpenCV matrix held through a const
+ *                  reference; when loading, the result is written back into the
+ *                  referenced matrix by casting away const.
  *
- * @tparam       Archive
- *               Boost archive type; saving or loading is read from it.
+ * @tparam          Archive
+ *                  Boost archive type; saving or loading is read from it.
  *
- * @param[in,out] ar
- *               Archive written when saving, read when loading.
- * @param[in,out] mat
- *               Matrix written when saving; replaced when loading.
- * @param[in]    version
- *               Archive version, forwarded to the non-const
- *               overload.
+ * @param[in,out]   ar
+ *                  Archive written when saving, read when loading.
+ *
+ * @param[in,out]   mat
+ *                  Matrix written when saving; replaced when loading.
+ *
+ * @param[in]       version
+ *                  Archive version, forwarded to the non-const
+ *                  overload.
  */
 template <class Archive>
 void serializeMatrix(Archive           &ar,
@@ -208,20 +214,22 @@ void serializeMatrix(Archive           &ar,
 }
 
 /*!
- * @brief        Saves or loads a list of OpenCV key points, one field at a
- *               time. When loading, the result is written back into the
- *               referenced vector by casting away const.
+ * @brief           Saves or loads a list of OpenCV key points, one field at a
+ *                  time. When loading, the result is written back into the
+ *                  referenced vector by casting away const.
  *
- * @tparam       Archive
- *               Boost archive type; saving or loading is read from it.
+ * @tparam          Archive
+ *                  Boost archive type; saving or loading is read from it.
  *
- * @param[in,out] ar
- *               Archive written when saving, read when loading.
- * @param[in,out] vKP
- *               Key points written when saving; replaced when
- *               loading.
- * @param[in]    version
- *               Archive version; currently unused.
+ * @param[in,out]   ar
+ *                  Archive written when saving, read when loading.
+ *
+ * @param[in,out]   vKP
+ *                  Key points written when saving; replaced when
+ *                  loading.
+ *
+ * @param[in]       version
+ *                  Archive version; currently unused.
  */
 template <class Archive>
 void serializeVectorKeyPoints(Archive                            &ar,

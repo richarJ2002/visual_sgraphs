@@ -20,7 +20,7 @@
  * @file            InvDepthPointStatus.h
  *
  * @brief           Declares the status returned by every InvDepthPoint
- * operation.
+ *                  operation.
  */
 
 #ifndef INV_DEPTH_POINT_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a InvDepthPoint operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a InvDepthPoint operation. Values are fixed and
+ *                  never reordered.
  */
 enum class InvDepthPointStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     INV_DEPTH_POINT_STATUS_SUCCESS = 0U
 };
 

@@ -20,7 +20,7 @@
  * @file            SemanticAxiomEvaluatorStatus.h
  *
  * @brief           Declares the status returned by every SemanticAxiomEvaluator
- * operation.
+ *                  operation.
  */
 
 #ifndef SEMANTIC_AXIOM_EVALUATOR_STATUS_H
@@ -36,12 +36,14 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a SemanticAxiomEvaluator operation. Values are fixed
- * and never reordered.
+ * @brief           Result of a SemanticAxiomEvaluator operation. Values are
+ *                  fixed and never reordered.
  */
 enum class SemanticAxiomEvaluatorStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS = 0U
 };
 

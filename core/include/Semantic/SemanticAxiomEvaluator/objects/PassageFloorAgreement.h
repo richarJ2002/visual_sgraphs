@@ -35,48 +35,68 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Whether one live passage's real (live, confirmed) endpoint
- *              rooms agree on floor.
+ * @brief           Whether one live passage's real (live, confirmed) endpoint
+ *                  rooms agree on floor.
  */
 enum class PassageFloorAgreement : std::uint8_t
 {
-    /*! @brief Fewer than two real endpoints have a resolvable floor link,
-     *  so agreement cannot be checked; also used for zero/one real
-     *  endpoints, which vacuously cannot disagree. */
+    /*!
+     * @brief           Fewer than two real endpoints have a resolvable floor
+     *                  link, so agreement cannot be checked; also used for
+     *                  zero/one real endpoints, which vacuously cannot
+     *                  disagree.
+     */
     NOT_APPLICABLE = 0U,
 
-    /*! @brief At least one real endpoint has no floor link yet. */
+    /*!
+     * @brief           At least one real endpoint has no floor link yet.
+     */
     EVIDENCE_UNAVAILABLE = 1U,
 
-    /*! @brief Two real endpoints resolve to different floors. */
+    /*!
+     * @brief           Two real endpoints resolve to different floors.
+     */
     DISAGREE = 2U,
 
-    /*! @brief Two real endpoints resolve to the same floor. */
+    /*!
+     * @brief           Two real endpoints resolve to the same floor.
+     */
     AGREE = 3U,
 
-    /*! @brief Two real endpoints share an equal floor key, but that key
-     *  names more than one FloorRecord in the same map, or the resolved
-     *  floor does not reciprocally list one or both endpoint rooms in its
-     *  own roomRefs: identity/reciprocity ambiguity, distinct from a plain
-     *  missing floor link (EVIDENCE_UNAVAILABLE) or a genuine cross-floor
-     *  disagreement (DISAGREE). */
+    /*!
+     * @brief           Two real endpoints share an equal floor key, but that
+     *                  key names more than one FloorRecord in the same map, or
+     *                  the resolved floor does not reciprocally list one or
+     *                  both endpoint rooms in its own roomRefs:
+     *                  identity/reciprocity ambiguity, distinct from a plain
+     *                  missing floor link (EVIDENCE_UNAVAILABLE) or a genuine
+     *                  cross-floor disagreement (DISAGREE).
+     */
     AMBIGUOUS = 4U,
 
-    /*! @brief At least one real endpoint room's own canonical
-     *  evaluateOneRoomFloorReciprocity() result is FAIL: a known room/floor
-     *  contradiction (wrong kind, cross-map, duplicate identity, duplicate
-     *  or missing reverse membership, or a second claiming floor) that must
-     *  dominate any floorKey-equality comparison rather than let equal
-     *  dangling keys or one malformed reverse member become AGREE. */
+    /*!
+     * @brief           At least one real endpoint room's own canonical
+     *                  evaluateOneRoomFloorReciprocity() result is FAIL: a
+     *                  known room/floor contradiction (wrong kind, cross-map,
+     *                  duplicate identity, duplicate or missing reverse
+     *                  membership, or a second claiming floor) that must
+     *                  dominate any floorKey-equality comparison rather than
+     *                  let equal dangling keys or one malformed reverse member
+     *                  become AGREE.
+     */
     ENDPOINT_ROOM_FLOOR_INVALID = 5U,
 
-    /*! @brief At least one real endpoint room's own canonical
-     *  evaluateOneRoomFloorReciprocity() result is UNKNOWN (no FAIL among
-     *  its findings, but at least one UNKNOWN): that room's own room-floor
-     *  proof is itself unavailable, so this passage's floor agreement
-     *  cannot be positively proved either, even though it is also not a
-     *  proven contradiction. Distinct from ENDPOINT_ROOM_FLOOR_INVALID
-     *  (FAIL dominates) and EVIDENCE_UNAVAILABLE (no floor link at all). */
+    /*!
+     * @brief           At least one real endpoint room's own canonical
+     *                  evaluateOneRoomFloorReciprocity() result is UNKNOWN (no
+     *                  FAIL among its findings, but at least one UNKNOWN): that
+     *                  room's own room-floor proof is itself unavailable, so
+     *                  this passage's floor agreement cannot be positively
+     *                  proved either, even though it is also not a proven
+     *                  contradiction. Distinct from ENDPOINT_ROOM_FLOOR_INVALID
+     *                  (FAIL dominates) and EVIDENCE_UNAVAILABLE (no floor link
+     *                  at all).
+     */
     ENDPOINT_ROOM_FLOOR_UNVERIFIED = 6U
 };
 

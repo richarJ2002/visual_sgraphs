@@ -35,12 +35,14 @@ namespace geometric
 {
 
 /*!
- * @brief       Result of a Plane operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a Plane operation. Values are fixed and never
+ *                  reordered.
  */
 enum class PlaneStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     PLANE_STATUS_SUCCESS = 0U
 };
 

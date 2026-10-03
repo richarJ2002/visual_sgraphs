@@ -20,7 +20,7 @@
  * @file            TwoViewReconstructionStatus.h
  *
  * @brief           Declares the status returned by every TwoViewReconstruction
- * operation.
+ *                  operation.
  */
 
 #ifndef TWO_VIEW_RECONSTRUCTION_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a TwoViewReconstruction operation. Values are fixed
- * and never reordered.
+ * @brief           Result of a TwoViewReconstruction operation. Values are
+ *                  fixed and never reordered.
  */
 enum class TwoViewReconstructionStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS = 0U
 };
 

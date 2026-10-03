@@ -228,21 +228,28 @@ SemanticsManagerStatus SemanticsManager::detectOpenPassagesFromSkeletonEdges(
         Eigen::Vector3d crossingPoint = Eigen::Vector3d::Zero();
 
         double      openingRadius = 0.0;
-        /*! Vertical span of this cycle's crossing cluster, 0 when not
-         *  reliably measured (see minimumMeasuredHeightSpan below). Together
-         *  with openingRadius, this is the passage size estimate the user
-         *  asked for -- previously only door-typed (closed) passages had a
-         *  size at all. */
+        /*!
+         * @brief           Vertical span of this cycle's crossing cluster, 0
+         *                  when not reliably measured (see
+         *                  minimumMeasuredHeightSpan below). Together with
+         *                  openingRadius, this is the passage size estimate the
+         *                  user asked for -- previously only door-typed
+         *                  (closed) passages had a size at all.
+         */
         double      heightSpan_m      = 0.0;
         std::size_t confirmationCount = 0;
-        /*! Number of individual skeleton-edge crossings clustered into this
-         *  opening THIS cycle alone (see crossingClusters below) -- the
-         *  same-cycle evidence-quantity signal passage creation is gated on,
-         *  the passage-side equivalent of a wall's cluster point count /
-         *  connectivity ratio. Not carried across cycles by the temporal
-         *  matching below, unlike openingRadius/heightSpan_m: strength must
-         *  be re-earned each cycle, exactly like a wall's own admission
-         *  evidence. */
+        /*!
+         * @brief           Number of individual skeleton-edge crossings
+         *                  clustered into this opening THIS cycle alone (see
+         *                  crossingClusters below) -- the same-cycle
+         *                  evidence-quantity signal passage creation is gated
+         *                  on, the passage-side equivalent of a wall's cluster
+         *                  point count / connectivity ratio. Not carried across
+         *                  cycles by the temporal matching below, unlike
+         *                  openingRadius/heightSpan_m: strength must be
+         *                  re-earned each cycle, exactly like a wall's own
+         *                  admission evidence.
+         */
         std::size_t crossingCount = 0;
     };
 

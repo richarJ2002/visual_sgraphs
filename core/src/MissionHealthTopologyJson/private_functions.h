@@ -23,6 +23,7 @@ namespace core
  *
  * @param[in]       keys_in
  *                  Keys to project.
+ *
  * @param[out]      json_out
  *                  JSON array of {kind, mapId, entityId} objects.
  *
@@ -37,6 +38,7 @@ namespace core
  *
  * @param[in]       value_in
  *                  Value to map.
+ *
  * @param[out]      json_out
  *                  The value, or "NaN"/"Infinity"/"-Infinity".
  *

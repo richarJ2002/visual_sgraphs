@@ -50,87 +50,130 @@ namespace semantic
 {
 
 /*!
- * @brief Return stable human-readable name for an axiom code.
- * @param code_in The axiom code enum value.
- * @param[out] axiomCodeName_out Stable name string (e.g. "AX_FRAME_01",
- * "AX_WALL_01"), or "UNKNOWN_AXIOM_CODE" for a value outside the declared enum.
- * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
+ * @brief           Return stable human-readable name for an axiom code.
+ *
+ * @param[in]       code_in
+ *                  The axiom code enum value.
+ *
+ * @param[out]      axiomCodeName_out
+ *                  Stable name string (e.g. "AX_FRAME_01", "AX_WALL_01"), or
+ *                  "UNKNOWN_AXIOM_CODE" for a value outside the declared enum.
+ *
+ * @return          SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticAxiomEvaluatorStatus
     axiomCodeName(AxiomCode code_in, std::string &axiomCodeName_out);
 
 /*!
- * @brief Return stable human-readable name for an axiom result.
- * @param result_in The result enum value.
- * @param[out] axiomResultName_out Stable name string ("PASS", "FAIL", or
- * "UNKNOWN"), or "UNKNOWN_AXIOM_RESULT" for a value outside the declared enum.
- * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
+ * @brief           Return stable human-readable name for an axiom result.
+ *
+ * @param[in]       result_in
+ *                  The result enum value.
+ *
+ * @param[out]      axiomResultName_out
+ *                  Stable name string ("PASS", "FAIL", or "UNKNOWN"), or
+ *                  "UNKNOWN_AXIOM_RESULT" for a value outside the declared
+ *                  enum.
+ *
+ * @return          SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticAxiomEvaluatorStatus
     axiomResultName(AxiomResult result_in, std::string &axiomResultName_out);
 
 /*!
- * @brief Return stable human-readable name for an axiom class.
- * @param class_in The class enum value.
- * @param[out] axiomClassName_out Stable name string ("HARD" or "DERIVED"), or
- * "UNKNOWN_AXIOM_CLASS" for a value outside the declared enum.
- * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
+ * @brief           Return stable human-readable name for an axiom class.
+ *
+ * @param[in]       class_in
+ *                  The class enum value.
+ *
+ * @param[out]      axiomClassName_out
+ *                  Stable name string ("HARD" or "DERIVED"), or
+ *                  "UNKNOWN_AXIOM_CLASS" for a value outside the declared enum.
+ *
+ * @return          SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticAxiomEvaluatorStatus
     axiomClassName(AxiomClass class_in, std::string &axiomClassName_out);
 
 /*!
- * @brief Return stable human-readable name for a reason code.
- * @param reason_in The reason code enum value.
- * @param[out] reasonCodeName_out Stable name string (e.g.
- * "FRAME_TRANSITION_EVALUATION_REQUIRED"), or "UNKNOWN_REASON_CODE" for a value
- * outside the declared enum.
- * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
+ * @brief           Return stable human-readable name for a reason code.
+ *
+ * @param[in]       reason_in
+ *                  The reason code enum value.
+ *
+ * @param[out]      reasonCodeName_out
+ *                  Stable name string (e.g.
+ *                  "FRAME_TRANSITION_EVALUATION_REQUIRED"), or
+ *                  "UNKNOWN_REASON_CODE" for a value outside the declared enum.
+ *
+ * @return          SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticAxiomEvaluatorStatus
     reasonCodeName(ReasonCode reason_in, std::string &reasonCodeName_out);
 
 /*!
- * @brief Return stable human-readable name for an entity kind.
- * @param kind_in The entity kind enum value.
- * @param[out] entityKindName_out Stable name string ("ROOM", "WALL", "PASSAGE",
- * or "FLOOR"), or "UNKNOWN_ENTITY_KIND" for a value outside the declared enum.
- * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
+ * @brief           Return stable human-readable name for an entity kind.
+ *
+ * @param[in]       kind_in
+ *                  The entity kind enum value.
+ *
+ * @param[out]      entityKindName_out
+ *                  Stable name string ("ROOM", "WALL", "PASSAGE", or "FLOOR"),
+ *                  or "UNKNOWN_ENTITY_KIND" for a value outside the declared
+ *                  enum.
+ *
+ * @return          SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticAxiomEvaluatorStatus
     entityKindName(EntityKind kind_in, std::string &entityKindName_out);
 
 /*!
- * @brief Return stable human-readable name for an unavailable reason.
- * @param reason_in The unavailable reason enum value.
- * @param[out] unavailableReasonName_out Stable name string (e.g. "NONE",
- * "NOT_TRACKED_BY_CURRENT_SCHEMA"), or "UNKNOWN_UNAVAILABLE_REASON" for a value
- * outside the declared enum.
- * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
+ * @brief           Return stable human-readable name for an unavailable reason.
+ *
+ * @param[in]       reason_in
+ *                  The unavailable reason enum value.
+ *
+ * @param[out]      unavailableReasonName_out
+ *                  Stable name string (e.g. "NONE",
+ *                  "NOT_TRACKED_BY_CURRENT_SCHEMA"), or
+ *                  "UNKNOWN_UNAVAILABLE_REASON" for a value outside the
+ *                  declared enum.
+ *
+ * @return          SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticAxiomEvaluatorStatus
     unavailableReasonName(UnavailableReason reason_in,
                           std::string      &unavailableReasonName_out);
 
 /*!
- * @brief Return stable human-readable name for a capability level.
- * @param level_in The capability level enum value.
- * @param[out] capabilityLevelName_out Stable name string ("FULL", "PARTIAL", or
- * "DEFERRED"), or "UNKNOWN_CAPABILITY_LEVEL" for a value outside the declared
- * enum.
- * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
+ * @brief           Return stable human-readable name for a capability level.
+ *
+ * @param[in]       level_in
+ *                  The capability level enum value.
+ *
+ * @param[out]      capabilityLevelName_out
+ *                  Stable name string ("FULL", "PARTIAL", or "DEFERRED"), or
+ *                  "UNKNOWN_CAPABILITY_LEVEL" for a value outside the declared
+ *                  enum.
+ *
+ * @return          SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticAxiomEvaluatorStatus
     capabilityLevelName(CapabilityLevel level_in,
                         std::string    &capabilityLevelName_out);
 
 /*!
- * @brief Return stable human-readable name for a missing-proof owner.
- * @param owner_in The missing-proof owner enum value.
- * @param[out] missingProofOwnerName_out Stable name string (e.g. "NONE",
- * "PHASE_2", "SCOPE_DECISION_REQUIRED"), or "UNKNOWN_MISSING_PROOF_OWNER" for a
- * value outside the declared enum.
- * @return SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
+ * @brief           Return stable human-readable name for a missing-proof owner.
+ *
+ * @param[in]       owner_in
+ *                  The missing-proof owner enum value.
+ *
+ * @param[out]      missingProofOwnerName_out
+ *                  Stable name string (e.g. "NONE", "PHASE_2",
+ *                  "SCOPE_DECISION_REQUIRED"), or "UNKNOWN_MISSING_PROOF_OWNER"
+ *                  for a value outside the declared enum.
+ *
+ * @return          SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS.
  */
 [[nodiscard]] SemanticAxiomEvaluatorStatus
     missingProofOwnerName(MissingProofOwner owner_in,

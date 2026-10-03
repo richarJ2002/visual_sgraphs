@@ -51,9 +51,9 @@ namespace semantic
 {
 
 /*!
- * @brief        Checks that a captured snapshot holds plain values, not
- *               pointers into the model, so a room and wall still read
- *               correctly after the source objects and atlas are destroyed.
+ * @brief           Checks that a captured snapshot holds plain values, not
+ *                  pointers into the model, so a room and wall still read
+ *                  correctly after the source objects and atlas are destroyed.
  */
 TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
 {
@@ -116,13 +116,13 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
 }
 
 /*!
- * @brief        Checks that the wall, passage, floor and owner references
- *               inside a snapshot's relationship lists stay valid after the
- *               source objects are destroyed.
+ * @brief           Checks that the wall, passage, floor and owner references
+ *                  inside a snapshot's relationship lists stay valid after the
+ *                  source objects are destroyed.
  *
- *               Covers RoomRecord::wallRefs and passageRefs,
- *               WallRecord::ownerRoomRefs and FloorRecord::roomRefs, which hold
- *               EntityRef or RawPlaneRef values rather than bare keys.
+ *                  Covers RoomRecord::wallRefs and passageRefs,
+ *                  WallRecord::ownerRoomRefs and FloorRecord::roomRefs, which
+ *                  hold EntityRef or RawPlaneRef values rather than bare keys.
  */
 TEST(SemanticGraphSnapshot,
      RelationshipSubValuesRemainValidAfterFixtureModelObjectsLeaveScope)
@@ -215,9 +215,9 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that rooms, walls, passages and floors that share a
- *               local id in two maps stay distinct in the snapshot because
- *               their keys include the map id.
+ * @brief           Checks that rooms, walls, passages and floors that share a
+ *                  local id in two maps stay distinct in the snapshot because
+ *                  their keys include the map id.
  */
 TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
 {
@@ -336,9 +336,10 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
 }
 
 /*!
- * @brief        Checks that for rooms, walls, passages and floors the snapshot
- *               records both the map that contains the entity and the map it
- *               declares, including a different declared map and none at all.
+ * @brief           Checks that for rooms, walls, passages and floors the
+ *                  snapshot records both the map that contains the entity and
+ *                  the map it declares, including a different declared map and
+ *                  none at all.
  */
 TEST(SemanticGraphSnapshot,
      ContainingMapVersusDeclaredMapIsPreservedForEveryEntityKind)
@@ -511,9 +512,9 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that rooms held only in the detected set, only in the
- *               candidate set, or in both are told apart by their membership
- *               flags.
+ * @brief           Checks that rooms held only in the detected set, only in the
+ *                  candidate set, or in both are told apart by their membership
+ *                  flags.
  */
 TEST(SemanticGraphSnapshot,
      DetectedCandidateAndBothCollectionMembershipAreDistinguishable)
@@ -579,9 +580,9 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that a relationship pointing at a null, unmapped,
- *               retired, unlisted, other-map or wrong-type target still records
- *               the true key, reason, liveness and plane type.
+ * @brief           Checks that a relationship pointing at a null, unmapped,
+ *                  retired, unlisted, other-map or wrong-type target still
+ *                  records the true key, reason, liveness and plane type.
  */
 TEST(SemanticGraphSnapshot,
      RelationshipTargetsRetainTruthfulEvidenceAcrossEveryUnusualCase)
@@ -730,9 +731,9 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that a default-constructed entity reference and raw
- *               plane reference report a null-reference reason and unknown
- *               liveness, never a live target.
+ * @brief           Checks that a default-constructed entity reference and raw
+ *                  plane reference report a null-reference reason and unknown
+ *                  liveness, never a live target.
  */
 TEST(SemanticGraphSnapshot, DefaultReferenceInvariantsAreValid)
 {
@@ -754,14 +755,14 @@ TEST(SemanticGraphSnapshot, DefaultReferenceInvariantsAreValid)
 }
 
 /*!
- * @brief        Checks that a non-wall plane named as a wall's twin, a room's
- *               wall or a passage's wall keeps its true plane type and is never
- *               recorded as a wall.
+ * @brief           Checks that a non-wall plane named as a wall's twin, a
+ *                  room's wall or a passage's wall keeps its true plane type
+ *                  and is never recorded as a wall.
  *
- *               Regression test: entityRefForWall() once labelled every
- *               referenced plane a wall without checking its plane type.
- *               Wall-shaped references now use RawPlaneRef, which keeps the
- *               true type.
+ *                  Regression test: entityRefForWall() once labelled every
+ *                  referenced plane a wall without checking its plane type.
+ *                  Wall-shaped references now use RawPlaneRef, which keeps the
+ *                  true type.
  */
 TEST(SemanticGraphSnapshot,
      WrongTypePlaneTargetsInWallShapedReferencesRetainTruthfulEvidence)
@@ -861,14 +862,14 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that references to a room or floor with no map keep the
- *               target's local id, and that liveness is known for the room but
- *               explicitly unknown for the floor.
+ * @brief           Checks that references to a room or floor with no map keep
+ *                  the target's local id, and that liveness is known for the
+ *                  room but explicitly unknown for the floor.
  *
- *               Regression test: entityRefForRoom() and entityRefForFloor()
- *               once dropped the local id (and, for a room, the liveness) of a
- *               target with no map. A floor has no bad flag, so its liveness is
- *               reported as unknown, never as live.
+ *                  Regression test: entityRefForRoom() and entityRefForFloor()
+ *                  once dropped the local id (and, for a room, the liveness) of
+ *                  a target with no map. A floor has no bad flag, so its
+ *                  liveness is reported as unknown, never as live.
  */
 TEST(SemanticGraphSnapshot,
      UnmappedNonNullRoomAndFloorReferencesRetainLocalIdentityAndLiveness)
@@ -949,12 +950,12 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that capturing a snapshot from an atlas with no maps
- *               reports no current map and does not create one.
+ * @brief           Checks that capturing a snapshot from an atlas with no maps
+ *                  reports no current map and does not create one.
  *
- *               Regression test: capture once called Atlas::getCurrentMap(),
- *               which creates a map when there is none. An atlas without maps
- *               is reachable in production through Atlas::clearAtlas().
+ *                  Regression test: capture once called Atlas::getCurrentMap(),
+ *                  which creates a map when there is none. An atlas without
+ *                  maps is reachable in production through Atlas::clearAtlas().
  */
 TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
 {
@@ -987,14 +988,14 @@ TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
 }
 
 /*!
- * @brief        Checks that a current map marked bad before a map change is
- *               reported as not active and is left out of the snapshot's map
- *               list.
+ * @brief           Checks that a current map marked bad before a map change is
+ *                  reported as not active and is left out of the snapshot's map
+ *                  list.
  *
- *               Atlas::setMapBad() removes the current map from the active set
- *               but keeps it as the current map until Atlas::changeMap()
- *               installs a replacement. In between, the snapshot must say so
- *               through AtlasCurrentMapStatus.
+ *                  Atlas::setMapBad() removes the current map from the active
+ *                  set but keeps it as the current map until Atlas::changeMap()
+ *                  installs a replacement. In between, the snapshot must say so
+ *                  through AtlasCurrentMapStatus.
  */
 TEST(SemanticGraphSnapshot,
      CurrentMapMarkedBadBeforeChangeMapIsReportedAsNotActive)
@@ -1032,8 +1033,8 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that an ordinary current map is reported as active and
- *               flagged as the current map in the snapshot.
+ * @brief           Checks that an ordinary current map is reported as active
+ *                  and flagged as the current map in the snapshot.
  */
 TEST(SemanticGraphSnapshot, CurrentMapStatusIsActiveForAnOrdinaryCurrentMap)
 {
@@ -1063,13 +1064,13 @@ TEST(SemanticGraphSnapshot, CurrentMapStatusIsActiveForAnOrdinaryCurrentMap)
 }
 
 /*!
- * @brief        Checks that snapshot fields not yet captured report their
- *               documented unavailable reasons by default rather than invented
- *               values.
+ * @brief           Checks that snapshot fields not yet captured report their
+ *                  documented unavailable reasons by default rather than
+ *                  invented values.
  *
- *               Covers quarantine and history, the semantics manager's private
- *               open-passage and unresolved-wall hypotheses, and the per-wall
- *               quarantine and observation-ray evidence.
+ *                  Covers quarantine and history, the semantics manager's
+ *                  private open-passage and unresolved-wall hypotheses, and the
+ *                  per-wall quarantine and observation-ray evidence.
  */
 TEST(SemanticGraphSnapshot,
      ManagerPrivateAndHistoryUnavailableDefaultsAreReported)
@@ -1118,14 +1119,14 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that two rooms with the same entity key are both kept
- *               and are ordered by their values, whichever was registered
- *               first.
+ * @brief           Checks that two rooms with the same entity key are both kept
+ *                  and are ordered by their values, whichever was registered
+ *                  first.
  *
- *               Captures the same pair through two atlases built in opposite
- *               orders: both captures must give the order that
- *               isValueLessForCollisionTiebreak() decides from the values, not
- *               the insertion or pointer order.
+ *                  Captures the same pair through two atlases built in opposite
+ *                  orders: both captures must give the order that
+ *                  isValueLessForCollisionTiebreak() decides from the values,
+ *                  not the insertion or pointer order.
  */
 TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
 {
@@ -1279,15 +1280,16 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
 }
 
 /*!
- * @brief        Checks that two wall records with the same key are both kept
- *               and sorted by value, bad before live, whatever the input order.
+ * @brief           Checks that two wall records with the same key are both kept
+ *                  and sorted by value, bad before live, whatever the input
+ *                  order.
  *
- *               Calls sortByKey() directly, the template the capture uses for
- *               all four record types. Walls, passages and floors cannot
- *               collide through the map: Map::addMapPlane() and
- *               Map::addMapFloor() give a colliding object a new id and
- *               Map::addMapPassage() refuses it. So the colliding records are
- *               sorted directly, in both input orders.
+ *                  Calls sortByKey() directly, the template the capture uses
+ *                  for all four record types. Walls, passages and floors cannot
+ *                  collide through the map: Map::addMapPlane() and
+ *                  Map::addMapFloor() give a colliding object a new id and
+ *                  Map::addMapPassage() refuses it. So the colliding records
+ *                  are sorted directly, in both input orders.
  */
 TEST(SemanticGraphSnapshot,
      CollidingWallRecordsAreBothRetainedAndDeterministicallyOrdered)
@@ -1329,9 +1331,9 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that two passage records with the same key are both kept
- *               and sorted by value, narrower before wider, whatever the input
- *               order.
+ * @brief           Checks that two passage records with the same key are both
+ *                  kept and sorted by value, narrower before wider, whatever
+ *                  the input order.
  */
 TEST(SemanticGraphSnapshot,
      CollidingPassageRecordsAreBothRetainedAndDeterministicallyOrdered)
@@ -1375,9 +1377,9 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that two floor records with the same key are both kept
- *               and sorted by value, lower centroid before higher, whatever the
- *               input order.
+ * @brief           Checks that two floor records with the same key are both
+ *                  kept and sorted by value, lower centroid before higher,
+ *                  whatever the input order.
  */
 TEST(SemanticGraphSnapshot,
      CollidingFloorRecordsAreBothRetainedAndDeterministicallyOrdered)
@@ -1419,12 +1421,12 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that two rooms with the same key that own one wall both
- *               stay in the wall's owner list, ordered with the bad one before
- *               the live one.
+ * @brief           Checks that two rooms with the same key that own one wall
+ *                  both stay in the wall's owner list, ordered with the bad one
+ *                  before the live one.
  *
- *               The two rooms are different objects with different liveness, so
- *               sharing a key must not merge them.
+ *                  The two rooms are different objects with different liveness,
+ *                  so sharing a key must not merge them.
  */
 TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
 {
@@ -1486,13 +1488,13 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
 }
 
 /*!
- * @brief        Checks that a wall's owner reference is keyed by the map the
- *               owning room was listed under, even when that room declares a
- *               different map.
+ * @brief           Checks that a wall's owner reference is keyed by the map the
+ *                  owning room was listed under, even when that room declares a
+ *                  different map.
  *
- *               The capture builds the owner key from the map it is walking
- *               through, not from the room's declared map, so the key matches
- *               the room's own RoomRecord::key.
+ *                  The capture builds the owner key from the map it is walking
+ *                  through, not from the room's declared map, so the key
+ *                  matches the room's own RoomRecord::key.
  */
 TEST(SemanticGraphSnapshot,
      OwnerRoomRefIsKeyedByContainingMapEvenWhenRoomDeclaresADifferentMap)
@@ -1563,9 +1565,9 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that a wall claimed by several rooms, including a
- *               retired one, keeps every owner, and that a room in both room
- *               sets appears once as owner.
+ * @brief           Checks that a wall claimed by several rooms, including a
+ *                  retired one, keeps every owner, and that a room in both room
+ *                  sets appears once as owner.
  */
 TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
 {
@@ -1690,9 +1692,9 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
 }
 
 /*!
- * @brief        Checks that rooms registered in ascending or descending id
- *               order end up in the same sorted order in the snapshot, and that
- *               capturing leaves the source room unchanged.
+ * @brief           Checks that rooms registered in ascending or descending id
+ *                  order end up in the same sorted order in the snapshot, and
+ *                  that capturing leaves the source room unchanged.
  */
 TEST(
     SemanticGraphSnapshot,
@@ -1820,13 +1822,13 @@ TEST(
 }
 
 /*!
- * @brief        Checks that walls, passages and floors registered in ascending
- *               or descending id order, and the maps list, come out sorted the
- *               same way in the snapshot.
+ * @brief           Checks that walls, passages and floors registered in
+ *                  ascending or descending id order, and the maps list, come
+ *                  out sorted the same way in the snapshot.
  *
- *               Two maps never share an id, because map ids come from a counter
- *               that only increases (Map::nextId), so no map-id collision is
- *               tested.
+ *                  Two maps never share an id, because map ids come from a
+ *                  counter that only increases (Map::nextId), so no map-id
+ *                  collision is tested.
  */
 TEST(
     SemanticGraphSnapshot,
@@ -2015,12 +2017,12 @@ TEST(
 }
 
 /*!
- * @brief        Checks that a room's wall and passage references, a wall's
- *               owner rooms, a floor's rooms and a passage's walls come out
- *               sorted the same way whatever order they were added in.
+ * @brief           Checks that a room's wall and passage references, a wall's
+ *                  owner rooms, a floor's rooms and a passage's walls come out
+ *                  sorted the same way whatever order they were added in.
  *
- *               Each collection gets three distinct members, added in opposite
- *               orders in the two captures.
+ *                  Each collection gets three distinct members, added in
+ *                  opposite orders in the two captures.
  */
 TEST(
     SemanticGraphSnapshot,
@@ -2354,13 +2356,13 @@ TEST(
 }
 
 /*!
- * @brief        Checks that capture works while the caller already holds the
- *               semantic update lock and does not try to take it again, which
- *               would deadlock.
+ * @brief           Checks that capture works while the caller already holds the
+ *                  semantic update lock and does not try to take it again,
+ *                  which would deadlock.
  *
- *               Atlas::semanticUpdateMutex is a plain, non-recursive
- *               std::mutex, so taking it again would hang this test: reaching
- *               the last assertion is the proof.
+ *                  Atlas::semanticUpdateMutex is a plain, non-recursive
+ *                  std::mutex, so taking it again would hang this test:
+ *                  reaching the last assertion is the proof.
  */
 TEST(SemanticGraphSnapshot,
      CaptureUnderHeldSemanticLockCompletesWithoutReacquiring)
@@ -2389,9 +2391,9 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that the cheap plane metadata accessor returns the same
- *               scalars as the full geometry snapshot, and that the wall record
- *               carries those same values.
+ * @brief           Checks that the cheap plane metadata accessor returns the
+ *                  same scalars as the full geometry snapshot, and that the
+ *                  wall record carries those same values.
  */
 TEST(SemanticGraphSnapshot,
      CheapPlaneAccessorAgreesWithFullGeometrySnapshotScalars)
@@ -2467,8 +2469,8 @@ TEST(SemanticGraphSnapshot,
 }
 
 /*!
- * @brief        Checks that capturing from a null atlas returns an empty
- *               snapshot with no current map instead of crashing.
+ * @brief           Checks that capturing from a null atlas returns an empty
+ *                  snapshot with no current map instead of crashing.
  */
 TEST(SemanticGraphSnapshot, NullAtlasReturnsEmptyDefaultSnapshot)
 {
@@ -2482,13 +2484,13 @@ TEST(SemanticGraphSnapshot, NullAtlasReturnsEmptyDefaultSnapshot)
 }
 
 /*!
- * @brief        Checks that the wall, room and passage reference append helpers
- *               ignore a null pointer and add nothing.
+ * @brief           Checks that the wall, room and passage reference append
+ *                  helpers ignore a null pointer and add nothing.
  *
- *               Room::setWalls(), Passage::addAssociateWall(), Floor::addRoom()
- *               and Floor::setRooms() already refuse null pointers, so capture
- *               never reaches this case; the helpers are called directly
- *               instead.
+ *                  Room::setWalls(), Passage::addAssociateWall(),
+ *                  Floor::addRoom() and Floor::setRooms() already refuse null
+ *                  pointers, so capture never reaches this case; the helpers
+ *                  are called directly instead.
  */
 TEST(SemanticGraphSnapshot, AppendHelpersDropNullPointersWithoutAppending)
 {
@@ -2512,14 +2514,14 @@ TEST(SemanticGraphSnapshot, AppendHelpersDropNullPointersWithoutAppending)
 }
 
 /*!
- * @brief        Checks that the double ordering function puts negative zero
- *               before positive zero and negative NaN, the finite values and
- *               positive NaN in one fixed order, with no value less than
- *               itself.
+ * @brief           Checks that the double ordering function puts negative zero
+ *                  before positive zero and negative NaN, the finite values and
+ *                  positive NaN in one fixed order, with no value less than
+ *                  itself.
  *
- *               doubleTotalOrderKey() and isDoubleLess() are called directly,
- *               because every ordering guarantee of the snapshot is built on
- *               them.
+ *                  doubleTotalOrderKey() and isDoubleLess() are called
+ *                  directly, because every ordering guarantee of the snapshot
+ *                  is built on them.
  */
 TEST(SemanticGraphSnapshot, FloatTotalOrderHandlesNaNInfinityAndSignedZero)
 {

@@ -34,28 +34,36 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Tri-state outcome of one axiom evaluation, at either finding
- *              or aggregate granularity.
+ * @brief           Tri-state outcome of one axiom evaluation, at either finding
+ *                  or aggregate granularity.
  *
- *              Aggregation precedence is always FAIL > UNKNOWN > PASS
- *              (aggregateFindings()): a single FAIL anywhere makes the whole
- *              aggregate FAIL; otherwise a single UNKNOWN makes it UNKNOWN;
- *              only unanimous PASS (or a vacuously empty finding set for an
- *              axiom whose contract does not require a witness) yields PASS.
- *              Missing evidence must never be reported as PASS -- see each
- *              per-axiom evaluator's own Doxygen for when it emits UNKNOWN
- *              instead of guessing.
+ *                  Aggregation precedence is always FAIL > UNKNOWN > PASS
+ *                  (aggregateFindings()): a single FAIL anywhere makes the
+ *                  whole aggregate FAIL; otherwise a single UNKNOWN makes it
+ *                  UNKNOWN; only unanimous PASS (or a vacuously empty finding
+ *                  set for an axiom whose contract does not require a witness)
+ *                  yields PASS. Missing evidence must never be reported as PASS
+ *                  -- see each per-axiom evaluator's own Doxygen for when it
+ *                  emits UNKNOWN instead of guessing.
  */
 enum class AxiomResult : std::uint8_t
 {
-    /*! @brief The observable clause holds; positive proof was available. */
+    /*!
+     * @brief           The observable clause holds; positive proof was
+     *                  available.
+     */
     PASS = 0U,
 
-    /*! @brief An observable contradiction was found. */
+    /*!
+     * @brief           An observable contradiction was found.
+     */
     FAIL = 1U,
 
-    /*! @brief Required proof is unavailable; no contradiction was found
-     *  either. Never upgraded to PASS merely because nothing looked wrong. */
+    /*!
+     * @brief           Required proof is unavailable; no contradiction was
+     *                  found either. Never upgraded to PASS merely because
+     *                  nothing looked wrong.
+     */
     UNKNOWN = 2U
 };
 

@@ -106,25 +106,25 @@ void MapPoint::serialize(Archive &ar, const unsigned int version)
 }
 
 /*!
- * @brief        Loads a MapPoint from a binary archive.
+ * @brief           Loads a MapPoint from a binary archive.
  */
 template void MapPoint::serialize<boost::archive::binary_iarchive>(
     boost::archive::binary_iarchive &,
     const unsigned int);
 /*!
- * @brief        Saves a MapPoint to a binary archive.
+ * @brief           Saves a MapPoint to a binary archive.
  */
 template void MapPoint::serialize<boost::archive::binary_oarchive>(
     boost::archive::binary_oarchive &,
     const unsigned int);
 /*!
- * @brief        Loads a MapPoint from a text archive.
+ * @brief           Loads a MapPoint from a text archive.
  */
 template void MapPoint::serialize<boost::archive::text_iarchive>(
     boost::archive::text_iarchive &,
     const unsigned int);
 /*!
- * @brief        Saves a MapPoint to a text archive.
+ * @brief           Saves a MapPoint to a text archive.
  */
 template void MapPoint::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,

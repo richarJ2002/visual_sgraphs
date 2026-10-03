@@ -27,14 +27,14 @@ class Floor;
 } // namespace semantic
 
 /*!
- * @brief        Merges duplicate floor evidence and rooms.
+ * @brief           Merges duplicate floor evidence and rooms.
  */
 [[nodiscard]] LoopClosingStatus
     mergeFloorEvidenceAndRooms(semantic::Floor *p_retainedFloor_inout,
                                semantic::Floor *p_duplicateFloor_in);
 
 /*!
- * @brief        Collapses duplicate floors in the surviving map.
+ * @brief           Collapses duplicate floors in the surviving map.
  */
 [[nodiscard]] LoopClosingStatus collapseMergedFloors(Map *p_survivingMap_inout);
 

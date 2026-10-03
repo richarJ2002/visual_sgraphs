@@ -35,39 +35,53 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief        Stable, orderable identity for one snapshot entity.
+ * @brief           Stable, orderable identity for one snapshot entity.
  *
- *               Relationships in this snapshot always use this key,
- *               never a bare local ID, because local IDs may repeat
- *               across different maps. This is the *containing*
- *               map's identity -- the map whose enumeration produced
- *               this record -- which may differ from the entity's
- *               own declared map; see the record types'
- *               declaredMapId field for that separate fact.
+ *                  Relationships in this snapshot always use this key,
+ *                  never a bare local ID, because local IDs may repeat
+ *                  across different maps. This is the *containing*
+ *                  map's identity -- the map whose enumeration produced
+ *                  this record -- which may differ from the entity's
+ *                  own declared map; see the record types'
+ *                  declaredMapId field for that separate fact.
  */
 struct EntityKey
 {
   public:
-    /*! @brief Which kind of graph entity entityId names. */
+    /*!
+     * @brief           Which kind of graph entity entityId names.
+     */
     EntityKind kind{EntityKind::ROOM};
 
-    /*! @brief Atlas::Map::GetId() of the map this record was enumerated
-     *  from. */
+    /*!
+     * @brief           Atlas::Map::GetId() of the map this record was
+     *                  enumerated from.
+     */
     long unsigned int mapId{0U};
 
-    /*! @brief The entity's local id (Room::getId(), Plane::getId(),
-     *  Passage::getId(), or Floor::getId()), unique only within mapId. */
+    /*!
+     * @brief           The entity's local id (Room::getId(), Plane::getId(),
+     *                  Passage::getId(), or Floor::getId()), unique only within
+     *                  mapId.
+     */
     int entityId{0};
 };
 
-/*! @brief True when kind, mapId, and entityId all match. */
+/*!
+ * @brief           True when kind, mapId, and entityId all match.
+ */
 bool operator==(const EntityKey &lhs_in, const EntityKey &rhs_in);
 
-/*! @brief Inverse of operator==(). */
+/*!
+ * @brief           Inverse of operator==().
+ */
 bool operator!=(const EntityKey &lhs_in, const EntityKey &rhs_in);
 
-/*! @brief Total order by (kind, mapId, entityId), used to sort every
- *  snapshot record and relationship collection deterministically. */
+/*!
+ * @brief           Total order by (kind, mapId, entityId), used to sort every
+ *                  snapshot record and relationship collection
+ *                  deterministically.
+ */
 bool operator<(const EntityKey &lhs_in, const EntityKey &rhs_in);
 
 } // namespace semantic

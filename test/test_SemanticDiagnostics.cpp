@@ -79,9 +79,9 @@ SemanticReportCacheEntry makeEntry(std::uint64_t               cycle_in,
 } // namespace
 
 /*!
- * @brief        Checks that the first cycle emits a summary whose only
- *               violation detail is the failing finding, with pass and unknown
- *               findings left out.
+ * @brief           Checks that the first cycle emits a summary whose only
+ *                  violation detail is the failing finding, with pass and
+ *                  unknown findings left out.
  */
 TEST(SemanticDiagnostics, FirstCycleEmitsSummaryAndOnlyFailAppeared)
 {
@@ -112,8 +112,8 @@ TEST(SemanticDiagnostics, FirstCycleEmitsSummaryAndOnlyFailAppeared)
 }
 
 /*!
- * @brief        Checks that cycles 2 to 9 emit nothing when the findings and
- *               digest are unchanged since cycle 1.
+ * @brief           Checks that cycles 2 to 9 emit nothing when the findings and
+ *                  digest are unchanged since cycle 1.
  */
 TEST(SemanticDiagnostics, UnchangedCycles2Through9EmitNothing)
 {
@@ -141,8 +141,8 @@ TEST(SemanticDiagnostics, UnchangedCycles2Through9EmitNothing)
 }
 
 /*!
- * @brief        Checks that an unchanged state emits a detail-free heartbeat on
- *               cycle 10 and again on cycle 19, and nothing in between.
+ * @brief           Checks that an unchanged state emits a detail-free heartbeat
+ *                  on cycle 10 and again on cycle 19, and nothing in between.
  */
 TEST(SemanticDiagnostics, HeartbeatEmittedExactlyOnCycle10)
 {
@@ -198,9 +198,9 @@ TEST(SemanticDiagnostics, HeartbeatEmittedExactlyOnCycle10)
 }
 
 /*!
- * @brief        Checks that a failing finding reported for the first time is
- *               marked appeared, one that disappears is marked resolved, and
- *               one that persists is not reported.
+ * @brief           Checks that a failing finding reported for the first time is
+ *                  marked appeared, one that disappears is marked resolved, and
+ *                  one that persists is not reported.
  */
 TEST(SemanticDiagnostics, AppearedChangedAndResolvedFailTransitions)
 {
@@ -247,8 +247,8 @@ TEST(SemanticDiagnostics, AppearedChangedAndResolvedFailTransitions)
 }
 
 /*!
- * @brief        Checks that a change in the full-geometry digest alone, with
- *               the same topology digest and findings, emits nothing.
+ * @brief           Checks that a change in the full-geometry digest alone, with
+ *                  the same topology digest and findings, emits nothing.
  */
 TEST(SemanticDiagnostics, GeometryOnlyDriftNeverEmitsOrRepeatsDetails)
 {
@@ -276,9 +276,9 @@ TEST(SemanticDiagnostics, GeometryOnlyDriftNeverEmitsOrRepeatsDetails)
 }
 
 /*!
- * @brief        Checks that 60 new failures emit only the capped number of
- *               details and that the summary counts both the emitted and the
- *               omitted ones.
+ * @brief           Checks that 60 new failures emit only the capped number of
+ *                  details and that the summary counts both the emitted and the
+ *                  omitted ones.
  */
 TEST(SemanticDiagnostics, DetailCapBoundsOutputAndCountsEverything)
 {
@@ -311,9 +311,9 @@ TEST(SemanticDiagnostics, DetailCapBoundsOutputAndCountsEverything)
 }
 
 /*!
- * @brief        Checks that the same findings in opposite input order give
- *               identical summary and detail text, and that all of it parses as
- *               JSON.
+ * @brief           Checks that the same findings in opposite input order give
+ *                  identical summary and detail text, and that all of it parses
+ *                  as JSON.
  */
 TEST(SemanticDiagnostics, OutputIsDeterministicAndJsonParseable)
 {

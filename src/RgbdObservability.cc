@@ -1,6 +1,7 @@
 /*!
- * @file RgbdObservability.cc
- * @brief Implements package-private RGB-D callback/worker accounting.
+ * @file            RgbdObservability.cc
+ *
+ * @brief           Implements package-private RGB-D callback/worker accounting.
  */
 
 #include "RgbdObservability.h"

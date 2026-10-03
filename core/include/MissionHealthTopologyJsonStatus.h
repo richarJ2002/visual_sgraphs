@@ -20,7 +20,7 @@
  * @file            MissionHealthTopologyJsonStatus.h
  *
  * @brief           Declares the status returned by every
- * MissionHealthTopologyJson operation.
+ *                  MissionHealthTopologyJson operation.
  */
 
 #ifndef MISSION_HEALTH_TOPOLOGY_JSON_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a MissionHealthTopologyJson operation. Values are
- * fixed and never reordered.
+ * @brief           Result of a MissionHealthTopologyJson operation. Values are
+ *                  fixed and never reordered.
  */
 enum class MissionHealthTopologyJsonStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS = 0U
 };
 

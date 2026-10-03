@@ -788,16 +788,21 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
             }
         }
 
-        /*! Axiom: both rooms a passage links must be on the same floor,
-         * except through a vertical passage / staircase (not implemented
-         * yet -- see the user's own carve-out). A same-passage,
-         * different-floor match is therefore not new information, it is a
-         * matching error: since no vertical-passage mechanism exists to
-         * produce a genuine one, one of the two sides must be wrong. Keep
-         * whichever side is closer to the passage (the stronger match) and
-         * drop the farther one back to unresolved for this cycle -- it can
-         * still recover in a later cycle, e.g. once its own floor identity
-         * is corrected, or a different room wins that side instead. */
+        /*!
+         * @brief           Axiom: both rooms a passage links must be on the
+         *                  same floor, except through a vertical passage /
+         *                  staircase (not implemented yet -- see the user's own
+         *                  carve-out). A same-passage, different-floor match is
+         *                  therefore not new information, it is a matching
+         *                  error: since no vertical-passage mechanism exists to
+         *                  produce a genuine one, one of the two sides must be
+         *                  wrong. Keep whichever side is closer to the passage
+         *                  (the stronger match) and drop the farther one back
+         *                  to unresolved for this cycle -- it can still recover
+         *                  in a later cycle, e.g. once its own floor identity
+         *                  is corrected, or a different room wins that side
+         *                  instead.
+         */
         if (p_negativeSideRoom != nullptr && p_positiveSideRoom != nullptr)
         {
             vs_graphs::core::semantic::Floor *p_negativeFloor = nullptr;

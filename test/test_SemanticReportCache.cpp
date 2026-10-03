@@ -27,9 +27,9 @@ namespace semantic
 {
 
 /*!
- * @brief        Checks that a new cache reports itself unavailable, and that
- *               reading it still returns a default entry with cycle 0, sequence
- *               0, no map and no findings.
+ * @brief           Checks that a new cache reports itself unavailable, and that
+ *                  reading it still returns a default entry with cycle 0,
+ *                  sequence 0, no map and no findings.
  */
 TEST(SemanticReportCache, UnavailableBeforeFirstUpdate)
 {
@@ -52,9 +52,9 @@ TEST(SemanticReportCache, UnavailableBeforeFirstUpdate)
 }
 
 /*!
- * @brief        Checks that after one update the cache reports itself available
- *               and returns the entry with the cycle and update sequence set to
- *               1.
+ * @brief           Checks that after one update the cache reports itself
+ *                  available and returns the entry with the cycle and update
+ *                  sequence set to 1.
  */
 TEST(SemanticReportCache, AvailableAfterOneUpdate)
 {
@@ -85,11 +85,11 @@ TEST(SemanticReportCache, AvailableAfterOneUpdate)
 }
 
 /*!
- * @brief        Checks that the cache keeps map id 0 and map revision 0 as real
- *               values, distinct from having no current map.
+ * @brief           Checks that the cache keeps map id 0 and map revision 0 as
+ *                  real values, distinct from having no current map.
  *
- *               Map id 0 is the real id of the first map, so it must not stand
- *               for "no current map", which is an empty optional.
+ *                  Map id 0 is the real id of the first map, so it must not
+ *                  stand for "no current map", which is an empty optional.
  */
 TEST(SemanticReportCache, PreservesMapIdZeroDistinctFromNoMap)
 {
@@ -133,9 +133,9 @@ TEST(SemanticReportCache, PreservesMapIdZeroDistinctFromNoMap)
 }
 
 /*!
- * @brief        Checks that the entry the cache returns is a copy, so changing
- *               it or the original input afterwards does not change what the
- *               cache holds.
+ * @brief           Checks that the entry the cache returns is a copy, so
+ *                  changing it or the original input afterwards does not change
+ *                  what the cache holds.
  */
 TEST(SemanticReportCache, GetLatestReturnsNonAliasingCopy)
 {
@@ -175,9 +175,9 @@ TEST(SemanticReportCache, GetLatestReturnsNonAliasingCopy)
 }
 
 /*!
- * @brief        Checks that the update sequence rises by exactly one per update
- *               while the semantic cycle is stored as given, even when it skips
- *               numbers.
+ * @brief           Checks that the update sequence rises by exactly one per
+ *                  update while the semantic cycle is stored as given, even
+ *                  when it skips numbers.
  */
 TEST(SemanticReportCache,
      UpdateSequenceIsMonotonicAndIndependentOfSemanticCycle)
@@ -223,9 +223,9 @@ TEST(SemanticReportCache,
 }
 
 /*!
- * @brief        Checks that the geometry revision goes up only when the full-
- *               geometry digest changes, not when only the topology digest
- *               does.
+ * @brief           Checks that the geometry revision goes up only when the
+ *                  full-geometry digest changes, not when only the topology
+ *                  digest does.
  */
 TEST(SemanticReportCache,
      GeometryRevisionIncrementsOnlyWhenFullGeometryDigestChanges)
@@ -299,13 +299,13 @@ TEST(SemanticReportCache,
 }
 
 /*!
- * @brief        Checks that a writer thread updating the cache while the main
- *               thread reads it never produces a torn entry, a crash or a
- *               deadlock.
+ * @brief           Checks that a writer thread updating the cache while the
+ *                  main thread reads it never produces a torn entry, a crash or
+ *                  a deadlock.
  *
- *               Uses an ordinary std::thread and no ROS fixture: it only has to
- *               show that the cache mutex keeps the writer and the reader
- *               apart.
+ *                  Uses an ordinary std::thread and no ROS fixture: it only has
+ *                  to show that the cache mutex keeps the writer and the reader
+ *                  apart.
  */
 TEST(SemanticReportCache, ConcurrentWriterAndReaderStayConsistent)
 {

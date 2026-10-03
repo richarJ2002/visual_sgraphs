@@ -201,8 +201,8 @@ void ExpectSetsEqualSorted(const std::set<Value> &expected_in,
 } // namespace
 
 /*!
- * @brief        Checks that a Sophus SE3 pose, including the identity pose,
- *               survives a Boost binary save and load unchanged.
+ * @brief           Checks that a Sophus SE3 pose, including the identity pose,
+ *                  survives a Boost binary save and load unchanged.
  */
 TEST(SerializationUtils, SophusSe3RoundTrip)
 {
@@ -243,9 +243,9 @@ TEST(SerializationUtils, SophusSe3RoundTrip)
 }
 
 /*!
- * @brief        Checks that an OpenCV matrix survives a Boost binary round trip
- *               when it is continuous, when it is a non-continuous region of a
- *               larger matrix, and when it is empty.
+ * @brief           Checks that an OpenCV matrix survives a Boost binary round
+ *                  trip when it is continuous, when it is a non-continuous
+ *                  region of a larger matrix, and when it is empty.
  */
 TEST(SerializationUtils, CvMatRoundTripContinuousAndRoi)
 {
@@ -310,8 +310,8 @@ TEST(SerializationUtils, CvMatRoundTripContinuousAndRoi)
 }
 
 /*!
- * @brief        Checks that a vector of OpenCV key points, empty or with two
- *               entries, survives a Boost binary round trip unchanged.
+ * @brief           Checks that a vector of OpenCV key points, empty or with two
+ *                  entries, survives a Boost binary round trip unchanged.
  */
 TEST(SerializationUtils, VectorKeyPointsRoundTrip)
 {
@@ -353,8 +353,8 @@ TEST(SerializationUtils, VectorKeyPointsRoundTrip)
 }
 
 /*!
- * @brief        Checks that IMU bias values, including the defaults, survive a
- *               round trip through memory and through a temporary file.
+ * @brief           Checks that IMU bias values, including the defaults, survive
+ *                  a round trip through memory and through a temporary file.
  */
 TEST(SerializationImu, BiasRoundTripMemoryAndTmpFile)
 {
@@ -381,9 +381,9 @@ TEST(SerializationImu, BiasRoundTripMemoryAndTmpFile)
 }
 
 /*!
- * @brief        Checks that an IMU calibration, with its camera-to-IMU
- *               transforms and covariances, survives a round trip, and that an
- *               unset calibration stays unset.
+ * @brief           Checks that an IMU calibration, with its camera-to-IMU
+ *                  transforms and covariances, survives a round trip, and that
+ *                  an unset calibration stays unset.
  */
 TEST(SerializationImu, CalibRoundTrip)
 {
@@ -411,9 +411,9 @@ TEST(SerializationImu, CalibRoundTrip)
 }
 
 /*!
- * @brief        Checks that preintegrated IMU measurements survive a round trip
- *               with their integrated terms and bias, and that the loaded
- *               object still accepts new measurements.
+ * @brief           Checks that preintegrated IMU measurements survive a round
+ *                  trip with their integrated terms and bias, and that the
+ *                  loaded object still accepts new measurements.
  */
 TEST(SerializationImu, PreintegratedRoundTrip)
 {
@@ -459,8 +459,8 @@ TEST(SerializationImu, PreintegratedRoundTrip)
 }
 
 /*!
- * @brief        Checks that a pinhole camera keeps its id, type, four
- *               parameters and equality after a round trip.
+ * @brief           Checks that a pinhole camera keeps its id, type, four
+ *                  parameters and equality after a round trip.
  */
 TEST(SerializationCamera, PinholeRoundTrip)
 {
@@ -516,9 +516,9 @@ TEST(SerializationCamera, PinholeRoundTrip)
 }
 
 /*!
- * @brief        Checks that a Kannala-Brandt8 fisheye camera keeps its id,
- *               type, eight parameters, precision and equality after a round
- *               trip.
+ * @brief           Checks that a Kannala-Brandt8 fisheye camera keeps its id,
+ *                  type, eight parameters, precision and equality after a round
+ *                  trip.
  */
 TEST(SerializationCamera, KannalaBrandt8RoundTrip)
 {
@@ -582,13 +582,14 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
 }
 
 /*!
- * @brief        Builds a camera over memory filled with a non-zero pattern and
- *               destroys it, which would delete that pattern as a pointer if
- *               the default constructor left the two-view reconstruction
- *               helper unset. Boost builds a loaded camera this way.
+ * @brief           Builds a camera over memory filled with a non-zero pattern
+ *                  and destroys it, which would delete that pattern as a
+ *                  pointer if the default constructor left the two-view
+ *                  reconstruction helper unset. Boost builds a loaded camera
+ *                  this way.
  *
- * @tparam       Camera
- *               Camera model to build, Pinhole or KannalaBrandt8.
+ * @tparam          Camera
+ *                  Camera model to build, Pinhole or KannalaBrandt8.
  */
 template <typename Camera> void ExpectDefaultBuiltCameraDestroysCleanly()
 {
@@ -599,9 +600,9 @@ template <typename Camera> void ExpectDefaultBuiltCameraDestroysCleanly()
 }
 
 /*!
- * @brief        Checks that pinhole and Kannala-Brandt8 cameras built by the
- *               default constructor, as Boost does when loading, can be
- *               destroyed without deleting a stale reconstructor pointer.
+ * @brief           Checks that pinhole and Kannala-Brandt8 cameras built by the
+ *                  default constructor, as Boost does when loading, can be
+ *                  destroyed without deleting a stale reconstructor pointer.
  */
 TEST(SerializationCamera, DefaultBuiltCamerasOwnNoReconstructor)
 {
@@ -611,8 +612,8 @@ TEST(SerializationCamera, DefaultBuiltCamerasOwnNoReconstructor)
 }
 
 /*!
- * @brief        Checks that a camera pointer saved twice in one archive loads
- *               as a single shared camera that keeps its id and type.
+ * @brief           Checks that a camera pointer saved twice in one archive
+ *                  loads as a single shared camera that keeps its id and type.
  */
 TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
 {
@@ -670,9 +671,9 @@ TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
 }
 
 /*!
- * @brief        Checks that a map point keeps its id, first key frame id,
- *               observation count, position, normal and distance limits across
- *               a round trip, and can be moved afterwards.
+ * @brief           Checks that a map point keeps its id, first key frame id,
+ *                  observation count, position, normal and distance limits
+ *                  across a round trip, and can be moved afterwards.
  */
 TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
 {
@@ -741,9 +742,9 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
 }
 
 /*!
- * @brief        Checks that an empty key frame database survives a round trip,
- *               with a second save giving the same byte length, and that
- *               clearing a map on the loaded database works.
+ * @brief           Checks that an empty key frame database survives a round
+ *                  trip, with a second save giving the same byte length, and
+ *                  that clearing a map on the loaded database works.
  */
 TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
 {
@@ -781,9 +782,9 @@ TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
 }
 
 /*!
- * @brief        Checks that a key frame without cameras keeps its id, key point
- *               count, pose, velocity and IMU bias across a round trip, and can
- *               still be given a new pose.
+ * @brief           Checks that a key frame without cameras keeps its id, key
+ *                  point count, pose, velocity and IMU bias across a round
+ *                  trip, and can still be given a new pose.
  */
 TEST(SerializationKeyFrame, DefaultRoundTrip)
 {
@@ -851,9 +852,9 @@ TEST(SerializationKeyFrame, DefaultRoundTrip)
 }
 
 /*!
- * @brief        Checks that a key frame saved without cameras loads with both
- *               camera pointers null, even when they held stale values, and
- *               adds nothing to the camera table.
+ * @brief           Checks that a key frame saved without cameras loads with
+ *                  both camera pointers null, even when they held stale values,
+ *                  and adds nothing to the camera table.
  */
 TEST(SerializationKeyFrame, AbsentCamerasLoadAsNull)
 {
@@ -895,9 +896,9 @@ TEST(SerializationKeyFrame, AbsentCamerasLoadAsNull)
 }
 
 /*!
- * @brief        Checks that an empty map keeps its id, key frame ids and flags
- *               across a round trip through memory and through a temporary
- *               file, and can be queried afterwards.
+ * @brief           Checks that an empty map keeps its id, key frame ids and
+ *                  flags across a round trip through memory and through a
+ *                  temporary file, and can be queried afterwards.
  */
 TEST(SerializationMap, EmptyRoundTripMemoryAndTmpFile)
 {
@@ -974,8 +975,8 @@ TEST(SerializationMap, EmptyRoundTripMemoryAndTmpFile)
 }
 
 /*!
- * @brief        Checks that an empty atlas with no cameras survives a round
- *               trip with zero maps and can still be queried.
+ * @brief           Checks that an empty atlas with no cameras survives a round
+ *                  trip with zero maps and can still be queried.
  */
 TEST(SerializationAtlas, EmptyAndCameraRoundTrip)
 {
@@ -1002,9 +1003,9 @@ TEST(SerializationAtlas, EmptyAndCameraRoundTrip)
 }
 
 /*!
- * @brief        Checks that an atlas with one map and one pinhole camera
- *               written to and read from a file keeps its last init key frame
- *               id and the camera's id and type.
+ * @brief           Checks that an atlas with one map and one pinhole camera
+ *                  written to and read from a file keeps its last init key
+ *                  frame id and the camera's id and type.
  */
 TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
 {
@@ -1083,9 +1084,9 @@ TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
 }
 
 /*!
- * @brief        Checks that the sorted-set and sorted-map comparison helpers
- *               treat equal contents in different insertion order as equal, and
- *               that different values still compare unequal.
+ * @brief           Checks that the sorted-set and sorted-map comparison helpers
+ *                  treat equal contents in different insertion order as equal,
+ *                  and that different values still compare unequal.
  */
 TEST(SerializationOrdering, SortedSetMapComparisonIsDeterministic)
 {

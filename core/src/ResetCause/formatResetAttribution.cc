@@ -1,7 +1,7 @@
 /*!
- * @file         formatResetAttribution.cc
+ * @file            formatResetAttribution.cc
  *
- * @brief        Implements formatResetAttribution declared in ResetCause.h.
+ * @brief           Implements formatResetAttribution declared in ResetCause.h.
  */
 
 #include "ResetCause.h"

@@ -235,7 +235,8 @@ void SemanticsManager::run(void)
         /*!
          * Use free-space evidence to create and update rooms.
          *
-         * @note         This is the preferred wall-to-room association method.
+         * @note            This is the preferred wall-to-room association
+         *                  method.
          */
         if (p_sysParams->roomSeg.method ==
             types::SystemParams::RoomSeg::Method::FREE_SPACE)
@@ -254,9 +255,9 @@ void SemanticsManager::run(void)
         /*!
          * Enforce the semantic hierarchy.
          *
-         * @note        wall which was not captured by the free-space room
-         *              detector receives either an existing room or a new
-         *              provisional structural element.
+         * @note            wall which was not captured by the free-space room
+         *                  detector receives either an existing room or a new
+         *                  provisional structural element.
          */
         if (associateAllWallsToRooms() !=
             SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)

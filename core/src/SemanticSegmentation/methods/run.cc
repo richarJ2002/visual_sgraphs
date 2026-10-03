@@ -291,11 +291,11 @@ void SemanticSegmentation::run()
          * Clear point-cloud data from older keyframes that were skipped by this
          * processing stage.
          *
-         * @note        Keep the most recent few keyframes intact because
-         *              keyframes may be processed slightly out of order. Once a
-         *              keyframe is older than the buffer window, its raw and
-         *              classified point-cloud data are no longer needed and can
-         *              be released to reduce memory usage.
+         * @note            Keep the most recent few keyframes intact because
+         *                  keyframes may be processed slightly out of order.
+         *                  Once a keyframe is older than the buffer window, its
+         *                  raw and classified point-cloud data are no longer
+         *                  needed and can be released to reduce memory usage.
          */
         if (p_thisKeyFrame->id - lastProcessedKeyFrameId > 5)
         {
@@ -390,7 +390,7 @@ void SemanticSegmentation::run()
         /*!
          * Extract planes from segmented point cloud.
          *
-         * @note        Does not define the semantic type the plane is
+         * @note            Does not define the semantic type the plane is
          */
         std::vector<
             std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,

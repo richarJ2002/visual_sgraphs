@@ -33,12 +33,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a Viewer operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a Viewer operation. Values are fixed and never
+ *                  reordered.
  */
 enum class ViewerStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     VIEWER_STATUS_SUCCESS = 0U
 };
 

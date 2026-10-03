@@ -43,85 +43,111 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Immutable, value-only, atlas-wide semantic graph snapshot.
+ * @brief           Immutable, value-only, atlas-wide semantic graph snapshot.
  *
- *              Every record and relationship collection reachable from this
- *              type is copied and sorted at capture time, so two captures of
- *              the same underlying state serialize byte-identically
- *              regardless of the model's live container iteration order (see
- *              the canonical serialization component that consumes this
- *              type).
+ *                  Every record and relationship collection reachable from this
+ *                  type is copied and sorted at capture time, so two captures
+ *                  of the same underlying state serialize byte-identically
+ *                  regardless of the model's live container iteration order
+ *                  (see the canonical serialization component that consumes
+ *                  this type).
  *
- *              Contains no raw/smart pointers to model objects, no PCL cloud
- *              data, no mutexes, no ROS types, no logger handles, no
- *              callbacks, and no wall-clock values.
+ *                  Contains no raw/smart pointers to model objects, no PCL
+ *                  cloud data, no mutexes, no ROS types, no logger handles, no
+ *                  callbacks, and no wall-clock values.
  */
 struct SemanticGraphSnapshot
 {
   public:
-    /*! @brief Absent only when currentMapStatus ==
-     *  AtlasCurrentMapStatus::NO_CURRENT_MAP at capture time. Interpret
-     *  together with currentMapStatus: a present value here is not itself
-     *  proof that the named map appears in maps below -- see
-     *  AtlasCurrentMapStatus::CURRENT_MAP_NOT_ACTIVE. */
+    /*!
+     * @brief           Absent only when currentMapStatus ==
+     *                  AtlasCurrentMapStatus::NO_CURRENT_MAP at capture time.
+     *                  Interpret together with currentMapStatus: a present
+     *                  value here is not itself proof that the named map
+     *                  appears in maps below -- see
+     *                  AtlasCurrentMapStatus::CURRENT_MAP_NOT_ACTIVE.
+     */
     std::optional<long unsigned int> currentMapId;
 
-    /*! @brief Truthful status of currentMapId relative to maps below, read
-     *  from Atlas::GetCoherentMapView() in the same critical section as
-     *  currentMapId and maps. Never assume currentMapId names an entry in
-     *  maps without checking this field first -- see
-     *  AtlasCurrentMapStatus.h. */
+    /*!
+     * @brief           Truthful status of currentMapId relative to maps below,
+     *                  read from Atlas::GetCoherentMapView() in the same
+     *                  critical section as currentMapId and maps. Never assume
+     *                  currentMapId names an entry in maps without checking
+     *                  this field first -- see AtlasCurrentMapStatus.h.
+     */
     AtlasCurrentMapStatus currentMapStatus{
         AtlasCurrentMapStatus::NO_CURRENT_MAP};
 
-    /*! @brief Sorted by mapId. Only Atlas::GetCoherentMapView()'s active
-     *  map vector (live maps) is represented; see badRetiredMapVisibility. */
+    /*!
+     * @brief           Sorted by mapId. Only Atlas::GetCoherentMapView()'s
+     *                  active map vector (live maps) is represented; see
+     *                  badRetiredMapVisibility.
+     */
     std::vector<MapSnapshot> maps;
 
-    /*! @brief Always NOT_EXPOSED_BY_CURRENT_API in this slice: Atlas's
-     *  bad/retired map sets (badMaps/retiredMaps) are protected with
-     *  no public enumeration API (confirmed by direct source read of
-     *  Atlas.h/Atlas.cc). This snapshot never claims visibility into
-     *  quarantined map state. */
+    /*!
+     * @brief           Always NOT_EXPOSED_BY_CURRENT_API in this slice: Atlas's
+     *                  bad/retired map sets (badMaps/retiredMaps) are protected
+     *                  with no public enumeration API (confirmed by direct
+     *                  source read of Atlas.h/Atlas.cc). This snapshot never
+     *                  claims visibility into quarantined map state.
+     */
     UnavailableReason badRetiredMapVisibility{
         UnavailableReason::NOT_EXPOSED_BY_CURRENT_API};
 
-    /*! @brief Always NOT_CAPTURED_IN_FOUNDATION_SLICE in this slice:
-     *  Atlas::copyRoomContextHistory()/copyRoomContextForMap() expose a
-     *  per-map history of RoomContextSnapshot values captured before a map
-     *  is abandoned (Atlas.h), but this foundation slice does not capture
-     *  them into the graph snapshot. No current TODO in this plan names a
-     *  phase that adds a value-only RoomContextSnapshot capture; resolving
-     *  this to an actual value is an open scope decision, same as
-     *  badRetiredMapVisibility above. */
+    /*!
+     * @brief           Always NOT_CAPTURED_IN_FOUNDATION_SLICE in this slice:
+     *                  Atlas::copyRoomContextHistory()/copyRoomContextForMap()
+     *                  expose a per-map history of RoomContextSnapshot values
+     *                  captured before a map is abandoned (Atlas.h), but this
+     *                  foundation slice does not capture them into the graph
+     *                  snapshot. No current TODO in this plan names a phase
+     *                  that adds a value-only RoomContextSnapshot capture;
+     *                  resolving this to an actual value is an open scope
+     *                  decision, same as badRetiredMapVisibility above.
+     */
     UnavailableReason roomContextHistoryReason{
         UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE};
 
-    /*! @brief Value-only copy of SemanticsManager::openPassageEvidence
-     *  (SemanticsManager.h), converted and populated by SemanticsManager
-     *  itself at the semantic transaction boundary
-     * (captureSemanticGraphSnapshot() cannot see this private member); empty
-     * and meaningless whenever managerPrivateOpenPassageHypothesesReason !=
-     * NONE. */
+    /*!
+     * @brief           Value-only copy of SemanticsManager::openPassageEvidence
+     *                   (SemanticsManager.h), converted and populated by
+     *                   SemanticsManager itself at the semantic transaction
+     *                   boundary
+     *                  (captureSemanticGraphSnapshot() cannot see this private
+     *                  member); empty and meaningless whenever
+     *                  managerPrivateOpenPassageHypothesesReason != NONE.
+     */
     std::vector<OpenPassageHypothesisRecord>
         managerPrivateOpenPassageHypotheses;
 
-    /*! @brief NOT_CAPTURED_IN_FOUNDATION_SLICE for a snapshot built only by
-     *  captureSemanticGraphSnapshot() (e.g. a test fixture, or the legacy
-     *  replay path); NONE once SemanticsManager::Run() has populated
-     *  managerPrivateOpenPassageHypotheses above for this cycle. */
+    /*!
+     * @brief           NOT_CAPTURED_IN_FOUNDATION_SLICE for a snapshot built
+     *                  only by captureSemanticGraphSnapshot() (e.g. a test
+     *                  fixture, or the legacy replay path); NONE once
+     *                  SemanticsManager::Run() has populated
+     *                  managerPrivateOpenPassageHypotheses above for this
+     *                  cycle.
+     */
     UnavailableReason managerPrivateOpenPassageHypothesesReason{
         UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE};
 
-    /*! @brief Value-only copy of SemanticsManager::undefendedWalls
-     *  (SemanticsManager.h), converted and populated by SemanticsManager
-     *  itself at the semantic transaction boundary; empty and meaningless
-     *  whenever managerPrivateUnresolvedWallHypothesesReason != NONE. */
+    /*!
+     * @brief           Value-only copy of SemanticsManager::undefendedWalls
+     *                  (SemanticsManager.h), converted and populated by
+     *                  SemanticsManager itself at the semantic transaction
+     *                  boundary; empty and meaningless whenever
+     *                  managerPrivateUnresolvedWallHypothesesReason != NONE.
+     */
     std::vector<UnresolvedWallHypothesisRecord>
         managerPrivateUnresolvedWallHypotheses;
 
-    /*! @brief Same convention as managerPrivateOpenPassageHypothesesReason,
-     *  for managerPrivateUnresolvedWallHypotheses. */
+    /*!
+     * @brief           Same convention as
+     *                  managerPrivateOpenPassageHypothesesReason, for
+     *                  managerPrivateUnresolvedWallHypotheses.
+     */
     UnavailableReason managerPrivateUnresolvedWallHypothesesReason{
         UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE};
 };

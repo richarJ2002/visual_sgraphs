@@ -1,8 +1,8 @@
 /*!
- * @file         consume.cc
+ * @file            consume.cc
  *
- * @brief        Implements ResetCauseRetention::consume declared in
- *               ResetCause.h.
+ * @brief           Implements ResetCauseRetention::consume declared in
+ *                  ResetCause.h.
  */
 
 #include "ResetCause.h"

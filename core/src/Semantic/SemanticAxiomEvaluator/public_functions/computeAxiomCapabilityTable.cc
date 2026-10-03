@@ -17,72 +17,72 @@
  */
 
 /*!
- * @file         computeAxiomCapabilityTable.cc
+ * @file            computeAxiomCapabilityTable.cc
  *
- * @brief        Implements computeAxiomCapabilityTable(), declared
- *               in public_functions.h.
+ * @brief           Implements computeAxiomCapabilityTable(), declared
+ *                  in public_functions.h.
  *
- *               Fixed capability/ownership assignment:
- *               - AX-FRAME-01: DEFERRED (frame/face provenance; a
- *                 static snapshot cannot prove equivariance at
- *                 all);
- *               - AX-WALL-01: PARTIAL (multiple/invalid/bad/
- *                 cross-map owners are fully checkable; a
- *                 committed zero-owner violation requires
- *                 quarantine proof this schema does not track);
- *               - AX-WALL-02: DEFERRED (no observation-ray/
- *                 aperture-crossing evidence is tracked at all);
- *               - AX-WALL-03: PARTIAL (structural twin plausibility
- *                 is fully checkable; geometric-plausibility
- *                 threshold evidence is not tracked);
- *               - AX-PASS-01: PARTIAL (the passable() flag makes a
- *                 non-passable live passage an observable FAIL;
- *                 full chain-of-custody provenance is not
- *                 retained);
- *               - AX-PASS-02/03/04: PARTIAL (PassageRecord::
- *                 endpointSlotReason is always
- *                 NOT_TRACKED_BY_CURRENT_SCHEMA -- no authoritative
- *                 DISCOVERY_SIDE/OPPOSITE_SIDE slot exists, so
- *                 observable contradictions -- including a third
- *                 reverse-listing room, a bad/cross-map/
- *                 unresolvable/duplicate reverse reference,
- *                 cardinality, reciprocity, known-side variant
- *                 confirmation, and map/floor agreement -- are
- *                 fully checkable and FAIL when contradicted, but
- *                 a passage with no contradiction is UNKNOWN,
- *                 never PASS, pending authoritative endpoint
- *                 slots);
- *               - AX-ROOM-01/02: DEFERRED (no schema field records
- *                 creation provenance or independent far-side
- *                 promotion evidence at all);
- *               - AX-BOUND-01: PARTIAL (boundary-status,
- *                 polygon-geometry, non-finite-corner, and verified
- *                 live/reciprocal/same-map wall-evidence clauses
- *                 are fully checkable and FAIL when contradicted;
- *                 full edge-to-wall and observation-gap-to-aperture
- *                 geometric correspondence is not implemented, so
- *                 a COMPLETE room with no contradiction is UNKNOWN,
- *                 never PASS);
- *               - AX-FLOOR-01: PARTIAL (room-floor reciprocity, including
- *                 duplicate-identity and multi-floor-claim
- *                 detection, is fully checkable; the passage
- *                 floor-agreement clause shares AX-PASS-04's
- *                 authoritative-endpoint-slot gap, so it is PARTIAL
- *                 overall);
- *               - AX-LIFE-01: DEFERRED (no quarantine provenance
- *                 field exists, and detecting silent erasure
- *                 additionally requires transition history);
- *               - AX-TXN-01: DEFERRED (a static snapshot cannot prove
- *                 transaction determinism/idempotence, and
- *                 postcondition re-validation is not implemented);
- *               - AX-COMP-01: PARTIAL (the shadow conservative
- *                 calculation itself is fully implemented here; the
- *                 missing piece is becoming the production
- *                 authority in place of the legacy calculation, an
- *                 integration step not performed here -- see the
- *                 shadow-only scope);
- *               - AX-MERGE-01: DEFERRED (no map-merge
- *                 preservation/postcondition logic is implemented).
+ *                  Fixed capability/ownership assignment:
+ *                  - AX-FRAME-01: DEFERRED (frame/face provenance; a
+ *                    static snapshot cannot prove equivariance at
+ *                    all);
+ *                  - AX-WALL-01: PARTIAL (multiple/invalid/bad/
+ *                    cross-map owners are fully checkable; a
+ *                    committed zero-owner violation requires
+ *                    quarantine proof this schema does not track);
+ *                  - AX-WALL-02: DEFERRED (no observation-ray/
+ *                    aperture-crossing evidence is tracked at all);
+ *                  - AX-WALL-03: PARTIAL (structural twin plausibility
+ *                    is fully checkable; geometric-plausibility
+ *                    threshold evidence is not tracked);
+ *                  - AX-PASS-01: PARTIAL (the passable() flag makes a
+ *                    non-passable live passage an observable FAIL;
+ *                    full chain-of-custody provenance is not
+ *                    retained);
+ *                  - AX-PASS-02/03/04: PARTIAL (PassageRecord::
+ *                    endpointSlotReason is always
+ *                    NOT_TRACKED_BY_CURRENT_SCHEMA -- no authoritative
+ *                    DISCOVERY_SIDE/OPPOSITE_SIDE slot exists, so
+ *                    observable contradictions -- including a third
+ *                    reverse-listing room, a bad/cross-map/
+ *                    unresolvable/duplicate reverse reference,
+ *                    cardinality, reciprocity, known-side variant
+ *                    confirmation, and map/floor agreement -- are
+ *                    fully checkable and FAIL when contradicted, but
+ *                    a passage with no contradiction is UNKNOWN,
+ *                    never PASS, pending authoritative endpoint
+ *                    slots);
+ *                  - AX-ROOM-01/02: DEFERRED (no schema field records
+ *                    creation provenance or independent far-side
+ *                    promotion evidence at all);
+ *                  - AX-BOUND-01: PARTIAL (boundary-status,
+ *                    polygon-geometry, non-finite-corner, and verified
+ *                    live/reciprocal/same-map wall-evidence clauses
+ *                    are fully checkable and FAIL when contradicted;
+ *                    full edge-to-wall and observation-gap-to-aperture
+ *                    geometric correspondence is not implemented, so
+ *                    a COMPLETE room with no contradiction is UNKNOWN,
+ *                    never PASS);
+ *                  - AX-FLOOR-01: PARTIAL (room-floor reciprocity, including
+ *                    duplicate-identity and multi-floor-claim
+ *                    detection, is fully checkable; the passage
+ *                    floor-agreement clause shares AX-PASS-04's
+ *                    authoritative-endpoint-slot gap, so it is PARTIAL
+ *                    overall);
+ *                  - AX-LIFE-01: DEFERRED (no quarantine provenance
+ *                    field exists, and detecting silent erasure
+ *                    additionally requires transition history);
+ *                  - AX-TXN-01: DEFERRED (a static snapshot cannot prove
+ *                    transaction determinism/idempotence, and
+ *                    postcondition re-validation is not implemented);
+ *                  - AX-COMP-01: PARTIAL (the shadow conservative
+ *                    calculation itself is fully implemented here; the
+ *                    missing piece is becoming the production
+ *                    authority in place of the legacy calculation, an
+ *                    integration step not performed here -- see the
+ *                    shadow-only scope);
+ *                  - AX-MERGE-01: DEFERRED (no map-merge
+ *                    preservation/postcondition logic is implemented).
  */
 
 #include "Semantic/SemanticAxiomEvaluator/public_functions.h"

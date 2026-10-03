@@ -20,7 +20,7 @@
  * @file            EdgeMonoOnlyPoseStatus.h
  *
  * @brief           Declares the status returned by every EdgeMonoOnlyPose
- * operation.
+ *                  operation.
  */
 
 #ifndef EDGE_MONO_ONLY_POSE_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a EdgeMonoOnlyPose operation. Values are fixed and
- * never reordered.
+ * @brief           Result of a EdgeMonoOnlyPose operation. Values are fixed and
+ *                  never reordered.
  */
 enum class EdgeMonoOnlyPoseStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     EDGE_MONO_ONLY_POSE_STATUS_SUCCESS = 0U
 };
 

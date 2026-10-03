@@ -26,16 +26,22 @@ namespace core
 {
 
 /*!
- * @brief        Describes the strongest spatially connected part of a wall
- *               cloud.
+ * @brief           Describes the strongest spatially connected part of a wall
+ *                  cloud.
  */
 struct WallComponentSupport
 {
-    /*! @brief Source-cloud indices forming the largest component. */
+    /*!
+     * @brief           Source-cloud indices forming the largest component.
+     */
     std::vector<int> pointIndices;
-    /*! @brief Number of finite points considered by clustering. */
+    /*!
+     * @brief           Number of finite points considered by clustering.
+     */
     std::size_t      finitePointCount = 0U;
-    /*! @brief Fraction of finite points in the largest component. */
+    /*!
+     * @brief           Fraction of finite points in the largest component.
+     */
     double           componentRatio = 0.0;
 };
 

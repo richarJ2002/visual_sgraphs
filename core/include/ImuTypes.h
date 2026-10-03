@@ -16,9 +16,9 @@
  */
 
 /*!
- * @file         ImuTypes.h
+ * @file            ImuTypes.h
  *
- * @brief        Declares IMU measurements, biases and preintegration.
+ * @brief           Declares IMU measurements, biases and preintegration.
  */
 
 #ifndef IMUTYPES_H
@@ -47,44 +47,50 @@ namespace core
 namespace IMU
 {
 /*!
- * @brief        Gravity magnitude in metres per second
- *               squared.
+ * @brief           Gravity magnitude in metres per second
+ *                  squared.
  */
 const float GRAVITY_VALUE = 9.81;
 
 /*!
- * @brief        Singularity threshold shared by the SO(3)
- *               Jacobian helpers and IntegratedRotation.
+ * @brief           Singularity threshold shared by the SO(3)
+ *                  Jacobian helpers and IntegratedRotation.
  */
 const float eps = 1e-4;
 
 /*!
- * @brief        Single IMU sample with accelerometer,
- *               gyroscope and timestamp.
+ * @brief           Single IMU sample with accelerometer,
+ *                  gyroscope and timestamp.
  */
 class Point
 {
   public:
     /*!
-     * @brief        Creates a sample from raw components.
+     * @brief           Creates a sample from raw components.
      *
-     * @param[in]    accelerometerX_in
-     *               Accelerometer x in metres per second
-     *               squared.
-     * @param[in]    accelerometerY_in
-     *               Accelerometer y in metres per second
-     *               squared.
-     * @param[in]    accelerometerZ_in
-     *               Accelerometer z in metres per second
-     *               squared.
-     * @param[in]    gyroscopeX_in
-     *               Gyroscope x in radians per second.
-     * @param[in]    gyroscopeY_in
-     *               Gyroscope y in radians per second.
-     * @param[in]    gyroscopeZ_in
-     *               Gyroscope z in radians per second.
-     * @param[in]    timestamp_in
-     *               Sample timestamp in seconds.
+     * @param[in]       accelerometerX_in
+     *                  Accelerometer x in metres per second
+     *                  squared.
+     *
+     * @param[in]       accelerometerY_in
+     *                  Accelerometer y in metres per second
+     *                  squared.
+     *
+     * @param[in]       accelerometerZ_in
+     *                  Accelerometer z in metres per second
+     *                  squared.
+     *
+     * @param[in]       gyroscopeX_in
+     *                  Gyroscope x in radians per second.
+     *
+     * @param[in]       gyroscopeY_in
+     *                  Gyroscope y in radians per second.
+     *
+     * @param[in]       gyroscopeZ_in
+     *                  Gyroscope z in radians per second.
+     *
+     * @param[in]       timestamp_in
+     *                  Sample timestamp in seconds.
      */
     Point(const float  &accelerometerX_in,
           const float  &accelerometerY_in,
@@ -98,15 +104,17 @@ class Point
         t(timestamp_in)
     {}
     /*!
-     * @brief        Creates a sample from OpenCV vectors.
+     * @brief           Creates a sample from OpenCV vectors.
      *
-     * @param[in]    accelerometer_in
-     *               Accelerometer sample in metres per second
-     *               squared.
-     * @param[in]    gyroscope_in
-     *               Gyroscope sample in radians per second.
-     * @param[in]    timestamp_in
-     *               Sample timestamp in seconds.
+     * @param[in]       accelerometer_in
+     *                  Accelerometer sample in metres per second
+     *                  squared.
+     *
+     * @param[in]       gyroscope_in
+     *                  Gyroscope sample in radians per second.
+     *
+     * @param[in]       timestamp_in
+     *                  Sample timestamp in seconds.
      */
     Point(const cv::Point3f accelerometer_in,
           const cv::Point3f gyroscope_in,
@@ -118,42 +126,43 @@ class Point
 
   public:
     /*!
-     * @brief        Accelerometer sample in metres per second
-     *               squared.
+     * @brief           Accelerometer sample in metres per second
+     *                  squared.
      */
     Eigen::Vector3f a;
     /*!
-     * @brief        Gyroscope sample in radians per second.
+     * @brief           Gyroscope sample in radians per second.
      */
     Eigen::Vector3f w;
     /*!
-     * @brief        Sample timestamp in seconds.
+     * @brief           Sample timestamp in seconds.
      */
     double          t;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 /*!
- * @brief        IMU biases for the gyroscope and the
- *               accelerometer.
+ * @brief           IMU biases for the gyroscope and the
+ *                  accelerometer.
  */
 class Bias
 {
     friend class boost::serialization::access;
     /*!
-     * @brief        Serializes the six bias components.
+     * @brief           Serializes the six bias components.
      *
-     * @param[in,out] ar
-     *                Archive receiving the stored fields.
-     * @param[in]    version
-     *               Archive version; currently unused.
+     * @param[in,out]   ar
+     *                  Archive receiving the stored fields.
+     *
+     * @param[in]       version
+     *                  Archive version; currently unused.
      */
     template <class Archive>
     void serialize(Archive &ar, [[maybe_unused]] const unsigned int version);
 
   public:
     /*!
-     * @brief        Creates zero biases.
+     * @brief           Creates zero biases.
      */
     Bias() :
         bax(0),
@@ -164,20 +173,25 @@ class Bias
         bwz(0)
     {}
     /*!
-     * @brief        Creates biases from raw components.
+     * @brief           Creates biases from raw components.
      *
-     * @param[in]    accelerometerBiasX_in
-     *               Accelerometer x bias.
-     * @param[in]    accelerometerBiasY_in
-     *               Accelerometer y bias.
-     * @param[in]    accelerometerBiasZ_in
-     *               Accelerometer z bias.
-     * @param[in]    gyroscopeBiasX_in
-     *               Gyroscope x bias.
-     * @param[in]    gyroscopeBiasY_in
-     *               Gyroscope y bias.
-     * @param[in]    gyroscopeBiasZ_in
-     *               Gyroscope z bias.
+     * @param[in]       accelerometerBiasX_in
+     *                  Accelerometer x bias.
+     *
+     * @param[in]       accelerometerBiasY_in
+     *                  Accelerometer y bias.
+     *
+     * @param[in]       accelerometerBiasZ_in
+     *                  Accelerometer z bias.
+     *
+     * @param[in]       gyroscopeBiasX_in
+     *                  Gyroscope x bias.
+     *
+     * @param[in]       gyroscopeBiasY_in
+     *                  Gyroscope y bias.
+     *
+     * @param[in]       gyroscopeBiasZ_in
+     *                  Gyroscope z bias.
      */
     Bias(const float &accelerometerBiasX_in,
          const float &accelerometerBiasY_in,
@@ -193,86 +207,92 @@ class Bias
         bwz(gyroscopeBiasZ_in)
     {}
     /*!
-     * @brief        Copies every component from another bias.
+     * @brief           Copies every component from another bias.
      *
-     * @param[in]    b_in
-     *               Source bias; shall be non-null.
+     * @param[in]       b_in
+     *                  Source bias; shall be non-null.
      */
     [[nodiscard]] BiasStatus copyFrom(Bias &b_in);
     /*!
-     * @brief        Appends the six bias components to the
-     *               stream.
+     * @brief           Appends the six bias components to the
+     *                  stream.
      *
-     * @param[in,out] out_inout
-     *                Stream receiving the components.
-     * @param[in]    b_in
-     *               Bias whose components are written.
+     * @param[in,out]   out_inout
+     *                  Stream receiving the components.
      *
-     * @return       The output stream.
+     * @param[in]       b_in
+     *                  Bias whose components are written.
+     *
+     * @return          The output stream.
      */
     friend std::ostream &operator<<(std::ostream &out_inout, const Bias &b_in);
 
   public:
     /*!
-     * @brief        Accelerometer bias along the body x axis, m/s^2.
+     * @brief           Accelerometer bias along the body x axis, m/s^2.
      */
     float bax;
     /*!
-     * @brief        Accelerometer bias along the body y axis, m/s^2.
+     * @brief           Accelerometer bias along the body y axis, m/s^2.
      */
     float bay;
     /*!
-     * @brief        Accelerometer bias along the body z axis, m/s^2.
+     * @brief           Accelerometer bias along the body z axis, m/s^2.
      */
     float baz;
     /*!
-     * @brief        Gyroscope bias about the body x axis, rad/s.
+     * @brief           Gyroscope bias about the body x axis, rad/s.
      */
     float bwx;
     /*!
-     * @brief        Gyroscope bias about the body y axis, rad/s.
+     * @brief           Gyroscope bias about the body y axis, rad/s.
      */
     float bwy;
     /*!
-     * @brief        Gyroscope bias about the body z axis, rad/s.
+     * @brief           Gyroscope bias about the body z axis, rad/s.
      */
     float bwz;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 /*!
- * @brief        IMU calibration holding transforms and noise
- *               models.
+ * @brief           IMU calibration holding transforms and noise
+ *                  models.
  */
 class Calib
 {
     friend class boost::serialization::access;
     /*!
-     * @brief        Serializes the transforms, covariances
-     *               and validity flag.
+     * @brief           Serializes the transforms, covariances
+     *                  and validity flag.
      *
-     * @param[in,out] ar
-     *                Archive receiving the stored fields.
-     * @param[in]    version
-     *               Archive version; currently unused.
+     * @param[in,out]   ar
+     *                  Archive receiving the stored fields.
+     *
+     * @param[in]       version
+     *                  Archive version; currently unused.
      */
     template <class Archive>
     void serialize(Archive &ar, const unsigned int version);
 
   public:
     /*!
-     * @brief        Creates a calibration and marks it valid.
+     * @brief           Creates a calibration and marks it valid.
      *
-     * @param[in]    extrinsicPose_cameraToBody_in
-     *               Camera-to-body (IMU) transform.
-     * @param[in]    gyroscopeNoiseDensity_in
-     *               Gyroscope noise density.
-     * @param[in]    accelerometerNoiseDensity_in
-     *               Accelerometer noise density.
-     * @param[in]    gyroscopeRandomWalkDensity_in
-     *               Gyroscope random-walk density.
-     * @param[in]    accelerometerRandomWalkDensity_in
-     *               Accelerometer random-walk density.
+     * @param[in]       extrinsicPose_cameraToBody_in
+     *                  Camera-to-body (IMU) transform.
+     *
+     * @param[in]       gyroscopeNoiseDensity_in
+     *                  Gyroscope noise density.
+     *
+     * @param[in]       accelerometerNoiseDensity_in
+     *                  Accelerometer noise density.
+     *
+     * @param[in]       gyroscopeRandomWalkDensity_in
+     *                  Gyroscope random-walk density.
+     *
+     * @param[in]       accelerometerRandomWalkDensity_in
+     *                  Accelerometer random-walk density.
      */
     Calib(const Sophus::SE3<float> &extrinsicPose_cameraToBody_in,
           const float              &gyroscopeNoiseDensity_in,
@@ -295,7 +315,7 @@ class Calib
     }
 
     /*!
-     * @brief        Creates an unset calibration.
+     * @brief           Creates an unset calibration.
      */
     Calib()
     {
@@ -305,19 +325,23 @@ class Calib
     // void Set(const cv::Mat &cvTbc, const float &ng, const float &na, const
     // float &ngw, const float &naw);
     /*!
-     * @brief        Stores the transform and noise densities
-     *               and marks the calibration valid.
+     * @brief           Stores the transform and noise densities
+     *                  and marks the calibration valid.
      *
-     * @param[in]    extrinsicPose_cameraToBody_in
-     *               Camera-to-body (IMU) transform.
-     * @param[in]    ng_in
-     *               Gyroscope noise density.
-     * @param[in]    na_in
-     *               Accelerometer noise density.
-     * @param[in]    ngw_in
-     *               Gyroscope random-walk density.
-     * @param[in]    naw_in
-     *               Accelerometer random-walk density.
+     * @param[in]       extrinsicPose_cameraToBody_in
+     *                  Camera-to-body (IMU) transform.
+     *
+     * @param[in]       ng_in
+     *                  Gyroscope noise density.
+     *
+     * @param[in]       na_in
+     *                  Accelerometer noise density.
+     *
+     * @param[in]       ngw_in
+     *                  Gyroscope random-walk density.
+     *
+     * @param[in]       naw_in
+     *                  Accelerometer random-walk density.
      */
     [[nodiscard]] CalibStatus
         setCalibration(const Sophus::SE3<float> &extrinsicPose_cameraToBody_in,
@@ -329,49 +353,51 @@ class Calib
   public:
     // Sophus/Eigen implementation
     /*!
-     * @brief        Camera-to-body transform.
+     * @brief           Camera-to-body transform.
      */
     Sophus::SE3<float>              mTcb;
     /*!
-     * @brief        Body-to-camera transform.
+     * @brief           Body-to-camera transform.
      */
     Sophus::SE3<float>              mTbc;
     /*!
-     * @brief        Gyroscope then accelerometer measurement noise variances
-     *               (diagonal), set by setCalibration.
+     * @brief           Gyroscope then accelerometer measurement noise variances
+     *                  (diagonal), set by setCalibration.
      */
     Eigen::DiagonalMatrix<float, 6> Cov;
     /*!
-     * @brief        Gyroscope then accelerometer bias random-walk variances
-     *               (diagonal), set by setCalibration.
+     * @brief           Gyroscope then accelerometer bias random-walk variances
+     *                  (diagonal), set by setCalibration.
      */
     Eigen::DiagonalMatrix<float, 6> CovWalk;
     /*!
-     * @brief        True once Set has stored a calibration.
+     * @brief           True once Set has stored a calibration.
      */
     bool                            isCalibrationSet;
 };
 
 /*!
- * @brief        Rotation integrated from one gyroscope
- *               measurement.
+ * @brief           Rotation integrated from one gyroscope
+ *                  measurement.
  */
 class IntegratedRotation
 {
   public:
     /*!
-     * @brief        Creates an empty integrated rotation.
+     * @brief           Creates an empty integrated rotation.
      */
     IntegratedRotation() {}
     /*!
-     * @brief        Integrates one angular-rate measurement.
+     * @brief           Integrates one angular-rate measurement.
      *
-     * @param[in]    angularVelocity_in
-     *               Angular rate in radians per second.
-     * @param[in]    imuBias_in
-     *               Bias subtracted before integration.
-     * @param[in]    integrationInterval_in
-     *               Integration interval in seconds.
+     * @param[in]       angularVelocity_in
+     *                  Angular rate in radians per second.
+     *
+     * @param[in]       imuBias_in
+     *                  Bias subtracted before integration.
+     *
+     * @param[in]       integrationInterval_in
+     *                  Integration interval in seconds.
      */
     IntegratedRotation(const Eigen::Vector3f &angularVelocity_in,
                        const Bias            &imuBias_in,
@@ -415,39 +441,40 @@ class IntegratedRotation
 
   public:
     /*!
-     * @brief        Integration interval in seconds.
+     * @brief           Integration interval in seconds.
      */
     float           deltaT; // integration time
     /*!
-     * @brief        Integrated rotation increment.
+     * @brief           Integrated rotation increment.
      */
     Eigen::Matrix3f deltaR;
     /*!
-     * @brief        Right Jacobian of the increment.
+     * @brief           Right Jacobian of the increment.
      */
     Eigen::Matrix3f rightJ; // right jacobian
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 /*!
- * @brief        Preintegration of IMU measurements between
- *               keyframes.
+ * @brief           Preintegration of IMU measurements between
+ *                   keyframes.
  *
- *              Bias-dependent getters take the preintegration
- *              lock; bulk updates run under the same lock
- *              through Reintegrate and MergePrevious.
+ *                  Bias-dependent getters take the preintegration
+ *                  lock; bulk updates run under the same lock
+ *                  through Reintegrate and MergePrevious.
  */
 class Preintegrated
 {
     friend class boost::serialization::access;
     /*!
-     * @brief        Serializes the preintegrated state and
-     *               the stored measurements.
+     * @brief           Serializes the preintegrated state and
+     *                  the stored measurements.
      *
-     * @param[in,out] ar
-     *                Archive receiving the stored fields.
-     * @param[in]    version
-     *               Archive version; currently unused.
+     * @param[in,out]   ar
+     *                  Archive receiving the stored fields.
+     *
+     * @param[in]       version
+     *                  Archive version; currently unused.
      */
     template <class Archive>
     void serialize(Archive &ar, [[maybe_unused]] const unsigned int version);
@@ -455,13 +482,14 @@ class Preintegrated
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     /*!
-     * @brief        Creates a preintegration from a bias and
-     *               a calibration.
+     * @brief           Creates a preintegration from a bias and
+     *                  a calibration.
      *
-     * @param[in]    bias_in
-     *               Bias integrated against.
-     * @param[in]    calib_in
-     *               Calibration supplying the noise models.
+     * @param[in]       bias_in
+     *                  Bias integrated against.
+     *
+     * @param[in]       calib_in
+     *                  Calibration supplying the noise models.
      */
     Preintegrated(const Bias &bias_in, const Calib &calib_in)
     {
@@ -477,10 +505,10 @@ class Preintegrated
         }
     }
     /*!
-     * @brief        Copies another preintegration.
+     * @brief           Copies another preintegration.
      *
-     * @param[in]    p_sourcePreintegration_in
-     *               Non-owning source; shall be non-null.
+     * @param[in]       p_sourcePreintegration_in
+     *                  Non-owning source; shall be non-null.
      */
     // Copy constructor
     Preintegrated(Preintegrated *p_sourcePreintegration_in) :
@@ -505,238 +533,262 @@ class Preintegrated
         measurements(p_sourcePreintegration_in->measurements)
     {}
     /*!
-     * @brief        Creates an empty preintegration.
+     * @brief           Creates an empty preintegration.
      */
     Preintegrated() {}
     /*!
-     * @brief        Copies the state of another
-     *               preintegration.
+     * @brief           Copies the state of another
+     *                  preintegration.
      *
-     * @param[in]    p_sourcePreintegrated_in
-     *               Non-owning source; shall be non-null.
+     * @param[in]       p_sourcePreintegrated_in
+     *                  Non-owning source; shall be non-null.
      */
     [[nodiscard]] PreintegratedStatus
         copyFrom(Preintegrated *p_sourcePreintegrated_in);
     /*!
-     * @brief        Resets the deltas for a new bias.
+     * @brief           Resets the deltas for a new bias.
      *
-     * @param[in]    referenceBias_in
-     *               Bias integrated against.
+     * @param[in]       referenceBias_in
+     *                  Bias integrated against.
      */
     [[nodiscard]] PreintegratedStatus initialize(const Bias &referenceBias_in);
     /*!
-     * @brief        Folds one measurement into the deltas.
+     * @brief           Folds one measurement into the deltas.
      *
-     * @param[in]    acceleration_in
-     *               Accelerometer sample in metres per second
-     *               squared.
-     * @param[in]    angularVelocity_in
-     *               Gyroscope sample in radians per second.
-     * @param[in]    deltaTime_in
-     *               Interval since the previous sample, in
-     *               seconds.
+     * @param[in]       acceleration_in
+     *                  Accelerometer sample in metres per second
+     *                  squared.
+     *
+     * @param[in]       angularVelocity_in
+     *                  Gyroscope sample in radians per second.
+     *
+     * @param[in]       deltaTime_in
+     *                  Interval since the previous sample, in
+     *                  seconds.
      */
     [[nodiscard]] PreintegratedStatus
         integrateNewMeasurement(const Eigen::Vector3f &acceleration_in,
                                 const Eigen::Vector3f &angularVelocity_in,
                                 const float           &deltaTime_in);
     /*!
-     * @brief        Rebuilds the deltas from the stored
-     *               measurements under the updated bias.
+     * @brief           Rebuilds the deltas from the stored
+     *                   measurements under the updated bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      */
     [[nodiscard]] PreintegratedStatus reintegrate();
     /*!
-     * @brief        Prepends the state of a previous
-     *               preintegration.
+     * @brief           Prepends the state of a previous
+     *                   preintegration.
      *
-     *              Takes both preintegration locks; a
-     *              self-merge is ignored.
+     *                  Takes both preintegration locks; a
+     *                  self-merge is ignored.
      *
-     * @param[in]    p_previousPreintegrated_in
-     *               Non-owning previous preintegration; shall
-     *               be non-null.
+     * @param[in]       p_previousPreintegrated_in
+     *                  Non-owning previous preintegration; shall
+     *                  be non-null.
      */
     [[nodiscard]] PreintegratedStatus
         mergePrevious(Preintegrated *p_previousPreintegrated_in);
     /*!
-     * @brief        Stores the updated bias and refreshes the
-     *               bias difference.
+     * @brief           Stores the updated bias and refreshes the
+     *                   bias difference.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[in]    updatedBias_in
-     *               Updated bias estimate.
+     * @param[in]       updatedBias_in
+     *                  Updated bias estimate.
      */
     [[nodiscard]] PreintegratedStatus setNewBias(const Bias &updatedBias_in);
     /*!
-     * @brief        Returns the bias change relative to the
-     *               original bias.
+     * @brief           Returns the bias change relative to the
+     *                   original bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[in]    referenceBias_in
-     *               Bias to compare against.
+     * @param[in]       referenceBias_in
+     *                  Bias to compare against.
      *
-     * @param[out] deltaBias_out Difference between the given bias and the
-     * original bias.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      deltaBias_out
+     *                  Difference between the given bias and the original bias.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus getDeltaBias(const Bias &referenceBias_in,
                                                    IMU::Bias  &deltaBias_out);
 
     /*!
-     * @brief        Returns the delta rotation corrected for
-     *               the given bias.
+     * @brief           Returns the delta rotation corrected for
+     *                   the given bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[in]    referenceBias_in
-     *               Bias to correct for.
+     * @param[in]       referenceBias_in
+     *                  Bias to correct for.
      *
-     * @param[out] deltaRotation_out Bias-corrected delta rotation.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      deltaRotation_out
+     *                  Bias-corrected delta rotation.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus
         getDeltaRotation(const Bias      &referenceBias_in,
                          Eigen::Matrix3f &deltaRotation_out);
     /*!
-     * @brief        Returns the delta velocity corrected for
-     *               the given bias.
+     * @brief           Returns the delta velocity corrected for
+     *                   the given bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[in]    referenceBias_in
-     *               Bias to correct for.
+     * @param[in]       referenceBias_in
+     *                  Bias to correct for.
      *
-     * @param[out] deltaVelocity_out Bias-corrected delta velocity in metres per
-     * second.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      deltaVelocity_out
+     *                  Bias-corrected delta velocity in metres per second.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus
         getDeltaVelocity(const Bias      &referenceBias_in,
                          Eigen::Vector3f &deltaVelocity_out);
     /*!
-     * @brief        Returns the delta position corrected for
-     *               the given bias.
+     * @brief           Returns the delta position corrected for
+     *                   the given bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[in]    referenceBias_in
-     *               Bias to correct for.
+     * @param[in]       referenceBias_in
+     *                  Bias to correct for.
      *
-     * @param[out] deltaPosition_out Bias-corrected delta position in metres.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      deltaPosition_out
+     *                  Bias-corrected delta position in metres.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus
         getDeltaPosition(const Bias      &referenceBias_in,
                          Eigen::Vector3f &deltaPosition_out);
 
     /*!
-     * @brief        Returns the delta rotation under the
-     *               updated bias.
+     * @brief           Returns the delta rotation under the
+     *                   updated bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[out] updatedDeltaRotation_out Updated delta rotation.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      updatedDeltaRotation_out
+     *                  Updated delta rotation.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus
         getUpdatedDeltaRotation(Eigen::Matrix3f &updatedDeltaRotation_out);
     /*!
-     * @brief        Returns the delta velocity under the
-     *               updated bias.
+     * @brief           Returns the delta velocity under the
+     *                   updated bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[out] updatedDeltaVelocity_out Updated delta velocity in metres per
-     * second.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      updatedDeltaVelocity_out
+     *                  Updated delta velocity in metres per second.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus
         getUpdatedDeltaVelocity(Eigen::Vector3f &updatedDeltaVelocity_out);
     /*!
-     * @brief        Returns the delta position under the
-     *               updated bias.
+     * @brief           Returns the delta position under the
+     *                   updated bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[out] updatedDeltaPosition_out Updated delta position in metres.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      updatedDeltaPosition_out
+     *                  Updated delta position in metres.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus
         getUpdatedDeltaPosition(Eigen::Vector3f &updatedDeltaPosition_out);
 
     /*!
-     * @brief        Returns the delta rotation under the
-     *               original bias.
+     * @brief           Returns the delta rotation under the
+     *                   original bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[out] originalDeltaRotation_out Original delta rotation.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      originalDeltaRotation_out
+     *                  Original delta rotation.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus
         getOriginalDeltaRotation(Eigen::Matrix3f &originalDeltaRotation_out);
     /*!
-     * @brief        Returns the delta velocity under the
-     *               original bias.
+     * @brief           Returns the delta velocity under the
+     *                   original bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[out] originalDeltaVelocity_out Original delta velocity in metres
-     * per second.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      originalDeltaVelocity_out
+     *                  Original delta velocity in metres per second.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus
         getOriginalDeltaVelocity(Eigen::Vector3f &originalDeltaVelocity_out);
     /*!
-     * @brief        Returns the delta position under the
-     *               original bias.
+     * @brief           Returns the delta position under the
+     *                   original bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[out] originalDeltaPosition_out Original delta position in metres.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      originalDeltaPosition_out
+     *                  Original delta position in metres.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus
         getOriginalDeltaPosition(Eigen::Vector3f &originalDeltaPosition_out);
 
     /*!
-     * @brief        Returns the stored bias difference.
+     * @brief           Returns the stored bias difference.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[out] deltaBias_out Six-element difference between the updated and
-     * original biases.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      deltaBias_out
+     *                  Six-element difference between the updated and original
+     *                  biases.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus
         getDeltaBias(Eigen::Matrix<float, 6, 1> &deltaBias_out);
 
     /*!
-     * @brief        Returns the original integration bias.
+     * @brief           Returns the original integration bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[out] originalBias_out Bias integrated against.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      originalBias_out
+     *                  Bias integrated against.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus getOriginalBias(Bias &originalBias_out);
     /*!
-     * @brief        Returns the latest updated bias.
+     * @brief           Returns the latest updated bias.
      *
-     *              Takes the preintegration lock.
+     *                  Takes the preintegration lock.
      *
-     * @param[out] updatedBias_out Updated bias estimate.
-     * @return PREINTEGRATED_STATUS_SUCCESS.
+     * @param[out]      updatedBias_out
+     *                  Updated bias estimate.
+     *
+     * @return          PREINTEGRATED_STATUS_SUCCESS.
      */
     [[nodiscard]] PreintegratedStatus getUpdatedBias(Bias &updatedBias_out);
 
     /*!
-     * @brief        Prints the stored measurement timestamps
-     *               to standard output.
+     * @brief           Prints the stored measurement timestamps
+     *                  to standard output.
      */
     [[nodiscard]] PreintegratedStatus printMeasurements() const
     {
@@ -753,111 +805,112 @@ class Preintegrated
 
   public:
     /*!
-     * @brief        Accumulated integration time in seconds.
+     * @brief           Accumulated integration time in seconds.
      */
     float                           dT;
     /*!
-     * @brief        Fifteen-by-fifteen covariance.
+     * @brief           Fifteen-by-fifteen covariance.
      */
     Eigen::Matrix<float, 15, 15>    C;
     /*!
-     * @brief        Fifteen-by-fifteen information matrix.
+     * @brief           Fifteen-by-fifteen information matrix.
      */
     Eigen::Matrix<float, 15, 15>    Info;
     /*!
-     * @brief        Gyroscope then accelerometer measurement noise variances
-     *               (diagonal) used to grow the covariance.
+     * @brief           Gyroscope then accelerometer measurement noise variances
+     *                  (diagonal) used to grow the covariance.
      */
     Eigen::DiagonalMatrix<float, 6> Nga;
     /*!
-     * @brief        Gyroscope then accelerometer bias random-walk variances
-     *               (diagonal) added to the bias block of the covariance at
-     *               every measurement.
+     * @brief           Gyroscope then accelerometer bias random-walk variances
+     *                  (diagonal) added to the bias block of the covariance at
+     *                  every measurement.
      */
     Eigen::DiagonalMatrix<float, 6> NgaWalk;
 
     // Values for the original bias (when integration was computed)
     /*!
-     * @brief        Bias the deltas were integrated against.
+     * @brief           Bias the deltas were integrated against.
      */
     Bias            b;
     /*!
-     * @brief        Integrated rotation increment.
+     * @brief           Integrated rotation increment.
      */
     Eigen::Matrix3f dR;
     /*!
-     * @brief        Integrated velocity increment in the body frame at the
-     *               start of the integration, m/s.
+     * @brief           Integrated velocity increment in the body frame at the
+     *                  start of the integration, m/s.
      */
     Eigen::Vector3f dV;
     /*!
-     * @brief        Integrated position increment in the body frame at the
-     *               start of the integration, metres.
+     * @brief           Integrated position increment in the body frame at the
+     *                  start of the integration, metres.
      */
     Eigen::Vector3f dP;
     /*!
-     * @brief        Jacobian of the rotation increment with respect to the
-     *               gyroscope bias.
+     * @brief           Jacobian of the rotation increment with respect to the
+     *                  gyroscope bias.
      */
     Eigen::Matrix3f JRg;
     /*!
-     * @brief        Jacobian of the velocity increment with respect to the
-     *               gyroscope bias.
+     * @brief           Jacobian of the velocity increment with respect to the
+     *                  gyroscope bias.
      */
     Eigen::Matrix3f JVg;
     /*!
-     * @brief        Jacobian of the velocity increment with respect to the
-     *               accelerometer bias.
+     * @brief           Jacobian of the velocity increment with respect to the
+     *                  accelerometer bias.
      */
     Eigen::Matrix3f JVa;
     /*!
-     * @brief        Jacobian of the position increment with respect to the
-     *               gyroscope bias.
+     * @brief           Jacobian of the position increment with respect to the
+     *                  gyroscope bias.
      */
     Eigen::Matrix3f JPg;
     /*!
-     * @brief        Jacobian of the position increment with respect to the
-     *               accelerometer bias.
+     * @brief           Jacobian of the position increment with respect to the
+     *                  accelerometer bias.
      */
     Eigen::Matrix3f JPa;
     /*!
-     * @brief        Time-weighted mean of the bias-corrected acceleration,
-     *               rotated by the integrated rotation, m/s^2.
+     * @brief           Time-weighted mean of the bias-corrected acceleration,
+     *                  rotated by the integrated rotation, m/s^2.
      */
     Eigen::Vector3f avgA;
     /*!
-     * @brief        Time-weighted mean of the bias-corrected angular velocity,
-     *               rad/s.
+     * @brief           Time-weighted mean of the bias-corrected angular
+     *                  velocity, rad/s.
      */
     Eigen::Vector3f avgW;
 
   private:
     // Updated bias
     /*!
-     * @brief        Latest updated bias estimate.
+     * @brief           Latest updated bias estimate.
      */
     Bias                       bu;
     // Dif between original and updated bias
     // This is used to compute the updated values of the preintegration
     /*!
-     * @brief        Difference between the updated and the
-     *               original bias.
+     * @brief           Difference between the updated and the
+     *                  original bias.
      */
     Eigen::Matrix<float, 6, 1> db;
 
     /*!
-     * @brief        One stored accelerometer and gyroscope
-     *               reading.
+     * @brief           One stored accelerometer and gyroscope
+     *                  reading.
      */
     struct Integrable
     {
         /*!
-         * @brief        Serializes the stored reading.
+         * @brief           Serializes the stored reading.
          *
-         * @param[in,out] ar
-         *                Archive receiving the stored fields.
-         * @param[in]    version
-         *               Archive version; currently unused.
+         * @param[in,out]   ar
+         *                  Archive receiving the stored fields.
+         *
+         * @param[in]       version
+         *                  Archive version; currently unused.
          */
         template <class Archive>
         void serialize(Archive                            &ar,
@@ -865,21 +918,23 @@ class Preintegrated
 
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         /*!
-         * @brief        Creates an empty stored reading.
+         * @brief           Creates an empty stored reading.
          */
         Integrable() {}
         /*!
-         * @brief        Creates a stored reading.
+         * @brief           Creates a stored reading.
          *
-         * @param[in]    acceleration_in
-         *               Accelerometer sample in metres per
-         *               second squared.
-         * @param[in]    angularVelocity_in
-         *               Gyroscope sample in radians per
-         *               second.
-         * @param[in]    sampleInterval_in
-         *               Interval since the previous sample,
-         *               in seconds.
+         * @param[in]       acceleration_in
+         *                  Accelerometer sample in metres per
+         *                  second squared.
+         *
+         * @param[in]       angularVelocity_in
+         *                  Gyroscope sample in radians per
+         *                  second.
+         *
+         * @param[in]       sampleInterval_in
+         *                  Interval since the previous sample,
+         *                  in seconds.
          */
         Integrable(const Eigen::Vector3f &acceleration_in,
                    const Eigen::Vector3f &angularVelocity_in,
@@ -889,45 +944,49 @@ class Preintegrated
             t(sampleInterval_in)
         {}
         /*!
-         * @brief        Stored accelerometer sample, m/s^2.
+         * @brief           Stored accelerometer sample, m/s^2.
          */
         Eigen::Vector3f a;
         /*!
-         * @brief        Stored gyroscope sample, rad/s.
+         * @brief           Stored gyroscope sample, rad/s.
          */
         Eigen::Vector3f w;
         /*!
-         * @brief        Interval since the previous sample,
-         *               in seconds.
+         * @brief           Interval since the previous sample,
+         *                  in seconds.
          */
         float           t;
     };
 
     /*!
-     * @brief        Stored readings backing reintegration.
+     * @brief           Stored readings backing reintegration.
      */
     std::vector<Integrable> measurements;
 
     /*!
-     * @brief        Serializes concurrent preintegration
-     *               updates.
+     * @brief           Serializes concurrent preintegration
+     *                  updates.
      */
     std::mutex preintegrationMutex;
 };
 
 /*!
- * @brief        Returns the right Jacobian of SO3 at the
- *               given rotation vector.
+ * @brief           Returns the right Jacobian of SO3 at the
+ *                  given rotation vector.
  *
- * @param[in]    rotationVectorX_in
- *               Rotation x in radians.
- * @param[in]    rotationVectorY_in
- *               Rotation y in radians.
- * @param[in]    rotationVectorZ_in
- *               Rotation z in radians.
+ * @param[in]       rotationVectorX_in
+ *                  Rotation x in radians.
  *
- * @param[out] rightJacobian_out Three-by-three right Jacobian.
- * @return IMU_TYPES_STATUS_SUCCESS.
+ * @param[in]       rotationVectorY_in
+ *                  Rotation y in radians.
+ *
+ * @param[in]       rotationVectorZ_in
+ *                  Rotation z in radians.
+ *
+ * @param[out]      rightJacobian_out
+ *                  Three-by-three right Jacobian.
+ *
+ * @return          IMU_TYPES_STATUS_SUCCESS.
  */
 [[nodiscard]] ImuTypesStatus
     rightJacobianSO3(const float     &rotationVectorX_in,
@@ -935,32 +994,38 @@ class Preintegrated
                      const float     &rotationVectorZ_in,
                      Eigen::Matrix3f &rightJacobian_out);
 /*!
- * @brief        Returns the right Jacobian of SO3 at the
- *               given rotation vector.
+ * @brief           Returns the right Jacobian of SO3 at the
+ *                  given rotation vector.
  *
- * @param[in]    rotationVector_in
- *               Rotation vector in radians.
+ * @param[in]       rotationVector_in
+ *                  Rotation vector in radians.
  *
- * @param[out] rightJacobian_out Three-by-three right Jacobian.
- * @return IMU_TYPES_STATUS_SUCCESS.
+ * @param[out]      rightJacobian_out
+ *                  Three-by-three right Jacobian.
+ *
+ * @return          IMU_TYPES_STATUS_SUCCESS.
  */
 [[nodiscard]] ImuTypesStatus
     rightJacobianSO3(const Eigen::Vector3f &rotationVector_in,
                      Eigen::Matrix3f       &rightJacobian_out);
 
 /*!
- * @brief        Returns the inverse right Jacobian of SO3 at
- *               the given rotation vector.
+ * @brief           Returns the inverse right Jacobian of SO3 at
+ *                  the given rotation vector.
  *
- * @param[in]    angleAxisX_in
- *               Rotation x in radians.
- * @param[in]    angleAxisY_in
- *               Rotation y in radians.
- * @param[in]    angleAxisZ_in
- *               Rotation z in radians.
+ * @param[in]       angleAxisX_in
+ *                  Rotation x in radians.
  *
- * @param[out] inverseRightJacobian_out Three-by-three inverse right Jacobian.
- * @return IMU_TYPES_STATUS_SUCCESS.
+ * @param[in]       angleAxisY_in
+ *                  Rotation y in radians.
+ *
+ * @param[in]       angleAxisZ_in
+ *                  Rotation z in radians.
+ *
+ * @param[out]      inverseRightJacobian_out
+ *                  Three-by-three inverse right Jacobian.
+ *
+ * @return          IMU_TYPES_STATUS_SUCCESS.
  */
 [[nodiscard]] ImuTypesStatus
     inverseRightJacobianSO3(const float     &angleAxisX_in,
@@ -968,27 +1033,31 @@ class Preintegrated
                             const float     &angleAxisZ_in,
                             Eigen::Matrix3f &inverseRightJacobian_out);
 /*!
- * @brief        Returns the inverse right Jacobian of SO3 at
- *               the given rotation vector.
+ * @brief           Returns the inverse right Jacobian of SO3 at
+ *                  the given rotation vector.
  *
- * @param[in]    angleAxisVector_in
- *               Rotation vector in radians.
+ * @param[in]       angleAxisVector_in
+ *                  Rotation vector in radians.
  *
- * @param[out] inverseRightJacobian_out Three-by-three inverse right Jacobian.
- * @return IMU_TYPES_STATUS_SUCCESS.
+ * @param[out]      inverseRightJacobian_out
+ *                  Three-by-three inverse right Jacobian.
+ *
+ * @return          IMU_TYPES_STATUS_SUCCESS.
  */
 [[nodiscard]] ImuTypesStatus
     inverseRightJacobianSO3(const Eigen::Vector3f &angleAxisVector_in,
                             Eigen::Matrix3f       &inverseRightJacobian_out);
 
 /*!
- * @brief        Re-orthonormalizes a rotation estimate.
+ * @brief           Re-orthonormalizes a rotation estimate.
  *
- * @param[in]    rotationMatrix_in
- *               Rotation to normalize.
+ * @param[in]       rotationMatrix_in
+ *                  Rotation to normalize.
  *
- * @param[out] rotation_out Closest rotation in the Frobenius sense.
- * @return IMU_TYPES_STATUS_SUCCESS.
+ * @param[out]      rotation_out
+ *                  Closest rotation in the Frobenius sense.
+ *
+ * @return          IMU_TYPES_STATUS_SUCCESS.
  */
 [[nodiscard]] ImuTypesStatus
     normalizeRotation(const Eigen::Matrix3f &rotationMatrix_in,

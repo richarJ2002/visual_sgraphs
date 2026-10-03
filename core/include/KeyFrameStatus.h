@@ -33,16 +33,20 @@ namespace core
 {
 
 /*!
- * @brief       Result of a KeyFrame operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a KeyFrame operation. Values are fixed and never
+ *                  reordered.
  */
 enum class KeyFrameStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     KEY_FRAME_STATUS_SUCCESS = 0U,
 
-    /*! @brief An input was null, repeated or not finite; the object and the
-     * outputs were left unchanged. */
+    /*!
+     * @brief           An input was null, repeated or not finite; the object
+     *                  and the outputs were left unchanged.
+     */
     KEY_FRAME_STATUS_INVALID_ARGUMENT = 1U
 };
 

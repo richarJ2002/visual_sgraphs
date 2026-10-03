@@ -37,23 +37,24 @@ namespace core
 {
 
 /*!
- * @brief        Finds the largest Euclidean component of a proposed wall
- *               plane.
+ * @brief           Finds the largest Euclidean component of a proposed wall
+ *                  plane.
  *
- *               The returned indices refer to the input cloud, allowing
- *               the same support to be selected in both camera and map
- *               frames. Invalid depth samples are excluded before
- *               building the search tree.
+ *                  The returned indices refer to the input cloud, allowing
+ *                  the same support to be selected in both camera and map
+ *                  frames. Invalid depth samples are excluded before
+ *                  building the search tree.
  *
- * @param[in]    p_wallCloud_in
- *               Proposed wall support cloud.
- * @param[in]    clusterTolerance_m_in
- *               Maximum Euclidean neighbour separation in metres.
+ * @param[in]       p_wallCloud_in
+ *                  Proposed wall support cloud.
  *
- * @param[out]   largestWallComponent_out
- *               Largest connected component and its support statistics.
+ * @param[in]       clusterTolerance_m_in
+ *                  Maximum Euclidean neighbour separation in metres.
  *
- * @return       SEMANTIC_SEGMENTATION_STATUS_SUCCESS.
+ * @param[out]      largestWallComponent_out
+ *                  Largest connected component and its support statistics.
+ *
+ * @return          SEMANTIC_SEGMENTATION_STATUS_SUCCESS.
  */
 SemanticSegmentationStatus findLargestWallComponent(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_wallCloud_in,

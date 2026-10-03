@@ -54,33 +54,33 @@ void KannalaBrandt8::serialize(Archive                            &ar,
 }
 
 /*!
- * @brief        Reads the GeometricCamera base data and the precision from a
- *               binary input archive (explicit instantiation of
- *               KannalaBrandt8::serialize).
+ * @brief           Reads the GeometricCamera base data and the precision from a
+ *                  binary input archive (explicit instantiation of
+ *                  KannalaBrandt8::serialize).
  */
 template void KannalaBrandt8::serialize<boost::archive::binary_iarchive>(
     boost::archive::binary_iarchive &,
     const unsigned int);
 /*!
- * @brief        Writes the GeometricCamera base data and the precision to a
- *               binary output archive (explicit instantiation of
- *               KannalaBrandt8::serialize).
+ * @brief           Writes the GeometricCamera base data and the precision to a
+ *                  binary output archive (explicit instantiation of
+ *                  KannalaBrandt8::serialize).
  */
 template void KannalaBrandt8::serialize<boost::archive::binary_oarchive>(
     boost::archive::binary_oarchive &,
     const unsigned int);
 /*!
- * @brief        Reads the GeometricCamera base data and the precision from a
- *               text input archive (explicit instantiation of
- *               KannalaBrandt8::serialize).
+ * @brief           Reads the GeometricCamera base data and the precision from a
+ *                  text input archive (explicit instantiation of
+ *                  KannalaBrandt8::serialize).
  */
 template void KannalaBrandt8::serialize<boost::archive::text_iarchive>(
     boost::archive::text_iarchive &,
     const unsigned int);
 /*!
- * @brief        Writes the GeometricCamera base data and the precision to
- *               a text output archive (explicit instantiation of
- *               KannalaBrandt8::serialize).
+ * @brief           Writes the GeometricCamera base data and the precision to
+ *                  a text output archive (explicit instantiation of
+ *                  KannalaBrandt8::serialize).
  */
 template void KannalaBrandt8::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,

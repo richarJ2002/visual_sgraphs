@@ -56,7 +56,6 @@ PlaneStatus Plane::transformPlaneEquation(
      * The transformed plane is:
      *
      *     n'^T x' + d' = 0
-     *
      */
 
     const Eigen::Matrix3d rotation =

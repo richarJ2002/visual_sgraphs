@@ -39,13 +39,13 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief        Lifecycle states of the camera relative to the
- *               mapped rooms.
+ * @brief           Lifecycle states of the camera relative to the
+ *                  mapped rooms.
  *
- *               The state machine is self-contained: it carries
- *               only state names, event labels, timestamps and
- *               scalar guard values, and is therefore
- *               frame-agnostic.
+ *                  The state machine is self-contained: it carries
+ *                  only state names, event labels, timestamps and
+ *                  scalar guard values, and is therefore
+ *                  frame-agnostic.
  */
 enum class RoomTrackingState
 {
@@ -58,12 +58,12 @@ enum class RoomTrackingState
 };
 
 /*!
- * @brief        Events consumed by the transition engine.
+ * @brief           Events consumed by the transition engine.
  *
- *               The set of (source, event) rows is exactly the
- *               transition table. An event with no defined row for
- *               the current source state is rejected: the state
- *               does not change and a rejection record is logged.
+ *                  The set of (source, event) rows is exactly the
+ *                  transition table. An event with no defined row for
+ *                  the current source state is rejected: the state
+ *                  does not change and a rejection record is logged.
  */
 enum class RoomTrackingEvent
 {
@@ -79,50 +79,50 @@ enum class RoomTrackingEvent
 };
 
 /*!
- * @brief        Guard values describing one transition attempt.
+ * @brief           Guard values describing one transition attempt.
  */
 struct TraversalGuardValues
 {
     /*!
-     * @brief    Continuous time the guard has been satisfied. The caller
-     *           (RoomTracker::step in production, the tests in unit tests)
-     *           supplies it; RoomTracker::step accumulates it across the
-     *           dwell timers.
+     * @brief           Continuous time the guard has been satisfied. The caller
+     *                  (RoomTracker::step in production, the tests in unit
+     *                  tests) supplies it; RoomTracker::step accumulates it
+     *                  across the dwell timers.
      *
-     * @units    seconds
+     * @units           seconds
      */
     double dwell_s = 0.0;
 
     /*!
-     * @brief    Traversal/verification confidence in [0, 1].
+     * @brief           Traversal/verification confidence in [0, 1].
      */
     double confidence = 0.0;
 
     /*!
-     * @brief    A trajectory segment crossed a passable passage aperture
-     *           (segmentCrossesPassageOpening()).
+     * @brief           A trajectory segment crossed a passable passage aperture
+     *                  (segmentCrossesPassageOpening()).
      */
     bool isPassageDetected = false;
 
     /*!
-     * @brief    The crossed passage is passable (Passage::isPassable()).
+     * @brief           The crossed passage is passable (Passage::isPassable()).
      */
     bool isPassable = false;
 
     /*!
-     * @brief    Both sides of the passage have been observed.
+     * @brief           Both sides of the passage have been observed.
      */
     bool areBothSidesObserved = false;
 };
 
 /*!
- * @brief        Abstract verification-result event.
+ * @brief           Abstract verification-result event.
  *
- *               Production remains UNAVAILABLE until a future typed
- *               geometric-verifier producer supplies a result. Tests
- *               may inject deterministic values. Only the verdict
- *               and confidence are consumed by the transition
- *               engine.
+ *                  Production remains UNAVAILABLE until a future typed
+ *                  geometric-verifier producer supplies a result. Tests
+ *                  may inject deterministic values. Only the verdict
+ *                  and confidence are consumed by the transition
+ *                  engine.
  */
 enum class VerificationStatus
 {
@@ -132,45 +132,48 @@ enum class VerificationStatus
 };
 
 /*!
- * @brief        Result of a geometric room-match verification: whether it
- *               passed and the numbers behind that verdict.
+ * @brief           Result of a geometric room-match verification: whether it
+ *                  passed and the numbers behind that verdict.
  */
 struct VerificationVerdict
 {
     /*!
-     * @brief        Whether a verifier produced a result at all, and if so
-     *               PASS or REJECTED.
+     * @brief           Whether a verifier produced a result at all, and if so
+     *                  PASS or REJECTED.
      */
     VerificationStatus status = VerificationStatus::UNAVAILABLE;
     /*!
-     * @brief        Verifier's own pass flag; isPass() also needs status ==
-     *               PASS and every metric in range.
+     * @brief           Verifier's own pass flag; isPass() also needs status ==
+     *                  PASS and every metric in range.
      */
     bool               hasPassed = false;
     /*!
-     * @brief        Number of inliers the verifier counted.
+     * @brief           Number of inliers the verifier counted.
      */
     unsigned int       inlierCount = 0U;
     /*!
-     * @brief        Fraction of inliers among all matches, in [0, 1].
+     * @brief           Fraction of inliers among all matches, in [0, 1].
      */
     double             inlierRatio = 0.0;
     /*!
-     * @brief        Condition number of the verification normalised to
-     *               [0, 1]; confidence falls as it rises.
+     * @brief           Condition number of the verification normalised to
+     *                  [0, 1]; confidence falls as it rises.
      */
     double             normalisedConditionNumber = 0.0;
     /*!
-     * @brief        Angular residual of the verification, radians, at least
-     *               0.
+     * @brief           Angular residual of the verification, radians, at least
+     *                  0.
      */
     double             angularResidual_rad = 0.0;
     /*!
-     * @brief        Overall confidence of the verdict, in [0, 1].
+     * @brief           Overall confidence of the verdict, in [0, 1].
      */
     double             confidence = 0.0;
 
-    /*! Returns true only for a finite, internally consistent PASS. */
+    /*!
+     * @brief           Returns true only for a finite, internally consistent
+     *                  PASS.
+     */
     [[nodiscard]] VerificationVerdictStatus isPass(bool &isPass_out) const
     {
         isPass_out =
@@ -191,12 +194,12 @@ struct VerificationVerdict
 struct TrackingStatusInput
 {
     /*!
-     * @brief       Tracking was declared lost for the current cycle.
+     * @brief           Tracking was declared lost for the current cycle.
      */
     bool isLost = false;
 
     /*!
-     * @brief       A new map was created while tracking was lost.
+     * @brief           A new map was created while tracking was lost.
      */
     bool isNewMapCreated = false;
 };
@@ -211,85 +214,103 @@ struct TrackingStatusInput
 struct TransitionEvent
 {
     /*!
-     * @brief        Monotonic time when the transition was attempted, seconds.
+     * @brief           Monotonic time when the transition was attempted,
+     *                  seconds.
      */
     double            timestamp_s = 0.0;
     /*!
-     * @brief        State the tracker was in before the attempt.
+     * @brief           State the tracker was in before the attempt.
      */
     RoomTrackingState sourceState = RoomTrackingState::UNKNOWN;
     /*!
-     * @brief        State after the attempt; equals sourceState when the
-     *               transition was rejected.
+     * @brief           State after the attempt; equals sourceState when the
+     *                  transition was rejected.
      */
     RoomTrackingState targetState = RoomTrackingState::UNKNOWN;
     /*!
-     * @brief        Event that triggered the attempt.
+     * @brief           Event that triggered the attempt.
      */
     RoomTrackingEvent event = RoomTrackingEvent::FIRST_ROOM_CONFIRMED;
     /*!
-     * @brief        Continuous guard dwell time supplied with the attempt,
-     *               seconds.
+     * @brief           Continuous guard dwell time supplied with the attempt,
+     *                  seconds.
      */
     double            dwell_s = 0.0;
     /*!
-     * @brief        Traversal confidence supplied with the attempt, in [0, 1].
+     * @brief           Traversal confidence supplied with the attempt, in [0,
+     *                  1].
      */
     double            confidence = 0.0;
     /*!
-     * @brief        True when the verification verdict supplied with the
-     *               attempt passed isPass().
+     * @brief           True when the verification verdict supplied with the
+     *                  attempt passed isPass().
      */
     bool              hasVerificationPassed = false;
     /*!
-     * @brief        True when the transition was committed, false when it was
-     *               rejected and the state stayed unchanged.
+     * @brief           True when the transition was committed, false when it
+     *                  was rejected and the state stayed unchanged.
      */
     bool              isAccepted = false;
 };
 
 /*!
- * @brief        RoomTracker tuning parameters.
+ * @brief           RoomTracker tuning parameters.
  */
 struct RoomTrackerConfig
 {
-    /*! Minimum continuous crossed-passage dwell before committing the
-     *  CONFIRMED_ROOM <-> CROSSING_PASSAGE transitions (seconds). */
+    /*!
+     * @brief           Minimum continuous crossed-passage dwell before
+     *                  committing the CONFIRMED_ROOM <-> CROSSING_PASSAGE
+     *                  transitions (seconds).
+     */
     double       crossing_dwell_s = 2.0;
-    /*! Minimum traversal confidence (0..1) for a crossing to count. */
+    /*!
+     * @brief           Minimum traversal confidence (0..1) for a crossing to
+     *                  count.
+     */
     double       crossing_confidence = 0.7;
-    /*! Maximum time in LOST_WITH_LAST_ROOM before decay to
-     *  LOST_WITHOUT_ROOM (seconds). */
+    /*!
+     * @brief           Maximum time in LOST_WITH_LAST_ROOM before decay to
+     *                  LOST_WITHOUT_ROOM (seconds).
+     */
     double       lost_timeout_s = 30.0;
-    /*! Maximum time in REACQUIRING_IN_NEW_MAP before decay to
-     *  LOST_WITHOUT_ROOM (seconds). */
+    /*!
+     * @brief           Maximum time in REACQUIRING_IN_NEW_MAP before decay to
+     *                  LOST_WITHOUT_ROOM (seconds).
+     */
     double       reacquire_timeout_s = 60.0;
-    /*! Retry backoff between failed reacquire attempts (seconds). */
+    /*!
+     * @brief           Retry backoff between failed reacquire attempts
+     *                  (seconds).
+     */
     double       reacquire_retry_interval_s = 5.0;
-    /*! Maximum failed reacquire attempts before timeout applies. */
+    /*!
+     * @brief           Maximum failed reacquire attempts before timeout
+     *                  applies.
+     */
     unsigned int reacquire_max_retries = 3U;
     /*!
-     * @brief        Minimum planes required to attempt a reacquire.
-     *               Consumed by the verification stub; acceptance
-     *               still requires the full verification gates.
+     * @brief           Minimum planes required to attempt a reacquire.
+     *                  Consumed by the verification stub; acceptance
+     *                  still requires the full verification gates.
      */
     unsigned int reacquire_min_planes = 3U;
 };
 
 /*!
- * @brief        Room-state machine implementing the transition
- *               table.
+ * @brief           Room-state machine implementing the transition
+ *                  table.
  *
- *               Standalone and pure (no ROS, Eigen, PCL or Atlas
- *               types) so it can be driven directly by
- *               deterministic unit tests and by
- *               SemanticsManager::Run.
+ *                  Standalone and pure (no ROS, Eigen, PCL or Atlas
+ *                  types) so it can be driven directly by
+ *                  deterministic unit tests and by
+ *                  SemanticsManager::Run.
  */
 class RoomTracker
 {
   public:
     /*!
-     * @brief       Constructs a tracker with the given configuration.
+     * @brief           Constructs a tracker with the given configuration.
      */
     explicit RoomTracker(
         const RoomTrackerConfig &configuration_in = RoomTrackerConfig()) :
@@ -297,39 +318,41 @@ class RoomTracker
     {}
 
     /*!
-     * @brief       Resets state, timers, retry counters and event history.
+     * @brief           Resets state, timers, retry counters and event history.
      */
     [[nodiscard]] RoomTrackerStatus reset(double now_s_in);
 
     /*!
-     * @brief        Per-cycle integration entry point.
+     * @brief           Per-cycle integration entry point.
      *
-     *               1. Advances time (never backwards).
-     *               2. Fires unconditional timeout transitions first.
-     *               3. Fires the tracking-lost transitions of the
-     *               transition table.
-     *               4. Evaluates the guarded transitions using the
-     *               supplied crossing evidence and verification
-     *               verdict, applying the dwell timers internally.
+     *                  1. Advances time (never backwards).
+     *                  2. Fires unconditional timeout transitions first.
+     *                  3. Fires the tracking-lost transitions of the
+     *                     transition table.
+     *                  4. Evaluates the guarded transitions using the
+     *                     supplied crossing evidence and verification
+     *                     verdict, applying the dwell timers internally.
      *
-     *               At most one transition is committed per cycle.
+     *                  At most one transition is committed per cycle.
      *
-     * @param[in]    now_s_in
-     *               Monotonic seconds since an arbitrary epoch.
+     * @param[in]       now_s_in
+     *                  Monotonic seconds since an arbitrary epoch.
      *
-     * @param[in]    crossing_in
-     *               Passage crossing evidence from
-     *               updateTraversalEvidence().
+     * @param[in]       crossing_in
+     *                  Passage crossing evidence from
+     *                  updateTraversalEvidence().
      *
-     * @param[in]    verification_in
-     *               Abstract verification verdict (verification
-     *               stub).
+     * @param[in]       verification_in
+     *                  Abstract verification verdict (verification
+     *                  stub).
      *
-     * @param[in]    tracking_in
-     *               Tracking-loss and new-map lifecycle signals.
+     * @param[in]       tracking_in
+     *                  Tracking-loss and new-map lifecycle signals.
      *
-     * @param[out] nextState_out The state after the cycle.
-     * @return ROOM_TRACKER_STATUS_SUCCESS.
+     * @param[out]      nextState_out
+     *                  The state after the cycle.
+     *
+     * @return          ROOM_TRACKER_STATUS_SUCCESS.
      */
     [[nodiscard]] RoomTrackerStatus
         step(double                      now_s_in,
@@ -339,30 +362,32 @@ class RoomTracker
              RoomTrackingState          &nextState_out);
 
     /*!
-     * @brief        Discrete transition oracle: applies exactly one
-     *               transition-table row and returns the resulting
-     *               state.
+     * @brief           Discrete transition oracle: applies exactly one
+     *                  transition-table row and returns the resulting
+     *                  state.
      *
-     *               Events with no row defined for the current source
-     *               state are rejected: the state is unchanged, a
-     *               rejected TransitionEvent is recorded and a WARN is
-     *               logged.
+     *                  Events with no row defined for the current source
+     *                  state are rejected: the state is unchanged, a
+     *                  rejected TransitionEvent is recorded and a WARN is
+     *                  logged.
      *
-     * @param[in]    event_in
-     *               The event to apply.
+     * @param[in]       event_in
+     *                  The event to apply.
      *
-     * @param[in]    now_s_in
-     *               Monotonic seconds used as the record timestamp.
+     * @param[in]       now_s_in
+     *                  Monotonic seconds used as the record timestamp.
      *
-     * @param[in]    crossing_in
-     *               Explicit guard values for the guarded rows.
+     * @param[in]       crossing_in
+     *                  Explicit guard values for the guarded rows.
      *
-     * @param[in]    verification_in
-     *               Explicit verification verdict for the guarded
-     *               rows.
+     * @param[in]       verification_in
+     *                  Explicit verification verdict for the guarded
+     *                  rows.
      *
-     * @param[out] nextState_out The state after applying the row.
-     * @return ROOM_TRACKER_STATUS_SUCCESS.
+     * @param[out]      nextState_out
+     *                  The state after applying the row.
+     *
+     * @return          ROOM_TRACKER_STATUS_SUCCESS.
      */
     [[nodiscard]] RoomTrackerStatus
         applyEvent(RoomTrackingEvent           event_in,
@@ -372,58 +397,58 @@ class RoomTracker
                    RoomTrackingState          &nextState_out);
 
     /*!
-     * @brief       Returns the current state.
+     * @brief           Returns the current state.
      */
     [[nodiscard]] RoomTrackerStatus
         getState(RoomTrackingState &state_out) const;
 
     /*!
-     * @brief       Returns every recorded TransitionEvent (accepted or
-     *              rejected), oldest first.
+     * @brief           Returns every recorded TransitionEvent (accepted or
+     *                  rejected), oldest first.
      */
     [[nodiscard]] RoomTrackerStatus getEventHistory(
         const std::vector<TransitionEvent> *&p_eventHistory_out) const;
 
     /*!
-     * @brief       Returns the most recent TransitionEvent record.
+     * @brief           Returns the most recent TransitionEvent record.
      */
     [[nodiscard]] RoomTrackerStatus
         getLastEvent(const TransitionEvent *&p_lastEvent_out) const;
 
     /*!
-     * @brief       Returns the tracker configuration.
+     * @brief           Returns the tracker configuration.
      */
     [[nodiscard]] RoomTrackerStatus
         getConfig(const RoomTrackerConfig *&p_config_out) const;
 
     /*!
-     * @brief       Renders a state as a stable literal name.
+     * @brief           Renders a state as a stable literal name.
      */
     [[nodiscard]] static RoomTrackerStatus
         stateToString(RoomTrackingState state_in, std::string &text_out);
 
     /*!
-     * @brief       Renders an event as a stable literal name.
+     * @brief           Renders an event as a stable literal name.
      */
     [[nodiscard]] static RoomTrackerStatus
         eventToString(RoomTrackingEvent event_in, std::string &text_out);
 
     /*!
-     * @brief       Serialises a TransitionEvent as one JSON object line.
+     * @brief           Serialises a TransitionEvent as one JSON object line.
      */
     [[nodiscard]] static RoomTrackerStatus
         eventToJSON(const TransitionEvent &event_in, std::string &json_out);
 
     /*!
-     * @brief        Confidence formula:
+     * @brief           Confidence formula:
      *
-     *               confidence = inlier_ratio * (1 -
-     *               normalised_condition_number)
-     *               * exp(-angular_residual / sigma_theta_rad)
+     *                  confidence = inlier_ratio * (1 -
+     *                  normalised_condition_number)
+     *                  * exp(-angular_residual / sigma_theta_rad)
      *
-     *               Non-finite or out-of-range inputs are clamped; a
-     *               non-positive sigma results in 1.0 for a zero
-     *               residual and 0.0 otherwise.
+     *                  Non-finite or out-of-range inputs are clamped; a
+     *                  non-positive sigma results in 1.0 for a zero
+     *                  residual and 0.0 otherwise.
      */
     [[nodiscard]] static RoomTrackerStatus
         computeConfidence(double  inlierRatio_in,
@@ -434,8 +459,8 @@ class RoomTracker
 
   private:
     /*!
-     * @brief       Central row engine: applies the source row for (state,
-     *              event). Returns true when the transition was committed.
+     * @brief           Central row engine: applies the source row for (state,
+     *                  event). Returns true when the transition was committed.
      */
     [[nodiscard]] RoomTrackerStatus
         applyRow(RoomTrackingState           source_in,
@@ -446,7 +471,7 @@ class RoomTracker
                  bool                       &isAccepted_out);
 
     /*!
-     * @brief       Commits target as the new state and records the event.
+     * @brief           Commits target as the new state and records the event.
      */
     [[nodiscard]] RoomTrackerStatus
         commit(RoomTrackingState           source_in,
@@ -457,23 +482,24 @@ class RoomTracker
                bool                        accepted_in);
 
     /*!
-     * @brief       Accumulates the crossing/dwell timer for the given state.
+     * @brief           Accumulates the crossing/dwell timer for the given
+     *                  state.
      *
-     * @param[in]   state_in
-     *              Current tracking state (not used by the timer).
+     * @param[in]       state_in
+     *                  Current tracking state (not used by the timer).
      *
-     * @param[in]   now_s_in
-     *              Current time, in seconds.
+     * @param[in]       now_s_in
+     *                  Current time, in seconds.
      *
-     * @param[in]   guardSatisfied_in
-     *              Whether the dwell guard holds now; false restarts the
-     *              timer.
+     * @param[in]       guardSatisfied_in
+     *                  Whether the dwell guard holds now; false restarts the
+     *                  timer.
      *
-     * @param[out]  accumulatedDwell_out
-     *              Seconds elapsed since the guard became satisfied, or 0
-     *              when it is not.
+     * @param[out]      accumulatedDwell_out
+     *                  Seconds elapsed since the guard became satisfied, or 0
+     *                  when it is not.
      *
-     * @return      ROOM_TRACKER_STATUS_SUCCESS.
+     * @return          ROOM_TRACKER_STATUS_SUCCESS.
      */
     [[nodiscard]] RoomTrackerStatus
         accumulateDwell(RoomTrackingState state_in,
@@ -483,59 +509,59 @@ class RoomTracker
 
   private:
     /*!
-     * @brief        Tuning parameters this tracker was constructed with.
+     * @brief           Tuning parameters this tracker was constructed with.
      */
     RoomTrackerConfig            config;
     /*!
-     * @brief        Current state of the tracker.
+     * @brief           Current state of the tracker.
      */
     RoomTrackingState            trackingState = RoomTrackingState::UNKNOWN;
     /*!
-     * @brief        Every transition attempt, accepted or rejected, oldest
-     *               first; cleared by reset().
+     * @brief           Every transition attempt, accepted or rejected, oldest
+     *                  first; cleared by reset().
      */
     std::vector<TransitionEvent> eventHistory;
     /*!
-     * @brief        Most recent transition record; default-constructed until
-     *               the first attempt.
+     * @brief           Most recent transition record; default-constructed until
+     *                  the first attempt.
      */
     TransitionEvent              lastEvent;
 
     /*!
-     * @brief        Latest time step() has seen, seconds; step() never lets
-     *               time run backwards.
+     * @brief           Latest time step() has seen, seconds; step() never lets
+     *                  time run backwards.
      */
     double lastReceivedTime_s = 0.0;
     /*!
-     * @brief        Time the current state was entered, seconds; drives the
-     *               lost and reacquire timeouts.
+     * @brief           Time the current state was entered, seconds; drives the
+     *                  lost and reacquire timeouts.
      */
     double lastEnterStateTime_s = 0.0;
     /*!
-     * @brief        Time the crossing guard first held, seconds; -1 when the
-     *               dwell timer is not running.
+     * @brief           Time the crossing guard first held, seconds; -1 when the
+     *                  dwell timer is not running.
      */
     double crossingDwellStartTime_s = -1.0;
 
     /*!
-     * @brief        Failed reacquire attempts since entering
-     *               REACQUIRING_IN_NEW_MAP.
+     * @brief           Failed reacquire attempts since entering
+     *                  REACQUIRING_IN_NEW_MAP.
      */
     unsigned int reacquireRetryCount = 0U;
     /*!
-     * @brief        Time of the latest reacquire attempt, seconds; -1 when
-     *               none has been made yet.
+     * @brief           Time of the latest reacquire attempt, seconds; -1 when
+     *                  none has been made yet.
      */
     double       reacquireLastRetryTime_s = -1.0;
 
     /*!
-     * @brief        True once both sides of the crossed passage have been
-     *               observed during the current crossing.
+     * @brief           True once both sides of the crossed passage have been
+     *                  observed during the current crossing.
      */
     bool hasObservedBothSides = false;
     /*!
-     * @brief        Tracking-lost flag from the previous step() cycle, used
-     *               to detect the moment tracking is newly lost.
+     * @brief           Tracking-lost flag from the previous step() cycle, used
+     *                  to detect the moment tracking is newly lost.
      */
     bool wasTrackingLost = false;
 };

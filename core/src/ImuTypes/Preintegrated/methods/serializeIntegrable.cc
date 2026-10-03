@@ -61,36 +61,40 @@ void Preintegrated::Integrable::serialize(
 }
 
 /*!
- * @brief        Explicit instantiation of Preintegrated::Integrable::serialize
- *               that reads one stored reading through a Boost binary input
- *               archive, so the map save/load code can link it.
+ * @brief           Explicit instantiation of
+ *                  Preintegrated::Integrable::serialize that reads one stored
+ *                  reading through a Boost binary input archive, so the map
+ *                  save/load code can link it.
  */
 template void
     Preintegrated::Integrable::serialize<boost::archive::binary_iarchive>(
         boost::archive::binary_iarchive &,
         const unsigned int);
 /*!
- * @brief        Explicit instantiation of Preintegrated::Integrable::serialize
- *               that writes one stored reading through a Boost binary output
- *               archive, so the map save/load code can link it.
+ * @brief           Explicit instantiation of
+ *                  Preintegrated::Integrable::serialize that writes one stored
+ *                  reading through a Boost binary output archive, so the map
+ *                  save/load code can link it.
  */
 template void
     Preintegrated::Integrable::serialize<boost::archive::binary_oarchive>(
         boost::archive::binary_oarchive &,
         const unsigned int);
 /*!
- * @brief        Explicit instantiation of Preintegrated::Integrable::serialize
- *               that reads one stored reading through a Boost text input
- *               archive, so the map save/load code can link it.
+ * @brief           Explicit instantiation of
+ *                  Preintegrated::Integrable::serialize that reads one stored
+ *                  reading through a Boost text input archive, so the map
+ *                  save/load code can link it.
  */
 template void
     Preintegrated::Integrable::serialize<boost::archive::text_iarchive>(
         boost::archive::text_iarchive &,
         const unsigned int);
 /*!
- * @brief        Explicit instantiation of Preintegrated::Integrable::serialize
- *               that writes one stored reading through a Boost text output
- *               archive, so the map save/load code can link it.
+ * @brief           Explicit instantiation of
+ *                  Preintegrated::Integrable::serialize that writes one stored
+ *                  reading through a Boost text output archive, so the map
+ *                  save/load code can link it.
  */
 template void
     Preintegrated::Integrable::serialize<boost::archive::text_oarchive>(

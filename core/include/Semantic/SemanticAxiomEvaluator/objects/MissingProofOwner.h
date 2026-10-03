@@ -17,11 +17,11 @@
  */
 
 /*!
- * @file         MissingProofOwner.h
+ * @file            MissingProofOwner.h
  *
- * @brief        Declares which future evidence area (if any) owns
- *               supplying the proof a PARTIAL/DEFERRED axiom code
- *               currently lacks.
+ * @brief           Declares which future evidence area (if any) owns
+ *                  supplying the proof a PARTIAL/DEFERRED axiom code
+ *                  currently lacks.
  */
 
 #ifndef SEMANTIC_AXIOM_EVALUATOR_MISSING_PROOF_OWNER_H
@@ -36,69 +36,71 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief        Names the evidence area responsible for the proof a
- *               PARTIAL/DEFERRED axiom code cannot yet supply.
+ * @brief           Names the evidence area responsible for the proof a
+ *                  PARTIAL/DEFERRED axiom code cannot yet supply.
  *
- *               Values name the missing-evidence area exactly, per
- *               this module's fixed assignment table
- *               (computeAxiomCapabilityTable()). NONE is used only
- *               for a FULL capability axiom, where nothing is
- *               missing. SCOPE_DECISION_REQUIRED is used only where
- *               no owner area is named (never invented) -- see
- *               AxiomCapabilityEntry.h.
+ *                  Values name the missing-evidence area exactly, per
+ *                  this module's fixed assignment table
+ *                  (computeAxiomCapabilityTable()). NONE is used only
+ *                  for a FULL capability axiom, where nothing is
+ *                  missing. SCOPE_DECISION_REQUIRED is used only where
+ *                  no owner area is named (never invented) -- see
+ *                  AxiomCapabilityEntry.h.
  */
 enum class MissingProofOwner : std::uint8_t
 {
-    /*! @brief Nothing missing; the axiom's capability is FULL. */
+    /*!
+     * @brief           Nothing missing; the axiom's capability is FULL.
+     */
     NONE = 0U,
 
     /*!
-     * @brief        Frame/face provenance.
+     * @brief           Frame/face provenance.
      */
     PHASE_2 = 1U,
 
     /*!
-     * @brief        Passage endpoints and room origins authoritative.
+     * @brief           Passage endpoints and room origins authoritative.
      */
     PHASE_3 = 2U,
 
     /*!
-     * @brief        Observation-based wall ownership.
+     * @brief           Observation-based wall ownership.
      */
     PHASE_4 = 3U,
 
     /*!
-     * @brief        Quarantine/reconciliation case: observation-based
-     *               wall ownership or full passage
-     *               provenance/reconciliation, as applicable to the
-     *               specific case.
+     * @brief           Quarantine/reconciliation case: observation-based
+     *                  wall ownership or full passage
+     *                  provenance/reconciliation, as applicable to the
+     *                  specific case.
      */
     PHASE_4_OR_5 = 4U,
 
     /*!
-     * @brief        Full passage provenance/reconciliation.
+     * @brief           Full passage provenance/reconciliation.
      */
     PHASE_5 = 5U,
 
     /*!
-     * @brief        RViz/observability boundary-geometry proof.
+     * @brief           RViz/observability boundary-geometry proof.
      */
     PHASE_6 = 6U,
 
     /*!
-     * @brief        Unified reconciler/transaction, completeness
-     *               authority switch.
+     * @brief           Unified reconciler/transaction, completeness
+     *                  authority switch.
      */
     PHASE_7 = 7U,
 
     /*!
-     * @brief        Verified map merge.
+     * @brief           Verified map merge.
      */
     PHASE_8 = 8U,
 
     /*!
-     * @brief        No owner area is named for this specific gap; do
-     *               not infer one.
+     * @brief           No owner area is named for this specific gap; do
+     *                  not infer one.
      */
     SCOPE_DECISION_REQUIRED = 9U
 };

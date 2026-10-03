@@ -16,9 +16,9 @@
  */
 
 /*!
- * @file         GeometricCamera.h
+ * @file            GeometricCamera.h
  *
- * @brief        Declares the abstract geometric camera interface.
+ * @brief           Declares the abstract geometric camera interface.
  */
 
 #ifndef CAMERAMODELS_GEOMETRICCAMERA_H
@@ -48,154 +48,160 @@ namespace camera_models
 namespace geometriccamera
 {
 /*!
- * @brief        Abstract interface for geometric camera models
- *               projecting camera-frame points into images.
+ * @brief           Abstract interface for geometric camera models
+ *                  projecting camera-frame points into images.
  */
 class GeometricCamera
 {
     friend class boost::serialization::access;
 
     /*!
-     * @brief        Serializes the camera identifier, type and
-     *               parameters.
+     * @brief           Serializes the camera identifier, type and
+     *                  parameters.
      *
-     * @param[in,out] ar
-     *                Archive receiving the stored fields.
-     * @param[in]    version
-     *               Archive version; currently unused.
+     * @param[in,out]   ar
+     *                  Archive receiving the stored fields.
+     *
+     * @param[in]       version
+     *                  Archive version; currently unused.
      */
     template <class Archive>
     void serialize(Archive &ar, [[maybe_unused]] const unsigned int version);
 
   public:
     /*!
-     * @brief        Creates a camera with an empty parameter
-     *               vector.
+     * @brief           Creates a camera with an empty parameter
+     *                  vector.
      */
     GeometricCamera() {}
     /*!
-     * @brief        Creates a camera from calibration
-     *               parameters.
+     * @brief           Creates a camera from calibration
+     *                  parameters.
      *
-     * @param[in]    parameters_in
-     *               Calibration entries; layout depends on the
-     *               model.
+     * @param[in]       parameters_in
+     *                  Calibration entries; layout depends on the
+     *                  model.
      */
     GeometricCamera(const std::vector<float> &parameters_in) :
         parameters(parameters_in)
     {}
     /*!
-     * @brief        Destroys the camera; virtual so that deleting a camera
-     *               through this base type runs the derived destructor.
+     * @brief           Destroys the camera; virtual so that deleting a camera
+     *                  through this base type runs the derived destructor.
      */
     virtual ~GeometricCamera() = default;
 
     /*!
-     * @brief        Projects a camera-frame point into the image.
+     * @brief           Projects a camera-frame point into the image.
      *
-     * @param[in]    point3d_in
-     *               Point expressed in the camera frame.
+     * @param[in]       point3d_in
+     *                  Point expressed in the camera frame.
      *
-     * @return       Pixel coordinates of the projection.
+     * @return          Pixel coordinates of the projection.
      */
     virtual cv::Point2f     project(const cv::Point3f &point3d_in) = 0;
     /*!
-     * @brief        Projects a camera-frame point into the image.
+     * @brief           Projects a camera-frame point into the image.
      *
-     * @param[in]    point3d_in
-     *               Point expressed in the camera frame.
+     * @param[in]       point3d_in
+     *                  Point expressed in the camera frame.
      *
-     * @return       Pixel coordinates of the projection.
+     * @return          Pixel coordinates of the projection.
      */
     virtual Eigen::Vector2d project(const Eigen::Vector3d &point3d_in) = 0;
     /*!
-     * @brief        Projects a camera-frame point into the image.
+     * @brief           Projects a camera-frame point into the image.
      *
-     * @param[in]    point3d_in
-     *               Point expressed in the camera frame.
+     * @param[in]       point3d_in
+     *                  Point expressed in the camera frame.
      *
-     * @return       Pixel coordinates of the projection.
+     * @return          Pixel coordinates of the projection.
      */
     virtual Eigen::Vector2f project(const Eigen::Vector3f &point3d_in) = 0;
     /*!
-     * @brief        Projects a camera-frame point into the image.
+     * @brief           Projects a camera-frame point into the image.
      *
-     * @param[in]    point3d_in
-     *               Point expressed in the camera frame.
+     * @param[in]       point3d_in
+     *                  Point expressed in the camera frame.
      *
-     * @return       Pixel coordinates as an Eigen vector.
+     * @return          Pixel coordinates as an Eigen vector.
      */
     virtual Eigen::Vector2f projectMat(const cv::Point3f &point3d_in) = 0;
 
     /*!
-     * @brief        Returns the squared uncertainty scale applied
-     *               to observations at the given pixel.
+     * @brief           Returns the squared uncertainty scale applied
+     *                  to observations at the given pixel.
      *
-     * @param[in]    point2d_in
-     *               Pixel whose scale is requested.
+     * @param[in]       point2d_in
+     *                  Pixel whose scale is requested.
      *
-     * @return       Squared scale factor; the shipped models
-     *               return one for uniform weighting.
+     * @return          Squared scale factor; the shipped models
+     *                  return one for uniform weighting.
      */
     virtual float
         uncertainty2(const Eigen::Matrix<double, 2, 1> &point2d_in) = 0;
 
     /*!
-     * @brief        Back-projects a pixel into a camera-frame
-     *               ray.
+     * @brief           Back-projects a pixel into a camera-frame
+     *                  ray.
      *
-     * @param[in]    point2d_in
-     *               Pixel to back-project.
+     * @param[in]       point2d_in
+     *                  Pixel to back-project.
      *
-     * @return       Ray through the pixel in the camera frame.
+     * @return          Ray through the pixel in the camera frame.
      */
     virtual Eigen::Vector3f unprojectEig(const cv::Point2f &point2d_in) = 0;
     /*!
-     * @brief        Back-projects a pixel into a camera-frame
-     *               ray.
+     * @brief           Back-projects a pixel into a camera-frame
+     *                  ray.
      *
-     * @param[in]    point2d_in
-     *               Pixel to back-project.
+     * @param[in]       point2d_in
+     *                  Pixel to back-project.
      *
-     * @return       Ray through the pixel in the camera frame.
+     * @return          Ray through the pixel in the camera frame.
      */
     virtual cv::Point3f     unproject(const cv::Point2f &point2d_in) = 0;
 
     /*!
-     * @brief        Returns the Jacobian of the projection at a
-     *               camera-frame point.
+     * @brief           Returns the Jacobian of the projection at a
+     *                  camera-frame point.
      *
-     * @param[in]    point3d_in
-     *               Point expressed in the camera frame.
+     * @param[in]       point3d_in
+     *                  Point expressed in the camera frame.
      *
-     * @return       Two-by-three Jacobian with image-x then
-     *               image-y rows.
+     * @return          Two-by-three Jacobian with image-x then
+     *                  image-y rows.
      */
     virtual Eigen::Matrix<double, 2, 3>
         computeProjectionJacobian(const Eigen::Vector3d &point3d_in) = 0;
 
     /*!
-     * @brief        Estimates the relative pose between two views
-     *               and triangulates the matched keypoints.
+     * @brief           Estimates the relative pose between two views
+     *                  and triangulates the matched keypoints.
      *
-     * @param[in]    keys1_in
-     *               Keypoints of the first view.
-     * @param[in]    keys2_in
-     *               Keypoints of the second view.
-     * @param[in]    matches12_in
-     *               Per-keypoint match indices from the first
-     *               view into the second view.
-     * @param[in,out] pose21_inout
-     *               Estimated pose of the second view in the
-     *               first view frame.
-     * @param[in,out] points3d_inout
-     *               Triangulated points.
-     * @param[in,out] triangulated_inout
-     *               Per-match flag reporting a valid
-     *               triangulation.
+     * @param[in]       keys1_in
+     *                  Keypoints of the first view.
      *
-     * @return       True when the two-view reconstruction
-     *               succeeds.
+     * @param[in]       keys2_in
+     *                  Keypoints of the second view.
+     *
+     * @param[in]       matches12_in
+     *                  Per-keypoint match indices from the first
+     *                  view into the second view.
+     *
+     * @param[in,out]   pose21_inout
+     *                  Estimated pose of the second view in the
+     *                  first view frame.
+     *
+     * @param[in,out]   points3d_inout
+     *                  Triangulated points.
+     *
+     * @param[in,out]   triangulated_inout
+     *                  Per-match flag reporting a valid
+     *                  triangulation.
+     *
+     * @return          True when the two-view reconstruction
+     *                  succeeds.
      */
     virtual bool
         reconstructWithTwoViews(const std::vector<cv::KeyPoint> &keys1_in,
@@ -206,44 +212,50 @@ class GeometricCamera
                                 std::vector<bool> &triangulated_inout) = 0;
 
     /*!
-     * @brief        Returns the three-by-three calibration
-     *               matrix.
+     * @brief           Returns the three-by-three calibration
+     *                  matrix.
      *
-     * @return       Calibration matrix in single precision.
+     * @return          Calibration matrix in single precision.
      */
     virtual cv::Mat         toK() = 0;
     /*!
-     * @brief        Returns the three-by-three calibration
-     *               matrix.
+     * @brief           Returns the three-by-three calibration
+     *                  matrix.
      *
-     * @return       Calibration matrix in single precision.
+     * @return          Calibration matrix in single precision.
      */
     virtual Eigen::Matrix3f toK_() = 0;
 
     /*!
-     * @brief        Checks whether two keypoints satisfy the
-     *               epipolar constraint between the cameras.
+     * @brief           Checks whether two keypoints satisfy the
+     *                  epipolar constraint between the cameras.
      *
-     * @param[in,out] p_otherCamera_inout
-     *               Non-owning pointer to the second camera;
-     *               shall be non-null.
-     * @param[in]    keypoint1_in
-     *               Keypoint in this camera view.
-     * @param[in]    keypoint2_in
-     *               Keypoint in the second camera view.
-     * @param[in]    rotation12_in
-     *               Rotation from the first camera frame into
-     *               the second.
-     * @param[in]    translation12_in
-     *               Translation from the first camera frame
-     *               into the second, in metres.
-     * @param[in]    sigmaLevel_in
-     *               Scale variance of the keypoint level.
-     * @param[in]    uncertainty_in
-     *               Pixel uncertainty scale.
+     * @param[in,out]   p_otherCamera_inout
+     *                  Non-owning pointer to the second camera;
+     *                  shall be non-null.
      *
-     * @return       True when the pair passes the epipolar
-     *               test.
+     * @param[in]       keypoint1_in
+     *                  Keypoint in this camera view.
+     *
+     * @param[in]       keypoint2_in
+     *                  Keypoint in the second camera view.
+     *
+     * @param[in]       rotation12_in
+     *                  Rotation from the first camera frame into
+     *                  the second.
+     *
+     * @param[in]       translation12_in
+     *                  Translation from the first camera frame
+     *                  into the second, in metres.
+     *
+     * @param[in]       sigmaLevel_in
+     *                  Scale variance of the keypoint level.
+     *
+     * @param[in]       uncertainty_in
+     *                  Pixel uncertainty scale.
+     *
+     * @return          True when the pair passes the epipolar
+     *                  test.
      */
     virtual bool epipolarConstrain(GeometricCamera       *p_otherCamera_inout,
                                    const cv::KeyPoint    &keypoint1_in,
@@ -254,14 +266,16 @@ class GeometricCamera
                                    const float            uncertainty_in) = 0;
 
     /*!
-     * @brief        Returns the calibration entry at the given
-     *               index.
+     * @brief           Returns the calibration entry at the given
+     *                  index.
      *
-     * @param[in]    index_in
-     *               Entry to read.
+     * @param[in]       index_in
+     *                  Entry to read.
      *
-     * @param[out] parameter_out Stored calibration value.
-     * @return GEOMETRIC_CAMERA_STATUS_SUCCESS.
+     * @param[out]      parameter_out
+     *                  Stored calibration value.
+     *
+     * @return          GEOMETRIC_CAMERA_STATUS_SUCCESS.
      */
     [[nodiscard]] GeometricCameraStatus getParameter(const int index_in,
                                                      float    &parameter_out)
@@ -270,12 +284,13 @@ class GeometricCamera
         return GeometricCameraStatus::GEOMETRIC_CAMERA_STATUS_SUCCESS;
     }
     /*!
-     * @brief        Stores a calibration entry.
+     * @brief           Stores a calibration entry.
      *
-     * @param[in]    value_in
-     *               Value stored at the entry.
-     * @param[in]    index_in
-     *               Entry to update.
+     * @param[in]       value_in
+     *                  Value stored at the entry.
+     *
+     * @param[in]       index_in
+     *                  Entry to update.
      */
     [[nodiscard]] GeometricCameraStatus setParameter(const float  value_in,
                                                      const size_t index_in)
@@ -286,10 +301,12 @@ class GeometricCamera
     }
 
     /*!
-     * @brief        Returns the number of calibration entries.
+     * @brief           Returns the number of calibration entries.
      *
-     * @param[out] size_out Size of the parameter vector.
-     * @return GEOMETRIC_CAMERA_STATUS_SUCCESS.
+     * @param[out]      size_out
+     *                  Size of the parameter vector.
+     *
+     * @return          GEOMETRIC_CAMERA_STATUS_SUCCESS.
      */
     [[nodiscard]] GeometricCameraStatus size(size_t &size_out)
     {
@@ -298,30 +315,37 @@ class GeometricCamera
     }
 
     /*!
-     * @brief        Validates a keypoint pair and triangulates
-     *               it.
+     * @brief           Validates a keypoint pair and triangulates
+     *                  it.
      *
-     * @param[in]    keypoint1_in
-     *               Keypoint in this camera view.
-     * @param[in]    keypoint2_in
-     *               Keypoint in the second camera view.
-     * @param[in,out] p_otherCamera_inout
-     *               Non-owning pointer to the second camera;
-     *               shall be non-null.
-     * @param[in,out] pose1_inout
-     *               Pose of this camera in the world frame.
-     * @param[in,out] pose2_inout
-     *               Pose of the second camera in the world
-     *               frame.
-     * @param[in]    sigmaLevel1_in
-     *               Scale variance of the first keypoint level.
-     * @param[in]    sigmaLevel2_in
-     *               Scale variance of the second keypoint level.
-     * @param[in,out] point3d_inout
-     *               Triangulated point in the world frame.
+     * @param[in]       keypoint1_in
+     *                  Keypoint in this camera view.
      *
-     * @return       True when the pair is accepted and
-     *               point3D_out was set.
+     * @param[in]       keypoint2_in
+     *                  Keypoint in the second camera view.
+     *
+     * @param[in,out]   p_otherCamera_inout
+     *                  Non-owning pointer to the second camera;
+     *                  shall be non-null.
+     *
+     * @param[in,out]   pose1_inout
+     *                  Pose of this camera in the world frame.
+     *
+     * @param[in,out]   pose2_inout
+     *                  Pose of the second camera in the world
+     *                  frame.
+     *
+     * @param[in]       sigmaLevel1_in
+     *                  Scale variance of the first keypoint level.
+     *
+     * @param[in]       sigmaLevel2_in
+     *                  Scale variance of the second keypoint level.
+     *
+     * @param[in,out]   point3d_inout
+     *                  Triangulated point in the world frame.
+     *
+     * @return          True when the pair is accepted and
+     *                  point3D_out was set.
      */
     virtual bool matchAndTriangulate(const cv::KeyPoint &keypoint1_in,
                                      const cv::KeyPoint &keypoint2_in,
@@ -333,10 +357,12 @@ class GeometricCamera
                                      Eigen::Vector3f    &point3d_inout) = 0;
 
     /*!
-     * @brief        Returns the unique camera identifier.
+     * @brief           Returns the unique camera identifier.
      *
-     * @param[out] id_out Identifier assigned at construction.
-     * @return GEOMETRIC_CAMERA_STATUS_SUCCESS.
+     * @param[out]      id_out
+     *                  Identifier assigned at construction.
+     *
+     * @return          GEOMETRIC_CAMERA_STATUS_SUCCESS.
      */
     [[nodiscard]] GeometricCameraStatus getId(unsigned int &id_out) const
     {
@@ -345,10 +371,12 @@ class GeometricCamera
     }
 
     /*!
-     * @brief        Returns the camera model type.
+     * @brief           Returns the camera model type.
      *
-     * @param[out] type_out CAM_PINHOLE or CAM_FISHEYE.
-     * @return GEOMETRIC_CAMERA_STATUS_SUCCESS.
+     * @param[out]      type_out
+     *                  CAM_PINHOLE or CAM_FISHEYE.
+     *
+     * @return          GEOMETRIC_CAMERA_STATUS_SUCCESS.
      */
     [[nodiscard]] GeometricCameraStatus getType(unsigned int &type_out) const
     {
@@ -357,33 +385,33 @@ class GeometricCamera
     }
 
     /*!
-     * @brief        Model type tag for pinhole cameras.
+     * @brief           Model type tag for pinhole cameras.
      */
     const static unsigned int CAM_PINHOLE = 0;
     /*!
-     * @brief        Model type tag for fisheye cameras.
+     * @brief           Model type tag for fisheye cameras.
      */
     const static unsigned int CAM_FISHEYE = 1;
 
     /*!
-     * @brief        Source of unique camera identifiers.
+     * @brief           Source of unique camera identifiers.
      */
     static long unsigned int nextId;
 
   protected:
     /*!
-     * @brief        Calibration entries; layout depends on the
-     *               model.
+     * @brief           Calibration entries; layout depends on the
+     *                  model.
      */
     std::vector<float> parameters;
 
     /*!
-     * @brief        Unique camera identifier.
+     * @brief           Unique camera identifier.
      */
     unsigned int id;
 
     /*!
-     * @brief        Camera model type tag.
+     * @brief           Camera model type tag.
      */
     unsigned int type;
 };

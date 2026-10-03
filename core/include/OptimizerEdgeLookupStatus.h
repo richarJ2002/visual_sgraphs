@@ -20,7 +20,7 @@
  * @file            OptimizerEdgeLookupStatus.h
  *
  * @brief           Declares the status returned by every OptimizerEdgeLookup
- * operation.
+ *                  operation.
  */
 
 #ifndef OPTIMIZER_EDGE_LOOKUP_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a OptimizerEdgeLookup operation. Values are fixed and
- * never reordered.
+ * @brief           Result of a OptimizerEdgeLookup operation. Values are fixed
+ *                  and never reordered.
  */
 enum class OptimizerEdgeLookupStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS = 0U
 };
 

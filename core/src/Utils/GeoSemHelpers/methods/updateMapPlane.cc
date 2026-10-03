@@ -139,8 +139,9 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
          * Refit the mapped global equation from the complete accumulated point
          * cloud.
          *
-         * @note        Without refitting, the point cloud and centroid change
-         *              but the original plane equation becomes stale.
+         * @note            Without refitting, the point cloud and centroid
+         *                  change but the original plane equation becomes
+         *                  stale.
          */
         bool wasPlaneRefit{};
         if (refitMappedPlaneFromCloud(p_currentPlane, wasPlaneRefit) !=

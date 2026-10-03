@@ -27,9 +27,9 @@
 #define CONFIG_H
 
 /*!
- * @file         Config.h
+ * @file            Config.h
  *
- * @brief        Declares the configuration containers and file parser.
+ * @brief           Declares the configuration containers and file parser.
  */
 
 #include "Utils/Config/objects/ConfigParserStatus.h"
@@ -45,61 +45,61 @@ namespace config
 {
 
 /*!
- * @brief        Viewer configuration container.
+ * @brief           Viewer configuration container.
  */
 class ViewerConfig
 {};
 
 /*!
- * @brief        Camera configuration container.
+ * @brief           Camera configuration container.
  */
 class CameraConfig
 {};
 
 /*!
- * @brief        ORB extractor configuration container.
+ * @brief           ORB extractor configuration container.
  */
 class ORBExtractorConfig
 {};
 
 /*!
- * @brief        IMU configuration container.
+ * @brief           IMU configuration container.
  */
 class IMUConfig
 {};
 
 /*!
- * @brief        Parses the estimator configuration file.
+ * @brief           Parses the estimator configuration file.
  */
 class ConfigParser
 {
   public:
     /*!
-     * @brief        Parses the configuration file at the given path.
+     * @brief           Parses the configuration file at the given path.
      *
-     * @param[in]    configurationFilePath_in
-     *               Path of the configuration file to parse.
+     * @param[in]       configurationFilePath_in
+     *                  Path of the configuration file to parse.
      *
-     * @return CONFIG_PARSER_STATUS_SUCCESS.
+     * @return          CONFIG_PARSER_STATUS_SUCCESS.
      */
     [[nodiscard]] ConfigParserStatus
         parseConfigFile(const std::string &configurationFilePath_in);
 
   private:
     /*!
-     * @brief        Stored viewer configuration.
+     * @brief           Stored viewer configuration.
      */
     ViewerConfig       viewerConfig;
     /*!
-     * @brief        Stored camera configuration.
+     * @brief           Stored camera configuration.
      */
     CameraConfig       cameraConfig;
     /*!
-     * @brief        Stored ORB extractor configuration.
+     * @brief           Stored ORB extractor configuration.
      */
     ORBExtractorConfig orbConfig;
     /*!
-     * @brief        Stored IMU configuration.
+     * @brief           Stored IMU configuration.
      */
     IMUConfig          imuConfig;
 };

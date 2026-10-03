@@ -1,6 +1,7 @@
 /*!
- * @file test_SparseClusterVerdict.cpp
- * @brief Tests deterministic sparse-graph marker classification.
+ * @file            test_SparseClusterVerdict.cpp
+ *
+ * @brief           Tests deterministic sparse-graph marker classification.
  */
 
 #include "../src/SparseClusterVerdict.h"

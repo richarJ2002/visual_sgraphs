@@ -25,19 +25,26 @@ namespace vs_graphs
 namespace core
 {
 
-/*! @brief Side of the square patch the ORB descriptor samples, in pixels. */
+/*!
+ * @brief           Side of the square patch the ORB descriptor samples, in
+ *                  pixels.
+ */
 inline constexpr int PATCH_SIZE = 31;
 
-/*! @brief Radius of the circular patch that sets a keypoint orientation, in
- *         pixels (PATCH_SIZE / 2). */
+/*!
+ * @brief           Radius of the circular patch that sets a keypoint
+ *                  orientation, in pixels (PATCH_SIZE / 2).
+ */
 inline constexpr int HALF_PATCH_SIZE = 15;
 
-/*! @brief Image border, in pixels, kept free of keypoints so that every
- *         patch fits inside the image. */
+/*!
+ * @brief           Image border, in pixels, kept free of keypoints so that
+ *                  every patch fits inside the image.
+ */
 inline constexpr int EDGE_THRESHOLD = 19;
 
 /*!
- * @brief        Computes the dominant orientation of a patch.
+ * @brief           Computes the dominant orientation of a patch.
  */
 [[nodiscard]] ORBextractorStatus
     computeIntensityCentroidAngle(const cv::Mat          &image_in,
@@ -46,27 +53,31 @@ inline constexpr int EDGE_THRESHOLD = 19;
                                   float &intensityCentroidAngle_out);
 
 /*!
- * @brief        Computes the 256-bit ORB descriptor of one keypoint by
- *               comparing the brightness of 256 pairs of pixels around it.
+ * @brief           Computes the 256-bit ORB descriptor of one keypoint by
+ *                  comparing the brightness of 256 pairs of pixels around it.
  *
- *               The sampling pattern is rotated by the keypoint orientation, so
- *               the descriptor does not change when the image rotates. No
- *               bounds check is done: the rotated pattern must stay inside the
- *               image, which the keypoint border (EDGE_THRESHOLD) guarantees.
+ *                  The sampling pattern is rotated by the keypoint orientation,
+ *                  so the descriptor does not change when the image rotates. No
+ *                  bounds check is done: the rotated pattern must stay inside
+ *                  the image, which the keypoint border (EDGE_THRESHOLD)
+ *                  guarantees.
  *
- * @param[in]    kpt_in
- *               Keypoint; its position is in pixels of image_in and its
- *               angle in degrees.
- * @param[in]    image_in
- *               8-bit single-channel image of the keypoint's pyramid level.
- * @param[in]    p_briefPattern_in
- *               512 sampling points, two per test, as pixel offsets from the
- *               keypoint. Borrowed; not modified.
- * @param[in,out] p_descriptor_inout
- *               Destination for the 32 descriptor bytes; the caller provides
- *               room for 32 bytes and every byte is overwritten.
+ * @param[in]       kpt_in
+ *                  Keypoint; its position is in pixels of image_in and its
+ *                  angle in degrees.
  *
- * @return       ORBEXTRACTOR_STATUS_SUCCESS always.
+ * @param[in]       image_in
+ *                  8-bit single-channel image of the keypoint's pyramid level.
+ *
+ * @param[in]       p_briefPattern_in
+ *                  512 sampling points, two per test, as pixel offsets from the
+ *                  keypoint. Borrowed; not modified.
+ *
+ * @param[in,out]   p_descriptor_inout
+ *                  Destination for the 32 descriptor bytes; the caller provides
+ *                  room for 32 bytes and every byte is overwritten.
+ *
+ * @return          ORBEXTRACTOR_STATUS_SUCCESS always.
  */
 [[nodiscard]] ORBextractorStatus
     computeOrbDescriptor(const cv::KeyPoint &kpt_in,
@@ -75,7 +86,7 @@ inline constexpr int EDGE_THRESHOLD = 19;
                          unsigned char      *p_descriptor_inout);
 
 /*!
- * @brief        Assigns orientations to all keypoints.
+ * @brief           Assigns orientations to all keypoints.
  */
 [[nodiscard]] ORBextractorStatus
     computeOrientation(const cv::Mat             &image_in,
@@ -83,13 +94,13 @@ inline constexpr int EDGE_THRESHOLD = 19;
                        const std::vector<int>    &orientationMaximumOffset_in);
 
 /*!
- * @brief        Orders octree nodes by keypoint count, descending.
+ * @brief           Orders octree nodes by keypoint count, descending.
  */
 bool compareNodes(std::pair<int, ExtractorNode *> &e1_in,
                   std::pair<int, ExtractorNode *> &e2_in);
 
 /*!
- * @brief        Computes descriptors for all keypoints.
+ * @brief           Computes descriptors for all keypoints.
  */
 [[nodiscard]] ORBextractorStatus
     computeDescriptors(const cv::Mat                &image_in,

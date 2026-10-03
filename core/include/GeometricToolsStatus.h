@@ -20,7 +20,7 @@
  * @file            GeometricToolsStatus.h
  *
  * @brief           Declares the status returned by every GeometricTools
- * operation.
+ *                  operation.
  */
 
 #ifndef GEOMETRIC_TOOLS_STATUS_H
@@ -34,15 +34,19 @@ namespace core
 {
 
 /*!
- * @brief       Result of a GeometricTools operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a GeometricTools operation. Values are fixed and
+ *                  never reordered.
  */
 enum class GeometricToolsStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     GEOMETRIC_TOOLS_STATUS_SUCCESS = 0U,
 
-    /*! @brief A numerical step did not converge or produced a non-finite value.
+    /*!
+     * @brief           A numerical step did not converge or produced a
+     *                  non-finite value.
      */
     GEOMETRIC_TOOLS_STATUS_NUMERICAL_FAILURE = 1U
 };

@@ -87,8 +87,8 @@ void writeFile(const std::filesystem::path &path_in,
 } // namespace
 
 /*!
- * @brief        Checks that replaying a nonexistent directory returns an empty,
- *               valid result instead of failing.
+ * @brief           Checks that replaying a nonexistent directory returns an
+ *                  empty, valid result instead of failing.
  */
 TEST(LegacyCaptureReplay, ReturnsValidResultForNonexistentDirectory)
 {
@@ -101,8 +101,8 @@ TEST(LegacyCaptureReplay, ReturnsValidResultForNonexistentDirectory)
 }
 
 /*!
- * @brief        Checks that a well-formed capture parses without the malformed
- *               flag.
+ * @brief           Checks that a well-formed capture parses without the
+ *                  malformed flag.
  */
 TEST(LegacyCaptureReplay, ParsesAValidCaptureWithoutMalformedFlag)
 {
@@ -116,8 +116,9 @@ TEST(LegacyCaptureReplay, ParsesAValidCaptureWithoutMalformedFlag)
 }
 
 /*!
- * @brief        Checks that a capture with a missing or wrongly typed required
- *               field is reported malformed rather than silently dropped.
+ * @brief           Checks that a capture with a missing or wrongly typed
+ *                  required field is reported malformed rather than silently
+ *                  dropped.
  */
 TEST(LegacyCaptureReplay,
      MissingRequiredFieldIsReportedMalformedNotSilentlyDropped)
@@ -138,8 +139,8 @@ TEST(LegacyCaptureReplay,
 }
 
 /*!
- * @brief        Checks that replayed axiom results never contain PASS, carry a
- *               reason, and list each axiom code once.
+ * @brief           Checks that replayed axiom results never contain PASS, carry
+ *                  a reason, and list each axiom code once.
  */
 TEST(LegacyCaptureReplay, NeverEmitsPassOnlyFailOrUnknown)
 {
@@ -167,9 +168,9 @@ TEST(LegacyCaptureReplay, NeverEmitsPassOnlyFailOrUnknown)
 }
 
 /*!
- * @brief        Checks that a wall whose room_id names no room in the file is
- *               deterministically reported as FAIL for the wall-ownership
- *               axiom.
+ * @brief           Checks that a wall whose room_id names no room in the file
+ *                  is deterministically reported as FAIL for the wall-ownership
+ *                  axiom.
  */
 TEST(LegacyCaptureReplay,
      UnresolvableWallOwnerIsReportedAsFailDeterministically)
@@ -199,8 +200,8 @@ TEST(LegacyCaptureReplay,
 }
 
 /*!
- * @brief        Checks that reordering the JSON arrays of a capture leaves both
- *               digests unchanged.
+ * @brief           Checks that reordering the JSON arrays of a capture leaves
+ *                  both digests unchanged.
  */
 TEST(LegacyCaptureReplay, JsonArrayPermutationProducesIdenticalDigests)
 {
@@ -217,8 +218,8 @@ TEST(LegacyCaptureReplay, JsonArrayPermutationProducesIdenticalDigests)
 }
 
 /*!
- * @brief        Checks that a geometry-only change alters the full geometry
- *               digest but not the topology digest.
+ * @brief           Checks that a geometry-only change alters the full geometry
+ *                  digest but not the topology digest.
  */
 TEST(LegacyCaptureReplay, GeometryOnlyDriftChangesOnlyFullGeometryDigest)
 {
@@ -235,8 +236,9 @@ TEST(LegacyCaptureReplay, GeometryOnlyDriftChangesOnlyFullGeometryDigest)
 }
 
 /*!
- * @brief        Checks that replaying a directory twice gives the same report,
- *               with real file counts and results sorted by file name.
+ * @brief           Checks that replaying a directory twice gives the same
+ *                  report, with real file counts and results sorted by file
+ *                  name.
  */
 TEST(LegacyCaptureReplay, DirectoryReplayIsDeterministicAndReportsRealCounts)
 {
@@ -277,8 +279,8 @@ TEST(LegacyCaptureReplay, DirectoryReplayIsDeterministicAndReportsRealCounts)
 }
 
 /*!
- * @brief        Checks that the real 147-file acceptance corpus replays;
- *               skipped when that corpus directory is unavailable.
+ * @brief           Checks that the real 147-file acceptance corpus replays;
+ *                  skipped when that corpus directory is unavailable.
  */
 TEST(LegacyCaptureReplay, ReplaysTheReal147FileAcceptanceCorpus)
 {

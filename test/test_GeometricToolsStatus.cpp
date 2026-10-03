@@ -32,8 +32,8 @@ namespace core
 {
 
 /*!
- * @brief        Checks that GeometricTools::triangulate recovers the 3D point
- *               seen by two cameras and returns success.
+ * @brief           Checks that GeometricTools::triangulate recovers the 3D
+ *                  point seen by two cameras and returns success.
  */
 TEST(GeometricToolsStatus, TriangulatesAPointSeenByTwoCameras)
 {
@@ -55,9 +55,9 @@ TEST(GeometricToolsStatus, TriangulatesAPointSeenByTwoCameras)
 }
 
 /*!
- * @brief        Checks that triangulate returns a numerical-failure status, and
- *               leaves the output point untouched, when the solution lies at
- *               infinity.
+ * @brief           Checks that triangulate returns a numerical-failure status,
+ *                  and leaves the output point untouched, when the solution
+ *                  lies at infinity.
  */
 TEST(GeometricToolsStatus, ReportsASolutionAtInfinityAsNumericalFailure)
 {

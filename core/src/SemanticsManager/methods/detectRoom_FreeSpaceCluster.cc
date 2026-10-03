@@ -253,9 +253,9 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
             /*!
              * Use centroid distance only as a coarse rejection condition.
              *
-             * @note        A long wall may have a centroid far from the room
-             *              centre while still forming a valid boundary of the
-             *              room.
+             * @note            A long wall may have a centroid far from the
+             *                  room centre while still forming a valid boundary
+             *                  of the room.
              */
             const double coarseCentroidDistanceThreshold =
                 2.0 * static_cast<double>(
@@ -871,20 +871,27 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
 
         if (p_room == nullptr)
         {
-            /*! Axiom: every room after the first must be discovered through
-             * a passage (a prospective-room handle, checked above via
-             * p_clusterProspective/matched wall ownership), not conjured
-             * directly from free-space geometry alone -- "if a wall is
-             * observed it must be linked to a room; if that room is new, it
-             * must be observed through a passage" (user rule). The
-             * exception is the first room -- but per-MAP, not per-mission:
-             * every tracking-loss reset starts an entirely new Map with no
-             * passages yet either, so it needs its own bootstrap room the
-             * same way the mission's very first map did. Atlas::GetAllRooms()
-             * spans every map (confirmed by reading it), so scoping this to
-             * the CURRENT map only is required -- otherwise a confirmed room
-             * surviving in an old, now-inactive map would permanently block
-             * every future map from ever bootstrapping its own first room. */
+            /*!
+             * @brief           Axiom: every room after the first must be
+             *                  discovered through a passage (a prospective-room
+             *                  handle, checked above via
+             *                  p_clusterProspective/matched wall ownership),
+             *                  not conjured directly from free-space geometry
+             *                  alone -- "if a wall is observed it must be
+             *                  linked to a room; if that room is new, it must
+             *                  be observed through a passage" (user rule). The
+             *                  exception is the first room -- but per-MAP, not
+             *                  per-mission: every tracking-loss reset starts an
+             *                  entirely new Map with no passages yet either, so
+             *                  it needs its own bootstrap room the same way the
+             *                  mission's very first map did.
+             *                  Atlas::GetAllRooms() spans every map (confirmed
+             *                  by reading it), so scoping this to the CURRENT
+             *                  map only is required -- otherwise a confirmed
+             *                  room surviving in an old, now-inactive map would
+             *                  permanently block every future map from ever
+             *                  bootstrapping its own first room.
+             */
             Map *p_currentMapForBootstrapCheck = nullptr;
             if (p_atlas->getCurrentMap(p_currentMapForBootstrapCheck) !=
                 AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -995,12 +1002,16 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 continue;
             }
 
-            /*! First-room creation lives in the bootstrap hierarchy, which
-             * runs before free-space detection every cycle and promotes its
-             * room immediately: a cluster that matches no room, wall owner,
-             * or passage-linked prospective at this point describes no known
-             * space, so it is deferred rather than conjured into a duplicate
-             * first room. */
+            /*!
+             * @brief           First-room creation lives in the bootstrap
+             *                  hierarchy, which runs before free-space
+             *                  detection every cycle and promotes its room
+             *                  immediately: a cluster that matches no room,
+             *                  wall owner, or passage-linked prospective at
+             *                  this point describes no known space, so it is
+             *                  deferred rather than conjured into a duplicate
+             *                  first room.
+             */
             std::cout << "[SemMgr] Cluster " << clusterId
                       << " deferred: first-room creation is owned by "
                          "bootstrap; cluster matches no known space."
@@ -1086,15 +1097,20 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                          __func__);
         }
 
-        /*! Perspective guard: a wall observed through an opening is on the far
-         * side of the passage's supporting wall and therefore cannot bound the
-         * near room. Bind such walls to the passage's prospective room instead,
-         * where they can later be matched by independently validated far-side
-         * cluster evidence. Keyed by the room centroid so the near side stays
-         * stable. When no prospective exists yet, the wall is left off the near
-         * room so it can bind onto a prospective created later in the same
-         * cycle. The crossing geometry alone drives the far-side decision,
-         * independent of the passage's passability state.
+        /*!
+         * @brief           Perspective guard: a wall observed through an
+         *                  opening is on the far side of the passage's
+         *                  supporting wall and therefore cannot bound the near
+         *                  room. Bind such walls to the passage's prospective
+         *                  room instead, where they can later be matched by
+         *                  independently validated far-side cluster evidence.
+         *                  Keyed by the room centroid so the near side stays
+         *                  stable. When no prospective exists yet, the wall is
+         *                  left off the near room so it can bind onto a
+         *                  prospective created later in the same cycle. The
+         *                  crossing geometry alone drives the far-side
+         *                  decision, independent of the passage's passability
+         *                  state.
          */
         for (vs_graphs::core::geometric::Plane *wall : closestWalls)
         {
@@ -1114,8 +1130,11 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                 continue;
             }
 
-            /*! Reroute far-side walls to the passage's prospective room.
-             * The ground normal is needed to project the aperture crossing. */
+            /*!
+             * @brief           Reroute far-side walls to the passage's
+             *                  prospective room. The ground normal is needed to
+             *                  project the aperture crossing.
+             */
             bool farSideBound = false;
             {
                 geometric::Plane *p_groundPlane = nullptr;
@@ -2245,8 +2264,8 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
          * Consolidate provisional single-wall structural elements whose wall
          * has now been absorbed into the cluster-backed room.
          *
-         * @note        This is deliberately more restrictive than the old
-         *              centroid-only reAssociateRooms() implementation.
+         * @note            This is deliberately more restrictive than the old
+         *                  centroid-only reAssociateRooms() implementation.
          */
         if (utils::utils::Utils::consolidateProvisionalRooms(p_room, p_atlas) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
@@ -2412,10 +2431,11 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
         /*!
          * Confirm the room from its free-space cluster.
          *
-         * @note        A room is defined by connected free space, not by having
-         *              a particular arrangement or number of walls. The
-         *              associated walls describe the room boundary but do not
-         *              define whether the free-space region is a room.
+         * @note            A room is defined by connected free space, not by
+         *                  having a particular arrangement or number of walls.
+         *                  The associated walls describe the room boundary but
+         *                  do not define whether the free-space region is a
+         *                  room.
          */
         const bool validFreeSpaceCluster =
             cluster.size() >=

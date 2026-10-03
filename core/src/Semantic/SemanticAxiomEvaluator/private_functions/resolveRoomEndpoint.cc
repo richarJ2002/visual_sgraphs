@@ -17,41 +17,41 @@
  */
 
 /*!
- * @file         resolveRoomEndpoint.cc
+ * @file            resolveRoomEndpoint.cc
  *
- * @brief        Implements resolveRoomEndpoint(), declared in
- *               private_functions.h.
+ * @brief           Implements resolveRoomEndpoint(), declared in
+ *                  private_functions.h.
  *
- *               "Real"/"confirmed" throughout this module's passage-
- *               endpoint evaluators (AX-PASS-02/03/04) means
- *               isLive && isConfirmedRoomVariant, read directly from the
- *               target RoomRecord this function resolves. This is a
- *               deliberate, documented proxy for the plan's
- *               "authoritative side slot" concept
- *               (PassageRecord::endpointSlotReason is always
- *               UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA in this
- *               slice, confirmed by direct source read of Passage.h/
- *               Passage.cc: KnownSideProvenance and getProspectiveRoom()
- *               record which room is known/prospective, not a named
- *               DISCOVERY_SIDE/OPPOSITE_SIDE endpoint slot). Evaluating
- *               cardinality, reciprocity, and map/floor agreement from
- *               this proxy is not "claiming authoritative endpoint-slot
- *               PASS from unavailable evidence": every field this
- *               function reads (EntityRef::key/isLive,
- *               RoomRecord::isLive/variant/floorRef) is genuinely,
- *               always populated by capture -- see
- *               ResolvedRoomEndpoint.h.
+ *                  "Real"/"confirmed" throughout this module's passage-
+ *                  endpoint evaluators (AX-PASS-02/03/04) means
+ *                  isLive && isConfirmedRoomVariant, read directly from the
+ *                  target RoomRecord this function resolves. This is a
+ *                  deliberate, documented proxy for the plan's
+ *                  "authoritative side slot" concept
+ *                  (PassageRecord::endpointSlotReason is always
+ *                  UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA in this
+ *                  slice, confirmed by direct source read of Passage.h/
+ *                  Passage.cc: KnownSideProvenance and getProspectiveRoom()
+ *                  record which room is known/prospective, not a named
+ *                  DISCOVERY_SIDE/OPPOSITE_SIDE endpoint slot). Evaluating
+ *                  cardinality, reciprocity, and map/floor agreement from
+ *                  this proxy is not "claiming authoritative endpoint-slot
+ *                  PASS from unavailable evidence": every field this
+ *                  function reads (EntityRef::key/isLive,
+ *                  RoomRecord::isLive/variant/floorRef) is genuinely,
+ *                  always populated by capture -- see
+ *                  ResolvedRoomEndpoint.h.
  *
- *               Residual known limitation: RoomRecord::variant is not
- *               duplicated onto EntityRef, so isConfirmedRoomVariant can
- *               only be known when the target is actually located via
- *               enumeration (isFoundInSnapshot); a referenced room this
- *               snapshot cannot enumerate in any captured map never
- *               satisfies "real"/"confirmed" here, even when it is
- *               genuinely live -- the downstream evaluators correctly
- *               treat that as unproven rather than fabricating a
- *               variant, but it remains a schema gap distinct from the
- *               isLive fix below.
+ *                  Residual known limitation: RoomRecord::variant is not
+ *                  duplicated onto EntityRef, so isConfirmedRoomVariant can
+ *                  only be known when the target is actually located via
+ *                  enumeration (isFoundInSnapshot); a referenced room this
+ *                  snapshot cannot enumerate in any captured map never
+ *                  satisfies "real"/"confirmed" here, even when it is
+ *                  genuinely live -- the downstream evaluators correctly
+ *                  treat that as unproven rather than fabricating a
+ *                  variant, but it remains a schema gap distinct from the
+ *                  isLive fix below.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

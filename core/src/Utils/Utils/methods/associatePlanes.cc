@@ -125,8 +125,8 @@ UtilsStatus Utils::associatePlanes(
     /*!
      * Association thresholds.
      *
-     * @note        The ominus threshold_in is used here as the maximum angular
-     *              difference in radians.
+     * @note            The ominus threshold_in is used here as the maximum
+     *                  angular difference in radians.
      */
     const double maximumAngularDifference =
         std::max(0.01, static_cast<double>(threshold_in));
@@ -239,9 +239,10 @@ UtilsStatus Utils::associatePlanes(
          * Transform the mapped equation into the frame used by the supplied
          * observation.
          *
-         * @note        SemanticSegmentation now supplies both planes in the
-         *              global frame, therefore keyframePose_in is normally
-         * identity.
+         * @note            SemanticSegmentation now supplies both planes in the
+         *                               global frame, therefore keyframePose_in
+         *                               is normally
+         *                  identity.
          */
         g2o::Plane3D mappedPlaneInGivenFrame{};
         if (Utils::applyPoseToPlane(
@@ -462,9 +463,12 @@ UtilsStatus Utils::associatePlanes(
          * Require either a direct centroid match or finite point-cloud
          * compatibility.
          *
-         * @note        The angular and perpendicular plane-distance checks have
-         *              already been applied above. Therefore, planes with the
-         * same centroid but significantly different normals are not merged.
+         * @note            The angular and perpendicular plane-distance checks
+         *                  have
+         *                               already been applied above. Therefore,
+         *                               planes with the
+         *                  same centroid but significantly different normals
+         *                  are not merged.
          */
         if (!centroidsAreClose && !finiteCloudsCompatible)
         {

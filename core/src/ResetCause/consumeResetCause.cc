@@ -1,7 +1,7 @@
 /*!
- * @file         consumeResetCause.cc
+ * @file            consumeResetCause.cc
  *
- * @brief        Implements consumeResetCause declared in ResetCause.h.
+ * @brief           Implements consumeResetCause declared in ResetCause.h.
  */
 
 #include "ResetCause.h"

@@ -17,29 +17,29 @@
  */
 
 /*!
- * @file         evaluateOneRoomBoundary.cc
+ * @file            evaluateOneRoomBoundary.cc
  *
- * @brief        Implements evaluateOneRoomBoundary(), declared in
- *               private_functions.h.
+ * @brief           Implements evaluateOneRoomBoundary(), declared in
+ *                  private_functions.h.
  *
- *               A non-finite corner is an explicit FAIL
- *               (checkRoomBoundaryGeometry()'s NON_FINITE_CORNER status);
- *               wall evidence is validated per-reference by
- *               isValidBoundaryWallEvidence() rather than accepted merely
- *               for being a nonempty vector; and this evaluator never emits
- *               ROOM_BOUNDARY_STRUCTURALLY_VALID/PASS -- edge-to-wall and
- *               gap-to-aperture geometric correspondence are not
- *               implemented here, so a COMPLETE room with otherwise-valid
- *               geometry and at least one verified, live, reciprocal,
- *               same-map WALL reference is UNKNOWN, never PASS.
+ *                  A non-finite corner is an explicit FAIL
+ *                  (checkRoomBoundaryGeometry()'s NON_FINITE_CORNER status);
+ *                  wall evidence is validated per-reference by
+ *                  isValidBoundaryWallEvidence() rather than accepted merely
+ *                  for being a nonempty vector; and this evaluator never emits
+ *                  ROOM_BOUNDARY_STRUCTURALLY_VALID/PASS -- edge-to-wall and
+ *                  gap-to-aperture geometric correspondence are not
+ *                  implemented here, so a COMPLETE room with otherwise-valid
+ *                  geometry and at least one verified, live, reciprocal,
+ *                  same-map WALL reference is UNKNOWN, never PASS.
  *
- *               Each RoomRecord::wallRefs entry's typed
- *               RoomBoundaryWallEvidenceStatus is inspected individually
- *               rather than merely counted as a boolean: a known-INVALID
- *               reference is a FAIL even when another reference is VALID,
- *               so a provable contradiction cannot be hidden behind one
- *               otherwise-valid reference or silently reach the
- *               edge-support-coverage UNKNOWN.
+ *                  Each RoomRecord::wallRefs entry's typed
+ *                  RoomBoundaryWallEvidenceStatus is inspected individually
+ *                  rather than merely counted as a boolean: a known-INVALID
+ *                  reference is a FAIL even when another reference is VALID,
+ *                  so a provable contradiction cannot be hidden behind one
+ *                  otherwise-valid reference or silently reach the
+ *                  edge-support-coverage UNKNOWN.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

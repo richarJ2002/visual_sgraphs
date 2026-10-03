@@ -1,10 +1,12 @@
 /*!
- * @file test_BoundaryLoopOutlierPruning.cpp
- * @brief User rule: once a room's true boundary closes into a valid loop,
- *        any wall the room still owns that is NOT part of that loop, and
- *        that no passage tied to the room explains, is invalid and must be
- *        detached -- rather than the presence of that one stray wall
- *        silently blocking the whole room from ever reaching COMPLETE.
+ * @file            test_BoundaryLoopOutlierPruning.cpp
+ *
+ * @brief           User rule: once a room's true boundary closes into a valid
+ *                  loop, any wall the room still owns that is NOT part of that
+ *                  loop, and that no passage tied to the room explains, is
+ *                  invalid and must be detached -- rather than the presence of
+ *                  that one stray wall silently blocking the whole room from
+ *                  ever reaching COMPLETE.
  */
 
 #include "Atlas.h"
@@ -29,9 +31,12 @@ namespace core
 namespace
 {
 
-/*! Builds a GROUND geometric::Plane at z=0 with a genuine, production-refit
- * geometry snapshot (Map::GetBiggestGroundPlane() requires cloudGeneration ==
- * successfulRefitGeneration and a finite support count). */
+/*!
+ * @brief           Builds a GROUND geometric::Plane at z=0 with a genuine,
+ *                  production-refit geometry snapshot
+ *                  (Map::GetBiggestGroundPlane() requires cloudGeneration ==
+ *                  successfulRefitGeneration and a finite support count).
+ */
 std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
                                                                Map *p_map_in)
 {
@@ -105,11 +110,14 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
     return ground;
 }
 
-/*! Builds an admissible WALL geometric::Plane on the plane {normal . p + d = 0}
- * passing through pointOnPlane_world_in, with a genuine on-plane point
- * cloud running along axisAlong_world_in (must be horizontal) for
- * [-halfLength_m_in, halfLength_m_in] and vertically for [zMin_m_in,
- * zMax_m_in]. */
+/*!
+ * @brief           Builds an admissible WALL geometric::Plane on the plane
+ *                  {normal . p + d = 0} passing through pointOnPlane_world_in,
+ *                  with a genuine on-plane point cloud running along
+ *                  axisAlong_world_in (must be horizontal) for
+ *                  [-halfLength_m_in, halfLength_m_in] and vertically for
+ *                  [zMin_m_in, zMax_m_in].
+ */
 std::unique_ptr<geometric::Plane>
     makeWallSegmentPlane(int                    id_in,
                          Map                   *p_map_in,
@@ -208,8 +216,10 @@ std::unique_ptr<geometric::Plane>
     return wall;
 }
 
-/*! Builds a 4-wall rectangular loop (x in [0,4], y in [0,3], z in [1,2])
- * plus a 5th wall far away and disconnected from it. */
+/*!
+ * @brief           Builds a 4-wall rectangular loop (x in [0,4], y in [0,3], z
+ *                  in [1,2]) plus a 5th wall far away and disconnected from it.
+ */
 struct RectangleWithOutlier
 {
     std::unique_ptr<geometric::Plane> north, south, east, west, outlier;
@@ -266,9 +276,9 @@ RectangleWithOutlier makeRectangleWithOutlier(Map *p_map_in)
 } // namespace
 
 /*!
- * @brief        Checks that a room whose four walls form a closed rectangle
- *               reaches a COMPLETE boundary and drops a fifth wall that no
- *               passage explains.
+ * @brief           Checks that a room whose four walls form a closed rectangle
+ *                  reaches a COMPLETE boundary and drops a fifth wall that no
+ *                  passage explains.
  */
 TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
 {
@@ -338,8 +348,8 @@ TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
 }
 
 /*!
- * @brief        Checks that a fifth wall explained by a passage stays attached
- *               to the room and the boundary is still COMPLETE.
+ * @brief           Checks that a fifth wall explained by a passage stays
+ *                  attached to the room and the boundary is still COMPLETE.
  */
 TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
 {

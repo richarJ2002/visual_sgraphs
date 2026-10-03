@@ -20,7 +20,7 @@
  * @file            OpenPassageHypothesisRecord.h
  *
  * @brief           Declares a value-only copy of one
- *                   SemanticsManager::OpenPassageEvidence entry.
+ *                  SemanticsManager::OpenPassageEvidence entry.
  */
 
 #ifndef SEMANTIC_GRAPH_SNAPSHOT_OPEN_PASSAGE_HYPOTHESIS_RECORD_H
@@ -39,41 +39,56 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Value-only copy of one open-passage hypothesis
- *              (SemanticsManager::OpenPassageEvidence, SemanticsManager.h),
- *              a temporally tracked candidate awaiting repeated Voxblox
- *              confirmation before it is promoted to a Passage.
+ * @brief           Value-only copy of one open-passage hypothesis
+ *                  (SemanticsManager::OpenPassageEvidence, SemanticsManager.h),
+ *                  a temporally tracked candidate awaiting repeated Voxblox
+ *                  confirmation before it is promoted to a Passage.
  *
- *              Never holds SemanticsManager::OpenPassageEvidence's own
- *              Plane* -- \c supportingWallRef is the pointer-free
- *              RawPlaneRef built from it at capture time instead (see
- *              rawPlaneRef()).
+ *                  Never holds SemanticsManager::OpenPassageEvidence's own
+ *                  Plane* -- \c supportingWallRef is the pointer-free
+ *                  RawPlaneRef built from it at capture time instead (see
+ *                  rawPlaneRef()).
  */
 struct OpenPassageHypothesisRecord
 {
   public:
-    /*! @brief Pointer-free reference to the supporting wall Plane, or
-     *  reason == UnavailableReason::NULL_REFERENCE when the source
-     *  pointer was null. */
+    /*!
+     * @brief           Pointer-free reference to the supporting wall Plane, or
+     *                  reason == UnavailableReason::NULL_REFERENCE when the
+     *                  source pointer was null.
+     */
     RawPlaneRef supportingWallRef;
 
-    /*! @brief OpenPassageEvidence::openingCentroid_world_m at capture time. */
+    /*!
+     * @brief           OpenPassageEvidence::openingCentroid_world_m at capture
+     *                  time.
+     */
     Eigen::Vector3d openingCentroid_world_m{Eigen::Vector3d::Zero()};
 
-    /*! @brief OpenPassageEvidence::confirmationCount at capture time. */
+    /*!
+     * @brief           OpenPassageEvidence::confirmationCount at capture time.
+     */
     std::size_t confirmationCount{0U};
 
-    /*! @brief OpenPassageEvidence::missedUpdateCount at capture time. */
+    /*!
+     * @brief           OpenPassageEvidence::missedUpdateCount at capture time.
+     */
     std::size_t missedUpdateCount{0U};
 
-    /*! @brief OpenPassageEvidence::lastConfirmedSkeletonFingerprint at
-     *  capture time. */
+    /*!
+     * @brief           OpenPassageEvidence::lastConfirmedSkeletonFingerprint at
+     *                  capture time.
+     */
     std::uint64_t lastConfirmedSkeletonFingerprint{0U};
 
-    /*! @brief OpenPassageEvidence::openingRadius_m at capture time. */
+    /*!
+     * @brief           OpenPassageEvidence::openingRadius_m at capture time.
+     */
     double openingRadius_m{0.0};
 
-    /*! @brief OpenPassageEvidence::heightSpan_m at capture time. */
+    /*!
+     * @brief           OpenPassageEvidence::heightSpan_m at capture time.
+     */
     double heightSpan_m{0.0};
 };
 

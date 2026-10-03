@@ -20,7 +20,7 @@
  * @file            EdgeSE3KFPointToPlaneStatus.h
  *
  * @brief           Declares the status returned by every EdgeSE3KFPointToPlane
- * operation.
+ *                  operation.
  */
 
 #ifndef EDGE_SE3_KFPOINT_TO_PLANE_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a EdgeSE3KFPointToPlane operation. Values are fixed
- * and never reordered.
+ * @brief           Result of a EdgeSE3KFPointToPlane operation. Values are
+ *                  fixed and never reordered.
  */
 enum class EdgeSE3KFPointToPlaneStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     EDGE_SE3_KFPOINT_TO_PLANE_STATUS_SUCCESS = 0U
 };
 

@@ -25,9 +25,12 @@ namespace core
 namespace semantic
 {
 
-/*! One (width,height) aperture pair, normalised by the room's valid median
- * extent. Kept paired (not flattened) so lexicographic sort and pairwise
- * Manhattan distance compare a passage's own width against its own height. */
+/*!
+ * @brief           One (width,height) aperture pair, normalised by the room's
+ *                  valid median extent. Kept paired (not flattened) so
+ *                  lexicographic sort and pairwise Manhattan distance compare a
+ *                  passage's own width against its own height.
+ */
 SemanticCandidatesStatus apertureSignature(
     const RoomContextSnapshot              &snapshot_in,
     const double                            median_in,

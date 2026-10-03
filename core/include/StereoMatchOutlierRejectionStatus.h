@@ -20,7 +20,7 @@
  * @file            StereoMatchOutlierRejectionStatus.h
  *
  * @brief           Declares the status returned by every
- * StereoMatchOutlierRejection operation.
+ *                  StereoMatchOutlierRejection operation.
  */
 
 #ifndef STEREO_MATCH_OUTLIER_REJECTION_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a StereoMatchOutlierRejection operation. Values are
- * fixed and never reordered.
+ * @brief           Result of a StereoMatchOutlierRejection operation. Values
+ *                  are fixed and never reordered.
  */
 enum class StereoMatchOutlierRejectionStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     STEREO_MATCH_OUTLIER_REJECTION_STATUS_SUCCESS = 0U
 };
 

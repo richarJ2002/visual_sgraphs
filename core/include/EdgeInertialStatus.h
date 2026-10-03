@@ -20,7 +20,7 @@
  * @file            EdgeInertialStatus.h
  *
  * @brief           Declares the status returned by every EdgeInertial
- * operation.
+ *                  operation.
  */
 
 #ifndef EDGE_INERTIAL_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a EdgeInertial operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a EdgeInertial operation. Values are fixed and
+ *                  never reordered.
  */
 enum class EdgeInertialStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     EDGE_INERTIAL_STATUS_SUCCESS = 0U
 };
 

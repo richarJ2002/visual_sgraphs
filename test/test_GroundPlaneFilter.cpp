@@ -1,14 +1,17 @@
 /*!
- * @file test_GroundPlaneFilter.cpp
- * @brief B1 regression coverage: computeGroundPlaneHeight() must not read
- *        past an empty (or single-point) support cloud.
+ * @file            test_GroundPlaneFilter.cpp
  *
- * Before the fix, an empty support cloud made numPoint (= yVals.size() / 2)
- * equal to 0, and yVals[numPoint - 1] underflowed to yVals[SIZE_MAX] -- an
- * out-of-bounds read. A freshly constructed geometric::Plane (never given
- * points via setMapClouds/replaceMapClouds) is already in exactly this state,
- * since geometric::Plane's constructor allocates a valid but empty point cloud
- * rather than a null one.
+ * @brief           B1 regression coverage: computeGroundPlaneHeight() must not
+ *                  read
+ *                         past an empty (or single-point) support cloud.
+ *
+ *                  Before the fix, an empty support cloud made numPoint (=
+ *                  yVals.size() / 2) equal to 0, and yVals[numPoint - 1]
+ *                  underflowed to yVals[SIZE_MAX] -- an out-of-bounds read. A
+ *                  freshly constructed geometric::Plane (never given points via
+ *                  setMapClouds/replaceMapClouds) is already in exactly this
+ *                  state, since geometric::Plane's constructor allocates a
+ *                  valid but empty point cloud rather than a null one.
  */
 
 #include "Atlas.h"
@@ -26,8 +29,8 @@ namespace core
 {
 
 /*!
- * @brief        Checks that computing the ground-plane height returns no value
- *               for a plane with an empty support cloud.
+ * @brief           Checks that computing the ground-plane height returns no
+ *                  value for a plane with an empty support cloud.
  */
 TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
 {
@@ -52,8 +55,8 @@ TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
 }
 
 /*!
- * @brief        Checks that computing the ground-plane height returns no value
- *               for a plane whose support cloud has a single point.
+ * @brief           Checks that computing the ground-plane height returns no
+ *                  value for a plane whose support cloud has a single point.
  */
 TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
 {
@@ -87,8 +90,8 @@ TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
 }
 
 /*!
- * @brief        Checks that computing the ground-plane height returns a value
- *               for a plane whose support cloud has several points.
+ * @brief           Checks that computing the ground-plane height returns a
+ *                  value for a plane whose support cloud has several points.
  */
 TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
 {

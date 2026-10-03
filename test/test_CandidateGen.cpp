@@ -84,8 +84,10 @@ semantic::RoomContextSnapshot
     return snapshot;
 }
 
-/*! No walls, no passages: always fails minimum evidence regardless of which
- * cue weights are configured. */
+/*!
+ * @brief           No walls, no passages: always fails minimum evidence
+ *                  regardless of which cue weights are configured.
+ */
 semantic::RoomContextSnapshot emptyEvidenceRoom(int roomId)
 {
     semantic::RoomContextSnapshot snapshot;
@@ -93,10 +95,13 @@ semantic::RoomContextSnapshot emptyEvidenceRoom(int roomId)
     return snapshot;
 }
 
-/*! One wall (valid normal, degenerate/invalid bounds) plus one aperture-valid
- * passage: passes minimum evidence via the mixed branch, but its own median
- * extent is 0 (no wall has valid bounds), so extent/aperture normalisation
- * cannot proceed. */
+/*!
+ * @brief           One wall (valid normal, degenerate/invalid bounds) plus one
+ *                  aperture-valid passage: passes minimum evidence via the
+ *                  mixed branch, but its own median extent is 0 (no wall has
+ *                  valid bounds), so extent/aperture normalisation cannot
+ *                  proceed.
+ */
 semantic::RoomContextSnapshot degenerateMedianRoom(int roomId, int passageId)
 {
     semantic::RoomContextSnapshot snapshot;
@@ -113,7 +118,10 @@ semantic::RoomContextSnapshot degenerateMedianRoom(int roomId, int passageId)
     return snapshot;
 }
 
-/*! One valid wall plus one aperture-valid passage of the given dimensions. */
+/*!
+ * @brief           One valid wall plus one aperture-valid passage of the given
+ *                  dimensions.
+ */
 semantic::RoomContextSnapshot
     singlePassageRoom(int roomId, double width_m, double height_m)
 {
@@ -164,9 +172,9 @@ semantic::RoomContextSnapshot
 } // namespace
 
 /*!
- * @brief        Checks that the candidate distance is the weighted numerator
- *               divided by the weight denominator, with both computed
- *               deterministically from the cues.
+ * @brief           Checks that the candidate distance is the weighted numerator
+ *                  divided by the weight denominator, with both computed
+ *                  deterministically from the cues.
  */
 TEST(CandidateGen, UsesDeterministicNumeratorAndDenominator)
 {
@@ -194,8 +202,8 @@ TEST(CandidateGen, UsesDeterministicNumeratorAndDenominator)
 }
 
 /*!
- * @brief        Checks that the candidate distance does not depend on the order
- *               in which maps or rooms were inserted into the history.
+ * @brief           Checks that the candidate distance does not depend on the
+ *                  order in which maps or rooms were inserted into the history.
  */
 TEST(CandidateGen, DoesNotDependOnContainerInsertionOrder)
 {
@@ -222,9 +230,9 @@ TEST(CandidateGen, DoesNotDependOnContainerInsertionOrder)
 }
 
 /*!
- * @brief        Checks that rooms with different raw ids but the same local
- *               topology get topology distance 0, and that removing a far-side
- *               room makes it positive.
+ * @brief           Checks that rooms with different raw ids but the same local
+ *                  topology get topology distance 0, and that removing a
+ *                  far-side room makes it positive.
  */
 TEST(CandidateGen, CanonicalizesLocalTopologyWithoutComparingRawIds)
 {
@@ -256,8 +264,8 @@ TEST(CandidateGen, CanonicalizesLocalTopologyWithoutComparingRawIds)
 }
 
 /*!
- * @brief        Checks that the angle tolerance decides whether near-zero angle
- *               differences count as equivalent.
+ * @brief           Checks that the angle tolerance decides whether near-zero
+ *                  angle differences count as equivalent.
  */
 TEST(CandidateGen, AngleToleranceControlsNearZeroEquivalence)
 {
@@ -286,8 +294,8 @@ TEST(CandidateGen, AngleToleranceControlsNearZeroEquivalence)
 }
 
 /*!
- * @brief        Checks that an invalid candidate configuration is rejected with
- *               a typed rejection reason.
+ * @brief           Checks that an invalid candidate configuration is rejected
+ *                  with a typed rejection reason.
  */
 TEST(CandidateGen, RejectsInvalidConfigurationWithTypedReason)
 {
@@ -360,8 +368,8 @@ TEST(CandidateGen, RejectsInvalidConfigurationWithTypedReason)
 }
 
 /*!
- * @brief        Checks that topology is left out of the cues when the node cap
- *               would be exceeded.
+ * @brief           Checks that topology is left out of the cues when the node
+ *                  cap would be exceeded.
  */
 TEST(CandidateGen, OmitsTopologyWhenNodeCapWouldBeExceeded)
 {
@@ -381,8 +389,9 @@ TEST(CandidateGen, OmitsTopologyWhenNodeCapWouldBeExceeded)
 }
 
 /*!
- * @brief        Checks that a randomly rotated copy of a room scores distance 0
- *               against the original in all 100 seeded trials (angle cue only).
+ * @brief           Checks that a randomly rotated copy of a room scores
+ *                  distance 0 against the original in all 100 seeded trials
+ *                  (angle cue only).
  */
 TEST(CandidateGen, SeededTransformInvarianceIs100Of100)
 {
@@ -417,9 +426,9 @@ TEST(CandidateGen, SeededTransformInvarianceIs100Of100)
 }
 
 /*!
- * @brief        Checks that, under small seeded wall-angle perturbations, the
- *               true pair stays the single top candidate in at least 45 of 50
- *               trials.
+ * @brief           Checks that, under small seeded wall-angle perturbations,
+ *                  the true pair stays the single top candidate in at least 45
+ *                  of 50 trials.
  */
 TEST(CandidateGen, SeededTopOneStabilityIsAtLeast45Of50)
 {
@@ -457,8 +466,8 @@ TEST(CandidateGen, SeededTopOneStabilityIsAtLeast45Of50)
 }
 
 /*!
- * @brief        Checks that the true room pair is found in at least 48 of 50
- *               seeded trials.
+ * @brief           Checks that the true room pair is found in at least 48 of 50
+ *                  seeded trials.
  */
 TEST(CandidateGen, SeededTruePairRecallIsAtLeast48Of50)
 {
@@ -500,8 +509,8 @@ TEST(CandidateGen, SeededTruePairRecallIsAtLeast48Of50)
 }
 
 /*!
- * @brief        Checks that the serialized candidate bytes are identical
- *               whatever the insertion order of the input.
+ * @brief           Checks that the serialized candidate bytes are identical
+ *                  whatever the insertion order of the input.
  */
 TEST(CandidateGen, CandidateBytesAreInsertionOrderIndependent)
 {
@@ -527,9 +536,9 @@ TEST(CandidateGen, CandidateBytesAreInsertionOrderIndependent)
 }
 
 /*!
- * @brief        Checks that applying a runtime budget never changes the
- *               deterministic candidate bytes and leaves the budget-exceeded
- *               flag clear.
+ * @brief           Checks that applying a runtime budget never changes the
+ *                  deterministic candidate bytes and leaves the budget-exceeded
+ *                  flag clear.
  */
 TEST(CandidateGen, RuntimeBudgetNeverChangesDeterministicBytes)
 {
@@ -556,9 +565,9 @@ TEST(CandidateGen, RuntimeBudgetNeverChangesDeterministicBytes)
 }
 
 /*!
- * @brief        Checks that rooms without passages still score wall cues, with
- *               topology and aperture cues absent rather than trivially
- *               available.
+ * @brief           Checks that rooms without passages still score wall cues,
+ *                  with topology and aperture cues absent rather than trivially
+ *                  available.
  */
 TEST(CandidateGen, WallOnlyRoomsScoreWallCuesWithTopologyAndApertureAbsent)
 {
@@ -579,9 +588,9 @@ TEST(CandidateGen, WallOnlyRoomsScoreWallCuesWithTopologyAndApertureAbsent)
 }
 
 /*!
- * @brief        Checks that a wall with invalid bounds omits only its extent
- *               element while its finite normal still contributes angle
- *               evidence.
+ * @brief           Checks that a wall with invalid bounds omits only its extent
+ *                  element while its finite normal still contributes angle
+ *                  evidence.
  */
 TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
 {
@@ -634,9 +643,9 @@ TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
 }
 
 /*!
- * @brief        Checks that rooms with unequal numbers of wall-angle signatures
- *               are compared with the padded mean-L1 rule, using the
- *               missing-angle penalty for the unmatched entries.
+ * @brief           Checks that rooms with unequal numbers of wall-angle
+ *                  signatures are compared with the padded mean-L1 rule, using
+ *                  the missing-angle penalty for the unmatched entries.
  */
 TEST(CandidateGen, UnequalSignatureCountsExercisePadding)
 {
@@ -675,9 +684,9 @@ TEST(CandidateGen, UnequalSignatureCountsExercisePadding)
 }
 
 /*!
- * @brief        Checks that a zero or invalid median disables the extent and
- *               aperture cues without rejecting the room, which still scores
- *               through topology.
+ * @brief           Checks that a zero or invalid median disables the extent and
+ *                  aperture cues without rejecting the room, which still scores
+ *                  through topology.
  */
 TEST(CandidateGen, InvalidMedianDisablesExtentAndApertureCues)
 {
@@ -713,8 +722,8 @@ TEST(CandidateGen, InvalidMedianDisablesExtentAndApertureCues)
 }
 
 /*!
- * @brief        Checks that only candidates within the configured ambiguity
- *               margin of the best distance are marked ambiguous.
+ * @brief           Checks that only candidates within the configured ambiguity
+ *                  margin of the best distance are marked ambiguous.
  */
 TEST(CandidateGen, AmbiguityMarginMarksOnlyCandidatesWithinMargin)
 {
@@ -742,9 +751,9 @@ TEST(CandidateGen, AmbiguityMarginMarksOnlyCandidatesWithinMargin)
 }
 
 /*!
- * @brief        Checks that a bounded global fallback finds the true pair when
- *               the adjacency-prioritised tier admits nothing, without relaxing
- *               the minimum evidence for the anchor.
+ * @brief           Checks that a bounded global fallback finds the true pair
+ *                  when the adjacency-prioritised tier admits nothing, without
+ *                  relaxing the minimum evidence for the anchor.
  */
 TEST(CandidateGen, FallbackFindsTruePairWhenAnchorHasNoUsableEvidence)
 {
@@ -771,9 +780,9 @@ TEST(CandidateGen, FallbackFindsTruePairWhenAnchorHasNoUsableEvidence)
 }
 
 /*!
- * @brief        Checks that equal-distance candidates are ordered by the
- *               (mapAId, roomAId, mapBId, roomBId) tie-break and not by
- *               distance alone.
+ * @brief           Checks that equal-distance candidates are ordered by the
+ *                  (mapAId, roomAId, mapBId, roomBId) tie-break and not by
+ *                  distance alone.
  */
 TEST(CandidateGen, TieBreaksByMapAndRoomIdWhenDistancesAreEqual)
 {
@@ -807,9 +816,9 @@ TEST(CandidateGen, TieBreaksByMapAndRoomIdWhenDistancesAreEqual)
 }
 
 /*!
- * @brief        Checks that apertures are compared as (width, height) pairs by
- *               pairwise Manhattan error, so swapping width and height is
- *               detected instead of scoring distance 0.
+ * @brief           Checks that apertures are compared as (width, height) pairs
+ *                  by pairwise Manhattan error, so swapping width and height is
+ *                  detected instead of scoring distance 0.
  */
 TEST(CandidateGen, AperturePairwiseManhattanDistinguishesSwappedWidthHeight)
 {
@@ -833,8 +842,8 @@ TEST(CandidateGen, AperturePairwiseManhattanDistinguishesSwappedWidthHeight)
 }
 
 /*!
- * @brief        Checks that a configuration with zero topology refinement
- *               iterations is rejected with TOPO_REFINEMENT_ITERS_ZERO.
+ * @brief           Checks that a configuration with zero topology refinement
+ *                  iterations is rejected with TOPO_REFINEMENT_ITERS_ZERO.
  */
 TEST(CandidateGen, RejectsZeroTopoRefinementIters)
 {
@@ -852,10 +861,10 @@ TEST(CandidateGen, RejectsZeroTopoRefinementIters)
 }
 
 /*!
- * @brief        Checks, by compilation, that this target never links the legacy
- *               transform-dependent wall matching helpers: they are not
- *               declared to this translation unit, so any call would not
- *               compile.
+ * @brief           Checks, by compilation, that this target never links the
+ *                  legacy transform-dependent wall matching helpers: they are
+ *                  not declared to this translation unit, so any call would not
+ *                  compile.
  */
 TEST(CandidateGen, DoesNotLinkLegacyTransformDependentHelpers)
 {

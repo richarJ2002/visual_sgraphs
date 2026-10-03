@@ -20,7 +20,7 @@
  * @file            Sha256DigestStatus.h
  *
  * @brief           Declares the status returned by every Sha256Digest
- * operation.
+ *                  operation.
  */
 
 #ifndef SHA256_DIGEST_STATUS_H
@@ -36,12 +36,14 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a Sha256Digest operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a Sha256Digest operation. Values are fixed and
+ *                  never reordered.
  */
 enum class Sha256DigestStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SHA256_DIGEST_STATUS_SUCCESS = 0U
 };
 

@@ -19,8 +19,8 @@
 /*!
  * @file            Sha256Digest.h
  *
- * @brief           Declares sha256HexDigest(), a genuine OpenSSL SHA-256
- *                   digest over canonical serialized bytes.
+ * @brief           Declares sha256HexDigest(), a genuine OpenSSL SHA-256 digest
+ *                  over canonical serialized bytes.
  */
 
 #ifndef SEMANTIC_SHA256_DIGEST_H
@@ -36,13 +36,17 @@ namespace core
 namespace semantic
 {
 
-/*! @brief Returns the 64-character lowercase hex SHA-256 digest of \p
- *  bytes_in, computed with OpenSSL's EVP digest API (already linked into
- *  this target via -lcrypto for System.cc's MD5 usage). A genuine SHA-256
- *  digest, not a placeholder: callers must never label a different or
- *  weaker hash "SHA-256". Deterministic and free of wall-clock data,
- *  pointer addresses, or unordered iteration -- suitable as a canonical
- *  content digest for two byte-identical inputs to always match. */
+/*!
+ * @brief           Returns the 64-character lowercase hex SHA-256 digest of
+ *                  \p bytes_in, computed with OpenSSL's EVP digest API (already
+ *                  linked into this target via -lcrypto for System.cc's MD5
+ *                  usage). A genuine SHA-256 digest, not a placeholder: callers
+ *                  must never label a different or weaker hash "SHA-256".
+ *                  Deterministic and free of wall-clock data, pointer
+ *                  addresses, or unordered iteration -- suitable as a canonical
+ *                  content digest for two byte-identical inputs to always
+ *                  match.
+ */
 [[nodiscard]] Sha256DigestStatus sha256HexDigest(const std::string &bytes_in,
                                                  std::string &hexDigest_out);
 

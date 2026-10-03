@@ -1,7 +1,8 @@
 /*!
- * @file test_OptimizerEdgeLookup.cpp
- * @brief B4 regression coverage: edgeSourceKeyFrame() must not read past the
- *        end of a shorter parallel edge-keyframe vector.
+ * @file            test_OptimizerEdgeLookup.cpp
+ *
+ * @brief           B4 regression coverage: edgeSourceKeyFrame() must not read
+ *                  past the end of a shorter parallel edge-keyframe vector.
  */
 
 #include "OptimizerEdgeLookup.h"
@@ -16,8 +17,8 @@ namespace core
 {
 
 /*!
- * @brief        Checks that an in-bounds index returns the key frame pointer
- *               stored at that position.
+ * @brief           Checks that an in-bounds index returns the key frame pointer
+ *                  stored at that position.
  */
 TEST(OptimizerEdgeLookup, ReturnsThePointerAtAnInBoundsIndex)
 {
@@ -39,8 +40,8 @@ TEST(OptimizerEdgeLookup, ReturnsThePointerAtAnInBoundsIndex)
 }
 
 /*!
- * @brief        Checks that an index past the end returns nullptr with a
- *               success status instead of reading out of bounds.
+ * @brief           Checks that an index past the end returns nullptr with a
+ *                  success status instead of reading out of bounds.
  */
 TEST(OptimizerEdgeLookup, ReturnsNullptrForAnOutOfBoundsIndex)
 {
@@ -66,8 +67,8 @@ TEST(OptimizerEdgeLookup, ReturnsNullptrForAnOutOfBoundsIndex)
 }
 
 /*!
- * @brief        Checks that looking up any index in an empty vector returns
- *               nullptr with a success status.
+ * @brief           Checks that looking up any index in an empty vector returns
+ *                  nullptr with a success status.
  */
 TEST(OptimizerEdgeLookup, ReturnsNullptrForAnEmptyVector)
 {

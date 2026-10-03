@@ -17,39 +17,39 @@
  */
 
 /*!
- * @file         evaluateOnePassageSlotState.cc
+ * @file            evaluateOnePassageSlotState.cc
  *
- * @brief        Implements evaluateOnePassageSlotState(), declared
- *               in private_functions.h.
+ * @brief           Implements evaluateOnePassageSlotState(), declared
+ *                  in private_functions.h.
  *
- *               The current Passage model has exactly one
- *               prospective-room field
- *               (PassageRecord::prospectiveRoomRef), so "the
- *               opposite slot contains at most one stable
- *               prospective handle" is structurally guaranteed
- *               rather than checked; the substantive, checkable
- *               clause left is that a "known"/near side, when it
- *               resolves at all, must actually be a confirmed
- *               (ROOM-variant) room rather than an unpromoted
- *               prospective handle -- a fact read directly from
- *               RoomRecord::variant, independent of the
- *               authoritative-endpoint-slot gap
- *               computeAxiomCapabilityTable() records for this code
- *               (downgraded to PARTIAL alongside AX-PASS-02/04, since the
- *               "which slot is authoritative" clause is unprovable, even
- *               though this specific variant-confirmation clause is not).
- *               Cardinality/duplicate/reciprocity issues are
- *               AX-PASS-02's concern, not re-checked here.
+ *                  The current Passage model has exactly one
+ *                  prospective-room field
+ *                  (PassageRecord::prospectiveRoomRef), so "the
+ *                  opposite slot contains at most one stable
+ *                  prospective handle" is structurally guaranteed
+ *                  rather than checked; the substantive, checkable
+ *                  clause left is that a "known"/near side, when it
+ *                  resolves at all, must actually be a confirmed
+ *                  (ROOM-variant) room rather than an unpromoted
+ *                  prospective handle -- a fact read directly from
+ *                  RoomRecord::variant, independent of the
+ *                  authoritative-endpoint-slot gap
+ *                  computeAxiomCapabilityTable() records for this code
+ *                  (downgraded to PARTIAL alongside AX-PASS-02/04, since the
+ *                  "which slot is authoritative" clause is unprovable, even
+ *                  though this specific variant-confirmation clause is not).
+ *                  Cardinality/duplicate/reciprocity issues are
+ *                  AX-PASS-02's concern, not re-checked here.
  *
- *                  The terminal success path also appends a typed
- *                  PASSAGE_SLOT_ENDPOINT_PROOF_UNVERIFIED UNKNOWN alongside
- *                  the clause-level PASSAGE_SLOT_STATE_VALID PASS, so the
- *                  AX-PASS-03 aggregate can never become PASS while
- *                  PassageRecord::endpointSlotReason remains
- *                  NOT_TRACKED_BY_CURRENT_SCHEMA (FAIL > UNKNOWN > PASS
- *                  still lets an independently observed contradiction above
- *                  dominate, since this addition only runs after every FAIL
- *                  return).
+ *                     The terminal success path also appends a typed
+ *                     PASSAGE_SLOT_ENDPOINT_PROOF_UNVERIFIED UNKNOWN alongside
+ *                     the clause-level PASSAGE_SLOT_STATE_VALID PASS, so the
+ *                     AX-PASS-03 aggregate can never become PASS while
+ *                     PassageRecord::endpointSlotReason remains
+ *                     NOT_TRACKED_BY_CURRENT_SCHEMA (FAIL > UNKNOWN > PASS
+ *                     still lets an independently observed contradiction above
+ *                     dominate, since this addition only runs after every FAIL
+ *                     return).
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

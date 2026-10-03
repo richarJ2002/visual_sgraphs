@@ -27,7 +27,6 @@
  *                <https://www.gnu.org/licenses/>.
  *
  * Date:          20/07/2026
- *
  */
 
 /*!
@@ -282,8 +281,8 @@ void observeVoxbloxInput(const std::uint32_t width_in,
  * -------------------------------------------------------------------------- */
 
 /*!
- * @brief        Message time of the last plane publication; zero until the
- *               first one.
+ * @brief           Message time of the last plane publication; zero until the
+ *                  first one.
  */
 rclcpp::Time lastPlanePublishTime(0, 0, RCL_ROS_TIME);
 
@@ -442,15 +441,16 @@ static void clearPublishedPointCloud(
 }
 
 /*!
- * @brief       Clears all map-scoped visualization state after a map revision.
+ * @brief           Clears all map-scoped visualization state after a map
+ *                  revision.
  *
- *              RViz markers use infinite lifetimes. Merely omitting an entity
- *              after the active map changes does not remove its old marker, so
- *              stale rooms and planes otherwise appear to belong to the new
- *              map.
+ *                  RViz markers use infinite lifetimes. Merely omitting an
+ *                  entity after the active map changes does not remove its old
+ *                  marker, so stale rooms and planes otherwise appear to belong
+ *                  to the new map.
  *
- * @param[in]   msgTime_s_in
- *              Timestamp assigned to reset messages.
+ * @param[in]       msgTime_s_in
+ *                  Timestamp assigned to reset messages.
  */
 static void clearMapScopedVisualization(const rclcpp::Time &msgTime_s_in)
 {
@@ -482,11 +482,11 @@ rclcpp::Service<vs_graphs::srv::GetMissionHealth>::SharedPtr
     srvGetMissionHealth = nullptr;
 
 /*!
- * @brief        Service server that reports the visual estimator's frame rate
- *               and the age of its last processed frame.
+ * @brief           Service server that reports the visual estimator's frame
+ *                  rate and the age of its last processed frame.
  *
- *               Declared only in this file; created by setupServices() and
- *               reset on shutdown.
+ *                  Declared only in this file; created by setupServices() and
+ *                  reset on shutdown.
  */
 rclcpp::Service<vs_graphs::srv::EstimatorHealth>::SharedPtr srvEstimatorHealth =
     nullptr;
@@ -3308,10 +3308,11 @@ void publishAllMappedFloors(
 namespace
 {
 /*!
- * @brief       Sanitises a double for nlohmann::json.
+ * @brief           Sanitises a double for nlohmann::json.
  *
- *              nlohmann::json rejects non-finite values, so they are stored
- *              as strings following the MissionHealthTopologyJson convention.
+ *                  nlohmann::json rejects non-finite values, so they are stored
+ *                  as strings following the MissionHealthTopologyJson
+ *                  convention.
  */
 Json sanitiseArchiveDouble(const double value_in)
 {
@@ -3336,13 +3337,13 @@ Json archiveVector3(const Eigen::Vector3d &vector_in)
 }
 
 /*!
- * @brief       Deletes the oldest SGraph archives beyond the retain limit.
+ * @brief           Deletes the oldest SGraph archives beyond the retain limit.
  *
- * @param[in]   archiveDir_in
- *              Directory holding `sgraph_<sec>_<nsec>.json` files.
+ * @param[in]       archiveDir_in
+ *                  Directory holding `sgraph_<sec>_<nsec>.json` files.
  *
- * @param[in]   maxFiles_in
- *              Maximum number of files to retain (positive by contract).
+ * @param[in]       maxFiles_in
+ *                  Maximum number of files to retain (positive by contract).
  */
 void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
                          const int                    maxFiles_in)
@@ -7816,17 +7817,18 @@ void shutdownRosInterfaces()
 }
 
 /*!
- * @brief        Service handler that reports the estimator's frame rate and how
- *               long ago it last processed a frame.
+ * @brief           Service handler that reports the estimator's frame rate and
+ *                  how long ago it last processed a frame.
  *
- *               Called by an executor thread, since the service uses the node's
- *               default callback group.
+ *                  Called by an executor thread, since the service uses the
+ *                  node's default callback group.
  *
- * @param[in]    request_in
- *               Unused; the request carries no fields.
- * @param[out]   response_out
- *               Filled with frames_per_second and last_frame_age_seconds (wall
- *               clock; infinity before the first frame).
+ * @param[in]       request_in
+ *                  Unused; the request carries no fields.
+ *
+ * @param[out]      response_out
+ *                  Filled with frames_per_second and last_frame_age_seconds
+ *                  (wall clock; infinity before the first frame).
  */
 static void getEstimatorHealthService(
     const std::shared_ptr<vs_graphs::srv::EstimatorHealth::Request> request_in,
@@ -7845,19 +7847,22 @@ static void getEstimatorHealthService(
 }
 
 /*!
- * @brief        Service handler that fills a snapshot of tracking,
- *               segmentation, loop-closure and room/passage topology health.
+ * @brief           Service handler that fills a snapshot of tracking,
+ *                  segmentation, loop-closure and room/passage topology health.
  *
- *               Sets available to false and returns when the SLAM system does
- *               not exist yet. Room, floor and passage topology is gathered
- *               only when the request asks for it, because that path takes the
- *               semantic update lock. Called by an executor thread, since the
- *               service uses the node's default callback group.
+ *                  Sets available to false and returns when the SLAM system
+ *                  does not exist yet. Room, floor and passage topology is
+ *                  gathered only when the request asks for it, because that
+ *                  path takes the semantic update lock. Called by an executor
+ *                  thread, since the service uses the node's default callback
+ *                  group.
  *
- * @param[in]    request_in
- *               Request; include_topology selects whether topology is gathered.
- * @param[out]   response_out
- *               Filled with the health snapshot.
+ * @param[in]       request_in
+ *                  Request; include_topology selects whether topology is
+ *                  gathered.
+ *
+ * @param[out]      response_out
+ *                  Filled with the health snapshot.
  */
 static void getMissionHealthService(
     const std::shared_ptr<vs_graphs::srv::GetMissionHealth::Request> request_in,

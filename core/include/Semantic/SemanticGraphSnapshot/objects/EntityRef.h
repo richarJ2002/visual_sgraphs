@@ -38,81 +38,108 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       A single optional reference to another snapshot entity, paired
- *              with why it is absent when it is.
+ * @brief           A single optional reference to another snapshot entity,
+ *                  paired
+ *                               with why it is absent when it is.
  *
- *              Used for every one-to-one relationship field that could
- *              plausibly point either at nothing (an ordinary, expected state
- *              for most of these fields) or at an object this snapshot could
- *              not safely key (a non-null but unmapped referenced object).
- *              Also used as the element type of every one-to-many
- *              Room/Passage/Floor relationship collection
- * (RoomRecord::passageRefs, FloorRecord::roomRefs, WallRecord::ownerRoomRefs),
- * replacing a bare std::vector<EntityKey> so a keyed-but-bad or
- *              keyed-but-missing-from-enumeration collection member no
- *              longer loses its own liveness/local-identity evidence.
+ *                               Used for every one-to-one relationship field
+ *                               that could plausibly point either at nothing
+ *                               (an ordinary, expected state for most of these
+ *                               fields) or at an object this snapshot could not
+ *                               safely key (a non-null but unmapped referenced
+ *                               object). Also used as the element type of every
+ *                               one-to-many Room/Passage/Floor relationship
+ *                               collection
+ *                  (RoomRecord::passageRefs, FloorRecord::roomRefs,
+ *                  WallRecord::ownerRoomRefs), replacing a bare
+ *                  std::vector<EntityKey> so a keyed-but-bad or
+ *                               keyed-but-missing-from-enumeration collection
+ *                               member no longer loses its own
+ *                               liveness/local-identity evidence.
  *
- *              Invariant: key.has_value() is equivalent to
- *              reason == UnavailableReason::NONE. A default-constructed
- *              EntityRef therefore defaults reason to NULL_REFERENCE, never
- *              NONE -- an untouched field must never silently read as "a
- *              value is present."
+ *                               Invariant: key.has_value() is equivalent to
+ *                               reason == UnavailableReason::NONE. A
+ *                               default-constructed EntityRef therefore
+ *                               defaults reason to NULL_REFERENCE, never NONE
+ *                               -- an untouched field must never silently read
+ *                               as "a value is present."
  *
- *              Separately, localId.has_value() is true whenever the
- *              underlying model pointer was non-null at capture time,
- *              independent of key/reason -- so an unmapped non-null target
- *              (reason == ENTITY_HAS_NO_MAP) still retains its own local id,
- *              rather than degrading to the same evidence as a genuinely
- *              null pointer. localId is always populated before key,
- *              whether or not key ends up populated too.
+ *                               Separately, localId.has_value() is true
+ *                               whenever the underlying model pointer was
+ *                               non-null at capture time, independent of
+ *                               key/reason -- so an unmapped non-null target
+ *                               (reason == ENTITY_HAS_NO_MAP) still retains its
+ *                               own local id, rather than degrading to the same
+ *                               evidence as a genuinely null pointer. localId
+ *                               is always populated before key, whether or not
+ *                               key ends up populated too.
  *
- *              Liveness is a tri-state, independent of key/localId:
- *              isLive.has_value() is equivalent to
- *              livenessUnavailableReason == UnavailableReason::NONE.
- *              - Null reference (localId absent): isLive is absent and
- *                livenessUnavailableReason is NULL_REFERENCE.
- *              - Non-null target whose type exposes isBad() (Room,
- *                Passage): isLive holds the actual !isBad() value and
- *                livenessUnavailableReason is NONE.
- *              - Non-null target whose type has no isBad() at all (Floor):
- *                isLive is explicitly absent and livenessUnavailableReason
- *                is NOT_TRACKED_BY_CURRENT_SCHEMA -- unknown liveness is
- *                never encoded as true.
- *              Liveness is captured directly from the referenced pointer,
- *              independent of whether that entity is present in this
- *              snapshot's own enumerated record collections, so a target
- *              missing from enumeration (e.g. erased from its map's
- *              collections elsewhere) still reports truthful liveness here
- *              rather than requiring an unreliable cross-reference lookup.
+ *                               Liveness is a tri-state, independent of
+ *                               key/localId: isLive.has_value() is equivalent
+ *                               to livenessUnavailableReason ==
+ *                               UnavailableReason::NONE.
+ *                               - Null reference (localId absent): isLive is
+ *                                 absent and livenessUnavailableReason is
+ *                                 NULL_REFERENCE.
+ *                               - Non-null target whose type exposes isBad()
+ *                                 (Room, Passage): isLive holds the actual
+ *                                 !isBad() value and livenessUnavailableReason
+ *                                 is NONE.
+ *                               - Non-null target whose type has no isBad() at
+ *                                 all (Floor): isLive is explicitly absent and
+ *                                 livenessUnavailableReason is
+ *                                 NOT_TRACKED_BY_CURRENT_SCHEMA -- unknown
+ *                                 liveness is never encoded as true. Liveness
+ *                                 is captured directly from the referenced
+ *                                 pointer, independent of whether that entity
+ *                                 is present in this snapshot's own enumerated
+ *                                 record collections, so a target missing from
+ *                                 enumeration (e.g. erased from its map's
+ *                                 collections elsewhere) still reports truthful
+ *                                 liveness here rather than requiring an
+ *                                 unreliable cross-reference lookup.
  */
 struct EntityRef
 {
   public:
-    /*! @brief The referenced entity's key, present only when reason ==
-     *  UnavailableReason::NONE. */
+    /*!
+     * @brief           The referenced entity's key, present only when reason ==
+     *                  UnavailableReason::NONE.
+     */
     std::optional<EntityKey> key;
 
-    /*! @brief Why key is empty; UnavailableReason::NONE exactly when key
-     *  has a value. */
+    /*!
+     * @brief           Why key is empty; UnavailableReason::NONE exactly when
+     *                  key has a value.
+     */
     UnavailableReason reason{UnavailableReason::NULL_REFERENCE};
 
-    /*! @brief The referenced entity's own local id (Room::getId(),
-     *  Passage::getId(), or Floor::getId()), present whenever the
-     *  underlying pointer was non-null at capture time -- including when it
-     *  had no map and key could therefore not be formed. Absent exactly
-     *  when the underlying pointer was nullptr. */
+    /*!
+     * @brief           The referenced entity's own local id (Room::getId(),
+     *                  Passage::getId(), or Floor::getId()), present whenever
+     *                  the underlying pointer was non-null at capture time --
+     *                  including when it had no map and key could therefore not
+     *                  be formed. Absent exactly when the underlying pointer
+     *                  was nullptr.
+     */
     std::optional<int> localId;
 
-    /*! @brief Inverse of the referenced entity's own isBad() at capture
-     *  time, present only when livenessUnavailableReason ==
-     *  UnavailableReason::NONE. Never true merely because liveness is
-     *  unknown -- see livenessUnavailableReason. */
+    /*!
+     * @brief           Inverse of the referenced entity's own isBad() at
+     *                  capture time, present only when
+     *                  livenessUnavailableReason == UnavailableReason::NONE.
+     *                  Never true merely because liveness is unknown -- see
+     *                  livenessUnavailableReason.
+     */
     std::optional<bool> isLive;
 
-    /*! @brief Why isLive is absent; UnavailableReason::NONE exactly when
-     *  isLive has a value. NULL_REFERENCE when localId is also absent (no
-     *  target at all); NOT_TRACKED_BY_CURRENT_SCHEMA when localId is
-     *  present but the referenced type has no isBad() API (Floor). */
+    /*!
+     * @brief           Why isLive is absent; UnavailableReason::NONE exactly
+     *                  when isLive has a value. NULL_REFERENCE when localId is
+     *                  also absent (no target at all);
+     *                  NOT_TRACKED_BY_CURRENT_SCHEMA when localId is present
+     *                  but the referenced type has no isBad() API (Floor).
+     */
     UnavailableReason livenessUnavailableReason{
         UnavailableReason::NULL_REFERENCE};
 };

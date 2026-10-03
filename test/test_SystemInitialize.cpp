@@ -45,8 +45,10 @@ namespace core
 namespace
 {
 
-/*! Settings file that opens but holds no camera, so the run stops at the
- *  vocabulary step. Removed when the test ends. */
+/*!
+ * @brief           Settings file that opens but holds no camera, so the run
+ *                  stops at the vocabulary step. Removed when the test ends.
+ */
 class ReadableSettingsFile
 {
   public:
@@ -60,7 +62,9 @@ class ReadableSettingsFile
     {
         std::remove(path.c_str());
     }
-    /*! Not copyable: each copy would remove the same file. */
+    /*!
+     * @brief           Not copyable: each copy would remove the same file.
+     */
     ReadableSettingsFile(const ReadableSettingsFile &otherFile_in) = delete;
     ReadableSettingsFile &
         operator=(const ReadableSettingsFile &otherFile_in) = delete;
@@ -70,8 +74,8 @@ class ReadableSettingsFile
 } // namespace
 
 /*!
- * @brief        Checks that initializing with a settings file that does not
- *               exist returns the settings-unreadable status.
+ * @brief           Checks that initializing with a settings file that does not
+ *                  exist returns the settings-unreadable status.
  */
 TEST(SystemInitialize, ReportsAnUnreadableSettingsFile)
 {
@@ -85,9 +89,9 @@ TEST(SystemInitialize, ReportsAnUnreadableSettingsFile)
 }
 
 /*!
- * @brief        Checks that initializing with a readable settings file but a
- *               missing vocabulary file returns the vocabulary-unreadable
- *               status.
+ * @brief           Checks that initializing with a readable settings file but a
+ *                  missing vocabulary file returns the vocabulary-unreadable
+ *                  status.
  */
 TEST(SystemInitialize, ReportsAnUnreadableVocabularyFile)
 {
@@ -102,8 +106,8 @@ TEST(SystemInitialize, ReportsAnUnreadableVocabularyFile)
 }
 
 /*!
- * @brief        Checks that a System that was never initialized can be
- *               destroyed without waiting for or joining any worker thread.
+ * @brief           Checks that a System that was never initialized can be
+ *                  destroyed without waiting for or joining any worker thread.
  */
 TEST(SystemInitialize, DestroysASystemThatNeverInitialised)
 {

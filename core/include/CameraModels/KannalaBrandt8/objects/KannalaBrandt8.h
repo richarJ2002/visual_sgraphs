@@ -16,9 +16,9 @@
  */
 
 /*!
- * @file         KannalaBrandt8.h
+ * @file            KannalaBrandt8.h
  *
- * @brief        Declares the Kannala-Brandt fisheye camera model.
+ * @brief           Declares the Kannala-Brandt fisheye camera model.
  */
 
 #ifndef CAMERAMODELS_KANNALABRANDT8_H
@@ -35,8 +35,8 @@
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
 /*!
- * @brief        Fisheye camera following the Kannala-Brandt
- *               eight-parameter distortion model.
+ * @brief           Fisheye camera following the Kannala-Brandt
+ *                  eight-parameter distortion model.
  */
 class KannalaBrandt8 : public geometriccamera::GeometricCamera
 {
@@ -44,21 +44,22 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
     friend class boost::serialization::access;
 
     /*!
-     * @brief        Serializes the base camera and the solver
-     *               precision.
+     * @brief           Serializes the base camera and the solver
+     *                  precision.
      *
-     * @param[in,out] ar
-     *                Archive receiving the stored fields.
-     * @param[in]    version
-     *               Archive version; currently unused.
+     * @param[in,out]   ar
+     *                  Archive receiving the stored fields.
+     *
+     * @param[in]       version
+     *                  Archive version; currently unused.
      */
     template <class Archive>
     void serialize(Archive &ar, [[maybe_unused]] const unsigned int version);
 
   public:
     /*!
-     * @brief        Creates a fisheye camera with default solver
-     *               precision.
+     * @brief           Creates a fisheye camera with default solver
+     *                  precision.
      */
     KannalaBrandt8() :
         precision(1e-6),
@@ -69,12 +70,12 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
         type = CAM_FISHEYE;
     }
     /*!
-     * @brief        Creates a fisheye camera from calibration
-     *               parameters.
+     * @brief           Creates a fisheye camera from calibration
+     *                  parameters.
      *
-     * @param[in]    parameters_in
-     *               Eight entries holding fx, fy, cx, cy, k0,
-     *               k1, k2 and k3; the size is asserted.
+     * @param[in]       parameters_in
+     *                  Eight entries holding fx, fy, cx, cy, k0,
+     *                  k1, k2 and k3; the size is asserted.
      */
     KannalaBrandt8(const std::vector<float> parameters_in) :
         geometriccamera::GeometricCamera(parameters_in),
@@ -88,14 +89,15 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
     }
 
     /*!
-     * @brief        Creates a fisheye camera with custom solver
-     *               precision.
+     * @brief           Creates a fisheye camera with custom solver
+     *                  precision.
      *
-     * @param[in]    parameters_in
-     *               Eight entries holding fx, fy, cx, cy, k0,
-     *               k1, k2 and k3; the size is asserted.
-     * @param[in]    precision_in
-     *               Newton-solve tolerance for unprojection.
+     * @param[in]       parameters_in
+     *                  Eight entries holding fx, fy, cx, cy, k0,
+     *                  k1, k2 and k3; the size is asserted.
+     *
+     * @param[in]       precision_in
+     *                  Newton-solve tolerance for unprojection.
      */
     KannalaBrandt8(const std::vector<float> parameters_in,
                    const float              precision_in) :
@@ -109,11 +111,11 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
         type = CAM_FISHEYE;
     }
     /*!
-     * @brief        Copies the calibration of another fisheye
-     *               camera under a fresh identifier.
+     * @brief           Copies the calibration of another fisheye
+     *                  camera under a fresh identifier.
      *
-     * @param[in,out] p_kannala_inout
-     *               Non-owning source camera; shall be non-null.
+     * @param[in,out]   p_kannala_inout
+     *                  Non-owning source camera; shall be non-null.
      */
     KannalaBrandt8(KannalaBrandt8 *p_kannala_inout) :
         geometriccamera::GeometricCamera(p_kannala_inout->parameters),
@@ -127,130 +129,135 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
     }
 
     /*!
-     * @brief        Destroys the camera and its two-view helper.
+     * @brief           Destroys the camera and its two-view helper.
      */
     ~KannalaBrandt8() override
     {
         delete p_twoViewReconstruction;
     }
     /*!
-     * @brief        Copying is forbidden: a copy would share the two-view
-     *               helper and both destructors would delete it. Clone the
-     *               calibration with KannalaBrandt8(KannalaBrandt8 *)
-     *               instead.
+     * @brief           Copying is forbidden: a copy would share the two-view
+     *                  helper and both destructors would delete it. Clone the
+     *                  calibration with KannalaBrandt8(KannalaBrandt8 *)
+     *                  instead.
      */
     KannalaBrandt8(const KannalaBrandt8 &otherKannalaBrandt8_in) = delete;
     KannalaBrandt8 &
         operator=(const KannalaBrandt8 &otherKannalaBrandt8_in) = delete;
 
     /*!
-     * @brief        Projects a camera-frame point into the image.
+     * @brief           Projects a camera-frame point into the image.
      *
-     * @param[in]    point3d_in
-     *               Point expressed in the camera frame.
+     * @param[in]       point3d_in
+     *                  Point expressed in the camera frame.
      *
-     * @return       Pixel coordinates of the projection.
+     * @return          Pixel coordinates of the projection.
      */
     cv::Point2f     project(const cv::Point3f &point3d_in);
     /*!
-     * @brief        Projects a camera-frame point into the image.
+     * @brief           Projects a camera-frame point into the image.
      *
-     * @param[in]    point3d_in
-     *               Point expressed in the camera frame.
+     * @param[in]       point3d_in
+     *                  Point expressed in the camera frame.
      *
-     * @return       Pixel coordinates of the projection.
+     * @return          Pixel coordinates of the projection.
      */
     Eigen::Vector2d project(const Eigen::Vector3d &point3d_in);
     /*!
-     * @brief        Projects a camera-frame point into the image.
+     * @brief           Projects a camera-frame point into the image.
      *
-     * @param[in]    point3d_in
-     *               Point expressed in the camera frame.
+     * @param[in]       point3d_in
+     *                  Point expressed in the camera frame.
      *
-     * @return       Pixel coordinates of the projection.
+     * @return          Pixel coordinates of the projection.
      */
     Eigen::Vector2f project(const Eigen::Vector3f &point3d_in);
     /*!
-     * @brief        Projects a camera-frame point into the image.
+     * @brief           Projects a camera-frame point into the image.
      *
-     * @param[in]    point3d_in
-     *               Point expressed in the camera frame.
+     * @param[in]       point3d_in
+     *                  Point expressed in the camera frame.
      *
-     * @return       Pixel coordinates as an Eigen vector.
+     * @return          Pixel coordinates as an Eigen vector.
      */
     Eigen::Vector2f projectMat(const cv::Point3f &point3d_in);
 
     /*!
-     * @brief        Returns the squared uncertainty scale applied
-     *               to observations at the given pixel.
+     * @brief           Returns the squared uncertainty scale applied
+     *                  to observations at the given pixel.
      *
-     * @param[in]    point2d_in
-     *               Pixel whose scale is requested; currently
-     *               unused.
+     * @param[in]       point2d_in
+     *                  Pixel whose scale is requested; currently
+     *                  unused.
      *
-     * @return       One for uniform weighting.
+     * @return          One for uniform weighting.
      */
     float uncertainty2(const Eigen::Matrix<double, 2, 1> &point2d_in);
 
     /*!
-     * @brief        Back-projects a pixel into a camera-frame
-     *               ray.
+     * @brief           Back-projects a pixel into a camera-frame
+     *                  ray.
      *
-     * @param[in]    point2d_in
-     *               Pixel to back-project.
+     * @param[in]       point2d_in
+     *                  Pixel to back-project.
      *
-     * @return       Ray through the pixel in the camera frame.
+     * @return          Ray through the pixel in the camera frame.
      */
     Eigen::Vector3f unprojectEig(const cv::Point2f &point2d_in);
     /*!
-     * @brief        Back-projects a pixel into a camera-frame
-     *               ray.
+     * @brief           Back-projects a pixel into a camera-frame
+     *                  ray.
      *
-     * @param[in]    point2d_in
-     *               Pixel to back-project.
+     * @param[in]       point2d_in
+     *                  Pixel to back-project.
      *
-     * @return       Ray through the pixel in the camera frame.
+     * @return          Ray through the pixel in the camera frame.
      */
     cv::Point3f     unproject(const cv::Point2f &point2d_in);
 
     /*!
-     * @brief        Returns the Jacobian of the projection at a
-     *               camera-frame point.
+     * @brief           Returns the Jacobian of the projection at a
+     *                  camera-frame point.
      *
-     * @param[in]    point3d_in
-     *               Point expressed in the camera frame.
+     * @param[in]       point3d_in
+     *                  Point expressed in the camera frame.
      *
-     * @return       Two-by-three Jacobian with image-x then
-     *               image-y rows.
+     * @return          Two-by-three Jacobian with image-x then
+     *                  image-y rows.
      */
     Eigen::Matrix<double, 2, 3>
         computeProjectionJacobian(const Eigen::Vector3d &point3d_in);
 
     /*!
-     * @brief        Estimates the relative pose between two views
-     *               and triangulates the matched keypoints.
+     * @brief           Estimates the relative pose between two views
+     *                   and triangulates the matched keypoints.
      *
-     *              Points are undistorted with the fisheye model
-     *              before estimation.
+     *                  Points are undistorted with the fisheye model
+     *                  before estimation.
      *
-     * @param[in]    keys1_in
-     *               Keypoints of the first view.
-     * @param[in]    keys2_in
-     *               Keypoints of the second view.
-     * @param[in]    matches12_in
-     *               Per-keypoint match indices from the first
-     *               view into the second view.
-     * @param[in,out] pose21_inout
-     *               Estimated pose of the second view in the
-     *               first view frame.
-     * @param[in,out] points3d_inout
-     *               Triangulated points.
-     * @param[in,out] triangulated_inout
-     *               Per-match flag reporting a valid
-     *               triangulation.
+     * @param[in]       keys1_in
+     *                  Keypoints of the first view.
      *
-     * @return       True when the two-view reconstruction
-     *               succeeds.
+     * @param[in]       keys2_in
+     *                  Keypoints of the second view.
+     *
+     * @param[in]       matches12_in
+     *                  Per-keypoint match indices from the first
+     *                  view into the second view.
+     *
+     * @param[in,out]   pose21_inout
+     *                  Estimated pose of the second view in the
+     *                  first view frame.
+     *
+     * @param[in,out]   points3d_inout
+     *                  Triangulated points.
+     *
+     * @param[in,out]   triangulated_inout
+     *                  Per-match flag reporting a valid
+     *                  triangulation.
+     *
+     * @return          True when the two-view reconstruction
+     *                  succeeds.
      */
     bool reconstructWithTwoViews(const std::vector<cv::KeyPoint> &keys1_in,
                                  const std::vector<cv::KeyPoint> &keys2_in,
@@ -260,47 +267,53 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
                                  std::vector<bool>        &triangulated_inout);
 
     /*!
-     * @brief        Returns the three-by-three calibration
-     *               matrix.
+     * @brief           Returns the three-by-three calibration
+     *                  matrix.
      *
-     * @return       Calibration matrix in single precision.
+     * @return          Calibration matrix in single precision.
      */
     cv::Mat         toK();
     /*!
-     * @brief        Returns the three-by-three calibration
-     *               matrix.
+     * @brief           Returns the three-by-three calibration
+     *                  matrix.
      *
-     * @return       Calibration matrix in single precision.
+     * @return          Calibration matrix in single precision.
      */
     Eigen::Matrix3f toK_();
 
     /*!
-     * @brief        Checks whether two keypoints satisfy the
-     *               epipolar constraint between the cameras.
+     * @brief           Checks whether two keypoints satisfy the
+     *                   epipolar constraint between the cameras.
      *
-     *              Acceptance requires a positive triangulated
-     *              depth above 1e-4.
+     *                  Acceptance requires a positive triangulated
+     *                  depth above 1e-4.
      *
-     * @param[in]    p_otherCamera_in
-     *               Non-owning pointer to the second camera;
-     *               shall be non-null.
-     * @param[in]    keypoint1_in
-     *               Keypoint in this camera view.
-     * @param[in]    keypoint2_in
-     *               Keypoint in the second camera view.
-     * @param[in]    rotation12_in
-     *               Rotation from the first camera frame into
-     *               the second.
-     * @param[in]    translation12_in
-     *               Translation from the first camera frame
-     *               into the second, in metres.
-     * @param[in]    sigmaLevel_in
-     *               Scale variance of the keypoint level.
-     * @param[in]    uncertainty_in
-     *               Pixel uncertainty scale.
+     * @param[in]       p_otherCamera_in
+     *                  Non-owning pointer to the second camera;
+     *                  shall be non-null.
      *
-     * @return       True when the pair passes the epipolar
-     *               test.
+     * @param[in]       keypoint1_in
+     *                  Keypoint in this camera view.
+     *
+     * @param[in]       keypoint2_in
+     *                  Keypoint in the second camera view.
+     *
+     * @param[in]       rotation12_in
+     *                  Rotation from the first camera frame into
+     *                  the second.
+     *
+     * @param[in]       translation12_in
+     *                  Translation from the first camera frame
+     *                  into the second, in metres.
+     *
+     * @param[in]       sigmaLevel_in
+     *                  Scale variance of the keypoint level.
+     *
+     * @param[in]       uncertainty_in
+     *                  Pixel uncertainty scale.
+     *
+     * @return          True when the pair passes the epipolar
+     *                  test.
      */
     bool epipolarConstrain(geometriccamera::GeometricCamera *p_otherCamera_in,
                            const cv::KeyPoint               &keypoint1_in,
@@ -311,36 +324,45 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
                            const float                       uncertainty_in);
 
     /*!
-     * @brief        Triangulates a keypoint pair given the
-     *               relative motion between the views.
+     * @brief           Triangulates a keypoint pair given the
+     *                   relative motion between the views.
      *
-     *              Rejects pairs with low parallax, points
-     *              behind either camera, or reprojection errors
-     *              above the chi-squared bounds.
+     *                  Rejects pairs with low parallax, points
+     *                  behind either camera, or reprojection errors
+     *                  above the chi-squared bounds.
      *
-     * @param[in,out] p_otherCamera_inout
-     *               Non-owning pointer to the second camera;
-     *               shall be non-null.
-     * @param[in]    keypoint1_in
-     *               Keypoint in this camera view.
-     * @param[in]    keypoint2_in
-     *               Keypoint in the second camera view.
-     * @param[in]    rotation12_in
-     *               Rotation from the first camera frame into
-     *               the second.
-     * @param[in]    translation12_in
-     *               Translation from the first camera frame
-     *               into the second, in metres.
-     * @param[in]    sigmaLevel_in
-     *               Scale variance of the keypoint level.
-     * @param[in]    uncertainty_in
-     *               Pixel uncertainty scale.
-     * @param[out]   point3d_out
-     *               Triangulated point in the world frame.
+     * @param[in,out]   p_otherCamera_inout
+     *                  Non-owning pointer to the second camera;
+     *                  shall be non-null.
      *
-     * @param[out] parallax_out Front depth of the triangulated point, or a
-     * negative code when the pair is rejected.
-     * @return KANNALA_BRANDT8_STATUS_SUCCESS.
+     * @param[in]       keypoint1_in
+     *                  Keypoint in this camera view.
+     *
+     * @param[in]       keypoint2_in
+     *                  Keypoint in the second camera view.
+     *
+     * @param[in]       rotation12_in
+     *                  Rotation from the first camera frame into
+     *                  the second.
+     *
+     * @param[in]       translation12_in
+     *                  Translation from the first camera frame
+     *                  into the second, in metres.
+     *
+     * @param[in]       sigmaLevel_in
+     *                  Scale variance of the keypoint level.
+     *
+     * @param[in]       uncertainty_in
+     *                  Pixel uncertainty scale.
+     *
+     * @param[out]      point3d_out
+     *                  Triangulated point in the world frame.
+     *
+     * @param[out]      parallax_out
+     *                  Front depth of the triangulated point, or a negative
+     *                  code when the pair is rejected.
+     *
+     * @return          KANNALA_BRANDT8_STATUS_SUCCESS.
      */
     [[nodiscard]] KannalaBrandt8Status triangulateMatches(
         geometriccamera::GeometricCamera *p_otherCamera_inout,
@@ -354,36 +376,43 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
         float                            &parallax_out);
 
     /*!
-     * @brief        Image column bounds of the stereo overlap
-     *               region.
+     * @brief           Image column bounds of the stereo overlap
+     *                  region.
      */
     std::vector<int> lappingArea;
 
     /*!
-     * @brief        Validates a keypoint pair by parallax and
-     *               reprojection checks and triangulates it.
+     * @brief           Validates a keypoint pair by parallax and
+     *                  reprojection checks and triangulates it.
      *
-     * @param[in]    keypoint1_in
-     *               Keypoint in this camera view.
-     * @param[in]    keypoint2_in
-     *               Keypoint in the second camera view.
-     * @param[in,out] p_otherCamera_inout
-     *               Non-owning pointer to the second camera;
-     *               shall be non-null.
-     * @param[in]    pose1_in
-     *               Pose of this camera in the world frame.
-     * @param[in]    pose2_in
-     *               Pose of the second camera in the world
-     *               frame.
-     * @param[in]    sigmaLevel1_in
-     *               Scale variance of the first keypoint level.
-     * @param[in]    sigmaLevel2_in
-     *               Scale variance of the second keypoint level.
-     * @param[in,out] point3d_inout
-     *               Triangulated point in the world frame.
+     * @param[in]       keypoint1_in
+     *                  Keypoint in this camera view.
      *
-     * @return       True when the pair is accepted and
-     *               point3D_out was set.
+     * @param[in]       keypoint2_in
+     *                  Keypoint in the second camera view.
+     *
+     * @param[in,out]   p_otherCamera_inout
+     *                  Non-owning pointer to the second camera;
+     *                  shall be non-null.
+     *
+     * @param[in]       pose1_in
+     *                  Pose of this camera in the world frame.
+     *
+     * @param[in]       pose2_in
+     *                  Pose of the second camera in the world
+     *                  frame.
+     *
+     * @param[in]       sigmaLevel1_in
+     *                  Scale variance of the first keypoint level.
+     *
+     * @param[in]       sigmaLevel2_in
+     *                  Scale variance of the second keypoint level.
+     *
+     * @param[in,out]   point3d_inout
+     *                  Triangulated point in the world frame.
+     *
+     * @return          True when the pair is accepted and
+     *                  point3D_out was set.
      */
     bool matchAndTriangulate(
         const cv::KeyPoint               &keypoint1_in,
@@ -396,38 +425,42 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
         Eigen::Vector3f                  &point3d_inout);
 
     /*!
-     * @brief        Appends the eight calibration entries to the
-     *               stream.
+     * @brief           Appends the eight calibration entries to the
+     *                  stream.
      *
-     * @param[in,out] outputStream_inout
-     *                Stream receiving the entries.
-     * @param[in]    kannala_in
-     *               Camera whose entries are written.
+     * @param[in,out]   outputStream_inout
+     *                  Stream receiving the entries.
      *
-     * @return       The output stream.
+     * @param[in]       kannala_in
+     *                  Camera whose entries are written.
+     *
+     * @return          The output stream.
      */
     friend std::ostream &operator<<(std::ostream         &outputStream_inout,
                                     const KannalaBrandt8 &kannala_in);
     /*!
-     * @brief        Reads eight calibration entries from the
-     *               stream.
+     * @brief           Reads eight calibration entries from the
+     *                  stream.
      *
-     * @param[in,out] inputStream_inout
-     *                Stream holding the entries; shall be good.
-     * @param[out]    kannala_out
-     *                Camera receiving the entries.
+     * @param[in,out]   inputStream_inout
+     *                  Stream holding the entries; shall be good.
      *
-     * @return       The input stream.
+     * @param[out]      kannala_out
+     *                  Camera receiving the entries.
+     *
+     * @return          The input stream.
      */
     friend std::istream &operator>>(std::istream   &inputStream_inout,
                                     KannalaBrandt8 &kannala_out);
 
     /*!
-     * @brief        Returns the Newton-solve tolerance used for
-     *               unprojection.
+     * @brief           Returns the Newton-solve tolerance used for
+     *                  unprojection.
      *
-     * @param[out] precision_out Solver precision.
-     * @return KANNALA_BRANDT8_STATUS_SUCCESS.
+     * @param[out]      precision_out
+     *                  Solver precision.
+     *
+     * @return          KANNALA_BRANDT8_STATUS_SUCCESS.
      */
     [[nodiscard]] KannalaBrandt8Status getPrecision(float &precision_out) const
     {
@@ -436,19 +469,20 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
     }
 
     /*!
-     * @brief        Checks calibration equality with another
-     *               fisheye camera.
+     * @brief           Checks calibration equality with another
+     *                   fisheye camera.
      *
-     *              Entries and precisions shall agree within
-     *              1e-6.
+     *                  Entries and precisions shall agree within
+     *                  1e-6.
      *
-     * @param[in]    p_camera_in
-     *               Non-owning candidate camera; shall be
-     *               non-null.
+     * @param[in]       p_camera_in
+     *                  Non-owning candidate camera; shall be
+     *                  non-null.
      *
-     * @param[out] isEqual_out True when both cameras share the type and
-     * calibration.
-     * @return KANNALA_BRANDT8_STATUS_SUCCESS.
+     * @param[out]      isEqual_out
+     *                  True when both cameras share the type and calibration.
+     *
+     * @return          KANNALA_BRANDT8_STATUS_SUCCESS.
      */
     [[nodiscard]] KannalaBrandt8Status
         isEqual(geometriccamera::GeometricCamera *p_camera_in,
@@ -456,7 +490,7 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
 
   private:
     /*!
-     * @brief        Newton-solve tolerance for unprojection.
+     * @brief           Newton-solve tolerance for unprojection.
      */
     const float precision;
 
@@ -464,25 +498,29 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
     //[fx, fy, cx, cy, k0, k1, k2, k3]
 
     /*!
-     * @brief        Owned two-view helper created on first
-     *               reconstruction and released at destruction.
+     * @brief           Owned two-view helper created on first
+     *                  reconstruction and released at destruction.
      */
     TwoViewReconstruction *p_twoViewReconstruction;
 
     /*!
-     * @brief        Triangulates two normalized observations
-     *               with a linear solve.
+     * @brief           Triangulates two normalized observations
+     *                  with a linear solve.
      *
-     * @param[in]    point1_in
-     *               Observation in the first view.
-     * @param[in]    point2_in
-     *               Observation in the second view.
-     * @param[in]    pose1_in
-     *               Three-by-four pose of the first view.
-     * @param[in]    pose2_in
-     *               Three-by-four pose of the second view.
-     * @param[out]   point3d_out
-     *               Triangulated point.
+     * @param[in]       point1_in
+     *                  Observation in the first view.
+     *
+     * @param[in]       point2_in
+     *                  Observation in the second view.
+     *
+     * @param[in]       pose1_in
+     *                  Three-by-four pose of the first view.
+     *
+     * @param[in]       pose2_in
+     *                  Three-by-four pose of the second view.
+     *
+     * @param[out]      point3d_out
+     *                  Triangulated point.
      */
     [[nodiscard]] KannalaBrandt8Status
         triangulate(const cv::Point2f                &point1_in,

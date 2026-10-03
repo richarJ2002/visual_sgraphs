@@ -1,17 +1,27 @@
 /*!
- * @file test_RoomCreationBudget.cpp
- * @brief User-mandated invariant: a map may hold at most one more room than
- *        it has PASSABLE passages. GeoSemHelpers::createBlankRoomCandidate()
- *        is the sole choke point that ever constructs a new semantic::Room, so
- * the cap is enforced there, regardless of which call site (free-space
- *        bootstrap, or a passage's prospective-room creation) is asking.
+ * @file            test_RoomCreationBudget.cpp
  *
- *        A "blocked" semantic::Passage (isPassable() == false) must not count
- * toward the budget -- a semantic::Passage can be created purely from a
- * classified door plane sitting near a wall (SemanticsManager::
- *        detectDoorsAndDoorways()), with zero free-space evidence. Only a
- *        semantic::Passage actually observed passable (real
- * Voxblox-skeleton-crosses- wall evidence) may unlock a new room.
+ * @brief           User-mandated invariant: a map may hold at most one more
+ *                  room than
+ *                         it has PASSABLE passages.
+ *                         GeoSemHelpers::createBlankRoomCandidate() is the sole
+ *                         choke point that ever constructs a new
+ *                         semantic::Room, so
+ *                  the cap is enforced there, regardless of which call site
+ *                  (free-space
+ *                         bootstrap, or a passage's prospective-room creation)
+ *                         is asking.
+ *
+ *                         A "blocked" semantic::Passage (isPassable() == false)
+ *                         must not count
+ *                  toward the budget -- a semantic::Passage can be created
+ *                  purely from a classified door plane sitting near a wall
+ *                  (SemanticsManager::
+ *                         detectDoorsAndDoorways()), with zero free-space
+ *                         evidence. Only a semantic::Passage actually observed
+ *                         passable (real
+ *                  Voxblox-skeleton-crosses- wall evidence) may unlock a new
+ *                  room.
  */
 
 #include "Atlas.h"
@@ -30,8 +40,8 @@ namespace core
 {
 
 /*!
- * @brief        Checks that the first room is allowed when the map has no
- *               passages.
+ * @brief           Checks that the first room is allowed when the map has no
+ *                  passages.
  */
 TEST(RoomCreationBudget, AllowsTheFirstRoomWithZeroPassages)
 {
@@ -52,8 +62,8 @@ TEST(RoomCreationBudget, AllowsTheFirstRoomWithZeroPassages)
 }
 
 /*!
- * @brief        Checks that a second room is refused while the map has no
- *               passable passage.
+ * @brief           Checks that a second room is refused while the map has no
+ *                  passable passage.
  */
 TEST(RoomCreationBudget, RefusesASecondRoomWithoutAPassablePassage)
 {
@@ -81,8 +91,8 @@ TEST(RoomCreationBudget, RefusesASecondRoomWithoutAPassablePassage)
 }
 
 /*!
- * @brief        Checks that a second room is allowed once one passable passage
- *               exists.
+ * @brief           Checks that a second room is allowed once one passable
+ *                  passage exists.
  */
 TEST(RoomCreationBudget, AllowsASecondRoomOnceAPassablePassageExists)
 {
@@ -122,8 +132,8 @@ TEST(RoomCreationBudget, AllowsASecondRoomOnceAPassablePassageExists)
 }
 
 /*!
- * @brief        Checks that a passage marked not passable does not unlock a
- *               second room.
+ * @brief           Checks that a passage marked not passable does not unlock a
+ *                  second room.
  */
 TEST(RoomCreationBudget, ABlockedPassageDoesNotUnlockASecondRoom)
 {
@@ -166,8 +176,8 @@ TEST(RoomCreationBudget, ABlockedPassageDoesNotUnlockASecondRoom)
 }
 
 /*!
- * @brief        Checks that a third room is refused until two passable passages
- *               exist.
+ * @brief           Checks that a third room is refused until two passable
+ *                  passages exist.
  */
 TEST(RoomCreationBudget, ThirdRoomRequiresATwoPassablePassages)
 {

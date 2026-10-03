@@ -37,59 +37,60 @@
 #include <rclcpp/logging.hpp>
 
 /*!
- * @brief        ROS 2 node that admits synchronized RGB, depth and point-cloud
- *               triples and hands the newest one to a worker thread running
- *               the SLAM tracker. GrabRGBD runs on a ROS executor thread and
- *               keeps only the newest packet; ProcessRgbdPackets runs on a
- *               separate worker thread.
+ * @brief           ROS 2 node that admits synchronized RGB, depth and
+ *                  point-cloud triples and hands the newest one to a worker
+ *                  thread running the SLAM tracker. GrabRGBD runs on a ROS
+ *                  executor thread and keeps only the newest packet;
+ *                  ProcessRgbdPackets runs on a separate worker thread.
  */
 class ImageGrabber : public rclcpp::Node
 {
   public:
     /*!
-     * @brief       Owns one timestamp-coherent RGB, depth, and point-cloud
-     *              sample.
+     * @brief           Owns one timestamp-coherent RGB, depth, and point-cloud
+     *                  sample.
      */
     struct SynchronizedRgbdPacket
     {
         /*!
-         * @brief        RGB image of the packet; shared with the ROS message,
-         *               which stays alive while the packet holds it.
+         * @brief           RGB image of the packet; shared with the ROS
+         *                  message, which stays alive while the packet holds
+         *                  it.
          */
         sensor_msgs::msg::Image::ConstSharedPtr       p_rgbImageMessage;
         /*!
-         * @brief        Registered depth image of the packet; shared with the
-         *               ROS message.
+         * @brief           Registered depth image of the packet; shared with
+         *                  the ROS message.
          */
         sensor_msgs::msg::Image::ConstSharedPtr       p_depthImageMessage;
         /*!
-         * @brief        Point cloud matching the image pair; shared with the
-         *               ROS message.
+         * @brief           Point cloud matching the image pair; shared with the
+         *                  ROS message.
          */
         sensor_msgs::msg::PointCloud2::ConstSharedPtr p_pointCloudMessage;
         /*!
-         * @brief        RGB image header stamp, nanoseconds on the node clock
-         *               (simulation time when use_sim_time is set).
+         * @brief           RGB image header stamp, nanoseconds on the node
+         *                  clock (simulation time when use_sim_time is set).
          */
         std::int64_t sensorTimestampNanoseconds{0};
         /*!
-         * @brief        Steady-clock time at which GrabRGBD received the
-         *               triple; the worker measures its queue wait from it.
+         * @brief           Steady-clock time at which GrabRGBD received the
+         *                  triple; the worker measures its queue wait from it.
          */
         vs_graphs::observability::RgbdObservability::SteadyTime callbackArrival;
     };
 
     /*!
-     * @brief       Constructs the RGB-D adapter with the parent node's clock
-     *              mode.
+     * @brief           Constructs the RGB-D adapter with the parent node's
+     *                  clock mode.
      *
-     * @param[in]   useSimTime_in
-     *              True when timestamps must follow `/clock`.
+     * @param[in]       useSimTime_in
+     *                  True when timestamps must follow `/clock`.
      *
-     * @param[in]   directGazeboFluCloud_in
-     *              True when the input cloud is a direct Gazebo cloud in
-     *              forward-left-up axes, converted to the optical camera
-     *              frame; generated RGB-D clouds are already optical.
+     * @param[in]       directGazeboFluCloud_in
+     *                  True when the input cloud is a direct Gazebo cloud in
+     *                  forward-left-up axes, converted to the optical camera
+     *                  frame; generated RGB-D clouds are already optical.
      */
     ImageGrabber(const bool useSimTime_in, const bool directGazeboFluCloud_in) :
         rclcpp::Node(
@@ -106,43 +107,46 @@ class ImageGrabber : public rclcpp::Node
     }
 
     /*!
-     * @brief       Processes the newest coherent sensor packet.
+     * @brief           Processes the newest coherent sensor packet.
      *
-     *              A pending packet is replaced while tracking is busy, as in
-     *              the established RGB-D delivery path.
+     *                  A pending packet is replaced while tracking is busy, as
+     *                  in the established RGB-D delivery path.
      */
     void ProcessRgbdPackets();
 
     /*!
-     * @brief       Requests worker shutdown and wakes a waiting worker.
+     * @brief           Requests worker shutdown and wakes a waiting worker.
      */
     void RequestStop();
 
-    /*! Logs a cumulative summary without holding packet/accounting locks. */
+    /*!
+     * @brief           Logs a cumulative summary without holding
+     *                  packet/accounting locks.
+     */
     void LogRgbdObservabilitySummary(const std::string &event_in) const;
 
     /*!
-     * @brief       Callback function to get the skeleton graph from the
-     *              `voxblox` module
+     * @brief           Callback function to get the skeleton graph from the
+     *                  `voxblox` module
      *
-     * @param       msgSkeletonGraph
-     *              The skeleton graph from the `voxblox` module
+     * @param[in]       msgSkeletonGraph
+     *                  The skeleton graph from the `voxblox` module
      */
     void GrabVoxbloxSkeletonGraph(
         const visualization_msgs::msg::MarkerArray &msgSkeletonGraph);
 
     /*!
-     * @brief       Admits a coherent RGB-D packet without blocking ROS
-     *              input.
+     * @brief           Admits a coherent RGB-D packet without blocking ROS
+     *                  input.
      *
-     * @param[in]   msgRGB_in
-     *              RGB image message.
+     * @param[in]       msgRGB_in
+     *                  RGB image message.
      *
-     * @param[in]   msgD_in
-     *              Registered depth image message.
+     * @param[in]       msgD_in
+     *                  Registered depth image message.
      *
-     * @param[in]   msgPC_in
-     *              Point cloud corresponding to the image pair.
+     * @param[in]       msgPC_in
+     *                  Point cloud corresponding to the image pair.
      */
     void
         GrabRGBD(const sensor_msgs::msg::Image::ConstSharedPtr       &msgRGB_in,
@@ -150,68 +154,71 @@ class ImageGrabber : public rclcpp::Node
                  const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC_in);
 
   private:
-    /*! Publishes a lock-free copy of frontend progress into System health. */
+    /*!
+     * @brief           Publishes a lock-free copy of frontend progress into
+     *                  System health.
+     */
     void PublishRgbdFrontendHealth() const;
 
     /*!
-     * @brief        Guards latestRgbdPacket, hasPendingRgbdPacket,
-     *               stopRequested, hasReceivedRgbdPacket and
-     *               lastReceivedRgbdTimestamp_seconds.
+     * @brief           Guards latestRgbdPacket, hasPendingRgbdPacket,
+     *                  stopRequested, hasReceivedRgbdPacket and
+     *                  lastReceivedRgbdTimestamp_seconds.
      */
     std::mutex              rgbdPacketMutex;
     /*!
-     * @brief        Wakes the worker when a packet becomes pending or stop
-     *               is requested; waited on with rgbdPacketMutex.
+     * @brief           Wakes the worker when a packet becomes pending or stop
+     *                  is requested; waited on with rgbdPacketMutex.
      */
     std::condition_variable rgbdPacketCondition;
     /*!
-     * @brief        Newest admitted packet; a later packet replaces it
-     *               before the worker takes it. Valid only while
-     *               hasPendingRgbdPacket is true; guarded by
-     *               rgbdPacketMutex.
+     * @brief           Newest admitted packet; a later packet replaces it
+     *                  before the worker takes it. Valid only while
+     *                  hasPendingRgbdPacket is true; guarded by
+     *                  rgbdPacketMutex.
      */
     SynchronizedRgbdPacket  latestRgbdPacket;
     /*!
-     * @brief        True from admission until the worker takes the packet
-     *               or shutdown discards it.
+     * @brief           True from admission until the worker takes the packet
+     *                  or shutdown discards it.
      */
     bool                    hasPendingRgbdPacket{false};
     /*!
-     * @brief        Set by RequestStop; GrabRGBD then rejects triples and
-     *               the worker exits.
+     * @brief           Set by RequestStop; GrabRGBD then rejects triples and
+     *                  the worker exits.
      */
     bool                    stopRequested{false};
     /*!
-     * @brief        True once any packet has been admitted; makes
-     *               lastReceivedRgbdTimestamp_seconds meaningful.
+     * @brief           True once any packet has been admitted; makes
+     *                  lastReceivedRgbdTimestamp_seconds meaningful.
      */
     bool                    hasReceivedRgbdPacket{false};
     /*!
-     * @brief        RGB header stamp of the newest admitted packet,
-     *               seconds; a triple with a stamp not above it is
-     *               rejected.
+     * @brief           RGB header stamp of the newest admitted packet,
+     *                  seconds; a triple with a stamp not above it is
+     *                  rejected.
      */
     double                  lastReceivedRgbdTimestamp_seconds{0.0};
     /*!
-     * @brief        True once the worker has tracked a packet. Used only
-     *               on the worker thread, so unguarded.
+     * @brief           True once the worker has tracked a packet. Used only
+     *                  on the worker thread, so unguarded.
      */
     bool                    hasProcessedRgbdPacket{false};
     /*!
-     * @brief        RGB header stamp of the last packet the worker
-     *               tracked, seconds; gives the estimator frame interval.
-     *               Worker thread only.
+     * @brief           RGB header stamp of the last packet the worker
+     *                  tracked, seconds; gives the estimator frame interval.
+     *                  Worker thread only.
      */
     double                  lastProcessedRgbdTimestamp_seconds{0.0};
     /*!
-     * @brief        Fixed at construction: true when the input cloud is a
-     *               direct Gazebo cloud in forward-left-up axes that must
-     *               be converted to the optical camera frame.
+     * @brief           Fixed at construction: true when the input cloud is a
+     *                  direct Gazebo cloud in forward-left-up axes that must
+     *                  be converted to the optical camera frame.
      */
     const bool              directGazeboFluCloud;
     /*!
-     * @brief        Thread-safe counters and timings, updated from both
-     *               the executor thread and the worker thread.
+     * @brief           Thread-safe counters and timings, updated from both
+     *                  the executor thread and the worker thread.
      */
     vs_graphs::observability::RgbdObservability rgbdObservability;
 };

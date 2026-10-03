@@ -37,12 +37,14 @@ namespace converter
 {
 
 /*!
- * @brief       Result of a Converter operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a Converter operation. Values are fixed and never
+ *                  reordered.
  */
 enum class ConverterStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     CONVERTER_STATUS_SUCCESS = 0U
 };
 

@@ -55,61 +55,72 @@ namespace core
 {
 namespace semantic
 {
-/*! @brief Schema version of serializeSnapshotTopologyOnly()'s and
- *  serializeSnapshotFullGeometry()'s "schema" field. Increment only when
- *  either function's own output shape changes incompatibly. */
+/*!
+ * @brief           Schema version of serializeSnapshotTopologyOnly()'s and
+ *                  serializeSnapshotFullGeometry()'s "schema" field. Increment
+ *                  only when either function's own output shape changes
+ *                  incompatibly.
+ */
 inline constexpr int SEMANTIC_SNAPSHOT_SCHEMA_VERSION = 1;
 
-/*! @brief Schema version of serializeEvaluationReport()'s "schema"
- *  field. */
+/*!
+ * @brief           Schema version of serializeEvaluationReport()'s "schema"
+ *                  field.
+ */
 inline constexpr int SEMANTIC_EVALUATION_REPORT_SCHEMA_VERSION = 1;
 
-/*! @brief Schema version of serializeMapCompletenessResults()'s "schema"
- *  field. */
+/*!
+ * @brief           Schema version of serializeMapCompletenessResults()'s
+ *                  "schema" field.
+ */
 inline constexpr int SEMANTIC_COMPLETENESS_SCHEMA_VERSION = 1;
 
 /*!
- * @brief       Canonically serializes \p snapshot_in without any geometric
- *              field (equations, centroids, extents, boundary corners,
- *              observation gaps, plane identity): identity, lifecycle,
- *              enums, and relationships only.
+ * @brief           Canonically serializes \p snapshot_in without any geometric
+ *                  field (equations, centroids, extents, boundary corners,
+ *                  observation gaps, plane identity): identity, lifecycle,
+ *                  enums, and relationships only.
  *
- * @param[in]   snapshot_in     Snapshot to serialize; never mutated.
+ * @param[in]       snapshot_in
+ *                  Snapshot to serialize; never mutated.
  *
- * @return      A JSON object with a top-level "schema" version field.
+ * @return          A JSON object with a top-level "schema" version field.
  */
 nlohmann::json
     serializeSnapshotTopologyOnly(const SemanticGraphSnapshot &snapshot_in);
 
 /*!
- * @brief       Canonically serializes \p snapshot_in including every
- *              geometric field, in addition to everything
- *              serializeSnapshotTopologyOnly() includes.
+ * @brief           Canonically serializes \p snapshot_in including every
+ *                  geometric field, in addition to everything
+ *                  serializeSnapshotTopologyOnly() includes.
  *
- * @param[in]   snapshot_in     Snapshot to serialize; never mutated.
+ * @param[in]       snapshot_in
+ *                  Snapshot to serialize; never mutated.
  *
- * @return      A JSON object with a top-level "schema" version field.
+ * @return          A JSON object with a top-level "schema" version field.
  */
 nlohmann::json
     serializeSnapshotFullGeometry(const SemanticGraphSnapshot &snapshot_in);
 
 /*!
- * @brief       Canonically serializes a complete AxiomEvaluationReport.
+ * @brief           Canonically serializes a complete AxiomEvaluationReport.
  *
- * @param[in]   report_in       Report to serialize; never mutated.
+ * @param[in]       report_in
+ *                  Report to serialize; never mutated.
  *
- * @return      A JSON object with a top-level "schema" version field.
+ * @return          A JSON object with a top-level "schema" version field.
  */
 nlohmann::json
     serializeEvaluationReport(const AxiomEvaluationReport &report_in);
 
 /*!
- * @brief       Canonically serializes a complete evaluateMapCompleteness()
- *              result list.
+ * @brief           Canonically serializes a complete evaluateMapCompleteness()
+ *                  result list.
  *
- * @param[in]   results_in      Results to serialize; never mutated.
+ * @param[in]       results_in
+ *                  Results to serialize; never mutated.
  *
- * @return      A JSON object with a top-level "schema" version field.
+ * @return          A JSON object with a top-level "schema" version field.
  */
 nlohmann::json serializeMapCompletenessResults(
     const std::vector<MapCompletenessResult> &results_in);

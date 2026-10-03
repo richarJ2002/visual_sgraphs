@@ -1,7 +1,7 @@
 /*!
- * @file         clearResetCause.cc
+ * @file            clearResetCause.cc
  *
- * @brief        Implements clearResetCause declared in ResetCause.h.
+ * @brief           Implements clearResetCause declared in ResetCause.h.
  */
 
 #include "ResetCause.h"

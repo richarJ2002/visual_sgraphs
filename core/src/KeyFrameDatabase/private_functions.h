@@ -23,6 +23,7 @@ namespace core
  *
  * @param[in]       firstScoredCandidate_in
  *                  First pair.
+ *
  * @param[in]       secondScoredCandidate_in
  *                  Second pair.
  *

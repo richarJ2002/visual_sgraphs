@@ -73,8 +73,9 @@ namespace core
 {
 
 /*!
- * @brief        BRIEF test pattern: 256 tests, each two sampling points stored
- *               as (x, y) integer pairs in pixels relative to the keypoint.
+ * @brief           BRIEF test pattern: 256 tests, each two sampling points
+ *                  stored as (x, y) integer pairs in pixels relative to the
+ *                  keypoint.
  */
 static const int orbBitPattern31[256 * 4] = {
     8,   -3,  9,   5 /*mean (0), correlation (0)*/,

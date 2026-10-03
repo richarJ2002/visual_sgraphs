@@ -96,9 +96,11 @@ bool isLegacyWallRecordLessFullGeometry(const LegacyWallRecord &lhs_in,
     return isDoubleLess(lhs_in.extentM, rhs_in.extentM);
 }
 
-/*! @brief Reads a fixed-length numeric JSON array into an Eigen vector;
- *  returns false (leaving \p out unmodified) when \p value_in is not an
- *  array of exactly \p Size numbers. */
+/*!
+ * @brief           Reads a fixed-length numeric JSON array into an Eigen
+ *                  vector; returns false (leaving \p out unmodified) when
+ *                  \p value_in is not an array of exactly \p Size numbers.
+ */
 template <int Size>
 bool readFixedNumericArray(const nlohmann::json           &value_in,
                            Eigen::Matrix<double, Size, 1> &out_inout)
@@ -119,9 +121,11 @@ bool readFixedNumericArray(const nlohmann::json           &value_in,
     return true;
 }
 
-/*! @brief Canonical JSON of the discrete (topology) facts common to both
- *  digests: sorted room-id multiset, sorted wall-owner-room-id multiset,
- *  passageCount, hasFloor. */
+/*!
+ * @brief           Canonical JSON of the discrete (topology) facts common to
+ *                  both digests: sorted room-id multiset, sorted
+ *                  wall-owner-room-id multiset, passageCount, hasFloor.
+ */
 nlohmann::json topologyJson(const LegacyCapture &capture_in)
 {
     std::vector<int> roomIds;

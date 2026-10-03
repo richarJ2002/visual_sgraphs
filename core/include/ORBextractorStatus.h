@@ -20,7 +20,7 @@
  * @file            ORBextractorStatus.h
  *
  * @brief           Declares the status returned by every ORBextractor
- * operation.
+ *                  operation.
  */
 
 #ifndef ORBEXTRACTOR_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a ORBextractor operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a ORBextractor operation. Values are fixed and
+ *                  never reordered.
  */
 enum class ORBextractorStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     ORBEXTRACTOR_STATUS_SUCCESS = 0U
 };
 

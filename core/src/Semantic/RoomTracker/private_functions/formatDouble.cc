@@ -35,7 +35,10 @@ namespace core
 namespace semantic
 {
 
-/*! @brief Formats a double for JSON output without trailing exponent noise. */
+/*!
+ * @brief           Formats a double for JSON output without trailing exponent
+ *                  noise.
+ */
 RoomTrackerStatus formatDouble(double       numericValue_in,
                                std::string &formattedValue_out)
 {

@@ -19,8 +19,8 @@
  * @file            reconstructWithTwoViews.cc
  *
  * @brief           Implements KannalaBrandt8::reconstructWithTwoViews(),
- *                  declared in
- * CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h.
+ *                                   declared in
+ *                  CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h.
  */
 
 #include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"

@@ -35,12 +35,14 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a RoomTracker operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a RoomTracker operation. Values are fixed and
+ *                  never reordered.
  */
 enum class RoomTrackerStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     ROOM_TRACKER_STATUS_SUCCESS = 0U
 };
 

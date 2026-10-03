@@ -40,9 +40,9 @@ UtilsStatus Utils::reAssociateRooms(Atlas *p_atlas_in)
     /*!
      * Re-run the targeted provisional-room consolidation pass.
      *
-     * @note        This function does not merge confirmed rooms. It only allows
-     *              a confirmed room or corridor to absorb redundant,
-     *              single-wall provisional structural elements.
+     * @note            This function does not merge confirmed rooms. It only
+     *                  allows a confirmed room or corridor to absorb redundant,
+     *                  single-wall provisional structural elements.
      */
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
     if (p_atlas_in->getAllRooms(allRooms) != AtlasStatus::ATLAS_STATUS_SUCCESS)

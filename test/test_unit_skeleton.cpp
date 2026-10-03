@@ -38,7 +38,7 @@ namespace core
 {
 
 /*!
- * @brief State/event literal names are stable, parseable identifiers.
+ * @brief           State/event literal names are stable, parseable identifiers.
  */
 TEST(RoomTrackerSkeleton, StateAndEventLiteralsAreStable)
 {
@@ -151,7 +151,7 @@ TEST(RoomTrackerSkeleton, StateAndEventLiteralsAreStable)
 }
 
 /*!
- * @brief Confidence formula matches hand-computed values.
+ * @brief           Confidence formula matches hand-computed values.
  */
 TEST(RoomTrackerSkeleton, ConfidenceFormula)
 {
@@ -230,8 +230,8 @@ TEST(RoomTrackerSkeleton, ConfidenceFormula)
 }
 
 /*!
- * @brief semantic::TransitionEvent serialises as one JSON object with all
- * fields.
+ * @brief           semantic::TransitionEvent serialises as one JSON object with
+ *                  all fields.
  */
 TEST(RoomTrackerSkeleton, EventSerialisationIsJSON)
 {
@@ -259,7 +259,7 @@ TEST(RoomTrackerSkeleton, EventSerialisationIsJSON)
 }
 
 /*!
- * @brief Configuration defaults match the declared tuning values.
+ * @brief           Configuration defaults match the declared tuning values.
  */
 TEST(RoomTrackerSkeleton, DefaultConfiguration)
 {

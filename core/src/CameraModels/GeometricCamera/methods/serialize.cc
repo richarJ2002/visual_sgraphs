@@ -64,33 +64,33 @@ void GeometricCamera::serialize(Archive                            &ar,
 }
 
 /*!
- * @brief        Reads the camera id, model type and parameter vector from a
- *               binary input archive (explicit instantiation of
- *               GeometricCamera::serialize).
+ * @brief           Reads the camera id, model type and parameter vector from a
+ *                  binary input archive (explicit instantiation of
+ *                  GeometricCamera::serialize).
  */
 template void GeometricCamera::serialize<boost::archive::binary_iarchive>(
     boost::archive::binary_iarchive &,
     const unsigned int);
 /*!
- * @brief        Writes the camera id, model type and parameter vector to a
- *               binary output archive (explicit instantiation of
- *               GeometricCamera::serialize).
+ * @brief           Writes the camera id, model type and parameter vector to a
+ *                  binary output archive (explicit instantiation of
+ *                  GeometricCamera::serialize).
  */
 template void GeometricCamera::serialize<boost::archive::binary_oarchive>(
     boost::archive::binary_oarchive &,
     const unsigned int);
 /*!
- * @brief        Reads the camera id, model type and parameter vector from
- *               a text input archive (explicit instantiation of
- *               GeometricCamera::serialize).
+ * @brief           Reads the camera id, model type and parameter vector from
+ *                  a text input archive (explicit instantiation of
+ *                  GeometricCamera::serialize).
  */
 template void GeometricCamera::serialize<boost::archive::text_iarchive>(
     boost::archive::text_iarchive &,
     const unsigned int);
 /*!
- * @brief        Writes the camera id, model type and parameter vector to a text
- *               output archive (explicit instantiation of
- *               GeometricCamera::serialize).
+ * @brief           Writes the camera id, model type and parameter vector to a
+ *                  text output archive (explicit instantiation of
+ *                  GeometricCamera::serialize).
  */
 template void GeometricCamera::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,

@@ -1,7 +1,8 @@
 /*!
- * @file OptimizerEdgeLookup.h
- * @brief Bounds-checked lookup into a bundle-adjustment edge's parallel
- *        keyframe vector.
+ * @file            OptimizerEdgeLookup.h
+ *
+ * @brief           Bounds-checked lookup into a bundle-adjustment edge's
+ *                  parallel keyframe vector.
  */
 
 #ifndef VS_GRAPHS_CORE_OPTIMIZER_EDGE_LOOKUP_H

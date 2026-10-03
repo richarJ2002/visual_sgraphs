@@ -20,7 +20,7 @@
  * @file            ConfigParserStatus.h
  *
  * @brief           Declares the status returned by every ConfigParser
- * operation.
+ *                  operation.
  */
 
 #ifndef CONFIG_PARSER_STATUS_H
@@ -38,12 +38,14 @@ namespace config
 {
 
 /*!
- * @brief       Result of a ConfigParser operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a ConfigParser operation. Values are fixed and
+ *                  never reordered.
  */
 enum class ConfigParserStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     CONFIG_PARSER_STATUS_SUCCESS = 0U
 };
 

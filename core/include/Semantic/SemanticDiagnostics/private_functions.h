@@ -47,34 +47,45 @@ namespace core
 {
 namespace semantic
 {
-/*! @brief Serializes \p value_in as a JSON number for every finite value, or
- *  as one of the explicit string sentinels "NaN"/"Infinity"/"-Infinity" for
- *  a non-finite value, so a canonical diagnostic record can never contain
- *  the JSON null that nlohmann::json's default numeric formatting would
- *  otherwise silently substitute for a non-finite double. */
+/*!
+ * @brief           Serializes \p value_in as a JSON number for every finite
+ *                  value, or as one of the explicit string sentinels
+ *                  "NaN"/"Infinity"/"-Infinity" for a non-finite value, so a
+ *                  canonical diagnostic record can never contain the JSON null
+ *                  that nlohmann::json's default numeric formatting would
+ *                  otherwise silently substitute for a non-finite double.
+ */
 nlohmann::json serializeFiniteAwareDouble(double value_in);
 
-/*! @brief Serializes one Finding's evidence: observedCount/expectedCount
- *  present only when set; numericValue present only when set, via
- *  serializeFiniteAwareDouble(). */
+/*!
+ * @brief           Serializes one Finding's evidence:
+ *                  observedCount/expectedCount present only when set;
+ *                  numericValue present only when set, via
+ *                  serializeFiniteAwareDouble().
+ */
 [[nodiscard]] SemanticDiagnosticsStatus
     findingEvidenceToJson(const FindingEvidence &evidence_in,
                           nlohmann::json        &json_out);
 
-/*! @brief Serializes \p keys_in as a sorted (ascending, from a private
- *  copy) JSON array of {kind, mapId, entityId} objects. Never mutates \p
- *  keys_in. */
+/*!
+ * @brief           Serializes \p keys_in as a sorted (ascending, from a private
+ *                  copy) JSON array of {kind, mapId, entityId} objects. Never
+ *                  mutates \p keys_in.
+ */
 [[nodiscard]] SemanticDiagnosticsStatus
     entityKeysToJson(const std::vector<EntityKey> &keys_in,
                      nlohmann::json               &json_out);
 
-/*! @brief Serializes one FAIL Finding as a bounded SG_VIOLATION detail
- *  object for the given transition ("appeared", "changed", or "resolved"):
- *  level (WARN for a newly appeared HARD FAIL, INFO otherwise), findingId,
- *  transition, readable axiomCode/result/severity/reasonCode, sorted
- *  involvedKeys, and evidence. \p finding_in must have
- *  \c result == AxiomResult::FAIL -- see buildSemanticDiagnosticUpdate.cc,
- *  the only caller. */
+/*!
+ * @brief           Serializes one FAIL Finding as a bounded SG_VIOLATION detail
+ *                  object for the given transition ("appeared", "changed", or
+ *                  "resolved"): level (WARN for a newly appeared HARD FAIL,
+ *                  INFO otherwise), findingId, transition, readable
+ *                  axiomCode/result/severity/reasonCode, sorted involvedKeys,
+ *                  and evidence. \p finding_in must have \c result ==
+ *                  AxiomResult::FAIL -- see buildSemanticDiagnosticUpdate.cc,
+ *                  the only caller.
+ */
 [[nodiscard]] SemanticDiagnosticsStatus
     violationDetailToJson(const Finding  &finding_in,
                           const char     *p_transition_in,

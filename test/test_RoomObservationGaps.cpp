@@ -1,9 +1,10 @@
 /*!
- * @file test_RoomObservationGaps.cpp
- * @brief User rule: manage incomplete rooms explicitly -- track which
- *        angular sectors around a room still have no wall evidence, as a
- *        situational-awareness signal (independent of, and available
- *        earlier than, semantic::BoundaryStatus::COMPLETE).
+ * @file            test_RoomObservationGaps.cpp
+ *
+ * @brief           User rule: manage incomplete rooms explicitly -- track which
+ *                  angular sectors around a room still have no wall evidence,
+ *                  as a situational-awareness signal (independent of, and
+ *                  available earlier than, semantic::BoundaryStatus::COMPLETE).
  */
 
 #include "Atlas.h"
@@ -27,9 +28,12 @@ namespace core
 namespace
 {
 
-/*! Builds a GROUND geometric::Plane at z=0 with a genuine, production-refit
- * geometry snapshot (Map::GetBiggestGroundPlane() requires cloudGeneration ==
- * successfulRefitGeneration and a finite support count). */
+/*!
+ * @brief           Builds a GROUND geometric::Plane at z=0 with a genuine,
+ *                  production-refit geometry snapshot
+ *                  (Map::GetBiggestGroundPlane() requires cloudGeneration ==
+ *                  successfulRefitGeneration and a finite support count).
+ */
 std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
                                                                Map *p_map_in)
 {
@@ -103,9 +107,12 @@ std::unique_ptr<geometric::Plane> makeRefitGroundPlaneAtOrigin(int  id_in,
     return ground;
 }
 
-/*! Builds an admissible WALL geometric::Plane on the plane {normal . p + d = 0}
- * passing through pointOnPlane_world_in, with a genuine on-plane point cloud
- * running along axisAlong_world_in (must be horizontal). */
+/*!
+ * @brief           Builds an admissible WALL geometric::Plane on the plane
+ *                  {normal . p + d = 0} passing through pointOnPlane_world_in,
+ *                  with a genuine on-plane point cloud running along
+ *                  axisAlong_world_in (must be horizontal).
+ */
 std::unique_ptr<geometric::Plane>
     makeWallSegmentPlane(int                    id_in,
                          Map                   *p_map_in,
@@ -207,8 +214,8 @@ std::unique_ptr<geometric::Plane>
 } // namespace
 
 /*!
- * @brief        Checks that a room with no walls reports one observation gap
- *               spanning the full circle.
+ * @brief           Checks that a room with no walls reports one observation gap
+ *                  spanning the full circle.
  */
 TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
 {
@@ -245,8 +252,8 @@ TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
 }
 
 /*!
- * @brief        Checks that a room with a single wall reports one gap larger
- *               than half a circle.
+ * @brief           Checks that a room with a single wall reports one gap larger
+ *                  than half a circle.
  */
 TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
 {
@@ -298,8 +305,8 @@ TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
 }
 
 /*!
- * @brief        Checks that a room whose boundary is complete reports no
- *               observation gaps.
+ * @brief           Checks that a room whose boundary is complete reports no
+ *                  observation gaps.
  */
 TEST(RoomObservationGaps, ReportsNoGapsForARoomWithACompleteBoundary)
 {

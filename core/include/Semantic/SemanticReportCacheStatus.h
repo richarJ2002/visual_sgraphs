@@ -20,7 +20,7 @@
  * @file            SemanticReportCacheStatus.h
  *
  * @brief           Declares the status returned by every SemanticReportCache
- * operation.
+ *                  operation.
  */
 
 #ifndef SEMANTIC_REPORT_CACHE_STATUS_H
@@ -36,12 +36,14 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a SemanticReportCache operation. Values are fixed and
- * never reordered.
+ * @brief           Result of a SemanticReportCache operation. Values are fixed
+ *                  and never reordered.
  */
 enum class SemanticReportCacheStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SEMANTIC_REPORT_CACHE_STATUS_SUCCESS = 0U
 };
 

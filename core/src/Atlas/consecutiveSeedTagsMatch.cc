@@ -41,10 +41,10 @@ namespace core
 {
 
 /*!
- * @brief        Room-prior seed: the old final room and the new starting
- *               room must carry the same non-empty tag. A silent mismatch
- *               means no prior link (e.g. loop closure between
- *               non-consecutive maps): not this path's job.
+ * @brief           Room-prior seed: the old final room and the new starting
+ *                  room must carry the same non-empty tag. A silent mismatch
+ *                  means no prior link (e.g. loop closure between
+ *                  non-consecutive maps): not this path's job.
  */
 AtlasStatus consecutiveSeedTagsMatch(Map  *p_oldMap_in,
                                      Map  *p_currentMap_in,

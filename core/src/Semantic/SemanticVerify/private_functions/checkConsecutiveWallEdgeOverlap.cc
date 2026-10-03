@@ -36,11 +36,13 @@ namespace core
 namespace semantic
 {
 
-/*! @brief Requires coplanar wall pairs to also overlap along the wall
- * direction. Same infinite plane with disjoint extents means different
- * walls (or different places): positive disjointness evidence contradicts,
- * while walls without enough samples are skipped (the angle/offset core
- * owns their verdict). */
+/*!
+ * @brief           Requires coplanar wall pairs to also overlap along the wall
+ *                  direction. Same infinite plane with disjoint extents means
+ *                  different walls (or different places): positive disjointness
+ *                  evidence contradicts, while walls without enough samples are
+ *                  skipped (the angle/offset core owns their verdict).
+ */
 SemanticVerifyStatus checkConsecutiveWallEdgeOverlap(
     const std::vector<ConsecutiveAnchorPair> &pairs_in,
     const g2o::Sim3                          &transform_in,

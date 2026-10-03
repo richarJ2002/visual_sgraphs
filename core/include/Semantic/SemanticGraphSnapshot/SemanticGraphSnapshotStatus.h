@@ -20,7 +20,7 @@
  * @file            SemanticGraphSnapshotStatus.h
  *
  * @brief           Declares the status returned by every SemanticGraphSnapshot
- * operation.
+ *                  operation.
  */
 
 #ifndef SEMANTIC_GRAPH_SNAPSHOT_STATUS_H
@@ -36,12 +36,14 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a SemanticGraphSnapshot operation. Values are fixed
- * and never reordered.
+ * @brief           Result of a SemanticGraphSnapshot operation. Values are
+ *                  fixed and never reordered.
  */
 enum class SemanticGraphSnapshotStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS = 0U
 };
 

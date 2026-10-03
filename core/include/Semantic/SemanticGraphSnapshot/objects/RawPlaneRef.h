@@ -40,65 +40,82 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Raw identity of a referenced Plane, used both for a plane
- *              whose accepted Plane::PlaneVariant is not WALL by design
- *              (e.g. the DOOR plane a Passage names, or the GROUND plane a
- *              Room names) and, via wallKey below, for every wall-shaped
- *              reference (a Plane a caller expected to be WALL-typed: a
- *              wall's twin face, a Room's owned walls, a Passage's
- *              associated walls) instead of a WALL-kind EntityKey built
- *              without checking the actual Plane::PlaneVariant.
+ * @brief           Raw identity of a referenced Plane, used both for a plane
+ *                  whose accepted Plane::PlaneVariant is not WALL by design
+ *                  (e.g. the DOOR plane a Passage names, or the GROUND plane a
+ *                  Room names) and, via wallKey below, for every wall-shaped
+ *                  reference (a Plane a caller expected to be WALL-typed: a
+ *                  wall's twin face, a Room's owned walls, a Passage's
+ *                  associated walls) instead of a WALL-kind EntityKey built
+ *                  without checking the actual Plane::PlaneVariant.
  *
- *              Invariant: reason == UnavailableReason::NONE exactly when the
- *              underlying Plane pointer was non-null at capture time, in
- *              which case planeId/isLive/planeType/mapId are populated from
- *              it. A default-constructed RawPlaneRef therefore defaults
- *              reason to NULL_REFERENCE, matching EntityRef's invariant --
- *              an untouched field must never silently read as "a plane is
- *              present." mapId is independently optional even when reason ==
- *              NONE, because the referenced plane, while non-null, may not
- *              itself have been assigned a map. wallKey is populated only
- *              when planeType is genuinely WALL and mapId has a value, so a
- *              Plane that is present, mapped, and live but is NOT actually
- *              WALL-typed (a caller/model contract violation) still reports
- *              its true planeId/mapId/isLive/planeType -- it is never
- *              silently dropped or fabricated into a nonexistent WallRecord
- *              identity.
+ *                  Invariant: reason == UnavailableReason::NONE exactly when
+ *                  the underlying Plane pointer was non-null at capture time,
+ *                  in which case planeId/isLive/planeType/mapId are populated
+ *                  from it. A default-constructed RawPlaneRef therefore
+ *                  defaults reason to NULL_REFERENCE, matching EntityRef's
+ *                  invariant -- an untouched field must never silently read as
+ *                  "a plane is present." mapId is independently optional even
+ *                  when reason == NONE, because the referenced plane, while
+ *                  non-null, may not itself have been assigned a map. wallKey
+ *                  is populated only when planeType is genuinely WALL and mapId
+ *                  has a value, so a Plane that is present, mapped, and live
+ *                  but is NOT actually WALL-typed (a caller/model contract
+ *                  violation) still reports its true
+ *                  planeId/mapId/isLive/planeType -- it is never silently
+ *                  dropped or fabricated into a nonexistent WallRecord
+ *                  identity.
  */
 struct RawPlaneRef
 {
   public:
-    /*! @brief Present only when reason == UnavailableReason::NONE and the
-     *  referenced plane itself had a non-null map at capture time. */
+    /*!
+     * @brief           Present only when reason == UnavailableReason::NONE and
+     *                  the referenced plane itself had a non-null map at
+     *                  capture time.
+     */
     std::optional<long unsigned int> mapId;
 
-    /*! @brief The referenced plane's Atlas-assigned id; meaningful only
-     *  when reason == UnavailableReason::NONE. */
+    /*!
+     * @brief           The referenced plane's Atlas-assigned id; meaningful
+     *                  only when reason == UnavailableReason::NONE.
+     */
     int planeId{0};
 
-    /*! @brief Inverse of Plane::isBad() at capture time; meaningful only
-     *  when reason == UnavailableReason::NONE. */
+    /*!
+     * @brief           Inverse of Plane::isBad() at capture time; meaningful
+     *                  only when reason == UnavailableReason::NONE.
+     */
     bool isLive{true};
 
-    /*! @brief The referenced plane's accepted Plane::PlaneVariant at
-     *  capture time; meaningful only when reason ==
-     *  UnavailableReason::NONE. */
+    /*!
+     * @brief           The referenced plane's accepted Plane::PlaneVariant at
+     *                  capture time; meaningful only when reason ==
+     *                  UnavailableReason::NONE.
+     */
     geometric::Plane::PlaneVariant planeType{
         geometric::Plane::PlaneVariant::UNDEFINED};
 
-    /*! @brief UnavailableReason::NONE when a plane was actually referenced;
-     *  UnavailableReason::NULL_REFERENCE (the default) when the underlying
-     *  pointer was nullptr, which is the ordinary "no such plane yet"
-     *  case for most callers of this type. */
+    /*!
+     * @brief           UnavailableReason::NONE when a plane was actually
+     *                  referenced; UnavailableReason::NULL_REFERENCE (the
+     *                  default) when the underlying pointer was nullptr, which
+     *                  is the ordinary "no such plane yet" case for most
+     *                  callers of this type.
+     */
     UnavailableReason reason{UnavailableReason::NULL_REFERENCE};
 
-    /*! @brief Present only when reason == UnavailableReason::NONE,
-     *  planeType == Plane::PlaneVariant::WALL, and mapId has a value: the
-     *  key of the full WallRecord this same snapshot also captures for this
-     *  plane. Absent whenever planeType is not WALL (the wrong-type target
-     *  is still retained above via planeId/isLive/planeType/mapId, never
-     *  fabricated as a WALL key) or the plane has no map (a WallRecord
-     *  cannot exist for it either, for the same reason). */
+    /*!
+     * @brief           Present only when reason == UnavailableReason::NONE,
+     *                  planeType == Plane::PlaneVariant::WALL, and mapId has a
+     *                  value: the key of the full WallRecord this same snapshot
+     *                  also captures for this plane. Absent whenever planeType
+     *                  is not WALL (the wrong-type target is still retained
+     *                  above via planeId/isLive/planeType/mapId, never
+     *                  fabricated as a WALL key) or the plane has no map (a
+     *                  WallRecord cannot exist for it either, for the same
+     *                  reason).
+     */
     std::optional<EntityKey> wallKey;
 };
 

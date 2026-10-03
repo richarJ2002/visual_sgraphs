@@ -110,9 +110,9 @@ const AxiomCapabilityEntry *
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that evaluating an empty Atlas gives sixteen aggregate
- *               results, one per axiom code with no duplicate, running from
- *               AX_FRAME_01 to AX_MERGE_01.
+ * @brief           Checks that evaluating an empty Atlas gives sixteen
+ *                  aggregate results, one per axiom code with no duplicate,
+ *                  running from AX_FRAME_01 to AX_MERGE_01.
  */
 TEST(SemanticAxiomEvaluator, AggregateReportContainsExactlyOneEntryPerAxiomCode)
 {
@@ -149,10 +149,10 @@ TEST(SemanticAxiomEvaluator, AggregateReportContainsExactlyOneEntryPerAxiomCode)
 }
 
 /*!
- * @brief        Checks that the capability table has sixteen entries sorted by
- *               axiom code and that AX_FRAME_01, AX_PASS_02, AX_FLOOR_01,
- *               AX_COMP_01 and AX_MERGE_01 carry the expected capability level,
- *               owning phase and class.
+ * @brief           Checks that the capability table has sixteen entries sorted
+ *                  by axiom code and that AX_FRAME_01, AX_PASS_02, AX_FLOOR_01,
+ *                  AX_COMP_01 and AX_MERGE_01 carry the expected capability
+ *                  level, owning phase and class.
  */
 TEST(SemanticAxiomEvaluator,
      AxiomCapabilityTableHasSixteenEntriesSortedByCodeWithKnownAssignments)
@@ -202,9 +202,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that on an empty Atlas each deferred axiom reports
- *               exactly one UNKNOWN finding and an UNKNOWN aggregate, while
- *               AX_ROOM_01 reports no finding and aggregates to PASS.
+ * @brief           Checks that on an empty Atlas each deferred axiom reports
+ *                  exactly one UNKNOWN finding and an UNKNOWN aggregate, while
+ *                  AX_ROOM_01 reports no finding and aggregates to PASS.
  */
 TEST(SemanticAxiomEvaluator, DeferredAxiomsAlwaysReportExactlyOneUnknownFinding)
 {
@@ -250,9 +250,9 @@ TEST(SemanticAxiomEvaluator, DeferredAxiomsAlwaysReportExactlyOneUnknownFinding)
 }
 
 /*!
- * @brief        Checks that AX_ROOM_01 reports one UNKNOWN finding per room,
- *               each naming only its own room, so two rooms give two findings
- *               and an UNKNOWN aggregate.
+ * @brief           Checks that AX_ROOM_01 reports one UNKNOWN finding per room,
+ *                  each naming only its own room, so two rooms give two
+ *                  findings and an UNKNOWN aggregate.
  */
 TEST(SemanticAxiomEvaluator,
      RoomCreationProvenanceIsPerRoomAndVacuousWithNoRooms)
@@ -296,8 +296,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that AX_WALL_01 aggregates to FAIL when one wall has no
- *               owner, one has two owners and one has a single valid owner.
+ * @brief           Checks that AX_WALL_01 aggregates to FAIL when one wall has
+ *                  no owner, one has two owners and one has a single valid
+ *                  owner.
  */
 TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
 {
@@ -374,9 +375,9 @@ TEST(SemanticAxiomEvaluator, AggregationPrecedenceFailBeatsUnknownBeatsPass)
 }
 
 /*!
- * @brief        Checks that aggregateFindings turns PASS, UNKNOWN and FAIL
- *               findings of one entity and axiom into FAIL, and into UNKNOWN
- *               once the FAIL finding is removed.
+ * @brief           Checks that aggregateFindings turns PASS, UNKNOWN and FAIL
+ *                  findings of one entity and axiom into FAIL, and into UNKNOWN
+ *                  once the FAIL finding is removed.
  */
 TEST(SemanticAxiomEvaluator, SameEntityPrecedenceFailBeatsUnknownBeatsPass)
 {
@@ -450,9 +451,9 @@ TEST(SemanticAxiomEvaluator, SameEntityPrecedenceFailBeatsUnknownBeatsPass)
 }
 
 /*!
- * @brief        Checks that evaluateState over a valid wall, an ownerless wall
- *               and a doubly owned wall reports all three findings and
- *               aggregates AX_WALL_01 to FAIL.
+ * @brief           Checks that evaluateState over a valid wall, an ownerless
+ *                  wall and a doubly owned wall reports all three findings and
+ *                  aggregates AX_WALL_01 to FAIL.
  */
 TEST(SemanticAxiomEvaluator,
      AxWall01PrecedenceThroughEvaluateStateOverRealEntities)
@@ -552,8 +553,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that evaluating a snapshot and a copy with its room and
- *               wall records reversed gives the same finding ids and results.
+ * @brief           Checks that evaluating a snapshot and a copy with its room
+ *                  and wall records reversed gives the same finding ids and
+ *                  results.
  */
 TEST(SemanticAxiomEvaluator,
      FindingIdsAreDeterministicRegardlessOfConstructionOrder)
@@ -620,8 +622,8 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that the findings of one evaluation come out in non-
- *               decreasing id order.
+ * @brief           Checks that the findings of one evaluation come out in non-
+ *                  decreasing id order.
  */
 TEST(SemanticAxiomEvaluator, FindingsAreSortedById)
 {
@@ -658,9 +660,9 @@ TEST(SemanticAxiomEvaluator, FindingsAreSortedById)
 }
 
 /*!
- * @brief        Checks that evaluating one snapshot twice gives identical
- *               findings and aggregates and leaves the snapshot's contents
- *               unchanged.
+ * @brief           Checks that evaluating one snapshot twice gives identical
+ *                  findings and aggregates and leaves the snapshot's contents
+ *                  unchanged.
  */
 TEST(SemanticAxiomEvaluator, EvaluateStateIsIdempotentAndDoesNotMutateInput)
 {
@@ -718,9 +720,10 @@ TEST(SemanticAxiomEvaluator, EvaluateStateIsIdempotentAndDoesNotMutateInput)
 }
 
 /*!
- * @brief        Checks that evaluateTransition reports one not-yet-implemented
- *               finding each for AX_FRAME_01 and AX_TXN_01 while its AX_WALL_01
- *               findings equal those of evaluateState on the after snapshot.
+ * @brief           Checks that evaluateTransition reports one
+ *                  not-yet-implemented finding each for AX_FRAME_01 and
+ *                  AX_TXN_01 while its AX_WALL_01 findings equal those of
+ *                  evaluateState on the after snapshot.
  */
 TEST(SemanticAxiomEvaluator,
      EvaluateTransitionReplacesFrameAndTxnPlaceholdersButKeepsRestFromAfter)
@@ -790,8 +793,8 @@ TEST(SemanticAxiomEvaluator,
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that a wall no room owns gets an UNKNOWN AX_WALL_01
- *               finding because its ownership commitment cannot be verified.
+ * @brief           Checks that a wall no room owns gets an UNKNOWN AX_WALL_01
+ *                  finding because its ownership commitment cannot be verified.
  */
 TEST(SemanticAxiomEvaluator, OwnerlessWallIsUnknown)
 {
@@ -826,8 +829,8 @@ TEST(SemanticAxiomEvaluator, OwnerlessWallIsUnknown)
 }
 
 /*!
- * @brief        Checks that a wall owned by exactly one live room of the same
- *               map gets a PASS AX_WALL_01 finding.
+ * @brief           Checks that a wall owned by exactly one live room of the
+ *                  same map gets a PASS AX_WALL_01 finding.
  */
 TEST(SemanticAxiomEvaluator, SingleValidSameMapOwnerIsPass)
 {
@@ -866,8 +869,8 @@ TEST(SemanticAxiomEvaluator, SingleValidSameMapOwnerIsPass)
 }
 
 /*!
- * @brief        Checks that a wall owned by two rooms gets a FAIL AX_WALL_01
- *               finding with an observed owner count of two.
+ * @brief           Checks that a wall owned by two rooms gets a FAIL AX_WALL_01
+ *                  finding with an observed owner count of two.
  */
 TEST(SemanticAxiomEvaluator, MultipleOwnersIsFail)
 {
@@ -912,8 +915,8 @@ TEST(SemanticAxiomEvaluator, MultipleOwnersIsFail)
 }
 
 /*!
- * @brief        Checks that a wall whose only owner room is retired gets a FAIL
- *               AX_WALL_01 finding.
+ * @brief           Checks that a wall whose only owner room is retired gets a
+ *                  FAIL AX_WALL_01 finding.
  */
 TEST(SemanticAxiomEvaluator, BadOwnerIsFail)
 {
@@ -954,8 +957,8 @@ TEST(SemanticAxiomEvaluator, BadOwnerIsFail)
 }
 
 /*!
- * @brief        Checks that a wall owned by a room registered in a different
- *               map gets a FAIL AX_WALL_01 finding.
+ * @brief           Checks that a wall owned by a room registered in a different
+ *                  map gets a FAIL AX_WALL_01 finding.
  */
 TEST(SemanticAxiomEvaluator, CrossMapOwnerIsFail)
 {
@@ -1007,8 +1010,9 @@ TEST(SemanticAxiomEvaluator, CrossMapOwnerIsFail)
 }
 
 /*!
- * @brief        Checks that a wall whose owner reference locates a prospective
- *               (UNDEFINED variant) room gets a FAIL AX_WALL_01 finding.
+ * @brief           Checks that a wall whose owner reference locates a
+ *                  prospective (UNDEFINED variant) room gets a FAIL AX_WALL_01
+ *                  finding.
  */
 TEST(SemanticAxiomEvaluator, WallOwnerWrongVariantIsFail)
 {
@@ -1052,9 +1056,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongVariantIsFail)
 }
 
 /*!
- * @brief        Checks that a wall gets a FAIL AX_WALL_01 finding when its
- *               owner room is registered in the wall's map but declares a
- *               different map.
+ * @brief           Checks that a wall gets a FAIL AX_WALL_01 finding when its
+ *                  owner room is registered in the wall's map but declares a
+ *                  different map.
  */
 TEST(SemanticAxiomEvaluator, WallOwnerDeclaredMapMismatchIsFail)
 {
@@ -1106,8 +1110,8 @@ TEST(SemanticAxiomEvaluator, WallOwnerDeclaredMapMismatchIsFail)
 }
 
 /*!
- * @brief        Checks that a wall gets a FAIL AX_WALL_01 finding when two
- *               distinct room records share the owner's key.
+ * @brief           Checks that a wall gets a FAIL AX_WALL_01 finding when two
+ *                  distinct room records share the owner's key.
  */
 TEST(SemanticAxiomEvaluator, WallOwnerDuplicateIdentityIsFail)
 {
@@ -1153,9 +1157,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerDuplicateIdentityIsFail)
 }
 
 /*!
- * @brief        Checks that a wall gets an UNKNOWN AX_WALL_01 finding when its
- *               owner reference names a room that has no record in the snapshot
- *               (edited into the snapshot).
+ * @brief           Checks that a wall gets an UNKNOWN AX_WALL_01 finding when
+ *                  its owner reference names a room that has no record in the
+ *                  snapshot (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallOwnerRecordUnavailableIsUnknown)
 {
@@ -1202,9 +1206,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordUnavailableIsUnknown)
 }
 
 /*!
- * @brief        Checks that a wall gets a FAIL AX_WALL_01 finding when the
- *               owner room's wall references no longer list the wall (edited
- *               into the snapshot).
+ * @brief           Checks that a wall gets a FAIL AX_WALL_01 finding when the
+ *                  owner room's wall references no longer list the wall (edited
+ *                  into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallOwnerNotReciprocalIsFail)
 {
@@ -1256,8 +1260,8 @@ TEST(SemanticAxiomEvaluator, WallOwnerNotReciprocalIsFail)
 }
 
 /*!
- * @brief        Checks that two wall records sharing one key give a FAIL
- *               AX_WALL_01 finding (duplicate added to the snapshot).
+ * @brief           Checks that two wall records sharing one key give a FAIL
+ *                  AX_WALL_01 finding (duplicate added to the snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallDuplicateIdentityIsFail)
 {
@@ -1302,9 +1306,9 @@ TEST(SemanticAxiomEvaluator, WallDuplicateIdentityIsFail)
 }
 
 /*!
- * @brief        Checks that a wall whose declared map differs from the map that
- *               contains it gets a FAIL AX_WALL_01 finding (edited into the
- *               snapshot).
+ * @brief           Checks that a wall whose declared map differs from the map
+ *                  that contains it gets a FAIL AX_WALL_01 finding (edited into
+ *                  the snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallDeclaredMapMismatchIsFail)
 {
@@ -1348,9 +1352,9 @@ TEST(SemanticAxiomEvaluator, WallDeclaredMapMismatchIsFail)
 }
 
 /*!
- * @brief        Checks that a wall gets a FAIL AX_WALL_01 finding when its
- *               owner room record is marked not live although the owner
- *               reference says live (edited into the snapshot).
+ * @brief           Checks that a wall gets a FAIL AX_WALL_01 finding when its
+ *                  owner room record is marked not live although the owner
+ *                  reference says live (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallOwnerRecordNotLiveIsFail)
 {
@@ -1393,8 +1397,8 @@ TEST(SemanticAxiomEvaluator, WallOwnerRecordNotLiveIsFail)
 }
 
 /*!
- * @brief        Checks that a wall record whose key kind is not WALL gets a
- *               FAIL AX_WALL_01 finding (edited into the snapshot).
+ * @brief           Checks that a wall record whose key kind is not WALL gets a
+ *                  FAIL AX_WALL_01 finding (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallWrongKeyKindIsFail)
 {
@@ -1436,8 +1440,8 @@ TEST(SemanticAxiomEvaluator, WallWrongKeyKindIsFail)
 }
 
 /*!
- * @brief        Checks that a wall record whose plane type is not WALL gets a
- *               FAIL AX_WALL_01 finding (edited into the snapshot).
+ * @brief           Checks that a wall record whose plane type is not WALL gets
+ *                  a FAIL AX_WALL_01 finding (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallWrongPlaneTypeIsFail)
 {
@@ -1480,8 +1484,9 @@ TEST(SemanticAxiomEvaluator, WallWrongPlaneTypeIsFail)
 }
 
 /*!
- * @brief        Checks that a wall whose owner reference key is not of kind
- *               ROOM gets a FAIL AX_WALL_01 finding (edited into the snapshot).
+ * @brief           Checks that a wall whose owner reference key is not of kind
+ *                  ROOM gets a FAIL AX_WALL_01 finding (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallOwnerWrongKeyKindIsFail)
 {
@@ -1525,9 +1530,9 @@ TEST(SemanticAxiomEvaluator, WallOwnerWrongKeyKindIsFail)
 }
 
 /*!
- * @brief        Checks that a missing declared map on a wall keeps the PASS
- *               owner finding but adds an UNKNOWN finding and makes the
- *               AX_WALL_01 aggregate UNKNOWN.
+ * @brief           Checks that a missing declared map on a wall keeps the PASS
+ *                  owner finding but adds an UNKNOWN finding and makes the
+ *                  AX_WALL_01 aggregate UNKNOWN.
  */
 TEST(SemanticAxiomEvaluator, WallDeclaredMapUnavailableCapsAggregateAtUnknown)
 {
@@ -1579,9 +1584,10 @@ TEST(SemanticAxiomEvaluator, WallDeclaredMapUnavailableCapsAggregateAtUnknown)
 }
 
 /*!
- * @brief        Checks that an owner room whose only wall reference shares the
- *               wall's identity but has the wrong plane type gives a FAIL
- *               contradictory-reciprocal finding (edited into the snapshot).
+ * @brief           Checks that an owner room whose only wall reference shares
+ *                  the wall's identity but has the wrong plane type gives a
+ *                  FAIL contradictory-reciprocal finding (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallReciprocalMalformedOnlyIsFail)
 {
@@ -1626,9 +1632,9 @@ TEST(SemanticAxiomEvaluator, WallReciprocalMalformedOnlyIsFail)
 }
 
 /*!
- * @brief        Checks that an owner room listing the same wall twice with
- *               well-formed references gives a FAIL duplicate-reciprocal
- *               finding (edited into the snapshot).
+ * @brief           Checks that an owner room listing the same wall twice with
+ *                  well-formed references gives a FAIL duplicate-reciprocal
+ *                  finding (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallReciprocalDuplicateIsFail)
 {
@@ -1672,10 +1678,10 @@ TEST(SemanticAxiomEvaluator, WallReciprocalDuplicateIsFail)
 }
 
 /*!
- * @brief        Checks that a valid wall reference plus a malformed copy of it
- *               in the owner room gives a FAIL contradictory-reciprocal finding
- *               instead of hiding behind the valid entry (edited into the
- *               snapshot).
+ * @brief           Checks that a valid wall reference plus a malformed copy of
+ *                  it in the owner room gives a FAIL contradictory-reciprocal
+ *                  finding instead of hiding behind the valid entry (edited
+ *                  into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallReciprocalValidPlusMalformedIsFail)
 {
@@ -1725,8 +1731,8 @@ TEST(SemanticAxiomEvaluator, WallReciprocalValidPlusMalformedIsFail)
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that a wall with no twin face gets a PASS AX_WALL_03
- *               finding with reason WALL_TWIN_ABSENT.
+ * @brief           Checks that a wall with no twin face gets a PASS AX_WALL_03
+ *                  finding with reason WALL_TWIN_ABSENT.
  */
 TEST(SemanticAxiomEvaluator, NullTwinIsPass)
 {
@@ -1761,8 +1767,8 @@ TEST(SemanticAxiomEvaluator, NullTwinIsPass)
 }
 
 /*!
- * @brief        Checks that a wall that is its own twin face gets a FAIL
- *               AX_WALL_03 finding.
+ * @brief           Checks that a wall that is its own twin face gets a FAIL
+ *                  AX_WALL_03 finding.
  */
 TEST(SemanticAxiomEvaluator, SelfTwinIsFail)
 {
@@ -1799,8 +1805,8 @@ TEST(SemanticAxiomEvaluator, SelfTwinIsFail)
 }
 
 /*!
- * @brief        Checks that a wall whose twin does not point back at it gets a
- *               FAIL AX_WALL_03 finding.
+ * @brief           Checks that a wall whose twin does not point back at it gets
+ *                  a FAIL AX_WALL_03 finding.
  */
 TEST(SemanticAxiomEvaluator, AsymmetricTwinIsFail)
 {
@@ -1848,8 +1854,8 @@ TEST(SemanticAxiomEvaluator, AsymmetricTwinIsFail)
 }
 
 /*!
- * @brief        Checks that a wall whose reciprocal twin is retired gets a FAIL
- *               AX_WALL_03 finding.
+ * @brief           Checks that a wall whose reciprocal twin is retired gets a
+ *                  FAIL AX_WALL_03 finding.
  */
 TEST(SemanticAxiomEvaluator, BadTwinIsFail)
 {
@@ -1898,8 +1904,8 @@ TEST(SemanticAxiomEvaluator, BadTwinIsFail)
 }
 
 /*!
- * @brief        Checks that reciprocal twin walls registered in different maps
- *               get a FAIL AX_WALL_03 finding.
+ * @brief           Checks that reciprocal twin walls registered in different
+ *                  maps get a FAIL AX_WALL_03 finding.
  */
 TEST(SemanticAxiomEvaluator, CrossMapTwinIsFail)
 {
@@ -1952,8 +1958,8 @@ TEST(SemanticAxiomEvaluator, CrossMapTwinIsFail)
 }
 
 /*!
- * @brief        Checks that a wall whose twin face is a ground plane gets a
- *               FAIL AX_WALL_03 finding.
+ * @brief           Checks that a wall whose twin face is a ground plane gets a
+ *                  FAIL AX_WALL_03 finding.
  */
 TEST(SemanticAxiomEvaluator, WrongTypeTwinIsFail)
 {
@@ -1994,8 +2000,8 @@ TEST(SemanticAxiomEvaluator, WrongTypeTwinIsFail)
 }
 
 /*!
- * @brief        Checks that reciprocal twin walls owned by the same room get a
- *               FAIL AX_WALL_03 finding.
+ * @brief           Checks that reciprocal twin walls owned by the same room get
+ *                  a FAIL AX_WALL_03 finding.
  */
 TEST(SemanticAxiomEvaluator, SharedOwnerTwinIsFail)
 {
@@ -2051,9 +2057,9 @@ TEST(SemanticAxiomEvaluator, SharedOwnerTwinIsFail)
 }
 
 /*!
- * @brief        Checks that reciprocal twin walls with different owners get an
- *               UNKNOWN AX_WALL_03 finding because their geometry is not
- *               verified.
+ * @brief           Checks that reciprocal twin walls with different owners get
+ *                  an UNKNOWN AX_WALL_03 finding because their geometry is not
+ *                  verified.
  */
 TEST(SemanticAxiomEvaluator, StructurallyValidTwinIsUnknown)
 {
@@ -2115,8 +2121,8 @@ TEST(SemanticAxiomEvaluator, StructurallyValidTwinIsUnknown)
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that a live passage that is not passable gets a FAIL
- *               AX_PASS_01 finding.
+ * @brief           Checks that a live passage that is not passable gets a FAIL
+ *                  AX_PASS_01 finding.
  */
 TEST(SemanticAxiomEvaluator, NonPassableLivePassageIsFail)
 {
@@ -2161,8 +2167,9 @@ TEST(SemanticAxiomEvaluator, NonPassableLivePassageIsFail)
 }
 
 /*!
- * @brief        Checks that a live, passable passage gets an UNKNOWN AX_PASS_01
- *               finding because its full provenance chain cannot be verified.
+ * @brief           Checks that a live, passable passage gets an UNKNOWN
+ *                  AX_PASS_01 finding because its full provenance chain cannot
+ *                  be verified.
  */
 TEST(SemanticAxiomEvaluator, PassableLivePassageIsUnknownForFullProvenance)
 {
@@ -2205,8 +2212,8 @@ TEST(SemanticAxiomEvaluator, PassableLivePassageIsUnknownForFullProvenance)
 }
 
 /*!
- * @brief        Checks that a passage with no confirmed room endpoint gets a
- *               FAIL AX_PASS_02 finding.
+ * @brief           Checks that a passage with no confirmed room endpoint gets a
+ *                  FAIL AX_PASS_02 finding.
  */
 TEST(SemanticAxiomEvaluator, ZeroConfirmedEndpointsIsFail)
 {
@@ -2240,10 +2247,10 @@ TEST(SemanticAxiomEvaluator, ZeroConfirmedEndpointsIsFail)
 }
 
 /*!
- * @brief        Checks that a passage with two reciprocal confirmed rooms stays
- *               UNKNOWN for AX_PASS_02 and AX_PASS_03 because endpoint-slot
- *               proof is unavailable, although the slot-state clause itself
- *               passes.
+ * @brief           Checks that a passage with two reciprocal confirmed rooms
+ *                  stays UNKNOWN for AX_PASS_02 and AX_PASS_03 because
+ *                  endpoint-slot proof is unavailable, although the slot-state
+ *                  clause itself passes.
  */
 TEST(SemanticAxiomEvaluator, TwoConfirmedReciprocalEndpointsIsUnknown)
 {
@@ -2316,8 +2323,8 @@ TEST(SemanticAxiomEvaluator, TwoConfirmedReciprocalEndpointsIsUnknown)
 }
 
 /*!
- * @brief        Checks that a passage with one reciprocal confirmed room and an
- *               empty other side gets an UNKNOWN AX_PASS_02 finding.
+ * @brief           Checks that a passage with one reciprocal confirmed room and
+ *                  an empty other side gets an UNKNOWN AX_PASS_02 finding.
  */
 TEST(SemanticAxiomEvaluator, OneConfirmedEndpointOtherEmptyIsUnknown)
 {
@@ -2358,8 +2365,9 @@ TEST(SemanticAxiomEvaluator, OneConfirmedEndpointOtherEmptyIsUnknown)
 }
 
 /*!
- * @brief        Checks that a third live confirmed room that lists the passage,
- *               without being named by it, gives a FAIL third-endpoint finding.
+ * @brief           Checks that a third live confirmed room that lists the
+ *                  passage, without being named by it, gives a FAIL
+ *                  third-endpoint finding.
  */
 TEST(SemanticAxiomEvaluator, ThirdReverseOnlyConfirmedEndpointIsFail)
 {
@@ -2418,9 +2426,9 @@ TEST(SemanticAxiomEvaluator, ThirdReverseOnlyConfirmedEndpointIsFail)
 }
 
 /*!
- * @brief        Checks that a retired room listing the passage is ignored,
- *               leaving the passage at its ordinary UNKNOWN AX_PASS_02 result
- *               with no FAIL.
+ * @brief           Checks that a retired room listing the passage is ignored,
+ *                  leaving the passage at its ordinary UNKNOWN AX_PASS_02
+ *                  result with no FAIL.
  */
 TEST(SemanticAxiomEvaluator, RetiredReverseOnlyRoomDoesNotPoisonLivePassage)
 {
@@ -2482,9 +2490,9 @@ TEST(SemanticAxiomEvaluator, RetiredReverseOnlyRoomDoesNotPoisonLivePassage)
 }
 
 /*!
- * @brief        Checks that a room's passage reference marked not live while
- *               the passage is live gives a FAIL bad-reverse-endpoint finding
- *               (edited into the snapshot).
+ * @brief           Checks that a room's passage reference marked not live while
+ *                  the passage is live gives a FAIL bad-reverse-endpoint
+ *                  finding (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, ReverseReferenceOwnLivenessBadIsFail)
 {
@@ -2548,9 +2556,9 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceOwnLivenessBadIsFail)
 }
 
 /*!
- * @brief        Checks that a live prospective room declared in another map and
- *               listing the passage still gives a FAIL cross-map reverse-
- *               endpoint finding.
+ * @brief           Checks that a live prospective room declared in another map
+ *                  and listing the passage still gives a FAIL cross-map
+ *                  reverse-endpoint finding.
  */
 TEST(SemanticAxiomEvaluator, LiveProspectiveReverseOnlyRoomAnomalyIsExamined)
 {
@@ -2611,9 +2619,9 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveReverseOnlyRoomAnomalyIsExamined)
 }
 
 /*!
- * @brief        Checks that a room listing the passage while filling its empty
- *               far slot is not reported as a third endpoint and the passage
- *               stays UNKNOWN.
+ * @brief           Checks that a room listing the passage while filling its
+ *                  empty far slot is not reported as a third endpoint and the
+ *                  passage stays UNKNOWN.
  */
 TEST(SemanticAxiomEvaluator, ReverseOnlyRoomFillingEmptySlotIsNotThirdEndpoint)
 {
@@ -2674,9 +2682,10 @@ TEST(SemanticAxiomEvaluator, ReverseOnlyRoomFillingEmptySlotIsNotThirdEndpoint)
 }
 
 /*!
- * @brief        Checks that a room's passage reference whose key has the
- *               passage's ids but the wrong entity kind gives a FAIL wrong-kind
- *               reverse-endpoint finding (edited into the snapshot).
+ * @brief           Checks that a room's passage reference whose key has the
+ *                  passage's ids but the wrong entity kind gives a FAIL
+ *                  wrong-kind reverse-endpoint finding (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator, ReverseWrongKindKeyIsFail)
 {
@@ -2744,9 +2753,9 @@ TEST(SemanticAxiomEvaluator, ReverseWrongKindKeyIsFail)
 }
 
 /*!
- * @brief        Checks that a room naming the same passage twice in its passage
- *               references gives a FAIL duplicated-reverse-reference finding
- *               (edited into the snapshot).
+ * @brief           Checks that a room naming the same passage twice in its
+ *                  passage references gives a FAIL duplicated-reverse-reference
+ *                  finding (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, ReverseReferenceDuplicatedIsFail)
 {
@@ -2800,9 +2809,9 @@ TEST(SemanticAxiomEvaluator, ReverseReferenceDuplicatedIsFail)
 }
 
 /*!
- * @brief        Checks that a passage whose known-side room key is shared by
- *               two room records gets a FAIL duplicate-identity AX_PASS_02
- *               finding.
+ * @brief           Checks that a passage whose known-side room key is shared by
+ *                  two room records gets a FAIL duplicate-identity AX_PASS_02
+ *                  finding.
  */
 TEST(SemanticAxiomEvaluator, ForwardEndpointDuplicateIdentityIsFail)
 {
@@ -2855,9 +2864,9 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDuplicateIdentityIsFail)
 }
 
 /*!
- * @brief        Checks that a known-side room reference whose key kind is not
- *               ROOM gives FAIL findings for AX_PASS_02, AX_PASS_03, AX_PASS_04
- *               and AX_FLOOR_01 (edited into the snapshot).
+ * @brief           Checks that a known-side room reference whose key kind is
+ *                  not ROOM gives FAIL findings for AX_PASS_02, AX_PASS_03,
+ *                  AX_PASS_04 and AX_FLOOR_01 (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, ForwardEndpointWrongKindIsFail)
 {
@@ -2923,9 +2932,9 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointWrongKindIsFail)
 }
 
 /*!
- * @brief        Checks that a known-side room that declares a different map
- *               than the one it was found in gives a FAIL AX_PASS_02 finding
- *               (edited into the snapshot).
+ * @brief           Checks that a known-side room that declares a different map
+ *                  than the one it was found in gives a FAIL AX_PASS_02 finding
+ *                  (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, ForwardEndpointDeclaredMapMismatchIsFail)
 {
@@ -2971,9 +2980,10 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointDeclaredMapMismatchIsFail)
 }
 
 /*!
- * @brief        Checks that a known-side room reference with no liveness value,
- *               pointing at an unlocatable room, gives UNKNOWN rather than a
- *               no-endpoint or bad-endpoint FAIL (edited into the snapshot).
+ * @brief           Checks that a known-side room reference with no liveness
+ *                  value, pointing at an unlocatable room, gives UNKNOWN rather
+ *                  than a no-endpoint or bad-endpoint FAIL (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator, ForwardEndpointLivenessUnavailableIsUnknown)
 {
@@ -3032,9 +3042,9 @@ TEST(SemanticAxiomEvaluator, ForwardEndpointLivenessUnavailableIsUnknown)
 }
 
 /*!
- * @brief        Checks that a room's passage reference with no liveness value
- *               gives UNKNOWN and is not counted as a third endpoint (edited
- *               into the snapshot).
+ * @brief           Checks that a room's passage reference with no liveness
+ *                  value gives UNKNOWN and is not counted as a third endpoint
+ *                  (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, ReverseEndpointLivenessUnavailableIsUnknown)
 {
@@ -3104,9 +3114,10 @@ TEST(SemanticAxiomEvaluator, ReverseEndpointLivenessUnavailableIsUnknown)
 }
 
 /*!
- * @brief        Checks that scanReversePassageEndpoints records a clean
- *               prospective room that lists the passage, and that the passage
- *               stays UNKNOWN instead of failing as a third endpoint.
+ * @brief           Checks that scanReversePassageEndpoints records a clean
+ *                  prospective room that lists the passage, and that the
+ *                  passage stays UNKNOWN instead of failing as a third
+ *                  endpoint.
  */
 TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
 {
@@ -3186,8 +3197,8 @@ TEST(SemanticAxiomEvaluator, CleanProspectiveReverseRelationshipIsRepresented)
 }
 
 /*!
- * @brief        Checks that a room declared in another map that lists the
- *               passage gives a FAIL cross-map reverse-endpoint finding.
+ * @brief           Checks that a room declared in another map that lists the
+ *                  passage gives a FAIL cross-map reverse-endpoint finding.
  */
 TEST(SemanticAxiomEvaluator, CrossMapReverseOnlyEndpointIsFail)
 {
@@ -3248,9 +3259,10 @@ TEST(SemanticAxiomEvaluator, CrossMapReverseOnlyEndpointIsFail)
 }
 
 /*!
- * @brief        Checks that a room's unkeyed passage reference sharing a local
- *               id with a real passage gives a room-scoped FAIL finding, while
- *               the real passage stays UNKNOWN and does not name that room.
+ * @brief           Checks that a room's unkeyed passage reference sharing a
+ *                  local id with a real passage gives a room-scoped FAIL
+ *                  finding, while the real passage stays UNKNOWN and does not
+ *                  name that room.
  */
 TEST(SemanticAxiomEvaluator,
      UnkeyedReverseReferenceIsRoomScopedNotPassageAttributed)
@@ -3328,8 +3340,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that two room records sharing the key of a room that
- *               lists the passage give a FAIL duplicate-room-identity finding.
+ * @brief           Checks that two room records sharing the key of a room that
+ *                  lists the passage give a FAIL duplicate-room-identity
+ *                  finding.
  */
 TEST(SemanticAxiomEvaluator, PassageCardinalityDuplicateRoomIdentityIsFail)
 {
@@ -3381,8 +3394,8 @@ TEST(SemanticAxiomEvaluator, PassageCardinalityDuplicateRoomIdentityIsFail)
 }
 
 /*!
- * @brief        Checks that a passage whose known and far sides are the same
- *               room gets a FAIL duplicate-endpoint AX_PASS_02 finding.
+ * @brief           Checks that a passage whose known and far sides are the same
+ *                  room gets a FAIL duplicate-endpoint AX_PASS_02 finding.
  */
 TEST(SemanticAxiomEvaluator, DuplicateEndpointIsFail)
 {
@@ -3424,8 +3437,8 @@ TEST(SemanticAxiomEvaluator, DuplicateEndpointIsFail)
 }
 
 /*!
- * @brief        Checks that a passage naming a room that does not list the
- *               passage back gets a FAIL non-reciprocal AX_PASS_02 finding.
+ * @brief           Checks that a passage naming a room that does not list the
+ *                  passage back gets a FAIL non-reciprocal AX_PASS_02 finding.
  */
 TEST(SemanticAxiomEvaluator, NonReciprocalEndpointIsFail)
 {
@@ -3466,9 +3479,9 @@ TEST(SemanticAxiomEvaluator, NonReciprocalEndpointIsFail)
 }
 
 /*!
- * @brief        Checks that a retired far-side room missing from every room
- *               collection still gives a FAIL bad-endpoint finding, even next
- *               to a valid known-side room.
+ * @brief           Checks that a retired far-side room missing from every room
+ *                  collection still gives a FAIL bad-endpoint finding, even
+ *                  next to a valid known-side room.
  */
 TEST(SemanticAxiomEvaluator, BadUnenumeratedOtherSideEndpointIsFail)
 {
@@ -3522,8 +3535,8 @@ TEST(SemanticAxiomEvaluator, BadUnenumeratedOtherSideEndpointIsFail)
 }
 
 /*!
- * @brief        Checks that a passage whose known-side room is still
- *               prospective gets a FAIL AX_PASS_03 finding.
+ * @brief           Checks that a passage whose known-side room is still
+ *                  prospective gets a FAIL AX_PASS_03 finding.
  */
 TEST(SemanticAxiomEvaluator, KnownSideNotConfirmedIsFail)
 {
@@ -3569,9 +3582,9 @@ TEST(SemanticAxiomEvaluator, KnownSideNotConfirmedIsFail)
 }
 
 /*!
- * @brief        Checks that a keyed known-side reference whose reason is not
- *               NONE gives FAIL findings for AX_PASS_02, AX_PASS_03, AX_PASS_04
- *               and AX_FLOOR_01 (edited into the snapshot).
+ * @brief           Checks that a keyed known-side reference whose reason is not
+ *                  NONE gives FAIL findings for AX_PASS_02, AX_PASS_03,
+ *                  AX_PASS_04 and AX_FLOOR_01 (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      ReasonInconsistentForwardReferenceFailsEveryPassageAxiom)
@@ -3642,9 +3655,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a passage whose known-side room is in a different
- *               map gives FAIL findings for AX_PASS_02, AX_PASS_04, AX_PASS_03
- *               and AX_FLOOR_01.
+ * @brief           Checks that a passage whose known-side room is in a
+ *                  different map gives FAIL findings for AX_PASS_02,
+ *                  AX_PASS_04, AX_PASS_03 and AX_FLOOR_01.
  */
 TEST(SemanticAxiomEvaluator, CrossMapPassageEndpointIsFail)
 {
@@ -3715,9 +3728,9 @@ TEST(SemanticAxiomEvaluator, CrossMapPassageEndpointIsFail)
 }
 
 /*!
- * @brief        Checks that a passage joining rooms on different floors gives a
- *               FAIL AX_PASS_04 disagreement finding and a FAIL cross-floor
- *               AX_FLOOR_01 finding.
+ * @brief           Checks that a passage joining rooms on different floors
+ *                  gives a FAIL AX_PASS_04 disagreement finding and a FAIL
+ *                  cross-floor AX_FLOOR_01 finding.
  */
 TEST(SemanticAxiomEvaluator, CrossFloorPassageIsFail)
 {
@@ -3778,9 +3791,9 @@ TEST(SemanticAxiomEvaluator, CrossFloorPassageIsFail)
 }
 
 /*!
- * @brief        Checks that rooms on one floor give PASS agreement findings for
- *               AX_PASS_04 and AX_FLOOR_01 while both aggregates stay UNKNOWN
- *               because endpoint proof is unverified.
+ * @brief           Checks that rooms on one floor give PASS agreement findings
+ *                  for AX_PASS_04 and AX_FLOOR_01 while both aggregates stay
+ *                  UNKNOWN because endpoint proof is unverified.
  */
 TEST(SemanticAxiomEvaluator, SameFloorPassageAgreesButAggregateIsUnknown)
 {
@@ -3857,8 +3870,9 @@ TEST(SemanticAxiomEvaluator, SameFloorPassageAgreesButAggregateIsUnknown)
 }
 
 /*!
- * @brief        Checks that a passage whose endpoint rooms have no floor gets
- *               an UNKNOWN AX_PASS_04 finding for unverified room-floor proof.
+ * @brief           Checks that a passage whose endpoint rooms have no floor
+ *                  gets an UNKNOWN AX_PASS_04 finding for unverified room-floor
+ *                  proof.
  */
 TEST(SemanticAxiomEvaluator, MissingFloorEvidenceOnPassageIsUnknown)
 {
@@ -3916,8 +3930,8 @@ TEST(SemanticAxiomEvaluator, MissingFloorEvidenceOnPassageIsUnknown)
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that a room whose boundary was never observed gets an
- *               UNKNOWN AX_BOUND_01 finding.
+ * @brief           Checks that a room whose boundary was never observed gets an
+ *                  UNKNOWN AX_BOUND_01 finding.
  */
 TEST(SemanticAxiomEvaluator, UnobservedBoundaryIsUnknown)
 {
@@ -3950,8 +3964,8 @@ TEST(SemanticAxiomEvaluator, UnobservedBoundaryIsUnknown)
 }
 
 /*!
- * @brief        Checks that a room whose boundary status is CONFLICTING gets a
- *               FAIL AX_BOUND_01 finding.
+ * @brief           Checks that a room whose boundary status is CONFLICTING gets
+ *                  a FAIL AX_BOUND_01 finding.
  */
 TEST(SemanticAxiomEvaluator, ConflictingBoundaryIsFail)
 {
@@ -3982,8 +3996,8 @@ TEST(SemanticAxiomEvaluator, ConflictingBoundaryIsFail)
 }
 
 /*!
- * @brief        Checks that a room marked COMPLETE with only two corners gets a
- *               FAIL AX_BOUND_01 finding.
+ * @brief           Checks that a room marked COMPLETE with only two corners
+ *                  gets a FAIL AX_BOUND_01 finding.
  */
 TEST(SemanticAxiomEvaluator, CompleteWithTooFewCornersIsFail)
 {
@@ -4028,8 +4042,8 @@ TEST(SemanticAxiomEvaluator, CompleteWithTooFewCornersIsFail)
 }
 
 /*!
- * @brief        Checks that a room marked COMPLETE with four corners but no
- *               wall gets a FAIL AX_BOUND_01 finding.
+ * @brief           Checks that a room marked COMPLETE with four corners but no
+ *                  wall gets a FAIL AX_BOUND_01 finding.
  */
 TEST(SemanticAxiomEvaluator, CompleteWithNoWallEvidenceIsFail)
 {
@@ -4066,8 +4080,9 @@ TEST(SemanticAxiomEvaluator, CompleteWithNoWallEvidenceIsFail)
 }
 
 /*!
- * @brief        Checks that a COMPLETE room whose corners form a self-
- *               intersecting (bowtie) polygon gets a FAIL AX_BOUND_01 finding.
+ * @brief           Checks that a COMPLETE room whose corners form a
+ *                  self-intersecting (bowtie) polygon gets a FAIL AX_BOUND_01
+ *                  finding.
  */
 TEST(SemanticAxiomEvaluator, CompleteSelfIntersectingIsFail)
 {
@@ -4115,9 +4130,9 @@ TEST(SemanticAxiomEvaluator, CompleteSelfIntersectingIsFail)
 }
 
 /*!
- * @brief        Checks that a COMPLETE room with observation gaps gets an
- *               UNKNOWN AX_BOUND_01 finding because gap correspondence is
- *               unverified.
+ * @brief           Checks that a COMPLETE room with observation gaps gets an
+ *                  UNKNOWN AX_BOUND_01 finding because gap correspondence is
+ *                  unverified.
  */
 TEST(SemanticAxiomEvaluator, CompleteWithObservationGapsIsUnknown)
 {
@@ -4166,9 +4181,9 @@ TEST(SemanticAxiomEvaluator, CompleteWithObservationGapsIsUnknown)
 }
 
 /*!
- * @brief        Checks that a COMPLETE room with a valid polygon and valid wall
- *               evidence still gets an UNKNOWN AX_BOUND_01 finding, since edge-
- *               to-wall support is not verified.
+ * @brief           Checks that a COMPLETE room with a valid polygon and valid
+ *                  wall evidence still gets an UNKNOWN AX_BOUND_01 finding,
+ *                  since edge-to-wall support is not verified.
  */
 TEST(SemanticAxiomEvaluator, CompleteWithVerifiedWallEvidenceIsUnknown)
 {
@@ -4215,8 +4230,8 @@ TEST(SemanticAxiomEvaluator, CompleteWithVerifiedWallEvidenceIsUnknown)
 }
 
 /*!
- * @brief        Checks that a COMPLETE room with a NaN corner coordinate gets a
- *               FAIL AX_BOUND_01 finding.
+ * @brief           Checks that a COMPLETE room with a NaN corner coordinate
+ *                  gets a FAIL AX_BOUND_01 finding.
  */
 TEST(SemanticAxiomEvaluator, NonFiniteCornerIsFail)
 {
@@ -4265,8 +4280,8 @@ TEST(SemanticAxiomEvaluator, NonFiniteCornerIsFail)
 }
 
 /*!
- * @brief        Checks that a COMPLETE room with an infinite corner coordinate
- *               gets a FAIL AX_BOUND_01 finding.
+ * @brief           Checks that a COMPLETE room with an infinite corner
+ *                  coordinate gets a FAIL AX_BOUND_01 finding.
  */
 TEST(SemanticAxiomEvaluator, InfiniteCornerIsFail)
 {
@@ -4314,9 +4329,9 @@ TEST(SemanticAxiomEvaluator, InfiniteCornerIsFail)
 }
 
 /*!
- * @brief        Checks that a live room referencing a retired wall gets a FAIL
- *               invalid-wall-evidence AX_BOUND_01 finding while AX_WALL_01
- *               skips the retired wall.
+ * @brief           Checks that a live room referencing a retired wall gets a
+ *                  FAIL invalid-wall-evidence AX_BOUND_01 finding while
+ *                  AX_WALL_01 skips the retired wall.
  */
 TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
 {
@@ -4386,9 +4401,9 @@ TEST(SemanticAxiomEvaluator, LiveRoomReferencingRetiredWallCannotProveBoundary)
 }
 
 /*!
- * @brief        Checks that a room with one valid wall reference plus one
- *               wrong-type reference gets a FAIL invalid-wall-evidence
- *               AX_BOUND_01 finding (edited into the snapshot).
+ * @brief           Checks that a room with one valid wall reference plus one
+ *                  wrong-type reference gets a FAIL invalid-wall-evidence
+ *                  AX_BOUND_01 finding (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      BoundaryOneValidPlusOneWrongTypeWallReferenceIsFail)
@@ -4453,9 +4468,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a wall reference with no map adds no FAIL to
- *               AX_BOUND_01 and the room stays at the UNKNOWN edge-support
- *               finding (edited into the snapshot).
+ * @brief           Checks that a wall reference with no map adds no FAIL to
+ *                  AX_BOUND_01 and the room stays at the UNKNOWN edge-support
+ *                  finding (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      BoundaryUnmappedWallReferenceContributesOnlyUnknown)
@@ -4528,10 +4543,10 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a COMPLETE room whose only wall reference is
- *               unavailable gets an UNKNOWN wall-evidence-unavailable finding
- *               rather than the no-wall-evidence FAIL (edited into the
- *               snapshot).
+ * @brief           Checks that a COMPLETE room whose only wall reference is
+ *                  unavailable gets an UNKNOWN wall-evidence-unavailable
+ *                  finding rather than the no-wall-evidence FAIL (edited into
+ *                  the snapshot).
  */
 TEST(SemanticAxiomEvaluator, NonemptyAllUnavailableWallEvidenceIsUnknownNotFail)
 {
@@ -4601,8 +4616,8 @@ TEST(SemanticAxiomEvaluator, NonemptyAllUnavailableWallEvidenceIsUnknownNotFail)
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that a room with no floor gets an UNKNOWN AX_FLOOR_01
- *               finding with reason ROOM_FLOOR_UNLINKED.
+ * @brief           Checks that a room with no floor gets an UNKNOWN AX_FLOOR_01
+ *                  finding with reason ROOM_FLOOR_UNLINKED.
  */
 TEST(SemanticAxiomEvaluator, RoomWithNoFloorIsUnknown)
 {
@@ -4631,8 +4646,8 @@ TEST(SemanticAxiomEvaluator, RoomWithNoFloorIsUnknown)
 }
 
 /*!
- * @brief        Checks that a room and a floor that list each other get a PASS
- *               AX_FLOOR_01 finding.
+ * @brief           Checks that a room and a floor that list each other get a
+ *                  PASS AX_FLOOR_01 finding.
  */
 TEST(SemanticAxiomEvaluator, RoomFloorReciprocalIsPass)
 {
@@ -4664,8 +4679,8 @@ TEST(SemanticAxiomEvaluator, RoomFloorReciprocalIsPass)
 }
 
 /*!
- * @brief        Checks that a room whose floor does not list it back gets a
- *               FAIL AX_FLOOR_01 finding.
+ * @brief           Checks that a room whose floor does not list it back gets a
+ *                  FAIL AX_FLOOR_01 finding.
  */
 TEST(SemanticAxiomEvaluator, RoomFloorNonReciprocalIsFail)
 {
@@ -4700,8 +4715,8 @@ TEST(SemanticAxiomEvaluator, RoomFloorNonReciprocalIsFail)
 }
 
 /*!
- * @brief        Checks that a room whose floor belongs to a different map gets
- *               a FAIL AX_FLOOR_01 finding.
+ * @brief           Checks that a room whose floor belongs to a different map
+ *                  gets a FAIL AX_FLOOR_01 finding.
  */
 TEST(SemanticAxiomEvaluator, RoomFloorCrossMapIsFail)
 {
@@ -4741,8 +4756,8 @@ TEST(SemanticAxiomEvaluator, RoomFloorCrossMapIsFail)
 }
 
 /*!
- * @brief        Checks that a floor listing a room that names no floor gives a
- *               FAIL reverse-claim finding (edited into the snapshot).
+ * @brief           Checks that a floor listing a room that names no floor gives
+ *                  a FAIL reverse-claim finding (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, RoomFloorReverseClaimWithoutForwardLinkIsFail)
 {
@@ -4787,9 +4802,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorReverseClaimWithoutForwardLinkIsFail)
 }
 
 /*!
- * @brief        Checks that a room whose floor reference key is not of kind
- *               FLOOR gets a FAIL AX_FLOOR_01 finding (edited into the
- *               snapshot).
+ * @brief           Checks that a room whose floor reference key is not of kind
+ *                  FLOOR gets a FAIL AX_FLOOR_01 finding (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator, RoomFloorWrongKindIsFail)
 {
@@ -4826,9 +4841,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorWrongKindIsFail)
 }
 
 /*!
- * @brief        Checks that a floor whose declared map differs from its
- *               containing map gets a FAIL AX_FLOOR_01 finding (edited into the
- *               snapshot).
+ * @brief           Checks that a floor whose declared map differs from its
+ *                  containing map gets a FAIL AX_FLOOR_01 finding (edited into
+ *                  the snapshot).
  */
 TEST(SemanticAxiomEvaluator, RoomFloorDeclaredMapMismatchIsFail)
 {
@@ -4865,9 +4880,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorDeclaredMapMismatchIsFail)
 }
 
 /*!
- * @brief        Checks that a room whose declared map differs from its
- *               containing map gets a FAIL AX_FLOOR_01 finding (edited into the
- *               snapshot).
+ * @brief           Checks that a room whose declared map differs from its
+ *                  containing map gets a FAIL AX_FLOOR_01 finding (edited into
+ *                  the snapshot).
  */
 TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapMismatchIsFail)
 {
@@ -4904,9 +4919,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapMismatchIsFail)
 }
 
 /*!
- * @brief        Checks that a missing declared map on the room keeps the PASS
- *               reciprocity finding but adds an UNKNOWN finding (edited into
- *               the snapshot).
+ * @brief           Checks that a missing declared map on the room keeps the
+ *                  PASS reciprocity finding but adds an UNKNOWN finding (edited
+ *                  into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapUnavailableCapsAtUnknown)
 {
@@ -4947,9 +4962,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorRoomDeclaredMapUnavailableCapsAtUnknown)
 }
 
 /*!
- * @brief        Checks that a missing declared map on the floor keeps the PASS
- *               reciprocity finding but adds an UNKNOWN finding (edited into
- *               the snapshot).
+ * @brief           Checks that a missing declared map on the floor keeps the
+ *                  PASS reciprocity finding but adds an UNKNOWN finding (edited
+ *                  into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, RoomFloorFloorDeclaredMapUnavailableCapsAtUnknown)
 {
@@ -4990,10 +5005,10 @@ TEST(SemanticAxiomEvaluator, RoomFloorFloorDeclaredMapUnavailableCapsAtUnknown)
 }
 
 /*!
- * @brief        Checks that a duplicated floor record makes both endpoint rooms
- *               fail their own floor proof, giving FAIL endpoint-room-floor-
- *               invalid findings for AX_PASS_04 and AX_FLOOR_01 (edited into
- *               the snapshot).
+ * @brief           Checks that a duplicated floor record makes both endpoint
+ *                  rooms fail their own floor proof, giving FAIL
+ *                  endpoint-room-floor-invalid findings for AX_PASS_04 and
+ *                  AX_FLOOR_01 (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      PassageFloorDuplicateFloorRecordFailsViaCanonicalRoomFloorProof)
@@ -5062,9 +5077,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a floor that drops one endpoint room's reverse
- *               membership gives FAIL endpoint-room-floor-invalid findings for
- *               AX_PASS_04 (edited into the snapshot).
+ * @brief           Checks that a floor that drops one endpoint room's reverse
+ *                  membership gives FAIL endpoint-room-floor-invalid findings
+ *                  for AX_PASS_04 (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      PassageFloorNonReciprocalMembershipFailsViaCanonicalRoomFloorProof)
@@ -5128,9 +5143,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that two floor records sharing the key a room's floor
- *               reference names give a FAIL AX_FLOOR_01 finding (duplicate
- *               added to the snapshot).
+ * @brief           Checks that two floor records sharing the key a room's floor
+ *                  reference names give a FAIL AX_FLOOR_01 finding (duplicate
+ *                  added to the snapshot).
  */
 TEST(SemanticAxiomEvaluator, RoomFloorDuplicateIdentityIsFail)
 {
@@ -5169,9 +5184,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorDuplicateIdentityIsFail)
 }
 
 /*!
- * @brief        Checks that a floor listing the same room twice gives a FAIL
- *               duplicate-reverse-membership finding (edited into the
- *               snapshot).
+ * @brief           Checks that a floor listing the same room twice gives a FAIL
+ *                  duplicate-reverse-membership finding (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator, RoomFloorDuplicateReverseMembershipIsFail)
 {
@@ -5210,9 +5225,9 @@ TEST(SemanticAxiomEvaluator, RoomFloorDuplicateReverseMembershipIsFail)
 }
 
 /*!
- * @brief        Checks that a room listed by a second floor besides its own
- *               gives a FAIL claimed-by-multiple-floors finding (edited into
- *               the snapshot).
+ * @brief           Checks that a room listed by a second floor besides its own
+ *                  gives a FAIL claimed-by-multiple-floors finding (edited into
+ *                  the snapshot).
  */
 TEST(SemanticAxiomEvaluator, RoomClaimedByMultipleFloorsIsFail)
 {
@@ -5274,9 +5289,9 @@ TEST(SemanticAxiomEvaluator, RoomClaimedByMultipleFloorsIsFail)
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that a map with no confirmed room is conservatively FAIL
- *               and not complete, with reason ZERO_CONFIRMED_ROOMS and a FAIL
- *               AX_COMP_01 finding.
+ * @brief           Checks that a map with no confirmed room is conservatively
+ *                  FAIL and not complete, with reason ZERO_CONFIRMED_ROOMS and
+ *                  a FAIL AX_COMP_01 finding.
  */
 TEST(SemanticAxiomEvaluator, ZeroConfirmedRoomsMakesMapIncomplete)
 {
@@ -5314,8 +5329,8 @@ TEST(SemanticAxiomEvaluator, ZeroConfirmedRoomsMakesMapIncomplete)
 }
 
 /*!
- * @brief        Checks that a map holding a live prospective room is
- *               conservatively FAIL and counts one prospective room.
+ * @brief           Checks that a map holding a live prospective room is
+ *                  conservatively FAIL and counts one prospective room.
  */
 TEST(SemanticAxiomEvaluator, LiveProspectiveRoomMakesMapIncomplete)
 {
@@ -5346,8 +5361,9 @@ TEST(SemanticAxiomEvaluator, LiveProspectiveRoomMakesMapIncomplete)
 }
 
 /*!
- * @brief        Checks that two rooms sharing one local id make the map's
- *               completeness FAIL with reason COMPLETENESS_DUPLICATE_IDENTITY.
+ * @brief           Checks that two rooms sharing one local id make the map's
+ *                  completeness FAIL with reason
+ *                  COMPLETENESS_DUPLICATE_IDENTITY.
  */
 TEST(SemanticAxiomEvaluator, CompletenessDuplicateIdentityIsFail)
 {
@@ -5386,9 +5402,9 @@ TEST(SemanticAxiomEvaluator, CompletenessDuplicateIdentityIsFail)
 }
 
 /*!
- * @brief        Checks that a confirmed room makes the map's conservative
- *               completeness UNKNOWN, with reason room-creation-provenance-
- *               unavailable.
+ * @brief           Checks that a confirmed room makes the map's conservative
+ *                  completeness UNKNOWN, with reason room-creation-provenance-
+ *                  unavailable.
  */
 TEST(SemanticAxiomEvaluator, CompletenessRoomCreationProvenanceUnavailable)
 {
@@ -5438,9 +5454,9 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomCreationProvenanceUnavailable)
 }
 
 /*!
- * @brief        Checks that a failing AX_PASS_03 slot state (known-side room
- *               still prospective) makes completeness FAIL with reason
- *               PASSAGE_ENDPOINTS_INVALID.
+ * @brief           Checks that a failing AX_PASS_03 slot state (known-side room
+ *                  still prospective) makes completeness FAIL with reason
+ *                  PASSAGE_ENDPOINTS_INVALID.
  */
 TEST(SemanticAxiomEvaluator, CompletenessPassageSlotStateFailureIsFail)
 {
@@ -5486,8 +5502,9 @@ TEST(SemanticAxiomEvaluator, CompletenessPassageSlotStateFailureIsFail)
 }
 
 /*!
- * @brief        Checks that a cross-floor passage makes completeness FAIL with
- *               reasons PASSAGE_ENDPOINTS_INVALID and HARD_CONTRADICTION.
+ * @brief           Checks that a cross-floor passage makes completeness FAIL
+ *                  with reasons PASSAGE_ENDPOINTS_INVALID and
+ *                  HARD_CONTRADICTION.
  */
 TEST(SemanticAxiomEvaluator, CompletenessCrossFloorPassageIsFail)
 {
@@ -5545,9 +5562,9 @@ TEST(SemanticAxiomEvaluator, CompletenessCrossFloorPassageIsFail)
 }
 
 /*!
- * @brief        Checks that two map snapshots sharing one map id both get FAIL
- *               completeness with reason DUPLICATE_MAP_IDENTITY, whether the
- *               duplicate is appended or prepended.
+ * @brief           Checks that two map snapshots sharing one map id both get
+ *                  FAIL completeness with reason DUPLICATE_MAP_IDENTITY,
+ *                  whether the duplicate is appended or prepended.
  */
 TEST(SemanticAxiomEvaluator,
      DuplicateMapIdentityIsFailRegardlessOfInsertionOrder)
@@ -5603,9 +5620,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a room whose passage reference has no key makes
- *               completeness FAIL with reason
- *               ROOM_HAS_MALFORMED_PASSAGE_REFERENCE.
+ * @brief           Checks that a room whose passage reference has no key makes
+ *                  completeness FAIL with reason
+ *                  ROOM_HAS_MALFORMED_PASSAGE_REFERENCE.
  */
 TEST(SemanticAxiomEvaluator, CompletenessRoomHasMalformedPassageReferenceIsFail)
 {
@@ -5645,10 +5662,10 @@ TEST(SemanticAxiomEvaluator, CompletenessRoomHasMalformedPassageReferenceIsFail)
 }
 
 /*!
- * @brief        Checks that the strongest map the schema can build (two
- *               reciprocal COMPLETE rooms and a same-floor passage) is legacy
- *               fully modelled but conservatively UNKNOWN, so the two
- *               calculations diverge.
+ * @brief           Checks that the strongest map the schema can build (two
+ *                  reciprocal COMPLETE rooms and a same-floor passage) is
+ *                  legacy fully modelled but conservatively UNKNOWN, so the two
+ *                  calculations diverge.
  */
 TEST(SemanticAxiomEvaluator,
      LegacyCompleteButConservativeUnknownSchemaLimitedDiverges)
@@ -5747,9 +5764,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a room registered in two collections is counted
- *               twice by the legacy calculation but once by the conservative
- *               one.
+ * @brief           Checks that a room registered in two collections is counted
+ *                  twice by the legacy calculation but once by the conservative
+ *                  one.
  */
 TEST(SemanticAxiomEvaluator, LegacyReproducesDoubleRegisteredRoomMultiplicity)
 {
@@ -5791,9 +5808,9 @@ TEST(SemanticAxiomEvaluator, LegacyReproducesDoubleRegisteredRoomMultiplicity)
 }
 
 /*!
- * @brief        Checks that a passage the rooms do not list back leaves the map
- *               legacy fully modelled but conservatively FAIL, so the
- *               calculations diverge.
+ * @brief           Checks that a passage the rooms do not list back leaves the
+ *                  map legacy fully modelled but conservatively FAIL, so the
+ *                  calculations diverge.
  */
 TEST(SemanticAxiomEvaluator,
      LegacyCompleteButConservativeFailsOnNonReciprocalPassageDiverges)
@@ -5860,8 +5877,8 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a map with no floor is legacy fully modelled but
- *               conservatively UNKNOWN, so the calculations diverge.
+ * @brief           Checks that a map with no floor is legacy fully modelled but
+ *                  conservatively UNKNOWN, so the calculations diverge.
  */
 TEST(SemanticAxiomEvaluator,
      LegacyCompleteButConservativeUnknownDueToMissingFloorEvidenceDiverges)
@@ -5947,9 +5964,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a doubly owned wall in map A makes map A FAIL with
- *               HARD_CONTRADICTION while empty map B fails only with
- *               ZERO_CONFIRMED_ROOMS.
+ * @brief           Checks that a doubly owned wall in map A makes map A FAIL
+ *                  with HARD_CONTRADICTION while empty map B fails only with
+ *                  ZERO_CONFIRMED_ROOMS.
  */
 TEST(SemanticAxiomEvaluator, HardFailureInOneMapDoesNotContaminateAnotherMap)
 {
@@ -6038,9 +6055,9 @@ TEST(SemanticAxiomEvaluator, HardFailureInOneMapDoesNotContaminateAnotherMap)
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that a room and its floor split across two map snapshots
- *               sharing one map id neither crash evaluateState nor yield a PASS
- *               AX_FLOOR_01 finding (edited into the snapshot).
+ * @brief           Checks that a room and its floor split across two map
+ *                  snapshots sharing one map id neither crash evaluateState nor
+ *                  yield a PASS AX_FLOOR_01 finding (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      DuplicateContainingMapRoomFloorSplitDoesNotCrashAndIsNotPass)
@@ -6108,9 +6125,10 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a known-side reference with no liveness value stays
- *               UNKNOWN even though the room record it resolves to is live, and
- *               gives no non-reciprocal FAIL (edited into the snapshot).
+ * @brief           Checks that a known-side reference with no liveness value
+ *                  stays UNKNOWN even though the room record it resolves to is
+ *                  live, and gives no non-reciprocal FAIL (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      ForwardEndpointLivenessUnavailableStaysUnknownDespiteLiveEnumeratedRecord)
@@ -6164,9 +6182,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a room's passage reference whose reason is not NONE
- *               gives a FAIL bad-reverse-endpoint finding instead of counting
- *               as reciprocity proof (edited into the snapshot).
+ * @brief           Checks that a room's passage reference whose reason is not
+ *                  NONE gives a FAIL bad-reverse-endpoint finding instead of
+ *                  counting as reciprocity proof (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      ReasonInconsistentReciprocalPassageRefIsNotReciprocityProof)
@@ -6231,9 +6249,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that two passage records sharing one key both get FAIL
- *               non-reciprocal AX_PASS_02 findings instead of reciprocity proof
- *               (duplicate added to the snapshot).
+ * @brief           Checks that two passage records sharing one key both get
+ *                  FAIL non-reciprocal AX_PASS_02 findings instead of
+ *                  reciprocity proof (duplicate added to the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      ReciprocityAgainstDuplicatePassageIdentityIsNotProof)
@@ -6293,8 +6311,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that an owner reference with no liveness value does not
- *               hide a FAIL cross-map owner finding (edited into the snapshot).
+ * @brief           Checks that an owner reference with no liveness value does
+ *                  not hide a FAIL cross-map owner finding (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator, OwnerLivenessUnavailableDoesNotMaskCrossMapOwner)
 {
@@ -6351,9 +6370,9 @@ TEST(SemanticAxiomEvaluator, OwnerLivenessUnavailableDoesNotMaskCrossMapOwner)
 }
 
 /*!
- * @brief        Checks that an owner reference whose reason is not NONE gives a
- *               FAIL owner-reason-inconsistent finding even though the
- *               reciprocal link is valid (edited into the snapshot).
+ * @brief           Checks that an owner reference whose reason is not NONE
+ *                  gives a FAIL owner-reason-inconsistent finding even though
+ *                  the reciprocal link is valid (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      OwnerReasonInconsistentIsFailDespiteValidReciprocal)
@@ -6398,9 +6417,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a copy of the wall reference carrying a non-NONE
- *               reason gives a FAIL contradictory-reciprocal finding instead of
- *               being skipped (edited into the snapshot).
+ * @brief           Checks that a copy of the wall reference carrying a non-NONE
+ *                  reason gives a FAIL contradictory-reciprocal finding instead
+ *                  of being skipped (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, ContradictoryReciprocalWithNonNoneReasonIsFail)
 {
@@ -6446,9 +6465,9 @@ TEST(SemanticAxiomEvaluator, ContradictoryReciprocalWithNonNoneReasonIsFail)
 }
 
 /*!
- * @brief        Checks that a missing declared map on the owner room keeps the
- *               PASS owner finding and adds an UNKNOWN finding, with no
- *               mismatch FAIL (edited into the snapshot).
+ * @brief           Checks that a missing declared map on the owner room keeps
+ *                  the PASS owner finding and adds an UNKNOWN finding, with no
+ *                  mismatch FAIL (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, OwnerDeclaredMapUnavailableCapsAtUnknownNotFail)
 {
@@ -6501,9 +6520,10 @@ TEST(SemanticAxiomEvaluator, OwnerDeclaredMapUnavailableCapsAtUnknownNotFail)
 }
 
 /*!
- * @brief        Checks that a wall reference claiming to be absent yet carrying
- *               populated, contradictory data gives a FAIL invalid-wall-
- *               evidence AX_BOUND_01 finding (edited into the snapshot).
+ * @brief           Checks that a wall reference claiming to be absent yet
+ *                  carrying populated, contradictory data gives a FAIL
+ *                  invalid-wall-evidence AX_BOUND_01 finding (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      BoundaryRawRefReasonInconsistentIsInvalidNotUnavailable)
@@ -6553,10 +6573,10 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that wall evidence whose owner finding is PASS plus
- *               UNKNOWN (declared map missing) gives an UNKNOWN wall-evidence-
- *               unavailable finding, not valid evidence (edited into the
- *               snapshot).
+ * @brief           Checks that wall evidence whose owner finding is PASS plus
+ *                  UNKNOWN (declared map missing) gives an UNKNOWN
+ *                  wall-evidence-unavailable finding, not valid evidence
+ *                  (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      BoundaryEvidenceFromPassPlusUnknownOwnerIsUnavailable)
@@ -6606,9 +6626,10 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a twin reference claiming to be absent yet carrying
- *               a dead self-twin gives a FAIL twin-reason-inconsistent
- *               AX_WALL_03 finding (edited into the snapshot).
+ * @brief           Checks that a twin reference claiming to be absent yet
+ *                  carrying a dead self-twin gives a FAIL
+ *                  twin-reason-inconsistent AX_WALL_03 finding (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallTwinReasonInconsistentIsFail)
 {
@@ -6651,9 +6672,9 @@ TEST(SemanticAxiomEvaluator, WallTwinReasonInconsistentIsFail)
 }
 
 /*!
- * @brief        Checks that a floor's room reference with a non-NONE reason and
- *               a not-live flag gives a FAIL reverse-member-invalid finding and
- *               no PASS (edited into the snapshot).
+ * @brief           Checks that a floor's room reference with a non-NONE reason
+ *                  and a not-live flag gives a FAIL reverse-member-invalid
+ *                  finding and no PASS (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, FloorReverseMemberReasonInconsistentAndDeadIsFail)
 {
@@ -6695,9 +6716,9 @@ TEST(SemanticAxiomEvaluator, FloorReverseMemberReasonInconsistentAndDeadIsFail)
 }
 
 /*!
- * @brief        Checks that a wall and its owner room placed in two map
- *               snapshots sharing one map id give a FAIL containing-map-
- *               ambiguous finding and no PASS (edited into the snapshot).
+ * @brief           Checks that a wall and its owner room placed in two map
+ *                  snapshots sharing one map id give a FAIL containing-map-
+ *                  ambiguous finding and no PASS (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator, WallOwnerSplitAcrossDuplicateContainingMapIsFail)
 {
@@ -6779,9 +6800,10 @@ TEST(SemanticAxiomEvaluator, WallOwnerSplitAcrossDuplicateContainingMapIsFail)
  * ---------------------------------------------------------------------- */
 
 /*!
- * @brief        Checks that a retired owner room gives a FAIL owner-record-not-
- *               live finding even when the owner reference's liveness is
- *               unavailable (edited into the snapshot).
+ * @brief           Checks that a retired owner room gives a FAIL
+ *                  owner-record-not-live finding even when the owner
+ *                  reference's liveness is unavailable (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      OwnerRecordNotLiveDominatesReferenceLivenessUnavailable)
@@ -6834,9 +6856,10 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that a wall reference whose wall key names this wall but
- *               whose raw map id disagrees gives a FAIL contradictory-
- *               reciprocal finding and no PASS (edited into the snapshot).
+ * @brief           Checks that a wall reference whose wall key names this wall
+ *                  but whose raw map id disagrees gives a FAIL
+ *                  contradictory-reciprocal finding and no PASS (edited into
+ *                  the snapshot).
  */
 TEST(SemanticAxiomEvaluator, ReciprocalWallKeyRawIdentityMismatchIsFail)
 {
@@ -6887,9 +6910,10 @@ TEST(SemanticAxiomEvaluator, ReciprocalWallKeyRawIdentityMismatchIsFail)
 }
 
 /*!
- * @brief        Checks that a floor listing a room twice, once with unavailable
- *               liveness, still gives a FAIL duplicate-reverse-membership
- *               finding and no PASS (edited into the snapshot).
+ * @brief           Checks that a floor listing a room twice, once with
+ *                  unavailable liveness, still gives a FAIL
+ *                  duplicate-reverse-membership finding and no PASS (edited
+ *                  into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      FloorReverseDuplicateWithOneLivenessUnavailableIsFail)
@@ -6934,9 +6958,9 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that an owner room declaring a different map gives a
- *               FAIL mismatch finding even when the owner reference's liveness
- *               is unavailable (edited into the snapshot).
+ * @brief           Checks that an owner room declaring a different map gives a
+ *                  FAIL mismatch finding even when the owner reference's
+ *                  liveness is unavailable (edited into the snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      OwnerDeclaredMapMismatchDominatesReferenceLivenessUnavailable)
@@ -7012,9 +7036,10 @@ TEST(SemanticAxiomEvaluator,
 }
 
 /*!
- * @brief        Checks that an owner room that does not list the wall back
- *               gives a FAIL not-reciprocal finding even when the owner
- *               reference's liveness is unavailable (edited into the snapshot).
+ * @brief           Checks that an owner room that does not list the wall back
+ *                  gives a FAIL not-reciprocal finding even when the owner
+ *                  reference's liveness is unavailable (edited into the
+ *                  snapshot).
  */
 TEST(SemanticAxiomEvaluator,
      OwnerNotReciprocalDominatesReferenceLivenessUnavailable)

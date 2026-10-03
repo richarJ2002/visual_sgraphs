@@ -45,13 +45,13 @@ namespace core
 {
 
 /*!
- * @brief        Merges the semantic graph of the other map into the
- *               current map.
+ * @brief           Merges the semantic graph of the other map into the
+ *                  current map.
  *
- *               Mirrors the semantic-transfer pattern of
- *               LoopClosing::MergeLocal using Horn's deterministic
- *               closed-form solution; no g2o types are used. Caller must
- *               already hold the semantic-update lock.
+ *                  Mirrors the semantic-transfer pattern of
+ *                  LoopClosing::MergeLocal using Horn's deterministic
+ *                  closed-form solution; no g2o types are used. Caller must
+ *                  already hold the semantic-update lock.
  */
 AtlasStatus Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
 {

@@ -1,7 +1,7 @@
 /*!
- * @file         reportResetAttribution.cc
+ * @file            reportResetAttribution.cc
  *
- * @brief        Implements reportResetAttribution declared in ResetCause.h.
+ * @brief           Implements reportResetAttribution declared in ResetCause.h.
  */
 
 #include "ResetCause.h"

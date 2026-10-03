@@ -34,8 +34,8 @@ namespace core
 {
 
 /*!
- * @brief        Bag-of-words vocabulary over ORB descriptors, used for place
- *               recognition.
+ * @brief           Bag-of-words vocabulary over ORB descriptors, used for place
+ *                  recognition.
  */
 typedef DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB>
     ORBVocabulary;

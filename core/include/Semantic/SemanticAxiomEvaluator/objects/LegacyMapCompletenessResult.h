@@ -40,56 +40,72 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Exact reproduction of the legacy per-map completeness
- *              projection, computed from a SemanticGraphSnapshot instead of
- *              live model pointers by computeLegacyMapCompleteness().
+ * @brief           Exact reproduction of the legacy per-map completeness
+ *                  projection, computed from a SemanticGraphSnapshot instead of
+ *                  live model pointers by computeLegacyMapCompleteness().
  *
- *              Deliberately preserves the legacy calculation's real
- *              multiplicity: it iterates the concatenation of
- *              Map::GetAllDetectedMapRooms() and
- *              Map::GetAllMarkerBasedMapRooms() (Map::GetAllRooms()'s own
- *              documented behaviour), so a Room pointer present in both
- *              collections is counted twice here as well, exactly as the
- *              live legacy code counts it twice -- see
- *              RoomRecord::isDetectedMember/isMarkerBasedMember, which the
- *              snapshot schema added specifically to make that
- *              reproduction possible without a live Atlas/Map pointer. This
- *              type is evidence for auditing/comparison only; it is not
- *              itself the legacy code path and does not replace it.
+ *                  Deliberately preserves the legacy calculation's real
+ *                  multiplicity: it iterates the concatenation of
+ *                  Map::GetAllDetectedMapRooms() and
+ *                  Map::GetAllMarkerBasedMapRooms() (Map::GetAllRooms()'s own
+ *                  documented behaviour), so a Room pointer present in both
+ *                  collections is counted twice here as well, exactly as the
+ *                  live legacy code counts it twice -- see
+ *                  RoomRecord::isDetectedMember/isMarkerBasedMember, which the
+ *                  snapshot schema added specifically to make that
+ *                  reproduction possible without a live Atlas/Map pointer. This
+ *                  type is evidence for auditing/comparison only; it is not
+ *                  itself the legacy code path and does not replace it.
  */
 struct LegacyMapCompletenessResult
 {
   public:
-    /*! @brief Legacy confirmedRoomCount: sum, over every GetAllRooms()
-     *  entry (with the double-membership multiplicity above), of 1 for
-     *  each entry whose room is live and RoomRecord::variant == ROOM. */
+    /*!
+     * @brief           Legacy confirmedRoomCount: sum, over every GetAllRooms()
+     *                  entry (with the double-membership multiplicity above),
+     *                  of 1 for each entry whose room is live and
+     *                  RoomRecord::variant == ROOM.
+     */
     std::size_t confirmedRoomCount{0U};
 
-    /*! @brief Legacy completeRoomCount: the confirmedRoomCount subset whose
-     *  boundaryStatus == COMPLETE. */
+    /*!
+     * @brief           Legacy completeRoomCount: the confirmedRoomCount subset
+     *                  whose boundaryStatus == COMPLETE.
+     */
     std::size_t completeRoomCount{0U};
 
-    /*! @brief Legacy incompleteRoomIds: local Room ids (Plane/Room-local,
-     *  not EntityKey) of every confirmed-but-not-COMPLETE GetAllRooms()
-     *  entry, in legacy iteration order including the same double-
-     *  membership multiplicity (an id may repeat). */
+    /*!
+     * @brief           Legacy incompleteRoomIds: local Room ids
+     *                  (Plane/Room-local, not EntityKey) of every
+     *                  confirmed-but-not-COMPLETE GetAllRooms() entry, in
+     *                  legacy iteration order including the same
+     *                  double-membership multiplicity (an id may repeat).
+     */
     std::vector<int> incompleteRoomIds;
 
-    /*! @brief Legacy passageCount: count of live passages in the map. */
+    /*!
+     * @brief           Legacy passageCount: count of live passages in the map.
+     */
     std::size_t passageCount{0U};
 
-    /*! @brief Legacy fullyLinkedPassageCount: the passageCount subset whose
-     *  known-side room and prospective room are both non-null, live, and
-     *  RoomRecord::variant == ROOM. */
+    /*!
+     * @brief           Legacy fullyLinkedPassageCount: the passageCount subset
+     *                  whose known-side room and prospective room are both
+     *                  non-null, live, and RoomRecord::variant == ROOM.
+     */
     std::size_t fullyLinkedPassageCount{0U};
 
-    /*! @brief Legacy danglingPassageIds: local Passage ids of every live
-     *  passage not counted in fullyLinkedPassageCount. */
+    /*!
+     * @brief           Legacy danglingPassageIds: local Passage ids of every
+     *                  live passage not counted in fullyLinkedPassageCount.
+     */
     std::vector<int> danglingPassageIds;
 
-    /*! @brief Legacy isMapFullyModeled: confirmedRoomCount > 0 &&
-     *  completeRoomCount == confirmedRoomCount &&
-     *  fullyLinkedPassageCount == passageCount. */
+    /*!
+     * @brief           Legacy isMapFullyModeled: confirmedRoomCount > 0 &&
+     *                  completeRoomCount == confirmedRoomCount &&
+     *                  fullyLinkedPassageCount == passageCount.
+     */
     bool isMapFullyModeled{false};
 };
 

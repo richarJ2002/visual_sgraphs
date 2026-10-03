@@ -35,16 +35,20 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a Passage operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a Passage operation. Values are fixed and never
+ *                  reordered.
  */
 enum class PassageStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     PASSAGE_STATUS_SUCCESS = 0U,
 
-    /*! @brief An input was null, repeated or not finite; the object and the
-     * outputs were left unchanged. */
+    /*!
+     * @brief           An input was null, repeated or not finite; the object
+     *                  and the outputs were left unchanged.
+     */
     PASSAGE_STATUS_INVALID_ARGUMENT = 1U
 };
 

@@ -36,8 +36,10 @@ namespace core
 namespace semantic
 {
 
-/*! Solves N_B t = b (translation from offsets) via SVD, and reports
- * rank(N_B)/cond(N_B) for the observability gates. */
+/*!
+ * @brief           Solves N_B t = b (translation from offsets) via SVD, and
+ *                  reports rank(N_B)/cond(N_B) for the observability gates.
+ */
 SemanticVerifyStatus
     fitTranslation(const Eigen::Matrix3d              &rotation_in,
                    const std::vector<Eigen::Vector3d> &normalsA_in,

@@ -47,9 +47,12 @@ struct RawWall
     Eigen::Vector3d centroid;
 };
 
-/*! Owns geometric::Plane objects for the lifetime of one synthetic room fixture
- * and associates them with a semantic::Room via the genuine
- * semantic::Room::setWalls() API. */
+/*!
+ * @brief           Owns geometric::Plane objects for the lifetime of one
+ *                  synthetic room fixture and associates them with a
+ *                  semantic::Room via the genuine semantic::Room::setWalls()
+ *                  API.
+ */
 struct SyntheticRoom
 {
     semantic::Room                                 room;
@@ -77,9 +80,12 @@ struct SyntheticRoom
     }
 };
 
-/*! Transforms a raw plane equation the same way
- * geometric::Plane::transformPlaneEquation does (geometric::Plane.cc:410-467,
- * scale fixed at 1): n' = R n; d' = d - n'^T t. */
+/*!
+ * @brief           Transforms a raw plane equation the same way
+ *                  geometric::Plane::transformPlaneEquation does
+ *                  (geometric::Plane.cc:410-467, scale fixed at 1): n' = R n;
+ *                  d' = d - n'^T t.
+ */
 RawWall transformWall(const RawWall         &source_in,
                       const Eigen::Matrix3d &rotation_in,
                       const Eigen::Vector3d &translation_in,
@@ -93,13 +99,16 @@ RawWall transformWall(const RawWall         &source_in,
     return transformed;
 }
 
-/*! A well-conditioned, deliberately ASYMMETRIC 4-wall room: three
- * axis-aligned faces with distinct, non-zero offsets (breaking the axis-
- * permutation symmetry a shared d=0 origin corner would otherwise have)
- * plus one oblique face with non-uniform normal components. Without this
- * asymmetry, a wrong axis-permuted rotation can satisfy every gate exactly
- * as well as the true one, producing genuine ambiguity rather than a test
- * bug. */
+/*!
+ * @brief           A well-conditioned, deliberately ASYMMETRIC 4-wall room:
+ *                  three axis-aligned faces with distinct, non-zero offsets
+ *                  (breaking the axis-permutation symmetry a shared d=0 origin
+ *                  corner would otherwise have) plus one oblique face with
+ *                  non-uniform normal components. Without this asymmetry, a
+ *                  wrong axis-permuted rotation can satisfy every gate exactly
+ *                  as well as the true one, producing genuine ambiguity rather
+ *                  than a test bug.
+ */
 std::vector<RawWall> makeReferenceWalls()
 {
     return {
@@ -191,9 +200,9 @@ double rotationAngle_deg(const Eigen::Matrix3d &first_in,
 } // namespace
 
 /*!
- * @brief        Checks that two rooms whose walls are related by a known rigid
- *               transform are accepted, with the transform recovered within
- *               tolerance.
+ * @brief           Checks that two rooms whose walls are related by a known
+ *                  rigid transform are accepted, with the transform recovered
+ *                  within tolerance.
  */
 TEST(GeometricVerify, AcceptsGroundTruthCorrelatedRooms)
 {
@@ -262,8 +271,8 @@ TEST(GeometricVerify, AcceptsGroundTruthCorrelatedRooms)
 }
 
 /*!
- * @brief        Checks that rooms with only two parallel wall correspondences
- *               are rejected as having too few walls.
+ * @brief           Checks that rooms with only two parallel wall
+ *                  correspondences are rejected as having too few walls.
  */
 TEST(GeometricVerify, RejectsRankDeficientCorrespondences)
 {
@@ -323,9 +332,9 @@ TEST(GeometricVerify, RejectsRankDeficientCorrespondences)
 }
 
 /*!
- * @brief        Checks that the correct hypothesis still wins when each room
- *               has two extra unrelated walls, and that those walls are not
- *               among the inliers.
+ * @brief           Checks that the correct hypothesis still wins when each room
+ *                  has two extra unrelated walls, and that those walls are not
+ *                  among the inliers.
  */
 TEST(GeometricVerify, CorrectHypothesisWinsOverOutlierCorrespondences)
 {
@@ -400,8 +409,8 @@ TEST(GeometricVerify, CorrectHypothesisWinsOverOutlierCorrespondences)
 }
 
 /*!
- * @brief        Checks that two equally good hypotheses, as for a cube of four
- *               vertical faces, are rejected as ambiguous.
+ * @brief           Checks that two equally good hypotheses, as for a cube of
+ *                  four vertical faces, are rejected as ambiguous.
  */
 TEST(GeometricVerify, RejectsAmbiguousEquallyGoodHypotheses)
 {
@@ -487,8 +496,9 @@ TEST(GeometricVerify, RejectsAmbiguousEquallyGoodHypotheses)
 }
 
 /*!
- * @brief        Checks that the floor gate accepts rooms on matching floors and
- *               rejects rooms on mismatched floors, recording the gate verdict.
+ * @brief           Checks that the floor gate accepts rooms on matching floors
+ *                  and rejects rooms on mismatched floors, recording the gate
+ *                  verdict.
  */
 TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
 {
@@ -560,8 +570,8 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
 }
 
 /*!
- * @brief        Checks that the semantic merge gate accepts rooms whose
- *               hierarchy is aligned and stable.
+ * @brief           Checks that the semantic merge gate accepts rooms whose
+ *                  hierarchy is aligned and stable.
  */
 TEST(GeometricVerify, SemanticMergeGateAcceptsAlignedStableHierarchy)
 {
@@ -587,8 +597,8 @@ TEST(GeometricVerify, SemanticMergeGateAcceptsAlignedStableHierarchy)
 }
 
 /*!
- * @brief        Checks that the semantic merge gate rejects identical geometry
- *               when the passage predecessor is wrong.
+ * @brief           Checks that the semantic merge gate rejects identical
+ *                  geometry when the passage predecessor is wrong.
  */
 TEST(GeometricVerify,
      SemanticMergeGateRejectsIdenticalGeometryWithWrongPassagePredecessor)
@@ -614,8 +624,8 @@ TEST(GeometricVerify,
 }
 
 /*!
- * @brief        Checks that the semantic merge gate defers the decision when
- *               passage evidence is missing.
+ * @brief           Checks that the semantic merge gate defers the decision when
+ *                  passage evidence is missing.
  */
 TEST(GeometricVerify, SemanticMergeGateDefersWhenPassageEvidenceIsMissing)
 {
@@ -639,8 +649,8 @@ TEST(GeometricVerify, SemanticMergeGateDefersWhenPassageEvidenceIsMissing)
 }
 
 /*!
- * @brief        Checks that the semantic merge gate rejects passages whose
- *               directions are opposed.
+ * @brief           Checks that the semantic merge gate rejects passages whose
+ *                  directions are opposed.
  */
 TEST(GeometricVerify, SemanticMergeGateRejectsOpposedPassageDirection)
 {
@@ -663,8 +673,8 @@ TEST(GeometricVerify, SemanticMergeGateRejectsOpposedPassageDirection)
 }
 
 /*!
- * @brief        Checks that room reconciliation never fuses rooms that have
- *               different stable identities.
+ * @brief           Checks that room reconciliation never fuses rooms that have
+ *                  different stable identities.
  */
 TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
 {
@@ -711,8 +721,8 @@ TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
 }
 
 /*!
- * @brief        Checks that room reconciliation collapses rooms that share a
- *               stable identity into one.
+ * @brief           Checks that room reconciliation collapses rooms that share a
+ *                  stable identity into one.
  */
 TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
 {
@@ -764,8 +774,8 @@ TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
 }
 
 /*!
- * @brief        Checks that fusing rooms in reconciliation preserves the
- *               visited flag.
+ * @brief           Checks that fusing rooms in reconciliation preserves the
+ *                  visited flag.
  */
 TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
 {
@@ -853,8 +863,8 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
 }
 
 /*!
- * @brief        Checks that the combined verdict requires both the geometric
- *               verification and the floor gate to pass.
+ * @brief           Checks that the combined verdict requires both the geometric
+ *                  verification and the floor gate to pass.
  */
 TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
 {
@@ -998,8 +1008,8 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
 }
 
 /*!
- * @brief        Checks that configFromSystemParams carries distinctive loaded
- *               YAML values into the verifier configuration.
+ * @brief           Checks that configFromSystemParams carries distinctive
+ *                  loaded YAML values into the verifier configuration.
  */
 TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
 {
@@ -1058,8 +1068,8 @@ TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
 }
 
 /*!
- * @brief        Checks that seeded random, uncorrelated room pairs never
- *               produce a false accept.
+ * @brief           Checks that seeded random, uncorrelated room pairs never
+ *                  produce a false accept.
  */
 TEST(GeometricVerify, SeededUncorrelatedRoomsProduceNoFalseAccepts)
 {
@@ -1139,9 +1149,9 @@ TEST(GeometricVerify, SeededUncorrelatedRoomsProduceNoFalseAccepts)
 }
 
 /*!
- * @brief        Checks that the plane-transform edge residual is zero at the
- *               ground-truth transform and non-zero when the translation is
- *               perturbed.
+ * @brief           Checks that the plane-transform edge residual is zero at the
+ *                  ground-truth transform and non-zero when the translation is
+ *                  perturbed.
  */
 TEST(GeometricVerify,
      PlaneTransformEdgeResidualIsZeroAtGroundTruthAndNonzeroNearby)
@@ -1185,9 +1195,9 @@ TEST(GeometricVerify,
 }
 
 /*!
- * @brief        Checks that the plane-transform edge residual stays non-zero,
- *               with an orientation residual of pi, when the plane normals are
- *               antipodally misaligned.
+ * @brief           Checks that the plane-transform edge residual stays
+ *                  non-zero, with an orientation residual of pi, when the plane
+ *                  normals are antipodally misaligned.
  */
 TEST(GeometricVerify,
      PlaneTransformEdgeResidualIsNonzeroAtAntipodalMisalignment)

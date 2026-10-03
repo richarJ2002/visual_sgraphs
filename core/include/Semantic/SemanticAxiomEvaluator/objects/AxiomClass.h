@@ -17,11 +17,11 @@
  */
 
 /*!
- * @file         AxiomClass.h
+ * @file            AxiomClass.h
  *
- * @brief        Declares the severity/classification distinguishing
- *               a hard contradiction from a derived aggregate,
- *               mirroring the catalogue's "Class" column.
+ * @brief           Declares the severity/classification distinguishing
+ *                  a hard contradiction from a derived aggregate,
+ *                  mirroring the catalogue's "Class" column.
  */
 
 #ifndef SEMANTIC_AXIOM_EVALUATOR_AXIOM_CLASS_H
@@ -36,25 +36,29 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief        Severity classification carried by every Finding and
- *               by each axiom code's fixed catalogue entry
- *               (axiomClassFor()).
+ * @brief           Severity classification carried by every Finding and
+ *                  by each axiom code's fixed catalogue entry
+ *                  (axiomClassFor()).
  *
- *               A HARD axiom is a direct contradiction of the
- *               semantic model (fifteen of the sixteen codes are
- *               "hard"). A DERIVED axiom (AX-COMP-01 only)
- *               aggregates other axioms' outcomes rather than
- *               checking a contradiction of its own; a DERIVED
- *               FAIL/UNKNOWN reports that its inputs were not all
- *               PASS, not a newly discovered independent
- *               contradiction.
+ *                  A HARD axiom is a direct contradiction of the
+ *                  semantic model (fifteen of the sixteen codes are
+ *                  "hard"). A DERIVED axiom (AX-COMP-01 only)
+ *                  aggregates other axioms' outcomes rather than
+ *                  checking a contradiction of its own; a DERIVED
+ *                  FAIL/UNKNOWN reports that its inputs were not all
+ *                  PASS, not a newly discovered independent
+ *                  contradiction.
  */
 enum class AxiomClass : std::uint8_t
 {
-    /*! @brief A direct semantic contradiction. */
+    /*!
+     * @brief           A direct semantic contradiction.
+     */
     HARD = 0U,
 
-    /*! @brief An aggregate over other axioms' outcomes. */
+    /*!
+     * @brief           An aggregate over other axioms' outcomes.
+     */
     DERIVED = 1U
 };
 

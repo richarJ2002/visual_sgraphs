@@ -20,8 +20,8 @@
  * @file            AtlasCurrentMapStatus.h
  *
  * @brief           Declares the truthful status of
- * Atlas::GetCoherentMapView()'s reported current-map id relative to its own
- * reported active map set.
+ *                  Atlas::GetCoherentMapView()'s reported current-map id
+ *                  relative to its own reported active map set.
  */
 
 #ifndef ATLAS_CURRENT_MAP_STATUS_H
@@ -35,31 +35,39 @@ namespace core
 {
 
 /*!
- * @brief       Status of Atlas::GetCoherentMapView()'s reported current-map
- *              id relative to the active map vector it returns in the same
- *              call.
+ * @brief           Status of Atlas::GetCoherentMapView()'s reported current-map
+ *                  id relative to the active map vector it returns in the same
+ *                  call.
  *
- *              Atlas::SetMapBad() erases a map from the active set
- *              (Atlas::maps) and marks it bad without clearing
- *              Atlas::p_activeMap; a later Atlas::ChangeMap() call is what
- *              eventually installs a new current map. Between those two
- *              calls, a truthful coherent read must be able to report that
- *              the current map id names a map genuinely absent from the
- *              active set, rather than silently claiming an invariant that
- *              does not hold at that instant.
+ *                  Atlas::SetMapBad() erases a map from the active set
+ *                  (Atlas::maps) and marks it bad without clearing
+ *                  Atlas::p_activeMap; a later Atlas::ChangeMap() call is what
+ *                  eventually installs a new current map. Between those two
+ *                  calls, a truthful coherent read must be able to report that
+ *                  the current map id names a map genuinely absent from the
+ *                  active set, rather than silently claiming an invariant that
+ *                  does not hold at that instant.
  */
 enum class AtlasCurrentMapStatus : std::uint8_t
 {
-    /*! @brief Atlas::p_activeMap was nullptr at the moment of the read. */
+    /*!
+     * @brief           Atlas::p_activeMap was nullptr at the moment of the
+     *                  read.
+     */
     NO_CURRENT_MAP = 0U,
 
-    /*! @brief Atlas::p_activeMap was non-null and present in the returned
-     *  active map vector. */
+    /*!
+     * @brief           Atlas::p_activeMap was non-null and present in the
+     *                  returned active map vector.
+     */
     CURRENT_MAP_ACTIVE = 1U,
 
-    /*! @brief Atlas::p_activeMap was non-null but absent from the returned
-     *  active map vector -- reachable via Atlas::SetMapBad(currentMap)
-     *  followed by no Atlas::ChangeMap() call yet. */
+    /*!
+     * @brief           Atlas::p_activeMap was non-null but absent from the
+     *                  returned active map vector -- reachable via
+     *                  Atlas::SetMapBad(currentMap) followed by no
+     *                  Atlas::ChangeMap() call yet.
+     */
     CURRENT_MAP_NOT_ACTIVE = 2U
 };
 

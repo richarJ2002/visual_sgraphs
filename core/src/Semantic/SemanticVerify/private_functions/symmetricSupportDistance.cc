@@ -35,12 +35,15 @@ namespace core
 namespace semantic
 {
 
-/*! Symmetric point-to-plane support-cloud distance (inlier
- * classification): sampled points from wall A, transformed by the
- * hypothesis, checked against wall B's plane; and the reverse. Returns the
- * larger (worse) of the two mean distances; 0.0 (vacuously passing) when
- * neither side has a usable sample, since not every synthetic/unit-test
- * observation populates a support cloud. */
+/*!
+ * @brief           Symmetric point-to-plane support-cloud distance (inlier
+ *                  classification): sampled points from wall A, transformed by
+ *                  the hypothesis, checked against wall B's plane; and the
+ *                  reverse. Returns the larger (worse) of the two mean
+ *                  distances; 0.0 (vacuously passing) when neither side has a
+ *                  usable sample, since not every synthetic/unit-test
+ *                  observation populates a support cloud.
+ */
 SemanticVerifyStatus
     symmetricSupportDistance(const VerifyWallObservation &wallA_in,
                              const VerifyWallObservation &wallB_in,

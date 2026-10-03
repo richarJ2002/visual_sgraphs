@@ -38,14 +38,14 @@ namespace semantic
 {
 
 /*!
- * @brief        Checks that serializeDouble writes finite values as JSON
- *               numbers, keeps the sign of zero, writes NaN and the infinities
- *               as quoted strings, and always produces text that parses as
- *               JSON.
+ * @brief           Checks that serializeDouble writes finite values as JSON
+ *                  numbers, keeps the sign of zero, writes NaN and the
+ *                  infinities as quoted strings, and always produces text that
+ *                  parses as JSON.
  *
- *               Calls serializeDouble() directly, because this encoding of
- *               finite values, NaN, the infinities and signed zero is the whole
- *               contract of the function.
+ *                  Calls serializeDouble() directly, because this encoding of
+ *                  finite values, NaN, the infinities and signed zero is the
+ *                  whole contract of the function.
  */
 TEST(SemanticCanonicalSerialization,
      SerializeDoubleHandlesFiniteNaNInfinityAndSignedZero)
@@ -67,8 +67,8 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that the snapshot, evaluation report and completeness
- *               JSON each carry their schema version constant.
+ * @brief           Checks that the snapshot, evaluation report and completeness
+ *                  JSON each carry their schema version constant.
  */
 TEST(SemanticCanonicalSerialization, SchemaVersionFieldsArePresentAndStable)
 {
@@ -97,9 +97,9 @@ TEST(SemanticCanonicalSerialization, SchemaVersionFieldsArePresentAndStable)
 }
 
 /*!
- * @brief        Checks that the topology-only snapshot JSON leaves out a wall's
- *               plane equation and centroid, which the full-geometry JSON
- *               includes.
+ * @brief           Checks that the topology-only snapshot JSON leaves out a
+ *                  wall's plane equation and centroid, which the full-geometry
+ *                  JSON includes.
  */
 TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
 {
@@ -136,8 +136,8 @@ TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
 }
 
 /*!
- * @brief        Checks that reversing the order of the room and wall records
- *               inside one snapshot does not change the full-geometry JSON.
+ * @brief           Checks that reversing the order of the room and wall records
+ *                  inside one snapshot does not change the full-geometry JSON.
  */
 TEST(SemanticCanonicalSerialization,
      SnapshotSerializationIsInvariantUnderPermutation)
@@ -197,8 +197,9 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that two rooms with the same entity key are both written
- *               to the topology-only JSON rather than merged into one.
+ * @brief           Checks that two rooms with the same entity key are both
+ *                  written to the topology-only JSON rather than merged into
+ *                  one.
  */
 TEST(SemanticCanonicalSerialization,
      SnapshotSerializationPreservesEntityKeyCollisionDuplicates)
@@ -237,8 +238,8 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that reversing the findings of an evaluation report does
- *               not change the serialized report.
+ * @brief           Checks that reversing the findings of an evaluation report
+ *                  does not change the serialized report.
  */
 TEST(SemanticCanonicalSerialization,
      EvaluationReportSerializationIsInvariantUnderFindingPermutation)
@@ -285,8 +286,8 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that serializing the map completeness results gives the
- *               same text whatever order the per-map results arrive in.
+ * @brief           Checks that serializing the map completeness results gives
+ *                  the same text whatever order the per-map results arrive in.
  */
 TEST(SemanticCanonicalSerialization,
      CompletenessResultsSerializationIsInvariantUnderMapPermutation)
@@ -314,9 +315,9 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that a room held in both the detected and candidate sets
- *               appears twice, with the same id, in the legacy incomplete-room
- *               list.
+ * @brief           Checks that a room held in both the detected and candidate
+ *                  sets appears twice, with the same id, in the legacy
+ *                  incomplete-room list.
  */
 TEST(SemanticCanonicalSerialization,
      CompletenessSerializationPreservesLegacyMultiplicityDuplicateIds)
@@ -348,8 +349,8 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that serializing a snapshot twice gives identical text
- *               and leaves the snapshot's own record order unchanged.
+ * @brief           Checks that serializing a snapshot twice gives identical
+ *                  text and leaves the snapshot's own record order unchanged.
  */
 TEST(SemanticCanonicalSerialization,
      SerializationNeverMutatesInputAndIsRepeatable)
@@ -398,12 +399,12 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that two findings with the same id but different
- *               evidence serialize identically in either input order.
+ * @brief           Checks that two findings with the same id but different
+ *                  evidence serialize identically in either input order.
  *
- *               Regression test: the serializer once sorted findings by id
- *               only, so two findings with the same id (the same axiom, reason
- *               and involved keys) could come out in either order.
+ *                  Regression test: the serializer once sorted findings by id
+ *                  only, so two findings with the same id (the same axiom,
+ *                  reason and involved keys) could come out in either order.
  */
 TEST(SemanticCanonicalSerialization,
      FindingsWithSameIdAndUnequalEvidenceAreOrderedDeterministically)
@@ -429,12 +430,13 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that two aggregate results with the same axiom code but
- *               different payloads serialize identically in either input order.
+ * @brief           Checks that two aggregate results with the same axiom code
+ *                  but different payloads serialize identically in either input
+ *                  order.
  *
- *               A report should hold one aggregate per axiom code, but the
- *               serializer must not rely on that: a collision must still give
- *               one fixed order.
+ *                  A report should hold one aggregate per axiom code, but the
+ *                  serializer must not rely on that: a collision must still
+ *                  give one fixed order.
  */
 TEST(SemanticCanonicalSerialization,
      AggregatesWithSameAxiomCodeAndUnequalPayloadAreOrderedDeterministically)
@@ -459,8 +461,9 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that two completeness results with the same map id but
- *               different payloads serialize identically in either input order.
+ * @brief           Checks that two completeness results with the same map id
+ *                  but different payloads serialize identically in either input
+ *                  order.
  */
 TEST(
     SemanticCanonicalSerialization,
@@ -485,9 +488,9 @@ TEST(
 }
 
 /*!
- * @brief        Checks that two map snapshots with the same map id but
- *               different rooms serialize identically in either input order,
- *               for both the full-geometry and topology-only forms.
+ * @brief           Checks that two map snapshots with the same map id but
+ *                  different rooms serialize identically in either input order,
+ *                  for both the full-geometry and topology-only forms.
  */
 TEST(SemanticCanonicalSerialization,
      MapSnapshotsWithSameMapIdAndUnequalPayloadAreOrderedDeterministically)
@@ -519,11 +522,13 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that two wall records that differ only in geometry give
- *               identical topology-only text but different full-geometry text.
+ * @brief           Checks that two wall records that differ only in geometry
+ *                  give identical topology-only text but different
+ *                  full-geometry text.
  *
- *               This shows that the topology-only order depends on no geometric
- *               field at all, not only on the fields that exist today.
+ *                  This shows that the topology-only order depends on no
+ *                  geometric field at all, not only on the fields that exist
+ *                  today.
  */
 TEST(SemanticCanonicalSerialization,
      GeometryOnlyPerturbationNeverChangesTopologyOnlyBytesForCollidingRecords)
@@ -559,13 +564,13 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that every enum name function returns the readable name
- *               for a known value and a fixed UNKNOWN_ name for an out-of-range
- *               value.
+ * @brief           Checks that every enum name function returns the readable
+ *                  name for a known value and a fixed UNKNOWN_ name for an
+ *                  out-of-range value.
  *
- *               Covers AxiomCode, AxiomResult, AxiomClass, ReasonCode,
- *               EntityKind, UnavailableReason, CapabilityLevel and
- *               MissingProofOwner.
+ *                  Covers AxiomCode, AxiomResult, AxiomClass, ReasonCode,
+ *                  EntityKind, UnavailableReason, CapabilityLevel and
+ *                  MissingProofOwner.
  */
 TEST(SemanticCanonicalSerialization,
      EnumNamesEmitKnownValuesAndStableUnknownSentinel)
@@ -660,11 +665,11 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that the serialized findings carry the readable axiom,
- *               result, classification and reason names.
+ * @brief           Checks that the serialized findings carry the readable
+ *                  axiom, result, classification and reason names.
  *
- *               The names must appear in the serialized text itself, not only
- *               through the EnumNames.h functions.
+ *                  The names must appear in the serialized text itself, not
+ *                  only through the EnumNames.h functions.
  */
 TEST(SemanticCanonicalSerialization, SerializedFindingsCarryReadableNameFields)
 {
@@ -687,14 +692,14 @@ TEST(SemanticCanonicalSerialization, SerializedFindingsCarryReadableNameFields)
 }
 
 /*!
- * @brief        Checks that open-passage hypotheses that differ only in
- *               geometry give identical topology-only text, which omits the
- *               geometry fields, and different full-geometry text.
+ * @brief           Checks that open-passage hypotheses that differ only in
+ *                  geometry give identical topology-only text, which omits the
+ *                  geometry fields, and different full-geometry text.
  *
- *               Regression test: the serializer once wrote
- *               openingCentroid_world_m, openingRadius_m and heightSpan_m in
- *               the topology-only form too, and the sort broke ties on
- *               openingCentroid_world_m, so that form depended on geometry.
+ *                  Regression test: the serializer once wrote
+ *                  openingCentroid_world_m, openingRadius_m and heightSpan_m in
+ *                  the topology-only form too, and the sort broke ties on
+ *                  openingCentroid_world_m, so that form depended on geometry.
  */
 TEST(SemanticCanonicalSerialization,
      OpenPassageHypothesisGeometryOnlyDriftNeverChangesTopologyOnlyBytes)
@@ -736,14 +741,14 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that open-passage and unresolved-wall hypothesis records
- *               that differ only in counters the sort once ignored serialize
- *               identically in either input order.
+ * @brief           Checks that open-passage and unresolved-wall hypothesis
+ *                  records that differ only in counters the sort once ignored
+ *                  serialize identically in either input order.
  *
- *               Regression test: the sort once compared only supportingWallRef
- *               and openingCentroid_world_m of open-passage hypotheses, and
- *               ignored cloudPointCount and observationCount of unresolved-wall
- *               hypotheses.
+ *                  Regression test: the sort once compared only
+ *                  supportingWallRef and openingCentroid_world_m of
+ *                  open-passage hypotheses, and ignored cloudPointCount and
+ *                  observationCount of unresolved-wall hypotheses.
  */
 TEST(SemanticCanonicalSerialization,
      HypothesisRecordsWithUnequalIgnoredFieldsAreOrderedDeterministically)
@@ -782,8 +787,9 @@ TEST(SemanticCanonicalSerialization,
 }
 
 /*!
- * @brief        Checks that marking a room as previously visited changes
- *               neither the topology-only nor the full-geometry snapshot text.
+ * @brief           Checks that marking a room as previously visited changes
+ *                  neither the topology-only nor the full-geometry snapshot
+ *                  text.
  */
 TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
 {

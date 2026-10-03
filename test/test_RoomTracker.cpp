@@ -84,8 +84,8 @@ semantic::TrackingStatusInput nominalTracking()
  * ------------------------------------------------------------------------ */
 
 /*!
- * @brief        Checks that a tracking-lost event moves a confirmed room to the
- *               lost state unconditionally.
+ * @brief           Checks that a tracking-lost event moves a confirmed room to
+ *                  the lost state unconditionally.
  */
 TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromConfirmedRoom)
 {
@@ -122,8 +122,8 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromConfirmedRoom)
 }
 
 /*!
- * @brief        Checks that a tracking-lost event moves a crossing passage to
- *               the lost state unconditionally.
+ * @brief           Checks that a tracking-lost event moves a crossing passage
+ *                  to the lost state unconditionally.
  */
 TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromCrossingPassage)
 {
@@ -176,8 +176,8 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromCrossingPassage)
 }
 
 /*!
- * @brief        Checks that the lost timeout event takes the tracker out of the
- *               lost state unconditionally.
+ * @brief           Checks that the lost timeout event takes the tracker out of
+ *                  the lost state unconditionally.
  */
 TEST(RoomTrackerTransitions, UnconditionalLostTimeout)
 {
@@ -222,8 +222,8 @@ TEST(RoomTrackerTransitions, UnconditionalLostTimeout)
 }
 
 /*!
- * @brief        Checks that the reacquire timeout event takes the tracker out
- *               of reacquiring unconditionally.
+ * @brief           Checks that the reacquire timeout event takes the tracker
+ *                  out of reacquiring unconditionally.
  */
 TEST(RoomTrackerTransitions, UnconditionalReacquireTimeout)
 {
@@ -284,8 +284,8 @@ TEST(RoomTrackerTransitions, UnconditionalReacquireTimeout)
  * ------------------------------------------------------------------------ */
 
 /*!
- * @brief        Checks that the first-room event confirms a room when its guard
- *               holds.
+ * @brief           Checks that the first-room event confirms a room when its
+ *                  guard holds.
  */
 TEST(RoomTrackerTransitions, GuardedFirstRoomConfirmed)
 {
@@ -339,8 +339,8 @@ TEST(RoomTrackerTransitions, GuardedFirstRoomConfirmed)
 }
 
 /*!
- * @brief        Checks that the passage-crossing event fires when its guard
- *               holds and is rejected otherwise.
+ * @brief           Checks that the passage-crossing event fires when its guard
+ *                  holds and is rejected otherwise.
  */
 TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
 {
@@ -499,8 +499,8 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
 }
 
 /*!
- * @brief        Checks that the traversal-complete event fires when its guard
- *               holds and is rejected otherwise.
+ * @brief           Checks that the traversal-complete event fires when its
+ *                  guard holds and is rejected otherwise.
  */
 TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
 {
@@ -657,8 +657,8 @@ TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
 }
 
 /*!
- * @brief        Checks that the room-reacquired event fires when its guard
- *               holds and is rejected otherwise.
+ * @brief           Checks that the room-reacquired event fires when its guard
+ *                  holds and is rejected otherwise.
  */
 TEST(RoomTrackerTransitions, GuardedRoomReacquired)
 {
@@ -759,8 +759,8 @@ TEST(RoomTrackerTransitions, GuardedRoomReacquired)
 }
 
 /*!
- * @brief        Checks that the new-map event with a room match fires when its
- *               guard holds and is rejected otherwise.
+ * @brief           Checks that the new-map event with a room match fires when
+ *                  its guard holds and is rejected otherwise.
  */
 TEST(RoomTrackerTransitions, GuardedNewMapWithRoomMatch)
 {
@@ -845,8 +845,8 @@ TEST(RoomTrackerTransitions, GuardedNewMapWithRoomMatch)
 }
 
 /*!
- * @brief        Checks that the verified-match-to-last-room event fires when
- *               its guard holds and is rejected otherwise.
+ * @brief           Checks that the verified-match-to-last-room event fires when
+ *                  its guard holds and is rejected otherwise.
  */
 TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
 {
@@ -954,8 +954,8 @@ TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
  * ------------------------------------------------------------------------ */
 
 /*!
- * @brief        Checks that events with no table row for the current state are
- *               rejected and leave the state unchanged.
+ * @brief           Checks that events with no table row for the current state
+ *                  are rejected and leave the state unchanged.
  */
 TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
 {
@@ -1158,8 +1158,8 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
  * ------------------------------------------------------------------------ */
 
 /*!
- * @brief        Checks that step() confirms a crossing after dwell time along a
- *               trajectory with position jitter.
+ * @brief           Checks that step() confirms a crossing after dwell time
+ *                  along a trajectory with position jitter.
  */
 TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 {
@@ -1258,8 +1258,8 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 }
 
 /*!
- * @brief        Checks that a failed guard resets the accumulated dwell time
- *               instead of letting it carry over.
+ * @brief           Checks that a failed guard resets the accumulated dwell time
+ *                  instead of letting it carry over.
  */
 TEST(RoomTrackerStep, HysteresisResetsDwellOnGuardFailure)
 {
@@ -1325,8 +1325,8 @@ TEST(RoomTrackerStep, HysteresisResetsDwellOnGuardFailure)
 }
 
 /*!
- * @brief        Checks that invalid crossing guard inputs make step() reject
- *               the crossing instead of accepting it.
+ * @brief           Checks that invalid crossing guard inputs make step() reject
+ *                  the crossing instead of accepting it.
  */
 TEST(RoomTrackerStep, InvalidCrossingGuardsFailClosed)
 {
@@ -1364,8 +1364,8 @@ TEST(RoomTrackerStep, InvalidCrossingGuardsFailClosed)
 }
 
 /*!
- * @brief        Checks that seeing both sides and dwell time accumulate across
- *               step() cycles until the crossing completes.
+ * @brief           Checks that seeing both sides and dwell time accumulate
+ *                  across step() cycles until the crossing completes.
  */
 TEST(RoomTrackerStep, BothSidesAndDwellAccumulateAcrossCycles)
 {
@@ -1431,8 +1431,8 @@ TEST(RoomTrackerStep, BothSidesAndDwellAccumulateAcrossCycles)
 }
 
 /*!
- * @brief        Checks that a timestamp discontinuity in steady domain input
- *               does not change the tracker state.
+ * @brief           Checks that a timestamp discontinuity in steady domain input
+ *                  does not change the tracker state.
  */
 TEST(RoomTrackerStep, SteadyDomainInputIgnoresTimestampDiscontinuity)
 {
@@ -1479,8 +1479,8 @@ TEST(RoomTrackerStep, SteadyDomainInputIgnoresTimestampDiscontinuity)
 }
 
 /*!
- * @brief        Checks that a second step while tracking is still lost adds no
- *               new event: one tracking-loss episode is handled once.
+ * @brief           Checks that a second step while tracking is still lost adds
+ *                  no new event: one tracking-loss episode is handled once.
  */
 TEST(RoomTrackerStep, TrackingLossIsConsumedOncePerEpisode)
 {
@@ -1527,9 +1527,9 @@ TEST(RoomTrackerStep, TrackingLossIsConsumedOncePerEpisode)
 }
 
 /*!
- * @brief        Checks that staying lost past the lost timeout moves the
- *               tracker from lost-with-last-room to lost-without-room, as an
- *               accepted event.
+ * @brief           Checks that staying lost past the lost timeout moves the
+ *                  tracker from lost-with-last-room to lost-without-room, as an
+ *                  accepted event.
  */
 TEST(RoomTrackerStep, TimeoutDecaysToLostWithoutRoom)
 {
@@ -1581,8 +1581,8 @@ TEST(RoomTrackerStep, TimeoutDecaysToLostWithoutRoom)
 }
 
 /*!
- * @brief        Checks that a tracking-loss event from the unknown state is
- *               rejected as undefined.
+ * @brief           Checks that a tracking-loss event from the unknown state is
+ *                  rejected as undefined.
  */
 TEST(RoomTrackerStep, UndefinedTrackingLossFromUnknownIsRejected)
 {
@@ -1612,8 +1612,8 @@ TEST(RoomTrackerStep, UndefinedTrackingLossFromUnknownIsRejected)
 }
 
 /*!
- * @brief        Checks that an unavailable verification result can neither
- *               confirm a room nor change tracker state.
+ * @brief           Checks that an unavailable verification result can neither
+ *                  confirm a room nor change tracker state.
  */
 TEST(RoomTrackerStep, UnavailableVerificationCannotConfirmOrMutateState)
 {
@@ -1637,8 +1637,8 @@ TEST(RoomTrackerStep, UnavailableVerificationCannotConfirmOrMutateState)
 }
 
 /*!
- * @brief        Checks that a malformed pass verdict is treated as a failure
- *               and does not confirm a room.
+ * @brief           Checks that a malformed pass verdict is treated as a failure
+ *                  and does not confirm a room.
  */
 TEST(RoomTrackerStep, MalformedPassVerdictFailsClosed)
 {
@@ -1676,9 +1676,10 @@ TEST(RoomTrackerStep, MalformedPassVerdictFailsClosed)
 }
 
 /*!
- * @brief        Checks that failed verifications in a new map keep the tracker
- *               reacquiring for the configured number of retries, after which a
- *               reacquire timeout leaves it lost without a room.
+ * @brief           Checks that failed verifications in a new map keep the
+ *                  tracker reacquiring for the configured number of retries,
+ *                  after which a reacquire timeout leaves it lost without a
+ *                  room.
  */
 TEST(RoomTrackerStep, ReacquireRetriesThenTimeouts)
 {

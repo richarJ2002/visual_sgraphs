@@ -20,7 +20,7 @@
  * @file            GeometricCameraStatus.h
  *
  * @brief           Declares the status returned by every GeometricCamera
- * operation.
+ *                  operation.
  */
 
 #ifndef GEOMETRIC_CAMERA_STATUS_H
@@ -38,12 +38,14 @@ namespace geometriccamera
 {
 
 /*!
- * @brief       Result of a GeometricCamera operation. Values are fixed and
- * never reordered.
+ * @brief           Result of a GeometricCamera operation. Values are fixed and
+ *                  never reordered.
  */
 enum class GeometricCameraStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     GEOMETRIC_CAMERA_STATUS_SUCCESS = 0U
 };
 

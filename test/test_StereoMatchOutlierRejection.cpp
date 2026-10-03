@@ -1,7 +1,9 @@
 /*!
- * @file test_StereoMatchOutlierRejection.cpp
- * @brief B3 regression coverage: Frame::computeStereoMatches()'s extracted
- *        outlier-rejection step must not read past an empty match list.
+ * @file            test_StereoMatchOutlierRejection.cpp
+ *
+ * @brief           B3 regression coverage: Frame::computeStereoMatches()'s
+ *                  extracted outlier-rejection step must not read past an empty
+ *                  match list.
  */
 
 #include "StereoMatchOutlierRejection.h"
@@ -17,9 +19,9 @@ namespace core
 {
 
 /*!
- * @brief        Checks that outlier rejection on an empty match list returns
- *               success and leaves the right-image coordinates and depths
- *               unchanged, instead of reading past the end of the list.
+ * @brief           Checks that outlier rejection on an empty match list returns
+ *                  success and leaves the right-image coordinates and depths
+ *                  unchanged, instead of reading past the end of the list.
  */
 TEST(StereoMatchOutlierRejection, NoOpsOnAnEmptyMatchList)
 {
@@ -39,9 +41,9 @@ TEST(StereoMatchOutlierRejection, NoOpsOnAnEmptyMatchList)
 }
 
 /*!
- * @brief        Checks that a stereo match whose distance is far above the
- *               median has its right-image coordinate and depth set to -1,
- *               while the close matches keep theirs.
+ * @brief           Checks that a stereo match whose distance is far above the
+ *                  median has its right-image coordinate and depth set to -1,
+ *                  while the close matches keep theirs.
  */
 TEST(StereoMatchOutlierRejection, RejectsMatchesFarAboveTheMedianDistance)
 {

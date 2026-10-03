@@ -48,9 +48,9 @@ namespace settings
 {
 
 /*!
- * @brief        Reads one integer parameter: the readParameter<int>()
- *               specialization whose contract is on its declaration in
- *               Settings.h.
+ * @brief           Reads one integer parameter: the readParameter<int>()
+ *                  specialization whose contract is on its declaration in
+ *                  Settings.h.
  */
 template <>
 SettingsStatus Settings::readParameter<int>(cv::FileStorage   &storage_in,

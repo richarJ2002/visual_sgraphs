@@ -1,22 +1,26 @@
 /*!
- * @file SemanticFixtures.h
- * @brief Deterministic, ROS/Gazebo-free builders for semantic-axiom test
- *        fixtures.
+ * @file            SemanticFixtures.h
  *
- * Several existing test files (test_WallAdmission.cpp,
- * test_RoomContextPersist.cpp, test_room_tracker_integration.cpp) each
- * hand-rolled their own local copy of "build a wall geometric::Plane from a
- * synthetic grid cloud" / "build a KeyFrame at a world camera center" helpers.
- * This header canonicalizes those patterns so later semantic-axiom-plan phases
- * (frame equivariance, passage endpoints, wall ownership, non-convex
- * boundaries) build fixtures the same way instead of re-deriving construction
- * order and required setters from scratch.
+ * @brief           Deterministic, ROS/Gazebo-free builders for semantic-axiom
+ *                  test
+ *                         fixtures.
  *
- * Every builder here constructs plain, in-memory model objects
- * (`Atlas`, `Map`, `geometric::Plane`, `semantic::Room`, `semantic::Passage`,
- * `semantic::Floor`, `KeyFrame`)
- * with no ROS node, message, or Gazebo dependency, so these fixtures run in a
- * bare GTest binary.
+ *                  Several existing test files (test_WallAdmission.cpp,
+ *                  test_RoomContextPersist.cpp,
+ *                  test_room_tracker_integration.cpp) each hand-rolled their
+ *                  own local copy of "build a wall geometric::Plane from a
+ *                  synthetic grid cloud" / "build a KeyFrame at a world camera
+ *                  center" helpers. This header canonicalizes those patterns so
+ *                  later semantic-axiom-plan phases (frame equivariance,
+ *                  passage endpoints, wall ownership, non-convex boundaries)
+ *                  build fixtures the same way instead of re-deriving
+ *                  construction order and required setters from scratch.
+ *
+ *                  Every builder here constructs plain, in-memory model objects
+ *                  (`Atlas`, `Map`, `geometric::Plane`, `semantic::Room`,
+ *                  `semantic::Passage`, `semantic::Floor`, `KeyFrame`) with no
+ *                  ROS node, message, or Gazebo dependency, so these fixtures
+ *                  run in a bare GTest binary.
  */
 
 #pragma once
@@ -47,21 +51,32 @@ namespace test
 {
 
 /*!
- * @brief   Builds a deterministic, exactly-on-plane rectangular grid point
- *          cloud spanning [-halfU, halfU] along axisU_world and
- *          [-halfV, halfV] along axisV_world, centered on
- *          gridCentroid_world_m_in.
+ * @brief           Builds a deterministic, exactly-on-plane rectangular grid
+ *                  point cloud spanning [-halfU, halfU] along axisU_world and
+ *                  [-halfV, halfV] along axisV_world, centered on
+ *                  gridCentroid_world_m_in.
  *
- * @param   gridCentroid_world_m_in Grid center, world frame, meters.
- * @param   axisU_world_in      Unit in-plane axis; caller ensures orthogonality
- *                               with axisV_world_in.
- * @param   axisV_world_in      Unit in-plane axis; caller ensures orthogonality
- *                               with axisU_world_in.
- * @param   halfU_m_in          Half-extent along axisU_world_in, meters.
- * @param   halfV_m_in          Half-extent along axisV_world_in, meters.
- * @param   stepsPerSide_in     Grid points per side (>= 2).
+ * @param[in]       gridCentroid_world_m_in
+ *                  Grid center, world frame, meters.
  *
- * @return  A populated, owned point cloud; never null.
+ * @param[in]       axisU_world_in
+ *                  Unit in-plane axis; caller ensures orthogonality with
+ *                  axisV_world_in.
+ *
+ * @param[in]       axisV_world_in
+ *                  Unit in-plane axis; caller ensures orthogonality with
+ *                  axisU_world_in.
+ *
+ * @param[in]       halfU_m_in
+ *                  Half-extent along axisU_world_in, meters.
+ *
+ * @param[in]       halfV_m_in
+ *                  Half-extent along axisV_world_in, meters.
+ *
+ * @param[in]       stepsPerSide_in
+ *                  Grid points per side (>= 2).
+ *
+ * @return          A populated, owned point cloud; never null.
  */
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
     makeGridCloud(const Eigen::Vector3d &gridCentroid_world_m_in,
@@ -72,28 +87,47 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
                   int                    stepsPerSide_in = 20);
 
 /*!
- * @brief   Constructs a wall geometric::Plane with a genuine,
- * production-computed geometry snapshot: a flat grid cloud fed through the real
- *          geometric::Plane::updateSizeOfPlane() path (the same function
- * wall-admission and ownership resolvers read from), rather than hand-setting
- *          finite-extent fields.
+ * @brief           Constructs a wall geometric::Plane with a genuine,
+ *                  production-computed geometry snapshot: a flat grid cloud fed
+ *                  through the real
+ *                           geometric::Plane::updateSizeOfPlane() path (the
+ *                           same function
+ *                  wall-admission and ownership resolvers read from), rather
+ *                  than hand-setting
+ *                           finite-extent fields.
  *
- * The caller owns wall_inout's lifetime; this function only mutates it and
- * registers it as a map plane candidate is left to the caller
- * (Map::AddMapPlane), since some tests intentionally exercise unregistered
- * planes.
+ *                  The caller owns wall_inout's lifetime; this function only
+ *                  mutates it and registers it as a map plane candidate is left
+ *                  to the caller (Map::AddMapPlane), since some tests
+ *                  intentionally exercise unregistered planes.
  *
- * @param   wall_inout          geometric::Plane to initialize; any prior state
- * is overwritten.
- * @param   id_in               geometric::Plane id.
- * @param   p_map_in            Owning map; non-owning, must outlive wall_inout.
- * @param   wallEquation_world_in   geometric::Plane equation (nx, ny, nz, d),
- * world frame.
- * @param   axisU_world_in      In-plane grid axis U, world frame, unit length.
- * @param   axisV_world_in      In-plane grid axis V, world frame, unit length.
- * @param   halfU_m_in          Half-extent along axisU_world_in, meters.
- * @param   halfV_m_in          Half-extent along axisV_world_in, meters.
- * @param   wallCentroid_world_m_in Grid/plane centroid, world frame, meters.
+ * @param[in,out]   wall_inout
+ *                  geometric::Plane to initialize; any prior state is
+ *                  overwritten.
+ *
+ * @param[in]       id_in
+ *                  geometric::Plane id.
+ *
+ * @param[in]       p_map_in
+ *                  Owning map; non-owning, must outlive wall_inout.
+ *
+ * @param[in]       wallEquation_world_in
+ *                  geometric::Plane equation (nx, ny, nz, d), world frame.
+ *
+ * @param[in]       axisU_world_in
+ *                  In-plane grid axis U, world frame, unit length.
+ *
+ * @param[in]       axisV_world_in
+ *                  In-plane grid axis V, world frame, unit length.
+ *
+ * @param[in]       halfU_m_in
+ *                  Half-extent along axisU_world_in, meters.
+ *
+ * @param[in]       halfV_m_in
+ *                  Half-extent along axisV_world_in, meters.
+ *
+ * @param[in]       wallCentroid_world_m_in
+ *                  Grid/plane centroid, world frame, meters.
  */
 void makeWallPlane(
     geometric::Plane      &wall_inout,
@@ -107,20 +141,31 @@ void makeWallPlane(
     const Eigen::Vector3d &wallCentroid_world_m_in = Eigen::Vector3d::Zero());
 
 /*!
- * @brief   Constructs a ground geometric::Plane from a flat, horizontal grid
- * cloud and refits it through the real production path
- *          (GeoSemHelpers::refitMappedPlaneFromCloud), matching how a real
- *          ground plane is derived from segmentation evidence.
+ * @brief           Constructs a ground geometric::Plane from a flat, horizontal
+ *                  grid cloud and refits it through the real production path
+ *                           (GeoSemHelpers::refitMappedPlaneFromCloud),
+ *                           matching how a real ground plane is derived from
+ *                           segmentation evidence.
  *
- * @param   ground_inout      geometric::Plane to initialize; any prior state is
- *                             overwritten.
- * @param   id_in             geometric::Plane id.
- * @param   p_map_in          Owning map; non-owning, must outlive ground_inout.
- * @param   halfExtent_m_in   Half-extent of the square ground patch, meters.
- * @param   stepsPerSide_in   Grid points per side (>= 2).
+ * @param[in,out]   ground_inout
+ *                  geometric::Plane to initialize; any prior state is
+ *                  overwritten.
  *
- * @return  Whether the production refit accepted the synthetic cloud (mirrors
- *          GeoSemHelpers::refitMappedPlaneFromCloud's own return contract).
+ * @param[in]       id_in
+ *                  geometric::Plane id.
+ *
+ * @param[in]       p_map_in
+ *                  Owning map; non-owning, must outlive ground_inout.
+ *
+ * @param[in]       halfExtent_m_in
+ *                  Half-extent of the square ground patch, meters.
+ *
+ * @param[in]       stepsPerSide_in
+ *                  Grid points per side (>= 2).
+ *
+ * @return          Whether the production refit accepted the synthetic cloud
+ *                  (mirrors GeoSemHelpers::refitMappedPlaneFromCloud's own
+ *                  return contract).
  */
 bool makeGroundPlane(geometric::Plane &ground_inout,
                      int               id_in,
@@ -129,17 +174,28 @@ bool makeGroundPlane(geometric::Plane &ground_inout,
                      int               stepsPerSide_in = 5);
 
 /*!
- * @brief   Constructs a minimal, valid semantic::Room bound to one wall face.
+ * @brief           Constructs a minimal, valid semantic::Room bound to one wall
+ *                  face.
  *
- * @param   room_inout          semantic::Room to initialize; any prior state is
- *                               overwritten.
- * @param   id_in               semantic::Room id.
- * @param   p_map_in            Owning map; non-owning, must outlive room_inout.
- * @param   p_wall_in           Wall face to attach; may be null for a room
- *                               fixture that only needs a centroid.
- * @param   roomCentroid_world_m_in semantic::Room centroid, world frame,
- * meters.
- * @param   variant_in          semantic::Room semantic variant.
+ * @param[in,out]   room_inout
+ *                  semantic::Room to initialize; any prior state is
+ *                  overwritten.
+ *
+ * @param[in]       id_in
+ *                  semantic::Room id.
+ *
+ * @param[in]       p_map_in
+ *                  Owning map; non-owning, must outlive room_inout.
+ *
+ * @param[in]       p_wall_in
+ *                  Wall face to attach; may be null for a room fixture that
+ *                  only needs a centroid.
+ *
+ * @param[in]       roomCentroid_world_m_in
+ *                  semantic::Room centroid, world frame, meters.
+ *
+ * @param[in]       variant_in
+ *                  semantic::Room semantic variant.
  */
 void makeRoom(
     semantic::Room        &room_inout,
@@ -150,28 +206,46 @@ void makeRoom(
     semantic::Room::RoomVariant variant_in = semantic::Room::RoomVariant::ROOM);
 
 /*!
- * @brief   Constructs a minimal semantic::Passage with one known-side room and,
- *          optionally, a prospective or second confirmed far-side room.
+ * @brief           Constructs a minimal semantic::Passage with one known-side
+ *                  room and, optionally, a prospective or second confirmed
+ *                  far-side room.
  *
- * @param   passage_inout            semantic::Passage to initialize; any prior
- * state is overwritten.
- * @param   id_in                    semantic::Passage id.
- * @param   p_map_in                 Owning map; non-owning, must outlive
- *                                    passage_inout.
- * @param   passageEquation_world_in        Aperture plane equation, world
- * frame.
- * @param   passageCentroid_world_m_in      Aperture centroid, world frame,
- * meters.
- * @param   p_knownSideRoom_in       Known/near-side room; non-owning, may be
- *                                    null.
- * @param   knownSideDirection_world_in Unit direction from the aperture
- *                                    toward the known-side room, world frame.
- * @param   p_farRoom_in             Prospective or confirmed far-side room;
- *                                    non-owning, may be null.
- * @param   passable_in              Whether the passage carries skeleton-
- *                                    crossing (Voxblox) evidence.
- * @param   width_m_in               Aperture width, meters.
- * @param   height_m_in              Aperture height, meters.
+ * @param[in,out]   passage_inout
+ *                  semantic::Passage to initialize; any prior state is
+ *                  overwritten.
+ *
+ * @param[in]       id_in
+ *                  semantic::Passage id.
+ *
+ * @param[in]       p_map_in
+ *                  Owning map; non-owning, must outlive passage_inout.
+ *
+ * @param[in]       passageEquation_world_in
+ *                  Aperture plane equation, world frame.
+ *
+ * @param[in]       passageCentroid_world_m_in
+ *                  Aperture centroid, world frame, meters.
+ *
+ * @param[in]       p_knownSideRoom_in
+ *                  Known/near-side room; non-owning, may be null.
+ *
+ * @param[in]       knownSideDirection_world_in
+ *                  Unit direction from the aperture toward the known-side room,
+ *                  world frame.
+ *
+ * @param[in]       p_farRoom_in
+ *                  Prospective or confirmed far-side room; non-owning, may be
+ *                  null.
+ *
+ * @param[in]       passable_in
+ *                  Whether the passage carries skeleton-crossing (Voxblox)
+ *                  evidence.
+ *
+ * @param[in]       width_m_in
+ *                  Aperture width, meters.
+ *
+ * @param[in]       height_m_in
+ *                  Aperture height, meters.
  */
 void makePassage(semantic::Passage     &passage_inout,
                  int                    id_in,
@@ -186,16 +260,23 @@ void makePassage(semantic::Passage     &passage_inout,
                  double                 height_m_in  = 2.0);
 
 /*!
- * @brief   Constructs a minimal semantic::Floor owning the given rooms.
+ * @brief           Constructs a minimal semantic::Floor owning the given rooms.
  *
- * @param   floor_inout           semantic::Floor to initialize; any prior state
- * is overwritten.
- * @param   id_in                 semantic::Floor id.
- * @param   p_map_in              Owning map; non-owning, must outlive
- *                                 floor_inout.
- * @param   rooms_in              Rooms this floor owns; non-owning pointers.
- * @param   centroidZ_world_m_in  semantic::Floor plane height, world frame,
- * meters.
+ * @param[in,out]   floor_inout
+ *                  semantic::Floor to initialize; any prior state is
+ *                  overwritten.
+ *
+ * @param[in]       id_in
+ *                  semantic::Floor id.
+ *
+ * @param[in]       p_map_in
+ *                  Owning map; non-owning, must outlive floor_inout.
+ *
+ * @param[in]       rooms_in
+ *                  Rooms this floor owns; non-owning pointers.
+ *
+ * @param[in]       centroidZ_world_m_in
+ *                  semantic::Floor plane height, world frame, meters.
  */
 void makeFloor(semantic::Floor                     &floor_inout,
                int                                  id_in,
@@ -204,15 +285,21 @@ void makeFloor(semantic::Floor                     &floor_inout,
                double                               centroidZ_world_m_in = 0.0);
 
 /*!
- * @brief   Constructs a KeyFrame at the given world camera center with
- *          identity orientation, and registers it with p_map_in.
+ * @brief           Constructs a KeyFrame at the given world camera center with
+ *                  identity orientation, and registers it with p_map_in.
  *
- * @param   keyFrame_inout           KeyFrame to initialize; any prior state
- *                                    is overwritten.
- * @param   id_in                    KeyFrame id (KeyFrame::id).
- * @param   p_map_in                 Map to register the KeyFrame with; non-
- *                                    owning, may be null to skip registration.
- * @param   cameraCenter_world_m_in  Camera center, world frame, meters.
+ * @param[in,out]   keyFrame_inout
+ *                  KeyFrame to initialize; any prior state is overwritten.
+ *
+ * @param[in]       id_in
+ *                  KeyFrame id (KeyFrame::id).
+ *
+ * @param[in]       p_map_in
+ *                  Map to register the KeyFrame with; non-owning, may be null
+ *                  to skip registration.
+ *
+ * @param[in]       cameraCenter_world_m_in
+ *                  Camera center, world frame, meters.
  */
 void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
                     unsigned long          id_in,
@@ -220,19 +307,25 @@ void makeKeyFrameAt(KeyFrame              &keyFrame_inout,
                     const Eigen::Vector3f &cameraCenter_world_m_in);
 
 /*!
- * @brief   Builds an arbitrary, non-trivial Sim3 old-world -> new-world
- *          transform (rotation + translation + non-unity scale), for
- *          AX-FRAME-01 equivariance tests: a transform that only permutes
- *          axes or is the identity can hide a missing-field bug that a
- *          generic rotation/scale would catch.
+ * @brief           Builds an arbitrary, non-trivial Sim3 old-world -> new-world
+ *                  transform (rotation + translation + non-unity scale), for
+ *                  AX-FRAME-01 equivariance tests: a transform that only
+ *                  permutes axes or is the identity can hide a missing-field
+ *                  bug that a generic rotation/scale would catch.
  *
- * @param   rotationAngle_rad_in       Rotation angle about rotationAxis_in.
- * @param   rotationAxis_in            Rotation axis; normalized internally.
- * @param   correctionTranslation_world_m_in     Translation applied in the
- * new-world frame, meters.
- * @param   scale_in                   Uniform scale; must be > 0.
+ * @param[in]       rotationAngle_rad_in
+ *                  Rotation angle about rotationAxis_in.
  *
- * @return  The requested old-world -> new-world Sim3 transform.
+ * @param[in]       rotationAxis_in
+ *                  Rotation axis; normalized internally.
+ *
+ * @param[in]       correctionTranslation_world_m_in
+ *                  Translation applied in the new-world frame, meters.
+ *
+ * @param[in]       scale_in
+ *                  Uniform scale; must be > 0.
+ *
+ * @return          The requested old-world -> new-world Sim3 transform.
  */
 g2o::Sim3 makeNonTrivialSim3(
     double                 rotationAngle_rad_in = 0.4,

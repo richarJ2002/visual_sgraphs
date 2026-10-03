@@ -49,43 +49,45 @@ namespace utils
 namespace utils
 {
 /*!
- * @brief        Median camera-to-plane side evidence for a mapped plane.
+ * @brief           Median camera-to-plane side evidence for a mapped plane.
  */
 struct ObservationSideEvidence
 {
     /*!
-     * @brief        Median signed camera-to-plane distance in metres, or no
-     *               value when the observations do not establish a side.
+     * @brief           Median signed camera-to-plane distance in metres, or no
+     *                  value when the observations do not establish a side.
      */
     std::optional<double> medianSignedDistance_m;
     /*!
-     * @brief        True when the observing cameras do not agree on one side of
-     *               the plane, so no side can be chosen.
+     * @brief           True when the observing cameras do not agree on one side
+     *                  of the plane, so no side can be chosen.
      */
     bool                  isAmbiguous{false};
 };
 
 /*!
- * @brief        Estimates which side of a mapped plane observed it.
+ * @brief           Estimates which side of a mapped plane observed it.
  *
- *               Plane coefficients have an arbitrary sign, so the caller
- *               supplies an already normalized and consistently oriented
- *               equation. The median camera-to-plane distance rejects
- *               isolated poses produced during relocalization.
- *               Observations too close to the surface do not provide
- *               reliable side evidence.
+ *                  Plane coefficients have an arbitrary sign, so the caller
+ *                  supplies an already normalized and consistently oriented
+ *                  equation. The median camera-to-plane distance rejects
+ *                  isolated poses produced during relocalization.
+ *                  Observations too close to the surface do not provide
+ *                  reliable side evidence.
  *
- * @param[in]    p_plane_in
- *               Plane whose observing keyframes provide the camera
- *               positions.
- * @param[in]    planeEquation_world_in
- *               Normalized plane equation expressed in the active map
- *               frame.
+ * @param[in]       p_plane_in
+ *                  Plane whose observing keyframes provide the camera
+ *                  positions.
  *
- * @param[out] medianObservationSide_world_m_out Median signed camera distance
- * in metres, or no value when the available observations do not establish a
- * side.
- * @return UTILS_STATUS_SUCCESS.
+ * @param[in]       planeEquation_world_in
+ *                  Normalized plane equation expressed in the active map
+ *                  frame.
+ *
+ * @param[out]      medianObservationSide_world_m_out
+ *                  Median signed camera distance in metres, or no value when
+ *                  the available observations do not establish a side.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
  */
 [[nodiscard]] UtilsStatus getMedianObservationSide_world_m(
     geometric::Plane        *p_plane_in,
@@ -93,50 +95,55 @@ struct ObservationSideEvidence
     ObservationSideEvidence &medianObservationSide_world_m_out);
 
 /*!
- * @brief Finite ranges of a cloud projected onto two plane-tangent axes.
+ * @brief           Finite ranges of a cloud projected onto two plane-tangent
+ *                  axes.
  */
 struct ProjectedPlaneBounds
 {
     /*!
-     * @brief        Smallest coordinate along the first tangent, in metres; the
-     *               largest double until a finite point is seen.
+     * @brief           Smallest coordinate along the first tangent, in metres;
+     *                  the largest double until a finite point is seen.
      */
     double minimumU_m = std::numeric_limits<double>::max();
     /*!
-     * @brief        Largest coordinate along the first tangent, in metres; the
-     *               lowest double until a finite point is seen.
+     * @brief           Largest coordinate along the first tangent, in metres;
+     *                  the lowest double until a finite point is seen.
      */
     double maximumU_m = std::numeric_limits<double>::lowest();
     /*!
-     * @brief        Smallest coordinate along the second tangent, in metres;
-     *               the largest double until a finite point is seen.
+     * @brief           Smallest coordinate along the second tangent, in metres;
+     *                  the largest double until a finite point is seen.
      */
     double minimumV_m = std::numeric_limits<double>::max();
     /*!
-     * @brief        Largest coordinate along the second tangent, in metres; the
-     *               lowest double until a finite point is seen.
+     * @brief           Largest coordinate along the second tangent, in metres;
+     *                  the lowest double until a finite point is seen.
      */
     double maximumV_m = std::numeric_limits<double>::lowest();
     /*!
-     * @brief        True once at least one finite point has set the bounds.
+     * @brief           True once at least one finite point has set the bounds.
      */
     bool   isValid = false;
 };
 
 /*!
- * @brief        Projects a finite plane cloud onto a shared in-plane
- *               coordinate system.
+ * @brief           Projects a finite plane cloud onto a shared in-plane
+ *                  coordinate system.
  *
- * @param[in]    p_planeCloud_in
- *               Plane support cloud expressed in the active map frame.
- * @param[in]    tangentU_world_in
- *               First unit tangent of the common plane.
- * @param[in]    tangentV_world_in
- *               Second unit tangent of the common plane.
+ * @param[in]       p_planeCloud_in
+ *                  Plane support cloud expressed in the active map frame.
  *
- * @param[out] planeBounds_out Finite projected bounds, or invalid bounds for an
- * empty cloud.
- * @return UTILS_STATUS_SUCCESS.
+ * @param[in]       tangentU_world_in
+ *                  First unit tangent of the common plane.
+ *
+ * @param[in]       tangentV_world_in
+ *                  Second unit tangent of the common plane.
+ *
+ * @param[out]      planeBounds_out
+ *                  Finite projected bounds, or invalid bounds for an empty
+ *                  cloud.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
  */
 [[nodiscard]] UtilsStatus projectPlaneBounds(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_planeCloud_in,
@@ -145,24 +152,30 @@ struct ProjectedPlaneBounds
     ProjectedPlaneBounds                               &planeBounds_out);
 
 /*!
- * @brief        Tests whether two finite clouds overlap or extend one
- *               another along the same plane.
+ * @brief           Tests whether two finite clouds overlap or extend one
+ *                  another along the same plane.
  *
- * @param[in]    p_firstCloud_in
- *               First finite plane support cloud.
- * @param[in]    p_secondCloud_in
- *               Second finite plane support cloud.
- * @param[in]    commonNormal_world_in
- *               Unit normal shared by the already equation-compatible
- *               planes.
- * @param[in]    maximumInPlaneGap_m_in
- *               Maximum permitted extension gap along either tangent.
- * @param[in]    minimumOrthogonalOverlap_m_in
- *               Required overlap along the other tangent.
+ * @param[in]       p_firstCloud_in
+ *                  First finite plane support cloud.
  *
- * @param[out] areCompatible_out True when the clouds overlap or form adjacent
- * finite extensions.
- * @return UTILS_STATUS_SUCCESS.
+ * @param[in]       p_secondCloud_in
+ *                  Second finite plane support cloud.
+ *
+ * @param[in]       commonNormal_world_in
+ *                  Unit normal shared by the already equation-compatible
+ *                  planes.
+ *
+ * @param[in]       maximumInPlaneGap_m_in
+ *                  Maximum permitted extension gap along either tangent.
+ *
+ * @param[in]       minimumOrthogonalOverlap_m_in
+ *                  Required overlap along the other tangent.
+ *
+ * @param[out]      areCompatible_out
+ *                  True when the clouds overlap or form adjacent finite
+ *                  extensions.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
  */
 [[nodiscard]] UtilsStatus finiteWallExtentsAreCompatible(
     const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &p_firstCloud_in,
@@ -173,30 +186,37 @@ struct ProjectedPlaneBounds
     bool        &areCompatible_out);
 
 /*!
- * @brief        Tests whether a segment traverses a passable passage
- *               aperture.
+ * @brief           Tests whether a segment traverses a passable passage
+ *                  aperture.
  *
- *               Mirrors the far-side wall-routing crossing test used by
- *               the semantic manager so that the merge path can apply
- *               the same rule when imported walls are copied into a
- *               retained room.
+ *                  Mirrors the far-side wall-routing crossing test used by
+ *                  the semantic manager so that the merge path can apply
+ *                  the same rule when imported walls are copied into a
+ *                  retained room.
  *
- * @param[in]    segmentStart_world_m_in
- *               First endpoint in the active map frame.
- * @param[in]    segmentEnd_world_m_in
- *               Second endpoint in the active map frame.
- * @param[in]    p_passage_in
- *               Passable passage defining the finite aperture.
- * @param[in]    groundNormal_world_in
- *               Unit ground normal in the active map frame.
- * @param[in]    openingMargin_m_in
- *               Aperture expansion used for noisy geometry.
- * @param[in]    minimumSideDistance_m_in
- *               Required endpoint distance from plane.
+ * @param[in]       segmentStart_world_m_in
+ *                  First endpoint in the active map frame.
  *
- * @param[out] crossesOpening_out True only when the segment crosses inside the
- * finite opening.
- * @return UTILS_STATUS_SUCCESS.
+ * @param[in]       segmentEnd_world_m_in
+ *                  Second endpoint in the active map frame.
+ *
+ * @param[in]       p_passage_in
+ *                  Passable passage defining the finite aperture.
+ *
+ * @param[in]       groundNormal_world_in
+ *                  Unit ground normal in the active map frame.
+ *
+ * @param[in]       openingMargin_m_in
+ *                  Aperture expansion used for noisy geometry.
+ *
+ * @param[in]       minimumSideDistance_m_in
+ *                  Required endpoint distance from plane.
+ *
+ * @param[out]      crossesOpening_out
+ *                  True only when the segment crosses inside the finite
+ *                  opening.
+ *
+ * @return          UTILS_STATUS_SUCCESS.
  */
 [[nodiscard]] UtilsStatus crossesPassablePassageOpening(
     const Eigen::Vector3d              &segmentStart_world_m_in,

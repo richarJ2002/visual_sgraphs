@@ -20,11 +20,11 @@
  * @file            SemanticReportCache.h
  *
  * @brief           Declares SemanticReportCache, the mutex-protected,
- *                   copied-value cache SemanticsManager owns to publish the
- *                   latest complete semantic evaluation cycle to any reader
- *                   thread (e.g. a ROS service callback) without touching
- *                   the semantic-update lock or exposing any live
- *                   Atlas/Map/Room/Wall/Passage pointer.
+ *                  copied-value cache SemanticsManager owns to publish the
+ *                  latest complete semantic evaluation cycle to any reader
+ *                  thread (e.g. a ROS service callback) without touching the
+ *                  semantic-update lock or exposing any live
+ *                  Atlas/Map/Room/Wall/Passage pointer.
  */
 
 #ifndef SEMANTIC_REPORT_CACHE_H
@@ -43,14 +43,14 @@ namespace semantic
 {
 
 /*!
- * @brief       Thread-safe, copied-value cache of the latest complete
- *              semantic evaluation cycle.
+ * @brief           Thread-safe, copied-value cache of the latest complete
+ *                  semantic evaluation cycle.
  *
- *              Every accessor holds \c mMutex only long enough to copy
- *              state in or out, never across a caller's own processing;
- *              every returned SemanticReportCacheEntry is an independent
- *              value with no aliasing into the cache's own storage or into
- *              any production model object.
+ *                  Every accessor holds \c mMutex only long enough to copy
+ *                  state in or out, never across a caller's own processing;
+ *                  every returned SemanticReportCacheEntry is an independent
+ *                  value with no aliasing into the cache's own storage or into
+ *                  any production model object.
  */
 class SemanticReportCache
 {
@@ -58,37 +58,49 @@ class SemanticReportCache
     SemanticReportCache() = default;
 
     /*!
-     * @brief       Records one complete semantic transaction cycle's
-     *              result.
+     * @brief           Records one complete semantic transaction cycle's
+     *                  result.
      *
-     *              \c geometryRevision on the stored entry increments by
-     *              exactly one relative to the entry this call replaces
-     *              only when \p canonicalFullGeometryDigest_in differs
-     *              from that prior entry's digest (or is the very first
-     *              update, in which case it starts at 0); a cycle with an
-     *              unchanged full-geometry digest leaves the counter
-     *              unchanged, so callers can detect genuine geometry drift
-     *              without re-parsing the digest strings themselves.
+     *                  \c geometryRevision on the stored entry increments by
+     *                  exactly one relative to the entry this call replaces
+     *                  only when \p canonicalFullGeometryDigest_in differs
+     *                  from that prior entry's digest (or is the very first
+     *                  update, in which case it starts at 0); a cycle with an
+     *                  unchanged full-geometry digest leaves the counter
+     *                  unchanged, so callers can detect genuine geometry drift
+     *                  without re-parsing the digest strings themselves.
      *
-     * @param[in]   snapshot_in                        Complete captured
-     *              snapshot this cycle evaluated.
-     * @param[in]   evaluationReport_in                 Complete evaluation
-     *              output for \p snapshot_in.
-     * @param[in]   completenessResults_in              Complete
-     *              map-completeness shadow results for \p snapshot_in.
-     * @param[in]   semanticCycle_in                    SemanticsManager's
-     *              own transaction cycle counter.
-     * @param[in]   currentMapId_in                     \p snapshot_in's
-     *              current map id, or absent.
-     * @param[in]   mapRevision_in                      Map::GetMapChangeIndex()
-     *              for that map, copied under the semantic lock, or
-     *              absent when \p currentMapId_in is absent.
-     * @param[in]   canonicalTopologyDigest_in           Digest of \p
-     *              snapshot_in's canonical topology-only serialization.
-     * @param[in]   canonicalFullGeometryDigest_in       Digest of \p
-     *              snapshot_in's canonical full-geometry serialization.
-     * @param[in]   evaluationDuration_in                Time spent
-     *              evaluating this cycle.
+     * @param[in]       snapshot_in
+     *                  Complete captured snapshot this cycle evaluated.
+     *
+     * @param[in]       evaluationReport_in
+     *                  Complete evaluation output for \p snapshot_in.
+     *
+     * @param[in]       completenessResults_in
+     *                  Complete map-completeness shadow results for
+     *                  \p snapshot_in.
+     *
+     * @param[in]       semanticCycle_in
+     *                  SemanticsManager's own transaction cycle counter.
+     *
+     * @param[in]       currentMapId_in
+     *                  \p snapshot_in's current map id, or absent.
+     *
+     * @param[in]       mapRevision_in
+     *                  Map::GetMapChangeIndex() for that map, copied under the
+     *                  semantic lock, or absent when \p currentMapId_in is
+     *                  absent.
+     *
+     * @param[in]       canonicalTopologyDigest_in
+     *                  Digest of \p snapshot_in's canonical topology-only
+     *                  serialization.
+     *
+     * @param[in]       canonicalFullGeometryDigest_in
+     *                  Digest of \p snapshot_in's canonical full-geometry
+     *                  serialization.
+     *
+     * @param[in]       evaluationDuration_in
+     *                  Time spent evaluating this cycle.
      */
     [[nodiscard]] SemanticReportCacheStatus
         update(const SemanticGraphSnapshot              &snapshot_in,
@@ -101,33 +113,37 @@ class SemanticReportCache
                const std::string        &canonicalFullGeometryDigest_in,
                std::chrono::milliseconds evaluationDuration_in);
 
-    /*! @brief Returns a copy of the latest cached entry. When
-     *  isAvailable() would return false, returns a default-constructed
-     *  SemanticReportCacheEntry (updateInstant ==
-     *  steady_clock::time_point::min(), every collection empty) rather
-     *  than a null/optional value -- callers must check isAvailable()
-     *  first to distinguish "no update yet" from a genuinely empty-graph
-     *  cycle. */
+    /*!
+     * @brief           Returns a copy of the latest cached entry. When
+     *                  isAvailable() would return false, returns a
+     *                  default-constructed SemanticReportCacheEntry
+     *                  (updateInstant == steady_clock::time_point::min(), every
+     *                  collection empty) rather than a null/optional value --
+     *                  callers must check isAvailable() first to distinguish
+     *                  "no update yet" from a genuinely empty-graph cycle.
+     */
     [[nodiscard]] SemanticReportCacheStatus
         getLatest(SemanticReportCacheEntry &getLatest_out) const;
 
-    /*! @brief True once at least one update() call has completed. */
+    /*!
+     * @brief           True once at least one update() call has completed.
+     */
     [[nodiscard]] SemanticReportCacheStatus
         isAvailable(bool &isAvailable_out) const;
 
   private:
     /*!
-     * @brief        Guards latestEntry and hasCachedReport.
+     * @brief           Guards latestEntry and hasCachedReport.
      */
     mutable std::mutex       cacheMutex;
     /*!
-     * @brief        Copy of the entry stored by the latest update(); guarded by
-     *               cacheMutex.
+     * @brief           Copy of the entry stored by the latest update(); guarded
+     *                  by cacheMutex.
      */
     SemanticReportCacheEntry latestEntry;
     /*!
-     * @brief        True once update() has stored an entry; guarded by
-     *               cacheMutex.
+     * @brief           True once update() has stored an entry; guarded by
+     *                  cacheMutex.
      */
     bool                     hasCachedReport{false};
 };

@@ -33,12 +33,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a Tracking operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a Tracking operation. Values are fixed and never
+ *                  reordered.
  */
 enum class TrackingStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     TRACKING_STATUS_SUCCESS = 0U
 };
 

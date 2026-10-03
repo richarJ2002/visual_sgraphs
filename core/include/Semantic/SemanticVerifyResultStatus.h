@@ -20,7 +20,7 @@
  * @file            SemanticVerifyResultStatus.h
  *
  * @brief           Declares the status returned by every SemanticVerifyResult
- * operation.
+ *                  operation.
  */
 
 #ifndef SEMANTIC_VERIFY_RESULT_STATUS_H
@@ -36,12 +36,14 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a SemanticVerifyResult operation. Values are fixed and
- * never reordered.
+ * @brief           Result of a SemanticVerifyResult operation. Values are fixed
+ *                  and never reordered.
  */
 enum class SemanticVerifyResultStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SEMANTIC_VERIFY_RESULT_STATUS_SUCCESS = 0U
 };
 

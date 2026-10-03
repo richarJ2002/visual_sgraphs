@@ -275,7 +275,7 @@ SemanticsManagerStatus
      * Detect open passages from connected Voxblox skeleton edges which breach
      * finite mapped wall surfaces.
      *
-     * @note        Camera trajectory crossings are deliberately not used.
+     * @note            Camera trajectory crossings are deliberately not used.
      */
     if (detectOpenPassagesFromSkeletonEdges(confirmedWallPlanes) !=
         SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)

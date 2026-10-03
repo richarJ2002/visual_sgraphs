@@ -20,11 +20,10 @@
  * @file            MissionHealthTopologyJson.h
  *
  * @brief           Declares augmentMissionHealthTopologyJsonWithSemantics(),
- *                   the pure function extending
- *                   /vs_graphs/get_mission_health's existing schema-1
- *                   topology_json to schema 2 with copied-cache evaluator
- *                   additions.
- *                   Pure and ROS-free so it is directly unit-testable.
+ *                  the pure function extending /vs_graphs/get_mission_health's
+ *                  existing schema-1 topology_json to schema 2 with
+ *                  copied-cache evaluator additions. Pure and ROS-free so it is
+ *                  directly unit-testable.
  */
 
 #ifndef MISSION_HEALTH_TOPOLOGY_JSON_H
@@ -41,27 +40,35 @@ namespace core
 {
 
 /*!
- * @brief       Returns a copy of \p topologyJson_in with every existing
- *              schema-1 key and type preserved unchanged, "schema" set to
- *              2, and copied-cache evaluator additions appended.
+ * @brief           Returns a copy of \p topologyJson_in with every existing
+ *                  schema-1 key and type preserved unchanged, "schema" set to
+ *                  2, and copied-cache evaluator additions appended.
  *
- *              Never reacquires an evaluator model pointer or mutates
- *              tracking/semantic state -- every added field is read
- *              straight from \p entry_in, itself already a copied,
- *              pointer-free value.
+ *                  Never reacquires an evaluator model pointer or mutates
+ *                  tracking/semantic state -- every added field is read
+ *                  straight from \p entry_in, itself already a copied,
+ *                  pointer-free value.
  *
- * @param[in]   topologyJson_in     The existing schema-1 topology object
- *                                  (unmodified fields/types are preserved).
- * @param[in]   entry_in            Latest copied semantic report cache
- *                                  entry (meaningless when \p
- *                                  cacheAvailable_in is false).
- * @param[in]   cacheAvailable_in   Whether \p entry_in reflects a real
- *                                  completed semantic cycle.
+ * @param[in]       topologyJson_in
+ *                  The existing schema-1 topology object
+ *                  (unmodified fields/types are preserved).
  *
- * @param[out] augmentedJson_out \p topologyJson_in extended to schema 2. When
- * \p cacheAvailable_in is false, only "schema" and "semanticCacheAvailable" are
- * added -- no evaluator field is fabricated from a meaningless entry.
- * @return MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS.
+ * @param[in]       entry_in
+ *                  Latest copied semantic report cache
+ *                  entry (meaningless when \p
+ *                  cacheAvailable_in is false).
+ *
+ * @param[in]       cacheAvailable_in
+ *                  Whether \p entry_in reflects a real
+ *                  completed semantic cycle.
+ *
+ * @param[out]      augmentedJson_out
+ *                  \p topologyJson_in extended to schema 2. When
+ *                  \p cacheAvailable_in is false, only "schema" and
+ *                  "semanticCacheAvailable" are added -- no evaluator field is
+ *                  fabricated from a meaningless entry.
+ *
+ * @return          MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS.
  */
 [[nodiscard]] MissionHealthTopologyJsonStatus
     augmentMissionHealthTopologyJsonWithSemantics(

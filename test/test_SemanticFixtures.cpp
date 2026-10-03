@@ -1,10 +1,12 @@
 /*!
- * @file test_SemanticFixtures.cpp
- * @brief Self-test for the deterministic semantic-fixture builders
- *. Each case exercises one
- *        builder and asserts the object it produced is what later
- *        semantic-axiom-plan phases will assume: correctly wired, and
- *        deterministic across repeated construction.
+ * @file            test_SemanticFixtures.cpp
+ *
+ * @brief           Self-test for the deterministic semantic-fixture builders .
+ *                  Each case exercises one
+ *                          builder and asserts the object it produced is what
+ *                          later semantic-axiom-plan phases will assume:
+ *                          correctly wired, and deterministic across repeated
+ *                          construction.
  */
 
 #include "SemanticFixtures.h"

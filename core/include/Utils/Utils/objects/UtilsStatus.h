@@ -37,12 +37,14 @@ namespace utils
 {
 
 /*!
- * @brief       Result of a Utils operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a Utils operation. Values are fixed and never
+ *                  reordered.
  */
 enum class UtilsStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     UTILS_STATUS_SUCCESS = 0U
 };
 

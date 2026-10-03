@@ -1,8 +1,9 @@
 /*!
- * @file GlobalWallMetrics.cc
- * @brief Implementation of the global wall precision/recall/F1 adapter
- *        declared in GlobalWallMetrics.h (semantic-axiom-reliability-plan.md,
- *        P0.5).
+ * @file            GlobalWallMetrics.cc
+ *
+ * @brief           Implementation of the global wall precision/recall/F1
+ *                  adapter declared in GlobalWallMetrics.h
+ *                  (semantic-axiom-reliability-plan.md, P0.5).
  */
 
 #include "GlobalWallMetrics.h"
@@ -75,26 +76,30 @@ std::vector<WallRecord> parseWalls(const nlohmann::json &sgraph_in)
 }
 
 /*!
- * @brief   Solves the rectangular minimum-total-cost one-to-one assignment
- *          problem for `rowCount <= colCount`: assigns every row to a
- *          distinct column so the sum of assigned costs is minimal.
+ * @brief           Solves the rectangular minimum-total-cost one-to-one
+ *                  assignment
+ *                           problem for `rowCount <= colCount`: assigns every
+ *                           row to a distinct column so the sum of assigned
+ *                           costs is minimal.
  *
- * This is the classic O(rowCount^2 * colCount) shortest-augmenting-path
- * Hungarian algorithm with row/column potentials (see e.g.
- * https://cp-algorithms.com/graph/hungarian-algorithm.html), the same
- * minimum-total-cost one-to-one assignment problem
- * `scipy.optimize.linear_sum_assignment` solves for a rectangular cost
- * matrix. It is deterministic: identical input always produces the same
- * assignment, including when multiple assignments tie at the same total
- * cost.
+ *                  This is the classic O(rowCount^2 * colCount)
+ *                  shortest-augmenting-path Hungarian algorithm with row/column
+ *                  potentials (see e.g.
+ *                  https://cp-algorithms.com/graph/hungarian-algorithm.html),
+ *                  the same minimum-total-cost one-to-one assignment problem
+ *                  `scipy.optimize.linear_sum_assignment` solves for a
+ *                  rectangular cost matrix. It is deterministic: identical
+ *                  input always produces the same assignment, including when
+ *                  multiple assignments tie at the same total cost.
  *
- * @param   cost_in Cost matrix with `cost_in.size()` rows and
- *                   `cost_in.front().size()` columns; every row must have
- *                   the same column count, and `cost_in.size()` must not
- *                   exceed that column count. Finite costs only.
+ * @param[in]       cost_in
+ *                  Cost matrix with `cost_in.size()` rows and
+ *                  `cost_in.front().size()` columns; every row must have the
+ *                  same column count, and `cost_in.size()` must not exceed that
+ *                  column count. Finite costs only.
  *
- * @return  One entry per row: the assigned column index. Empty when
- *          `cost_in` is empty.
+ * @return          One entry per row: the assigned column index. Empty when
+ *                  `cost_in` is empty.
  */
 std::vector<std::size_t>
     solveAssignmentRowsLeqCols(const std::vector<std::vector<double>> &cost_in)
@@ -179,14 +184,18 @@ std::vector<std::size_t>
     return rowToCol;
 }
 
-/*! Matches truth rooms to generated rooms by minimum-total-cost one-to-one
- * centroid-distance assignment (see `solveAssignmentRowsLeqCols`), gating
- * each assigned pair by `kMaxRoomMatchDistM` only after the full assignment
- * is solved -- exactly mirroring `match_rooms()` in
- * `compare_sgraph_to_ground_truth.py`, which applies `MAX_ROOM_MATCH_DIST_M`
- * after `linear_sum_assignment()`. `solveAssignmentRowsLeqCols` requires
- * rows <= columns, so the smaller side is solved as rows and the result
- * transposed back when there are more truth rooms than generated rooms. */
+/*!
+ * @brief           Matches truth rooms to generated rooms by minimum-total-cost
+ *                  one-to-one centroid-distance assignment (see
+ *                  `solveAssignmentRowsLeqCols`), gating each assigned pair by
+ *                  `kMaxRoomMatchDistM` only after the full assignment is
+ *                  solved -- exactly mirroring `match_rooms()` in
+ *                  `compare_sgraph_to_ground_truth.py`, which applies
+ *                  `MAX_ROOM_MATCH_DIST_M` after `linear_sum_assignment()`.
+ *                  `solveAssignmentRowsLeqCols` requires rows <= columns, so
+ *                  the smaller side is solved as rows and the result transposed
+ *                  back when there are more truth rooms than generated rooms.
+ */
 std::vector<std::pair<std::size_t, std::size_t>>
     matchRoomsOptimal(const std::vector<RoomRecord> &truthRooms_in,
                       const std::vector<RoomRecord> &genRooms_in)
@@ -257,10 +266,14 @@ std::vector<std::pair<std::size_t, std::size_t>>
     return pairs;
 }
 
-/*! Mirrors wall_matches() from compare_sgraph_to_ground_truth.py: for each
- * truth wall, greedily takes the best-scoring still-unused generated wall
- * that clears both gates. Returns the matched truth-wall indices (within
- * truthWalls_in) and generated-wall indices (within genWalls_in). */
+/*!
+ * @brief           Mirrors wall_matches() from
+ *                  compare_sgraph_to_ground_truth.py: for each truth wall,
+ *                  greedily takes the best-scoring still-unused generated wall
+ *                  that clears both gates. Returns the matched truth-wall
+ *                  indices (within truthWalls_in) and generated-wall indices
+ *                  (within genWalls_in).
+ */
 std::pair<std::set<std::size_t>, std::set<std::size_t>>
     matchWallsWithinRoomPair(const std::vector<WallRecord>  &truthWalls_in,
                              const std::vector<std::size_t> &truthIndices_in,

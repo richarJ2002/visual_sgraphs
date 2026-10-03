@@ -1,11 +1,12 @@
 /*!
- * @file test_TwoViewReconstruction.cpp
- * @brief Regression coverage for TwoViewReconstruction's homography
- *        reconstruction path: reconstructH() must publish the structure of
- *        its winning motion hypothesis through the vP3D output parameter,
- *        exactly as its sibling reconstructF() does, because
- *        Tracking::createInitialMapMonocular() reads those points straight
- *        after Reconstruct() returns.
+ * @file            test_TwoViewReconstruction.cpp
+ *
+ * @brief           Regression coverage for TwoViewReconstruction's homography
+ *                  reconstruction path: reconstructH() must publish the
+ *                  structure of its winning motion hypothesis through the vP3D
+ *                  output parameter, exactly as its sibling reconstructF()
+ *                  does, because Tracking::createInitialMapMonocular() reads
+ *                  those points straight after Reconstruct() returns.
  */
 
 #include "TwoViewReconstruction.h"
@@ -25,7 +26,9 @@ namespace core
 namespace
 {
 
-/*! Synthetic pinhole intrinsics shared by both views. */
+/*!
+ * @brief           Synthetic pinhole intrinsics shared by both views.
+ */
 constexpr float FOCAL_LENGTH_X_PIXELS    = 500.0F;
 constexpr float FOCAL_LENGTH_Y_PIXELS    = 500.0F;
 constexpr float PRINCIPAL_POINT_X_PIXELS = 320.0F;
@@ -33,13 +36,20 @@ constexpr float PRINCIPAL_POINT_Y_PIXELS = 240.0F;
 constexpr float IMAGE_WIDTH_PIXELS       = 640.0F;
 constexpr float IMAGE_HEIGHT_PIXELS      = 480.0F;
 
-/*! Distance from the first camera centre to the observed plane. */
+/*!
+ * @brief           Distance from the first camera centre to the observed plane.
+ */
 constexpr float PLANE_DISTANCE_M = 3.0F;
 
-/*! Lateral offset of the second camera centre in the first camera frame. */
+/*!
+ * @brief           Lateral offset of the second camera centre in the first
+ *                  camera frame.
+ */
 constexpr float CAMERA_BASELINE_M = 0.6F;
 
-/*! Keypoint grid laid out over the first image. */
+/*!
+ * @brief           Keypoint grid laid out over the first image.
+ */
 constexpr int   GRID_COLUMN_COUNT    = 16;
 constexpr int   GRID_ROW_COUNT       = 16;
 constexpr float GRID_ORIGIN_X_PIXELS = 100.0F;
@@ -47,52 +57,75 @@ constexpr float GRID_ORIGIN_Y_PIXELS = 70.0F;
 constexpr float GRID_SPAN_X_PIXELS   = 440.0F;
 constexpr float GRID_SPAN_Y_PIXELS   = 340.0F;
 
-/*! Arguments reconstructH() receives from Reconstruct(). */
+/*!
+ * @brief           Arguments reconstructH() receives from Reconstruct().
+ */
 constexpr float MIN_PARALLAX_DEG       = 1.0F;
 constexpr int   MIN_TRIANGULATED_COUNT = 50;
 
-/*! checkRT() only keeps a point whose squared reprojection error stays below
- * 4 * sigma^2, so a reconstructed and flagged point is guaranteed to fall
- * within 2 pixels of its first-view keypoint. */
+/*!
+ * @brief           checkRT() only keeps a point whose squared reprojection
+ *                  error stays below 4 * sigma^2, so a reconstructed and
+ *                  flagged point is guaranteed to fall within 2 pixels of its
+ *                  first-view keypoint.
+ */
 constexpr double REPROJECTION_TOLERANCE_PIXELS = 2.0;
 
 /*!
- * @brief        One deterministic, noise-free two-view observation of a
- *               single tilted plane.
+ * @brief           One deterministic, noise-free two-view observation of a
+ *                  single tilted plane.
  */
 struct PlanarTwoViewScene
 {
-    /*! Shared pinhole calibration of both views. */
+    /*!
+     * @brief           Shared pinhole calibration of both views.
+     */
     Eigen::Matrix3f calibrationMatrix;
 
-    /*! Plane-induced pixel homography mapping view 1 into view 2. */
+    /*!
+     * @brief           Plane-induced pixel homography mapping view 1 into view
+     *                  2.
+     */
     Eigen::Matrix3f relativeHomography_view1ToView2;
 
-    /*! Ground-truth rotation of the second view relative to the first. */
+    /*!
+     * @brief           Ground-truth rotation of the second view relative to the
+     *                  first.
+     */
     Eigen::Matrix3f relativeRotation_view1ToView2;
 
-    /*! Ground-truth translation of the second view, in the second frame. */
+    /*!
+     * @brief           Ground-truth translation of the second view, in the
+     *                  second frame.
+     */
     Eigen::Vector3f relativeTranslation_view1ToView2_m;
 
-    /*! Keypoints of the reference view. */
+    /*!
+     * @brief           Keypoints of the reference view.
+     */
     std::vector<cv::KeyPoint> keypointsView1;
 
-    /*! Keypoints of the current view. */
+    /*!
+     * @brief           Keypoints of the current view.
+     */
     std::vector<cv::KeyPoint> keypointsView2;
 
-    /*! Index into keypointsView2 for every keypoint of view 1. */
+    /*!
+     * @brief           Index into keypointsView2 for every keypoint of view 1.
+     */
     std::vector<int> matchesView1ToView2;
 };
 
 /*!
- * @brief        Builds a planar scene whose homography decomposition has a
- *               single dominant motion hypothesis.
+ * @brief           Builds a planar scene whose homography decomposition has a
+ *                                single dominant motion hypothesis.
  *
- * The plane is strongly tilted with respect to the optical axis; a
- * fronto-parallel plane leaves the Faugeras twisted-pair ambiguity almost
- * unresolved, so reconstructH() would reject its own winning hypothesis.
+ *                  The plane is strongly tilted with respect to the optical
+ *                  axis; a fronto-parallel plane leaves the Faugeras
+ *                  twisted-pair ambiguity almost unresolved, so reconstructH()
+ *                  would reject its own winning hypothesis.
  *
- * @return       A fully populated planar two-view scene.
+ * @return          A fully populated planar two-view scene.
  */
 PlanarTwoViewScene buildPlanarTwoViewScene()
 {
@@ -189,7 +222,10 @@ PlanarTwoViewScene buildPlanarTwoViewScene()
     return scene;
 }
 
-/*! Signature of the private TwoViewReconstruction::reconstructH(). */
+/*!
+ * @brief           Signature of the private
+ *                  TwoViewReconstruction::reconstructH().
+ */
 using ReconstructHPointer = TwoViewReconstructionStatus (
     TwoViewReconstruction::*)(std::vector<bool> &,
                               Eigen::Matrix3f &,
@@ -202,8 +238,8 @@ using ReconstructHPointer = TwoViewReconstructionStatus (
                               bool &);
 
 /*!
- * @brief        Carries the recovered member pointer out of the explicit
- *               instantiation below.
+ * @brief           Carries the recovered member pointer out of the explicit
+ *                  instantiation below.
  */
 struct ReconstructHAccess
 {
@@ -213,15 +249,18 @@ struct ReconstructHAccess
 };
 
 /*!
- * @brief        Publishes a private member pointer through a friend function.
+ * @brief           Publishes a private member pointer through a friend
+ *                  function.
  *
- * Access checking is not applied to the names used in an explicit
- * instantiation ([temp.explicit]), so this is a standard-conforming way to
- * reach a private method without touching the production header. It is used
- * here because Reconstruct() cannot be steered onto the homography branch
- * from a test: that branch needs SH / (SH + SF) > 0.50, and for an exactly
- * planar scene the fundamental matrix fits every correspondence at least as
- * well as the homography does, which pins the ratio at 0.50.
+ *                  Access checking is not applied to the names used in an
+ *                  explicit instantiation ([temp.explicit]), so this is a
+ *                  standard-conforming way to reach a private method without
+ *                  touching the production header. It is used here because
+ *                  Reconstruct() cannot be steered onto the homography branch
+ *                  from a test: that branch needs SH / (SH + SF) > 0.50, and
+ *                  for an exactly planar scene the fundamental matrix fits
+ *                  every correspondence at least as well as the homography
+ *                  does, which pins the ratio at 0.50.
  */
 template <typename TagType, typename TagType::type MemberPointer>
 struct PrivateMethodPublisher
@@ -236,17 +275,18 @@ template struct PrivateMethodPublisher<ReconstructHAccess,
                                        &TwoViewReconstruction::reconstructH>;
 
 /*!
- * @brief        Loads the scene into the private keypoint and match state
- *               that reconstructH() reads.
+ * @brief           Loads the scene into the private keypoint and match state
+ *                                that reconstructH() reads.
  *
- * Reconstruct() is the only public entry point that fills that state. Its
- * own verdict is irrelevant here and is deliberately ignored.
+ *                  Reconstruct() is the only public entry point that fills that
+ *                  state. Its own verdict is irrelevant here and is
+ *                  deliberately ignored.
  *
- * @param[in]    scene_in
- *               Scene whose correspondences are loaded.
+ * @param[in]       scene_in
+ *                  Scene whose correspondences are loaded.
  *
- * @param[in,out] reconstruction_inout
- *               Reconstruction object receiving the correspondences.
+ * @param[in,out]   reconstruction_inout
+ *                  Reconstruction object receiving the correspondences.
  */
 void loadSceneCorrespondences(const PlanarTwoViewScene &scene_in,
                               TwoViewReconstruction    &reconstruction_inout)
@@ -270,10 +310,10 @@ void loadSceneCorrespondences(const PlanarTwoViewScene &scene_in,
 } // namespace
 
 /*!
- * @brief        Checks that the homography reconstruction branch hands the
- *               caller its triangulated points and flags, and that each flagged
- *               point is finite, in front of the camera and reprojects close to
- *               its view-1 key point.
+ * @brief           Checks that the homography reconstruction branch hands the
+ *                  caller its triangulated points and flags, and that each
+ *                  flagged point is finite, in front of the camera and
+ *                  reprojects close to its view-1 key point.
  */
 TEST(TwoViewReconstruction, HomographyBranchPublishesTriangulatedStructure)
 {
@@ -359,8 +399,8 @@ TEST(TwoViewReconstruction, HomographyBranchPublishesTriangulatedStructure)
 }
 
 /*!
- * @brief        Checks that the homography branch with no inlier matches
- *               reports not reconstructed and publishes no points.
+ * @brief           Checks that the homography branch with no inlier matches
+ *                  reports not reconstructed and publishes no points.
  */
 TEST(TwoViewReconstruction, HomographyBranchRejectsAnEmptyInlierSet)
 {

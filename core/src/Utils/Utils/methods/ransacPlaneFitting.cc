@@ -173,8 +173,9 @@ UtilsStatus Utils::ransacPlaneFitting(
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 /*!
- * @brief        Explicit instantiation of Utils::ransacPlaneFitting for
- *               pcl::PointXYZRGBA clouds segmented with pcl::SACSegmentation.
+ * @brief           Explicit instantiation of Utils::ransacPlaneFitting for
+ *                  pcl::PointXYZRGBA clouds segmented with
+ *                  pcl::SACSegmentation.
  */
 template UtilsStatus
     Utils::ransacPlaneFitting<pcl::PointXYZRGBA, pcl::SACSegmentation>(
@@ -182,9 +183,9 @@ template UtilsStatus
         std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                               Eigen::Vector4d>> &);
 /*!
- * @brief        Explicit instantiation of Utils::ransacPlaneFitting for
- *               pcl::PointXYZRGBA clouds segmented with
- *               pcl::WeightedSACSegmentation.
+ * @brief           Explicit instantiation of Utils::ransacPlaneFitting for
+ *                  pcl::PointXYZRGBA clouds segmented with
+ *                  pcl::WeightedSACSegmentation.
  */
 template UtilsStatus
     Utils::ransacPlaneFitting<pcl::PointXYZRGBA, pcl::WeightedSACSegmentation>(

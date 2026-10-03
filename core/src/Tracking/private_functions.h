@@ -23,26 +23,26 @@ namespace core
 
 #ifdef REGISTER_TIMES
 /*!
- * @brief        Averages per-frame millisecond timings.
+ * @brief           Averages per-frame millisecond timings.
  */
 [[nodiscard]] TrackingStatus calcAverage(std::vector<double> times_in,
                                          double             &average_out);
 
 /*!
- * @brief        Standard deviation of per-frame millisecond timings.
+ * @brief           Standard deviation of per-frame millisecond timings.
  */
 [[nodiscard]] TrackingStatus calcDeviation(std::vector<double> times_in,
                                            double              average_in,
                                            double             &deviation_out);
 
 /*!
- * @brief        Averages integer counters, skipping zero entries.
+ * @brief           Averages integer counters, skipping zero entries.
  */
 [[nodiscard]] TrackingStatus calcAverage(std::vector<int> values_in,
                                          double          &average_out);
 
 /*!
- * @brief        Standard deviation of integer counters, skipping zeros.
+ * @brief           Standard deviation of integer counters, skipping zeros.
  */
 [[nodiscard]] TrackingStatus calcDeviation(std::vector<int> values_in,
                                            double           average_in,

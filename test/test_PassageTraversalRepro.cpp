@@ -1,25 +1,31 @@
 /*!
- * @file test_PassageTraversalRepro.cpp
- * @brief Regression test: reproduce the silent-passage-traversal miss.
+ * @file            test_PassageTraversalRepro.cpp
  *
- * The gate run 20260911-105315 showed UAV crossing semantic::Passage#1 around
- * t ≈ 7056-7065 sim seconds with traversal counters staying zero.
+ * @brief           Regression test: reproduce the silent-passage-traversal
+ *                  miss.
  *
- * This test builds a minimal synthetic scenario with exactly 3 keyframes
- * and a passage whose geometry is derived from the gate run's sgraph
- * output (semantic::Passage#1: centroid ≈ (-0.21,-0.75,5.72), width ≈ 1.135,
- * height 2.0). It calls updateTraversalEvidence() and asserts that
- * passage.getTraversalKnownToFarCount() > 0.
+ *                  The gate run 20260911-105315 showed UAV crossing
+ *                  semantic::Passage#1 around t ≈ 7056-7065 sim seconds with
+ *                  traversal counters staying zero.
  *
- * Outcome: the unit-level trigger works -- with a bracketing keyframe pair
- * and a refit-backed ground plane the crossing is detected, the far room
- * promotes, and traversal settles. Two setup artifacts were caught on the
- * way and are now guarded by this test: an on-plane middle sample defeats
- * the strict straddle test in segmentCrossesAperture(), and a ground cloud
- * under 20 points fails the refit-generation gate in
- * Map::GetBiggestGroundPlane(), which silently skips traversal. The
- * gate-run miss is therefore a production-condition issue (passable timing,
- * owning map vs active map at crossing time, aperture bounds then).
+ *                  This test builds a minimal synthetic scenario with exactly 3
+ *                  keyframes and a passage whose geometry is derived from the
+ *                  gate run's sgraph output (semantic::Passage#1: centroid ≈
+ *                  (-0.21,-0.75,5.72), width ≈ 1.135, height 2.0). It calls
+ *                  updateTraversalEvidence() and asserts that
+ *                  passage.getTraversalKnownToFarCount() > 0.
+ *
+ *                  Outcome: the unit-level trigger works -- with a bracketing
+ *                  keyframe pair and a refit-backed ground plane the crossing
+ *                  is detected, the far room promotes, and traversal settles.
+ *                  Two setup artifacts were caught on the way and are now
+ *                  guarded by this test: an on-plane middle sample defeats the
+ *                  strict straddle test in segmentCrossesAperture(), and a
+ *                  ground cloud under 20 points fails the refit-generation gate
+ *                  in Map::GetBiggestGroundPlane(), which silently skips
+ *                  traversal. The gate-run miss is therefore a
+ *                  production-condition issue (passable timing, owning map vs
+ *                  active map at crossing time, aperture bounds then).
  */
 
 #include "Atlas.h"
@@ -55,56 +61,57 @@ namespace test
 //   connects room1 ↔ room2
 //
 /*!
- * @brief        X of the passage centroid in the world frame, metres.
+ * @brief           X of the passage centroid in the world frame, metres.
  */
 static const double PASSAGE_CENTROID_X = -0.21;
 /*!
- * @brief        Y of the passage centroid in the world frame, metres.
+ * @brief           Y of the passage centroid in the world frame, metres.
  */
 static const double PASSAGE_CENTROID_Y = -0.75;
 /*!
- * @brief        Z of the passage centroid in the world frame, metres.
+ * @brief           Z of the passage centroid in the world frame, metres.
  */
 static const double PASSAGE_CENTROID_Z = 5.72;
 /*!
- * @brief        Passage width, metres.
+ * @brief           Passage width, metres.
  */
 static const double PASSAGE_WIDTH = 1.135355933026258;
 /*!
- * @brief        Passage height, metres.
+ * @brief           Passage height, metres.
  */
 static const double PASSAGE_HEIGHT = 2.0;
 
 /*!
- * @brief        X coefficient of the aperture plane equation; the plane normal
- *               points along +X, from the known side to the far side.
+ * @brief           X coefficient of the aperture plane equation; the plane
+ *                  normal points along +X, from the known side to the far side.
  */
 static const double PASSAGE_APERTURE_A = 1.0;
 /*!
- * @brief        Y coefficient of the aperture plane equation.
+ * @brief           Y coefficient of the aperture plane equation.
  */
 static const double PASSAGE_APERTURE_B = 0.0;
 /*!
- * @brief        Z coefficient of the aperture plane equation.
+ * @brief           Z coefficient of the aperture plane equation.
  */
 static const double PASSAGE_APERTURE_C = 0.0;
 /*!
- * @brief        Offset of the aperture plane equation, metres; the plane passes
- *               through the world origin.
+ * @brief           Offset of the aperture plane equation, metres; the plane
+ *                  passes through the world origin.
  */
 static const double PASSAGE_APERTURE_D = 0.0;
 
 /*!
- * @brief        X of the ground plane normal, which points downward to match
- *               the Gazebo RGB-D set-up.
+ * @brief           X of the ground plane normal, which points downward to match
+ *                  the Gazebo RGB-D set-up.
  */
 static const double GROUND_NORMAL_X = 0.0;
 /*!
- * @brief        Y of the ground plane normal; -1 means the normal points down.
+ * @brief           Y of the ground plane normal; -1 means the normal points
+ *                  down.
  */
 static const double GROUND_NORMAL_Y = -1.0;
 /*!
- * @brief        Z of the ground plane normal.
+ * @brief           Z of the ground plane normal.
  */
 static const double GROUND_NORMAL_Z = 0.0;
 
@@ -114,51 +121,51 @@ static const double GROUND_NORMAL_Z = 0.0;
 // aperture, and exits to the far side (+X).
 // --------------------------------------------------------------------------
 /*!
- * @brief        X of the entry key frame camera centre in the world frame,
- *               metres; well on the known side (-X) of the aperture.
+ * @brief           X of the entry key frame camera centre in the world frame,
+ *                  metres; well on the known side (-X) of the aperture.
  */
 static const double KNOWN_SIDE_CAMERA_CENTER_X = -1.0;
 /*!
- * @brief        Y of the entry key frame camera centre in the world frame,
- *               metres.
+ * @brief           Y of the entry key frame camera centre in the world frame,
+ *                  metres.
  */
 static const double KNOWN_SIDE_CAMERA_CENTER_Y = -0.5;
 /*!
- * @brief        Z of the entry key frame camera centre in the world frame,
- *               metres.
+ * @brief           Z of the entry key frame camera centre in the world frame,
+ *                  metres.
  */
 static const double KNOWN_SIDE_CAMERA_CENTER_Z = 5.5;
 
 /*!
- * @brief        X of the middle key frame camera centre in the world frame,
- *               metres; just past the aperture plane, never on it, so the pair
- *               of segments straddle it strictly.
+ * @brief           X of the middle key frame camera centre in the world frame,
+ *                  metres; just past the aperture plane, never on it, so the
+ *                  pair of segments straddle it strictly.
  */
 static const double APERTURE_CAMERA_CENTER_X = 0.15;
 /*!
- * @brief        Y of the middle key frame camera centre in the world frame,
- *               metres.
+ * @brief           Y of the middle key frame camera centre in the world frame,
+ *                  metres.
  */
 static const double APERTURE_CAMERA_CENTER_Y = -0.75;
 /*!
- * @brief        Z of the middle key frame camera centre in the world frame,
- *               metres.
+ * @brief           Z of the middle key frame camera centre in the world frame,
+ *                  metres.
  */
 static const double APERTURE_CAMERA_CENTER_Z = 5.72;
 
 /*!
- * @brief        X of the exit key frame camera centre in the world frame,
- *               metres; well on the far side (+X) of the aperture.
+ * @brief           X of the exit key frame camera centre in the world frame,
+ *                  metres; well on the far side (+X) of the aperture.
  */
 static const double FAR_SIDE_CAMERA_CENTER_X = 1.0;
 /*!
- * @brief        Y of the exit key frame camera centre in the world frame,
- *               metres.
+ * @brief           Y of the exit key frame camera centre in the world frame,
+ *                  metres.
  */
 static const double FAR_SIDE_CAMERA_CENTER_Y = -1.0;
 /*!
- * @brief        Z of the exit key frame camera centre in the world frame,
- *               metres.
+ * @brief           Z of the exit key frame camera centre in the world frame,
+ *                  metres.
  */
 static const double FAR_SIDE_CAMERA_CENTER_Z = 6.0;
 
@@ -166,8 +173,8 @@ static const double FAR_SIDE_CAMERA_CENTER_Z = 6.0;
 // TEST_F case
 // --------------------------------------------------------------------------
 /*!
- * @brief        Checks that a trajectory from the known side, through the
- *               aperture, to the far side records exactly one crossing.
+ * @brief           Checks that a trajectory from the known side, through the
+ *                  aperture, to the far side records exactly one crossing.
  */
 TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
 {

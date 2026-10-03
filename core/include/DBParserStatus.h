@@ -33,12 +33,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a DBParser operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a DBParser operation. Values are fixed and never
+ *                  reordered.
  */
 enum class DBParserStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     DBPARSER_STATUS_SUCCESS = 0U
 };
 

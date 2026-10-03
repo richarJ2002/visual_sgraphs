@@ -20,7 +20,7 @@
  * @file            SemanticVerifyStatus.h
  *
  * @brief           Declares the status returned by every SemanticVerify
- * operation.
+ *                  operation.
  */
 
 #ifndef SEMANTIC_VERIFY_STATUS_H
@@ -36,19 +36,25 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a SemanticVerify operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a SemanticVerify operation. Values are fixed and
+ *                  never reordered.
  */
 enum class SemanticVerifyStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SEMANTIC_VERIFY_STATUS_SUCCESS = 0U,
 
-    /*! @brief An input was null, repeated or not finite; the object and the
-     * outputs were left unchanged. */
+    /*!
+     * @brief           An input was null, repeated or not finite; the object
+     *                  and the outputs were left unchanged.
+     */
     SEMANTIC_VERIFY_STATUS_INVALID_ARGUMENT = 1U,
 
-    /*! @brief A numerical step did not converge or produced a non-finite value.
+    /*!
+     * @brief           A numerical step did not converge or produced a
+     *                  non-finite value.
      */
     SEMANTIC_VERIFY_STATUS_NUMERICAL_FAILURE = 2U
 };

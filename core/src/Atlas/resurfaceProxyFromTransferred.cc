@@ -41,15 +41,15 @@ namespace core
 {
 
 /*!
- * @brief        Folds a transferred passage into the same-lineage proxy.
+ * @brief           Folds a transferred passage into the same-lineage proxy.
  *
- *               The proxy keeps its stable current-map ID and live room
- *               links and adopts the transferred (already in-frame)
- *               geometry, supporting walls, door, known-side direction
- *               and traversal history. Traversal windows are disjoint
- *               (pre- vs post-reset), so counts add. Returns true when
- *               the transferred object must NOT enter the current map
- *               (it retires with the absorbed map instead).
+ *                  The proxy keeps its stable current-map ID and live room
+ *                  links and adopts the transferred (already in-frame)
+ *                  geometry, supporting walls, door, known-side direction
+ *                  and traversal history. Traversal windows are disjoint
+ *                  (pre- vs post-reset), so counts add. Returns true when
+ *                  the transferred object must NOT enter the current map
+ *                  (it retires with the absorbed map instead).
  */
 AtlasStatus resurfaceProxyFromTransferred(semantic::Passage *p_proxy_inout,
                                           semantic::Passage *p_transferred_in,

@@ -20,7 +20,7 @@
  * @file            KeyFrameDatabaseStatus.h
  *
  * @brief           Declares the status returned by every KeyFrameDatabase
- * operation.
+ *                  operation.
  */
 
 #ifndef KEY_FRAME_DATABASE_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a KeyFrameDatabase operation. Values are fixed and
- * never reordered.
+ * @brief           Result of a KeyFrameDatabase operation. Values are fixed and
+ *                  never reordered.
  */
 enum class KeyFrameDatabaseStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     KEY_FRAME_DATABASE_STATUS_SUCCESS = 0U
 };
 

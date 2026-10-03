@@ -17,9 +17,9 @@
  */
 
 /*!
- * @file         GeometricTools.h
+ * @file            GeometricTools.h
  *
- * @brief        Declares static two-view geometry helpers.
+ * @brief           Declares static two-view geometry helpers.
  */
 
 #ifndef GEOMETRIC_TOOLS_H
@@ -38,26 +38,29 @@ namespace core
 class KeyFrame;
 
 /*!
- * @brief        Static two-view geometry helpers shared by the
- *               estimator.
+ * @brief           Static two-view geometry helpers shared by the
+ *                  estimator.
  */
 class GeometricTools
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     /*!
-     * @brief        Computes the fundamental matrix between two
-     *               keyframe views.
+     * @brief           Computes the fundamental matrix between two
+     *                  keyframe views.
      *
-     * @param[in]    keyFrame1_in
-     *               Non-owning first keyframe; shall be non-null.
-     * @param[in]    keyFrame2_in
-     *               Non-owning second keyframe; shall be
-     *               non-null.
+     * @param[in]       keyFrame1_in
+     *                  Non-owning first keyframe; shall be non-null.
      *
-     * @param[out] f12_out Fundamental matrix mapping the second view into the
-     * first.
-     * @return GEOMETRIC_TOOLS_STATUS_SUCCESS.
+     * @param[in]       keyFrame2_in
+     *                  Non-owning second keyframe; shall be
+     *                  non-null.
+     *
+     * @param[out]      f12_out
+     *                  Fundamental matrix mapping the second view into the
+     *                  first.
+     *
+     * @return          GEOMETRIC_TOOLS_STATUS_SUCCESS.
      */
     [[nodiscard]] static GeometricToolsStatus
         computeF12(KeyFrame       *&keyFrame1_in,
@@ -65,24 +68,29 @@ class GeometricTools
                    Eigen::Matrix3f &f12_out);
 
     /*!
-     * @brief        Triangulates two normalized observations
-     *               with a linear solve.
+     * @brief           Triangulates two normalized observations
+     *                  with a linear solve.
      *
-     * @param[in]    x_c1
-     *               Normalized observation in the first view.
-     * @param[in]    x_c2
-     *               Normalized observation in the second view.
-     * @param[in]    Tc1w_in
-     *               Three-by-four projection matrix of the
-     *               first view.
-     * @param[in]    Tc2w_in
-     *               Three-by-four projection matrix of the
-     *               second view.
-     * @param[in,out] x3D_inout
-     *               Triangulated point.
+     * @param[in]       x_c1
+     *                  Normalized observation in the first view.
      *
-     * @return GEOMETRIC_TOOLS_STATUS_SUCCESS, or
-     * GEOMETRIC_TOOLS_STATUS_NUMERICAL_FAILURE when an input is rejected.
+     * @param[in]       x_c2
+     *                  Normalized observation in the second view.
+     *
+     * @param[in]       Tc1w_in
+     *                  Three-by-four projection matrix of the
+     *                  first view.
+     *
+     * @param[in]       Tc2w_in
+     *                  Three-by-four projection matrix of the
+     *                  second view.
+     *
+     * @param[in,out]   x3D_inout
+     *                  Triangulated point.
+     *
+     * @return          GEOMETRIC_TOOLS_STATUS_SUCCESS, or
+     *                  GEOMETRIC_TOOLS_STATUS_NUMERICAL_FAILURE when an input
+     *                  is rejected.
      */
     [[nodiscard]] static GeometricToolsStatus
         triangulate(Eigen::Vector3f            &x_c1,
@@ -92,20 +100,22 @@ class GeometricTools
                     Eigen::Vector3f            &x3D_inout);
 
     /*!
-     * @brief        Checks element-wise agreement between a cv
-     *               matrix and an Eigen matrix.
+     * @brief           Checks element-wise agreement between a cv
+     *                   matrix and an Eigen matrix.
      *
-     *              Mismatches are reported to standard output.
+     *                  Mismatches are reported to standard output.
      *
-     * @param[in]    cvMat
-     *               OpenCV matrix to compare.
-     * @param[in]    eigMat
-     *               Eigen matrix to compare.
-     * @param[out]   areMatricesEqual_out
-     *               True when sizes match and every coefficient
-     *               agrees within 1e-3.
+     * @param[in]       cvMat
+     *                  OpenCV matrix to compare.
      *
-     * @return       GEOMETRIC_TOOLS_STATUS_SUCCESS.
+     * @param[in]       eigMat
+     *                  Eigen matrix to compare.
+     *
+     * @param[out]      areMatricesEqual_out
+     *                  True when sizes match and every coefficient
+     *                  agrees within 1e-3.
+     *
+     * @return          GEOMETRIC_TOOLS_STATUS_SUCCESS.
      */
     template <int rows, int cols>
     [[nodiscard]] static GeometricToolsStatus
@@ -138,20 +148,22 @@ class GeometricTools
     }
 
     /*!
-     * @brief        Checks element-wise agreement between two
-     *               Eigen matrices.
+     * @brief           Checks element-wise agreement between two
+     *                   Eigen matrices.
      *
-     *              Mismatches are reported to standard output.
+     *                  Mismatches are reported to standard output.
      *
-     * @param[in]    eigMat1
-     *               First matrix to compare.
-     * @param[in]    eigMat2
-     *               Second matrix to compare.
-     * @param[out]   areMatricesEqual_out
-     *               True when every coefficient agrees within
-     *               1e-3.
+     * @param[in]       eigMat1
+     *                  First matrix to compare.
      *
-     * @return       GEOMETRIC_TOOLS_STATUS_SUCCESS.
+     * @param[in]       eigMat2
+     *                  Second matrix to compare.
+     *
+     * @param[out]      areMatricesEqual_out
+     *                  True when every coefficient agrees within
+     *                  1e-3.
+     *
+     * @return          GEOMETRIC_TOOLS_STATUS_SUCCESS.
      */
     template <typename T, int rows, int cols>
     [[nodiscard]] static GeometricToolsStatus

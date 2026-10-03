@@ -20,7 +20,7 @@
  * @file            SystemParamsStatus.h
  *
  * @brief           Declares the status returned by every SystemParams
- * operation.
+ *                  operation.
  */
 
 #ifndef SYSTEM_PARAMS_STATUS_H
@@ -36,12 +36,14 @@ namespace types
 {
 
 /*!
- * @brief       Result of a SystemParams operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a SystemParams operation. Values are fixed and
+ *                  never reordered.
  */
 enum class SystemParamsStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SYSTEM_PARAMS_STATUS_SUCCESS = 0U
 };
 

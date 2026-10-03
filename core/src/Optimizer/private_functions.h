@@ -37,20 +37,24 @@ class Frame;
 class MapPoint;
 class VertexPose;
 
-/*! Bridges a thread-safe cancellation request into g2o's thread-local flag. */
+/*!
+ * @brief           Bridges a thread-safe cancellation request into g2o's
+ *                  thread-local flag.
+ */
 class AtomicOptimizerStopBridge final : public g2o::HyperGraphAction
 {
   public:
     /*!
-     * @brief        Binds the cancellation request to the g2o stop flag.
+     * @brief           Binds the cancellation request to the g2o stop flag.
      *
-     * @param[in]    p_stopRequested_in
-     *               Thread-safe cancellation request written by another
-     *               thread; may be null. Borrowed; shall outlive the bridge.
-     * @param[in,out] p_localStopFlag_inout
-     *               g2o's force-stop flag, set to true when a stop was
-     *               requested; may be null. Borrowed; shall outlive the
-     *               bridge.
+     * @param[in]       p_stopRequested_in
+     *                  Thread-safe cancellation request written by another
+     *                  thread; may be null. Borrowed; shall outlive the bridge.
+     *
+     * @param[in,out]   p_localStopFlag_inout
+     *                  g2o's force-stop flag, set to true when a stop was
+     *                  requested; may be null. Borrowed; shall outlive the
+     *                  bridge.
      */
     AtomicOptimizerStopBridge(const std::atomic_bool *p_stopRequested_in,
                               bool                   *p_localStopFlag_inout) :
@@ -59,15 +63,16 @@ class AtomicOptimizerStopBridge final : public g2o::HyperGraphAction
     {}
 
     /*!
-     * @brief        Copies a pending stop request into the g2o stop flag;
-     *               g2o calls it before and after each iteration.
+     * @brief           Copies a pending stop request into the g2o stop flag;
+     *                  g2o calls it before and after each iteration.
      *
-     * @param[in]    p_graph_in
-     *               Graph being optimised; not used.
-     * @param[in,out] p_parameters_inout
-     *               Action parameters; not used.
+     * @param[in]       p_graph_in
+     *                  Graph being optimised; not used.
      *
-     * @return       This action, always.
+     * @param[in,out]   p_parameters_inout
+     *                  Action parameters; not used.
+     *
+     * @return          This action, always.
      */
     g2o::HyperGraphAction *
         operator()(const g2o::HyperGraph *p_graph_in,
@@ -87,58 +92,67 @@ class AtomicOptimizerStopBridge final : public g2o::HyperGraphAction
 
   private:
     /*!
-     * @brief        Cancellation request set from another thread; may be
-     *               null. Borrowed.
+     * @brief           Cancellation request set from another thread; may be
+     *                  null. Borrowed.
      */
     const std::atomic_bool *p_stopRequested;
 
     /*!
-     * @brief        g2o's force-stop flag that this bridge sets; may be null.
-     *               Borrowed.
+     * @brief           g2o's force-stop flag that this bridge sets; may be
+     *                  null. Borrowed.
      */
     bool *p_localStopFlag;
 };
 
 /*!
- * @brief        Orders map point entries by their integer value, ascending.
+ * @brief           Orders map point entries by their integer value, ascending.
  *
- * @param[in]    firstEntry_in
- *               Map point and its value.
- * @param[in]    secondEntry_in
- *               Map point and its value.
+ * @param[in]       firstEntry_in
+ *                  Map point and its value.
  *
- * @return       True when the first entry's value is smaller than the
- *               second's.
+ * @param[in]       secondEntry_in
+ *                  Map point and its value.
+ *
+ * @return          True when the first entry's value is smaller than the
+ *                  second's.
  */
 bool sortByVal(const std::pair<MapPoint *, int> &firstEntry_in,
                const std::pair<MapPoint *, int> &secondEntry_in);
 
 /*!
- * @brief        Adds a pose-only reprojection edge, with a Huber kernel, for
- *               every map point matched in the frame (left monocular, stereo
- *               and right monocular observations) and marks those keypoints
- *               as inliers. Holds MapPoint::globalMutex while reading the
- *               map points.
+ * @brief           Adds a pose-only reprojection edge, with a Huber kernel, for
+ *                  every map point matched in the frame (left monocular, stereo
+ *                  and right monocular observations) and marks those keypoints
+ *                  as inliers. Holds MapPoint::globalMutex while reading the
+ *                  map points.
  *
- * @param[in,out] p_frame_inout
- *                Frame whose matched keypoints become edges; shall be
- *                non-null. Its outlier flags are cleared for those keypoints.
- * @param[in]    p_poseVertex_in
- *               Pose vertex of the frame; the optimizer owns it.
- * @param[in,out] optimizer_inout
- *                Optimizer that takes ownership of the new edges.
- * @param[in,out] edgesMonos_inout
- *                Monocular edges, appended in keypoint order (borrowed).
- * @param[in,out] edgesStereos_inout
- *                Stereo edges, appended in keypoint order (borrowed).
- * @param[in,out] monoEdgeIndices_inout
- *                Keypoint index of each monocular edge.
- * @param[in,out] stereoEdgeIndices_inout
- *                Keypoint index of each stereo edge.
- * @param[in,out] initialMonoCorrespondenceCount_inout
- *                Incremented once per monocular edge.
- * @param[in,out] initialStereoCorrespondenceCount_inout
- *                Incremented once per stereo edge.
+ * @param[in,out]   p_frame_inout
+ *                  Frame whose matched keypoints become edges; shall be
+ *                  non-null. Its outlier flags are cleared for those keypoints.
+ *
+ * @param[in]       p_poseVertex_in
+ *                  Pose vertex of the frame; the optimizer owns it.
+ *
+ * @param[in,out]   optimizer_inout
+ *                  Optimizer that takes ownership of the new edges.
+ *
+ * @param[in,out]   edgesMonos_inout
+ *                  Monocular edges, appended in keypoint order (borrowed).
+ *
+ * @param[in,out]   edgesStereos_inout
+ *                  Stereo edges, appended in keypoint order (borrowed).
+ *
+ * @param[in,out]   monoEdgeIndices_inout
+ *                  Keypoint index of each monocular edge.
+ *
+ * @param[in,out]   stereoEdgeIndices_inout
+ *                  Keypoint index of each stereo edge.
+ *
+ * @param[in,out]   initialMonoCorrespondenceCount_inout
+ *                  Incremented once per monocular edge.
+ *
+ * @param[in,out]   initialStereoCorrespondenceCount_inout
+ *                  Incremented once per stereo edge.
  */
 [[nodiscard]] OptimizerStatus addPoseOnlyObservationEdges(
     Frame                             *p_frame_inout,

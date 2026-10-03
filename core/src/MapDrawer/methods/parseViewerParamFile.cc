@@ -1,8 +1,8 @@
 /*!
- * @file         parseViewerParamFile.cc
+ * @file            parseViewerParamFile.cc
  *
- * @brief        Implements MapDrawer::parseViewerParamFile declared in
- *               MapDrawer.h.
+ * @brief           Implements MapDrawer::parseViewerParamFile declared in
+ *                  MapDrawer.h.
  */
 
 #include "MapDrawer.h"

@@ -20,7 +20,7 @@
  * @file            SemanticDiagnosticsStatus.h
  *
  * @brief           Declares the status returned by every SemanticDiagnostics
- * operation.
+ *                  operation.
  */
 
 #ifndef SEMANTIC_DIAGNOSTICS_STATUS_H
@@ -36,12 +36,14 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a SemanticDiagnostics operation. Values are fixed and
- * never reordered.
+ * @brief           Result of a SemanticDiagnostics operation. Values are fixed
+ *                  and never reordered.
  */
 enum class SemanticDiagnosticsStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SEMANTIC_DIAGNOSTICS_STATUS_SUCCESS = 0U
 };
 

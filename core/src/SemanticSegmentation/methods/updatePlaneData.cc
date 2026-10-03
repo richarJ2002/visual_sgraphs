@@ -164,9 +164,9 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
              * Associate the observation using the global plane equation and
              * global point cloud.
              *
-             * @note        Performing the complete comparison in the global
-             *              frame avoids inconsistencies between plane
-             *              equations, centroids and point clouds.
+             * @note            Performing the complete comparison in the global
+             *                  frame avoids inconsistencies between plane
+             *                  equations, centroids and point clouds.
              */
             int             matchedPlaneId{};
             Eigen::Vector3f keyFrameCameraCenter{};
@@ -226,12 +226,12 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                      * Apply an additional geometry check before creating a new
                      * wall.
                      *
-                     * @note        Small wall observations may be produced by
-                     *              doorframes, furniture edges and segmentation
-                     *              noise. Small patches are still permited
-                     *              to udpate an existing wall because this
-                     *              check is only applied when a matchPlaneId is
-                     *              -1.
+                     * @note            Small wall observations may be produced
+                     *                  by doorframes, furniture edges and
+                     *                  segmentation noise. Small patches are
+                     *                  still permited to udpate an existing
+                     *                  wall because this check is only applied
+                     *                  when a matchPlaneId is -1.
                      */
                     if (semanticType ==
                         vs_graphs::core::geometric::Plane::PlaneVariant::WALL)
@@ -342,10 +342,10 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                         /*!
                          * Reject unsupported and doorframe-sized wall planes.
                          *
-                         * @note        These thresholds apply only to the
-                         *              creation of new wall planes. Subsequent
-                         *              smaller observations may still update a
-                         *              mapped wall.
+                         * @note            These thresholds apply only to the
+                         *                  creation of new wall planes.
+                         *                  Subsequent smaller observations may
+                         *                  still update a mapped wall.
                          */
                         const bool validConnectivity =
                             !wallCreationParams.connectivity.enabled ||
@@ -468,7 +468,7 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                     /*!
                      * Geometric segmentation already created the plane.
                      * Transform the current observation into the global
-                     frame
+                     * frame
                      * and append it to the matched mapped plane.
                      */
                     Sophus::SE3f keyFramePoseInverse3{};

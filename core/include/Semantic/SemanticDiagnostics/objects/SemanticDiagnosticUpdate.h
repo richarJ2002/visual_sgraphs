@@ -20,11 +20,11 @@
  * @file            SemanticDiagnosticUpdate.h
  *
  * @brief           Declares the pure result of one
- *                   buildSemanticDiagnosticUpdate() call: whether to emit,
- *                   and the exact bounded JSON to print if so. Carries no
- *                   I/O of its own -- the caller alone decides how/whether
- *                   to print it (SG_AXIOM/SG_VIOLATION prefixes, stream
- *                   choice), keeping this module free of logging concerns.
+ *                  buildSemanticDiagnosticUpdate() call: whether to emit, and
+ *                  the exact bounded JSON to print if so. Carries no I/O of its
+ *                  own -- the caller alone decides how/whether to print it
+ *                  (SG_AXIOM/SG_VIOLATION prefixes, stream choice), keeping
+ *                  this module free of logging concerns.
  */
 
 #ifndef SEMANTIC_DIAGNOSTICS_UPDATE_H
@@ -42,25 +42,33 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Pure output of one buildSemanticDiagnosticUpdate() call.
+ * @brief           Pure output of one buildSemanticDiagnosticUpdate() call.
  */
 struct SemanticDiagnosticUpdate
 {
   public:
-    /*! @brief True when this cycle's state changed (a "summary" eventType)
-     *  or the heartbeat is due (a "heartbeat" eventType); false when
-     *  neither condition holds and the caller must print nothing. */
+    /*!
+     * @brief           True when this cycle's state changed (a "summary"
+     *                  eventType) or the heartbeat is due (a "heartbeat"
+     *                  eventType); false when neither condition holds and the
+     *                  caller must print nothing.
+     */
     bool shouldEmit{false};
 
-    /*! @brief The complete SG_AXIOM summary object; only meaningful when
-     *  \c emit is true. */
+    /*!
+     * @brief           The complete SG_AXIOM summary object; only meaningful
+     *                  when \c emit is true.
+     */
     nlohmann::json summary;
 
-    /*! @brief One SG_VIOLATION detail object per emitted appeared/changed/
-     *  resolved FAIL-finding transition, already capped at
-     *  kMaxViolationDetailsPerCycle and in deterministic order; only
-     *  meaningful when \c emit is true. Never contains a PASS or UNKNOWN
-     *  finding -- see buildSemanticDiagnosticUpdate.cc. */
+    /*!
+     * @brief           One SG_VIOLATION detail object per emitted
+     *                  appeared/changed/ resolved FAIL-finding transition,
+     *                  already capped at kMaxViolationDetailsPerCycle and in
+     *                  deterministic order; only meaningful when \c emit is
+     *                  true. Never contains a PASS or UNKNOWN finding -- see
+     *                  buildSemanticDiagnosticUpdate.cc.
+     */
     std::vector<nlohmann::json> violationDetails;
 };
 

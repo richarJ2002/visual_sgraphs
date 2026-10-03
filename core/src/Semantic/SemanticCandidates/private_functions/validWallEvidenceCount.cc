@@ -25,8 +25,11 @@ namespace core
 namespace semantic
 {
 
-/*! Counts walls whose SAME index has both a valid finite unit-able normal and
- * valid bounds ("walls with valid normals and bounds"). */
+/*!
+ * @brief           Counts walls whose SAME index has both a valid finite
+ *                  unit-able normal and valid bounds ("walls with valid normals
+ *                  and bounds").
+ */
 SemanticCandidatesStatus
     validWallEvidenceCount(const RoomContextSnapshot &snapshot_in,
                            std::size_t &validWallEvidenceCount_out)

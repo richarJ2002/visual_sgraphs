@@ -36,35 +36,43 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Schema-level capability classification for one axiom code.
+ * @brief           Schema-level capability classification for one axiom code.
  *
- *              This describes the *evaluator's* structural ability to prove
- *              the axiom's contract, not any one fixture's outcome: a FULL
- *              axiom can still report UNKNOWN for a particular instance
- *              whose ordinary, nullable relationship (e.g. a room not yet
- *              linked to a floor) happens to be absent -- that is ordinary
- *              incomplete evidence, not a capability gap. PARTIAL/DEFERRED
- *              specifically mean at least one clause depends on a
- *              SemanticGraphSnapshot field that is *always*
- *              UnavailableReason for every current instance (e.g.
- *              WallRecord::quarantineReason, PassageRecord::endpointSlotReason,
- *              RoomRecord::creationProvenanceReason), or on before/after
- *              transition behaviour this static-snapshot evaluator does not
- *              implement in this slice.
+ *                  This describes the *evaluator's* structural ability to prove
+ *                  the axiom's contract, not any one fixture's outcome: a FULL
+ *                  axiom can still report UNKNOWN for a particular instance
+ *                  whose ordinary, nullable relationship (e.g. a room not yet
+ *                  linked to a floor) happens to be absent -- that is ordinary
+ *                  incomplete evidence, not a capability gap. PARTIAL/DEFERRED
+ *                  specifically mean at least one clause depends on a
+ *                  SemanticGraphSnapshot field that is *always*
+ *                  UnavailableReason for every current instance (e.g.
+ *                  WallRecord::quarantineReason,
+ *                  PassageRecord::endpointSlotReason,
+ *                  RoomRecord::creationProvenanceReason), or on before/after
+ *                  transition behaviour this static-snapshot evaluator does not
+ *                  implement in this slice.
  */
 enum class CapabilityLevel : std::uint8_t
 {
-    /*! @brief Every clause of the axiom's contract is checkable from fields
-     *  the schema genuinely, always populates. */
+    /*!
+     * @brief           Every clause of the axiom's contract is checkable from
+     *                  fields the schema genuinely, always populates.
+     */
     FULL = 0U,
 
-    /*! @brief Some clauses are checkable; at least one is permanently
-     *  unprovable from the current schema. */
+    /*!
+     * @brief           Some clauses are checkable; at least one is permanently
+     *                  unprovable from the current schema.
+     */
     PARTIAL = 1U,
 
-    /*! @brief The axiom's substantive content depends on a field that is
-     *  always unavailable, or on dynamic/transition logic not yet
-     *  implemented; every finding for this code is UNKNOWN in this slice. */
+    /*!
+     * @brief           The axiom's substantive content depends on a field that
+     *                  is always unavailable, or on dynamic/transition logic
+     *                  not yet implemented; every finding for this code is
+     *                  UNKNOWN in this slice.
+     */
     DEFERRED = 2U
 };
 

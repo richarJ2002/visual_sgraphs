@@ -1,7 +1,7 @@
 /*!
- * @file         retainResetCause.cc
+ * @file            retainResetCause.cc
  *
- * @brief        Implements retainResetCause declared in ResetCause.h.
+ * @brief           Implements retainResetCause declared in ResetCause.h.
  */
 
 #include "ResetCause.h"
@@ -20,15 +20,15 @@ namespace core
  * linkage so the split registry translation units share them; behavior is
  * unchanged (same mutex, same map, same lock discipline). */
 /*!
- * @brief        Mutex that guards resetCausesByOwner; held by retain, consume
- *               and clear for the whole access.
+ * @brief           Mutex that guards resetCausesByOwner; held by retain,
+ *                  consume and clear for the whole access.
  */
 std::mutex resetCauseMutex;
 
 /*!
- * @brief        Deferred reset cause of each owner, keyed by the owner's
- *               address (used only as an identity, never dereferenced).
- *               Guarded by resetCauseMutex.
+ * @brief           Deferred reset cause of each owner, keyed by the owner's
+ *                  address (used only as an identity, never dereferenced).
+ *                  Guarded by resetCauseMutex.
  */
 std::unordered_map<const void *, ResetCauseRetention> resetCausesByOwner;
 

@@ -38,25 +38,29 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Complete, immutable, value-only output of one pure
- *              evaluation call.
+ * @brief           Complete, immutable, value-only output of one pure
+ *                  evaluation call.
  *
- *              Both members are sorted, deterministic, and independent of
- *              the input snapshot's own container/iteration order:
- *              \c findings by Finding::id (ties cannot occur -- see
- *              makeFinding.cc); \c aggregates by AxiomCode, with exactly one
- *              entry for every one of the sixteen Section-5 codes,
- *              regardless of how many (if any) findings contributed to it.
+ *                  Both members are sorted, deterministic, and independent of
+ *                  the input snapshot's own container/iteration order:
+ *                  \c findings by Finding::id (ties cannot occur -- see
+ *                  makeFinding.cc); \c aggregates by AxiomCode, with exactly
+ *                  one entry for every one of the sixteen Section-5 codes,
+ *                  regardless of how many (if any) findings contributed to it.
  */
 struct AxiomEvaluationReport
 {
   public:
-    /*! @brief Every raw finding produced by this evaluation, sorted by
-     *  Finding::id. */
+    /*!
+     * @brief           Every raw finding produced by this evaluation, sorted by
+     *                  Finding::id.
+     */
     std::vector<Finding> findings;
 
-    /*! @brief Exactly sixteen entries, one per Section-5 axiom code,
-     *  sorted by AxiomCode. */
+    /*!
+     * @brief           Exactly sixteen entries, one per Section-5 axiom code,
+     *                  sorted by AxiomCode.
+     */
     std::vector<AggregateAxiomResult> aggregates;
 };
 

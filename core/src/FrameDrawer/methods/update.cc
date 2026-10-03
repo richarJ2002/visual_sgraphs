@@ -1,7 +1,7 @@
 /*!
- * @file         update.cc
+ * @file            update.cc
  *
- * @brief        Implements FrameDrawer::update declared in FrameDrawer.h.
+ * @brief           Implements FrameDrawer::update declared in FrameDrawer.h.
  */
 
 #include "FrameDrawer.h"

@@ -55,29 +55,29 @@ void KeyFrameDatabase::serialize(Archive                            &ar,
 }
 
 /*!
- * @brief        Loads the KeyFrameDatabase through a binary archive; the
- *               template is defined above.
+ * @brief           Loads the KeyFrameDatabase through a binary archive; the
+ *                  template is defined above.
  */
 template void KeyFrameDatabase::serialize<boost::archive::binary_iarchive>(
     boost::archive::binary_iarchive &,
     const unsigned int);
 /*!
- * @brief        Saves the KeyFrameDatabase through a binary archive; the
- *               template is defined above.
+ * @brief           Saves the KeyFrameDatabase through a binary archive; the
+ *                  template is defined above.
  */
 template void KeyFrameDatabase::serialize<boost::archive::binary_oarchive>(
     boost::archive::binary_oarchive &,
     const unsigned int);
 /*!
- * @brief        Loads the KeyFrameDatabase through a text archive; the template
- *               is defined above.
+ * @brief           Loads the KeyFrameDatabase through a text archive; the
+ *                  template is defined above.
  */
 template void KeyFrameDatabase::serialize<boost::archive::text_iarchive>(
     boost::archive::text_iarchive &,
     const unsigned int);
 /*!
- * @brief        Saves the KeyFrameDatabase through a text archive; the template
- *               is defined above.
+ * @brief           Saves the KeyFrameDatabase through a text archive; the
+ *                  template is defined above.
  */
 template void KeyFrameDatabase::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,

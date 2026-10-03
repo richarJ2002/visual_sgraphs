@@ -20,7 +20,7 @@
  * @file            EdgeVertexNPlaneProjectSE3RoomStatus.h
  *
  * @brief           Declares the status returned by every
- * EdgeVertexNPlaneProjectSE3Room operation.
+ *                  EdgeVertexNPlaneProjectSE3Room operation.
  */
 
 #ifndef EDGE_VERTEX_NPLANE_PROJECT_SE3_ROOM_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a EdgeVertexNPlaneProjectSE3Room operation. Values are
- * fixed and never reordered.
+ * @brief           Result of a EdgeVertexNPlaneProjectSE3Room operation. Values
+ *                  are fixed and never reordered.
  */
 enum class EdgeVertexNPlaneProjectSE3RoomStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     EDGE_VERTEX_NPLANE_PROJECT_SE3_ROOM_STATUS_SUCCESS = 0U
 };
 

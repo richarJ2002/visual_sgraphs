@@ -35,28 +35,36 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Discriminates which kind of graph entity an EntityKey names.
+ * @brief           Discriminates which kind of graph entity an EntityKey names.
  *
- *              A "wall" has no dedicated model class in this codebase: it is
- *              a Geometric/Plane.h object whose accepted Plane::PlaneVariant
- *              is WALL. DOOR/GROUND/WINDOW/UNDEFINED planes are out of scope
- *              for this foundation slice and are never represented as
- *              EntityKind::WALL records (see RawPlaneRef.h for how a
- *              reference to one of those is still reported, without a full
- *              record).
+ *                  A "wall" has no dedicated model class in this codebase: it
+ *                  is a Geometric/Plane.h object whose accepted
+ *                  Plane::PlaneVariant is WALL. DOOR/GROUND/WINDOW/UNDEFINED
+ *                  planes are out of scope for this foundation slice and are
+ *                  never represented as EntityKind::WALL records (see
+ *                  RawPlaneRef.h for how a reference to one of those is still
+ *                  reported, without a full record).
  */
 enum class EntityKind : std::uint8_t
 {
-    /*! @brief A committed or candidate Room. */
+    /*!
+     * @brief           A committed or candidate Room.
+     */
     ROOM = 0U,
 
-    /*! @brief A WALL-typed Geometric/Plane.h wall face. */
+    /*!
+     * @brief           A WALL-typed Geometric/Plane.h wall face.
+     */
     WALL = 1U,
 
-    /*! @brief A Passage. */
+    /*!
+     * @brief           A Passage.
+     */
     PASSAGE = 2U,
 
-    /*! @brief A Floor. */
+    /*!
+     * @brief           A Floor.
+     */
     FLOOR = 3U
 };
 

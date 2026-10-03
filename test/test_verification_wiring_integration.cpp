@@ -45,9 +45,11 @@ struct RawWall
     Eigen::Vector3d centroid;
 };
 
-/*! Same asymmetric 4-wall fixture as test_GeometricVerify.cpp's
- * AcceptsGroundTruthCorrelatedRooms: axis-permutation symmetry broken by
- * distinct non-zero offsets plus one oblique face. */
+/*!
+ * @brief           Same asymmetric 4-wall fixture as test_GeometricVerify.cpp's
+ *                  AcceptsGroundTruthCorrelatedRooms: axis-permutation symmetry
+ *                  broken by distinct non-zero offsets plus one oblique face.
+ */
 std::vector<RawWall> makeReferenceWalls()
 {
     return {
@@ -70,9 +72,11 @@ std::vector<RawWall> makeReferenceWalls()
     };
 }
 
-/*! Transforms a raw plane equation the same way
- * geometric::Plane::transformPlaneEquation does (scale fixed at 1): n' = R n;
- * d' = d - n'^T t. */
+/*!
+ * @brief           Transforms a raw plane equation the same way
+ *                  geometric::Plane::transformPlaneEquation does (scale fixed
+ *                  at 1): n' = R n; d' = d - n'^T t.
+ */
 RawWall transformWall(const RawWall         &source_in,
                       const Eigen::Matrix3d &rotation_in,
                       const Eigen::Vector3d &translation_in,
@@ -86,12 +90,15 @@ RawWall transformWall(const RawWall         &source_in,
     return transformed;
 }
 
-/*! Owns every `geometric::Plane`/`semantic::Floor` object one synthetic room
- * needs, and wires them into a real semantic::Room via the genuine setter API
- * so the production wiring's Atlas/Map lookups
- * (SemanticsManager::findRoomByMapAndId,
- * semantic::SemanticVerify::collectWallObservations, the floor gate) see
- * exactly what a live map would produce. */
+/*!
+ * @brief           Owns every `geometric::Plane`/`semantic::Floor` object one
+ *                  synthetic room needs, and wires them into a real
+ *                  semantic::Room via the genuine setter API so the production
+ *                  wiring's Atlas/Map lookups
+ *                  (SemanticsManager::findRoomByMapAndId,
+ *                  semantic::SemanticVerify::collectWallObservations, the floor
+ *                  gate) see exactly what a live map would produce.
+ */
 struct SyntheticRoomFixture
 {
     semantic::Room                                 room;
@@ -286,10 +293,10 @@ semantic::SemanticCandidate makeCandidate(Map            *p_mapA_in,
 } // namespace
 
 /*!
- * @brief        Checks that two matching rooms in different maps, once
- *               verified, move the room tracker from unknown to confirmed
- *               through a first-room-confirmed event, only after the queued
- *               verdict is processed.
+ * @brief           Checks that two matching rooms in different maps, once
+ *                  verified, move the room tracker from unknown to confirmed
+ *                  through a first-room-confirmed event, only after the queued
+ *                  verdict is processed.
  */
 TEST(VerificationWiringIntegration,
      MatchingRoomsAcrossMapsDriveRoomTrackerToConfirmed)
@@ -373,9 +380,9 @@ TEST(VerificationWiringIntegration,
 }
 
 /*!
- * @brief        Checks that a candidate pair with too few walls on one side is
- *               rejected by verification and leaves the tracker unknown with no
- *               events.
+ * @brief           Checks that a candidate pair with too few walls on one side
+ *                  is rejected by verification and leaves the tracker unknown
+ *                  with no events.
  */
 TEST(VerificationWiringIntegration,
      TooFewWallsOnOneSideYieldsRejectedVerdictNoTransition)
@@ -431,8 +438,8 @@ TEST(VerificationWiringIntegration,
 }
 
 /*!
- * @brief        Checks that evaluating an empty candidate list does nothing:
- *               the tracker stays unknown and records no events.
+ * @brief           Checks that evaluating an empty candidate list does nothing:
+ *                  the tracker stays unknown and records no events.
  */
 TEST(VerificationWiringIntegration, EmptyCandidateListIsANoOp)
 {
@@ -456,9 +463,9 @@ TEST(VerificationWiringIntegration, EmptyCandidateListIsANoOp)
 }
 
 /*!
- * @brief        Checks that when the top two candidates are both marked
- *               ambiguous, a real tie, the leader is skipped, so the tracker
- *               stays unknown with no events and no crash.
+ * @brief           Checks that when the top two candidates are both marked
+ *                  ambiguous, a real tie, the leader is skipped, so the tracker
+ *                  stays unknown with no events and no crash.
  */
 TEST(VerificationWiringIntegration, GenuineTiedLeaderIsSkipped)
 {

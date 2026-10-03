@@ -20,7 +20,7 @@
  * @file            EdgeVertexPlaneProjectSE3KFStatus.h
  *
  * @brief           Declares the status returned by every
- * EdgeVertexPlaneProjectSE3KF operation.
+ *                  EdgeVertexPlaneProjectSE3KF operation.
  */
 
 #ifndef EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a EdgeVertexPlaneProjectSE3KF operation. Values are
- * fixed and never reordered.
+ * @brief           Result of a EdgeVertexPlaneProjectSE3KF operation. Values
+ *                  are fixed and never reordered.
  */
 enum class EdgeVertexPlaneProjectSE3KFStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_SUCCESS = 0U
 };
 

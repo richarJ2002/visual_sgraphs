@@ -388,14 +388,15 @@ void LoopClosing::run(void)
                          * the current camera in the matched key frame's world
                          * frame (see above).
                          *
-                         * @note        Note that w1 reffers to the primary
-                         *              frame which is the current frame that
-                         *              the camera is in. This means that the
-                         *              map is appended onto the current map
-                         *              and hence avoids teleporting the camera
-                         *              position and allows for smooth
-                         *              operation (which would be the case if
-                         *              the primary map was the matched map)
+                         * @note            Note that w1 reffers to the primary
+                         *                  frame which is the current frame
+                         *                  that the camera is in. This means
+                         *                  that the map is appended onto the
+                         *                  current map and hence avoids
+                         *                  teleporting the camera position and
+                         *                  allows for smooth operation (which
+                         *                  would be the case if the primary map
+                         *                  was the matched map)
                          */
                         mg2oMergeScw = mg2oMergeSlw;
 

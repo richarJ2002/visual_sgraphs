@@ -20,7 +20,7 @@
  * @file            SemanticsManagerStatus.h
  *
  * @brief           Declares the status returned by every SemanticsManager
- * operation.
+ *                  operation.
  */
 
 #ifndef SEMANTICS_MANAGER_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a SemanticsManager operation. Values are fixed and
- * never reordered.
+ * @brief           Result of a SemanticsManager operation. Values are fixed and
+ *                  never reordered.
  */
 enum class SemanticsManagerStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     SEMANTICS_MANAGER_STATUS_SUCCESS = 0U
 };
 

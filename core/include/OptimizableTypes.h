@@ -64,32 +64,32 @@ class EdgeSE3ProjectXYZOnlyPose
     EdgeSE3ProjectXYZOnlyPose() {}
 
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the 2D pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the 2D
+     *                  pixel measurement (u, v), then the information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     bool read(std::istream &inputStream_inout);
 
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the pixel
+     *                  measurement (u, v), then the information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the reprojection error (u, v), in pixels: the
-     *               measured pixel minus the pixel the map point Xw projects to
-     *               through the camera pose vertex.
+     * @brief           Computes the reprojection error (u, v), in pixels: the
+     *                  measured pixel minus the pixel the map point Xw projects
+     *                  to through the camera pose vertex.
      */
     void computeError()
     {
@@ -100,10 +100,11 @@ class EdgeSE3ProjectXYZOnlyPose
     }
 
     /*!
-     * @brief        Tells whether the observed map point lies in front of the
-     *               camera, i.e. its depth z in the camera frame is positive.
+     * @brief           Tells whether the observed map point lies in front of
+     *                  the camera, i.e. its depth z in the camera frame is
+     *                  positive.
      *
-     * @return       true if the depth is greater than zero, false otherwise.
+     * @return          true if the depth is greater than zero, false otherwise.
      */
     bool isDepthPositive()
     {
@@ -113,20 +114,20 @@ class EdgeSE3ProjectXYZOnlyPose
     }
 
     /*!
-     * @brief        Computes the Jacobian of the reprojection error with
-     *               respect to the camera pose vertex.
+     * @brief           Computes the Jacobian of the reprojection error with
+     *                  respect to the camera pose vertex.
      */
     virtual void linearizeOplus();
 
     /*!
-     * @brief        Position of the observed map point in the world frame,
-     *               metres.
+     * @brief           Position of the observed map point in the world frame,
+     *                  metres.
      */
     Eigen::Vector3d                                  Xw;
     /*!
-     * @brief        Camera model used to project points. Borrowed from the key
-     *               frame or frame that owns it, never null once set by the
-     *               code that builds the edge.
+     * @brief           Camera model used to project points. Borrowed from the
+     *                  key frame or frame that owns it, never null once set by
+     *                  the code that builds the edge.
      */
     camera_models::geometriccamera::GeometricCamera *p_camera;
 };
@@ -145,31 +146,31 @@ class EdgeSE3ProjectXYZDepth
     EdgeSE3ProjectXYZDepth() {}
 
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the depth
-     *               measurement z, then its scalar information.
+     * @brief           Reads this edge from a g2o graph file stream: the depth
+     *                  measurement z, then its scalar information.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     bool read(std::istream &inputStream_inout);
 
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the depth
-     *               measurement z, then its scalar information.
+     * @brief           Writes this edge to a g2o graph file stream: the depth
+     *                  measurement z, then its scalar information.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       true if the stream is still good.
+     * @return          true if the stream is still good.
      */
     bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the depth error, in metres: the measured depth
-     *               minus the z coordinate of the map point Xw in the camera
-     *               frame.
+     * @brief           Computes the depth error, in metres: the measured depth
+     *                  minus the z coordinate of the map point Xw in the camera
+     *                  frame.
      */
     void computeError()
     {
@@ -184,10 +185,11 @@ class EdgeSE3ProjectXYZDepth
     }
 
     /*!
-     * @brief        Tells whether the observed map point lies in front of the
-     *               camera, i.e. its depth z in the camera frame is positive.
+     * @brief           Tells whether the observed map point lies in front of
+     *                  the camera, i.e. its depth z in the camera frame is
+     *                  positive.
      *
-     * @return       true if the depth is greater than zero, false otherwise.
+     * @return          true if the depth is greater than zero, false otherwise.
      */
     bool isDepthPositive()
     {
@@ -197,20 +199,20 @@ class EdgeSE3ProjectXYZDepth
     }
 
     /*!
-     * @brief        Computes the Jacobian of the depth error with respect to
-     *               the camera pose vertex.
+     * @brief           Computes the Jacobian of the depth error with respect to
+     *                  the camera pose vertex.
      */
     virtual void linearizeOplus();
 
     /*!
-     * @brief        Position of the observed map point in the world frame,
-     *               metres.
+     * @brief           Position of the observed map point in the world frame,
+     *                  metres.
      */
     Eigen::Vector3d                                  Xw;
     /*!
-     * @brief        Camera model used to project points. Borrowed from the key
-     *               frame or frame that owns it, never null once set by the
-     *               code that builds the edge.
+     * @brief           Camera model used to project points. Borrowed from the
+     *                  key frame or frame that owns it, never null once set by
+     *                  the code that builds the edge.
      */
     camera_models::geometriccamera::GeometricCamera *p_camera;
 };
@@ -228,33 +230,33 @@ class EdgeSE3ProjectXYZOnlyPoseToBody
     EdgeSE3ProjectXYZOnlyPoseToBody() {}
 
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the 2D pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the 2D
+     *                  pixel measurement (u, v), then the information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     bool read(std::istream &inputStream_inout);
 
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the pixel
+     *                  measurement (u, v), then the information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the reprojection error (u, v), in pixels, for the
-     *               right camera of a stereo pair: the measured pixel minus the
-     *               pixel the map point Xw projects to after the pose vertex
-     *               and the left-to-right camera transform mTrl.
+     * @brief           Computes the reprojection error (u, v), in pixels, for
+     *                  the right camera of a stereo pair: the measured pixel
+     *                  minus the pixel the map point Xw projects to after the
+     *                  pose vertex and the left-to-right camera transform mTrl.
      */
     void computeError()
     {
@@ -266,10 +268,11 @@ class EdgeSE3ProjectXYZOnlyPoseToBody
     }
 
     /*!
-     * @brief        Tells whether the observed map point lies in front of the
-     *               camera, i.e. its depth z in the camera frame is positive.
+     * @brief           Tells whether the observed map point lies in front of
+     *                  the camera, i.e. its depth z in the camera frame is
+     *                  positive.
      *
-     * @return       true if the depth is greater than zero, false otherwise.
+     * @return          true if the depth is greater than zero, false otherwise.
      */
     bool isDepthPositive()
     {
@@ -279,28 +282,28 @@ class EdgeSE3ProjectXYZOnlyPoseToBody
     }
 
     /*!
-     * @brief        Computes the Jacobian of the reprojection error with
-     *               respect to the camera pose vertex, through the left-to-
-     *               right camera transform mTrl.
+     * @brief           Computes the Jacobian of the reprojection error with
+     *                  respect to the camera pose vertex, through the left-to-
+     *                  right camera transform mTrl.
      */
     virtual void linearizeOplus();
 
     /*!
-     * @brief        Position of the observed map point in the world frame,
-     *               metres.
+     * @brief           Position of the observed map point in the world frame,
+     *                  metres.
      */
     Eigen::Vector3d                                  Xw;
     /*!
-     * @brief        Camera model of the right camera used to project points.
-     *               Borrowed from the frame or key frame that owns it, never
-     *               null once set by the code that builds the edge.
+     * @brief           Camera model of the right camera used to project points.
+     *                  Borrowed from the frame or key frame that owns it, never
+     *                  null once set by the code that builds the edge.
      */
     camera_models::geometriccamera::GeometricCamera *p_camera;
 
     /*!
-     * @brief        Rigid transform from the left (pose vertex) camera frame to
-     *               the right camera frame, set by the code that builds the
-     *               edge from the stereo extrinsics.
+     * @brief           Rigid transform from the left (pose vertex) camera frame
+     *                  to the right camera frame, set by the code that builds
+     *                  the edge from the stereo extrinsics.
      */
     g2o::SE3Quat mTrl;
 };
@@ -325,32 +328,32 @@ class EdgeSE3ProjectXYZ : public g2o::BaseBinaryEdge<2,
     {}
 
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the 2D pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the 2D
+     *                  pixel measurement (u, v), then the information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     bool read(std::istream &inputStream_inout);
 
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the pixel
+     *                  measurement (u, v), then the information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the reprojection error (u, v), in pixels: the
-     *               measured pixel minus the pixel the map point vertex
-     *               projects to through the key frame pose vertex.
+     * @brief           Computes the reprojection error (u, v), in pixels: the
+     *                  measured pixel minus the pixel the map point vertex
+     *                  projects to through the key frame pose vertex.
      */
     void computeError()
     {
@@ -364,10 +367,11 @@ class EdgeSE3ProjectXYZ : public g2o::BaseBinaryEdge<2,
     }
 
     /*!
-     * @brief        Tells whether the observed map point lies in front of the
-     *               camera, i.e. its depth z in the camera frame is positive.
+     * @brief           Tells whether the observed map point lies in front of
+     *                  the camera, i.e. its depth z in the camera frame is
+     *                  positive.
      *
-     * @return       true if the depth is greater than zero, false otherwise.
+     * @return          true if the depth is greater than zero, false otherwise.
      */
     bool isDepthPositive()
     {
@@ -379,16 +383,16 @@ class EdgeSE3ProjectXYZ : public g2o::BaseBinaryEdge<2,
     }
 
     /*!
-     * @brief        Computes the Jacobians of the reprojection error with
-     *               respect to the map point vertex and the key frame pose
-     *               vertex.
+     * @brief           Computes the Jacobians of the reprojection error with
+     *                  respect to the map point vertex and the key frame pose
+     *                  vertex.
      */
     virtual void linearizeOplus();
 
     /*!
-     * @brief        Camera model used to project points. Borrowed from the key
-     *               frame or frame that owns it, never null once set by the
-     *               code that builds the edge.
+     * @brief           Camera model used to project points. Borrowed from the
+     *                  key frame or frame that owns it, never null once set by
+     *                  the code that builds the edge.
      */
     camera_models::geometriccamera::GeometricCamera *p_camera;
 };
@@ -414,33 +418,34 @@ class EdgeSE3ProjectXYZToBody
     {}
 
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the 2D pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the 2D
+     *                  pixel measurement (u, v), then the information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     bool read(std::istream &inputStream_inout);
 
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the pixel
+     *                  measurement (u, v), then the information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the reprojection error (u, v), in pixels, for the
-     *               right camera of a stereo pair: the measured pixel minus the
-     *               pixel the map point vertex projects to after the pose
-     *               vertex and the left-to-right camera transform mTrl.
+     * @brief           Computes the reprojection error (u, v), in pixels, for
+     *                  the right camera of a stereo pair: the measured pixel
+     *                  minus the pixel the map point vertex projects to after
+     *                  the pose vertex and the left-to-right camera transform
+     *                  mTrl.
      */
     void computeError()
     {
@@ -454,10 +459,11 @@ class EdgeSE3ProjectXYZToBody
     }
 
     /*!
-     * @brief        Tells whether the observed map point lies in front of the
-     *               camera, i.e. its depth z in the camera frame is positive.
+     * @brief           Tells whether the observed map point lies in front of
+     *                  the camera, i.e. its depth z in the camera frame is
+     *                  positive.
      *
-     * @return       true if the depth is greater than zero, false otherwise.
+     * @return          true if the depth is greater than zero, false otherwise.
      */
     bool isDepthPositive()
     {
@@ -469,22 +475,22 @@ class EdgeSE3ProjectXYZToBody
     }
 
     /*!
-     * @brief        Computes the Jacobians of the reprojection error with
-     *               respect to the map point vertex and the key frame pose
-     *               vertex, through mTrl.
+     * @brief           Computes the Jacobians of the reprojection error with
+     *                  respect to the map point vertex and the key frame pose
+     *                  vertex, through mTrl.
      */
     virtual void linearizeOplus();
 
     /*!
-     * @brief        Camera model of the right camera used to project points.
-     *               Borrowed from the key frame that owns it, never null once
-     *               set by the code that builds the edge.
+     * @brief           Camera model of the right camera used to project points.
+     *                  Borrowed from the key frame that owns it, never null
+     *                  once set by the code that builds the edge.
      */
     camera_models::geometriccamera::GeometricCamera *p_camera;
     /*!
-     * @brief        Rigid transform from the left (pose vertex) camera frame to
-     *               the right camera frame, set by the code that builds the
-     *               edge from the stereo extrinsics.
+     * @brief           Rigid transform from the left (pose vertex) camera frame
+     *                  to the right camera frame, set by the code that builds
+     *                  the edge from the stereo extrinsics.
      */
     g2o::SE3Quat                                     mTrl;
 };
@@ -505,28 +511,29 @@ class VertexSim3Expmap : public g2o::BaseVertex<7, g2o::Sim3>
         isScaleFixed  = false;
     }
     /*!
-     * @brief        Reads the similarity transform and the camera parameters of
-     *               both cameras from a g2o graph file stream.
+     * @brief           Reads the similarity transform and the camera parameters
+     *                  of both cameras from a g2o graph file stream.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this vertex's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this vertex's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes the similarity transform and the camera parameters
-     *               of both cameras to a g2o graph file stream.
+     * @brief           Writes the similarity transform and the camera
+     *                  parameters of both cameras to a g2o graph file stream.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the vertex is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the vertex is appended to.
      *
-     * @return       true if the stream is still good.
+     * @return          true if the stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Resets the estimate to the identity similarity transform.
+     * @brief           Resets the estimate to the identity similarity
+     *                  transform.
      */
     virtual void setToOriginImpl()
     {
@@ -534,12 +541,14 @@ class VertexSim3Expmap : public g2o::BaseVertex<7, g2o::Sim3>
     }
 
     /*!
-     * @brief        Applies an update to the estimate by left-multiplying it
-     *               with the similarity transform given by the update. The
-     *               scale component is zeroed first when isScaleFixed is true.
+     * @brief           Applies an update to the estimate by left-multiplying it
+     *                  with the similarity transform given by the update. The
+     *                  scale component is zeroed first when isScaleFixed is
+     *                  true.
      *
-     * @param[in]    p_update_in
-     *               Seven values: rotation (3), translation (3), log scale (1).
+     * @param[in]       p_update_in
+     *                  Seven values: rotation (3), translation (3), log scale
+     *                  (1).
      */
     virtual void oplusImpl(const double *p_update_in)
     {
@@ -553,27 +562,27 @@ class VertexSim3Expmap : public g2o::BaseVertex<7, g2o::Sim3>
     }
 
     /*!
-     * @brief        Camera model of the first key frame. Borrowed, set by the
-     *               code that builds the vertex.
+     * @brief           Camera model of the first key frame. Borrowed, set by
+     *                  the code that builds the vertex.
      */
     camera_models::geometriccamera::GeometricCamera *p_firstCamera;
     /*!
-     * @brief        Camera model of the second key frame. Borrowed, set by the
-     *               code that builds the vertex.
+     * @brief           Camera model of the second key frame. Borrowed, set by
+     *                  the code that builds the vertex.
      */
     camera_models::geometriccamera::GeometricCamera *p_secondCamera;
 
     /*!
-     * @brief        True when the scale must not change during optimisation
-     *               (the scale update is forced to zero).
+     * @brief           True when the scale must not change during optimisation
+     *                  (the scale update is forced to zero).
      */
     bool isScaleFixed;
 };
 
 /*!
- * @brief        Edge connecting a map point vertex to a similarity-transform
- *               vertex: the pixel error of the point projected through the
- *               first camera.
+ * @brief           Edge connecting a map point vertex to a similarity-transform
+ *                  vertex: the pixel error of the point projected through the
+ *                  first camera.
  */
 class EdgeSim3ProjectXYZ
     : public g2o::BaseBinaryEdge<2,
@@ -590,32 +599,32 @@ class EdgeSim3ProjectXYZ
                             VertexSim3Expmap>()
     {}
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the 2D pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the 2D
+     *                  pixel measurement (u, v), then the information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the pixel
+     *                  measurement (u, v), then the information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the reprojection error (u, v), in pixels: the
-     *               measured pixel minus the pixel the map point vertex
-     *               projects to after the similarity transform, through the
-     *               first camera.
+     * @brief           Computes the reprojection error (u, v), in pixels: the
+     *                  measured pixel minus the pixel the map point vertex
+     *                  projects to after the similarity transform, through the
+     *                  first camera.
      */
     void computeError()
     {
@@ -632,9 +641,9 @@ class EdgeSim3ProjectXYZ
 };
 
 /*!
- * @brief        Edge connecting a map point vertex to a similarity-transform
- *               vertex: the pixel error of the point projected through the
- *               second camera using the inverse transform.
+ * @brief           Edge connecting a map point vertex to a similarity-transform
+ *                  vertex: the pixel error of the point projected through the
+ *                  second camera using the inverse transform.
  */
 class EdgeInverseSim3ProjectXYZ
     : public g2o::BaseBinaryEdge<2,
@@ -651,32 +660,32 @@ class EdgeInverseSim3ProjectXYZ
                             VertexSim3Expmap>()
     {}
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the 2D pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the 2D
+     *                  pixel measurement (u, v), then the information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the pixel
-     *               measurement (u, v), then the information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the pixel
+     *                  measurement (u, v), then the information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the reprojection error (u, v), in pixels: the
-     *               measured pixel minus the pixel the map point vertex
-     *               projects to after the inverse similarity transform, through
-     *               the second camera.
+     * @brief           Computes the reprojection error (u, v), in pixels: the
+     *                  measured pixel minus the pixel the map point vertex
+     *                  projects to after the inverse similarity transform,
+     *                  through the second camera.
      */
     void computeError()
     {
@@ -713,35 +722,35 @@ class EdgeSE3ProjectSE3 : public g2o::BaseBinaryEdge<6,
                             g2o::VertexSE3Expmap>()
     {}
     /*!
-     * @brief        Reads the measurement pose (translation and unit
-     *               quaternion) and the information matrix from a g2o graph
-     *               file stream.
+     * @brief           Reads the measurement pose (translation and unit
+     *                  quaternion) and the information matrix from a g2o graph
+     *                  file stream.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       false if the stream is bad after reading the pose;
-     *               otherwise true when the stream is still good or has reached
-     *               the end.
+     * @return          false if the stream is bad after reading the pose;
+     *                  otherwise true when the stream is still good or has
+     *                  reached the end.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the
-     *               measurement pose (translation and quaternion), then the
-     *               information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the
+     *                  measurement pose (translation and quaternion), then the
+     *                  information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
     /*!
-     * @brief        Stores the measured pose of the marker in the key frame.
+     * @brief           Stores the measured pose of the marker in the key frame.
      *
-     * @param[in]    m_in
-     *               Measured pose as an isometry.
+     * @param[in]       m_in
+     *                  Measured pose as an isometry.
      */
     virtual void setMeasurement(const g2o::Isometry3D &m_in) override
     {
@@ -749,9 +758,9 @@ class EdgeSE3ProjectSE3 : public g2o::BaseBinaryEdge<6,
     }
 
     /*!
-     * @brief        Computes the 6D pose error: the measured pose compared with
-     *               the marker pose seen from the key frame, i.e. key frame
-     *               global pose times marker global pose.
+     * @brief           Computes the 6D pose error: the measured pose compared
+     *                  with the marker pose seen from the key frame, i.e. key
+     *                  frame global pose times marker global pose.
      */
     void computeError()
     {
@@ -791,9 +800,9 @@ class EdgeSE3DoorwayProjectSE3Room : public EdgeSE3ProjectSE3
     {}
 
     /*!
-     * @brief        Computes the 6D pose error: the measured pose compared with
-     *               the doorway pose seen from the room, i.e. inverse room
-     *               global pose times doorway global pose.
+     * @brief           Computes the 6D pose error: the measured pose compared
+     *                  with the doorway pose seen from the room, i.e. inverse
+     *                  room global pose times doorway global pose.
      */
     void computeError()
     {
@@ -839,33 +848,33 @@ class EdgeSE3KFPointToPlane : public g2o::BaseBinaryEdge<1,
                             g2o::VertexPlane>()
     {}
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Stores the measurement matrix that the point-to-plane error
-     *               is evaluated against.
+     * @brief           Stores the measurement matrix that the point-to-plane
+     *                  error is evaluated against.
      *
-     * @param[in]    m_in
-     *               4x4 measurement matrix of the plane observation.
+     * @param[in]       m_in
+     *                  4x4 measurement matrix of the plane observation.
      */
     void setMeasurement(const Eigen::Matrix4d &m_in) override
     {
@@ -873,9 +882,9 @@ class EdgeSE3KFPointToPlane : public g2o::BaseBinaryEdge<1,
     }
 
     /*!
-     * @brief        Computes the scalar point-to-plane error from the plane
-     *               coefficients, the inverse key frame pose and the
-     *               measurement matrix.
+     * @brief           Computes the scalar point-to-plane error from the plane
+     *                  coefficients, the inverse key frame pose and the
+     *                  measurement matrix.
      */
     void computeError()
     {
@@ -891,13 +900,14 @@ class EdgeSE3KFPointToPlane : public g2o::BaseBinaryEdge<1,
     }
 
     /*!
-     * @brief        Checks whether the plane distance d, seen from the key
-     *               frame, is positive.
+     * @brief           Checks whether the plane distance d, seen from the key
+     *                  frame, is positive.
      *
-     * @param[out]   isDistanceCorrect_out
-     *               True when the plane distance in the key frame is positive.
+     * @param[out]      isDistanceCorrect_out
+     *                  True when the plane distance in the key frame is
+     *                  positive.
      *
-     * @return       EDGE_SE3_KFPOINT_TO_PLANE_STATUS_SUCCESS always.
+     * @return          EDGE_SE3_KFPOINT_TO_PLANE_STATUS_SUCCESS always.
      */
     [[nodiscard]] EdgeSE3KFPointToPlaneStatus
         isDistanceCorrect(bool &isDistanceCorrect_out)
@@ -937,32 +947,33 @@ class EdgeVertexPlaneProjectSE3KF
                             g2o::VertexPlane>()
     {}
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Stores the plane that the key frame is expected to observe.
+     * @brief           Stores the plane that the key frame is expected to
+     *                  observe.
      *
-     * @param[in]    m_in
-     *               Measured plane in the key frame.
+     * @param[in]       m_in
+     *                  Measured plane in the key frame.
      */
     void setMeasurement(const g2o::Plane3D &m_in) override
     {
@@ -970,9 +981,9 @@ class EdgeVertexPlaneProjectSE3KF
     }
 
     /*!
-     * @brief        Computes the plane error: the plane vertex seen from the
-     *               key frame, minus the measured plane, using the g2o plane
-     *               difference.
+     * @brief           Computes the plane error: the plane vertex seen from the
+     *                  key frame, minus the measured plane, using the g2o plane
+     *                  difference.
      */
     void computeError()
     {
@@ -992,13 +1003,14 @@ class EdgeVertexPlaneProjectSE3KF
     }
 
     /*!
-     * @brief        Checks whether the plane distance d, seen from the key
-     *               frame, is positive.
+     * @brief           Checks whether the plane distance d, seen from the key
+     *                  frame, is positive.
      *
-     * @param[out]   isDistanceCorrect_out
-     *               True when the plane distance in the key frame is positive.
+     * @param[out]      isDistanceCorrect_out
+     *                  True when the plane distance in the key frame is
+     *                  positive.
      *
-     * @return       EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_SUCCESS always.
+     * @return          EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_SUCCESS always.
      */
     [[nodiscard]] EdgeVertexPlaneProjectSE3KFStatus
         isDistanceCorrect(bool &isDistanceCorrect_out)
@@ -1036,30 +1048,30 @@ class EdgeVertexPlaneProjectPointXYZ
                             g2o::VertexPlane>()
     {}
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the signed distance, in metres, from the map point
-     *               to the plane (normalised plane equation n.x + d).
+     * @brief           Computes the signed distance, in metres, from the map
+     *                  point to the plane (normalised plane equation n.x + d).
      */
     void computeError()
     {
@@ -1099,31 +1111,31 @@ class EdgeVertexPlaneProjectSE3M
                             g2o::VertexPlane>()
     {}
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the 4D error between the plane seen from the
-     *               marker and the marker normal (three components), plus the
-     *               plane distance d in the marker frame.
+     * @brief           Computes the 4D error between the plane seen from the
+     *                  marker and the marker normal (three components), plus
+     *                  the plane distance d in the marker frame.
      */
     void computeError()
     {
@@ -1177,30 +1189,30 @@ class EdgeVertexPlaneParallelism
         g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>()
     {}
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the parallelism error: one minus the absolute dot
-     *               product of the two unit plane normals.
+     * @brief           Computes the parallelism error: one minus the absolute
+     *                  dot product of the two unit plane normals.
      */
     void computeError() override
     {
@@ -1234,30 +1246,30 @@ class EdgeVertexPlanePerpendicularity
         g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>()
     {}
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the perpendicularity error: the absolute dot
-     *               product of the two unit plane normals.
+     * @brief           Computes the perpendicularity error: the absolute dot
+     *                  product of the two unit plane normals.
      */
     void computeError() override
     {
@@ -1293,31 +1305,31 @@ class EdgeVertex4PlaneProjectSE3Room
         resize(5);
     }
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the 3D error between the room centre and the
-     *               position estimated from the four wall planes (two x planes,
-     *               two y planes).
+     * @brief           Computes the 3D error between the room centre and the
+     *                  position estimated from the four wall planes (two x
+     *                  planes, two y planes).
      */
     void computeError() override
     {
@@ -1368,12 +1380,12 @@ class EdgeVertex4PlaneProjectSE3Room
 
   protected:
     /*!
-     * @brief        Flips the plane so its distance coefficient is not
-     *               positive.
+     * @brief           Flips the plane so its distance coefficient is not
+     *                  positive.
      *
-     * @param[in,out] plane_inout
-     *               Plane coefficients (a, b, c, d); negated when d is
-     *               positive.
+     * @param[in,out]   plane_inout
+     *                  Plane coefficients (a, b, c, d); negated when d is
+     *                  positive.
      */
     virtual void correctPlaneDirection(Eigen::Vector4d &plane_inout)
     {
@@ -1394,24 +1406,24 @@ class EdgeVertexNPlaneProjectSE3Room
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
     EdgeVertexNPlaneProjectSE3Room()
@@ -1421,9 +1433,9 @@ class EdgeVertexNPlaneProjectSE3Room
     }
 
     /*!
-     * @brief        Computes the 3D error between the room centre (first
-     *               vertex) and the mean of the positions implied by its wall
-     *               planes (remaining vertices).
+     * @brief           Computes the 3D error between the room centre (first
+     *                  vertex) and the mean of the positions implied by its
+     *                  wall planes (remaining vertices).
      */
     void computeError() override
     {
@@ -1475,14 +1487,15 @@ class EdgeVertexNPlaneProjectSE3Room
 
   protected:
     /*!
-     * @brief        Flips the plane so its distance coefficient is not
-     *               positive.
+     * @brief           Flips the plane so its distance coefficient is not
+     *                  positive.
      *
-     * @param[in,out] plane_inout
-     *               Plane coefficients (a, b, c, d); negated when d is
-     *               positive.
+     * @param[in,out]   plane_inout
+     *                  Plane coefficients (a, b, c, d); negated when d is
+     *                  positive.
      *
-     * @return       EDGE_VERTEX_NPLANE_PROJECT_SE3_ROOM_STATUS_SUCCESS always.
+     * @return          EDGE_VERTEX_NPLANE_PROJECT_SE3_ROOM_STATUS_SUCCESS
+     *                  always.
      */
     [[nodiscard]] EdgeVertexNPlaneProjectSE3RoomStatus
         correctPlaneDirection(Eigen::Vector4d &plane_inout)
@@ -1515,31 +1528,31 @@ class EdgeVertexSE3RoomProjectSE3Marker
                             g2o::VertexSE3Expmap>()
     {}
     /*!
-     * @brief        Reads this edge from a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Reads this edge from a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] inputStream_inout
-     *               Stream positioned at this edge's data.
+     * @param[in,out]   inputStream_inout
+     *                  Stream positioned at this edge's data.
      *
-     * @return       true always.
+     * @return          true always.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!
-     * @brief        Writes this edge to a g2o graph file stream: the
-     *               information matrix.
+     * @brief           Writes this edge to a g2o graph file stream: the
+     *                  information matrix.
      *
-     * @param[in,out] outputStream_inout
-     *               Stream the edge is appended to.
+     * @param[in,out]   outputStream_inout
+     *                  Stream the edge is appended to.
      *
-     * @return       What writeInformationMatrix reports: true when the stream
-     *               is still good.
+     * @return          What writeInformationMatrix reports: true when the
+     *                  stream is still good.
      */
     virtual bool write(std::ostream &outputStream_inout) const;
 
     /*!
-     * @brief        Computes the 4D error: the marker position minus the room
-     *               centre (three components), plus the marker distance from
-     *               the origin.
+     * @brief           Computes the 4D error: the marker position minus the
+     *                  room centre (three components), plus the marker distance
+     *                  from the origin.
      */
     void computeError()
     {
@@ -1572,24 +1585,25 @@ class EdgeVertexSE3RoomProjectSE3Marker
 struct PlanePairMeasurement
 {
     /*!
-     * @brief        Unit normal of the source plane, in the absorbed map frame.
+     * @brief           Unit normal of the source plane, in the absorbed map
+     *                  frame.
      */
     Eigen::Vector3d n_A;
     /*!
-     * @brief        Offset of the source plane: n_A^T x + d_A = 0.
+     * @brief           Offset of the source plane: n_A^T x + d_A = 0.
      */
     double          d_A;
     /*!
-     * @brief        Unit normal of the target plane, in the surviving map
-     *               frame.
+     * @brief           Unit normal of the target plane, in the surviving map
+     *                  frame.
      */
     Eigen::Vector3d n_B;
     /*!
-     * @brief        Offset of the target plane: n_B^T x + d_B = 0.
+     * @brief           Offset of the target plane: n_B^T x + d_B = 0.
      */
     double          d_B;
     /*!
-     * @brief        Fixed sign hypothesis for the source plane, +1 or -1.
+     * @brief           Fixed sign hypothesis for the source plane, +1 or -1.
      */
     int             sigma;
 
@@ -1624,24 +1638,26 @@ class EdgePlaneTransformSE3
     EdgePlaneTransformSE3() {}
 
     /*!
-     * @brief        Placeholder for g2o: this edge is never read from a file.
+     * @brief           Placeholder for g2o: this edge is never read from a
+     *                  file.
      *
-     * @param[in,out] is_inout
-     *               Stream, left untouched.
+     * @param[in,out]   is_inout
+     *                  Stream, left untouched.
      *
-     * @return       false always.
+     * @return          false always.
      */
     bool read([[maybe_unused]] std::istream &is_inout)
     {
         return false;
     }
     /*!
-     * @brief        Placeholder for g2o: this edge is never written to a file.
+     * @brief           Placeholder for g2o: this edge is never written to a
+     *                  file.
      *
-     * @param[in,out] os_inout
-     *               Stream, left untouched.
+     * @param[in,out]   os_inout
+     *                  Stream, left untouched.
      *
-     * @return       false always.
+     * @return          false always.
      */
     bool write([[maybe_unused]] std::ostream &os_inout) const
     {
@@ -1649,9 +1665,9 @@ class EdgePlaneTransformSE3
     }
 
     /*!
-     * @brief        Computes the 3D error: two orientation components in the
-     *               tangent plane at n_B, plus the offset difference, for the
-     *               source plane moved by the SE3 vertex.
+     * @brief           Computes the 3D error: two orientation components in the
+     *                  tangent plane at n_B, plus the offset difference, for
+     *                  the source plane moved by the SE3 vertex.
      */
     void computeError()
     {

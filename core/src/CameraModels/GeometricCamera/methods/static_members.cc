@@ -19,8 +19,8 @@
  * @file            static_members.cc
  *
  * @brief           Defines the GeometricCamera static data members,
- *                  declared in
- * CameraModels/GeometricCamera/objects/GeometricCamera.h.
+ *                                   declared in
+ *                  CameraModels/GeometricCamera/objects/GeometricCamera.h.
  */
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"

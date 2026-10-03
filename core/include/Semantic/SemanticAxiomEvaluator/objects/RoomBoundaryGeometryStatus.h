@@ -36,31 +36,41 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Structural validity of one RoomRecord::boundaryCorners_world_m
- *              polygon, independent of Room::BoundaryStatus and of any
- *              observation-gap/aperture correspondence (a separate,
- *              non-geometric check performed directly by
- *              evaluateAxBound01()).
+ * @brief           Structural validity of one
+ *                  RoomRecord::boundaryCorners_world_m polygon, independent of
+ *                  Room::BoundaryStatus and of any observation-gap/aperture
+ *                  correspondence (a separate, non-geometric check performed
+ *                  directly by evaluateAxBound01()).
  */
 enum class RoomBoundaryGeometryStatus : std::uint8_t
 {
-    /*! @brief At least three corners, no zero-length consecutive edge, and
-     *  no self-intersecting edge pair in the polygon's own best-fit
-     *  plane. */
+    /*!
+     * @brief           At least three corners, no zero-length consecutive edge,
+     *                  and no self-intersecting edge pair in the polygon's own
+     *                  best-fit plane.
+     */
     VALID = 0U,
 
-    /*! @brief Fewer than three corners. */
+    /*!
+     * @brief           Fewer than three corners.
+     */
     TOO_FEW_CORNERS = 1U,
 
-    /*! @brief Two consecutive corners coincide (a zero-length edge). */
+    /*!
+     * @brief           Two consecutive corners coincide (a zero-length edge).
+     */
     DEGENERATE_EDGE = 2U,
 
-    /*! @brief Two non-adjacent edges of the polygon intersect. */
+    /*!
+     * @brief           Two non-adjacent edges of the polygon intersect.
+     */
     SELF_INTERSECTING = 3U,
 
-    /*! @brief At least one corner has a non-finite (NaN or Infinity)
-     *  coordinate; no comparison-based check below is trusted to reject
-     *  this on its own. */
+    /*!
+     * @brief           At least one corner has a non-finite (NaN or Infinity)
+     *                  coordinate; no comparison-based check below is trusted
+     *                  to reject this on its own.
+     */
     NON_FINITE_CORNER = 4U
 };
 

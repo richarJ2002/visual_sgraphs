@@ -67,7 +67,7 @@
 #include <vector>
 
 /*!
- * @brief        Conversion factor from degrees to radians (pi / 180).
+ * @brief           Conversion factor from degrees to radians (pi / 180).
  */
 const float factorPI = static_cast<float>(CV_PI / 180.f);
 

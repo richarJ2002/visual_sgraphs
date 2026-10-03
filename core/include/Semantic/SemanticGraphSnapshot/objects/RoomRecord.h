@@ -45,103 +45,141 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Value-only copy of one committed or candidate room.
+ * @brief           Value-only copy of one committed or candidate room.
  */
 struct RoomRecord
 {
   public:
-    /*! @brief Map-qualified identity; mapId is the *containing* map used to
-     *  enumerate this room, which may differ from declaredMapId below. */
+    /*!
+     * @brief           Map-qualified identity; mapId is the *containing* map
+     *                  used to enumerate this room, which may differ from
+     *                  declaredMapId below.
+     */
     EntityKey key;
 
-    /*! @brief Inverse of Room::isBad(): false means the room is retired. */
+    /*!
+     * @brief           Inverse of Room::isBad(): false means the room is
+     *                  retired.
+     */
     bool isLive{true};
 
-    /*! @brief True when this room's pointer was present in
-     *  Map::GetAllDetectedMapRooms() at capture time. Independent of
-     *  isMarkerBasedMember: the current model allows a Room pointer to be
-     *  registered in both collections simultaneously, and a malformed
-     *  object present in both must remain diagnosable rather than
-     *  collapsed into one flag. */
+    /*!
+     * @brief           True when this room's pointer was present in
+     *                  Map::GetAllDetectedMapRooms() at capture time.
+     *                  Independent of isMarkerBasedMember: the current model
+     *                  allows a Room pointer to be registered in both
+     *                  collections simultaneously, and a malformed object
+     *                  present in both must remain diagnosable rather than
+     *                  collapsed into one flag.
+     */
     bool isDetectedMember{false};
 
-    /*! @brief True when this room's pointer was present in
-     *  Map::GetAllMarkerBasedMapRooms() (== Map::GetAllCandidateMapRooms())
-     *  at capture time. See isDetectedMember. */
+    /*!
+     * @brief           True when this room's pointer was present in
+     *                  Map::GetAllMarkerBasedMapRooms() (==
+     *                  Map::GetAllCandidateMapRooms()) at capture time. See
+     *                  isDetectedMember.
+     */
     bool isMarkerBasedMember{false};
 
-    /*! @brief The room's own Room::getMap() result at capture time, as a
-     *  map id, or absent when that call returned nullptr. Captured
-     *  independently of key.mapId (the containing map) so a stored-in-A/
-     *  declares-B-or-null mismatch is directly diagnosable. */
+    /*!
+     * @brief           The room's own Room::getMap() result at capture time, as
+     *                  a map id, or absent when that call returned nullptr.
+     *                  Captured independently of key.mapId (the containing map)
+     *                  so a stored-in-A/ declares-B-or-null mismatch is
+     *                  directly diagnosable.
+     */
     std::optional<long unsigned int> declaredMapId;
 
-    /*! @brief Room::getRoomVariant() at capture time. */
+    /*!
+     * @brief           Room::getRoomVariant() at capture time.
+     */
     Room::RoomVariant variant{Room::RoomVariant::UNDEFINED};
 
-    /*! @brief Room::getCentroid() at capture time. May reflect a
-     *  concurrent bundle-adjustment update (Optimizer.cc calls
-     *  Room::setCentroid() outside the semantic-update lock); this is a
-     *  pre-existing, mutex-protected, non-racy characteristic shared by
-     *  every other centroid consumer in this codebase, not a defect
-     *  introduced by capture. */
+    /*!
+     * @brief           Room::getCentroid() at capture time. May reflect a
+     *                  concurrent bundle-adjustment update (Optimizer.cc calls
+     *                  Room::setCentroid() outside the semantic-update lock);
+     *                  this is a pre-existing, mutex-protected, non-racy
+     *                  characteristic shared by every other centroid consumer
+     *                  in this codebase, not a defect introduced by capture.
+     */
     Eigen::Vector3d roomCentroid_world_m{Eigen::Vector3d::Zero()};
 
-    /*! @brief Room::getBoundaryStatus() at capture time. */
+    /*!
+     * @brief           Room::getBoundaryStatus() at capture time.
+     */
     Room::BoundaryStatus boundaryStatus{Room::BoundaryStatus::UNOBSERVED};
 
-    /*! @brief As currently stored; Room.h documents these as populated
-     *  only while boundaryStatus == COMPLETE, but this snapshot copies
-     *  whatever is present without gating on status -- interpretation is
-     *  the evaluator's responsibility. */
+    /*!
+     * @brief           As currently stored; Room.h documents these as populated
+     *                  only while boundaryStatus == COMPLETE, but this snapshot
+     *                  copies whatever is present without gating on status --
+     *                  interpretation is the evaluator's responsibility.
+     */
     std::vector<Eigen::Vector3d> boundaryCorners_world_m;
 
-    /*! @brief Populated every cycle regardless of boundaryStatus. */
+    /*!
+     * @brief           Populated every cycle regardless of boundaryStatus.
+     */
     std::vector<Room::ObservationGap> observationGaps;
 
-    /*! @brief One RawPlaneRef per non-null Room::getWalls() entry, sorted
-     *  deterministically by (mapId, planeId, planeType); independent of any
-     *  reverse (Plane -> owning room) computation -- see
-     *  WallRecord::ownerRoomRefs for the inverted view this snapshot also
-     *  builds. A genuinely null Room::getWalls() entry (not currently
-     *  reachable: Room::setWalls() rejects a null pointer before insertion,
-     *  confirmed by direct source read) produces no entry at all -- an
-     *  ordinary "nothing there" case, not evidence. Every non-null entry is
-     *  retained here regardless of map/liveness/type, including a wrong-type
-     *  (planeType != WALL) target, which RawPlaneRef reports truthfully
-     *  instead of this snapshot fabricating a WALL identity for it. Use
-     *  RawPlaneRef::wallKey to look up the corresponding WallRecord when the
-     *  target is genuinely WALL-typed and mapped. */
+    /*!
+     * @brief           One RawPlaneRef per non-null Room::getWalls() entry,
+     *                  sorted deterministically by (mapId, planeId, planeType);
+     *                  independent of any reverse (Plane -> owning room)
+     *                  computation -- see WallRecord::ownerRoomRefs for the
+     *                  inverted view this snapshot also builds. A genuinely
+     *                  null Room::getWalls() entry (not currently reachable:
+     *                  Room::setWalls() rejects a null pointer before
+     *                  insertion, confirmed by direct source read) produces no
+     *                  entry at all -- an ordinary "nothing there" case, not
+     *                  evidence. Every non-null entry is retained here
+     *                  regardless of map/liveness/type, including a wrong-type
+     *                  (planeType != WALL) target, which RawPlaneRef reports
+     *                  truthfully instead of this snapshot fabricating a WALL
+     *                  identity for it. Use RawPlaneRef::wallKey to look up the
+     *                  corresponding WallRecord when the target is genuinely
+     *                  WALL-typed and mapped.
+     */
     std::vector<RawPlaneRef> wallRefs;
 
-    /*! @brief One EntityRef per non-null Room::getPassages() entry (the
-     *  Room::doorways side of the relationship), sorted deterministically.
-     *  Captured independently of each Passage's own knownSideProvenance/
-     *  p_prospectiveRoom fields -- the two directions are not kept
-     *  synchronized by the current model, so the evaluator cross-checks
-     *  them from both independently-captured sides. Unlike the prior
-     *  std::vector<EntityKey> representation, a bad or unmapped passage
-     *  here retains its own liveness/local-identity evidence instead of
-     *  losing it the moment it cannot be map-qualified keyed. */
+    /*!
+     * @brief           One EntityRef per non-null Room::getPassages() entry
+     *                  (the Room::doorways side of the relationship), sorted
+     *                  deterministically. Captured independently of each
+     *                  Passage's own knownSideProvenance/ p_prospectiveRoom
+     *                  fields -- the two directions are not kept synchronized
+     *                  by the current model, so the evaluator cross-checks them
+     *                  from both independently-captured sides. Unlike the prior
+     *                  std::vector<EntityKey> representation, a bad or unmapped
+     *                  passage here retains its own liveness/local-identity
+     *                  evidence instead of losing it the moment it cannot be
+     *                  map-qualified keyed.
+     */
     std::vector<EntityRef> passageRefs;
 
-    /*! @brief Absent means "no floor yet", an ordinary case. */
+    /*!
+     * @brief           Absent means "no floor yet", an ordinary case.
+     */
     EntityRef floorRef;
 
-    /*! @brief The room's ground plane, if any (a GROUND-typed Plane, not
-     *  captured as a WallRecord). reason == NULL_REFERENCE means "no
-     *  ground plane yet", the ordinary case. */
+    /*!
+     * @brief           The room's ground plane, if any (a GROUND-typed Plane,
+     *                  not captured as a WallRecord). reason == NULL_REFERENCE
+     *                  means "no ground plane yet", the ordinary case.
+     */
     RawPlaneRef groundPlaneRef;
 
     /*!
-     * @brief        Always NOT_TRACKED_BY_CURRENT_SCHEMA: Room has no
-     *               field recording how/why it was created (confirmed by
-     *               direct source read of Room.h/Room.cc -- roomTag,
-     *               p_matchedContext, and the meta-marker fields record
-     *               identity/labelling, not creation provenance). A
-     *               future extension that adds a provenance field on
-     *               Room is the owner of resolving this to an actual
-     *               value.
+     * @brief           Always NOT_TRACKED_BY_CURRENT_SCHEMA: Room has no
+     *                  field recording how/why it was created (confirmed by
+     *                  direct source read of Room.h/Room.cc -- roomTag,
+     *                  p_matchedContext, and the meta-marker fields record
+     *                  identity/labelling, not creation provenance). A
+     *                  future extension that adds a provenance field on
+     *                  Room is the owner of resolving this to an actual
+     *                  value.
      */
     UnavailableReason creationProvenanceReason{
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA};

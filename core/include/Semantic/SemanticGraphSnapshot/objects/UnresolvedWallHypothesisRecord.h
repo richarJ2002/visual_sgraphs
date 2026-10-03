@@ -20,7 +20,7 @@
  * @file            UnresolvedWallHypothesisRecord.h
  *
  * @brief           Declares a value-only copy of one
- *                   SemanticsManager::UndefendedWallState entry.
+ *                  SemanticsManager::UndefendedWallState entry.
  */
 
 #ifndef SEMANTIC_GRAPH_SNAPSHOT_UNRESOLVED_WALL_HYPOTHESIS_RECORD_H
@@ -37,29 +37,37 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       Value-only copy of one weak, unused wall hypothesis
- *              awaiting bounded retirement
- *              (SemanticsManager::UndefendedWallState, SemanticsManager.h).
+ * @brief           Value-only copy of one weak, unused wall hypothesis
+ *                  awaiting bounded retirement
+ *                  (SemanticsManager::UndefendedWallState, SemanticsManager.h).
  *
- *              Never holds SemanticsManager::UndefendedWallState's own
- *              Plane* -- \c wallRef is the pointer-free RawPlaneRef built
- *              from it at capture time instead (see rawPlaneRef()).
+ *                  Never holds SemanticsManager::UndefendedWallState's own
+ *                  Plane* -- \c wallRef is the pointer-free RawPlaneRef built
+ *                  from it at capture time instead (see rawPlaneRef()).
  */
 struct UnresolvedWallHypothesisRecord
 {
   public:
-    /*! @brief Pointer-free reference to the unresolved wall Plane, or
-     *  reason == UnavailableReason::NULL_REFERENCE when the source
-     *  pointer was null. */
+    /*!
+     * @brief           Pointer-free reference to the unresolved wall Plane, or
+     *                  reason == UnavailableReason::NULL_REFERENCE when the
+     *                  source pointer was null.
+     */
     RawPlaneRef wallRef;
 
-    /*! @brief UndefendedWallState::unresolvedCycles at capture time. */
+    /*!
+     * @brief           UndefendedWallState::unresolvedCycles at capture time.
+     */
     unsigned int unresolvedCycles{0U};
 
-    /*! @brief UndefendedWallState::cloudPointCount at capture time. */
+    /*!
+     * @brief           UndefendedWallState::cloudPointCount at capture time.
+     */
     std::size_t cloudPointCount{0U};
 
-    /*! @brief UndefendedWallState::observationCount at capture time. */
+    /*!
+     * @brief           UndefendedWallState::observationCount at capture time.
+     */
     std::size_t observationCount{0U};
 };
 

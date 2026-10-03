@@ -62,33 +62,33 @@ void Bias::serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
 }
 
 /*!
- * @brief        Explicit instantiation of Bias::serialize that reads the six
- *               bias components through a Boost binary input archive, so the
- *               map save/load code can link it.
+ * @brief           Explicit instantiation of Bias::serialize that reads the six
+ *                  bias components through a Boost binary input archive, so the
+ *                  map save/load code can link it.
  */
 template void Bias::serialize<boost::archive::binary_iarchive>(
     boost::archive::binary_iarchive &,
     const unsigned int);
 /*!
- * @brief        Explicit instantiation of Bias::serialize that writes the six
- *               bias components through a Boost binary output archive, so the
- *               map save/load code can link it.
+ * @brief           Explicit instantiation of Bias::serialize that writes the
+ *                  six bias components through a Boost binary output archive,
+ *                  so the map save/load code can link it.
  */
 template void Bias::serialize<boost::archive::binary_oarchive>(
     boost::archive::binary_oarchive &,
     const unsigned int);
 /*!
- * @brief        Explicit instantiation of Bias::serialize that reads the six
- *               bias components through a Boost text input archive, so the map
- *               save/load code can link it.
+ * @brief           Explicit instantiation of Bias::serialize that reads the six
+ *                  bias components through a Boost text input archive, so the
+ *                  map save/load code can link it.
  */
 template void Bias::serialize<boost::archive::text_iarchive>(
     boost::archive::text_iarchive &,
     const unsigned int);
 /*!
- * @brief        Explicit instantiation of Bias::serialize that writes the six
- *               bias components through a Boost text output archive, so the map
- *               save/load code can link it.
+ * @brief           Explicit instantiation of Bias::serialize that writes the
+ *                  six bias components through a Boost text output archive, so
+ *                  the map save/load code can link it.
  */
 template void Bias::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,

@@ -20,7 +20,7 @@
  * @file            KnownSideProvenanceStatus.h
  *
  * @brief           Declares the status returned by every KnownSideProvenance
- * operation.
+ *                  operation.
  */
 
 #ifndef KNOWN_SIDE_PROVENANCE_STATUS_H
@@ -36,12 +36,14 @@ namespace semantic
 {
 
 /*!
- * @brief       Result of a KnownSideProvenance operation. Values are fixed and
- * never reordered.
+ * @brief           Result of a KnownSideProvenance operation. Values are fixed
+ *                  and never reordered.
  */
 enum class KnownSideProvenanceStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS = 0U
 };
 

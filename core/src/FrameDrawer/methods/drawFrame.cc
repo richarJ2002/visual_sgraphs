@@ -1,7 +1,7 @@
 /*!
- * @file         drawFrame.cc
+ * @file            drawFrame.cc
  *
- * @brief        Implements FrameDrawer::drawFrame declared in FrameDrawer.h.
+ * @brief           Implements FrameDrawer::drawFrame declared in FrameDrawer.h.
  */
 
 #include "FrameDrawer.h"

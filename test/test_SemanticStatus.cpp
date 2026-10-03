@@ -44,9 +44,9 @@ using semantic::RoomStatus;
 using semantic::SemanticVerifyStatus;
 
 /*!
- * @brief        Checks that the room remove, replace and passage-association
- *               functions return an invalid-argument status for null or
- *               identical pointers and leave the room's walls empty.
+ * @brief           Checks that the room remove, replace and passage-association
+ *                  functions return an invalid-argument status for null or
+ *                  identical pointers and leave the room's walls empty.
  */
 TEST(SemanticStatus, RoomRejectsNullOrRepeatedWallsAndPassages)
 {
@@ -75,9 +75,9 @@ TEST(SemanticStatus, RoomRejectsNullOrRepeatedWallsAndPassages)
 }
 
 /*!
- * @brief        Checks that removing a wall the room does not hold returns
- *               success with the removed flag false, since an absent wall is
- *               data and not an error.
+ * @brief           Checks that removing a wall the room does not hold returns
+ *                  success with the removed flag false, since an absent wall is
+ *                  data and not an error.
  */
 TEST(SemanticStatus, RoomReportsAnAbsentWallAsDataNotFailure)
 {
@@ -91,9 +91,9 @@ TEST(SemanticStatus, RoomReportsAnAbsentWallAsDataNotFailure)
 }
 
 /*!
- * @brief        Checks that passage functions return an invalid-argument status
- *               for null or identical rooms, planes and duplicates, and for a
- *               zero or NaN known-side direction.
+ * @brief           Checks that passage functions return an invalid-argument
+ *                  status for null or identical rooms, planes and duplicates,
+ *                  and for a zero or NaN known-side direction.
  */
 TEST(SemanticStatus, PassageRejectsNullRepeatedAndDegenerateInputs)
 {
@@ -124,9 +124,9 @@ TEST(SemanticStatus, PassageRejectsNullRepeatedAndDegenerateInputs)
 }
 
 /*!
- * @brief        Checks that a floor rejects null or identical rooms and an all-
- *               zero plane, which leaves it without a plane identity, and
- *               accepts a valid plane.
+ * @brief           Checks that a floor rejects null or identical rooms and an
+ *                  all-zero plane, which leaves it without a plane identity,
+ *                  and accepts a valid plane.
  */
 TEST(SemanticStatus, FloorRejectsNullRoomsAndDegeneratePlanes)
 {
@@ -153,9 +153,9 @@ TEST(SemanticStatus, FloorRejectsNullRoomsAndDegeneratePlanes)
 }
 
 /*!
- * @brief        Checks that transformAbsorbedPoint applies a similarity
- *               transform of scale 2 and translation (1,0,0) to a finite point
- *               and returns success.
+ * @brief           Checks that transformAbsorbedPoint applies a similarity
+ *                  transform of scale 2 and translation (1,0,0) to a finite
+ *                  point and returns success.
  */
 TEST(SemanticStatus, TransformAbsorbedPointMapsAFinitePoint)
 {
@@ -171,9 +171,9 @@ TEST(SemanticStatus, TransformAbsorbedPointMapsAFinitePoint)
 }
 
 /*!
- * @brief        Checks that transformAbsorbedPoint returns invalid-argument and
- *               leaves the output untouched for a NaN point or a zero-scale
- *               transform.
+ * @brief           Checks that transformAbsorbedPoint returns invalid-argument
+ *                  and leaves the output untouched for a NaN point or a
+ *                  zero-scale transform.
  */
 TEST(SemanticStatus, TransformAbsorbedPointRejectsNonFiniteOrDegenerateInput)
 {
@@ -197,8 +197,9 @@ TEST(SemanticStatus, TransformAbsorbedPointRejectsNonFiniteOrDegenerateInput)
 }
 
 /*!
- * @brief        Checks that transformAbsorbedPoint returns a numerical-failure
- *               status when the scaled point overflows the double range.
+ * @brief           Checks that transformAbsorbedPoint returns a
+ *                  numerical-failure status when the scaled point overflows the
+ *                  double range.
  */
 TEST(SemanticStatus, TransformAbsorbedPointReportsOverflowAsNumericalFailure)
 {

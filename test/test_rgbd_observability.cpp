@@ -1,6 +1,8 @@
 /*!
- * @file test_rgbd_observability.cpp
- * @brief Tests deterministic RGB-D accounting and reset attribution strings.
+ * @file            test_rgbd_observability.cpp
+ *
+ * @brief           Tests deterministic RGB-D accounting and reset attribution
+ *                  strings.
  */
 
 #include "../src/RgbdObservability.h"

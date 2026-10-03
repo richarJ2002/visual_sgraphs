@@ -1,8 +1,9 @@
 /*!
- * @file SemanticFixtures.cc
- * @brief Implementation of the deterministic semantic-fixture builders
- *        declared in SemanticFixtures.h (semantic-axiom-reliability-plan.md,
- *        P0.4).
+ * @file            SemanticFixtures.cc
+ *
+ * @brief           Implementation of the deterministic semantic-fixture
+ *                  builders declared in SemanticFixtures.h
+ *                  (semantic-axiom-reliability-plan.md, P0.4).
  */
 
 #include "SemanticFixtures.h"

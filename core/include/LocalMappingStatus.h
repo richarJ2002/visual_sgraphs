@@ -20,7 +20,7 @@
  * @file            LocalMappingStatus.h
  *
  * @brief           Declares the status returned by every LocalMapping
- * operation.
+ *                  operation.
  */
 
 #ifndef LOCAL_MAPPING_STATUS_H
@@ -34,12 +34,14 @@ namespace core
 {
 
 /*!
- * @brief       Result of a LocalMapping operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a LocalMapping operation. Values are fixed and
+ *                  never reordered.
  */
 enum class LocalMappingStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     LOCAL_MAPPING_STATUS_SUCCESS = 0U
 };
 

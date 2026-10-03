@@ -20,7 +20,7 @@
  * @file            PreintegratedStatus.h
  *
  * @brief           Declares the status returned by every Preintegrated
- * operation.
+ *                  operation.
  */
 
 #ifndef PREINTEGRATED_STATUS_H
@@ -36,12 +36,14 @@ namespace IMU
 {
 
 /*!
- * @brief       Result of a Preintegrated operation. Values are fixed and never
- *              reordered.
+ * @brief           Result of a Preintegrated operation. Values are fixed and
+ *                  never reordered.
  */
 enum class PreintegratedStatus : std::uint8_t
 {
-    /*! @brief The operation completed and every output was written. */
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
     PREINTEGRATED_STATUS_SUCCESS = 0U
 };
 

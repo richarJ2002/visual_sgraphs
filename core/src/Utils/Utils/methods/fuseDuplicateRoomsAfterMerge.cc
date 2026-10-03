@@ -621,13 +621,17 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          __func__);
         }
 
-        /*! A wall can bound the retained (near) room only when no passable
-         * passage aperture separates its centroid from the retained room
-         * centre. Otherwise it belongs to the far-side room (the passage's
-         * prospective, or a confirmed room that already resolved that
-         * prospective). Copying such a wall into the retained room would both
-         * corrupt the near boundary and hand the far room's evidence to the
-         * near room, so the far-side consultation happens here. */
+        /*!
+         * @brief           A wall can bound the retained (near) room only when
+         *                  no passable passage aperture separates its centroid
+         *                  from the retained room centre. Otherwise it belongs
+         *                  to the far-side room (the passage's prospective, or
+         *                  a confirmed room that already resolved that
+         *                  prospective). Copying such a wall into the retained
+         *                  room would both corrupt the near boundary and hand
+         *                  the far room's evidence to the near room, so the
+         *                  far-side consultation happens here.
+         */
         geometric::Plane *p_mergeGroundPlane = nullptr;
 
         std::vector<geometric::Plane *> mapAllPlanes{};

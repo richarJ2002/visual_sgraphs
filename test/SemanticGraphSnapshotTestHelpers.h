@@ -36,22 +36,30 @@ namespace core
 namespace semantic
 {
 
-/*! @brief Finds the RoomRecord in \p mapSnapshot_in with local id
- *  \p entityId_in, or nullptr if absent. */
+/*!
+ * @brief           Finds the RoomRecord in \p mapSnapshot_in with local id
+ *                  \p entityId_in, or nullptr if absent.
+ */
 const RoomRecord *findRoomRecord(const MapSnapshot &mapSnapshot_in,
                                  int                entityId_in);
 
-/*! @brief Finds the WallRecord in \p mapSnapshot_in with local id
- *  \p entityId_in, or nullptr if absent. */
+/*!
+ * @brief           Finds the WallRecord in \p mapSnapshot_in with local id
+ *                  \p entityId_in, or nullptr if absent.
+ */
 const WallRecord *findWallRecord(const MapSnapshot &mapSnapshot_in,
                                  int                entityId_in);
 
-/*! @brief Finds the PassageRecord in \p mapSnapshot_in with local id
- *  \p entityId_in, or nullptr if absent. */
+/*!
+ * @brief           Finds the PassageRecord in \p mapSnapshot_in with local id
+ *                  \p entityId_in, or nullptr if absent.
+ */
 const PassageRecord *findPassageRecord(const MapSnapshot &mapSnapshot_in,
                                        int                entityId_in);
 
-/*! @brief Finds the MapSnapshot for \p mapId_in, or nullptr if absent. */
+/*!
+ * @brief           Finds the MapSnapshot for \p mapId_in, or nullptr if absent.
+ */
 const MapSnapshot *findMapSnapshot(const SemanticGraphSnapshot &snapshot_in,
                                    long unsigned int            mapId_in);
 

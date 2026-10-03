@@ -17,61 +17,61 @@
  */
 
 /*!
- * @file         scanReversePassageEndpoints.cc
+ * @file            scanReversePassageEndpoints.cc
  *
- * @brief        Implements scanReversePassageEndpoints(), declared in
- *               private_functions.h.
+ * @brief           Implements scanReversePassageEndpoints(), declared in
+ *                  private_functions.h.
  *
- *               Checking only the two rooms named by
- *               PassageRecord::knownSideRoomRef/prospectiveRoomRef leaves
- *               a third live confirmed room whose own RoomRecord::
- *               passageRefs also names this passage structurally invisible.
- *               This function inverts the direction: it scans every
- *               RoomRecord (live or retired) in every captured map for a
- *               passageRefs entry naming this passage, independent of the
- *               passage's own forward fields, and classifies each match
- *               -- a retired room that still lists the passage is itself
- *               a bad reverse reference, not silently excluded from
- *               consideration.
+ *                  Checking only the two rooms named by
+ *                  PassageRecord::knownSideRoomRef/prospectiveRoomRef leaves
+ *                  a third live confirmed room whose own RoomRecord::
+ *                  passageRefs also names this passage structurally invisible.
+ *                  This function inverts the direction: it scans every
+ *                  RoomRecord (live or retired) in every captured map for a
+ *                  passageRefs entry naming this passage, independent of the
+ *                  passage's own forward fields, and classifies each match
+ *                  -- a retired room that still lists the passage is itself
+ *                  a bad reverse reference, not silently excluded from
+ *                  consideration.
  *
- *               A retired RoomRecord (isLive == false) is skipped in
- *               full -- current-state axioms use live committed records,
- *               and retired reverse-room history alone must not poison a
- *               live passage. A live prospective (non-ROOM-variant)
- *               room's passageRefs entries are examined for the same
- *               bad/cross-map/duplicate-identity/wrong-kind anomalies as
- *               a confirmed room's, not silently discarded, even though
- *               they still never contribute to confirmedReverseRoomKeys.
- *               A same-map, live room's passageRefs entry sharing this
- *               passage's map/entity id but a different EntityKind is a
- *               typed wrongKindReverseRoomKeys anomaly rather than a
- *               silent non-match: EntityKey equality compares kind too,
- *               so the general `*passageRef.key != passage_in.key`
- *               comparison alone would otherwise treat a wrong-kind key
- *               exactly like an unrelated reference. A live, same-map,
- *               ROOM-variant room whose own passageRefs names this
- *               passage more than once is a typed
- *               duplicateReferenceRoomKeys anomaly instead of being
- *               silently collapsed to one clean match by the final
- *               key-deduplication pass.
+ *                  A retired RoomRecord (isLive == false) is skipped in
+ *                  full -- current-state axioms use live committed records,
+ *                  and retired reverse-room history alone must not poison a
+ *                  live passage. A live prospective (non-ROOM-variant)
+ *                  room's passageRefs entries are examined for the same
+ *                  bad/cross-map/duplicate-identity/wrong-kind anomalies as
+ *                  a confirmed room's, not silently discarded, even though
+ *                  they still never contribute to confirmedReverseRoomKeys.
+ *                  A same-map, live room's passageRefs entry sharing this
+ *                  passage's map/entity id but a different EntityKind is a
+ *                  typed wrongKindReverseRoomKeys anomaly rather than a
+ *                  silent non-match: EntityKey equality compares kind too,
+ *                  so the general `*passageRef.key != passage_in.key`
+ *                  comparison alone would otherwise treat a wrong-kind key
+ *                  exactly like an unrelated reference. A live, same-map,
+ *                  ROOM-variant room whose own passageRefs names this
+ *                  passage more than once is a typed
+ *                  duplicateReferenceRoomKeys anomaly instead of being
+ *                  silently collapsed to one clean match by the final
+ *                  key-deduplication pass.
  *
- *               An unkeyed passageRefs entry (a local id with no map at
- *               capture time) is not attributed to this specific passage
- *               by bare local-id equality -- local ids are unique only
- *               within one map and are not themselves a map-qualified
- *               identity (see EntityKey.h); that evidence is reported
- *               room/map-scoped by evaluateRoomMalformedPassageReferences()
- *               instead. A clean live prospective reverse relationship is
- *               represented in prospectiveReverseRoomKeys rather than
- *               silently discarded, and a same-map reverse reference
- *               whose own EntityRef::isLive carries no value is
- *               represented in livenessUnavailableReverseRoomKeys rather
- *               than silently falling through to be counted as a
- *               confirmed match ("missing liveness is unavailable, not
- *               live"). Duplicate-multiplicity detection counts every
- *               otherwise-clean match (confirmed, prospective, or
- *               liveness-unavailable alike), not only ROOM-variant
- *               confirmed matches.
+ *                  An unkeyed passageRefs entry (a local id with no map at
+ *                  capture time) is not attributed to this specific passage
+ *                  by bare local-id equality -- local ids are unique only
+ *                  within one map and are not themselves a map-qualified
+ *                  identity (see EntityKey.h); that evidence is reported
+ *                  room/map-scoped by evaluateRoomMalformedPassageReferences()
+ *                  instead. A clean live prospective reverse relationship is
+ *                  represented in prospectiveReverseRoomKeys rather than
+ *                  silently discarded, and a same-map reverse reference
+ *                  whose own EntityRef::isLive carries no value is
+ *                  represented in livenessUnavailableReverseRoomKeys rather
+ *                  than silently falling through to be counted as a
+ *                  confirmed match ("missing liveness is unavailable, not
+ *                  live"). Duplicate-multiplicity detection counts every
+ *                  otherwise-clean match (confirmed, prospective, or
+ *                  liveness-unavailable alike), not only ROOM-variant
+ *                  confirmed matches.
  */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions.h"

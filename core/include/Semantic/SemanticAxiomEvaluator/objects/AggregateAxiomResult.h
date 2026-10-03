@@ -20,7 +20,7 @@
  * @file            AggregateAxiomResult.h
  *
  * @brief           Declares one axiom code's aggregated outcome across every
- *                   Finding produced for it in one evaluation.
+ *                  Finding produced for it in one evaluation.
  */
 
 #ifndef SEMANTIC_AXIOM_EVALUATOR_AGGREGATE_AXIOM_RESULT_H
@@ -39,32 +39,38 @@ namespace core
 namespace semantic
 {
 /*!
- * @brief       One axiom code's aggregated outcome: exactly one instance of
- *              this type exists per axiom code in AxiomEvaluationReport::
- *              aggregates, computed by aggregateFindings() from
- *              AxiomEvaluationReport::findings using FAIL > UNKNOWN > PASS
- *              precedence (a single FAIL finding for a code makes its
- *              aggregate FAIL; otherwise a single UNKNOWN finding makes it
- *              UNKNOWN; only unanimous PASS, including a vacuously empty
- *              finding set, yields PASS).
+ * @brief           One axiom code's aggregated outcome: exactly one instance of
+ *                  this type exists per axiom code in AxiomEvaluationReport::
+ *                  aggregates, computed by aggregateFindings() from
+ *                  AxiomEvaluationReport::findings using FAIL > UNKNOWN > PASS
+ *                  precedence (a single FAIL finding for a code makes its
+ *                  aggregate FAIL; otherwise a single UNKNOWN finding makes it
+ *                  UNKNOWN; only unanimous PASS, including a vacuously empty
+ *                  finding set, yields PASS).
  */
 struct AggregateAxiomResult
 {
   public:
-    /*! @brief Which of the sixteen axiom codes this aggregate is for. */
+    /*!
+     * @brief           Which of the sixteen axiom codes this aggregate is for.
+     */
     AxiomCode axiomCode{AxiomCode::AX_FRAME_01};
 
-    /*! @brief The aggregated tri-state outcome. */
+    /*!
+     * @brief           The aggregated tri-state outcome.
+     */
     AxiomResult result{AxiomResult::UNKNOWN};
 
     /*!
-     * @brief        Fixed "Class" column value for axiomCode.
+     * @brief           Fixed "Class" column value for axiomCode.
      */
     AxiomClass classification{AxiomClass::HARD};
 
-    /*! @brief How many AxiomEvaluationReport::findings entries have this
-     *  axiomCode; always >= 1 in this slice (every code emits at least one
-     *  placeholder or per-instance finding). */
+    /*!
+     * @brief           How many AxiomEvaluationReport::findings entries have
+     *                  this axiomCode; always >= 1 in this slice (every code
+     *                  emits at least one placeholder or per-instance finding).
+     */
     std::size_t contributingFindingCount{0U};
 };
 

@@ -1,8 +1,8 @@
 /*!
- * @file         augmentMissionHealthTopologyJsonWithSemantics.cc
+ * @file            augmentMissionHealthTopologyJsonWithSemantics.cc
  *
- * @brief        Implements augmentMissionHealthTopologyJsonWithSemantics
- *               declared in MissionHealthTopologyJson.h.
+ * @brief           Implements augmentMissionHealthTopologyJsonWithSemantics
+ *                  declared in MissionHealthTopologyJson.h.
  */
 
 #include "MissionHealthTopologyJson.h"

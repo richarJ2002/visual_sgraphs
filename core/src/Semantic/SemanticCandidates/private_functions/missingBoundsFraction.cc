@@ -25,8 +25,11 @@ namespace core
 namespace semantic
 {
 
-/*! Fraction of wallBounds entries that are invalid; 0.0 when there are no
- * walls to be missing from (">50% missing bounds" guard). */
+/*!
+ * @brief           Fraction of wallBounds entries that are invalid; 0.0 when
+ *                  there are no walls to be missing from (">50% missing bounds"
+ *                  guard).
+ */
 SemanticCandidatesStatus
     missingBoundsFraction(const RoomContextSnapshot &snapshot_in,
                           double                    &missingBoundsFraction_out)
