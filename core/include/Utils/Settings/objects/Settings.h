@@ -829,24 +829,49 @@ class Settings
      * Visual stuff
      */
     /*!
-     * @brief        Owned first and second camera calibrations.
+     * @brief        Calibration of the first camera, created by readCamera1;
+     *               Settings never deletes it.
      */
-    camera_models::geometriccamera::GeometricCamera *p_calibration1,
-        *p_calibration2; // Camera calibration
+    camera_models::geometriccamera::GeometricCamera *p_calibration1;
     /*!
-     * @brief        Owned pre-rectification camera calibrations.
+     * @brief        Calibration of the second camera, created by readCamera2
+     *               for stereo sensors only (not initialised otherwise);
+     *               Settings never deletes it.
      */
-    camera_models::geometriccamera::GeometricCamera *p_originalCalibration1,
-        *p_originalCalibration2;
+    camera_models::geometriccamera::GeometricCamera *p_calibration2;
     /*!
-     * @brief        Pinhole distortion coefficients per camera.
+     * @brief        Calibration of the first camera as read from the file,
+     *               before resizing or rectification; Settings never deletes
+     *               it.
      */
-    std::vector<double> pinholeDistortion1, pinholeDistortion2;
+    camera_models::geometriccamera::GeometricCamera *p_originalCalibration1;
+    /*!
+     * @brief        Calibration of the second camera as read from the file,
+     *               before resizing or rectification; created by readCamera2
+     *               for stereo sensors only; Settings never deletes it.
+     */
+    camera_models::geometriccamera::GeometricCamera *p_originalCalibration2;
+    /*!
+     * @brief        Pinhole distortion coefficients of the first camera.
+     */
+    std::vector<double>                              pinholeDistortion1;
+    /*!
+     * @brief        Pinhole distortion coefficients of the second camera in
+     *               OpenCV order k1, k2, p1, p2 and optionally k3; empty unless
+     *               Camera2 is a distorted pinhole.
+     */
+    std::vector<double>                              pinholeDistortion2;
 
     /*!
-     * @brief        Original and undistorted image sizes in pixels.
+     * @brief        Image size stored in the settings file, in pixels.
      */
-    cv::Size originalImageSize, newImageSize;
+    cv::Size originalImageSize;
+    /*!
+     * @brief        Image size the pipeline works at, in pixels: equal to
+     *               originalImageSize unless Camera.newHeight or
+     *               Camera.newWidth request a resize.
+     */
+    cv::Size newImageSize;
     /*!
      * @brief        Camera frame rate in hertz.
      */
@@ -865,9 +890,15 @@ class Settings
      */
     bool isRectificationNeeded;
     /*!
-     * @brief        True when a resize step is configured.
+     * @brief        True when Camera.newHeight or Camera.newWidth request a
+     *               resize.
      */
-    bool isFirstResizeNeeded, isSecondResizeNeeded;
+    bool isFirstResizeNeeded;
+    /*!
+     * @brief        Second-camera resize flag; initialised to false and never
+     *               set to true by the readers.
+     */
+    bool isSecondResizeNeeded;
 
     /*!
      * @brief        Left-to-right stereo transform.
@@ -878,35 +909,60 @@ class Settings
      */
     double       depthThreshold;
     /*!
-     * @brief        Baseline-focal product and stereo baseline in
-     *               metres.
+     * @brief        Stereo baseline multiplied by the first camera focal length
+     *               fx, in metres times pixels.
      */
-    double       baselineFocal, stereoBaseline;
+    double       baselineFocal;
+    /*!
+     * @brief        Distance between the two cameras, in metres: Stereo.b for
+     *               rectified input, otherwise the norm of the Stereo.T_c1_c2
+     *               translation (RGB-D reads it from the settings file).
+     */
+    double       stereoBaseline;
 
     /*
      * Rectification stuff
      */
     /*!
-     * @brief        Left undistortion and rectification maps.
+     * @brief        Left-camera x lookup map of the undistortion and
+     *               rectification remap, filled by precomputeRectificationMaps.
      */
-    cv::Mat rectifyMap1Left, rectifyMap2Left;
+    cv::Mat rectifyMap1Left;
     /*!
-     * @brief        Right undistortion and rectification maps.
+     * @brief        Left-camera y lookup map of the undistortion and
+     *               rectification remap, filled by precomputeRectificationMaps.
      */
-    cv::Mat rectifyMap1Right, rectifyMap2Right;
+    cv::Mat rectifyMap2Left;
+    /*!
+     * @brief        Right-camera x lookup map of the undistortion and
+     *               rectification remap, filled by precomputeRectificationMaps.
+     */
+    cv::Mat rectifyMap1Right;
+    /*!
+     * @brief        Right-camera y lookup map of the undistortion and
+     *               rectification remap, filled by precomputeRectificationMaps.
+     */
+    cv::Mat rectifyMap2Right;
 
     /*
      * Inertial stuff
      */
     /*!
-     * @brief        Gyroscope and accelerometer noise densities.
+     * @brief        Gyroscope noise density, read from IMU.NoiseGyro.
      */
-    double       gyroNoise, accelNoise;
+    double       gyroNoise;
     /*!
-     * @brief        Gyroscope and accelerometer random-walk
-     *               densities.
+     * @brief        Accelerometer noise density, read from IMU.NoiseAcc.
      */
-    double       gyroWalkNoise, accelWalkNoise;
+    double       accelNoise;
+    /*!
+     * @brief        Gyroscope random-walk density, read from IMU.GyroWalk.
+     */
+    double       gyroWalkNoise;
+    /*!
+     * @brief        Accelerometer random-walk density, read from IMU.AccWalk.
+     */
+    double       accelWalkNoise;
     /*!
      * @brief        IMU sample rate in hertz.
      */
@@ -939,9 +995,15 @@ class Settings
      */
     double depthMapScale;
     /*!
-     * @brief        Near and far depth limits in metres.
+     * @brief        Nearest depth kept from a depth image, in metres, read from
+     *               RGBD.NearThresh.
      */
-    double nearThreshold, farThreshold;
+    double nearThreshold;
+    /*!
+     * @brief        Farthest depth kept from a depth image, in metres, read
+     *               from RGBD.FarThresh.
+     */
+    double farThreshold;
 
     /*
      * ORB stuff
@@ -959,9 +1021,15 @@ class Settings
      */
     int    pyramidLevels;
     /*!
-     * @brief        FAST thresholds used at extraction and retry.
+     * @brief        FAST corner threshold tried first, read from
+     *               ORBextractor.iniThFAST.
      */
-    int    initialFastThreshold, minimumFastThreshold;
+    int    initialFastThreshold;
+    /*!
+     * @brief        Lower FAST corner threshold used when the first one finds
+     *               too few corners, read from ORBextractor.minThFAST.
+     */
+    int    minimumFastThreshold;
 
     /*
      * Viewer stuff
@@ -991,10 +1059,25 @@ class Settings
      */
     double viewerCameraLineWidth;
     /*!
-     * @brief        Viewer viewpoint coordinates and focal value.
+     * @brief        Initial viewer camera x position, read from
+     *               Viewer.ViewpointX.
      */
-    double viewerViewPointX, viewerViewPointY, viewerViewPointZ,
-        viewerViewPointF;
+    double viewerViewPointX;
+    /*!
+     * @brief        Initial viewer camera y position, read from
+     *               Viewer.ViewpointY.
+     */
+    double viewerViewPointY;
+    /*!
+     * @brief        Initial viewer camera z position, read from
+     *               Viewer.ViewpointZ.
+     */
+    double viewerViewPointZ;
+    /*!
+     * @brief        Focal value of the viewer camera, read from
+     *               Viewer.ViewpointF.
+     */
+    double viewerViewPointF;
     /*!
      * @brief        Image viewer display scale.
      */
@@ -1004,9 +1087,15 @@ class Settings
      * Save & load maps
      */
     /*!
-     * @brief        Atlas load and save file paths.
+     * @brief        Path of a saved atlas to load, read from
+     *               System.LoadAtlasFromFile; empty when not given.
      */
-    std::string atlasLoadPath, atlasSavePath;
+    std::string atlasLoadPath;
+    /*!
+     * @brief        Path the atlas is saved to, read from
+     *               System.SaveAtlasToFile; empty when not given.
+     */
+    std::string atlasSavePath;
 
     /*
      * Other stuff
@@ -1026,6 +1115,25 @@ class Settings
  * translation unit that saw only the generic body would implicitly
  * instantiate it instead.
  */
+/*!
+ * @brief        Reads one floating-point parameter from file storage.
+ *
+ * @param[in]    storage_in
+ *               Open storage holding the parameters.
+ * @param[in]    name_in
+ *               Parameter name to read.
+ * @param[out]   found_out
+ *               True when the parameter exists.
+ * @param[out]   parameter_out
+ *               Parameter value; zero when an optional parameter
+ *               is missing.
+ * @param[in]    required_in
+ *               True to require the parameter.
+ *
+ * @return       SETTINGS_STATUS_SUCCESS. A missing required parameter
+ *               or a value of the wrong type
+ *               ends the process with exit(-1).
+ */
 template <>
 [[nodiscard]] SettingsStatus
     Settings::readParameter<float>(cv::FileStorage   &storage_in,
@@ -1034,6 +1142,25 @@ template <>
                                    float             &parameter_out,
                                    const bool         required_in);
 
+/*!
+ * @brief        Reads one integer parameter from file storage.
+ *
+ * @param[in]    storage_in
+ *               Open storage holding the parameters.
+ * @param[in]    name_in
+ *               Parameter name to read.
+ * @param[out]   found_out
+ *               True when the parameter exists.
+ * @param[out]   parameter_out
+ *               Parameter value; zero when an optional parameter
+ *               is missing.
+ * @param[in]    required_in
+ *               True to require the parameter.
+ *
+ * @return       SETTINGS_STATUS_SUCCESS. A missing required parameter
+ *               or a value of the wrong type
+ *               ends the process with exit(-1).
+ */
 template <>
 [[nodiscard]] SettingsStatus
     Settings::readParameter<int>(cv::FileStorage   &storage_in,
@@ -1042,6 +1169,25 @@ template <>
                                  int               &parameter_out,
                                  const bool         required_in);
 
+/*!
+ * @brief        Reads one string parameter from file storage.
+ *
+ * @param[in]    storage_in
+ *               Open storage holding the parameters.
+ * @param[in]    name_in
+ *               Parameter name to read.
+ * @param[out]   found_out
+ *               True when the parameter exists.
+ * @param[out]   parameter_out
+ *               Parameter value; an empty string when an optional parameter
+ *               is missing.
+ * @param[in]    required_in
+ *               True to require the parameter.
+ *
+ * @return       SETTINGS_STATUS_SUCCESS. A missing required parameter
+ *               or a value of the wrong type
+ *               ends the process with exit(-1).
+ */
 template <>
 [[nodiscard]] SettingsStatus
     Settings::readParameter<std::string>(cv::FileStorage   &storage_in,
@@ -1050,6 +1196,24 @@ template <>
                                          std::string       &parameter_out,
                                          const bool         required_in);
 
+/*!
+ * @brief        Reads one matrix parameter from file storage.
+ *
+ * @param[in]    storage_in
+ *               Open storage holding the parameters.
+ * @param[in]    name_in
+ *               Parameter name to read.
+ * @param[out]   found_out
+ *               True when the parameter exists.
+ * @param[out]   parameter_out
+ *               Parameter value; an empty matrix when an optional parameter
+ *               is missing.
+ * @param[in]    required_in
+ *               True to require the parameter.
+ *
+ * @return       SETTINGS_STATUS_SUCCESS. A missing required parameter
+ *               ends the process with exit(-1).
+ */
 template <>
 [[nodiscard]] SettingsStatus
     Settings::readParameter<cv::Mat>(cv::FileStorage   &storage_in,

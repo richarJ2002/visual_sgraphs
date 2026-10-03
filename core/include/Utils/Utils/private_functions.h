@@ -53,7 +53,15 @@ namespace utils
  */
 struct ObservationSideEvidence
 {
+    /*!
+     * @brief        Median signed camera-to-plane distance in metres, or no
+     *               value when the observations do not establish a side.
+     */
     std::optional<double> medianSignedDistance_m;
+    /*!
+     * @brief        True when the observing cameras do not agree on one side of
+     *               the plane, so no side can be chosen.
+     */
     bool                  isAmbiguous{false};
 };
 
@@ -89,11 +97,30 @@ struct ObservationSideEvidence
  */
 struct ProjectedPlaneBounds
 {
+    /*!
+     * @brief        Smallest coordinate along the first tangent, in metres; the
+     *               largest double until a finite point is seen.
+     */
     double minimumU_m = std::numeric_limits<double>::max();
+    /*!
+     * @brief        Largest coordinate along the first tangent, in metres; the
+     *               lowest double until a finite point is seen.
+     */
     double maximumU_m = std::numeric_limits<double>::lowest();
+    /*!
+     * @brief        Smallest coordinate along the second tangent, in metres;
+     *               the largest double until a finite point is seen.
+     */
     double minimumV_m = std::numeric_limits<double>::max();
+    /*!
+     * @brief        Largest coordinate along the second tangent, in metres; the
+     *               lowest double until a finite point is seen.
+     */
     double maximumV_m = std::numeric_limits<double>::lowest();
-    bool   isValid    = false;
+    /*!
+     * @brief        True once at least one finite point has set the bounds.
+     */
+    bool   isValid = false;
 };
 
 /*!

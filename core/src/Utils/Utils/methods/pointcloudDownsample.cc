@@ -66,6 +66,11 @@ UtilsStatus Utils::pointcloudDownsample(
     p_downsampledCloud_out = p_filteredCloud;
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
+/*!
+ * @brief        Explicit instantiation of Utils::pointcloudDownsample for
+ *               pcl::PointXYZRGBA clouds, the only point type the pipeline
+ *               uses.
+ */
 template UtilsStatus Utils::pointcloudDownsample<pcl::PointXYZRGBA>(
     const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &,
     const float,

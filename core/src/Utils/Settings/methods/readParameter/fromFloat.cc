@@ -47,6 +47,11 @@ namespace utils
 namespace settings
 {
 
+/*!
+ * @brief        Reads one floating-point parameter: the readParameter<float>()
+ *               specialization whose contract is on its declaration in
+ *               Settings.h.
+ */
 template <>
 SettingsStatus Settings::readParameter<float>(cv::FileStorage   &storage_in,
                                               const std::string &name_in,

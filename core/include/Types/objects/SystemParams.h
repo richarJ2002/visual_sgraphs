@@ -45,81 +45,276 @@ namespace core
 {
 namespace types
 {
+/*!
+ * @brief        Process-wide store of the tunable settings read from the YAML
+ *               parameter file (config/system_params.yaml). One instance
+ *               exists, obtained through getParams(); setParams() fills it once
+ *               at start-up.
+ */
 class SystemParams
 {
   public:
+    /*!
+     * @brief        Returns the single parameter store, creating it with the
+     *               built-in defaults on the first call. The store is never
+     *               deleted.
+     *
+     * @param[out]   p_params_out
+     *               Receives a borrowed pointer to the store; never null after
+     *               the call.
+     *
+     * @return       SYSTEM_PARAMS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] static SystemParamsStatus
         getParams(SystemParams *&p_params_out);
+    /*!
+     * @brief        Loads every setting from the YAML file, replacing the
+     *               defaults. A missing file, a missing or mistyped key, or a
+     *               value that fails the range checks is logged and ends the
+     *               process with exit(1) instead of returning.
+     *
+     * @param[in]    configurationFilePath_in
+     *               Path of the YAML parameter file.
+     *
+     * @return       SYSTEM_PARAMS_STATUS_SUCCESS when everything loaded;
+     *               failures never return.
+     */
     [[nodiscard]] SystemParamsStatus
         setParams(const std::string &configurationFilePath_in);
 
     // Common struct definitions
+    /*!
+     * @brief        Switch and weight of one optional plane-based optimisation
+     *               factor.
+     */
     struct Constraint
     {
-        bool  enabled         = false;
+        /*!
+         * @brief        True when the optimiser adds this factor.
+         */
+        bool  enabled = false;
+        /*!
+         * @brief        Scale applied to the factor's information matrix,
+         *               together with the observation confidence. Unitless;
+         *               larger values make the optimiser trust the factor more.
+         */
         float informationGain = 0.1f;
     };
+    /*!
+     * @brief        Voxel-grid settings for thinning a point cloud before it is
+     *               used.
+     */
     struct Downsample
     {
-        float        leafSize          = 0.03f;
+        /*!
+         * @brief        Edge length of one voxel, metres.
+         */
+        float        leafSize = 0.03f;
+        /*!
+         * @brief        Fewest points a voxel must hold to be kept; sparser
+         *               voxels are dropped.
+         */
         unsigned int minPointsPerVoxel = 5;
     };
     // Structs for different modules
+    /*!
+     * @brief        Run mode and environment-database settings.
+     */
     struct General
     {
-        // enum for mode of operation
+        /*!
+         * @brief        Which segmentation pipelines run. SEM_GEO runs semantic
+         *               segmentation together with geometric segmentation, SEM
+         *               runs semantic alone, GEO runs geometric alone. The
+         *               values match the YAML integers 0, 1 and 2.
+         */
         enum class ModeOfOperation : std::uint8_t
         {
             SEM_GEO = 0U,
             SEM     = 1U,
             GEO     = 2U
         };
+        /*!
+         * @brief        Selected pipeline, read from the YAML key
+         *               mode_of_operation as a raw integer (not range-checked).
+         */
         ModeOfOperation modeOfOperation = ModeOfOperation::SEM_GEO;
-        std::string     envDatabase     = "";
-    } general;
+        /*!
+         * @brief        Path of the JSON file holding the high-level semantic
+         *               description of the environment; System::initialize
+         *               parses it.
+         */
+        std::string     envDatabase = "";
+    };
+    /*!
+     * @brief        Run mode and environment-database settings.
+     */
+    General general;
 
+    /*!
+     * @brief        Fiducial-marker settings.
+     */
     struct Markers
     {
+        /*!
+         * @brief        Trust weight of marker observations, unitless. Loaded
+         *               from YAML but no optimisation step reads it yet.
+         */
         float impact = 0.1f;
-    } markers;
+    };
+    /*!
+     * @brief        Fiducial-marker settings.
+     */
+    Markers markers;
 
+    /*!
+     * @brief        Depth range accepted from the RGB-D sensor.
+     */
     struct Pointcloud
     {
+        /*!
+         * @brief        Near and far depth limits, metres, along the sensor z
+         *               axis: first is near, second is far. The defaults are
+         *               replaced by the camera settings RGBD.NearThresh and
+         *               RGBD.FarThresh when those are read.
+         */
         std::pair<float, float> distanceThresh = std::make_pair(0.2f, 10.0f);
-    } pointcloud;
+    };
+    /*!
+     * @brief        Depth range accepted from the RGB-D sensor.
+     */
+    Pointcloud pointcloud;
 
+    /*!
+     * @brief        Switches and gains of the plane-based optimisation factors.
+     */
     struct Optimization
     {
+        /*!
+         * @brief        True when bundle adjustment marginalises the plane
+         *               vertices out of the problem. The plane to map point
+         *               factor works only when this is false.
+         */
         bool       shouldMarginalizePlanes = false;
+        /*!
+         * @brief        Factor linking a plane to the map points observed on
+         *               it.
+         */
         Constraint planeMapPoint;
+        /*!
+         * @brief        Factor linking a plane equation to the key frame that
+         *               observes it.
+         */
         Constraint planeKf;
+        /*!
+         * @brief        Factor linking a plane to the distance of a point lying
+         *               on it.
+         */
         Constraint planePoint;
-    } optimization;
+    };
+    /*!
+     * @brief        Switches and gains of the plane-based optimisation factors.
+     */
+    Optimization optimization;
 
+    /*!
+     * @brief        Settings for removing map points that lie behind a semantic
+     *               plane.
+     */
     struct RefineMapPoints
     {
-        bool  enabled              = false;
+        /*!
+         * @brief        True when pose optimisation checks map points against
+         *               semantic planes.
+         */
+        bool  enabled = false;
+        /*!
+         * @brief        Signed distance behind a plane, metres, beyond which a
+         *               map point is treated as lying behind that plane and is
+         *               checked against the plane cloud.
+         */
         float maxDistanceForDelete = 0.5f;
+        /*!
+         * @brief        Octree search settings for testing whether a point lies
+         *               in a plane's point cloud.
+         */
         struct Octree
         {
-            float        resolution   = 0.1f;
+            /*!
+             * @brief        Leaf edge length of the plane-cloud octree, metres.
+             */
+            float        resolution = 0.1f;
+            /*!
+             * @brief        Radius of the neighbour search around the queried
+             *               point, metres.
+             */
             float        searchRadius = 0.5f;
+            /*!
+             * @brief        Number of plane-cloud points that must lie within
+             *               the search radius for the point to count as part of
+             *               the plane cloud.
+             */
             unsigned int minNeighbors = 2;
-        } octree;
-    } refineMapPoints;
+        };
+        /*!
+         * @brief        Octree search settings for testing whether a point lies
+         *               in a plane cloud.
+         */
+        Octree octree;
+    };
+    /*!
+     * @brief        Settings for removing map points that lie behind a semantic
+     *               plane.
+     */
+    RefineMapPoints refineMapPoints;
 
+    /*!
+     * @brief        Plane-based covisibility graph settings.
+     */
     struct PlaneBasedCovisibility
     {
-        bool         enabled       = true;
-        unsigned int maxKeyframes  = 75;
+        /*!
+         * @brief        True when key frames that see the same planes are used
+         *               as local bundle adjustment neighbours.
+         */
+        bool         enabled = true;
+        /*!
+         * @brief        Number of best covisible key frames used as neighbours
+         *               of a key frame in local bundle adjustment.
+         */
+        unsigned int maxKeyframes = 75;
+        /*!
+         * @brief        Covisibility score each plane shared by two key frames
+         *               adds to their connection weight.
+         */
         unsigned int scorePerPlane = 60;
-    } planeBasedCovisibility;
+    };
+    /*!
+     * @brief        Plane-based covisibility graph settings.
+     */
+    PlaneBasedCovisibility planeBasedCovisibility;
 
+    /*!
+     * @brief        Segmentation settings shared by the geometric and semantic
+     *               pipelines.
+     */
     struct Seg
     {
-        unsigned int pointcloudsThresh    = 200;
+        /*!
+         * @brief        Number of points a filtered cloud must exceed before a
+         *               plane is searched in it.
+         */
+        unsigned int pointcloudsThresh = 200;
+        /*!
+         * @brief        Largest distance from a map point to a plane, metres,
+         *               for the point to count as lying on the plane.
+         */
         float        planePointDistThresh = 0.2f;
 
+        /*!
+         * @brief        Thresholds that decide whether two plane observations
+         *               belong to the same plane.
+         */
         struct PlaneAssociation
         {
             /*!
@@ -140,6 +335,10 @@ class SystemParams
              */
             float centroidThresh = 2.5f;
 
+            /*!
+             * @brief        Splits the cloud of one plane into spatially
+             *               separate fragments.
+             */
             struct ClusterSeparation
             {
                 /*!
@@ -154,42 +353,158 @@ class SystemParams
                  */
                 float tolerance = 0.35f;
 
+                /*!
+                 * @brief        Voxel filter intended for the plane cloud
+                 *               before fragments are separated. Loaded from
+                 *               YAML but not read anywhere yet.
+                 */
                 Downsample downsample;
-            } clusterSeparation;
+            };
+            /*!
+             * @brief        Settings for splitting one plane's cloud into
+             *               separate fragments.
+             */
+            ClusterSeparation clusterSeparation;
+        };
+        /*!
+         * @brief        Thresholds that decide whether two plane observations
+         *               are the same plane.
+         */
+        PlaneAssociation planeAssociation;
 
-        } planeAssociation;
-
+        /*!
+         * @brief        RANSAC plane-fitting limits.
+         */
         struct Ransac
         {
-            unsigned int maxPlanes      = 2;
+            /*!
+             * @brief        Largest number of planes fitted in one point cloud.
+             */
+            unsigned int maxPlanes = 2;
+            /*!
+             * @brief        Largest distance from a point to the fitted plane,
+             *               metres, for the point to be an inlier.
+             */
             float        distanceThresh = 0.04f;
-            unsigned int maxIterations  = 600;
-        } ransac;
-    } seg;
+            /*!
+             * @brief        Largest number of RANSAC iterations per plane.
+             */
+            unsigned int maxIterations = 600;
+        };
+        /*!
+         * @brief        RANSAC plane-fitting limits.
+         */
+        Ransac ransac;
+    };
+    /*!
+     * @brief        Segmentation settings shared by the geometric and semantic
+     *               pipelines.
+     */
+    Seg seg;
 
+    /*!
+     * @brief        Geometric segmentation settings.
+     */
     struct GeoSeg
     {
+        /*!
+         * @brief        Point-cloud settings of geometric segmentation.
+         */
         struct Pointcloud
         {
+            /*!
+             * @brief        Voxel filter intended for the geometric point
+             *               cloud. Loaded from YAML but not read anywhere yet.
+             */
             Downsample downsample;
-        } pointcloud;
-    } geoSeg;
+        };
+        /*!
+         * @brief        Point-cloud settings of geometric segmentation.
+         */
+        Pointcloud pointcloud;
+    };
+    /*!
+     * @brief        Geometric segmentation settings.
+     */
+    GeoSeg geoSeg;
 
+    /*!
+     * @brief        Semantic segmentation settings.
+     */
     struct SemSeg
     {
-        float minVotes         = 1.0f;
-        float probThresh       = 0.5f;
-        float confThresh       = 0.5f;
-        float maxTiltWall      = 0.3f;
-        float maxTiltGround    = 0.2f;
+        /*!
+         * @brief        Weighted vote total a plane needs before it receives a
+         *               semantic label.
+         */
+        float minVotes = 1.0f;
+        /*!
+         * @brief        Smallest per-pixel class probability, 0 to 1, that is
+         *               kept in a class cloud.
+         */
+        float probThresh = 0.5f;
+        /*!
+         * @brief        Smallest segmentation confidence, 0 to 1, that is kept;
+         *               it is scaled by 255 to compare with the 8-bit
+         *               confidence values.
+         */
+        float confThresh = 0.5f;
+        /*!
+         * @brief        Largest absolute value of coefficient 1 of a wall
+         *               plane's equation, expressed in the ground-reference
+         *               frame, for the plane to stay a wall. Unitless; 0 is
+         *               perfectly vertical.
+         */
+        float maxTiltWall = 0.3f;
+        /*!
+         * @brief        Largest absolute value of coefficient 0 of a ground
+         *               plane's equation, expressed in the ground-reference
+         *               frame, for the plane to stay ground. Unitless; 0 is
+         *               perfectly horizontal.
+         */
+        float maxTiltGround = 0.2f;
+        /*!
+         * @brief        Depth, metres, below the main ground plane's median
+         *               height that other ground planes may reach before they
+         *               are dropped as not being stepped ground.
+         */
         float maxStepElevation = 0.2f;
 
-        int   passageKfWindow               = 7;
-        float maxDoorWidth                  = 1.5f;
-        float maxDoorHeight                 = 2.0f;
-        float maxWallDoorDistance           = 0.5f;
-        float maxKfPassageDistance          = 1.0f;
-        bool  enablePassageDetection        = true;
+        /*!
+         * @brief        Number of key frames meant to be checked when deciding
+         *               whether the camera passed through a passage. Loaded
+         *               from YAML but not read anywhere yet.
+         */
+        int   passageKfWindow = 7;
+        /*!
+         * @brief        Largest width of a door or passage, metres; wider
+         *               measured openings are limited or rejected.
+         */
+        float maxDoorWidth = 1.5f;
+        /*!
+         * @brief        Largest height of a door or passage, metres.
+         */
+        float maxDoorHeight = 2.0f;
+        /*!
+         * @brief        Largest distance, metres, between a door and its
+         *               supporting wall for the door to be attached to that
+         *               wall.
+         */
+        float maxWallDoorDistance = 0.5f;
+        /*!
+         * @brief        Largest key frame to passage distance, metres, meant
+         *               for detecting a pass through a passage. Loaded from
+         *               YAML but not read anywhere yet.
+         */
+        float maxKfPassageDistance = 1.0f;
+        /*!
+         * @brief        True when doors and passages are detected and updated.
+         */
+        bool  enablePassageDetection = true;
+        /*!
+         * @brief        Largest distance between two passage centroids, metres,
+         *               for them to be treated as the same passage.
+         */
         float passageCentroidDistanceThresh = 1.0f;
 
         /*!
@@ -242,12 +557,27 @@ class SystemParams
             float        minimumHorizontalFlankExtent_m = 0.35f;
             /*! @brief Required mapped wall points on each opening flank. */
             unsigned int minimumHorizontalFlankPointCount = 12U;
-        } passageDetection;
+        };
+        /*!
+         * @brief        Open-passage evidence extraction settings.
+         */
+        PassageDetection passageDetection;
 
+        /*!
+         * @brief        Point-cloud settings of semantic segmentation.
+         */
         struct Pointcloud
         {
+            /*!
+             * @brief        Voxel filter applied to each semantic class cloud
+             *               before planes are extracted.
+             */
             Downsample downsample;
-        } pointcloud;
+        };
+        /*!
+         * @brief        Point-cloud settings of semantic segmentation.
+         */
+        Pointcloud pointcloud;
 
         /*!
          * @brief Controls whether a semantic wall observation is substantial
@@ -284,8 +614,18 @@ class SystemParams
                  * gate must clear ~0.50 with margin while still catching
                  * genuinely scattered/sparse noise below it. */
                 float        minimumComponentRatio = 0.40f;
-            } connectivity;
-        } wallCreation;
+            };
+            /*!
+             * @brief        Connected-component validation of a new wall
+             *               observation.
+             */
+            Connectivity connectivity;
+        };
+        /*!
+         * @brief        Admission thresholds for creating a persistent wall
+         *               plane.
+         */
+        WallCreation wallCreation;
 
         /*!
          * @brief Thresholds deciding when two WALL Planes are plausibly the
@@ -299,11 +639,28 @@ class SystemParams
             float maximumThickness_m = 0.60f;
             /*! @brief Required in-plane footprint overlap ratio. */
             float minimumOverlapRatio = 0.30f;
-        } wallPairing;
+        };
+        /*!
+         * @brief        Thresholds for pairing the two faces of one physical
+         *               wall.
+         */
+        WallPairing wallPairing;
 
+        /*!
+         * @brief        Re-association of semantic planes that became
+         *               duplicates after loop closure or map merge.
+         */
         struct Reassociate
         {
-            bool  enabled           = false;
+            /*!
+             * @brief        True when duplicate semantic planes are reconciled.
+             */
+            bool  enabled = false;
+            /*!
+             * @brief        Association threshold passed to associatePlanes
+             *               when a plane is matched against the others during
+             *               re-association.
+             */
             float associationThresh = 0.2f;
 
             /*!
@@ -318,49 +675,181 @@ class SystemParams
                 float maximumInPlaneGap_m = 1.25f;
                 /*! @brief Minimum overlap on the orthogonal axis, in metres. */
                 float minimumOrthogonalOverlap_m = 0.30f;
-            } wallExtension;
-        } reassociate;
-    } semSeg;
+            };
+            /*!
+             * @brief        Settings for fusing adjacent finite fragments of
+             *               one wall.
+             */
+            WallExtension wallExtension;
+        };
+        /*!
+         * @brief        Re-association settings for duplicate semantic planes.
+         */
+        Reassociate reassociate;
+    };
+    /*!
+     * @brief        Semantic segmentation settings.
+     */
+    SemSeg semSeg;
 
+    /*!
+     * @brief        Room segmentation settings.
+     */
     struct RoomSeg
     {
+        /*!
+         * @brief        Algorithm that detects rooms. GEOMETRIC groups the
+         *               closest facing walls, FREE_SPACE clusters the Voxblox
+         *               free-space skeleton, and GNN uses a graph neural
+         *               network.
+         */
         enum class Method : std::uint8_t
         {
             GEOMETRIC  = 0U,
             FREE_SPACE = 1U,
             GNN        = 2U
         };
+        /*!
+         * @brief        Room detection algorithm, read from the YAML key method
+         *               as a raw integer (not range-checked).
+         */
         Method method = Method::FREE_SPACE;
 
-        float centerDistanceThresh        = 1.5f;
-        float planeFacingDotThresh        = -0.8f;
-        float minWallDistanceThresh       = 1.0f;
-        float wallsParallelismThresh      = 10.0f;
+        /*!
+         * @brief        Largest distance between two room centres, metres, for
+         *               them to be treated as the same room.
+         */
+        float centerDistanceThresh = 1.5f;
+        /*!
+         * @brief        Smallest alignment (dot product of unit normals) two
+         *               walls need to count as facing each other. Only its
+         *               absolute value is used. Unitless.
+         */
+        float planeFacingDotThresh = -0.8f;
+        /*!
+         * @brief        Smallest gap between two facing walls, metres, for the
+         *               space between them to count as a room or corridor.
+         */
+        float minWallDistanceThresh = 1.0f;
+        /*!
+         * @brief        Largest angle between two wall normals, degrees, for
+         *               the walls to count as parallel.
+         */
+        float wallsParallelismThresh = 10.0f;
+        /*!
+         * @brief        Largest deviation from 90 degrees, in degrees, between
+         *               two wall normals for the walls to count as
+         *               perpendicular.
+         */
         float wallsPerpendicularityThresh = 10.0f;
 
-        unsigned int minClusterVertices                        = 5;
-        float        markerWallDistanceThresh                  = 3.0f;
-        float        clusterPointWallDistanceThresh            = 0.5f;
+        /*!
+         * @brief        Smallest number of skeleton vertices that form a free-
+         *               space cluster.
+         */
+        unsigned int minClusterVertices = 5;
+        /*!
+         * @brief        Largest marker to wall distance, metres, for the
+         *               geometric room method. Deprecated; loaded from YAML but
+         *               not read anywhere.
+         */
+        float        markerWallDistanceThresh = 3.0f;
+        /*!
+         * @brief        Largest distance from a cluster point to a wall,
+         *               metres, for the wall to belong to the room.
+         */
+        float        clusterPointWallDistanceThresh = 0.5f;
+        /*!
+         * @brief        Largest distance from the cluster centroid to a wall
+         *               centroid, metres, for the wall to belong to the room.
+         */
         float        clusterCentroidWallCentroidDistanceThresh = 5.0f;
 
-        unsigned int minimumWallSupportPointCount    = 2;
-        unsigned int minimumWallObservationCount     = 3;
+        /*!
+         * @brief        Fewest skeleton points that must support a wall before
+         *               it is linked to a room.
+         */
+        unsigned int minimumWallSupportPointCount = 2;
+        /*!
+         * @brief        Fewest key frame observations a wall needs before it is
+         *               created as a structural element.
+         */
+        unsigned int minimumWallObservationCount = 3;
+        /*!
+         * @brief        Number of semantic cycles an unused wall is kept before
+         *               it is retired. Must be at least 1.
+         */
         unsigned int minimumUndefendedWallHoldCycles = 5;
-        float        minimumWallSupportRatio         = 0.5f;
-        float        finiteWallBoundsMargin_m        = 0.75f;
-        float        minimumFiniteWallExtent_m       = 1.0f;
+        /*!
+         * @brief        Fraction of nearby skeleton points, 0 to 1, that must
+         *               project inside a wall's observed bounds.
+         */
+        float        minimumWallSupportRatio = 0.5f;
+        /*!
+         * @brief        Tolerance added around a wall's observed finite bounds,
+         *               metres.
+         */
+        float        finiteWallBoundsMargin_m = 0.75f;
+        /*!
+         * @brief        Smallest observed extent along each of a wall's two
+         *               tangent axes, metres.
+         */
+        float        minimumFiniteWallExtent_m = 1.0f;
 
+        /*!
+         * @brief        Finite-wall topology validation: repair of clashing
+         *               walls and classification of closed room boundaries.
+         */
         struct BoundaryTopology
         {
-            bool         enabled                       = true;
-            unsigned int minimumWallCount              = 3;
-            float        minimumWallLength_m           = 0.75f;
-            float        maximumCornerGap_m            = 0.75f;
+            /*!
+             * @brief        True when wall-clash repair and closed-boundary
+             *               classification run.
+             */
+            bool         enabled = true;
+            /*!
+             * @brief        Fewest finite wall segments needed to close a room
+             *               boundary; at least 3.
+             */
+            unsigned int minimumWallCount = 3;
+            /*!
+             * @brief        Smallest robust horizontal wall length used by the
+             *               boundary model, metres.
+             */
+            float        minimumWallLength_m = 0.75f;
+            /*!
+             * @brief        Largest unsupported extension from an observed wall
+             *               end to a corner, metres.
+             */
+            float        maximumCornerGap_m = 0.75f;
+            /*!
+             * @brief        Largest distance an intersection may lie inside a
+             *               wall before it is treated as a clash or T-junction,
+             *               metres.
+             */
             float        maximumInteriorIntersection_m = 0.30f;
-            float        minimumEnclosedArea_m2        = 2.0f;
-            float        endpointTrimRatio             = 0.02f;
-            float        decisiveConflictSupportRatio  = 1.5f;
-        } boundaryTopology;
+            /*!
+             * @brief        Smallest horizontal area enclosed by a complete
+             *               room boundary, square metres.
+             */
+            float        minimumEnclosedArea_m2 = 2.0f;
+            /*!
+             * @brief        Fraction trimmed from each end of a wall projection
+             *               to reject outliers; 0 to 0.45.
+             */
+            float        endpointTrimRatio = 0.02f;
+            /*!
+             * @brief        Ratio by which the stronger wall's observation
+             *               score must exceed the weaker one's before the
+             *               weaker one is removed in a clash; otherwise both
+             *               are kept and the conflict is flagged. At least 1.
+             */
+            float        decisiveConflictSupportRatio = 1.5f;
+        };
+        /*!
+         * @brief        Finite-wall topology validation settings.
+         */
+        BoundaryTopology boundaryTopology;
 
         /*!
          * @brief Configures semantic room partitioning at confirmed passages.
@@ -388,10 +877,24 @@ class SystemParams
             bool  shouldDetachWallsBeyondPassages = true;
             /*! @brief Room/wall side-test distance threshold, in metres. */
             float wallCentroidMinimumSideDistance_m = 0.30f;
-        } passagePartition;
+        };
+        /*!
+         * @brief        Settings for cutting room free space at confirmed
+         *               passages.
+         */
+        PassagePartition passagePartition;
 
+        /*!
+         * @brief        Version of the GNN-based room segmentation: 1 is the
+         *               S-Graphs one, 2 the vS-Graphs one. Loaded from YAML but
+         *               not read anywhere yet.
+         */
         int gnnVersion = 1;
-    } roomSeg;
+    };
+    /*!
+     * @brief        Room segmentation settings.
+     */
+    RoomSeg roomSeg;
 
     /*!
      * @brief        Room-tracking state machine configuration.
@@ -419,45 +922,157 @@ class SystemParams
         unsigned int reacquireMaxRetries = 3U;
         /*! Minimum planes required to attempt a reacquire. */
         unsigned int reacquireMinPlanes = 3U;
-    } roomTracking;
+    };
+    /*!
+     * @brief        Room-tracking state machine settings.
+     */
+    RoomTracking roomTracking;
 
+    /*!
+     * @brief        Limits and weights for generating room-match candidates
+     *               across maps.
+     */
     struct CandidateGen
     {
-        unsigned int topK                   = 10U;
-        unsigned int candidatePairCap       = 1000U;
-        unsigned int topologyNodesCap       = 128U;
-        unsigned int globalFallbackCap      = 1000U;
-        float        weightAngle            = 1.0F;
-        float        weightExtent           = 1.0F;
-        float        weightAperture         = 1.0F;
-        float        weightTopology         = 1.0F;
-        float        angleMissingPenalty    = 1.0F;
-        float        extentMissingPenalty   = 1.0F;
+        /*!
+         * @brief        Largest number of candidates returned, best first.
+         */
+        unsigned int topK = 10U;
+        /*!
+         * @brief        Largest number of room pairs scored in the adjacency-
+         *               prioritised pass.
+         */
+        unsigned int candidatePairCap = 1000U;
+        /*!
+         * @brief        Largest number of topology graph nodes used per room.
+         */
+        unsigned int topologyNodesCap = 128U;
+        /*!
+         * @brief        Largest number of room pairs scored in the global
+         *               fallback pass.
+         */
+        unsigned int globalFallbackCap = 1000U;
+        /*!
+         * @brief        Weight of the wall-angle cue in the combined distance,
+         *               unitless.
+         */
+        float        weightAngle = 1.0F;
+        /*!
+         * @brief        Weight of the wall-extent cue in the combined distance,
+         *               unitless.
+         */
+        float        weightExtent = 1.0F;
+        /*!
+         * @brief        Weight of the passage-aperture cue in the combined
+         *               distance, unitless.
+         */
+        float        weightAperture = 1.0F;
+        /*!
+         * @brief        Weight of the topology cue in the combined distance,
+         *               unitless.
+         */
+        float        weightTopology = 1.0F;
+        /*!
+         * @brief        Value used in place of a missing entry when two rooms'
+         *               wall-angle lists differ in length.
+         */
+        float        angleMissingPenalty = 1.0F;
+        /*!
+         * @brief        Value used in place of a missing entry when two rooms'
+         *               wall-extent lists differ in length.
+         */
+        float        extentMissingPenalty = 1.0F;
+        /*!
+         * @brief        Penalty distance for a passage aperture that has no
+         *               partner in the other room.
+         */
         float        apertureMissingPenalty = 1.0F;
-        float        ambiguityMargin        = 0.05F;
-        float        angleTolerance_rad     = 1.0e-9F;
-        float        runtimeBudget_ms       = 0.0F;
-        unsigned int descriptorElementsCap  = 4096U;
-        unsigned int topoRefinementIters    = 3U;
-    } candidateGen;
+        /*!
+         * @brief        A candidate whose distance is within this margin of the
+         *               best one is flagged as ambiguous.
+         */
+        float        ambiguityMargin = 0.05F;
+        /*!
+         * @brief        Angle differences at or below this value, radians,
+         *               count as zero.
+         */
+        float        angleTolerance_rad = 1.0e-9F;
+        /*!
+         * @brief        Runtime budget, milliseconds, kept as profiling
+         *               metadata only; the generator never reads a clock. 0
+         *               means no budget.
+         */
+        float        runtimeBudget_ms = 0.0F;
+        /*!
+         * @brief        Largest number of elements in one room descriptor.
+         */
+        unsigned int descriptorElementsCap = 4096U;
+        /*!
+         * @brief        Number of refinement rounds when building a room's
+         *               topology signature.
+         */
+        unsigned int topoRefinementIters = 3U;
+    };
+    /*!
+     * @brief        Room-match candidate generation settings.
+     */
+    CandidateGen candidateGen;
 
     /*! Plane-gated geometric verification gates. Initial values are
      * explicit figures; all calibration-dependent. */
     struct Verification
     {
-        float        maxNormalAngle_deg      = 10.0F;
-        float        maxOffset_m             = 0.35F;
-        float        maxSupportDist_m        = 0.25F;
-        float        minInlierRatio          = 0.6F;
-        float        maxConditionNumber      = 100.0F;
-        unsigned int ambiguityMarginInliers  = 1U;
-        unsigned int maxWallsPerRoom         = 16U;
-        unsigned int maxHypotheses           = 2000U;
+        /*!
+         * @brief        Largest angle between two matched wall normals,
+         *               degrees, for the walls to agree.
+         */
+        float        maxNormalAngle_deg = 10.0F;
+        /*!
+         * @brief        Largest difference between matched wall plane offsets
+         *               after alignment, metres.
+         */
+        float        maxOffset_m = 0.35F;
+        /*!
+         * @brief        Largest symmetric support distance between two matched
+         *               walls after alignment, metres.
+         */
+        float        maxSupportDist_m = 0.25F;
+        /*!
+         * @brief        Smallest inlier ratio, 0 to 1, for a hypothesis to be
+         *               accepted.
+         */
+        float        minInlierRatio = 0.6F;
+        /*!
+         * @brief        Largest condition number of the translation fit; above
+         *               it a hypothesis is discarded. Unitless.
+         */
+        float        maxConditionNumber = 100.0F;
+        /*!
+         * @brief        Number of inliers by which the best hypothesis must
+         *               beat the runner-up; otherwise the match is rejected as
+         *               ambiguous.
+         */
+        unsigned int ambiguityMarginInliers = 1U;
+        /*!
+         * @brief        Largest number of walls collected per room.
+         */
+        unsigned int maxWallsPerRoom = 16U;
+        /*!
+         * @brief        Largest number of wall-triple hypotheses evaluated.
+         */
+        unsigned int maxHypotheses = 2000U;
+        /*!
+         * @brief        Largest number of support points sampled per wall.
+         */
         unsigned int maxSupportSamplePerWall = 64U;
         /*! Explicit |cos(theta)| gate, distinct from
          * maxNormalAngle_deg above. */
         float        minAbsCosNormalAngle = 0.85F;
-    } verification;
+    };
+    /*!
+     * @brief        Geometric verification gates for a room match.
+     */
+    Verification verification;
 
     /*! EdgePlaneTransformSE3 factor noise model and robust threshold.
      * No given initial values beyond the Huber constant; the sigma
@@ -465,11 +1080,32 @@ class SystemParams
      * calibration-dependent like the rest of this section. */
     struct Factor
     {
-        float        sigmaTheta_rad      = 0.05F;
-        float        sigmaOffset_m       = 0.05F;
-        float        huberDelta          = 1.345F;
+        /*!
+         * @brief        Standard deviation of the wall normal angle in the
+         *               edge-plane factor, radians.
+         */
+        float        sigmaTheta_rad = 0.05F;
+        /*!
+         * @brief        Standard deviation of the wall plane offset in the
+         *               edge-plane factor, metres.
+         */
+        float        sigmaOffset_m = 0.05F;
+        /*!
+         * @brief        Huber kernel threshold of the edge-plane factor, in
+         *               standard deviations; residuals beyond it are weighted
+         *               down.
+         */
+        float        huberDelta = 1.345F;
+        /*!
+         * @brief        Number of optimiser iterations used by the verification
+         *               step.
+         */
         unsigned int optimizerIterations = 20U;
-    } factor;
+    };
+    /*!
+     * @brief        Noise model and robust threshold of the edge-plane factor.
+     */
+    Factor factor;
 
     /*!
      * @brief        Map-merge and axiom configuration thresholds.
@@ -509,7 +1145,11 @@ class SystemParams
         /*! @brief Maximum anchor-room centroid distance after alignment
          * (metres). Rooms pair by tag; this only bounds residual drift. */
         float        roomCentroidTolerance_m = 0.50F;
-    } mapMerge;
+    };
+    /*!
+     * @brief        Map-merge and axiom thresholds.
+     */
+    MapMerge mapMerge;
 
   private:
     /*!
@@ -520,7 +1160,15 @@ class SystemParams
     {
         p_systemParams = nullptr;
     }
+    /*!
+     * @brief        The single parameter store, created by getParams() on first
+     *               use and never deleted; null until then.
+     */
     static SystemParams *p_systemParams;
+    /*!
+     * @brief        Root of the parsed YAML parameter file, kept by
+     *               setParams().
+     */
     YAML::Node           config;
 };
 } // namespace types

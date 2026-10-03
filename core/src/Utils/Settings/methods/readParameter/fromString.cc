@@ -26,7 +26,7 @@
 /*!
  * @file            fromString.cc
  *
- * @brief           Implements Settings::readParameter<string>(),
+ * @brief           Implements Settings::readParameter<std::string>(),
  *                  declared in Utils/Settings/objects/Settings.h.
  */
 
@@ -48,11 +48,11 @@ namespace settings
 {
 
 template <>
-SettingsStatus Settings::readParameter<string>(cv::FileStorage   &storage_in,
-                                               const std::string &name_in,
-                                               bool              &found_out,
-                                               std::string       &parameter_out,
-                                               const bool         required_in)
+SettingsStatus Settings::readParameter<std::string>(cv::FileStorage &storage_in,
+                                                    const std::string &name_in,
+                                                    bool        &found_out,
+                                                    std::string &parameter_out,
+                                                    const bool   required_in)
 {
     cv::FileNode node = storage_in[name_in];
     if (node.empty())

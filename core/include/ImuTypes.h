@@ -214,13 +214,29 @@ class Bias
 
   public:
     /*!
-     * @brief        Accelerometer bias components.
+     * @brief        Accelerometer bias along the body x axis, m/s^2.
      */
-    float bax, bay, baz;
+    float bax;
     /*!
-     * @brief        Gyroscope bias components.
+     * @brief        Accelerometer bias along the body y axis, m/s^2.
      */
-    float bwx, bwy, bwz;
+    float bay;
+    /*!
+     * @brief        Accelerometer bias along the body z axis, m/s^2.
+     */
+    float baz;
+    /*!
+     * @brief        Gyroscope bias about the body x axis, rad/s.
+     */
+    float bwx;
+    /*!
+     * @brief        Gyroscope bias about the body y axis, rad/s.
+     */
+    float bwy;
+    /*!
+     * @brief        Gyroscope bias about the body z axis, rad/s.
+     */
+    float bwz;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
@@ -321,9 +337,15 @@ class Calib
      */
     Sophus::SE3<float>              mTbc;
     /*!
-     * @brief        Noise and random-walk covariances.
+     * @brief        Gyroscope then accelerometer measurement noise variances
+     *               (diagonal), set by setCalibration.
      */
-    Eigen::DiagonalMatrix<float, 6> Cov, CovWalk;
+    Eigen::DiagonalMatrix<float, 6> Cov;
+    /*!
+     * @brief        Gyroscope then accelerometer bias random-walk variances
+     *               (diagonal), set by setCalibration.
+     */
+    Eigen::DiagonalMatrix<float, 6> CovWalk;
     /*!
      * @brief        True once Set has stored a calibration.
      */
@@ -743,9 +765,16 @@ class Preintegrated
      */
     Eigen::Matrix<float, 15, 15>    Info;
     /*!
-     * @brief        Measurement and random-walk noise models.
+     * @brief        Gyroscope then accelerometer measurement noise variances
+     *               (diagonal) used to grow the covariance.
      */
-    Eigen::DiagonalMatrix<float, 6> Nga, NgaWalk;
+    Eigen::DiagonalMatrix<float, 6> Nga;
+    /*!
+     * @brief        Gyroscope then accelerometer bias random-walk variances
+     *               (diagonal) added to the bias block of the covariance at
+     *               every measurement.
+     */
+    Eigen::DiagonalMatrix<float, 6> NgaWalk;
 
     // Values for the original bias (when integration was computed)
     /*!
@@ -757,18 +786,50 @@ class Preintegrated
      */
     Eigen::Matrix3f dR;
     /*!
-     * @brief        Integrated velocity and position deltas.
+     * @brief        Integrated velocity increment in the body frame at the
+     *               start of the integration, m/s.
      */
-    Eigen::Vector3f dV, dP;
+    Eigen::Vector3f dV;
     /*!
-     * @brief        Jacobians of the deltas with respect to
-     *               the bias.
+     * @brief        Integrated position increment in the body frame at the
+     *               start of the integration, metres.
      */
-    Eigen::Matrix3f JRg, JVg, JVa, JPg, JPa;
+    Eigen::Vector3f dP;
     /*!
-     * @brief        Mean acceleration and angular rate.
+     * @brief        Jacobian of the rotation increment with respect to the
+     *               gyroscope bias.
      */
-    Eigen::Vector3f avgA, avgW;
+    Eigen::Matrix3f JRg;
+    /*!
+     * @brief        Jacobian of the velocity increment with respect to the
+     *               gyroscope bias.
+     */
+    Eigen::Matrix3f JVg;
+    /*!
+     * @brief        Jacobian of the velocity increment with respect to the
+     *               accelerometer bias.
+     */
+    Eigen::Matrix3f JVa;
+    /*!
+     * @brief        Jacobian of the position increment with respect to the
+     *               gyroscope bias.
+     */
+    Eigen::Matrix3f JPg;
+    /*!
+     * @brief        Jacobian of the position increment with respect to the
+     *               accelerometer bias.
+     */
+    Eigen::Matrix3f JPa;
+    /*!
+     * @brief        Time-weighted mean of the bias-corrected acceleration,
+     *               rotated by the integrated rotation, m/s^2.
+     */
+    Eigen::Vector3f avgA;
+    /*!
+     * @brief        Time-weighted mean of the bias-corrected angular velocity,
+     *               rad/s.
+     */
+    Eigen::Vector3f avgW;
 
   private:
     // Updated bias
@@ -828,10 +889,13 @@ class Preintegrated
             t(sampleInterval_in)
         {}
         /*!
-         * @brief        Stored accelerometer and gyroscope
-         *               samples.
+         * @brief        Stored accelerometer sample, m/s^2.
          */
-        Eigen::Vector3f a, w;
+        Eigen::Vector3f a;
+        /*!
+         * @brief        Stored gyroscope sample, rad/s.
+         */
+        Eigen::Vector3f w;
         /*!
          * @brief        Interval since the previous sample,
          *               in seconds.

@@ -91,6 +91,11 @@ UtilsStatus Utils::pointcloudDistanceFilter(
     p_filteredCloud_out = p_filteredCloud;
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
+/*!
+ * @brief        Explicit instantiation of Utils::pointcloudDistanceFilter for
+ *               pcl::PointXYZRGBA clouds, the only point type the pipeline
+ *               uses.
+ */
 template UtilsStatus Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(
     const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &,
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);

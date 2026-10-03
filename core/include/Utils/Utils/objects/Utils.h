@@ -61,6 +61,10 @@ class Utils
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    /*!
+     * @brief        Maps each key frame to its world-to-camera pose as a
+     *               Sim(3); the keys are borrowed key frame pointers.
+     */
     using KeyFramePoseMap = std::map<
         KeyFrame *,
         g2o::Sim3,
@@ -107,18 +111,22 @@ class Utils
                                       double                &distance_out);
 
     /*!
-     * @brief        Calculates the intersection point of a line and a
-     *               plane. The line shall not be parallel to the plane.
+     * @brief           Calculates the intersection point of a line and a
+     *                  plane. The line shall not be parallel to the plane.
      *
-     * @param[in]    plane_in
-     *               Plane equation.
-     * @param[in]    lineStart_in
-     *               Start point of the line.
-     * @param[in]    lineEnd_in
-     *               End point of the line.
+     * @param[in]       plane_in
+     *                  Plane equation.
      *
-     * @param[out] intersection_out Point where the line meets the plane.
-     * @return UTILS_STATUS_SUCCESS.
+     * @param[in]       lineStart_in
+     *                  Start point of the line.
+     *
+     * @param[in]       lineEnd_in
+     *                  End point of the line.
+     *
+     * @param[out]      intersection_out
+     *                  Point where the line meets the plane.
+     *
+     * @return          UTILS_STATUS_SUCCESS.
      */
     [[nodiscard]] static UtilsStatus
         lineIntersectsPlane(const Eigen::Vector4d &plane_in,
@@ -127,19 +135,23 @@ class Utils
                             Eigen::Vector3d       &intersection_out);
 
     /*!
-     * @brief        Checks to see if two planes are apart enough from
-     *               each other, given a threshold.
+     * @brief           Checks to see if two planes are apart enough from
+     *                  each other, given a threshold.
      *
-     * @param[in]    p_plane1_in
-     *               First plane; may be null.
-     * @param[in]    p_plane2_in
-     *               Second plane; may be null.
-     * @param[in]    threshold_in
-     *               Threshold value for perpendicularity, in metres.
+     * @param[in]       p_plane1_in
+     *                  First plane; may be null.
      *
-     * @param[out] arePlanesApartEnough_out True when both planes are valid and
-     * their perpendicular separation exceeds the threshold.
-     * @return UTILS_STATUS_SUCCESS.
+     * @param[in]       p_plane2_in
+     *                  Second plane; may be null.
+     *
+     * @param[in]       threshold_in
+     *                  Threshold value for perpendicularity, in metres.
+     *
+     * @param[out]      arePlanesApartEnough_out
+     *                  True when both planes are valid and their perpendicular
+     *                  separation exceeds the threshold.
+     *
+     * @return          UTILS_STATUS_SUCCESS.
      */
     [[nodiscard]] static UtilsStatus
         arePlanesApartEnough(const geometric::Plane *p_plane1_in,
