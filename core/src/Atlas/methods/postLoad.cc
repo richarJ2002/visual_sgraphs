@@ -24,7 +24,7 @@
  */
 
 /*!
- * @file            PostLoad.cc
+ * @file            postLoad.cc
  *
  * @brief           Implements Atlas::postLoad(), declared in Atlas.h.
  */

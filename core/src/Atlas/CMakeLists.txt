@@ -8,8 +8,6 @@ set(VS_GRAPHS_ATLAS_SOURCES
   core/src/Atlas/countLivePassages.cc
   core/src/Atlas/countLiveRooms.cc
   core/src/Atlas/countLiveWallPlanes.cc
-  core/src/Atlas/methods/PostLoad.cc
-  core/src/Atlas/methods/PreSave.cc
   core/src/Atlas/methods/acknowledgeNewMapCreatedEvent.cc
   core/src/Atlas/methods/acquireSemanticUpdateLock.cc
   core/src/Atlas/methods/addCamera.cc
@@ -84,6 +82,8 @@ set(VS_GRAPHS_ATLAS_SOURCES
   core/src/Atlas/methods/observePassageIdentity.cc
   core/src/Atlas/methods/observeRoomIdentity.cc
   core/src/Atlas/methods/peekNewMapCreatedEvent.cc
+  core/src/Atlas/methods/postLoad.cc
+  core/src/Atlas/methods/preSave.cc
   core/src/Atlas/methods/removeBadMaps.cc
   core/src/Atlas/methods/reserveFloorIdentity.cc
   core/src/Atlas/methods/reservePassageIdentity.cc
