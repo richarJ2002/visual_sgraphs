@@ -83,6 +83,11 @@ namespace semantic
 struct RoomContextSnapshot;
 class Floor;
 
+/*!
+ * @brief        A room or corridor found in the building: the walls around it,
+ *               its doorways, the floor it is on and how well its boundary
+ *               has been observed.
+ */
 class Room
 {
   public:
@@ -169,6 +174,10 @@ class Room
      * PRIVATE MEMBERS
      * ---------------------------------------------------------------------- */
 
+    /*!
+     * @brief        Guards the name, tag, matched context, meta-marker, room
+     *               variant, recovery-proxy flag and visited flag.
+     */
     mutable std::mutex stateMutex;
 
     /*!

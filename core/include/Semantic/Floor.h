@@ -52,6 +52,11 @@ namespace semantic
 {
 class Room;
 
+/*!
+ * @brief        One storey of the building: the rooms and corridors found on
+ *               it, plus the ground plane used to tell floors apart and to
+ *               merge the same floor seen in different maps.
+ */
 class Floor
 {
   public:
@@ -59,24 +64,90 @@ class Floor
      * quality. */
     struct PlaneIdentity
     {
+        /*!
+         * @brief        Ground-plane equation (normal x, y, z and offset)
+         *               in the world frame, scaled so the normal has unit
+         *               length.
+         */
         Eigen::Vector4d planeEquation_world{Eigen::Vector4d::Zero()};
-        std::size_t     finiteSupportCount{0U};
-        std::size_t     observationCount{0U};
+
+        /*!
+         * @brief        How many observations of the plane had finite
+         *               support; the first criterion for picking the best
+         *               observed floor.
+         */
+        std::size_t finiteSupportCount{0U};
+
+        /*!
+         * @brief        Total number of observations of the plane; breaks
+         *               ties between equal finite support counts.
+         */
+        std::size_t observationCount{0U};
     };
 
+    /*!
+     * @brief        Largest angle, in degrees, between two ground-plane
+     *               normals for the planes to count as the same floor.
+     */
     static constexpr double kMergeMaxPlaneNormalAngle_deg = 10.0;
-    static constexpr double kMergeMaxPlaneOffset_m        = 0.35;
+
+    /*!
+     * @brief        Largest difference, in metres, between two ground-plane
+     *               offsets for the planes to count as the same floor.
+     */
+    static constexpr double kMergeMaxPlaneOffset_m = 0.35;
 
   private:
-    int             id;       // Floor's ID
-    int             opId;     // Floor's ID in the local optimizer
-    int             opIdG;    // Floor's ID in the global optimizer
-    std::string     name;     // The name devoted for each room (optional)
-    Eigen::Vector3d centroid; // Floor's centroid in the global reference
-    std::vector<vs_graphs::core::semantic::Room *>
-                                 rooms; // Floor's rooms and corridors
+    /*!
+     * @brief        Identifier of this floor, reserved by the atlas;
+     *               -1 = not assigned yet.
+     */
+    int id;
+
+    /*!
+     * @brief        Identifier of this floor in the local optimizer;
+     *               -1 = not assigned yet.
+     */
+    int opId;
+
+    /*!
+     * @brief        Identifier of this floor in the global optimizer;
+     *               -1 = not assigned yet.
+     */
+    int opIdG;
+
+    /*!
+     * @brief        Optional display name of this floor (empty = none).
+     */
+    std::string name;
+
+    /*!
+     * @brief        Centroid of this floor in the world frame, metres.
+     *               Guarded by geometryMutex.
+     */
+    Eigen::Vector3d centroid;
+
+    /*!
+     * @brief        Rooms and corridors on this floor; borrowed pointers,
+     *               the floor does not delete them. Guarded by roomsMutex.
+     */
+    std::vector<vs_graphs::core::semantic::Room *> rooms;
+
+    /*!
+     * @brief        Ground-plane identity of this floor; empty until one is
+     *               stored with setPlaneIdentity. Guarded by geometryMutex.
+     */
     std::optional<PlaneIdentity> planeIdentity;
 
+    /*!
+     * @brief        Removes a room from this floor and clears the room's
+     *               floor link when it still points here.
+     *
+     * @param[in,out] p_room_inout
+     *               Room to detach; a null pointer is ignored.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus
         detachRoom(vs_graphs::core::semantic::Room *p_room_inout);
 
@@ -104,19 +175,106 @@ class Floor
     [[nodiscard]] FloorStatus applyTransform(
         const g2o::Sim3 &alignmentTransform_oldWorldToNewWorld_in);
 
+    /*!
+     * @brief        Returns the identifier of this floor.
+     *
+     * @param[out]   id_out
+     *               Floor identifier; -1 = not assigned yet.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus getId(int &id_out) const;
+
+    /*!
+     * @brief        Sets the identifier of this floor.
+     *
+     * @param[in]    value_in
+     *               New floor identifier.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus setId(int value_in);
 
+    /*!
+     * @brief        Returns the identifier of this floor in the local
+     *               optimizer.
+     *
+     * @param[out]   opId_out
+     *               Local optimizer identifier; -1 = not assigned yet.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus getOpId(int &opId_out) const;
+
+    /*!
+     * @brief        Sets the identifier of this floor in the local optimizer.
+     *
+     * @param[in]    value_in
+     *               New local optimizer identifier.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus setOpId(int value_in);
 
+    /*!
+     * @brief        Returns the identifier of this floor in the global
+     *               optimizer.
+     *
+     * @param[out]   opIdG_out
+     *               Global optimizer identifier; -1 = not assigned yet.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus getOpIdG(int &opIdG_out) const;
+
+    /*!
+     * @brief        Sets the identifier of this floor in the global optimizer.
+     *
+     * @param[in]    value_in
+     *               New global optimizer identifier.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus setOpIdG(int value_in);
 
+    /*!
+     * @brief        Returns the display name of this floor.
+     *
+     * @param[out]   name_out
+     *               Floor name; empty when none was set.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus getName(std::string &name_out) const;
+
+    /*!
+     * @brief        Sets the display name of this floor.
+     *
+     * @param[in]    value_in
+     *               New floor name.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus setName(std::string value_in);
 
+    /*!
+     * @brief        Returns the centroid of this floor.
+     *
+     * @param[out]   centroid_out
+     *               Floor centroid in the world frame, metres.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus getCentroid(Eigen::Vector3d &centroid_out) const;
+
+    /*!
+     * @brief        Sets the centroid of this floor.
+     *
+     * @param[in]    value_in
+     *               New floor centroid in the world frame, metres.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus setCentroid(Eigen::Vector3d value_in);
 
     /*! Returns true when a finite normalized ground-plane identity is stored.
@@ -163,10 +321,41 @@ class Floor
         selectBestObservedFloor(const std::vector<Floor *> &floors_in,
                                 Floor                     *&p_bestFloor_out);
 
+    /*!
+     * @brief        Adds a room to this floor, taking it away from any other
+     *               floor it was on, and points the room's floor link here.
+     *
+     * @param[in,out] p_value_inout
+     *               Room to add; a null pointer is ignored. A room already on
+     *               this floor is not added twice.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus
         addRoom(vs_graphs::core::semantic::Room *p_value_inout);
+
+    /*!
+     * @brief        Returns a copy of the list of rooms on this floor.
+     *
+     * @param[out]   rooms_out
+     *               Borrowed room pointers (a copy of the list).
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus getRooms(
         std::vector<vs_graphs::core::semantic::Room *> &rooms_out) const;
+
+    /*!
+     * @brief        Replaces the rooms on this floor with the given list.
+     *               Null and repeated entries are skipped, rooms taken from
+     *               other floors are detached from them, and rooms dropped
+     *               from this floor lose their floor link.
+     *
+     * @param[in]    value_in
+     *               New list of rooms (borrowed pointers).
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus setRooms(
         const std::vector<vs_graphs::core::semantic::Room *> &value_in);
 
@@ -188,14 +377,47 @@ class Floor
                     vs_graphs::core::semantic::Room *p_retainedRoom_inout,
                     bool                            &wasRoomReplaced_out);
 
+    /*!
+     * @brief        Returns the map this floor belongs to.
+     *
+     * @param[out]   p_map_out
+     *               Borrowed map pointer; null when no map was set.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus getMap(vs_graphs::core::Map *&p_map_out);
+
+    /*!
+     * @brief        Sets the map this floor belongs to.
+     *
+     * @param[in]    p_map_in
+     *               Borrowed map pointer; the floor does not delete it.
+     *
+     * @return       FLOOR_STATUS_SUCCESS always.
+     */
     [[nodiscard]] FloorStatus setMap(vs_graphs::core::Map *p_map_in);
 
   protected:
+    /*!
+     * @brief        Map this floor belongs to; borrowed, null = none.
+     *               Guarded by mapMutex.
+     */
     vs_graphs::core::Map *p_map{nullptr};
-    std::mutex            mapMutex;
-    mutable std::mutex    roomsMutex;
-    mutable std::mutex    geometryMutex;
+
+    /*!
+     * @brief        Guards p_map.
+     */
+    std::mutex mapMutex;
+
+    /*!
+     * @brief        Guards the list of rooms.
+     */
+    mutable std::mutex roomsMutex;
+
+    /*!
+     * @brief        Guards the centroid and the ground-plane identity.
+     */
+    mutable std::mutex geometryMutex;
 };
 } // namespace semantic
 } // namespace core

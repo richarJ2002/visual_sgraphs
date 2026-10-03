@@ -117,8 +117,24 @@ class ScopedFault
 
     ScopedFault(const ScopedFault &other_in)            = delete;
     ScopedFault &operator=(const ScopedFault &other_in) = delete;
-    ScopedFault(ScopedFault &&other_inout)              = default;
-    ScopedFault &operator=(ScopedFault &&other_inout)   = default;
+    /*!
+     * @brief        Moves a scoped fault; the moved-from object still clears
+     *               the calling thread's probes when it is destroyed.
+     *
+     * @param[in,out] other_inout
+     *               Scoped fault to move from.
+     */
+    ScopedFault(ScopedFault &&other_inout) = default;
+
+    /*!
+     * @brief        Move-assigns a scoped fault.
+     *
+     * @param[in,out] other_inout
+     *               Scoped fault to move from.
+     *
+     * @return       Reference to this object.
+     */
+    ScopedFault &operator=(ScopedFault &&other_inout) = default;
 
   private:
     /*!
@@ -132,6 +148,14 @@ class ScopedFault
 } /* namespace vs_graphs */
 
 #ifdef VS_GRAPHS_ENABLE_FAULT_INJECTION
+/*!
+ * @brief        Makes the enclosing function return false when the named
+ *               probe is armed; does nothing when fault injection
+ *               is disabled.
+ *
+ * @param[in]    name_in
+ *               Probe name to check.
+ */
 #define VS_GRAPHS_FAULT_INJECT(name_in)                                        \
     do                                                                         \
     {                                                                          \
@@ -141,10 +165,23 @@ class ScopedFault
         }                                                                      \
     }                                                                          \
     while (0)
+/*!
+ * @brief        Evaluates to true when the named probe is armed; always false
+ *               when fault injection is disabled.
+ *
+ * @param[in]    name_in
+ *               Probe name to check.
+ */
 #define VS_GRAPHS_FAULT_CHECK(name_in)                                         \
     (::vs_graphs::testing::checkFault(name_in))
 #else
+/*!
+ * @brief        Fault injection is disabled: expands to nothing.
+ */
 #define VS_GRAPHS_FAULT_INJECT(name_in) ((void)0)
+/*!
+ * @brief        Fault injection is disabled: always false.
+ */
 #define VS_GRAPHS_FAULT_CHECK(name_in)  (false)
 #endif
 

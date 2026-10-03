@@ -131,15 +131,44 @@ enum class VerificationStatus
     REJECTED
 };
 
+/*!
+ * @brief        Result of a geometric room-match verification: whether it
+ *               passed and the numbers behind that verdict.
+ */
 struct VerificationVerdict
 {
-    VerificationStatus status      = VerificationStatus::UNAVAILABLE;
-    bool               hasPassed   = false;
+    /*!
+     * @brief        Whether a verifier produced a result at all, and if so
+     *               PASS or REJECTED.
+     */
+    VerificationStatus status = VerificationStatus::UNAVAILABLE;
+    /*!
+     * @brief        Verifier's own pass flag; isPass() also needs status ==
+     *               PASS and every metric in range.
+     */
+    bool               hasPassed = false;
+    /*!
+     * @brief        Number of inliers the verifier counted.
+     */
     unsigned int       inlierCount = 0U;
+    /*!
+     * @brief        Fraction of inliers among all matches, in [0, 1].
+     */
     double             inlierRatio = 0.0;
+    /*!
+     * @brief        Condition number of the verification normalised to
+     *               [0, 1]; confidence falls as it rises.
+     */
     double             normalisedConditionNumber = 0.0;
-    double             angularResidual_rad       = 0.0;
-    double             confidence                = 0.0;
+    /*!
+     * @brief        Angular residual of the verification, radians, at least
+     *               0.
+     */
+    double             angularResidual_rad = 0.0;
+    /*!
+     * @brief        Overall confidence of the verdict, in [0, 1].
+     */
+    double             confidence = 0.0;
 
     /*! Returns true only for a finite, internally consistent PASS. */
     [[nodiscard]] VerificationVerdictStatus isPass(bool &isPass_out) const
@@ -181,14 +210,42 @@ struct TrackingStatusInput
  */
 struct TransitionEvent
 {
+    /*!
+     * @brief        Monotonic time when the transition was attempted, seconds.
+     */
     double            timestamp_s = 0.0;
+    /*!
+     * @brief        State the tracker was in before the attempt.
+     */
     RoomTrackingState sourceState = RoomTrackingState::UNKNOWN;
+    /*!
+     * @brief        State after the attempt; equals sourceState when the
+     *               transition was rejected.
+     */
     RoomTrackingState targetState = RoomTrackingState::UNKNOWN;
-    RoomTrackingEvent event       = RoomTrackingEvent::FIRST_ROOM_CONFIRMED;
-    double            dwell_s     = 0.0;
-    double            confidence  = 0.0;
+    /*!
+     * @brief        Event that triggered the attempt.
+     */
+    RoomTrackingEvent event = RoomTrackingEvent::FIRST_ROOM_CONFIRMED;
+    /*!
+     * @brief        Continuous guard dwell time supplied with the attempt,
+     *               seconds.
+     */
+    double            dwell_s = 0.0;
+    /*!
+     * @brief        Traversal confidence supplied with the attempt, in [0, 1].
+     */
+    double            confidence = 0.0;
+    /*!
+     * @brief        True when the verification verdict supplied with the
+     *               attempt passed isPass().
+     */
     bool              hasVerificationPassed = false;
-    bool              isAccepted            = false;
+    /*!
+     * @brief        True when the transition was committed, false when it was
+     *               rejected and the state stayed unchanged.
+     */
+    bool              isAccepted = false;
 };
 
 /*!
@@ -425,20 +482,62 @@ class RoomTracker
                         double           &accumulatedDwell_out);
 
   private:
+    /*!
+     * @brief        Tuning parameters this tracker was constructed with.
+     */
     RoomTrackerConfig            config;
+    /*!
+     * @brief        Current state of the tracker.
+     */
     RoomTrackingState            trackingState = RoomTrackingState::UNKNOWN;
+    /*!
+     * @brief        Every transition attempt, accepted or rejected, oldest
+     *               first; cleared by reset().
+     */
     std::vector<TransitionEvent> eventHistory;
+    /*!
+     * @brief        Most recent transition record; default-constructed until
+     *               the first attempt.
+     */
     TransitionEvent              lastEvent;
 
-    double lastReceivedTime_s       = 0.0;
-    double lastEnterStateTime_s     = 0.0;
+    /*!
+     * @brief        Latest time step() has seen, seconds; step() never lets
+     *               time run backwards.
+     */
+    double lastReceivedTime_s = 0.0;
+    /*!
+     * @brief        Time the current state was entered, seconds; drives the
+     *               lost and reacquire timeouts.
+     */
+    double lastEnterStateTime_s = 0.0;
+    /*!
+     * @brief        Time the crossing guard first held, seconds; -1 when the
+     *               dwell timer is not running.
+     */
     double crossingDwellStartTime_s = -1.0;
 
-    unsigned int reacquireRetryCount      = 0U;
+    /*!
+     * @brief        Failed reacquire attempts since entering
+     *               REACQUIRING_IN_NEW_MAP.
+     */
+    unsigned int reacquireRetryCount = 0U;
+    /*!
+     * @brief        Time of the latest reacquire attempt, seconds; -1 when
+     *               none has been made yet.
+     */
     double       reacquireLastRetryTime_s = -1.0;
 
+    /*!
+     * @brief        True once both sides of the crossed passage have been
+     *               observed during the current crossing.
+     */
     bool hasObservedBothSides = false;
-    bool wasTrackingLost      = false;
+    /*!
+     * @brief        Tracking-lost flag from the previous step() cycle, used
+     *               to detect the moment tracking is newly lost.
+     */
+    bool wasTrackingLost = false;
 };
 
 } // namespace semantic

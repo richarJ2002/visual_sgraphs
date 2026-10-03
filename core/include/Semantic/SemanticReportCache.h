@@ -116,8 +116,19 @@ class SemanticReportCache
         isAvailable(bool &isAvailable_out) const;
 
   private:
+    /*!
+     * @brief        Guards latestEntry and hasCachedReport.
+     */
     mutable std::mutex       cacheMutex;
+    /*!
+     * @brief        Copy of the entry stored by the latest update(); guarded by
+     *               cacheMutex.
+     */
     SemanticReportCacheEntry latestEntry;
+    /*!
+     * @brief        True once update() has stored an entry; guarded by
+     *               cacheMutex.
+     */
     bool                     hasCachedReport{false};
 };
 
