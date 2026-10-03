@@ -281,6 +281,10 @@ void observeVoxbloxInput(const std::uint32_t width_in,
  * PUBLICATION STATE
  * -------------------------------------------------------------------------- */
 
+/*!
+ * @brief        Message time of the last plane publication; zero until the
+ *               first one.
+ */
 rclcpp::Time lastPlanePublishTime(0, 0, RCL_ROS_TIME);
 
 /* -------------------------------------------------------------------------- *
@@ -477,6 +481,13 @@ rclcpp::Service<vs_graphs::srv::SaveMap>::SharedPtr srvSaveTrajectory = nullptr;
 rclcpp::Service<vs_graphs::srv::GetMissionHealth>::SharedPtr
     srvGetMissionHealth = nullptr;
 
+/*!
+ * @brief        Service server that reports the visual estimator's frame rate
+ *               and the age of its last processed frame.
+ *
+ *               Declared only in this file; created by setupServices() and
+ *               reset on shutdown.
+ */
 rclcpp::Service<vs_graphs::srv::EstimatorHealth>::SharedPtr srvEstimatorHealth =
     nullptr;
 
@@ -7804,6 +7815,19 @@ void shutdownRosInterfaces()
     tfBuffer_.reset();
 }
 
+/*!
+ * @brief        Service handler that reports the estimator's frame rate and how
+ *               long ago it last processed a frame.
+ *
+ *               Called by an executor thread, since the service uses the node's
+ *               default callback group.
+ *
+ * @param[in]    request_in
+ *               Unused; the request carries no fields.
+ * @param[out]   response_out
+ *               Filled with frames_per_second and last_frame_age_seconds (wall
+ *               clock; infinity before the first frame).
+ */
 static void getEstimatorHealthService(
     const std::shared_ptr<vs_graphs::srv::EstimatorHealth::Request> request_in,
     std::shared_ptr<vs_graphs::srv::EstimatorHealth::Response> response_out)
@@ -7820,6 +7844,21 @@ static void getEstimatorHealthService(
                               : std::numeric_limits<double>::infinity();
 }
 
+/*!
+ * @brief        Service handler that fills a snapshot of tracking,
+ *               segmentation, loop-closure and room/passage topology health.
+ *
+ *               Sets available to false and returns when the SLAM system does
+ *               not exist yet. Room, floor and passage topology is gathered
+ *               only when the request asks for it, because that path takes the
+ *               semantic update lock. Called by an executor thread, since the
+ *               service uses the node's default callback group.
+ *
+ * @param[in]    request_in
+ *               Request; include_topology selects whether topology is gathered.
+ * @param[out]   response_out
+ *               Filled with the health snapshot.
+ */
 static void getMissionHealthService(
     const std::shared_ptr<vs_graphs::srv::GetMissionHealth::Request> request_in,
     std::shared_ptr<vs_graphs::srv::GetMissionHealth::Response> response_out)

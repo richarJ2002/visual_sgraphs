@@ -38,15 +38,39 @@ bool                bRGB = true;
 cv::Mat K;
 cv::Mat DistCoef;
 
+/*!
+ * @brief        Receives camera images from ROS, runs monocular tracking on
+ *               each and passes the result to the viewer.
+ */
 class ImageGrabber
 {
   public:
+    /*!
+     * @brief        Creates the grabber for a SLAM system.
+     *
+     * @param[in]    p_slamSystem
+     *               SLAM system to track with; borrowed, must outlive the
+     *               grabber.
+     */
     ImageGrabber(ORB_SLAM3::System *p_slamSystem) :
         mpSLAM(p_slamSystem)
     {}
 
+    /*!
+     * @brief        Image subscription callback: tracks the image and hands
+     *               the pose, keypoints and map points to the viewer.
+     *
+     *               Runs on the thread that calls ros::spin(). Returns without
+     *               tracking when the image cannot be converted.
+     *
+     * @param[in]    msg
+     *               Camera image from ROS.
+     */
     void GrabImage(const sensor_msgs::ImageConstPtr &msg);
 
+    /*!
+     * @brief        SLAM system used for tracking; borrowed.
+     */
     ORB_SLAM3::System *mpSLAM;
 };
 

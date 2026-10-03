@@ -34,6 +34,10 @@
 #include "common.hpp"
 #include <rclcpp/logging.hpp>
 
+/*!
+ * @brief        ROS node that buffers incoming IMU samples until the
+ *               synchronisation thread consumes them.
+ */
 class ImuGrabber : public rclcpp::Node
 {
   public:
@@ -55,13 +59,38 @@ class ImuGrabber : public rclcpp::Node
             std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
     }
 
+    /*!
+     * @brief        Appends one IMU sample to the buffer, dropping samples
+     *               that are not newer than the last one and the oldest sample
+     *               when 2500 are already queued.
+     *
+     *               Runs on an executor thread in the IMU callback group, which
+     *               never runs two of its callbacks at once.
+     *
+     * @param[in]    imu_msg
+     *               IMU sample; the pointer is kept in the buffer.
+     */
     void GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr &imu_msg);
 
     // Variables
-    std::mutex                                        mBufMutex;
+    /*!
+     * @brief        Guards imuBuf; taken by GrabImu() and by the
+     *               synchronisation thread.
+     */
+    std::mutex mBufMutex;
+
+    /*!
+     * @brief        IMU samples received but not yet paired with an image, in
+     *               increasing time-stamp order.
+     */
     std::queue<sensor_msgs::msg::Imu::ConstSharedPtr> imuBuf;
 };
 
+/*!
+ * @brief        ROS node that admits synchronised RGB-D packets into a buffer
+ *               and runs the thread that pairs them with IMU samples and feeds
+ *               the SLAM system.
+ */
 class ImageGrabber : public rclcpp::Node
 {
   public:
@@ -110,31 +139,136 @@ class ImageGrabber : public rclcpp::Node
     }
 
     // Variables
-    std::mutex                         mBufMutex;
-    std::atomic<bool>                  mustStop{false};
-    std::shared_ptr<ImuGrabber>        mpImuGb;
+    /*!
+     * @brief        Guards the RGB-D packet buffer, the admission state and the
+     *               latest point cloud; when taken together with the IMU
+     *               buffer's mutex, both are locked at once.
+     */
+    std::mutex mBufMutex;
+
+    /*!
+     * @brief        Set by main() after the executor stops to end the
+     *               synchronisation thread's loop.
+     */
+    std::atomic<bool> mustStop{false};
+
+    /*!
+     * @brief        IMU node whose buffer this node drains; shared with
+     *               main().
+     */
+    std::shared_ptr<ImuGrabber> mpImuGb;
+
+    /*!
+     * @brief        Admitted RGB-D packets waiting for IMU samples to reach
+     *               their time stamp; guarded by mBufMutex.
+     */
     std::queue<SynchronizedRgbdPacket> synchronizedRgbdPacketBuffer;
-    const double                       minimumTrackingInterval_seconds;
-    const std::size_t                  maximumBufferedRgbdPackets;
-    double                             lastReceivedRgbdTimestamp_seconds{0.0};
-    bool                               hasReceivedRgbdPacket{false};
-    double                             lastAdmittedRgbdTimestamp_seconds{0.0};
-    bool                               hasAdmittedRgbdPacket{false};
-    bool                               discardInputUntilBufferDrained{false};
-    double                             lastProcessedRgbdTimestamp_seconds{0.0};
-    bool                               hasProcessedRgbdPacket{false};
+
+    /*!
+     * @brief        Shortest allowed time between two admitted packets,
+     *               seconds (reciprocal of the maximum tracking rate).
+     */
+    const double minimumTrackingInterval_seconds;
+
+    /*!
+     * @brief        Largest number of packets the buffer may hold before new
+     *               ones are refused (rate times allowed latency, plus one).
+     */
+    const std::size_t maximumBufferedRgbdPackets;
+    double            lastReceivedRgbdTimestamp_seconds{0.0};
+    bool              hasReceivedRgbdPacket{false};
+
+    /*!
+     * @brief        RGB image time stamp of the latest admitted packet,
+     *               seconds; meaningful only when hasAdmittedRgbdPacket.
+     */
+    double lastAdmittedRgbdTimestamp_seconds{0.0};
+
+    /*!
+     * @brief        True once a packet has been admitted since start or since
+     *               the last overload reset.
+     */
+    bool hasAdmittedRgbdPacket{false};
+
+    /*!
+     * @brief        True after the buffer overflowed: new packets are refused
+     *               until the buffer is empty, then the active map is reset.
+     */
+    bool   discardInputUntilBufferDrained{false};
+    double lastProcessedRgbdTimestamp_seconds{0.0};
+    bool   hasProcessedRgbdPacket{false};
+
+    /*!
+     * @brief        Newest depth point cloud received, paired with the next
+     *               RGB-D image pair; null before the first one; guarded by
+     *               mBufMutex.
+     */
     sensor_msgs::msg::PointCloud2::ConstSharedPtr p_latestPointCloudMessage;
-    const bool                                    directGazeboFluCloud;
-    double lastConsumedImuTimestamp_seconds{0.0};
-    bool   hasConsumedImuSample{false};
+
+    const bool directGazeboFluCloud;
+    /*!
+     * @brief        Time stamp of the last IMU sample taken from the buffer,
+     *               seconds; meaningful only when hasConsumedImuSample.
+     */
+    double     lastConsumedImuTimestamp_seconds{0.0};
+
+    /*!
+     * @brief        True when an IMU sample has been consumed since start or
+     *               since the IMU run was last discarded.
+     */
+    bool hasConsumedImuSample{false};
+
+    /*!
+     * @brief        IMU samples taken from the buffer but not yet delivered
+     *               with an accepted visual frame; used by the
+     *               synchronisation thread only.
+     */
     std::vector<vs_graphs::core::IMU::Point> pendingImuMeasurements;
-    double                                   pendingMaximumImuGap_seconds{0.0};
+
+    /*!
+     * @brief        Largest time gap between consecutive samples in
+     *               pendingImuMeasurements, seconds.
+     */
+    double pendingMaximumImuGap_seconds{0.0};
 
     void    SyncWithImu();
     // void GrabArUcoMarker(const aruco_msgs::MarkerArray &msg);
+    /*!
+     * @brief        Converts a ROS image message into an OpenCV image.
+     *
+     *               Called by the synchronisation thread.
+     *
+     * @param[in]    img_msg
+     *               Image message to convert.
+     *
+     * @return       A copy of the image, or an empty matrix when conversion
+     *               fails (an error is logged).
+     */
     cv::Mat GetImage(const sensor_msgs::msg::Image::ConstSharedPtr &img_msg);
-    void    GrabVoxbloxSkeletonGraph(
-           const visualization_msgs::msg::MarkerArray &msgSkeletonGraph);
+
+    /*!
+     * @brief        Hands the voxblox skeleton graph to the semantic code,
+     *               which buffers it for the segmentation thread.
+     *
+     *               Runs on an executor thread in the skeleton callback group.
+     *
+     * @param[in]    msgSkeletonGraph
+     *               Skeleton graph markers published by voxblox.
+     */
+    void GrabVoxbloxSkeletonGraph(
+        const visualization_msgs::msg::MarkerArray &msgSkeletonGraph);
+
+    /*!
+     * @brief        Keeps the newest depth point cloud for the next RGB-D
+     *               image pair; ignores clouds that are not newer than the one
+     *               held.
+     *
+     *               Runs on an executor thread in the visual callback group,
+     *               the same group as the RGB-D synchroniser callback.
+     *
+     * @param[in]    msgPC
+     *               Point cloud message; the pointer is kept.
+     */
     void GrabPointCloud(
         const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC);
     void GrabRGBD(const sensor_msgs::msg::Image::ConstSharedPtr &msgRGB,
@@ -497,6 +631,22 @@ void ImageGrabber::SyncWithImu()
     }
 }
 
+/*!
+ * @brief        Starts the RGB-D plus IMU node: reads parameters, creates the
+ *               SLAM system, wires the subscriptions and spins a four-thread
+ *               executor until shutdown.
+ *
+ * @param[in]    argc
+ *               Number of command-line arguments; they are ignored with a
+ *               warning.
+ * @param[in]    argv
+ *               Command-line arguments.
+ *
+ * @return       0 after a normal shutdown; 1 when the vocabulary, settings or
+ *               system-parameter file is not given or a tracking-rate or
+ *               buffer parameter is not positive; -1 when the SLAM system
+ *               cannot initialise.
+ */
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);

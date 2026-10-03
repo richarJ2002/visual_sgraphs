@@ -28,8 +28,26 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
+/*!
+ * @brief        Rotation angle, radians, below which ExpSO3 uses a
+ *               second-order series instead of the exact formula.
+ */
 const float eps = 1e-4;
 
+/*!
+ * @brief        Converts a rotation vector into a rotation matrix
+ *               (Rodrigues formula).
+ *
+ * @param[in]    x
+ *               X component of the rotation vector, radians; its direction is
+ *               the axis and its length the angle.
+ * @param[in]    y
+ *               Y component of the rotation vector, radians.
+ * @param[in]    z
+ *               Z component of the rotation vector, radians.
+ *
+ * @return       The 3x3 float rotation matrix.
+ */
 cv::Mat ExpSO3(const float &x, const float &y, const float &z)
 {
     cv::Mat     I  = cv::Mat::eye(3, 3, CV_32F);
@@ -42,6 +60,14 @@ cv::Mat ExpSO3(const float &x, const float &y, const float &z)
         return (I + W * sin(d) / d + W * W * (1.0f - cos(d)) / d2);
 }
 
+/*!
+ * @brief        Converts a rotation vector into a rotation matrix.
+ *
+ * @param[in]    v
+ *               Rotation vector, radians (3x1 float): axis times angle.
+ *
+ * @return       The 3x3 float rotation matrix.
+ */
 cv::Mat ExpSO3(const cv::Mat &v)
 {
     return ExpSO3(v.at<float>(0), v.at<float>(1), v.at<float>(2));

@@ -14,15 +14,27 @@
 namespace vs_graphs::sparse
 {
 
-/* Marker type codes mirror visualization_msgs/msg/Marker.msg. The message
- * header is deliberately not included here so this module stays testable
- * without a ROS dependency. */
+/*!
+ * @brief        Marker type code of a CUBE_LIST marker, as in
+ *               visualization_msgs/msg/Marker.msg. The message header is not
+ *               included so this module builds without ROS.
+ */
 inline constexpr int SPARSE_CUBE_LIST_TYPE = 6;
+/*!
+ * @brief        Marker type code of a LINE_LIST marker, as in
+ *               visualization_msgs/msg/Marker.msg.
+ */
 inline constexpr int SPARSE_LINE_LIST_TYPE = 5;
 
-/* Marker namespaces published by the skeletonizer for free-space geometry. */
+/*!
+ * @brief        Prefix of the marker namespaces the skeletonizer uses for
+ *               connected free-space components.
+ */
 inline constexpr std::string_view SPARSE_CLUSTER_NAMESPACE_PREFIX =
     "connected_vertices_";
+/*!
+ * @brief        Marker namespace the skeletonizer uses for raw skeleton edges.
+ */
 inline constexpr std::string_view SPARSE_EDGE_NAMESPACE = "edges";
 
 /*!
@@ -60,14 +72,48 @@ enum class SparseMarkerVerdict : std::uint8_t
  */
 struct SparseIngestCounts
 {
+    /*!
+     * @brief        Number of marker-array ingests so far; the latest ingest
+     *               sets it, so a changed value means the other counts are
+     *               fresh.
+     */
     std::uint64_t sequence{0U};
+    /*!
+     * @brief        Markers skipped as carrying no free-space geometry.
+     */
     std::size_t   ignoredMarkerCount{0U};
+    /*!
+     * @brief        Cluster markers skipped for having no points.
+     */
     std::size_t   emptyClusterCount{0U};
+    /*!
+     * @brief        Cluster markers skipped for having fewer points than the
+     *               minimum.
+     */
     std::size_t   undersizedClusterCount{0U};
+    /*!
+     * @brief        Cluster markers skipped because their marker-to-world
+     *               transform could not be resolved.
+     */
     std::size_t   clusterTransformFailureCount{0U};
+    /*!
+     * @brief        Individual cluster points dropped because they could not
+     *               be transformed into the world frame.
+     */
     std::size_t   clusterPointDropCount{0U};
+    /*!
+     * @brief        Edge markers skipped for having no points.
+     */
     std::size_t   emptyEdgeCount{0U};
+    /*!
+     * @brief        Edge markers or single edges skipped because a transform
+     *               to the world frame failed.
+     */
     std::size_t   edgeTransformFailureCount{0U};
+    /*!
+     * @brief        Edges dropped for non-finite endpoints or a length under
+     *               1e-6 m.
+     */
     std::size_t   degenerateEdgeCount{0U};
 };
 
