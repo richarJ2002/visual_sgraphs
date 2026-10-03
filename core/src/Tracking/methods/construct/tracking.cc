@@ -48,11 +48,9 @@ Tracking::Tracking(System                    *p_sys_in,
                    KeyFrameDatabase          *p_keyFrameDatabase_in,
                    const std::string         &settingPath_in,
                    const int                  sensorType_in,
-                   utils::settings::Settings *p_settings_in,
-                   const std::string         &nameSeq_in) :
+                   utils::settings::Settings *p_settings_in) :
     state(NO_IMAGES_YET),
     sensor(sensorType_in),
-    trackedFr(0),
     isStepRequested(false),
     isTrackingOnlyMode(false),
     isMapUpdated(false),
@@ -74,7 +72,6 @@ Tracking::Tracking(System                    *p_sys_in,
     hasCreatedMap(false),
     p_camera2(nullptr)
 {
-    (void)nameSeq_in;
     // Load camera parameters from settings file
     if (p_settings_in)
     {
@@ -222,10 +219,9 @@ Tracking::Tracking(System                    *p_sys_in,
         poseTc0w = Sophus::SE3f(rotRpy, Eigen::Vector3f::Zero());
     }
 
-    initId                             = 0;
-    lastId                             = 0;
-    shouldInitializeWithThreeKeyFrames = false;
-    numDataset                         = 0;
+    initId     = 0;
+    lastId     = 0;
+    numDataset = 0;
 
     std::vector<camera_models::geometriccamera::GeometricCamera *> cams{};
     if (p_atlas->getAllCameras(cams) != AtlasStatus::ATLAS_STATUS_SUCCESS)

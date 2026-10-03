@@ -76,7 +76,6 @@ void MapPoint::serialize(Archive &ar, const unsigned int version)
     // ar & fuseCandidateKeyFrameId;
 
     // Variables used by loop closing and merging
-    // ar & loopPointKeyFrameId;
     // ar & correctedByKeyFrameId;
     // ar & correctedReferenceKeyFrameId;
     // serializeMatrix(ar,mPosGBA,version);

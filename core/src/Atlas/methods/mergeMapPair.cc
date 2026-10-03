@@ -789,8 +789,6 @@ AtlasStatus Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
     }
     const std::vector<KeyFrame *> importedKeyFrameOrigins =
         p_otherMap_inout->keyFrameOrigins;
-    KeyFrame *p_importedFirstRegionKeyFrame =
-        p_otherMap_inout->p_firstRegionKeyFrame;
 
     const Eigen::Matrix3f R = T_otherToCurrent.linear().cast<float>();
     const Eigen::Vector3f t = T_otherToCurrent.translation().cast<float>();
@@ -1270,27 +1268,6 @@ AtlasStatus Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
             }
         }
         p_otherMap_inout->keyFrameOrigins.clear();
-
-        Map *p_importedFirstRegionKeyFrameMap = nullptr;
-        if ((p_currentMap_inout->p_firstRegionKeyFrame == nullptr &&
-             p_importedFirstRegionKeyFrame != nullptr) &&
-            p_importedFirstRegionKeyFrame->getMap(
-                p_importedFirstRegionKeyFrameMap) !=
-                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
-        {
-            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                         "%s: getMap returned a failure status although it "
-                         "cannot fail; continuing as before.",
-                         __func__);
-        }
-        if (p_currentMap_inout->p_firstRegionKeyFrame == nullptr &&
-            p_importedFirstRegionKeyFrame != nullptr &&
-            p_importedFirstRegionKeyFrameMap == p_currentMap_inout)
-        {
-            p_currentMap_inout->p_firstRegionKeyFrame =
-                p_importedFirstRegionKeyFrame;
-        }
-        p_otherMap_inout->p_firstRegionKeyFrame = nullptr;
 
         if (p_currentMap_inout->setSkeletonClusterPoints({}) !=
             MapStatus::MAP_STATUS_SUCCESS)

@@ -52,7 +52,6 @@ MapPoint::MapPoint() :
     lastSeenFrameId(0),
     baLocalKeyFrameId(0),
     fuseCandidateKeyFrameId(0),
-    loopPointKeyFrameId(0),
     correctedByKeyFrameId(0),
     correctedReferenceKeyFrameId(0),
     baGlobalKeyFrameId(0),

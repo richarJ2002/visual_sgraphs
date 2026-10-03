@@ -141,8 +141,6 @@ class Viewer
                 {}
             }
         }
-
-        isTrackingStopRequested = false;
     }
 
     /*!
@@ -362,13 +360,6 @@ class Viewer
      * @brief           Guards hasStopped and isStopRequested.
      */
     std::mutex stopMutex;
-
-    /*!
-     * @brief           When true, run() switches the menu to step-by-step mode
-     *                  and clears it. Only read in run(); nothing sets it to
-     *                  true.
-     */
-    bool isTrackingStopRequested;
 };
 
 } // namespace core

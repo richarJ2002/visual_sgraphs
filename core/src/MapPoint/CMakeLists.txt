@@ -33,7 +33,6 @@ set(VS_GRAPHS_MAPPOINT_SOURCES
   core/src/MapPoint/methods/construct/default.cc
   core/src/MapPoint/methods/construct/fromFrame.cc
   core/src/MapPoint/methods/construct/fromReferenceKeyFrame.cc
-  core/src/MapPoint/methods/construct/withInverseDepth.cc
   core/src/MapPoint/methods/predictScale/withFrame.cc
   core/src/MapPoint/methods/predictScale/withKeyFrame.cc
 )

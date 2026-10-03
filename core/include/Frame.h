@@ -1089,12 +1089,6 @@ class Frame
      *                  an outlier.
      */
     std::vector<bool> outlierFlags;
-    /*!
-     * @brief           Set to 0 by the constructors and by
-     *                  computeStereoFishEyeMatches() and copied by the copy
-     *                  constructor; nothing counts into it or reads it.
-     */
-    int               closeMapPointCount = 0;
 
     /*!
      * @brief           Grid columns per pixel of image width (FRAME_GRID_COLS
@@ -1233,11 +1227,6 @@ class Frame
      *                  the local point search and used for drawing.
      */
     std::map<long unsigned int, cv::Point2f> projectedPoints;
-    /*!
-     * @brief           Cleared by the constructors and copied by the copy
-     *                  constructor; nothing fills or reads it.
-     */
-    std::map<long unsigned int, cv::Point2f> matchedPoints;
 
     /*!
      * @brief           Name of the image file this frame came from, set by
@@ -1442,11 +1431,6 @@ class Frame
      *                  fisheye stereo constructor.
      */
     cv::Mat imgRight;
-
-    /*!
-     * @brief           Never used.
-     */
-    Sophus::SE3<double> T_test;
 };
 
 } // namespace core

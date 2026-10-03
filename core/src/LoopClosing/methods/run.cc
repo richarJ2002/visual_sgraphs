@@ -82,28 +82,6 @@ void LoopClosing::run(void)
         }
         if (hasNewKeyFrames)
         {
-            /*!
-             * Check that the last keyframe to be added is valid.
-             *
-             * If so, then clear the buffer of candidate keyframes and buffer
-             * of merged keyframes. he previous processed KF may still hold
-             * debug/candidate lists from its last place-recognition query.
-             */
-            if (p_lastCurrentKF)
-            {
-                /*!
-                 * Remove stale same-map loop candidates associated with the
-                 * previous current KF.
-                 */
-                p_lastCurrentKF->loopCandKFs.clear();
-
-                /*!
-                 * Remove stale cross-map merge candidates associated with the
-                 * previous current KF.
-                 */
-                p_lastCurrentKF->mergeCandKFs.clear();
-            }
-
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point timeStartPr =
                 std::chrono::steady_clock::now();
@@ -929,7 +907,6 @@ void LoopClosing::run(void)
                     isLoopDetected  = false;
                 }
             }
-            p_lastCurrentKF = p_currentKF;
         }
 
         if (resetIfRequested() !=

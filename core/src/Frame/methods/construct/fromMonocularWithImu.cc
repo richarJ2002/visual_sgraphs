@@ -198,9 +198,8 @@ Frame::Frame(const cv::Mat                                   &imageColor_in,
     }
 
     // Set no stereo information
-    closeMapPointCount = 0;
-    depths             = std::vector<float>(keyPointCount, -1);
-    uRight             = std::vector<float>(keyPointCount, -1);
+    depths = std::vector<float>(keyPointCount, -1);
+    uRight = std::vector<float>(keyPointCount, -1);
 
     // Initialize MapPoints
     mapPoints = std::vector<MapPoint *>(keyPointCount,
@@ -210,7 +209,6 @@ Frame::Frame(const cv::Mat                                   &imageColor_in,
     mapMarkers = markers_in;
 
     projectedPoints.clear();
-    matchedPoints.clear();
 
     outlierFlags = std::vector<bool>(keyPointCount, false);
 

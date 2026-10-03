@@ -56,7 +56,6 @@ KeyFrame::KeyFrame() :
     fuseTargetKeyFrameId(0),
     baLocalKeyFrameId(0),
     baFixedKeyFrameId(0),
-    optimizationCount(0),
     loopQuery(0),
     loopWords(0),
     relocQuery(0),

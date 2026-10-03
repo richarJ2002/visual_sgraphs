@@ -1065,13 +1065,6 @@ class System
      *                  True to start the Viewer thread; false for headless
      *                  runs.
      *
-     * @param[in]       initialFr_in
-     *                  Index of the first frame to process (to resume a
-     *                  sequence).
-     *
-     * @param[in]       sequence_in
-     *                  Optional name of the sequence, used in logs.
-     *
      * @param[in]       verboseLevel_in
      *                  Threshold for core logging routed through ROS 2's
      *                  "visual_sgraphs" logger.
@@ -1088,8 +1081,6 @@ class System
                    const std::string            &sysParamsFile_in,
                    const SensorType              sensor_in,
                    const bool                    shouldUseViewer_in = true,
-                   const int                     initialFr_in       = 0,
-                   const std::string            &sequence_in = std::string(),
                    const Verbose::VerbosityLevel verboseLevel_in =
                        Verbose::VERBOSITY_QUIET);
 
@@ -1482,19 +1473,6 @@ class System
                                     Map               *p_map_in);
 
     /*!
-     * @brief           Save data used for initialization debug. This dump
-     *                  includes keyframe poses, map point positions, and other
-     *                  debugging information useful for diagnosing the
-     *                  initialization phase.
-     *
-     * @param[in]       initialIndex_in
-     *                  Index specifying which initialization debug data to
-     *                  save. Multiple debug dumps may be available for
-     *                  different initialization attempts.
-     */
-    [[nodiscard]] SystemStatus saveDebugData(const int &initialIndex_in);
-
-    /*!
      * @brief           Save camera trajectory in the KITTI dataset format. Only
      *                  for stereo and RGB-D. This method does not work for
      *                  monocular.
@@ -1610,19 +1588,6 @@ class System
      */
     [[nodiscard]] SystemStatus
         getAllPlanes(std::vector<geometric::Plane *> &allPlanes_out);
-
-    /*!
-     * @brief           Get all doors in the current map. Doors are semantic
-     *                  elements representing doorways between rooms.
-     *
-     * @param[out]      allDoors_out
-     *                  Vector of pointers to Door objects. May be empty if no
-     *                  doors have been detected yet.
-     *
-     * @return          SYSTEM_STATUS_SUCCESS.
-     */
-    [[nodiscard]] SystemStatus
-        getAllDoors(std::vector<vs_graphs::core::Door *> &allDoors_out);
 
     /*!
      * @brief           Get all markers (fiducial markers/AprilTags) in the

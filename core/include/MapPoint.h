@@ -102,35 +102,6 @@ class MapPoint
              KeyFrame              *p_referenceKeyFrame_in,
              Map                   *p_map_in);
     /*!
-     * @brief           Creates a point from an inverse-depth estimate seen in a
-     *                  host key frame. The world position is not set; the
-     *                  normal starts at zero and the point gets the next free
-     *                  id.
-     *
-     * @param[in]       invDepth_in
-     *                  Inverse depth of the point in the host key frame.
-     *
-     * @param[in]       initialPixel_in
-     *                  Pixel of the point in the host key frame image.
-     *
-     * @param[in]       p_referenceKeyFrame_in
-     *                  Reference key frame, must not be null; borrowed, not
-     *                  owned.
-     *
-     * @param[in]       p_hostKeyFrame_in
-     *                  Key frame the inverse depth refers to; borrowed, not
-     *                  owned.
-     *
-     * @param[in]       p_map_in
-     *                  Map the point belongs to, must not be null; borrowed,
-     *                  not owned.
-     */
-    MapPoint(const double invDepth_in,
-             cv::Point2f  initialPixel_in,
-             KeyFrame    *p_referenceKeyFrame_in,
-             KeyFrame    *p_hostKeyFrame_in,
-             Map         *p_map_in);
-    /*!
      * @brief           Creates a point from a position triangulated for a frame
      *                  that is not yet a key frame. The normal and the
      *                  scale-invariance distances are computed from the frame,
@@ -632,10 +603,6 @@ class MapPoint
 
     // Variables used by loop closing
     /*!
-     * @brief           Declared for loop closing; nothing reads or writes it.
-     */
-    long unsigned int loopPointKeyFrameId;
-    /*!
      * @brief           Id of the key frame whose loop correction last moved the
      *                  point.
      */
@@ -672,28 +639,6 @@ class MapPoint
      *                  frame, computed during a map merge.
      */
     Eigen::Vector3f normalVectorMerge;
-
-    // Fopr inverse depth optimization
-    /*!
-     * @brief           Inverse depth in the host key frame; only stored by the
-     *                  inverse-depth constructor, never read.
-     */
-    double    inverseDepth;
-    /*!
-     * @brief           Pixel x of the point in the host key frame; only stored
-     *                  by the inverse-depth constructor.
-     */
-    double    initU;
-    /*!
-     * @brief           Pixel y of the point in the host key frame; only stored
-     *                  by the inverse-depth constructor.
-     */
-    double    initV;
-    /*!
-     * @brief           Host key frame of the inverse depth; borrowed; only
-     *                  stored by the inverse-depth constructor.
-     */
-    KeyFrame *p_hostKF;
 
     /*!
      * @brief           Guards the world position while points are moved by a

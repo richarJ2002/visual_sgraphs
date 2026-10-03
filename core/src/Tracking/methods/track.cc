@@ -978,15 +978,6 @@ TrackingStatus Tracking::track()
                 if (currentFrame.id == (lastRelocFrameId + framesToResetIMU))
                 {
                     std::cout << "RESETING FRAME!!!" << std::endl;
-                    if (resetFrameIMU() !=
-                        TrackingStatus::TRACKING_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: resetFrameIMU returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
                 }
                 else if (currentFrame.id > (lastRelocFrameId + 30))
                     lastBias = currentFrame.imuBias;

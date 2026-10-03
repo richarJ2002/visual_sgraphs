@@ -74,7 +74,6 @@ namespace geometric
 {
 class Plane;
 }
-class Door;
 namespace semantic
 {
 class Floor;
@@ -93,7 +92,7 @@ class KeyFrameDatabase;
 
 /*!
  * @brief           One map of the atlas: the key frames, map points and
- *                  semantic entities (planes, rooms, floors, doors, markers,
+ *                  semantic entities (planes, rooms, floors, markers,
  *                  passages) that share one world frame. The pointers it holds
  *                  are borrowed: destroying or clearing the map only drops its
  *                  references. Most methods take mapMutex, as each one says.
@@ -134,8 +133,8 @@ class Map
     Map(int initialKeyFrameId_in);
     ~Map();
     /*!
-     * @brief           Copying is forbidden: the map owns its thumbnail
-     *                  image and deletes it when destroyed.
+     * @brief           Copying is forbidden: the map holds mutexes, which
+     *                  cannot be copied.
      */
     Map(const Map &otherMap_in)            = delete;
     Map &operator=(const Map &otherMap_in) = delete;
@@ -225,16 +224,6 @@ class Map
      */
     [[nodiscard]] MapStatus
         addMapFloor(vs_graphs::core::semantic::Floor *p_floor_inout);
-    /*!
-     * @brief           Adds a door to this map. The door is not entered in the
-     *                  id lookup used by getDoorById(). Takes mapMutex.
-     *
-     * @param[in]       p_door_in
-     *                  Door to add; borrowed.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus addMapDoor(vs_graphs::core::Door *p_door_in);
     /*!
      * @brief           Indexes a wall plane of a room by its plane id, so
      *                  getRoomWallPlaneById() can find it. The plane is not
@@ -529,16 +518,6 @@ class Map
     [[nodiscard]] MapStatus getAllDetectedMapRooms(
         std::vector<semantic::Room *> &allDetectedMapRooms_out);
     /*!
-     * @brief           Returns a snapshot copy of all doors of this map. Takes
-     *                  mapMutex.
-     *
-     * @param[out]      allDoors_out
-     *                  Receives the doors; borrowed pointers.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus getAllDoors(std::vector<Door *> &allDoors_out);
-    /*!
      * @brief           Returns a snapshot copy of all floors of this map. Takes
      *                  mapMutex.
      *
@@ -724,21 +703,6 @@ class Map
      */
     [[nodiscard]] MapStatus getFloorById(int               floorId_in,
                                          semantic::Floor *&p_floorById_out);
-    /*!
-     * @brief           Looks up a door by id. The id lookup is never filled by
-     *                  addMapDoor(), so this returns nullptr for every id.
-     *                  Takes mapMutex.
-     *
-     * @param[in]       doorId_in
-     *                  Id of the door.
-     *
-     * @param[out]      p_doorById_out
-     *                  Receives the door, or nullptr when no door has that id;
-     *                  borrowed.
-     *
-     * @return          MAP_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] MapStatus getDoorById(int doorId_in, Door *&p_doorById_out);
     /*!
      * @brief           Looks up a plane by id. Takes mapMutex.
      *
@@ -953,10 +917,9 @@ class Map
      * @brief           Moves the whole map into a new world frame: key frame
      *                  poses, key frame velocities, map points, planes,
      *                  markers, passages, rooms, floors and skeleton data are
-     *                  scaled and transformed; bad planes and rooms are skipped
-     *                  and doors are left untouched. Afterwards the change
-     *                  counter and the world frame epoch each grow by one.
-     *                  Takes mapMutex.
+     *                  scaled and transformed; bad planes and rooms are
+     *                  skipped. Afterwards the change counter and the world
+     *                  frame epoch each grow by one. Takes mapMutex.
      *
      * @param[in]       alignmentPose_oldWorldToNewWorld_in
      *                  Pose mapping points of the old world frame into the new
@@ -1095,15 +1058,6 @@ class Map
                      &cams_inout);
 
     /*!
-     * @brief           Key frame kept only for map merges; borrowed. The
-     *                  constructors set it to null, eraseKeyFrame() clears it
-     *                  when that key frame is erased, and Atlas::mergeMapPair()
-     *                  takes the absorbed map's value when this map has none
-     *                  and the key frame now belongs to this map. Nothing else
-     *                  reads it.
-     */
-    KeyFrame                      *p_firstRegionKeyFrame;
-    /*!
      * @brief           Held by tracking and the optimizers while they update
      *                  this map, so the map cannot change under them.
      */
@@ -1125,23 +1079,6 @@ class Map
      *                  create points with conflicting ids.
      */
     std::mutex pointCreationMutex;
-
-    /*!
-     * @brief           Failure flag; set to false at construction and never
-     *                  changed or read afterwards.
-     */
-    bool hasFailed;
-
-    /*!
-     * @brief           Width in pixels of the map thumbnail, a power of two;
-     *                  not used by any code yet.
-     */
-    static const int THUMB_WIDTH = 512;
-    /*!
-     * @brief           Height in pixels of the map thumbnail, a power of two;
-     *                  not used by any code yet.
-     */
-    static const int THUMB_HEIGHT = 512;
 
     /*!
      * @brief           Id given to the next map created; shared by all maps.
@@ -1169,10 +1106,6 @@ class Map
      * @brief           Floors of this map; borrowed.
      */
     std::set<semantic::Floor *>                    floors;
-    /*!
-     * @brief           Doors of this map; borrowed.
-     */
-    std::set<Door *>                               doors;
     /*!
      * @brief           Planes of this map; borrowed.
      */
@@ -1220,10 +1153,6 @@ class Map
      * @brief           Floors by floor id.
      */
     std::unordered_map<int, semantic::Floor *>                    floorIndex;
-    /*!
-     * @brief           Doors by door id; never filled, so lookups find nothing.
-     */
-    std::unordered_map<int, Door *>                               doorIndex;
     /*!
      * @brief           Planes by plane id.
      */
@@ -1350,20 +1279,9 @@ class Map
     int bigChangeIndex;
 
     /*!
-     * @brief           Top-down thumbnail image of the map; deleted by the
-     *                  destructor, nullptr because nothing allocates it yet.
-     */
-    unsigned char *p_thumbnail;
-
-    /*!
      * @brief           True while this map is the atlas's active map.
      */
     bool             isMapInUse;
-    /*!
-     * @brief           True when a thumbnail exists; always false because
-     *                  nothing creates one yet.
-     */
-    bool             hasThumbnail;
     /*!
      * @brief           True once setBad() flagged this map bad; atomic so
      *                  isBad() needs no lock.

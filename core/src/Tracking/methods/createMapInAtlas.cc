@@ -60,7 +60,6 @@ TrackingStatus Tracking::createMapInAtlas()
                          __func__);
         }
     }
-    isInitSet = false;
 
     initialFrameId = currentFrame.id + 1;
     state          = NO_IMAGES_YET;

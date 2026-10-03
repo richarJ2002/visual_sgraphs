@@ -197,7 +197,6 @@ TrackingStatus Tracking::reset(bool isRequestedByLocalMapping_in)
     state            = NO_IMAGES_YET;
 
     isReadyToInitialize = false;
-    isInitSet           = false;
 
     relativeFramePoses.clear();
     referenceKeyFrames.clear();

@@ -225,7 +225,6 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
     pointClouds = p_pointcloud_in;
 
     projectedPoints.clear();
-    matchedPoints.clear();
 
     outlierFlags = std::vector<bool>(keyPointCount, false);
 

@@ -69,7 +69,6 @@ FrameStatus Frame::computeStereoFishEyeMatches()
     depths             = std::vector<float>(leftKeyPointCount, -1.0f);
     uRight             = std::vector<float>(leftKeyPointCount, -1);
     stereoPoints3D     = std::vector<Eigen::Vector3f>(leftKeyPointCount);
-    closeMapPointCount = 0;
 
     // Perform a brute force between Keypoint in the left and right image
     std::vector<std::vector<cv::DMatch>> matches;

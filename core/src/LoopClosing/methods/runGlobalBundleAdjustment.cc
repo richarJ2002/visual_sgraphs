@@ -137,8 +137,6 @@ LoopClosingStatus
                                       false,
                                       1e2F,
                                       1e6F,
-                                      nullptr,
-                                      nullptr,
                                       &isGlobalBundleAdjustmentStopRequested) !=
             OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
         {

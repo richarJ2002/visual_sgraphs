@@ -52,8 +52,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
                    const int         &sensor_in) :
     isUndistortionNeeded(false),
     isRectificationNeeded(false),
-    isFirstResizeNeeded(false),
-    isSecondResizeNeeded(false)
+    isFirstResizeNeeded(false)
 {
     sensor = sensor_in;
 

@@ -1177,12 +1177,6 @@ class KeyFrame
      */
     long unsigned int baFixedKeyFrameId;
 
-    /*!
-     * @brief           Meant to count bundle adjustment iterations; set to 0 at
-     *                  construction and never read or updated afterwards.
-     */
-    long unsigned int optimizationCount;
-
     // Variables used by the keyframe database
     /*!
      * @brief           Id of the query key frame for which the loop candidate
@@ -1306,30 +1300,10 @@ class KeyFrame
      */
     Eigen::Vector3f   vwbMerge;
     /*!
-     * @brief           IMU velocity before the map merge correction, world
-     *                  frame; never written or read.
-     */
-    Eigen::Vector3f   vwbBefMerge;
-    /*!
-     * @brief           IMU bias after the map merge correction; never written
-     *                  or read.
-     */
-    IMU::Bias         biasMerge;
-    /*!
      * @brief           Id of the current key frame whose map merge corrected
      *                  this key frame; 0 when none.
      */
     long unsigned int mergeCorrectedKeyFrameId;
-    /*!
-     * @brief           Id of a merge key frame; set to nothing and never read
-     *                  or written after construction.
-     */
-    long unsigned int mergeKeyFrameId;
-    /*!
-     * @brief           Scale of the map merge; left uninitialised and never
-     *                  read or written.
-     */
-    float             scaleMerge;
     /*!
      * @brief           Id of the key frame whose merge local bundle adjustment
      *                  last included this key frame; 0 when none.
@@ -1522,17 +1496,6 @@ class KeyFrame
      *                  from.
      */
     int datasetId;
-
-    /*!
-     * @brief           Loop candidates of this key frame; only ever cleared by
-     *                  LoopClosing, never filled.
-     */
-    std::vector<KeyFrame *> loopCandKFs;
-    /*!
-     * @brief           Merge candidates of this key frame; only ever cleared by
-     *                  LoopClosing, never filled.
-     */
-    std::vector<KeyFrame *> mergeCandKFs;
 
     // bool mbHasHessian;
     // cv::Mat mHessianPose;

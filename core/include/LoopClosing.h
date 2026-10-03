@@ -382,13 +382,6 @@ class LoopClosing
     [[nodiscard]] LoopClosingStatus getLoopCorrectionStatus(
         LoopClosing::LoopCorrectionStatus &getLoopCorrectionStatus_out) const;
 
-    /*!
-     * @brief           Viewer; borrowed. System::initialize() sets it only when
-     *                  the viewer is enabled, and the loop closer never reads
-     *                  it.
-     */
-    Viewer *p_viewer;
-
 #ifdef REGISTER_TIMES
 
     std::vector<double> dataQueryTimes_ms;
@@ -509,11 +502,6 @@ class LoopClosing
      * @brief           Key frame being checked now.
      */
     KeyFrame *p_currentKF;
-
-    /*!
-     * @brief           Key frame checked in the previous iteration.
-     */
-    KeyFrame *p_lastCurrentKF;
 
     /*!
      * @brief           Key frames connected to the current key frame in the

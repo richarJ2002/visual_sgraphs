@@ -989,11 +989,6 @@ class Settings
      *                  resize.
      */
     bool isFirstResizeNeeded;
-    /*!
-     * @brief           Second-camera resize flag; initialised to false and
-     *                  never set to true by the readers.
-     */
-    bool isSecondResizeNeeded;
 
     /*!
      * @brief           Left-to-right stereo transform.

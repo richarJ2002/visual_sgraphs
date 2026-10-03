@@ -56,7 +56,6 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
     // Reference Frame: 1, Current Frame: 2
     matches12.clear();
     matches12.reserve(keys2.size());
-    matchedFlags1.resize(keys1.size());
     for (size_t matchIndex = 0, iend = matches12_in.size(); matchIndex < iend;
          matchIndex++)
     {
@@ -64,10 +63,7 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
         {
             matches12.push_back(
                 std::make_pair(matchIndex, matches12_in[matchIndex]));
-            matchedFlags1[matchIndex] = true;
         }
-        else
-            matchedFlags1[matchIndex] = false;
     }
 
     const int N = matches12.size();

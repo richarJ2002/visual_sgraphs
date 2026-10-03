@@ -34,22 +34,12 @@
 #define FRAMEDRAWER_H
 
 #include "Atlas.h"
-#include "Frame.h"
 #include "FrameDrawerStatus.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
 #include <mutex>
-#include <unordered_set>
-
-namespace vs_graphs
-{
-namespace core
-{
-class MapPoint;
-} // namespace core
-} // namespace vs_graphs
 
 namespace vs_graphs
 {
@@ -231,11 +221,6 @@ class FrameDrawer
     int state;
 
     /*!
-     * @brief           Depth of each key point of the last frame, in metres.
-     */
-    std::vector<float> currentDepths;
-
-    /*!
      * @brief           Depth that separates close from far points of the last
      *                  frame, in metres.
      */
@@ -248,65 +233,11 @@ class FrameDrawer
     Atlas *p_atlas;
 
     /*!
-     * @brief           Guards the copied frame data above and below, which
-     *                  update() writes and drawFrame() and drawRightFrame()
-     *                  read from different threads.
+     * @brief           Guards the copied frame data above, which update()
+     *                  writes and drawFrame() and drawRightFrame() read from
+     *                  different threads.
      */
     std::mutex frameStateMutex;
-
-    /*!
-     * @brief           Pairs of previous and current pixel positions that
-     *                  drawFrame() draws as thick lines while the tracker is
-     *                  not initialised. Nothing in the code fills it.
-     */
-    std::vector<std::pair<cv::Point2f, cv::Point2f>> tracks;
-
-    /*!
-     * @brief           Copy of the tracker's last processed frame.
-     */
-    Frame currentFrame;
-
-    /*!
-     * @brief           Map points of the tracker's local map. Borrowed from the
-     *                  map, not deleted here.
-     */
-    std::vector<MapPoint *> localMap;
-
-    /*!
-     * @brief           Key points matched to map points. Emptied by update()
-     *                  and never filled.
-     */
-    std::vector<cv::KeyPoint> matchedKeys;
-
-    /*!
-     * @brief           Map points matched to key points. Emptied by update()
-     *                  and never filled.
-     */
-    std::vector<MapPoint *> matchedMPs;
-
-    /*!
-     * @brief           Key points whose map point match was rejected as an
-     *                  outlier, in pixels.
-     */
-    std::vector<cv::KeyPoint> outlierKeys;
-
-    /*!
-     * @brief           Map points whose match to a key point was rejected as an
-     *                  outlier. Borrowed from the map, not deleted here.
-     */
-    std::vector<MapPoint *> outlierMPs;
-
-    /*!
-     * @brief           Pixel position of each map point projected into the last
-     *                  frame, keyed by map point id.
-     */
-    std::map<long unsigned int, cv::Point2f> projectPoints;
-
-    /*!
-     * @brief           Pixel position of the key point matched to each inlier
-     *                  map point, keyed by map point id.
-     */
-    std::map<long unsigned int, cv::Point2f> matchedInImage;
 };
 
 } // namespace core

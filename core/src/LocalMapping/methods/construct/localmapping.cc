@@ -37,19 +37,11 @@ namespace vs_graphs
 namespace core
 {
 
-LocalMapping::LocalMapping(
-    System                             *p_system_in,
-    Atlas                              *p_atlas_in,
-    const float                         monocular_in,
-    bool                                inertial_in,
-    [[maybe_unused]] const std::string &sequenceName_in) :
+LocalMapping::LocalMapping(Atlas      *p_atlas_in,
+                           const float monocular_in,
+                           bool        inertial_in) :
     scale(1.0),
-    initSection(0),
     initIndex(0),
-    iterationIndex(0),
-    isFirstImuBaPending(true),
-    isSecondImuBaPending(true),
-    p_system(p_system_in),
     isMonocular(monocular_in),
     isInertial(inertial_in),
     isResetRequested(false),
@@ -62,13 +54,10 @@ LocalMapping::LocalMapping(
     isStopRequested(false),
     isStopBlocked(false),
     shouldAcceptKeyFrames(true),
-    isInitializationInProgress(false),
-    infoInertial(Eigen::MatrixXd::Zero(9, 9))
+    isInitializationInProgress(false)
 {
-    localMappingCount       = 0;
     initializationStartTime = 0.f;
     isImuBad                = false;
-    keyFrameCullingCount    = 0;
     matchesInliers          = 0;
 
 #ifdef REGISTER_TIMES

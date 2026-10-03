@@ -248,7 +248,6 @@ class ImageGrabber : public rclcpp::Node
     double pendingMaximumImuGap_seconds{0.0};
 
     void    SyncWithImu();
-    // void GrabArUcoMarker(const aruco_msgs::MarkerArray &msg);
     /*!
      * @brief           Converts a ROS image message into an OpenCV image.
      *
@@ -795,8 +794,6 @@ int main(int argc, char **argv)
                                  sysParamsFile,
                                  sensorType,
                                  enablePangolin,
-                                 /*initFr*/ 0,
-                                 /*strSequence*/ std::string(),
                                  verboseLevel);
     if (systemStatus != vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
     {
@@ -1128,19 +1125,6 @@ void ImageGrabber::GrabRGBD(
     lastAdmittedRgbdTimestamp_seconds = rgbTimestamp_seconds;
     hasAdmittedRgbdPacket             = true;
 }
-
-/*
- * Callback function to get the markers detected by the `aruco_ros`
- * library
- *
- * @param msgMarkerArray The markers detected by the `aruco_ros` library
- */
-// void ImageGrabber::GrabArUcoMarker(const aruco_msgs::MarkerArray
-// &msgMarkerArray)
-// {
-//     // Pass the visited markers to a buffer to be processed later
-//     addMarkersToBuffer(msgMarkerArray);
-// }
 
 void ImageGrabber::GrabVoxbloxSkeletonGraph(
     const visualization_msgs::msg::MarkerArray &msgSkeletonGraph)

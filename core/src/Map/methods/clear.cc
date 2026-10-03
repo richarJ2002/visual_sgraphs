@@ -64,7 +64,6 @@ MapStatus Map::clear()
     markers.clear();
     passages.clear();
     floors.clear();
-    doors.clear();
     mapPoints.clear();
     keyFrames.clear();
 
@@ -72,7 +71,6 @@ MapStatus Map::clear()
     markerIndex.clear();
     passageIndex.clear();
     floorIndex.clear();
-    doorIndex.clear();
     keyFrameIndex.clear();
     roomWallPlaneIndex.clear();
 

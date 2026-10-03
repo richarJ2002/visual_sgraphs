@@ -624,16 +624,6 @@ class Sim3Solver
     std::vector<size_t> indices1;
 
     /*!
-     * @brief           Declared but never written or read.
-     */
-    std::vector<size_t> sigmaSquared1;
-
-    /*!
-     * @brief           Declared but never written or read.
-     */
-    std::vector<size_t> sigmaSquared2;
-
-    /*!
      * @brief           Largest squared reprojection error, in pixels squared,
      *                  that counts as an inlier in the first image, per
      *                  correspondence. Stored as integers, so fractions are
@@ -778,18 +768,6 @@ class Sim3Solver
      * @brief           Upper bound on RANSAC iterations, after adaptation.
      */
     int ransacMaxIterations;
-
-    // Threshold inlier/outlier. e = dist(Pi,T_ij*Pj)^2 < 5.991*mSigma2
-    /*!
-     * @brief           Declared but never written or read; the inlier threshold
-     *                  is applied through maxError1 and maxError2.
-     */
-    float threshold;
-
-    /*!
-     * @brief           Declared but never written or read.
-     */
-    float sigmaSquared;
 
     // Calibration
     // cv::Mat mK1;

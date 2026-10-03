@@ -595,11 +595,6 @@ class MLPnPsolver
     double mti[3];
 
     /*!
-     * @brief           Declared but never written or read.
-     */
-    Eigen::Matrix4f mTcwi;
-
-    /*!
      * @brief           Inlier flag of each correspondence under the current
      *                  pose estimate.
      */
@@ -686,13 +681,6 @@ class MLPnPsolver
      * @brief           Expected fraction of inliers among all correspondences.
      */
     float ransacEpsilon;
-
-    // RANSAC Threshold inlier/outlier. Max error e = dist(P1,T_12*P2)^2
-    /*!
-     * @brief           Declared but never written or read; the threshold is
-     *                  applied through maxError.
-     */
-    float ransacThreshold;
 
     // RANSAC Minimun Set used at each iteration
     /*!

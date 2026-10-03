@@ -528,12 +528,6 @@ class TwoViewReconstruction
      */
     std::vector<Match> matches12;
 
-    /*!
-     * @brief           True for each key point of frame 1 that has a match.
-     *                  Written by reconstruct() but never read.
-     */
-    std::vector<bool> matchedFlags1;
-
     // Calibration
     /*!
      * @brief           Camera intrinsic matrix K of both views, in pixels.

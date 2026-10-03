@@ -136,7 +136,6 @@ SystemStatus System::trackRGBD(
                                  timestamp_in,
                                  filename_in,
                                  markers_in,
-                                 envRooms,
                                  cameraPose_worldToCamera) !=
         TrackingStatus::TRACKING_STATUS_SUCCESS)
     {

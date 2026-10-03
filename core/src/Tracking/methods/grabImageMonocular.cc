@@ -44,12 +44,8 @@ TrackingStatus Tracking::grabImageMonocular(
     const double                         &timestamp_in,
     std::string                           filename_in,
     const std::vector<semantic::Marker *> markers_in,
-    const std::vector<semantic::Room *>   rooms_in,
     Sophus::SE3f                         &cameraPose_out)
 {
-    // Set arguments to local variables
-    env_rooms = rooms_in;
-
     // Adaptive FAST threshold: adjust before feature extraction
     if (adjustFASTThreshold() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
@@ -136,9 +132,6 @@ TrackingStatus Tracking::grabImageMonocular(
                                  *p_imuCalibration,
                                  markers_in);
     }
-
-    if (state == NO_IMAGES_YET)
-        t0 = timestamp_in;
 
     currentFrame.fileName  = filename_in;
     currentFrame.datasetId = numDataset;

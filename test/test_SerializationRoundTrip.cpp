@@ -966,7 +966,7 @@ TEST(SerializationMap, EmptyRoundTripMemoryAndTmpFile)
     EXPECT_EQ(id3, id4);
     std::remove(path.c_str());
 
-    // SKIP mutex/atomic/thumbnail: post-load map must be queryable.
+    // SKIP mutex/atomic: post-load map must be queryable.
     std::vector<KeyFrame *> loadedKeyFrames;
     MapStatus               getAllKeyFramesStatus{};
     EXPECT_NO_THROW(getAllKeyFramesStatus =

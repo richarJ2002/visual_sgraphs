@@ -44,8 +44,6 @@ namespace core
  * cycle. */
 
 Map::Map() :
-    p_firstRegionKeyFrame(static_cast<KeyFrame *>(nullptr)),
-    hasFailed(false),
     hasImuInitialization(false),
     mapChange(0),
     mapChangeNotified(0),
@@ -53,14 +51,12 @@ Map::Map() :
     maxKeyFrameId(0),
     bigChangeIndex(0),
     isMapInUse(false),
-    hasThumbnail(false),
     isFlaggedBad(false),
     isInertialMode(false),
     hasInertialBA1(false),
     hasInertialBA2(false)
 {
-    id          = nextId++;
-    p_thumbnail = nullptr;
+    id = nextId++;
 }
 
 } // namespace core

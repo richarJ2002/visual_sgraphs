@@ -8,7 +8,6 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   core/src/System/methods/construct/system.cc
   core/src/System/methods/deactivateLocalizationMode.cc
   core/src/System/methods/destruct.cc
-  core/src/System/methods/getAllDoors.cc
   core/src/System/methods/haveWorkersFinished.cc
   core/src/System/methods/initialize.cc
   core/src/System/methods/getAllFloors.cc
@@ -50,7 +49,6 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   core/src/System/methods/resetActiveMap.cc
   core/src/System/methods/reset.cc
   core/src/System/methods/saveAtlas.cc
-  core/src/System/methods/saveDebugData.cc
   core/src/System/methods/saveKeyFrameTrajectoryEuRoC/withMap.cc
   core/src/System/methods/saveKeyFrameTrajectoryEuRoC/withoutMap.cc
   core/src/System/methods/saveKeyFrameTrajectoryTUM.cc

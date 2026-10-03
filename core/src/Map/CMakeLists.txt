@@ -3,7 +3,6 @@ set(VS_GRAPHS_MAP_SOURCES
   core/src/Map/methods/addCandidateMapRoom.cc
   core/src/Map/methods/addDetectedMapRoom.cc
   core/src/Map/methods/addKeyFrame.cc
-  core/src/Map/methods/addMapDoor.cc
   core/src/Map/methods/addMapFloor.cc
   core/src/Map/methods/addMapMarker.cc
   core/src/Map/methods/addMapPassage.cc
@@ -26,7 +25,6 @@ set(VS_GRAPHS_MAP_SOURCES
   core/src/Map/methods/eraseRoomWallPlane.cc
   core/src/Map/methods/getAllCandidateMapRooms.cc
   core/src/Map/methods/getAllDetectedMapRooms.cc
-  core/src/Map/methods/getAllDoors.cc
   core/src/Map/methods/getAllFloors.cc
   core/src/Map/methods/getAllKeyFrames.cc
   core/src/Map/methods/getAllMapPoints.cc
@@ -36,7 +34,6 @@ set(VS_GRAPHS_MAP_SOURCES
   core/src/Map/methods/getAllPlanes.cc
   core/src/Map/methods/getAllRooms.cc
   core/src/Map/methods/getBiggestGroundPlane.cc
-  core/src/Map/methods/getDoorById.cc
   core/src/Map/methods/getFinalRoom.cc
   core/src/Map/methods/getFloorById.cc
   core/src/Map/methods/getFollowingMap.cc

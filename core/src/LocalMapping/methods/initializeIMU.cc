@@ -313,8 +313,6 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                                         mbg,
                                         mba,
                                         isMonocular,
-                                        infoInertial,
-                                        false,
                                         false,
                                         gyroPriorWeight_in,
                                         accelPriorWeight_in) !=
@@ -451,7 +449,6 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        p_tracker->t0IMU         = p_tracker->currentFrame.timeStamp;
         p_currentKeyFrame->isImu = true;
     }
 

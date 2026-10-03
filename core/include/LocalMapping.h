@@ -53,7 +53,6 @@ namespace vs_graphs
 namespace core
 {
 
-class System;
 class Tracking;
 class LoopClosing;
 class Atlas;
@@ -73,9 +72,6 @@ class LocalMapping
      *                  and setLoopCloser() before starting run() on its own
      *                  thread.
      *
-     * @param[in]       p_system_in
-     *                  Owning system; borrowed, shall outlive the mapper.
-     *
      * @param[in]       p_atlas_in
      *                  Atlas holding every map; borrowed, shall outlive the
      *                  mapper.
@@ -85,15 +81,8 @@ class LocalMapping
      *
      * @param[in]       inertial_in
      *                  True when an IMU is used.
-     *
-     * @param[in]       sequenceName_in
-     *                  Ignored; kept so the constructor signature is unchanged.
      */
-    LocalMapping(System            *p_system_in,
-                 Atlas             *p_atlas_in,
-                 const float        monocular_in,
-                 bool               inertial_in,
-                 const std::string &sequenceName_in = std::string());
+    LocalMapping(Atlas *p_atlas_in, const float monocular_in, bool inertial_in);
 
     /*!
      * @brief           Tells the mapper which loop closer to use.
@@ -328,19 +317,6 @@ class LocalMapping
         getCurrentKeyFrame(KeyFrame *&p_currentKeyFrame_out);
 
     /*!
-     * @brief           Mutex intended for IMU initialisation; its only use is a
-     *                  commented-out lock, so nothing locks it.
-     */
-    std::mutex imuInitMutex;
-
-    /*!
-     * @brief           Covariance of the inertial initialisation, dumped by
-     *                  System::saveDebugData(). Nothing assigns it, so it stays
-     *                  empty.
-     */
-    Eigen::MatrixXd mcovInertial;
-
-    /*!
      * @brief           Rotation from the gravity-aligned frame to the world
      *                  frame, estimated by IMU initialisation; scale
      *                  refinement resets it to identity first.
@@ -371,18 +347,6 @@ class LocalMapping
     double initTime;
 
     /*!
-     * @brief           Computation time of the initialisation, dumped by
-     *                  System::saveDebugData(). Nothing assigns it.
-     */
-    double costTime;
-
-    /*!
-     * @brief           Index of the initialisation section, used in the file
-     *                  names written by System::saveDebugData(). Always 0.
-     */
-    unsigned int initSection;
-
-    /*!
      * @brief           Number of IMU initialisations completed; set back to 0
      *                  on a full reset.
      */
@@ -407,43 +371,10 @@ class LocalMapping
     int matchesInliers;
 
     /*!
-     * @brief           Index of the first frame, assigned by
-     *                  System::initialize() from its initial-frame argument;
-     *                  the mapper does not read it.
-     */
-    int initFrame;
-
-    /*!
-     * @brief           Zero-initialised in the constructor; never read or
-     *                  changed afterwards.
-     */
-    int iterationIndex;
-
-    /*!
-     * @brief           Never assigned or read; always empty.
-     */
-    std::string sequence;
-
-    /*!
-     * @brief           Set to true when the mapper is reset; nothing reads it.
-     */
-    bool isFirstImuBaPending;
-
-    /*!
-     * @brief           Set to true when the mapper is reset; nothing reads it.
-     */
-    bool isSecondImuBaPending;
-
-    /*!
      * @brief           True when the IMU is flagged unusable; run() then skips
      *                  key-frame processing. Only a reset assigns it (false).
      */
     bool isImuBad;
-
-    /*!
-     * @brief           Never assigned or read.
-     */
-    bool shouldWriteStats;
 
     /*!
      * @brief           True to ignore far points (beyond farPointsThreshold)
@@ -527,12 +458,6 @@ class LocalMapping
      * @return          LOCAL_MAPPING_STATUS_SUCCESS always.
      */
     [[nodiscard]] LocalMappingStatus keyFrameCulling();
-
-    /*!
-     * @brief           Owning system; borrowed. Stored by the constructor and
-     *                  not used afterwards.
-     */
-    System *p_system;
 
     /*!
      * @brief           True when the sensor is monocular (set from the
@@ -649,11 +574,6 @@ class LocalMapping
     std::mutex newKeyFramesMutex;
 
     /*!
-     * @brief           Never locked.
-     */
-    std::mutex newRoomsMutex;
-
-    /*!
      * @brief           Set to true to make a running bundle adjustment give up;
      *                  cleared by run() before it starts one.
      */
@@ -732,38 +652,10 @@ class LocalMapping
     bool isInitializationInProgress;
 
     /*!
-     * @brief           Information matrix of the inertial initialisation,
-     *                  9 x 9, filled by the inertial optimisation.
-     */
-    Eigen::MatrixXd infoInertial;
-
-    /*!
-     * @brief           Set to 0 in the constructor; never read or changed
-     *                  afterwards.
-     */
-    int localMappingCount;
-
-    /*!
-     * @brief           Set to 0 in the constructor; never read or changed
-     *                  afterwards.
-     */
-    int keyFrameCullingCount;
-
-    /*!
      * @brief           Seconds of usable motion since the IMU initialisation
      *                  window began; 0 after a reset.
      */
     float initializationStartTime;
-
-    /*!
-     * @brief           Never assigned or read.
-     */
-    int countRefinement;
-
-    /*!
-     * @brief           Never opened or written.
-     */
-    std::ofstream localMappingStatsFile;
 };
 
 } // namespace core

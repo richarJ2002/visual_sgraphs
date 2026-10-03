@@ -21,7 +21,6 @@ FrameDrawerStatus FrameDrawer::update(Tracking *p_tracker_in)
     p_tracker_in->imageGray.copyTo(image);
     currentKeys    = p_tracker_in->currentFrame.keyPoints;
     depthThreshold = p_tracker_in->currentFrame.depthThreshold;
-    currentDepths  = p_tracker_in->currentFrame.depths;
 
     if (shouldDrawBothImages)
     {
@@ -37,30 +36,6 @@ FrameDrawerStatus FrameDrawer::update(Tracking *p_tracker_in)
     isVisualOdometryPoint = std::vector<bool>(keyPointCount, false);
     isTrackedMapPoint     = std::vector<bool>(keyPointCount, false);
     isTrackingOnlyMode    = p_tracker_in->isTrackingOnlyMode;
-
-    // Variables for the new visualization
-    currentFrame  = p_tracker_in->currentFrame;
-    projectPoints = currentFrame.projectedPoints;
-    matchedInImage.clear();
-
-    std::vector<MapPoint *> trackerLocalMapPoints{};
-    if (p_tracker_in->getLocalMapPoints(trackerLocalMapPoints) !=
-        TrackingStatus::TRACKING_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: getLocalMapPoints returned a failure status although "
-                     "it cannot fail; continuing as before.",
-                     __func__);
-    }
-    localMap = trackerLocalMapPoints;
-    matchedKeys.clear();
-    matchedKeys.reserve(keyPointCount);
-    matchedMPs.clear();
-    matchedMPs.reserve(keyPointCount);
-    outlierKeys.clear();
-    outlierKeys.reserve(keyPointCount);
-    outlierMPs.clear();
-    outlierMPs.reserve(keyPointCount);
 
     if (p_tracker_in->lastProcessedState == Tracking::NOT_INITIALIZED)
     {
@@ -93,14 +68,6 @@ FrameDrawerStatus FrameDrawer::update(Tracking *p_tracker_in)
                         isTrackedMapPoint[keyPointIndex] = true;
                     else
                         isVisualOdometryPoint[keyPointIndex] = true;
-
-                    matchedInImage[p_mapPoint->id] =
-                        currentKeys[keyPointIndex].pt;
-                }
-                else
-                {
-                    outlierMPs.push_back(p_mapPoint);
-                    outlierKeys.push_back(currentKeys[keyPointIndex]);
                 }
             }
         }

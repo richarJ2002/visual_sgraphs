@@ -64,8 +64,6 @@ LoopClosing::LoopClosing(Atlas            *p_atlas_in,
     fullBundleAdjustmentIndex(0),
     isLoopClosingActive(isActiveLc_in)
 {
-    p_lastCurrentKF = static_cast<KeyFrame *>(nullptr);
-
 #ifdef REGISTER_TIMES
 
     dataQueryTimes_ms.clear();

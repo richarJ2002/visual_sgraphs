@@ -67,7 +67,6 @@ void KeyFrame::serialize(Archive &ar, const unsigned int version)
     // Variables of local mapping
     // ar & baLocalKeyFrameId;
     // ar & baFixedKeyFrameId;
-    // ar & optimizationCount;
     // Variables used by KeyFrameDatabase
     // ar & mnLoopQuery;
     // ar & mnLoopWords;
@@ -94,11 +93,7 @@ void KeyFrame::serialize(Archive &ar, const unsigned int version)
     // serializeMatrix(ar,mTcwBefMerge,version);
     // serializeMatrix(ar,mTwcBefMerge,version);
     // serializeMatrix(ar,mVwbMerge,version);
-    // serializeMatrix(ar,mVwbBefMerge,version);
-    // ar & mBiasMerge;
     // ar & mergeCorrectedKeyFrameId;
-    // ar & mergeKeyFrameId;
-    // ar & mfScaleMerge;
     // ar & baLocalMergeId;
 
     // Scale

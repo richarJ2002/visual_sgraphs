@@ -17,7 +17,6 @@ set(VS_GRAPHS_TRACKING_SOURCES
   core/src/Tracking/methods/getImageScale.cc
   core/src/Tracking/methods/getImuTwb.cc
   core/src/Tracking/methods/getImuVwb.cc
-  core/src/Tracking/methods/getLocalMapPoints.cc
   core/src/Tracking/methods/getMatchesInliers.cc
   core/src/Tracking/methods/getNumberDataset.cc
   core/src/Tracking/methods/getStepByStep.cc
@@ -45,9 +44,6 @@ set(VS_GRAPHS_TRACKING_SOURCES
   core/src/Tracking/methods/requestStop.cc
   core/src/Tracking/methods/reset.cc
   core/src/Tracking/methods/resetActiveMap.cc
-  core/src/Tracking/methods/resetFrameIMU.cc
-  core/src/Tracking/methods/saveSubTrajectory/withFolder.cc
-  core/src/Tracking/methods/saveSubTrajectory/withMap.cc
   core/src/Tracking/methods/searchLocalPoints.cc
   core/src/Tracking/methods/setLocalMapper.cc
   core/src/Tracking/methods/setLoopClosing.cc

@@ -30,18 +30,7 @@ FrameDrawerStatus FrameDrawer::drawFrame(cv::Mat &frameImage_out,
     std::vector<cv::KeyPoint> currentKeyPoints; // KeyPoints in current frame
     std::vector<bool>         visualOdometryFlags,
         mapPointFlags; // Tracked MapPoints in current frame
-    std::vector<std::pair<cv::Point2f, cv::Point2f>> initialTracks;
-    int                drawState; // Tracking state
-    std::vector<float> currentDepthValues;
-
-    Frame                                    drawnFrame;
-    std::vector<MapPoint *>                  localMapPoints;
-    std::vector<cv::KeyPoint>                matchedKeyPoints;
-    std::vector<MapPoint *>                  matchedMapPoints;
-    std::vector<cv::KeyPoint>                outlierKeyPoints;
-    std::vector<MapPoint *>                  outlierMapPoints;
-    std::map<long unsigned int, cv::Point2f> projectedPointMap;
-    std::map<long unsigned int, cv::Point2f> matchedInImageMap;
+    int drawState;     // Tracking state
 
     cv::Scalar standardColor(0, 255, 0);
     cv::Scalar odometryColor(255, 0, 0);
@@ -60,24 +49,12 @@ FrameDrawerStatus FrameDrawer::drawFrame(cv::Mat &frameImage_out,
             currentKeyPoints    = currentKeys;
             initialKeyPoints    = iniKeys;
             initialMatchIndices = iniMatches;
-            initialTracks       = tracks;
         }
         else if (state == Tracking::OK)
         {
             currentKeyPoints    = currentKeys;
             visualOdometryFlags = isVisualOdometryPoint;
             mapPointFlags       = isTrackedMapPoint;
-
-            drawnFrame        = currentFrame;
-            localMapPoints    = localMap;
-            matchedKeyPoints  = matchedKeys;
-            matchedMapPoints  = matchedMPs;
-            outlierKeyPoints  = outlierKeys;
-            outlierMapPoints  = outlierMPs;
-            projectedPointMap = projectPoints;
-            matchedInImageMap = matchedInImage;
-
-            currentDepthValues = currentDepths;
         }
         else if (state == Tracking::LOST)
         {
@@ -124,24 +101,6 @@ FrameDrawerStatus FrameDrawer::drawFrame(cv::Mat &frameImage_out,
                 }
                 cv::line(displayImage, drawPoint1, drawPoint2, standardColor);
             }
-        }
-        for (std::vector<std::pair<cv::Point2f, cv::Point2f>>::iterator
-                 trackIt = initialTracks.begin();
-             trackIt != initialTracks.end();
-             trackIt++)
-        {
-            cv::Point2f drawPoint1, drawPoint2;
-            if (imageScale_in != 1.f)
-            {
-                drawPoint1 = (*trackIt).first / imageScale_in;
-                drawPoint2 = (*trackIt).second / imageScale_in;
-            }
-            else
-            {
-                drawPoint1 = (*trackIt).first;
-                drawPoint2 = (*trackIt).second;
-            }
-            cv::line(displayImage, drawPoint1, drawPoint2, standardColor, 5);
         }
     }
     else if (drawState == Tracking::OK) // TRACKING

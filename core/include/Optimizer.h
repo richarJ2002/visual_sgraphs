@@ -175,12 +175,6 @@ class Optimizer
      *                  accelerometer bias; used only when
      *                  isImuInitialization_in is true.
      *
-     * @param[in]       p_singularValues_in
-     *                  Not used.
-     *
-     * @param[in]       p_hessianComputed_in
-     *                  Not used.
-     *
      * @param[in]       p_stopRequested_in
      *                  Optional thread-safe cancellation request, copied into
      *                  p_stopFlag_inout between iterations; may be null.
@@ -197,9 +191,7 @@ class Optimizer
                        bool                    isImuInitialization_in = false,
                        float                   gyroBiasPriorWeight_in = 1e2,
                        float                   accelBiasPriorWeight_in = 1e6,
-                       Eigen::VectorXd        *p_singularValues_in  = nullptr,
-                       bool                   *p_hessianComputed_in = nullptr,
-                       const std::atomic_bool *p_stopRequested_in   = nullptr);
+                       const std::atomic_bool *p_stopRequested_in = nullptr);
 
     /*!
      * @brief           Refines the keyframes covisible with a keyframe, the map
@@ -684,15 +676,9 @@ class Optimizer
      * @param[in]       isMono_in
      *                  True to estimate the scale, false to keep it fixed.
      *
-     * @param[in]       covInertial_in
-     *                  Not used.
-     *
      * @param[in]       isFixedVelocity_in
      *                  True to hold velocities and biases fixed and estimate
      *                  only gravity and scale.
-     *
-     * @param[in]       shouldUseGaussNewton_in
-     *                  Not used.
      *
      * @param[in]       priorG_in
      *                  Information weight of the zero prior on the gyroscope
@@ -712,11 +698,9 @@ class Optimizer
                              Eigen::Vector3d &bg_in,
                              Eigen::Vector3d &ba_in,
                              bool             isMono_in,
-                             Eigen::MatrixXd &covInertial_in,
-                             bool             isFixedVelocity_in      = false,
-                             bool             shouldUseGaussNewton_in = false,
-                             float            priorG_in               = 1e2,
-                             float            priorA_in               = 1e6);
+                             bool             isFixedVelocity_in = false,
+                             float            priorG_in          = 1e2,
+                             float            priorA_in          = 1e6);
     /*!
      * @brief           Estimates the IMU biases and keyframe velocities of a
      *                  map from its keyframe poses, with gravity and scale held

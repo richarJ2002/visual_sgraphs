@@ -207,14 +207,10 @@ struct RoomContextSnapshot
      */
     std::vector<PassageContext>  passageContexts;
     /*!
-     * @brief           Time the snapshot was taken, seconds since the epoch of
-     *                  the clock named in timestampProvenance.
+     * @brief           Time the snapshot was taken, seconds since the
+     *                  std::chrono::steady_clock epoch.
      */
     double                       timestamp{0.0};
-    /*!
-     * @brief           Name of the clock that produced timestamp.
-     */
-    std::string                  timestampProvenance{"steady_clock"};
     /*!
      * @brief           Persistent room tag, "room_<roomId>", used to match
      *                  rooms across maps.

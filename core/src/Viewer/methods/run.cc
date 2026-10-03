@@ -158,12 +158,6 @@ void Viewer::run()
                 __func__);
         }
 
-        if (isTrackingStopRequested)
-        {
-            menuStepByStep          = true;
-            isTrackingStopRequested = false;
-        }
-
         if (menuFollowCamera && isFollowing)
         {
             if (isCameraView)

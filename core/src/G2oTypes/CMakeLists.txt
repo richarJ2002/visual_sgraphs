@@ -2,7 +2,6 @@
 # its own sources; free SO(3) helpers live directly in this module.
 # No source file is listed twice.
 include(${CMAKE_CURRENT_LIST_DIR}/ImuCamPose/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/InvDepthPoint/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/VertexPose/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/EdgeMono/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/EdgeMonoOnlyPose/CMakeLists.txt)
@@ -19,7 +18,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/VertexAccBias/CMakeLists.txt)
 
 set(VS_GRAPHS_G2OTYPES_SOURCES
   ${VS_GRAPHS_G2OTYPES_IMUCAMPOSE_SOURCES}
-  ${VS_GRAPHS_G2OTYPES_INVDEPTHPOINT_SOURCES}
   ${VS_GRAPHS_G2OTYPES_VERTEXPOSE_SOURCES}
   ${VS_GRAPHS_G2OTYPES_EDGEMONO_SOURCES}
   ${VS_GRAPHS_G2OTYPES_EDGEMONOONLYPOSE_SOURCES}

@@ -140,9 +140,6 @@ class Tracking
      *                  Already parsed settings. When not null the camera, ORB
      *                  and IMU values come from it instead of the YAML file.
      *                  Borrowed, may be null.
-     *
-     * @param[in]       nameSeq_in
-     *                  Unused.
      */
     Tracking(System                    *p_sys_in,
              ORBVocabulary             *p_vocabulary_in,
@@ -152,8 +149,7 @@ class Tracking
              KeyFrameDatabase          *p_keyFrameDatabase_in,
              const std::string         &settingPath_in,
              const int                  sensorType_in,
-             utils::settings::Settings *p_settings_in,
-             const std::string         &nameSeq_in = std::string());
+             utils::settings::Settings *p_settings_in);
 
     /*!
      * @brief           Reads the camera section of the settings file: builds
@@ -231,9 +227,6 @@ class Tracking
      * @param[in]       markers_in
      *                  Markers detected in this image, handed to the frame.
      *
-     * @param[in]       rooms_in
-     *                  Rooms known to the semantic layer, stored in env_rooms.
-     *
      * @param[out]      cameraPose_out
      *                  Pose the current frame holds after tracking, mapping
      *                  world-frame points into the camera frame. Read state to
@@ -247,7 +240,6 @@ class Tracking
                         const double  &timestamp_in,
                         std::string    filename_in,
                         const std::vector<semantic::Marker *> markers_in,
-                        const std::vector<semantic::Room *>   rooms_in,
                         Sophus::SE3f                         &cameraPose_out);
     /*!
      * @brief           Converts an RGB-D image to grayscale and metric depth,
@@ -271,9 +263,6 @@ class Tracking
      * @param[in]       markers_in
      *                  Markers detected in this image, handed to the frame.
      *
-     * @param[in]       rooms_in
-     *                  Rooms known to the semantic layer, stored in env_rooms.
-     *
      * @param[out]      cameraPose_out
      *                  Pose the current frame holds after tracking, mapping
      *                  world-frame points into the camera frame. Read state to
@@ -288,7 +277,6 @@ class Tracking
         const double                                 &timestamp_in,
         std::string                                   filename_in,
         const std::vector<semantic::Marker *>         markers_in,
-        const std::vector<semantic::Room *>           rooms_in,
         Sophus::SE3f                                 &cameraPose_out);
     /*!
      * @brief           Converts a monocular image to grayscale, extracts
@@ -307,9 +295,6 @@ class Tracking
      * @param[in]       markers_in
      *                  Markers detected in this image, handed to the frame.
      *
-     * @param[in]       rooms_in
-     *                  Rooms known to the semantic layer, stored in env_rooms.
-     *
      * @param[out]      cameraPose_out
      *                  Pose the current frame holds after tracking, mapping
      *                  world-frame points into the camera frame. Read state to
@@ -322,7 +307,6 @@ class Tracking
                            const double                         &timestamp_in,
                            std::string                           filename_in,
                            const std::vector<semantic::Marker *> markers_in,
-                           const std::vector<semantic::Room *>   rooms_in,
                            Sophus::SE3f &cameraPose_out);
 
     /*!
@@ -539,48 +523,6 @@ class Tracking
     [[nodiscard]] TrackingStatus
         getMatchesInliers(int &matchesInliers_out) const;
 
-    // DEBUG
-    /*!
-     * @brief           Writes the frame trajectory in EuRoC format through
-     *                  System. The key frame file name is ignored.
-     *
-     * @param[in]       textNameFileFrames_in
-     *                  File name of the frame trajectory.
-     *
-     * @param[in]       textNameFileKeyFrame_in
-     *                  Unused.
-     *
-     * @param[in]       folder_in
-     *                  Directory prefix put in front of the file name as plain
-     *                  text, so it must end with a separator.
-     *
-     * @return          TRACKING_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] TrackingStatus
-        saveSubTrajectory(std::string textNameFileFrames_in,
-                          std::string textNameFileKeyFrame_in,
-                          std::string folder_in = "");
-    /*!
-     * @brief           Writes the frame trajectory of one map, and its key
-     *                  frame trajectory when a key frame file name is given, in
-     *                  EuRoC format through System.
-     *
-     * @param[in]       textNameFileFrames_in
-     *                  File name of the frame trajectory.
-     *
-     * @param[in]       textNameFileKeyFrame_in
-     *                  File name of the key frame trajectory; empty to skip it.
-     *
-     * @param[in]       p_map_in
-     *                  Map to save. Borrowed.
-     *
-     * @return          TRACKING_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] TrackingStatus
-        saveSubTrajectory(std::string textNameFileFrames_in,
-                          std::string textNameFileKeyFrame_in,
-                          Map        *p_map_in);
-
     /*!
      * @brief           Gives the factor by which input images are scaled
      *                  relative to the calibration.
@@ -687,10 +629,6 @@ class Tracking
 
     // Initialization Variables (Monocular)
     /*!
-     * @brief           Not used anywhere; left over from ORB-SLAM3.
-     */
-    std::vector<int>         iniLastMatches;
-    /*!
      * @brief           Monocular initialization: for each keypoint of
      *                  initialFrame, the index of its match in the current
      *                  frame, negative when unmatched.
@@ -744,10 +682,6 @@ class Tracking
     std::list<bool>         lostFlags;
 
     /*!
-     * @brief           Number of trackLocalMap() calls so far; never read.
-     */
-    int  trackedFr;
-    /*!
      * @brief           Set by the viewer to let one frame through while
      *                  step-by-step mode waits; track() clears it.
      */
@@ -790,57 +724,11 @@ class Tracking
         resetActiveMap(bool isRequestedByLocalMapping_in = false);
 
     /*!
-     * @brief           Not used anywhere; left over from ORB-SLAM3.
-     */
-    float  meanTrack;
-    /*!
-     * @brief           Only set to false by the constructor; never read.
-     */
-    bool   shouldInitializeWithThreeKeyFrames;
-    /*!
-     * @brief           Timestamp of the first monocular frame read, seconds;
-     *                  set by grabImageMonocular() and not read elsewhere.
-     */
-    double t0;
-    /*!
-     * @brief           Not used anywhere; meant as the timestamp of the first
-     *                  inserted key frame.
-     */
-    double t0vis;
-    /*!
-     * @brief           Timestamp of the frame current when local mapping first
-     *                  initialized the IMU, seconds; not read elsewhere.
-     */
-    double t0IMU;
-    /*!
      * @brief           True when the IMU.FastInit setting is on: stereo and
      *                  RGB-D IMU initialization then skips the check that the
      *                  acceleration changed enough.
      */
-    bool   isFastInitEnabled = false;
-
-    /*!
-     * @brief           Gives a copy of the current local map points.
-     *
-     * @param[out]      localMapPoints_out
-     *                  Local map points. Borrowed, owned by their maps.
-     *
-     * @return          TRACKING_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] TrackingStatus
-        getLocalMapPoints(std::vector<MapPoint *> &localMapPoints_out);
-
-    /*!
-     * @brief           Not used anywhere; left over from ORB-SLAM3.
-     */
-    bool shouldWriteStats;
-
-    // Semantic map entities
-    /*!
-     * @brief           Rooms handed over with the latest image. Stored but not
-     *                  read by the tracker. Borrowed.
-     */
-    std::vector<vs_graphs::core::semantic::Room *> env_rooms;
+    bool isFastInitEnabled = false;
 
 #ifdef REGISTER_TIMES
     [[nodiscard]] TrackingStatus localMapStats2File();
@@ -1063,14 +951,6 @@ class Tracking
     [[nodiscard]] TrackingStatus preintegrateIMU();
 
     /*!
-     * @brief           Placeholder for resetting the IMU biases and recomputing
-     *                  the frame velocity; currently does nothing.
-     *
-     * @return          TRACKING_STATUS_SUCCESS always.
-     */
-    [[nodiscard]] TrackingStatus resetFrameIMU();
-
-    /*!
      * @brief           True when the current map changed since the previous
      *                  frame, set by track().
      */
@@ -1168,10 +1048,6 @@ class Tracking
      *                  was chosen and later frames are matched against it.
      */
     bool isReadyToInitialize;
-    /*!
-     * @brief           Only ever set to false; never read.
-     */
-    bool isInitSet;
 
     // Local Map
     /*!
@@ -1280,11 +1156,6 @@ class Tracking
      */
     int maxFrames;
 
-    /*!
-     * @brief           Id of the frame that was current when updateFrameIMU()
-     *                  last ran; never read.
-     */
-    int firstImuFrameId;
     /*!
      * @brief           Frames after a relocalization during which IMU tracking
      *                  is treated as unreliable; set to maxFrames for IMU
@@ -1443,32 +1314,6 @@ class Tracking
      *                  up by newDataset().
      */
     int numDataset;
-
-    /*!
-     * @brief           Not used anywhere; left over from ORB-SLAM3.
-     */
-    std::ofstream trackStatsFile;
-
-    /*!
-     * @brief           Not used anywhere; left over from ORB-SLAM3.
-     */
-    std::ofstream trackTimesFile;
-    /*!
-     * @brief           Not used anywhere; left over from ORB-SLAM3.
-     */
-    double        imuPreintegrationTime;
-    /*!
-     * @brief           Not used anywhere; left over from ORB-SLAM3.
-     */
-    double        posePredictionTime;
-    /*!
-     * @brief           Not used anywhere; left over from ORB-SLAM3.
-     */
-    double        localMapTrackTime;
-    /*!
-     * @brief           Not used anywhere; left over from ORB-SLAM3.
-     */
-    double        newKeyFrameDecisionTime;
 
     // Adaptive FAST threshold: track feature count to adjust threshold
     /*!

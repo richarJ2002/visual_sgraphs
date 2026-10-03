@@ -240,7 +240,6 @@ Frame::Frame(const cv::Mat &imageColor_in,
     mapMarkers = markers_in;
 
     projectedPoints.clear();
-    matchedPoints.clear();
 
     outlierFlags = std::vector<bool>(keyPointCount, false);
 

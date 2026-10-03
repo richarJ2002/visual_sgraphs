@@ -51,11 +51,6 @@ MapStatus Map::eraseKeyFrame(KeyFrame *p_keyFrame_inout)
                                       p_keyFrame_inout),
                           keyFrameOrigins.end());
 
-    if (p_firstRegionKeyFrame == p_keyFrame_inout)
-    {
-        p_firstRegionKeyFrame = nullptr;
-    }
-
     if (p_initialKeyFrame == p_keyFrame_inout)
     {
         p_initialKeyFrame = nullptr;

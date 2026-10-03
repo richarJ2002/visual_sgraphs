@@ -43,18 +43,16 @@ namespace vs_graphs
 namespace core
 {
 
-OptimizerStatus Optimizer::fullInertialBA(
-    Map                              *p_map_inout,
-    int                               iterationCount_in,
-    const bool                        fixLocalKeyFrames_in,
-    const long unsigned int           loopKeyFrameId_in,
-    bool                             *p_stopFlag_inout,
-    bool                              isImuInitialization_in,
-    float                             gyroBiasPriorWeight_in,
-    float                             accelBiasPriorWeight_in,
-    [[maybe_unused]] Eigen::VectorXd *p_singularValues_in,
-    [[maybe_unused]] bool            *p_hessianComputed_in,
-    const std::atomic_bool           *p_stopRequested_in)
+OptimizerStatus
+    Optimizer::fullInertialBA(Map                    *p_map_inout,
+                              int                     iterationCount_in,
+                              const bool              fixLocalKeyFrames_in,
+                              const long unsigned int loopKeyFrameId_in,
+                              bool                   *p_stopFlag_inout,
+                              bool                    isImuInitialization_in,
+                              float                   gyroBiasPriorWeight_in,
+                              float                   accelBiasPriorWeight_in,
+                              const std::atomic_bool *p_stopRequested_in)
 {
     unsigned long maxKeyFrameIdValue{};
     if (p_map_inout->getMaxKeyFrameId(maxKeyFrameIdValue) !=

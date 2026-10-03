@@ -26,8 +26,8 @@
 /*!
  * @file            destruct.cc
  *
- * @brief           Implements the Map destructor, declared in Map.h: frees the
- *                  thumbnail image only; the map elements are owned elsewhere.
+ * @brief           Implements the Map destructor, declared in Map.h: drops the
+ *                  map's references only; the map elements are owned elsewhere.
  */
 
 #include "Map.h"
@@ -56,15 +56,10 @@ Map::~Map()
 
     // Erase all semantic entities from memory
     floors.clear();
-    doors.clear();
     planes.clear();
     passages.clear();
     detectedRooms.clear();
     markerBasedRooms.clear();
-
-    if (p_thumbnail)
-        delete p_thumbnail;
-    p_thumbnail = nullptr;
 
     referenceMapPoints.clear();
     keyFrameOrigins.clear();

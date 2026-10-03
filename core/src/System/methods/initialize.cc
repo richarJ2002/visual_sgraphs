@@ -64,8 +64,6 @@ SystemStatus System::initialize(const std::string &vocabularyFile_in,
                                 const std::string &sysParamsFile_in,
                                 const SensorType   sensor_in,
                                 const bool         shouldUseViewer_in,
-                                const int          initialFr_in,
-                                const std::string &sequence_in,
                                 const Verbose::VerbosityLevel verboseLevel_in)
 {
     sensor = sensor_in;
@@ -311,8 +309,7 @@ SystemStatus System::initialize(const std::string &vocabularyFile_in,
                              p_keyFrameDatabase,
                              settingsFile_in,
                              sensor_in,
-                             p_settings,
-                             sequence_in);
+                             p_settings);
 
     /* ---------------------------------------------------------------------- *
      * LOCAL MAPPING THREAD
@@ -320,18 +317,15 @@ SystemStatus System::initialize(const std::string &vocabularyFile_in,
 
     /* Initialize the Local Mapping object */
     p_localMapper =
-        new LocalMapping(this,
-                         p_atlas,
+        new LocalMapping(p_atlas,
                          sensor_in == MONOCULAR || sensor_in == IMU_MONOCULAR,
                          sensor_in == IMU_MONOCULAR ||
-                             sensor_in == IMU_STEREO || sensor_in == IMU_RGBD,
-                         sequence_in);
+                             sensor_in == IMU_STEREO || sensor_in == IMU_RGBD);
 
     /* Set up thread to run the mpLocalMapper and call Run() method */
     p_localMappingThread =
         new std::thread(&vs_graphs::core::LocalMapping::run, p_localMapper);
 
-    p_localMapper->initFrame = initialFr_in;
     if (p_settings)
     {
         double settingsThFarPoints{};
@@ -475,7 +469,6 @@ SystemStatus System::initialize(const std::string &vocabularyFile_in,
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        p_loopCloser->p_viewer         = p_viewer;
         p_viewer->shouldDrawBothImages = p_frameDrawer->shouldDrawBothImages;
     }
 

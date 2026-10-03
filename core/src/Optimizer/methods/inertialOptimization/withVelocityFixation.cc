@@ -41,18 +41,15 @@ namespace vs_graphs
 namespace core
 {
 
-OptimizerStatus Optimizer::inertialOptimization(
-    Map                              *p_map_in,
-    Eigen::Matrix3d                  &Rwg_inout,
-    double                           &scale_inout,
-    Eigen::Vector3d                  &bg_in,
-    Eigen::Vector3d                  &ba_in,
-    bool                              isMono_in,
-    [[maybe_unused]] Eigen::MatrixXd &covInertial_in,
-    bool                              isFixedVelocity_in,
-    [[maybe_unused]] bool             shouldUseGaussNewton_in,
-    float                             priorG_in,
-    float                             priorA_in)
+OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
+                                                Eigen::Matrix3d &Rwg_inout,
+                                                double          &scale_inout,
+                                                Eigen::Vector3d &bg_in,
+                                                Eigen::Vector3d &ba_in,
+                                                bool             isMono_in,
+                                                bool  isFixedVelocity_in,
+                                                float priorG_in,
+                                                float priorA_in)
 {
     if (Verbose::printMess("inertial optimization",
                            Verbose::VERBOSITY_NORMAL) !=

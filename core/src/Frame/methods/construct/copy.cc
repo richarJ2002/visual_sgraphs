@@ -83,7 +83,6 @@ Frame::Frame(const Frame &frame_in) :
     descriptors(frame_in.descriptors.clone()),
     descriptorsRight(frame_in.descriptorsRight.clone()),
     outlierFlags(frame_in.outlierFlags),
-    closeMapPointCount(frame_in.closeMapPointCount),
     imuBias(frame_in.imuBias),
     imuCalibration(frame_in.imuCalibration),
     p_imuPreintegrated(frame_in.p_imuPreintegrated),
@@ -184,7 +183,6 @@ Frame::Frame(const Frame &frame_in) :
     }
 
     projectedPoints = frame_in.projectedPoints;
-    matchedPoints   = frame_in.matchedPoints;
 
 #ifdef REGISTER_TIMES
     stereoMatchTime   = frame_in.stereoMatchTime;

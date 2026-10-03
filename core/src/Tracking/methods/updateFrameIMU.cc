@@ -379,8 +379,6 @@ TrackingStatus Tracking::updateFrameIMU(const float      s_in,
         }
     }
 
-    firstImuFrameId = currentFrame.id;
-
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 

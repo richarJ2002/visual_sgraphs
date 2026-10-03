@@ -55,8 +55,6 @@ LocalMappingStatus LocalMapping::resetIfRequested()
             // Inertial parameters
             initializationStartTime = 0.f;
             initIndex               = 0;
-            isSecondImuBaPending    = true;
-            isFirstImuBaPending     = true;
             isImuBad                = false;
         }
 
@@ -71,8 +69,6 @@ LocalMappingStatus LocalMapping::resetIfRequested()
 
             // Inertial parameters
             initializationStartTime   = 0.f;
-            isSecondImuBaPending      = true;
-            isFirstImuBaPending       = true;
             isImuBad                  = false;
             isResetRequested          = false;
             isResetActiveMapRequested = false;

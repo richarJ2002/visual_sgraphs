@@ -485,7 +485,6 @@ SemanticVerifyStatus
     std::vector<double>          inlierOffsetsA;
     std::vector<Eigen::Vector3d> inlierNormalsB;
     std::vector<double>          inlierOffsetsB;
-    double                       angularResidualSum = 0.0;
     std::vector<double>          angularResiduals;
     for (const WallInlierPair &inlier : seed.inliers)
     {
@@ -517,7 +516,6 @@ SemanticVerifyStatus
         inlierNormalsB.push_back(p_observationB->wallNormal_world);
         inlierOffsetsB.push_back(p_observationB->d);
         angularResiduals.push_back(inlier.normalAngleResidual_rad);
-        angularResidualSum += inlier.normalAngleResidual_rad;
     }
 
     TranslationFit refinedFit{};
@@ -567,7 +565,6 @@ SemanticVerifyStatus
         angularResiduals.empty()
             ? 0.0
             : angularResiduals[angularResiduals.size() / 2U];
-    static_cast<void>(angularResidualSum);
 
     result.status                              = VerificationStatus::PASS;
     result.hasPassed                           = true;

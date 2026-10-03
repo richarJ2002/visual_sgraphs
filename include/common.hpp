@@ -800,38 +800,6 @@ extern rclcpp::Service<vs_graphs::srv::SaveMap>::SharedPtr srvSaveTrajectory;
 extern rclcpp::Service<vs_graphs::srv::GetMissionHealth>::SharedPtr
     srvGetMissionHealth;
 
-/*!
- * @brief           A map point paired with the cluster it belongs to.
- *
- *                  Not referenced anywhere in the repository; its members are
- *                  private.
- */
-class MapPointStruct
-{
-    /*!
-     * @brief           Cluster this point was assigned to; -1 means not
-     *                  assigned yet.
-     */
-    int clusterId;
-
-    /*!
-     * @brief           Position of the point, as passed to the constructor; the
-     *                  code names no frame.
-     */
-    Eigen::Vector3f coordinates;
-
-    /*!
-     * @brief           Creates a point that belongs to no cluster yet.
-     *
-     * @param[in]       coords
-     *                  Position of the point, stored unchanged.
-     */
-    MapPointStruct(Eigen::Vector3f coords) :
-        clusterId(-1),
-        coordinates(coords)
-    {}
-};
-
 /* -------------------------------------------------------------------------- *
  * GLOBAL VARIABLES
  * -------------------------------------------------------------------------- */

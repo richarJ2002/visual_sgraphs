@@ -352,8 +352,6 @@ int main(int argc, char **argv)
                                  sysParamsFile,
                                  sensorType,
                                  enablePangolin,
-                                 /*initFr*/ 0,
-                                 /*strSequence*/ std::string(),
                                  verboseLevel);
     if (systemStatus != vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
     {
