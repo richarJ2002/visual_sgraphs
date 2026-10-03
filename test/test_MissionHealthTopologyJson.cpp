@@ -25,6 +25,10 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief        Checks that an unavailable semantic cache only adds the schema
+ *               number and the availability flag to the schema-1 JSON.
+ */
 TEST(MissionHealthTopologyJson, CacheUnavailableOnlyAddsSchemaAndAvailability)
 {
     nlohmann::json schema1 = {{"schema", 1}, {"map_id", 3U}, {"rooms", {}}};
@@ -45,6 +49,10 @@ TEST(MissionHealthTopologyJson, CacheUnavailableOnlyAddsSchemaAndAvailability)
     EXPECT_FALSE(result.contains("semanticCacheAgeMs"));
 }
 
+/*!
+ * @brief        Checks that every schema-1 field keeps its name, type and value
+ *               after the semantic additions are merged in.
+ */
 TEST(MissionHealthTopologyJson, PreservesEverySchema1FieldAndType)
 {
     nlohmann::json       schema1  = {{"schema", 1},
@@ -87,6 +95,10 @@ TEST(MissionHealthTopologyJson, PreservesEverySchema1FieldAndType)
     EXPECT_EQ(result["schema"], 2);
 }
 
+/*!
+ * @brief        Checks that an available cache adds the readable evaluator
+ *               fields, and that map id 0 is kept as a real map.
+ */
 TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
 {
     semantic::SemanticReportCacheEntry entry;
@@ -231,8 +243,10 @@ TEST(MissionHealthTopologyJson, AvailableCacheAddsReadableEvaluatorAdditions)
     }
 }
 
-/* Red-first regression: reasons/relevantEntityKeys must serialize
- * sorted regardless of semantic::MapCompletenessResult's own field order. */
+/*!
+ * @brief        Checks that completeness reasons and entity keys are serialized
+ *               sorted, whatever order the input holds them in.
+ */
 TEST(MissionHealthTopologyJson,
      CompletenessReasonsAndEntityKeysAreSortedRegardlessOfInputOrder)
 {

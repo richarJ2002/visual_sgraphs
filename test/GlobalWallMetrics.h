@@ -56,12 +56,35 @@ namespace test
  * comparator's own `prf()` field names. */
 struct WallPrfResult
 {
-    std::size_t matched     = 0;
-    std::size_t generated   = 0;
+    /*!
+     * @brief        Number of generated walls paired one-to-one with a
+     *               ground-truth wall.
+     */
+    std::size_t matched = 0;
+    /*!
+     * @brief        Number of walls in the generated graph (the precision
+     *               denominator).
+     */
+    std::size_t generated = 0;
+    /*!
+     * @brief        Number of walls in the ground-truth graph (the recall
+     *               denominator).
+     */
     std::size_t groundTruth = 0;
-    double      recall      = 0.0;
-    double      precision   = 0.0;
-    double      f1          = 0.0;
+    /*!
+     * @brief        Fraction of ground-truth walls that were matched; 0.0 when
+     *               the ground truth has no walls.
+     */
+    double      recall = 0.0;
+    /*!
+     * @brief        Fraction of generated walls that were matched; 0.0 when no
+     *               wall was generated.
+     */
+    double      precision = 0.0;
+    /*!
+     * @brief        Harmonic mean of precision and recall.
+     */
+    double      f1 = 0.0;
 };
 
 /*!

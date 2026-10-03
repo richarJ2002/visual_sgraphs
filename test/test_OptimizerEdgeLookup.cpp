@@ -15,6 +15,10 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief        Checks that an in-bounds index returns the key frame pointer
+ *               stored at that position.
+ */
 TEST(OptimizerEdgeLookup, ReturnsThePointerAtAnInBoundsIndex)
 {
     int a = 1, b = 2, c = 3;
@@ -34,6 +38,10 @@ TEST(OptimizerEdgeLookup, ReturnsThePointerAtAnInBoundsIndex)
     EXPECT_EQ(p_keyFrame, &c);
 }
 
+/*!
+ * @brief        Checks that an index past the end returns nullptr with a
+ *               success status instead of reading out of bounds.
+ */
 TEST(OptimizerEdgeLookup, ReturnsNullptrForAnOutOfBoundsIndex)
 {
     /* Reproduces B4: a loop bounded by one edge vector's length (e.g.
@@ -57,6 +65,10 @@ TEST(OptimizerEdgeLookup, ReturnsNullptrForAnOutOfBoundsIndex)
     EXPECT_EQ(p_keyFrame, nullptr);
 }
 
+/*!
+ * @brief        Checks that looking up any index in an empty vector returns
+ *               nullptr with a success status.
+ */
 TEST(OptimizerEdgeLookup, ReturnsNullptrForAnEmptyVector)
 {
     std::vector<int *> emptyEdgeKeyFrames;

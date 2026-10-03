@@ -86,6 +86,10 @@ void writeFile(const std::filesystem::path &path_in,
 
 } // namespace
 
+/*!
+ * @brief        Checks that replaying a nonexistent directory returns an empty,
+ *               valid result instead of failing.
+ */
 TEST(LegacyCaptureReplay, ReturnsValidResultForNonexistentDirectory)
 {
     const LegacyReplayResult result = replayLegacyCaptures("/nonexistent/path");
@@ -96,6 +100,10 @@ TEST(LegacyCaptureReplay, ReturnsValidResultForNonexistentDirectory)
     EXPECT_TRUE(result.fileResults.empty());
 }
 
+/*!
+ * @brief        Checks that a well-formed capture parses without the malformed
+ *               flag.
+ */
 TEST(LegacyCaptureReplay, ParsesAValidCaptureWithoutMalformedFlag)
 {
     const LegacyParseResult parsed = parseLegacyCapture(makeValidCaptureJson());
@@ -107,6 +115,10 @@ TEST(LegacyCaptureReplay, ParsesAValidCaptureWithoutMalformedFlag)
     ASSERT_TRUE(parsed.capture.floor.has_value());
 }
 
+/*!
+ * @brief        Checks that a capture with a missing or wrongly typed required
+ *               field is reported malformed rather than silently dropped.
+ */
 TEST(LegacyCaptureReplay,
      MissingRequiredFieldIsReportedMalformedNotSilentlyDropped)
 {
@@ -125,6 +137,10 @@ TEST(LegacyCaptureReplay,
     EXPECT_TRUE(parseLegacyCapture(nonEmptyPassages).malformed);
 }
 
+/*!
+ * @brief        Checks that replayed axiom results never contain PASS, carry a
+ *               reason, and list each axiom code once.
+ */
 TEST(LegacyCaptureReplay, NeverEmitsPassOnlyFailOrUnknown)
 {
     const LegacyParseResult parsed = parseLegacyCapture(makeValidCaptureJson());
@@ -150,8 +166,11 @@ TEST(LegacyCaptureReplay, NeverEmitsPassOnlyFailOrUnknown)
         << "duplicate axiom code in replay result";
 }
 
-/* The one directly provable contradiction this legacy schema can
- * expose -- a wall's room_id names no room declared in the same file. */
+/*!
+ * @brief        Checks that a wall whose room_id names no room in the file is
+ *               deterministically reported as FAIL for the wall-ownership
+ *               axiom.
+ */
 TEST(LegacyCaptureReplay,
      UnresolvableWallOwnerIsReportedAsFailDeterministically)
 {
@@ -179,6 +198,10 @@ TEST(LegacyCaptureReplay,
     EXPECT_TRUE(foundFail);
 }
 
+/*!
+ * @brief        Checks that reordering the JSON arrays of a capture leaves both
+ *               digests unchanged.
+ */
 TEST(LegacyCaptureReplay, JsonArrayPermutationProducesIdenticalDigests)
 {
     nlohmann::json      captureJson = makeValidCaptureJson();
@@ -193,10 +216,10 @@ TEST(LegacyCaptureReplay, JsonArrayPermutationProducesIdenticalDigests)
               legacyFullGeometryDigest(reversed));
 }
 
-/* Two captures sharing every topology-relevant fact (room ids, wall
- * owner ids, passage count, floor presence) but differing only in geometry
- * must keep one topology digest and produce distinct full-geometry
- * digests. */
+/*!
+ * @brief        Checks that a geometry-only change alters the full geometry
+ *               digest but not the topology digest.
+ */
 TEST(LegacyCaptureReplay, GeometryOnlyDriftChangesOnlyFullGeometryDigest)
 {
     const LegacyCapture near =
@@ -211,6 +234,10 @@ TEST(LegacyCaptureReplay, GeometryOnlyDriftChangesOnlyFullGeometryDigest)
     EXPECT_NE(legacyFullGeometryDigest(near), legacyFullGeometryDigest(far));
 }
 
+/*!
+ * @brief        Checks that replaying a directory twice gives the same report,
+ *               with real file counts and results sorted by file name.
+ */
 TEST(LegacyCaptureReplay, DirectoryReplayIsDeterministicAndReportsRealCounts)
 {
     const std::filesystem::path dir = makeTempDir();
@@ -249,10 +276,10 @@ TEST(LegacyCaptureReplay, DirectoryReplayIsDeterministicAndReportsRealCounts)
     std::filesystem::remove_all(dir);
 }
 
-/* P1.9 acceptance: the real 147-file Phase-0 corpus. Skipped (not failed)
- * if the workspace-relative corpus directory is unavailable in this build
- * environment, since it is a preserved evidence artifact, not generated
- * source. */
+/*!
+ * @brief        Checks that the real 147-file acceptance corpus replays;
+ *               skipped when that corpus directory is unavailable.
+ */
 TEST(LegacyCaptureReplay, ReplaysTheReal147FileAcceptanceCorpus)
 {
     const std::filesystem::path corpusDir =

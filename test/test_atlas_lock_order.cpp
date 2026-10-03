@@ -47,6 +47,15 @@ SnapshotHookBarrier *pSnapshotHookBarrier = nullptr;
 
 } // namespace
 
+/*!
+ * @brief        Test hook that Atlas::matchRoomsToContext() calls, when built
+ *               with the hook enabled, just before it snapshots the maps. It
+ *               tells the test the matcher has reached that point, then blocks
+ *               until the test releases it.
+ *
+ * @pre          pSnapshotHookBarrier points to a live barrier; it is
+ *               dereferenced without a null check.
+ */
 extern "C" void vsGraphsAtlasLockOrderBeforeMapSnapshot()
 {
     SnapshotHookBarrier         &barrier = *pSnapshotHookBarrier;

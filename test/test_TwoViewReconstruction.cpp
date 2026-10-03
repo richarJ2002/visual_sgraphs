@@ -269,6 +269,12 @@ void loadSceneCorrespondences(const PlanarTwoViewScene &scene_in,
 
 } // namespace
 
+/*!
+ * @brief        Checks that the homography reconstruction branch hands the
+ *               caller its triangulated points and flags, and that each flagged
+ *               point is finite, in front of the camera and reprojects close to
+ *               its view-1 key point.
+ */
 TEST(TwoViewReconstruction, HomographyBranchPublishesTriangulatedStructure)
 {
     /* Before the fix reconstructH() computed bestP3D and then dropped it, so
@@ -352,6 +358,10 @@ TEST(TwoViewReconstruction, HomographyBranchPublishesTriangulatedStructure)
               static_cast<std::size_t>(MIN_TRIANGULATED_COUNT));
 }
 
+/*!
+ * @brief        Checks that the homography branch with no inlier matches
+ *               reports not reconstructed and publishes no points.
+ */
 TEST(TwoViewReconstruction, HomographyBranchRejectsAnEmptyInlierSet)
 {
     /* With no inlier left, every motion hypothesis triangulates nothing, so

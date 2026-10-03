@@ -49,6 +49,10 @@ nlohmann::json loadOfficeCleanGroundTruth()
 
 } // namespace
 
+/*!
+ * @brief        Checks that a graph compared against an identical copy scores a
+ *               perfect global wall match.
+ */
 TEST(GlobalWallMetrics, IdenticalGraphScoresPerfectGlobalMatch)
 {
     const nlohmann::json truth = loadOfficeCleanGroundTruth();
@@ -129,6 +133,10 @@ TEST(GlobalWallMetrics,
     EXPECT_LT(result.precision, 1.0);
 }
 
+/*!
+ * @brief        Checks that two empty graphs report zero metrics instead of
+ *               dividing by zero.
+ */
 TEST(GlobalWallMetrics, EmptyGraphsReportZeroRatherThanDivideByZero)
 {
     const nlohmann::json empty = {{"rooms", nlohmann::json::array()},
@@ -198,6 +206,11 @@ TEST(GlobalWallMetrics,
     EXPECT_DOUBLE_EQ(result.precision, 1.0);
 }
 
+/*!
+ * @brief        Checks that when the truth has more rooms than the generated
+ *               graph, the generated room is paired with its nearest truth
+ *               room, giving recall 0.5 and precision 1.0.
+ */
 TEST(GlobalWallMetrics, MoreTruthRoomsThanGeneratedRoomsAssignsTheNearestRow)
 {
     const nlohmann::json truth = {
@@ -226,6 +239,11 @@ TEST(GlobalWallMetrics, MoreTruthRoomsThanGeneratedRoomsAssignsTheNearestRow)
     EXPECT_EQ(result.generated, 1U);
 }
 
+/*!
+ * @brief        Checks that when the generated graph has more rooms than the
+ *               truth, only the nearest generated room is matched to the single
+ *               truth room.
+ */
 TEST(GlobalWallMetrics, MoreGeneratedRoomsThanTruthRoomsAssignsTheNearestColumn)
 {
     const nlohmann::json truth = {
@@ -252,6 +270,10 @@ TEST(GlobalWallMetrics, MoreGeneratedRoomsThanTruthRoomsAssignsTheNearestColumn)
     EXPECT_EQ(result.generated, 3U);
 }
 
+/*!
+ * @brief        Checks that when every room pair lies beyond the distance gate,
+ *               no wall is matched and recall and precision are 0.
+ */
 TEST(GlobalWallMetrics, AllRoomPairsBeyondGateProduceNoRoomMatches)
 {
     const nlohmann::json truth = {

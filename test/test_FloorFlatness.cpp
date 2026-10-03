@@ -107,6 +107,11 @@ std::unique_ptr<geometric::Plane>
 
 } // namespace
 
+/*!
+ * @brief        Checks that reconciling room ground planes repoints a room onto
+ *               the canonical floor ground plane when its own plane is the less
+ *               observed one.
+ */
 TEST(FloorFlatness, RepointsALessObservedRoomGroundPlaneToTheCanonicalOne)
 {
     Atlas atlas(0);
@@ -151,6 +156,10 @@ TEST(FloorFlatness, RepointsALessObservedRoomGroundPlaneToTheCanonicalOne)
     EXPECT_EQ(p_groundPlane, canonicalGround.get());
 }
 
+/*!
+ * @brief        Checks that reconciling room ground planes leaves a room alone
+ *               when its ground plane already is the canonical one.
+ */
 TEST(FloorFlatness, LeavesAnAgreeingRoomGroundPlaneUntouched)
 {
     Atlas atlas(0);

@@ -50,8 +50,11 @@ namespace core
 namespace semantic
 {
 
-/* Minimum-proof item 1: the result contains no model pointers/clouds and
- * remains valid after fixture model objects leave scope. */
+/*!
+ * @brief        Checks that a captured snapshot holds plain values, not
+ *               pointers into the model, so a room and wall still read
+ *               correctly after the source objects and atlas are destroyed.
+ */
 TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
 {
     std::optional<SemanticGraphSnapshot> capturedSnapshot;
@@ -112,12 +115,15 @@ TEST(SemanticGraphSnapshot, RemainsValidAfterFixtureModelObjectsLeaveScope)
     EXPECT_EQ(p_mapSnapshot->walls[0].finiteSupportCount, 0U);
 }
 
-/* "value lifetime after source objects are destroyed": extend
- * lifetime coverage beyond the whole-snapshot scope-exit case above to the
- * EntityRef/RawPlaneRef sub-values inside relationship collections
- * specifically (RoomRecord::wallRefs/passageRefs, WallRecord::ownerRoomRefs,
- * FloorRecord::roomRefs), which hold EntityRef/RawPlaneRef sub-values
- * rather than bare EntityKey. */
+/*!
+ * @brief        Checks that the wall, passage, floor and owner references
+ *               inside a snapshot's relationship lists stay valid after the
+ *               source objects are destroyed.
+ *
+ *               Covers RoomRecord::wallRefs and passageRefs,
+ *               WallRecord::ownerRoomRefs and FloorRecord::roomRefs, which hold
+ *               EntityRef or RawPlaneRef values rather than bare keys.
+ */
 TEST(SemanticGraphSnapshot,
      RelationshipSubValuesRemainValidAfterFixtureModelObjectsLeaveScope)
 {
@@ -208,8 +214,11 @@ TEST(SemanticGraphSnapshot,
     EXPECT_EQ(p_mapSnapshot->floors[0].roomRefs[0].key->entityId, 2);
 }
 
-/* Minimum-proof item 2: equal room/wall/passage/floor local IDs in two maps
- * remain distinct. */
+/*!
+ * @brief        Checks that rooms, walls, passages and floors that share a
+ *               local id in two maps stay distinct in the snapshot because
+ *               their keys include the map id.
+ */
 TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
 {
     Atlas atlas(0);
@@ -326,10 +335,11 @@ TEST(SemanticGraphSnapshot, EqualLocalIdsInTwoMapsRemainDistinct)
     EXPECT_NE(p_snapshotA->floors[0].key, p_snapshotB->floors[0].key);
 }
 
-/* Minimum-proof item 3, extended to full 4-kind x {mismatch, null} coverage
- * ("both null declared-map and containing/declared-map mismatch for
- * every kind"): containing-map versus declared-map mismatch
- * and null declared map are preserved explicitly for every entity kind. */
+/*!
+ * @brief        Checks that for rooms, walls, passages and floors the snapshot
+ *               records both the map that contains the entity and the map it
+ *               declares, including a different declared map and none at all.
+ */
 TEST(SemanticGraphSnapshot,
      ContainingMapVersusDeclaredMapIsPreservedForEveryEntityKind)
 {
@@ -500,8 +510,11 @@ TEST(SemanticGraphSnapshot,
     EXPECT_FALSE(p_noMapFloorRecord->declaredMapId.has_value());
 }
 
-/* Minimum-proof item 4: detected-only, candidate-only, and deliberately
- * both-collection room membership remain distinguishable. */
+/*!
+ * @brief        Checks that rooms held only in the detected set, only in the
+ *               candidate set, or in both are told apart by their membership
+ *               flags.
+ */
 TEST(SemanticGraphSnapshot,
      DetectedCandidateAndBothCollectionMembershipAreDistinguishable)
 {
@@ -565,9 +578,11 @@ TEST(SemanticGraphSnapshot,
     EXPECT_TRUE(p_bothCollections->isMarkerBasedMember);
 }
 
-/* Minimum-proof item 5: null, unmapped, bad, missing-from-enumeration,
- * cross-map, and wrong geometric::Plane-type relationship targets retain
- * truthful key/reason/liveness/type evidence. */
+/*!
+ * @brief        Checks that a relationship pointing at a null, unmapped,
+ *               retired, unlisted, other-map or wrong-type target still records
+ *               the true key, reason, liveness and plane type.
+ */
 TEST(SemanticGraphSnapshot,
      RelationshipTargetsRetainTruthfulEvidenceAcrossEveryUnusualCase)
 {
@@ -714,8 +729,11 @@ TEST(SemanticGraphSnapshot,
     EXPECT_FALSE(p_badGroundOwnerRoom->groundPlaneRef.isLive);
 }
 
-/* Tri-state EntityRef liveness: default reference invariants are valid,
- * and unknown liveness is never encoded as true. */
+/*!
+ * @brief        Checks that a default-constructed entity reference and raw
+ *               plane reference report a null-reference reason and unknown
+ *               liveness, never a live target.
+ */
 TEST(SemanticGraphSnapshot, DefaultReferenceInvariantsAreValid)
 {
     const EntityRef defaultEntityRef;
@@ -735,13 +753,16 @@ TEST(SemanticGraphSnapshot, DefaultReferenceInvariantsAreValid)
     EXPECT_FALSE(defaultRawPlaneRef.wallKey.has_value());
 }
 
-/* Regression coverage: entityRefForWall() used
- * to label every referenced geometric::Plane as EntityKind::WALL without
- * checking its real geometric::Plane::PlaneVariant, fabricating a WallRecord
- * identity for a non-WALL target. Wall-shaped references (a wall's twin face, a
- * Room's owned walls, a Passage's associated walls) always use RawPlaneRef, so
- * a wrong-type target retains its true planeType/isLive/mapId instead of a
- * fabricated WALL key. */
+/*!
+ * @brief        Checks that a non-wall plane named as a wall's twin, a room's
+ *               wall or a passage's wall keeps its true plane type and is never
+ *               recorded as a wall.
+ *
+ *               Regression test: entityRefForWall() once labelled every
+ *               referenced plane a wall without checking its plane type.
+ *               Wall-shaped references now use RawPlaneRef, which keeps the
+ *               true type.
+ */
 TEST(SemanticGraphSnapshot,
      WrongTypePlaneTargetsInWallShapedReferencesRetainTruthfulEvidence)
 {
@@ -839,12 +860,16 @@ TEST(SemanticGraphSnapshot,
     EXPECT_FALSE(p_passageRecord->associateWallRefs[0].wallKey.has_value());
 }
 
-/* Regression coverage for tri-state liveness:
- * entityRefForRoom()/entityRefForFloor() used to discard the target's own
- * local id (and, for Room, liveness) the moment it had no declared map.
- * Floor's liveness, which the model cannot expose at all (Floor has no
- * isBad()), is reported as explicitly unknown -- never fabricated as
- * true. */
+/*!
+ * @brief        Checks that references to a room or floor with no map keep the
+ *               target's local id, and that liveness is known for the room but
+ *               explicitly unknown for the floor.
+ *
+ *               Regression test: entityRefForRoom() and entityRefForFloor()
+ *               once dropped the local id (and, for a room, the liveness) of a
+ *               target with no map. A floor has no bad flag, so its liveness is
+ *               reported as unknown, never as live.
+ */
 TEST(SemanticGraphSnapshot,
      UnmappedNonNullRoomAndFloorReferencesRetainLocalIdentityAndLiveness)
 {
@@ -923,11 +948,14 @@ TEST(SemanticGraphSnapshot,
               UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA);
 }
 
-/* Regression coverage: captureSemanticGraphSnapshot() used to call
- * Atlas::GetCurrentMap(), which creates a new map as a side effect whenever
- * mpCurrentMap is null -- reachable in production via Atlas::clearAtlas().
- * Capture must never mutate an Atlas in that state, and must report the
- * coherent-view status truthfully for it. */
+/*!
+ * @brief        Checks that capturing a snapshot from an atlas with no maps
+ *               reports no current map and does not create one.
+ *
+ *               Regression test: capture once called Atlas::getCurrentMap(),
+ *               which creates a map when there is none. An atlas without maps
+ *               is reachable in production through Atlas::clearAtlas().
+ */
 TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
 {
     Atlas atlas(0);
@@ -958,12 +986,16 @@ TEST(SemanticGraphSnapshot, CaptureAfterAtlasClearedDoesNotCreateAMap)
     EXPECT_EQ(allMaps2.size(), 0U);
 }
 
-/* Atlas::SetMapBad(currentMap) erases the map from the active
- * set and marks it bad without clearing Atlas::mpCurrentMap; a later
- * Atlas::ChangeMap() call is what eventually installs a replacement. Between
- * those two events, the snapshot must truthfully report the current map as
- * absent from its own active-map list, via AtlasCurrentMapStatus, rather
- * than silently claiming a consistency invariant that does not hold. */
+/*!
+ * @brief        Checks that a current map marked bad before a map change is
+ *               reported as not active and is left out of the snapshot's map
+ *               list.
+ *
+ *               Atlas::setMapBad() removes the current map from the active set
+ *               but keeps it as the current map until Atlas::changeMap()
+ *               installs a replacement. In between, the snapshot must say so
+ *               through AtlasCurrentMapStatus.
+ */
 TEST(SemanticGraphSnapshot,
      CurrentMapMarkedBadBeforeChangeMapIsReportedAsNotActive)
 {
@@ -999,8 +1031,10 @@ TEST(SemanticGraphSnapshot,
     EXPECT_TRUE(snapshot.maps.empty());
 }
 
-/* Coherence counterpart: an ordinary current map (no
- * SetMapBad() call) is reported as active and appears in maps. */
+/*!
+ * @brief        Checks that an ordinary current map is reported as active and
+ *               flagged as the current map in the snapshot.
+ */
 TEST(SemanticGraphSnapshot, CurrentMapStatusIsActiveForAnOrdinaryCurrentMap)
 {
     Atlas atlas(0);
@@ -1028,11 +1062,15 @@ TEST(SemanticGraphSnapshot, CurrentMapStatusIsActiveForAnOrdinaryCurrentMap)
     EXPECT_TRUE(p_mapSnapshot->isCurrentMap);
 }
 
-/* The schema's still-missing-in-the-foundation-slice fields
- * (quarantine/history, manager-private open-passage and unresolved-wall
- * hypotheses, and per-wall quarantine/observation-ray evidence) report
- * their documented unavailable reason by default, never a fabricated
- * value. */
+/*!
+ * @brief        Checks that snapshot fields not yet captured report their
+ *               documented unavailable reasons by default rather than invented
+ *               values.
+ *
+ *               Covers quarantine and history, the semantics manager's private
+ *               open-passage and unresolved-wall hypotheses, and the per-wall
+ *               quarantine and observation-ray evidence.
+ */
 TEST(SemanticGraphSnapshot,
      ManagerPrivateAndHistoryUnavailableDefaultsAreReported)
 {
@@ -1079,13 +1117,16 @@ TEST(SemanticGraphSnapshot,
               UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA);
 }
 
-/* Value-based determinism: distinct source objects captured with a
- * colliding EntityKey (same kind, mapId, and local id) must both be
- * retained, never deduplicated, and the pair's relative order must be a
- * function of their captured VALUES (via isValueLessForCollisionTiebreak()),
- * not of insertion/pointer order -- proven here by capturing the identical
- * pair through two atlases built with reversed Room-construction order and
- * asserting both captures agree on the same value-determined order. */
+/*!
+ * @brief        Checks that two rooms with the same entity key are both kept
+ *               and are ordered by their values, whichever was registered
+ *               first.
+ *
+ *               Captures the same pair through two atlases built in opposite
+ *               orders: both captures must give the order that
+ *               isValueLessForCollisionTiebreak() decides from the values, not
+ *               the insertion or pointer order.
+ */
 TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
 {
     auto buildAndCapture = [](bool constructLowerCentroidFirst_in)
@@ -1237,26 +1278,17 @@ TEST(SemanticGraphSnapshot, CollidingEntityKeyRoomsAreBothRetained)
     }
 }
 
-/* White-box: the same value-based collision determinism as
- * the Room case above, for Wall, Passage, and Floor, proven directly against
- * the actual production sortByKey<RecordT>() template rather than through
- * Map's insertion API. Map::AddMapPlane()/AddMapPassage()/AddMapFloor() each
- * maintain their own id->pointer index and actively prevent two live
- * objects from sharing one id within a single map: AddMapPlane()/
- * AddMapFloor() silently reassign the incoming object's id to a fresh
- * unique one (confirmed by direct source read of Map.cc's AddMapPlane()/
- * AddMapFloor(), and observed directly: constructing two Planes/Floors with
- * id 1 and registering both leaves the second with a renumbered id), and
- * AddMapPassage() logs a collision and refuses the second insertion
- * (observed directly: passages.size() stays 1). Unlike Room
- * (AddDetectedMapRoom()/AddCandidateMapRoom() insert into a plain
- * std::set<Room *> with no id bookkeeping at all), a genuine same-map
- * EntityKey collision for Wall/Passage/Floor is therefore not reachable
- * through the production insertion path -- so the collision is supplied
- * directly to sortByKey<RecordT>() (the same template
- * captureSemanticGraphSnapshot() uses for every one of these four record
- * types), sorting/capturing logically identical colliding records supplied
- * in opposite orders and comparing every resulting value. */
+/*!
+ * @brief        Checks that two wall records with the same key are both kept
+ *               and sorted by value, bad before live, whatever the input order.
+ *
+ *               Calls sortByKey() directly, the template the capture uses for
+ *               all four record types. Walls, passages and floors cannot
+ *               collide through the map: Map::addMapPlane() and
+ *               Map::addMapFloor() give a colliding object a new id and
+ *               Map::addMapPassage() refuses it. So the colliding records are
+ *               sorted directly, in both input orders.
+ */
 TEST(SemanticGraphSnapshot,
      CollidingWallRecordsAreBothRetainedAndDeterministicallyOrdered)
 {
@@ -1296,6 +1328,11 @@ TEST(SemanticGraphSnapshot,
     }
 }
 
+/*!
+ * @brief        Checks that two passage records with the same key are both kept
+ *               and sorted by value, narrower before wider, whatever the input
+ *               order.
+ */
 TEST(SemanticGraphSnapshot,
      CollidingPassageRecordsAreBothRetainedAndDeterministicallyOrdered)
 {
@@ -1337,6 +1374,11 @@ TEST(SemanticGraphSnapshot,
     }
 }
 
+/*!
+ * @brief        Checks that two floor records with the same key are both kept
+ *               and sorted by value, lower centroid before higher, whatever the
+ *               input order.
+ */
 TEST(SemanticGraphSnapshot,
      CollidingFloorRecordsAreBothRetainedAndDeterministicallyOrdered)
 {
@@ -1376,11 +1418,14 @@ TEST(SemanticGraphSnapshot,
     }
 }
 
-/* "duplicate relationship references": two distinct rooms
- * sharing a colliding EntityKey both own the same wall. The wall's
- * ownerRoomRefs must retain both -- not deduplicate them merely because
- * they carry the same key -- since they are genuinely different source
- * objects with different liveness. */
+/*!
+ * @brief        Checks that two rooms with the same key that own one wall both
+ *               stay in the wall's owner list, ordered with the bad one before
+ *               the live one.
+ *
+ *               The two rooms are different objects with different liveness, so
+ *               sharing a key must not merge them.
+ */
 TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
 {
     Atlas atlas(0);
@@ -1440,13 +1485,15 @@ TEST(SemanticGraphSnapshot, CollidingOwnerRoomRefsForOneWallAreRetained)
     EXPECT_TRUE(*p_wallRecord->ownerRoomRefs[1].isLive);
 }
 
-/* WallRecord::ownerRoomRefs' key must come from the containing map used to
- * enumerate the owning room (matching that room's own RoomRecord::key),
- * never from the room's own possibly-different declared map --
- * captureSemanticGraphSnapshot.cc's wall-ownership inversion pass builds
- * this key from its own per-map loop variable, not from
- * entityRefForRoom()'s declared-map semantics, specifically to keep this
- * fact true even for a mismatched room. */
+/*!
+ * @brief        Checks that a wall's owner reference is keyed by the map the
+ *               owning room was listed under, even when that room declares a
+ *               different map.
+ *
+ *               The capture builds the owner key from the map it is walking
+ *               through, not from the room's declared map, so the key matches
+ *               the room's own RoomRecord::key.
+ */
 TEST(SemanticGraphSnapshot,
      OwnerRoomRefIsKeyedByContainingMapEvenWhenRoomDeclaresADifferentMap)
 {
@@ -1515,8 +1562,11 @@ TEST(SemanticGraphSnapshot,
     EXPECT_EQ(p_wallRecord->ownerRoomRefs[0].key->mapId, id3);
 }
 
-/* Minimum-proof item 7: bad room owners and duplicate/colliding relationship
- * evidence are retained. */
+/*!
+ * @brief        Checks that a wall claimed by several rooms, including a
+ *               retired one, keeps every owner, and that a room in both room
+ *               sets appears once as owner.
+ */
 TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
 {
     Atlas atlas(0);
@@ -1639,9 +1689,11 @@ TEST(SemanticGraphSnapshot, BadRoomOwnersAndDuplicateWallOwnershipAreRetained)
     EXPECT_TRUE(badOwnerKeyPresent);
 }
 
-/* Minimum-proof item 8: all records and relationship collections are
- * deterministically sorted for permuted insertion order without mutating
- * the source graph. */
+/*!
+ * @brief        Checks that rooms registered in ascending or descending id
+ *               order end up in the same sorted order in the snapshot, and that
+ *               capturing leaves the source room unchanged.
+ */
 TEST(
     SemanticGraphSnapshot,
     RecordsAreDeterministicallySortedRegardlessOfInsertionOrderAndSourceIsUnmutated)
@@ -1767,15 +1819,15 @@ TEST(
     EXPECT_EQ(allDetectedMapRooms.size(), 1U);
 }
 
-/* "ordering of maps and every record/relationship collection":
- * extends coverage beyond rooms (above) to walls, passages, floors, and the
- * top-level maps vector, each for permuted insertion order. A genuine map-
- * id collision is not exercised: Atlas::Map::nextId is a monotonically
- * increasing static counter (confirmed by direct source read of Map.h), so
- * two distinct Map objects sharing one Atlas can never collide -- there is
- * no reachable state to construct here, unlike the room/wall/passage/floor
- * local-id collisions above (which are per-map local counters an external
- * caller can set directly via setId()). */
+/*!
+ * @brief        Checks that walls, passages and floors registered in ascending
+ *               or descending id order, and the maps list, come out sorted the
+ *               same way in the snapshot.
+ *
+ *               Two maps never share an id, because map ids come from a counter
+ *               that only increases (Map::nextId), so no map-id collision is
+ *               tested.
+ */
 TEST(
     SemanticGraphSnapshot,
     WallsPassagesFloorsAndMapsAreDeterministicallySortedRegardlessOfInsertionOrder)
@@ -1962,14 +2014,14 @@ TEST(
     }
 }
 
-/* "ordering of ... every record/relationship collection",
- * closing a gap the final C++17/determinism reviewer found: the tests above
- * prove permuted-insertion-order determinism for the top-level per-map
- * record vectors, but not yet for a *relationship* collection built from
- * several distinct (non-colliding) members -- RoomRecord::wallRefs/
- * passageRefs, WallRecord::ownerRoomRefs, FloorRecord::roomRefs, and
- * PassageRecord::associateWallRefs. Each is built here from three distinct
- * members added in reversed order across two captures. */
+/*!
+ * @brief        Checks that a room's wall and passage references, a wall's
+ *               owner rooms, a floor's rooms and a passage's walls come out
+ *               sorted the same way whatever order they were added in.
+ *
+ *               Each collection gets three distinct members, added in opposite
+ *               orders in the two captures.
+ */
 TEST(
     SemanticGraphSnapshot,
     RelationshipCollectionsAreDeterministicallySortedRegardlessOfInsertionOrder)
@@ -2301,11 +2353,15 @@ TEST(
     }
 }
 
-/* Minimum-proof item 9: capture requires the caller-held semantic lock and
- * does not try to reacquire it. Atlas::semanticUpdateMutex is a plain,
- * non-recursive std::mutex, so if captureSemanticGraphSnapshot() ever tried
- * to acquire it again on this thread, this test would deadlock rather than
- * fail cleanly -- reaching the final assertion is itself the proof. */
+/*!
+ * @brief        Checks that capture works while the caller already holds the
+ *               semantic update lock and does not try to take it again, which
+ *               would deadlock.
+ *
+ *               Atlas::semanticUpdateMutex is a plain, non-recursive
+ *               std::mutex, so taking it again would hang this test: reaching
+ *               the last assertion is the proof.
+ */
 TEST(SemanticGraphSnapshot,
      CaptureUnderHeldSemanticLockCompletesWithoutReacquiring)
 {
@@ -2332,8 +2388,10 @@ TEST(SemanticGraphSnapshot,
     EXPECT_EQ(snapshot.maps[0].rooms.size(), 1U);
 }
 
-/* Minimum-proof item 10: the cheap geometric::Plane accessor agrees with the
- * scalar fields in the full geometry snapshot while returning no cloud payload.
+/*!
+ * @brief        Checks that the cheap plane metadata accessor returns the same
+ *               scalars as the full geometry snapshot, and that the wall record
+ *               carries those same values.
  */
 TEST(SemanticGraphSnapshot,
      CheapPlaneAccessorAgreesWithFullGeometrySnapshotScalars)
@@ -2408,8 +2466,10 @@ TEST(SemanticGraphSnapshot,
               metadata.successfulRefitGeneration);
 }
 
-/* Additional coverage: a null Atlas pointer returns a default (empty)
- * snapshot rather than crashing. */
+/*!
+ * @brief        Checks that capturing from a null atlas returns an empty
+ *               snapshot with no current map instead of crashing.
+ */
 TEST(SemanticGraphSnapshot, NullAtlasReturnsEmptyDefaultSnapshot)
 {
     SemanticGraphSnapshot snapshot{};
@@ -2421,15 +2481,15 @@ TEST(SemanticGraphSnapshot, NullAtlasReturnsEmptyDefaultSnapshot)
     EXPECT_TRUE(snapshot.maps.empty());
 }
 
-/* "helper-level null/drop test": appendWallRef()/
- * appendRoomRef()/appendPassageRef() must never dereference a null pointer
- * and must append nothing for one. Room::setWalls(), Passage::
- * addAssociateWall(), Floor::addRoom(), and Floor::setRooms() all reject a
- * null pointer before insertion (confirmed by direct source read of
- * Room.cc:273-279, Passage.cc:357-362, Floor.cc:289-294,316-326), so this
- * path is not reachable through the production capture entry point today --
- * it is proven directly against the helper itself instead, white-box, via
- * private_functions.h. */
+/*!
+ * @brief        Checks that the wall, room and passage reference append helpers
+ *               ignore a null pointer and add nothing.
+ *
+ *               Room::setWalls(), Passage::addAssociateWall(), Floor::addRoom()
+ *               and Floor::setRooms() already refuse null pointers, so capture
+ *               never reaches this case; the helpers are called directly
+ *               instead.
+ */
 TEST(SemanticGraphSnapshot, AppendHelpersDropNullPointersWithoutAppending)
 {
     std::vector<RawPlaneRef> wallRefs;
@@ -2451,9 +2511,16 @@ TEST(SemanticGraphSnapshot, AppendHelpersDropNullPointersWithoutAppending)
     EXPECT_TRUE(passageRefs.empty());
 }
 
-/* "finite, NaN, infinity and signed-zero ordering": white-box
- * test of doubleTotalOrderKey()/isDoubleLess() directly, since these are the
- * primitives every other determinism guarantee in this module is built on. */
+/*!
+ * @brief        Checks that the double ordering function puts negative zero
+ *               before positive zero and negative NaN, the finite values and
+ *               positive NaN in one fixed order, with no value less than
+ *               itself.
+ *
+ *               doubleTotalOrderKey() and isDoubleLess() are called directly,
+ *               because every ordering guarantee of the snapshot is built on
+ *               them.
+ */
 TEST(SemanticGraphSnapshot, FloatTotalOrderHandlesNaNInfinityAndSignedZero)
 {
     const double negativeInfinity = -std::numeric_limits<double>::infinity();

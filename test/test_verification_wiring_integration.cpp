@@ -285,6 +285,12 @@ semantic::SemanticCandidate makeCandidate(Map            *p_mapA_in,
 
 } // namespace
 
+/*!
+ * @brief        Checks that two matching rooms in different maps, once
+ *               verified, move the room tracker from unknown to confirmed
+ *               through a first-room-confirmed event, only after the queued
+ *               verdict is processed.
+ */
 TEST(VerificationWiringIntegration,
      MatchingRoomsAcrossMapsDriveRoomTrackerToConfirmed)
 {
@@ -366,6 +372,11 @@ TEST(VerificationWiringIntegration,
     EXPECT_TRUE(history.back().hasVerificationPassed);
 }
 
+/*!
+ * @brief        Checks that a candidate pair with too few walls on one side is
+ *               rejected by verification and leaves the tracker unknown with no
+ *               events.
+ */
 TEST(VerificationWiringIntegration,
      TooFewWallsOnOneSideYieldsRejectedVerdictNoTransition)
 {
@@ -419,6 +430,10 @@ TEST(VerificationWiringIntegration,
     EXPECT_TRUE((*p_getRoomTrackerEventHistoryForTest).empty());
 }
 
+/*!
+ * @brief        Checks that evaluating an empty candidate list does nothing:
+ *               the tracker stays unknown and records no events.
+ */
 TEST(VerificationWiringIntegration, EmptyCandidateListIsANoOp)
 {
     Atlas            atlas(0);
@@ -440,6 +455,11 @@ TEST(VerificationWiringIntegration, EmptyCandidateListIsANoOp)
     EXPECT_TRUE((*p_getRoomTrackerEventHistoryForTest).empty());
 }
 
+/*!
+ * @brief        Checks that when the top two candidates are both marked
+ *               ambiguous, a real tie, the leader is skipped, so the tracker
+ *               stays unknown with no events and no crash.
+ */
 TEST(VerificationWiringIntegration, GenuineTiedLeaderIsSkipped)
 {
     /* generateWithStatus() marks the winner's own `ambiguous` field true

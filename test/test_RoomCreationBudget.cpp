@@ -29,6 +29,10 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief        Checks that the first room is allowed when the map has no
+ *               passages.
+ */
 TEST(RoomCreationBudget, AllowsTheFirstRoomWithZeroPassages)
 {
     Atlas atlas(0);
@@ -47,6 +51,10 @@ TEST(RoomCreationBudget, AllowsTheFirstRoomWithZeroPassages)
     EXPECT_EQ(id, 0);
 }
 
+/*!
+ * @brief        Checks that a second room is refused while the map has no
+ *               passable passage.
+ */
 TEST(RoomCreationBudget, RefusesASecondRoomWithoutAPassablePassage)
 {
     Atlas atlas(0);
@@ -72,6 +80,10 @@ TEST(RoomCreationBudget, RefusesASecondRoomWithoutAPassablePassage)
     EXPECT_EQ(secondRoom, nullptr);
 }
 
+/*!
+ * @brief        Checks that a second room is allowed once one passable passage
+ *               exists.
+ */
 TEST(RoomCreationBudget, AllowsASecondRoomOnceAPassablePassageExists)
 {
     Atlas atlas(0);
@@ -109,6 +121,10 @@ TEST(RoomCreationBudget, AllowsASecondRoomOnceAPassablePassageExists)
     EXPECT_NE(secondRoom, nullptr);
 }
 
+/*!
+ * @brief        Checks that a passage marked not passable does not unlock a
+ *               second room.
+ */
 TEST(RoomCreationBudget, ABlockedPassageDoesNotUnlockASecondRoom)
 {
     Atlas atlas(0);
@@ -149,6 +165,10 @@ TEST(RoomCreationBudget, ABlockedPassageDoesNotUnlockASecondRoom)
     EXPECT_EQ(secondRoom, nullptr);
 }
 
+/*!
+ * @brief        Checks that a third room is refused until two passable passages
+ *               exist.
+ */
 TEST(RoomCreationBudget, ThirdRoomRequiresATwoPassablePassages)
 {
     Atlas atlas(0);

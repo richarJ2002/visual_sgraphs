@@ -54,23 +54,58 @@ namespace test
 //   height: 2.0 m
 //   connects room1 ↔ room2
 //
+/*!
+ * @brief        X of the passage centroid in the world frame, metres.
+ */
 static const double PASSAGE_CENTROID_X = -0.21;
+/*!
+ * @brief        Y of the passage centroid in the world frame, metres.
+ */
 static const double PASSAGE_CENTROID_Y = -0.75;
+/*!
+ * @brief        Z of the passage centroid in the world frame, metres.
+ */
 static const double PASSAGE_CENTROID_Z = 5.72;
-static const double PASSAGE_WIDTH      = 1.135355933026258;
-static const double PASSAGE_HEIGHT     = 2.0;
+/*!
+ * @brief        Passage width, metres.
+ */
+static const double PASSAGE_WIDTH = 1.135355933026258;
+/*!
+ * @brief        Passage height, metres.
+ */
+static const double PASSAGE_HEIGHT = 2.0;
 
-// Aperture plane equation: passage normal along +X axis (known side at -X,
-// far side at +X). This matches the sgraph wall-normal orientation observed
-// for the wall adjacent to semantic::Passage#1.
+/*!
+ * @brief        X coefficient of the aperture plane equation; the plane normal
+ *               points along +X, from the known side to the far side.
+ */
 static const double PASSAGE_APERTURE_A = 1.0;
+/*!
+ * @brief        Y coefficient of the aperture plane equation.
+ */
 static const double PASSAGE_APERTURE_B = 0.0;
+/*!
+ * @brief        Z coefficient of the aperture plane equation.
+ */
 static const double PASSAGE_APERTURE_C = 0.0;
+/*!
+ * @brief        Offset of the aperture plane equation, metres; the plane passes
+ *               through the world origin.
+ */
 static const double PASSAGE_APERTURE_D = 0.0;
 
-// Ground plane normal (pointing downward, matching Gazebo/RGB-D config):
+/*!
+ * @brief        X of the ground plane normal, which points downward to match
+ *               the Gazebo RGB-D set-up.
+ */
 static const double GROUND_NORMAL_X = 0.0;
+/*!
+ * @brief        Y of the ground plane normal; -1 means the normal points down.
+ */
 static const double GROUND_NORMAL_Y = -1.0;
+/*!
+ * @brief        Z of the ground plane normal.
+ */
 static const double GROUND_NORMAL_Z = 0.0;
 
 // --------------------------------------------------------------------------
@@ -78,28 +113,62 @@ static const double GROUND_NORMAL_Z = 0.0;
 // that enters the passage from the known side (-X), passes through the
 // aperture, and exits to the far side (+X).
 // --------------------------------------------------------------------------
-// Known-side entry point: well left of the aperture (x = -1.0)
+/*!
+ * @brief        X of the entry key frame camera centre in the world frame,
+ *               metres; well on the known side (-X) of the aperture.
+ */
 static const double KNOWN_SIDE_CAMERA_CENTER_X = -1.0;
+/*!
+ * @brief        Y of the entry key frame camera centre in the world frame,
+ *               metres.
+ */
 static const double KNOWN_SIDE_CAMERA_CENTER_Y = -0.5;
+/*!
+ * @brief        Z of the entry key frame camera centre in the world frame,
+ *               metres.
+ */
 static const double KNOWN_SIDE_CAMERA_CENTER_Z = 5.5;
 
-// Aperture-crossing point: just past the aperture plane on the far side
-// (x = +0.15). segmentCrossesAperture() needs a strict straddle with both
-// endpoints outside the 0.10 m side clearance, so the middle sample must
-// bracket the plane, never sit on it -- an on-plane sample is measure-zero
-// in flight and would reject both adjacent pairs.
+/*!
+ * @brief        X of the middle key frame camera centre in the world frame,
+ *               metres; just past the aperture plane, never on it, so the pair
+ *               of segments straddle it strictly.
+ */
 static const double APERTURE_CAMERA_CENTER_X = 0.15;
+/*!
+ * @brief        Y of the middle key frame camera centre in the world frame,
+ *               metres.
+ */
 static const double APERTURE_CAMERA_CENTER_Y = -0.75;
+/*!
+ * @brief        Z of the middle key frame camera centre in the world frame,
+ *               metres.
+ */
 static const double APERTURE_CAMERA_CENTER_Z = 5.72;
 
-// Far-side exit point: well right of the aperture (x = +1.0)
+/*!
+ * @brief        X of the exit key frame camera centre in the world frame,
+ *               metres; well on the far side (+X) of the aperture.
+ */
 static const double FAR_SIDE_CAMERA_CENTER_X = 1.0;
+/*!
+ * @brief        Y of the exit key frame camera centre in the world frame,
+ *               metres.
+ */
 static const double FAR_SIDE_CAMERA_CENTER_Y = -1.0;
+/*!
+ * @brief        Z of the exit key frame camera centre in the world frame,
+ *               metres.
+ */
 static const double FAR_SIDE_CAMERA_CENTER_Z = 6.0;
 
 // --------------------------------------------------------------------------
 // TEST_F case
 // --------------------------------------------------------------------------
+/*!
+ * @brief        Checks that a trajectory from the known side, through the
+ *               aperture, to the far side records exactly one crossing.
+ */
 TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
 {
     // --- Atlas / map / passage setup ---------------------------------------

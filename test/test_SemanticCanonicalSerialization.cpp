@@ -37,9 +37,16 @@ namespace core
 namespace semantic
 {
 
-/* White-box: directly exercises serializeDouble(), declared in
- * private_functions.h, since finite/NaN/Infinity/-Infinity/signed-zero
- * encoding is this function's entire documented contract. */
+/*!
+ * @brief        Checks that serializeDouble writes finite values as JSON
+ *               numbers, keeps the sign of zero, writes NaN and the infinities
+ *               as quoted strings, and always produces text that parses as
+ *               JSON.
+ *
+ *               Calls serializeDouble() directly, because this encoding of
+ *               finite values, NaN, the infinities and signed zero is the whole
+ *               contract of the function.
+ */
 TEST(SemanticCanonicalSerialization,
      SerializeDoubleHandlesFiniteNaNInfinityAndSignedZero)
 {
@@ -59,6 +66,10 @@ TEST(SemanticCanonicalSerialization,
         serializeDouble(std::numeric_limits<double>::quiet_NaN()).dump()));
 }
 
+/*!
+ * @brief        Checks that the snapshot, evaluation report and completeness
+ *               JSON each carry their schema version constant.
+ */
 TEST(SemanticCanonicalSerialization, SchemaVersionFieldsArePresentAndStable)
 {
     Atlas                 atlas(0);
@@ -85,6 +96,11 @@ TEST(SemanticCanonicalSerialization, SchemaVersionFieldsArePresentAndStable)
               SEMANTIC_COMPLETENESS_SCHEMA_VERSION);
 }
 
+/*!
+ * @brief        Checks that the topology-only snapshot JSON leaves out a wall's
+ *               plane equation and centroid, which the full-geometry JSON
+ *               includes.
+ */
 TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
 {
     Atlas atlas(0);
@@ -119,6 +135,10 @@ TEST(SemanticCanonicalSerialization, SnapshotTopologyOnlyOmitsGeometryFields)
     EXPECT_TRUE(wallGeometryJson.contains("centroid_World_m"));
 }
 
+/*!
+ * @brief        Checks that reversing the order of the room and wall records
+ *               inside one snapshot does not change the full-geometry JSON.
+ */
 TEST(SemanticCanonicalSerialization,
      SnapshotSerializationIsInvariantUnderPermutation)
 {
@@ -176,6 +196,10 @@ TEST(SemanticCanonicalSerialization,
               serializeSnapshotFullGeometry(reordered).dump());
 }
 
+/*!
+ * @brief        Checks that two rooms with the same entity key are both written
+ *               to the topology-only JSON rather than merged into one.
+ */
 TEST(SemanticCanonicalSerialization,
      SnapshotSerializationPreservesEntityKeyCollisionDuplicates)
 {
@@ -212,6 +236,10 @@ TEST(SemanticCanonicalSerialization,
     EXPECT_EQ(json["maps"][0]["rooms"].size(), 2U);
 }
 
+/*!
+ * @brief        Checks that reversing the findings of an evaluation report does
+ *               not change the serialized report.
+ */
 TEST(SemanticCanonicalSerialization,
      EvaluationReportSerializationIsInvariantUnderFindingPermutation)
 {
@@ -256,6 +284,10 @@ TEST(SemanticCanonicalSerialization,
               serializeEvaluationReport(reordered).dump());
 }
 
+/*!
+ * @brief        Checks that serializing the map completeness results gives the
+ *               same text whatever order the per-map results arrive in.
+ */
 TEST(SemanticCanonicalSerialization,
      CompletenessResultsSerializationIsInvariantUnderMapPermutation)
 {
@@ -281,6 +313,11 @@ TEST(SemanticCanonicalSerialization,
               serializeMapCompletenessResults(reordered).dump());
 }
 
+/*!
+ * @brief        Checks that a room held in both the detected and candidate sets
+ *               appears twice, with the same id, in the legacy incomplete-room
+ *               list.
+ */
 TEST(SemanticCanonicalSerialization,
      CompletenessSerializationPreservesLegacyMultiplicityDuplicateIds)
 {
@@ -310,6 +347,10 @@ TEST(SemanticCanonicalSerialization,
     EXPECT_EQ(incompleteRoomIdsJson[1], 1);
 }
 
+/*!
+ * @brief        Checks that serializing a snapshot twice gives identical text
+ *               and leaves the snapshot's own record order unchanged.
+ */
 TEST(SemanticCanonicalSerialization,
      SerializationNeverMutatesInputAndIsRepeatable)
 {
@@ -356,12 +397,14 @@ TEST(SemanticCanonicalSerialization,
     EXPECT_EQ(snapshot.maps[0].rooms[1].key.entityId, 2);
 }
 
-/* Red-first regression: two findings sharing the same deterministic id
- * (a genuine axiomCode/reasonCode/involvedKeys collision) but different
- * evidence must still serialize identically regardless of input
- * permutation. Before the fix, serializeEvaluationReport() sorted only by
- * id, so std::sort's implementation-defined handling of "equal" elements
- * left the two possible orderings unresolved. */
+/*!
+ * @brief        Checks that two findings with the same id but different
+ *               evidence serialize identically in either input order.
+ *
+ *               Regression test: the serializer once sorted findings by id
+ *               only, so two findings with the same id (the same axiom, reason
+ *               and involved keys) could come out in either order.
+ */
 TEST(SemanticCanonicalSerialization,
      FindingsWithSameIdAndUnequalEvidenceAreOrderedDeterministically)
 {
@@ -385,11 +428,14 @@ TEST(SemanticCanonicalSerialization,
               serializeEvaluationReport(reportReversed).dump());
 }
 
-/* Red-first regression: two aggregates sharing axiomCode (a genuine
- * collision -- AxiomEvaluationReport::aggregates is documented as exactly
- * one entry per code, but the serializer must not silently assume that
- * invariant) with unequal payloads must still serialize identically
- * regardless of input permutation. */
+/*!
+ * @brief        Checks that two aggregate results with the same axiom code but
+ *               different payloads serialize identically in either input order.
+ *
+ *               A report should hold one aggregate per axiom code, but the
+ *               serializer must not rely on that: a collision must still give
+ *               one fixed order.
+ */
 TEST(SemanticCanonicalSerialization,
      AggregatesWithSameAxiomCodeAndUnequalPayloadAreOrderedDeterministically)
 {
@@ -412,9 +458,10 @@ TEST(SemanticCanonicalSerialization,
               serializeEvaluationReport(reportReversed).dump());
 }
 
-/* Red-first regression: two completeness results sharing mapId with
- * unequal payloads must still serialize identically regardless of input
- * permutation. */
+/*!
+ * @brief        Checks that two completeness results with the same map id but
+ *               different payloads serialize identically in either input order.
+ */
 TEST(
     SemanticCanonicalSerialization,
     CompletenessResultsWithSameMapIdAndUnequalPayloadAreOrderedDeterministically)
@@ -437,9 +484,11 @@ TEST(
             .dump());
 }
 
-/* Red-first regression: two top-level MapSnapshot entries sharing
- * mapId with unequal payloads must still serialize identically regardless
- * of input permutation, for both projections. */
+/*!
+ * @brief        Checks that two map snapshots with the same map id but
+ *               different rooms serialize identically in either input order,
+ *               for both the full-geometry and topology-only forms.
+ */
 TEST(SemanticCanonicalSerialization,
      MapSnapshotsWithSameMapIdAndUnequalPayloadAreOrderedDeterministically)
 {
@@ -469,11 +518,13 @@ TEST(SemanticCanonicalSerialization,
               serializeSnapshotTopologyOnly(snapshotReversed).dump());
 }
 
-/* Red-first regression: two WallRecord entries colliding on key
- * (identical topology, different geometry only) must produce identical
- * topology-only bytes but a different full-geometry projection -- proving
- * the topology-only order is provably independent of every geometric
- * field, not merely coincidentally so for the current field list. */
+/*!
+ * @brief        Checks that two wall records that differ only in geometry give
+ *               identical topology-only text but different full-geometry text.
+ *
+ *               This shows that the topology-only order depends on no geometric
+ *               field at all, not only on the fields that exist today.
+ */
 TEST(SemanticCanonicalSerialization,
      GeometryOnlyPerturbationNeverChangesTopologyOnlyBytesForCollidingRecords)
 {
@@ -507,12 +558,15 @@ TEST(SemanticCanonicalSerialization,
     EXPECT_NE(geometryNear.dump(), geometryFar.dump());
 }
 
-/* Every required enum family (AxiomCode::AX_FRAME_01, AxiomResult::
- * PASS, AxiomClass::HARD, ReasonCode::FRAME_TRANSITION_EVALUATION_REQUIRED,
- * EntityKind::ROOM, UnavailableReason::NONE, CapabilityLevel::FULL,
- * MissingProofOwner::NONE) emits a known readable value, and a value
- * outside the declared enum emits a stable "UNKNOWN_..." sentinel rather
- * than an empty string or a crash. */
+/*!
+ * @brief        Checks that every enum name function returns the readable name
+ *               for a known value and a fixed UNKNOWN_ name for an out-of-range
+ *               value.
+ *
+ *               Covers AxiomCode, AxiomResult, AxiomClass, ReasonCode,
+ *               EntityKind, UnavailableReason, CapabilityLevel and
+ *               MissingProofOwner.
+ */
 TEST(SemanticCanonicalSerialization,
      EnumNamesEmitKnownValuesAndStableUnknownSentinel)
 {
@@ -605,8 +659,13 @@ TEST(SemanticCanonicalSerialization,
     EXPECT_EQ(missingProofOwnerName3, "UNKNOWN_MISSING_PROOF_OWNER");
 }
 
-/* Readable name fields actually appear in serialized output, not
- * only reachable from a standalone EnumNames.h call. */
+/*!
+ * @brief        Checks that the serialized findings carry the readable axiom,
+ *               result, classification and reason names.
+ *
+ *               The names must appear in the serialized text itself, not only
+ *               through the EnumNames.h functions.
+ */
 TEST(SemanticCanonicalSerialization, SerializedFindingsCarryReadableNameFields)
 {
     Finding finding;
@@ -627,17 +686,16 @@ TEST(SemanticCanonicalSerialization, SerializedFindingsCarryReadableNameFields)
     EXPECT_EQ(findingJson["reasonCodeName"], "WALL_OWNERSHIP_OWNER_BAD");
 }
 
-/* Red-first regression: two OpenPassageHypothesisRecord entries
- * colliding on every topology-only field (supportingWallRef,
- * confirmationCount, missedUpdateCount, lastConfirmedSkeletonFingerprint)
- * but differing only in geometry (openingCentroid_world_m, openingRadius_m,
- * heightSpan_m) must produce identical topology-only bytes but a different
- * full-geometry projection. Before the fix, serializeOpenPassageHypothesis
- * Record() always emitted openingCentroid_world_m/openingRadius_m/heightSpan_m
- * regardless of includeGeometry_in, and the sort used to place these
- * records inside serializeSnapshot() broke ties on openingCentroid_world_m -- a
- * geometric field -- so the topology-only projection was not actually
- * independent of geometry. */
+/*!
+ * @brief        Checks that open-passage hypotheses that differ only in
+ *               geometry give identical topology-only text, which omits the
+ *               geometry fields, and different full-geometry text.
+ *
+ *               Regression test: the serializer once wrote
+ *               openingCentroid_world_m, openingRadius_m and heightSpan_m in
+ *               the topology-only form too, and the sort broke ties on
+ *               openingCentroid_world_m, so that form depended on geometry.
+ */
 TEST(SemanticCanonicalSerialization,
      OpenPassageHypothesisGeometryOnlyDriftNeverChangesTopologyOnlyBytes)
 {
@@ -677,13 +735,16 @@ TEST(SemanticCanonicalSerialization,
     EXPECT_TRUE(hypothesisJson.contains("confirmationCount"));
 }
 
-/* Red-first regression: two OpenPassageHypothesisRecord entries
- * sharing every field the sort used to compare (supportingWallRef,
- * openingCentroid_world_m) but differing in a field the old comparator ignored
- * (confirmationCount, missedUpdateCount, lastConfirmedSkeletonFingerprint)
- * must still serialize identically regardless of input permutation, for
- * both projections; likewise for UnresolvedWallHypothesisRecord's
- * cloudPointCount/observationCount. */
+/*!
+ * @brief        Checks that open-passage and unresolved-wall hypothesis records
+ *               that differ only in counters the sort once ignored serialize
+ *               identically in either input order.
+ *
+ *               Regression test: the sort once compared only supportingWallRef
+ *               and openingCentroid_world_m of open-passage hypotheses, and
+ *               ignored cloudPointCount and observationCount of unresolved-wall
+ *               hypotheses.
+ */
 TEST(SemanticCanonicalSerialization,
      HypothesisRecordsWithUnequalIgnoredFieldsAreOrderedDeterministically)
 {
@@ -720,6 +781,10 @@ TEST(SemanticCanonicalSerialization,
               serializeSnapshotFullGeometry(snapshotReversed).dump());
 }
 
+/*!
+ * @brief        Checks that marking a room as previously visited changes
+ *               neither the topology-only nor the full-geometry snapshot text.
+ */
 TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
 {
     /* The visited flag is mission state, not identity: flipping it must not

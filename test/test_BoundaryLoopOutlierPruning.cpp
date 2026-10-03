@@ -265,6 +265,11 @@ RectangleWithOutlier makeRectangleWithOutlier(Map *p_map_in)
 
 } // namespace
 
+/*!
+ * @brief        Checks that a room whose four walls form a closed rectangle
+ *               reaches a COMPLETE boundary and drops a fifth wall that no
+ *               passage explains.
+ */
 TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
 {
     Atlas atlas(0);
@@ -332,6 +337,10 @@ TEST(BoundaryLoopOutlierPruning, ClosesTheLoopAndDetachesAnUnexplainedOutlier)
     }
 }
 
+/*!
+ * @brief        Checks that a fifth wall explained by a passage stays attached
+ *               to the room and the boundary is still COMPLETE.
+ */
 TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
 {
     Atlas atlas(0);

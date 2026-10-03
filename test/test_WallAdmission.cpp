@@ -128,6 +128,11 @@ void makeWallWithGridCloud(geometric::Plane      &wall_inout,
  * Fix 1: ground-aligned height/width gate (door-frame-post filter)
  * ---------------------------------------------------------------------- */
 
+/*!
+ * @brief        Checks that a 0.08 m wide, 2.2 m tall door-frame post is
+ *               rejected by the wall evidence gate when the ground normal is
+ *               known.
+ */
 TEST(WallAdmission, RejectsNarrowDoorFramePostWhenGroundAligned)
 {
     Atlas atlas(0);
@@ -158,6 +163,10 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostWhenGroundAligned)
     EXPECT_FALSE(admissible);
 }
 
+/*!
+ * @brief        Checks that a 2 m wide, 2.2 m tall wall panel passes the wall
+ *               evidence gate when the ground normal is known.
+ */
 TEST(WallAdmission, AdmitsPhysicallyAdequateWallWhenGroundAligned)
 {
     Atlas atlas(0);
@@ -187,6 +196,11 @@ TEST(WallAdmission, AdmitsPhysicallyAdequateWallWhenGroundAligned)
     EXPECT_TRUE(admissible);
 }
 
+/*!
+ * @brief        Checks that a narrow door-frame post on a wall facing an
+ *               arbitrary horizontal direction is still rejected, so the gate
+ *               does not depend on the wall being aligned to a world axis.
+ */
 TEST(WallAdmission, RejectsNarrowDoorFramePostOnObliqueWall)
 {
     /* The fix must generalise beyond a wall normal aligned to a world axis:
@@ -229,6 +243,11 @@ TEST(WallAdmission, RejectsNarrowDoorFramePostOnObliqueWall)
     EXPECT_FALSE(admissible);
 }
 
+/*!
+ * @brief        Checks that with no ground plane yet, a zero ground normal
+ *               makes the gate fall back to its old behaviour and admit a
+ *               generously sized wall.
+ */
 TEST(WallAdmission,
      EvidenceGateStillAdmitsGenerouslySizedWallWithoutGroundPlane)
 {
@@ -323,6 +342,11 @@ std::unique_ptr<geometric::Plane> makeAdmissibleWallAtOrigin(int  id_in,
 
 } // namespace
 
+/*!
+ * @brief        Checks that a wall whose observation origin and all observing
+ *               key frames lie on the opposite side from the room's centroid is
+ *               not admitted to the room.
+ */
 TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
 {
     Atlas atlas(0);
@@ -371,6 +395,10 @@ TEST(WallAdmission, RejectsWallConfidentlyObservedFromTheFarSide)
     EXPECT_TRUE(walls.empty());
 }
 
+/*!
+ * @brief        Checks that a wall observed from the same side as the room's
+ *               centroid is admitted to the room.
+ */
 TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
 {
     Atlas atlas(0);
@@ -413,6 +441,10 @@ TEST(WallAdmission, AdmitsWallObservedFromTheSameSideAsTheRoom)
     EXPECT_EQ(walls.size(), 1U);
 }
 
+/*!
+ * @brief        Checks that a wall with no observation evidence is admitted,
+ *               because unknown side evidence must not cause a rejection.
+ */
 TEST(WallAdmission, AdmitsWallWithNoObservationEvidenceRatherThanRejectingBlind)
 {
     /* Fail-open: with no keyframe evidence at all, getObservationSideSnapshot
@@ -446,6 +478,12 @@ TEST(WallAdmission, AdmitsWallWithNoObservationEvidenceRatherThanRejectingBlind)
  * plane -- common for a sparsely-observed (e.g. single-wall) room.
  * ---------------------------------------------------------------------- */
 
+/*!
+ * @brief        Checks that a wall beyond a passage is routed to the passage's
+ *               far-side prospective room, not the admitting room, even when
+ *               the admitting room's centroid sits on the passage plane,
+ *               provided the passage knows its near side.
+ */
 TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
 {
     Atlas atlas(0);
@@ -531,6 +569,11 @@ TEST(WallAdmission, ReroutesFarSideWallWhenRoomCentroidIsOnThePassagePlane)
     EXPECT_EQ(walls3.front(), &wall);
 }
 
+/*!
+ * @brief        Checks that when the room centroid sits on the passage plane
+ *               and the passage has no known side direction, the wall is
+ *               neither admitted to the room nor routed to the far-side room.
+ */
 TEST(WallAdmission, LeavesTheDegenerateCaseUnresolvedWithoutAKnownSideDirection)
 {
     /* Same degenerate room-centroid geometry as above, but the passage has
@@ -781,6 +824,11 @@ std::unique_ptr<geometric::Plane>
 
 } // namespace
 
+/*!
+ * @brief        Checks that a candidate wall whose finite extent clearly
+ *               crosses a wall already owned by another room is rejected, and
+ *               that the other room's wall is left in place.
+ */
 TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
 {
     Atlas atlas(0);
@@ -853,6 +901,11 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
  * fires; only the aperture exemption keeps the placement stable.
  * ---------------------------------------------------------------------- */
 
+/*!
+ * @brief        Checks that the per-cycle passage-side sweep does not evict a
+ *               far-side wall from the prospective room it was routed to when
+ *               the passage knows its near side.
+ */
 TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
 {
     Atlas atlas(0);
@@ -931,6 +984,11 @@ TEST(WallAdmission, SweepKeepsFarSideWallRoutedToItsProspectiveRoom)
     EXPECT_EQ(walls2.front(), &wall);
 }
 
+/*!
+ * @brief        Checks that the passage-side sweep still evicts the routed wall
+ *               from the prospective room when the passage has no known side
+ *               direction.
+ */
 TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
 {
     /* Same geometry as above, but the passage has no established
@@ -1001,6 +1059,11 @@ TEST(WallAdmission, SweepStillEvictsRoutedWallWithoutAKnownSideDirection)
     EXPECT_TRUE(walls.empty());
 }
 
+/*!
+ * @brief        Checks that a few far-away stray points on a wall plane do not
+ *               stretch the wall's in-plane bounds, which stay close to the
+ *               real 3 m by 2 m grid.
+ */
 TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)
 {
     Atlas atlas(0);

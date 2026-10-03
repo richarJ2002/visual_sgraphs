@@ -83,6 +83,10 @@ semantic::TrackingStatusInput nominalTracking()
  * Unconditional rows (4): event triggers the target state with no guard.
  * ------------------------------------------------------------------------ */
 
+/*!
+ * @brief        Checks that a tracking-lost event moves a confirmed room to the
+ *               lost state unconditionally.
+ */
 TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromConfirmedRoom)
 {
     for (int run = 0; run < 5; ++run)
@@ -117,6 +121,10 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromConfirmedRoom)
     }
 }
 
+/*!
+ * @brief        Checks that a tracking-lost event moves a crossing passage to
+ *               the lost state unconditionally.
+ */
 TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromCrossingPassage)
 {
     for (int run = 0; run < 5; ++run)
@@ -167,6 +175,10 @@ TEST(RoomTrackerTransitions, UnconditionalTrackingLostFromCrossingPassage)
     }
 }
 
+/*!
+ * @brief        Checks that the lost timeout event takes the tracker out of the
+ *               lost state unconditionally.
+ */
 TEST(RoomTrackerTransitions, UnconditionalLostTimeout)
 {
     for (int run = 0; run < 5; ++run)
@@ -209,6 +221,10 @@ TEST(RoomTrackerTransitions, UnconditionalLostTimeout)
     }
 }
 
+/*!
+ * @brief        Checks that the reacquire timeout event takes the tracker out
+ *               of reacquiring unconditionally.
+ */
 TEST(RoomTrackerTransitions, UnconditionalReacquireTimeout)
 {
     for (int run = 0; run < 5; ++run)
@@ -267,6 +283,10 @@ TEST(RoomTrackerTransitions, UnconditionalReacquireTimeout)
  * Guarded rows (6): guard-satisfied fires, guard-rejected stays in place.
  * ------------------------------------------------------------------------ */
 
+/*!
+ * @brief        Checks that the first-room event confirms a room when its guard
+ *               holds.
+ */
 TEST(RoomTrackerTransitions, GuardedFirstRoomConfirmed)
 {
     for (int run = 0; run < 5; ++run)
@@ -318,6 +338,10 @@ TEST(RoomTrackerTransitions, GuardedFirstRoomConfirmed)
     }
 }
 
+/*!
+ * @brief        Checks that the passage-crossing event fires when its guard
+ *               holds and is rejected otherwise.
+ */
 TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
 {
     for (int run = 0; run < 5; ++run)
@@ -474,6 +498,10 @@ TEST(RoomTrackerTransitions, GuardedPassageCrossingDetected)
     }
 }
 
+/*!
+ * @brief        Checks that the traversal-complete event fires when its guard
+ *               holds and is rejected otherwise.
+ */
 TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
 {
     for (int run = 0; run < 5; ++run)
@@ -628,6 +656,10 @@ TEST(RoomTrackerTransitions, GuardedPassageTraversalComplete)
     }
 }
 
+/*!
+ * @brief        Checks that the room-reacquired event fires when its guard
+ *               holds and is rejected otherwise.
+ */
 TEST(RoomTrackerTransitions, GuardedRoomReacquired)
 {
     for (int run = 0; run < 5; ++run)
@@ -726,6 +758,10 @@ TEST(RoomTrackerTransitions, GuardedRoomReacquired)
     }
 }
 
+/*!
+ * @brief        Checks that the new-map event with a room match fires when its
+ *               guard holds and is rejected otherwise.
+ */
 TEST(RoomTrackerTransitions, GuardedNewMapWithRoomMatch)
 {
     for (int run = 0; run < 5; ++run)
@@ -808,6 +844,10 @@ TEST(RoomTrackerTransitions, GuardedNewMapWithRoomMatch)
     }
 }
 
+/*!
+ * @brief        Checks that the verified-match-to-last-room event fires when
+ *               its guard holds and is rejected otherwise.
+ */
 TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
 {
     for (int run = 0; run < 5; ++run)
@@ -913,6 +953,10 @@ TEST(RoomTrackerTransitions, GuardedVerifiedMatchToLastRoom)
  * Undefined events: no row for the source state -> rejected, no state change.
  * ------------------------------------------------------------------------ */
 
+/*!
+ * @brief        Checks that events with no table row for the current state are
+ *               rejected and leave the state unchanged.
+ */
 TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
 {
     const std::vector<semantic::RoomTrackingEvent> allEvents = {
@@ -1113,6 +1157,10 @@ TEST(RoomTrackerTransitions, UndefinedEventsRejectedEverywhere)
  * semantic::RoomTracker::step() trajectories (dwell timers, timeouts, retries).
  * ------------------------------------------------------------------------ */
 
+/*!
+ * @brief        Checks that step() confirms a crossing after dwell time along a
+ *               trajectory with position jitter.
+ */
 TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
 {
     for (int run = 0; run < 5; ++run)
@@ -1209,6 +1257,10 @@ TEST(RoomTrackerStep, DwellCrossingTrajectoryWithJitter)
     }
 }
 
+/*!
+ * @brief        Checks that a failed guard resets the accumulated dwell time
+ *               instead of letting it carry over.
+ */
 TEST(RoomTrackerStep, HysteresisResetsDwellOnGuardFailure)
 {
     semantic::RoomTracker                        tracker;
@@ -1272,6 +1324,10 @@ TEST(RoomTrackerStep, HysteresisResetsDwellOnGuardFailure)
     EXPECT_EQ(nextState4, semantic::RoomTrackingState::CROSSING_PASSAGE);
 }
 
+/*!
+ * @brief        Checks that invalid crossing guard inputs make step() reject
+ *               the crossing instead of accepting it.
+ */
 TEST(RoomTrackerStep, InvalidCrossingGuardsFailClosed)
 {
     semantic::RoomTracker                        tracker;
@@ -1307,6 +1363,10 @@ TEST(RoomTrackerStep, InvalidCrossingGuardsFailClosed)
     EXPECT_EQ(nextState2, semantic::RoomTrackingState::CONFIRMED_ROOM);
 }
 
+/*!
+ * @brief        Checks that seeing both sides and dwell time accumulate across
+ *               step() cycles until the crossing completes.
+ */
 TEST(RoomTrackerStep, BothSidesAndDwellAccumulateAcrossCycles)
 {
     semantic::RoomTracker                        tracker;
@@ -1370,6 +1430,10 @@ TEST(RoomTrackerStep, BothSidesAndDwellAccumulateAcrossCycles)
     EXPECT_EQ(nextState5, semantic::RoomTrackingState::CONFIRMED_ROOM);
 }
 
+/*!
+ * @brief        Checks that a timestamp discontinuity in steady domain input
+ *               does not change the tracker state.
+ */
 TEST(RoomTrackerStep, SteadyDomainInputIgnoresTimestampDiscontinuity)
 {
     semantic::RoomTracker                        tracker;
@@ -1414,6 +1478,10 @@ TEST(RoomTrackerStep, SteadyDomainInputIgnoresTimestampDiscontinuity)
     EXPECT_EQ(nextState3, semantic::RoomTrackingState::CROSSING_PASSAGE);
 }
 
+/*!
+ * @brief        Checks that a second step while tracking is still lost adds no
+ *               new event: one tracking-loss episode is handled once.
+ */
 TEST(RoomTrackerStep, TrackingLossIsConsumedOncePerEpisode)
 {
     semantic::RoomTracker                        tracker;
@@ -1458,6 +1526,11 @@ TEST(RoomTrackerStep, TrackingLossIsConsumedOncePerEpisode)
     EXPECT_EQ((*p_eventHistory).size(), eventCountAfterLoss);
 }
 
+/*!
+ * @brief        Checks that staying lost past the lost timeout moves the
+ *               tracker from lost-with-last-room to lost-without-room, as an
+ *               accepted event.
+ */
 TEST(RoomTrackerStep, TimeoutDecaysToLostWithoutRoom)
 {
     semantic::RoomTracker                        tracker;
@@ -1507,6 +1580,10 @@ TEST(RoomTrackerStep, TimeoutDecaysToLostWithoutRoom)
     EXPECT_TRUE((*p_lastEvent).isAccepted);
 }
 
+/*!
+ * @brief        Checks that a tracking-loss event from the unknown state is
+ *               rejected as undefined.
+ */
 TEST(RoomTrackerStep, UndefinedTrackingLossFromUnknownIsRejected)
 {
     semantic::RoomTracker         tracker;
@@ -1534,6 +1611,10 @@ TEST(RoomTrackerStep, UndefinedTrackingLossFromUnknownIsRejected)
               semantic::RoomTrackingEvent::TRACKING_LOST);
 }
 
+/*!
+ * @brief        Checks that an unavailable verification result can neither
+ *               confirm a room nor change tracker state.
+ */
 TEST(RoomTrackerStep, UnavailableVerificationCannotConfirmOrMutateState)
 {
     semantic::RoomTracker         tracker;
@@ -1555,6 +1636,10 @@ TEST(RoomTrackerStep, UnavailableVerificationCannotConfirmOrMutateState)
     EXPECT_EQ((*p_eventHistory).size(), 0U);
 }
 
+/*!
+ * @brief        Checks that a malformed pass verdict is treated as a failure
+ *               and does not confirm a room.
+ */
 TEST(RoomTrackerStep, MalformedPassVerdictFailsClosed)
 {
     semantic::VerificationVerdict malformed = passVerdict();
@@ -1590,6 +1675,11 @@ TEST(RoomTrackerStep, MalformedPassVerdictFailsClosed)
     EXPECT_FALSE(isPass5);
 }
 
+/*!
+ * @brief        Checks that failed verifications in a new map keep the tracker
+ *               reacquiring for the configured number of retries, after which a
+ *               reacquire timeout leaves it lost without a room.
+ */
 TEST(RoomTrackerStep, ReacquireRetriesThenTimeouts)
 {
     semantic::RoomTracker                        tracker;

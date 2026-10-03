@@ -206,6 +206,10 @@ std::unique_ptr<geometric::Plane>
 
 } // namespace
 
+/*!
+ * @brief        Checks that a room with no walls reports one observation gap
+ *               spanning the full circle.
+ */
 TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
 {
     Atlas atlas(0);
@@ -240,6 +244,10 @@ TEST(RoomObservationGaps, ReportsAFullCircleGapForARoomWithNoWalls)
     EXPECT_NEAR(gaps.front().spanAngle_rad, 2.0 * M_PI, 1e-6);
 }
 
+/*!
+ * @brief        Checks that a room with a single wall reports one gap larger
+ *               than half a circle.
+ */
 TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
 {
     Atlas atlas(0);
@@ -289,6 +297,10 @@ TEST(RoomObservationGaps, ReportsALargeGapForARoomWithOnlyOneWall)
     EXPECT_GT(gaps.front().spanAngle_rad, M_PI);
 }
 
+/*!
+ * @brief        Checks that a room whose boundary is complete reports no
+ *               observation gaps.
+ */
 TEST(RoomObservationGaps, ReportsNoGapsForARoomWithACompleteBoundary)
 {
     Atlas atlas(0);

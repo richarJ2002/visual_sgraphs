@@ -26,6 +26,11 @@ namespace core
 namespace semantic
 {
 
+/*!
+ * @brief        Checks that a new cache reports itself unavailable, and that
+ *               reading it still returns a default entry with cycle 0, sequence
+ *               0, no map and no findings.
+ */
 TEST(SemanticReportCache, UnavailableBeforeFirstUpdate)
 {
     SemanticReportCache cache;
@@ -46,6 +51,11 @@ TEST(SemanticReportCache, UnavailableBeforeFirstUpdate)
     EXPECT_TRUE(entry.evaluationReport.findings.empty());
 }
 
+/*!
+ * @brief        Checks that after one update the cache reports itself available
+ *               and returns the entry with the cycle and update sequence set to
+ *               1.
+ */
 TEST(SemanticReportCache, AvailableAfterOneUpdate)
 {
     SemanticReportCache   cache;
@@ -74,9 +84,13 @@ TEST(SemanticReportCache, AvailableAfterOneUpdate)
     EXPECT_EQ(entry.updateSequence, 1U);
 }
 
-/* Map id 0 is a real, valid Atlas map id (the first map created), distinct
- * from "no current map" (absent optional). The cache must preserve that
- * distinction rather than treating 0 as a sentinel for "none". */
+/*!
+ * @brief        Checks that the cache keeps map id 0 and map revision 0 as real
+ *               values, distinct from having no current map.
+ *
+ *               Map id 0 is the real id of the first map, so it must not stand
+ *               for "no current map", which is an empty optional.
+ */
 TEST(SemanticReportCache, PreservesMapIdZeroDistinctFromNoMap)
 {
     SemanticReportCache   cache;
@@ -118,9 +132,11 @@ TEST(SemanticReportCache, PreservesMapIdZeroDistinctFromNoMap)
     EXPECT_FALSE(withNoMap.mapRevision.has_value());
 }
 
-/* The returned entry is a value copy: mutating it, or mutating the input
- * arguments after the call returns, must never change what a later
- * getLatest() call returns. */
+/*!
+ * @brief        Checks that the entry the cache returns is a copy, so changing
+ *               it or the original input afterwards does not change what the
+ *               cache holds.
+ */
 TEST(SemanticReportCache, GetLatestReturnsNonAliasingCopy)
 {
     SemanticReportCache   cache;
@@ -158,6 +174,11 @@ TEST(SemanticReportCache, GetLatestReturnsNonAliasingCopy)
     EXPECT_EQ(secondCopy.evaluationReport.findings[0].id, "original");
 }
 
+/*!
+ * @brief        Checks that the update sequence rises by exactly one per update
+ *               while the semantic cycle is stored as given, even when it skips
+ *               numbers.
+ */
 TEST(SemanticReportCache,
      UpdateSequenceIsMonotonicAndIndependentOfSemanticCycle)
 {
@@ -201,6 +222,11 @@ TEST(SemanticReportCache,
     EXPECT_EQ(getLatest4.semanticCycle, 9U);
 }
 
+/*!
+ * @brief        Checks that the geometry revision goes up only when the full-
+ *               geometry digest changes, not when only the topology digest
+ *               does.
+ */
 TEST(SemanticReportCache,
      GeometryRevisionIncrementsOnlyWhenFullGeometryDigestChanges)
 {
@@ -272,9 +298,15 @@ TEST(SemanticReportCache,
     EXPECT_EQ(getLatest5.geometryRevision, 2U);
 }
 
-/* No ROS fixture required: this only proves the mutex actually serializes
- * concurrent writer/reader access without a crash, a torn read, or a
- * deadlock -- run under an ordinary std::thread. */
+/*!
+ * @brief        Checks that a writer thread updating the cache while the main
+ *               thread reads it never produces a torn entry, a crash or a
+ *               deadlock.
+ *
+ *               Uses an ordinary std::thread and no ROS fixture: it only has to
+ *               show that the cache mutex keeps the writer and the reader
+ *               apart.
+ */
 TEST(SemanticReportCache, ConcurrentWriterAndReaderStayConsistent)
 {
     SemanticReportCache   cache;

@@ -190,6 +190,11 @@ double rotationAngle_deg(const Eigen::Matrix3d &first_in,
 
 } // namespace
 
+/*!
+ * @brief        Checks that two rooms whose walls are related by a known rigid
+ *               transform are accepted, with the transform recovered within
+ *               tolerance.
+ */
 TEST(GeometricVerify, AcceptsGroundTruthCorrelatedRooms)
 {
     const std::vector<RawWall> wallsA = makeReferenceWalls();
@@ -256,6 +261,10 @@ TEST(GeometricVerify, AcceptsGroundTruthCorrelatedRooms)
               0.5);
 }
 
+/*!
+ * @brief        Checks that rooms with only two parallel wall correspondences
+ *               are rejected as having too few walls.
+ */
 TEST(GeometricVerify, RejectsRankDeficientCorrespondences)
 {
     /* Two parallel wall correspondences only: rotation about the shared
@@ -313,6 +322,11 @@ TEST(GeometricVerify, RejectsRankDeficientCorrespondences)
     EXPECT_EQ(result.rejectReason, semantic::VerifyRejectReason::TOO_FEW_WALLS);
 }
 
+/*!
+ * @brief        Checks that the correct hypothesis still wins when each room
+ *               has two extra unrelated walls, and that those walls are not
+ *               among the inliers.
+ */
 TEST(GeometricVerify, CorrectHypothesisWinsOverOutlierCorrespondences)
 {
     std::vector<RawWall>  wallsA = makeReferenceWalls();
@@ -385,6 +399,10 @@ TEST(GeometricVerify, CorrectHypothesisWinsOverOutlierCorrespondences)
               0.5);
 }
 
+/*!
+ * @brief        Checks that two equally good hypotheses, as for a cube of four
+ *               vertical faces, are rejected as ambiguous.
+ */
 TEST(GeometricVerify, RejectsAmbiguousEquallyGoodHypotheses)
 {
     /* A cube's four vertical faces are consistent with two hypotheses 90
@@ -468,6 +486,10 @@ TEST(GeometricVerify, RejectsAmbiguousEquallyGoodHypotheses)
               semantic::VerifyRejectReason::NO_VALID_HYPOTHESIS);
 }
 
+/*!
+ * @brief        Checks that the floor gate accepts rooms on matching floors and
+ *               rejects rooms on mismatched floors, recording the gate verdict.
+ */
 TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
 {
     Map survivingMap;
@@ -537,6 +559,10 @@ TEST(GeometricVerify, FloorGateAcceptsMatchingAndRejectsMismatchedFloors)
     EXPECT_EQ(rejectedResult.floorGateResult, "REJECTED");
 }
 
+/*!
+ * @brief        Checks that the semantic merge gate accepts rooms whose
+ *               hierarchy is aligned and stable.
+ */
 TEST(GeometricVerify, SemanticMergeGateAcceptsAlignedStableHierarchy)
 {
     const semantic::SemanticMergeRoomEvidence surviving =
@@ -560,6 +586,10 @@ TEST(GeometricVerify, SemanticMergeGateAcceptsAlignedStableHierarchy)
     EXPECT_EQ(result.matchedPassageCount, 1U);
 }
 
+/*!
+ * @brief        Checks that the semantic merge gate rejects identical geometry
+ *               when the passage predecessor is wrong.
+ */
 TEST(GeometricVerify,
      SemanticMergeGateRejectsIdenticalGeometryWithWrongPassagePredecessor)
 {
@@ -583,6 +613,10 @@ TEST(GeometricVerify,
     EXPECT_EQ(result.matchedWallCount, 4U);
 }
 
+/*!
+ * @brief        Checks that the semantic merge gate defers the decision when
+ *               passage evidence is missing.
+ */
 TEST(GeometricVerify, SemanticMergeGateDefersWhenPassageEvidenceIsMissing)
 {
     const semantic::SemanticMergeRoomEvidence surviving =
@@ -604,6 +638,10 @@ TEST(GeometricVerify, SemanticMergeGateDefersWhenPassageEvidenceIsMissing)
               semantic::SemanticMergeReason::PASSAGE_EVIDENCE_MISSING);
 }
 
+/*!
+ * @brief        Checks that the semantic merge gate rejects passages whose
+ *               directions are opposed.
+ */
 TEST(GeometricVerify, SemanticMergeGateRejectsOpposedPassageDirection)
 {
     const semantic::SemanticMergeRoomEvidence surviving =
@@ -624,6 +662,10 @@ TEST(GeometricVerify, SemanticMergeGateRejectsOpposedPassageDirection)
               semantic::SemanticMergeReason::PASSAGE_DIRECTION_CONTRADICTION);
 }
 
+/*!
+ * @brief        Checks that room reconciliation never fuses rooms that have
+ *               different stable identities.
+ */
 TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
 {
     Map            map;
@@ -668,6 +710,10 @@ TEST(GeometricVerify, RoomReconciliationNeverFusesDifferentStableIdentities)
     EXPECT_EQ(allDetectedMapRooms.size(), 2U);
 }
 
+/*!
+ * @brief        Checks that room reconciliation collapses rooms that share a
+ *               stable identity into one.
+ */
 TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
 {
     Map            map;
@@ -717,6 +763,10 @@ TEST(GeometricVerify, RoomReconciliationCollapsesMatchingStableIdentity)
     EXPECT_EQ(allDetectedMapRooms2.front(), &retainedRoom);
 }
 
+/*!
+ * @brief        Checks that fusing rooms in reconciliation preserves the
+ *               visited flag.
+ */
 TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
 {
     /* Presence on either side proves the UAV has been there: a room fused
@@ -802,6 +852,10 @@ TEST(GeometricVerify, RoomReconciliationPreservesVisitedFlagOnFusion)
     EXPECT_FALSE(hasPreviouslyVisited3);
 }
 
+/*!
+ * @brief        Checks that the combined verdict requires both the geometric
+ *               verification and the floor gate to pass.
+ */
 TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
 {
     /* toVerificationVerdict() ANDs the geometric pass with hasFloorGatePassed
@@ -943,6 +997,10 @@ TEST(GeometricVerify, CombinedVerdictWiresGeometricAndFloorGate)
     EXPECT_FALSE(verificationVerdict2.hasPassed);
 }
 
+/*!
+ * @brief        Checks that configFromSystemParams carries distinctive loaded
+ *               YAML values into the verifier configuration.
+ */
 TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
 {
     /* Previously, semantic::SemanticVerifyConfig's own
@@ -999,6 +1057,10 @@ TEST(GeometricVerify, ConfigFromSystemParamsWiresLoadedYamlValues)
     params->factor       = savedFactor;
 }
 
+/*!
+ * @brief        Checks that seeded random, uncorrelated room pairs never
+ *               produce a false accept.
+ */
 TEST(GeometricVerify, SeededUncorrelatedRoomsProduceNoFalseAccepts)
 {
     semantic::SemanticVerifyConfig         config;
@@ -1076,6 +1138,11 @@ TEST(GeometricVerify, SeededUncorrelatedRoomsProduceNoFalseAccepts)
     EXPECT_EQ(falseAccepts, 0U);
 }
 
+/*!
+ * @brief        Checks that the plane-transform edge residual is zero at the
+ *               ground-truth transform and non-zero when the translation is
+ *               perturbed.
+ */
 TEST(GeometricVerify,
      PlaneTransformEdgeResidualIsZeroAtGroundTruthAndNonzeroNearby)
 {
@@ -1117,6 +1184,11 @@ TEST(GeometricVerify,
     EXPECT_GT(std::abs(perturbedEdge.error()(2)), 0.05);
 }
 
+/*!
+ * @brief        Checks that the plane-transform edge residual stays non-zero,
+ *               with an orientation residual of pi, when the plane normals are
+ *               antipodally misaligned.
+ */
 TEST(GeometricVerify,
      PlaneTransformEdgeResidualIsNonzeroAtAntipodalMisalignment)
 {

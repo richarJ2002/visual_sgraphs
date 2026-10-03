@@ -34,6 +34,22 @@
 
 #include "test/LegacyCaptureReplay.h"
 
+/*!
+ * @brief        Replays every legacy capture file in a corpus directory and
+ *               writes the bounded JSON report.
+ *
+ * @param[in]    argc
+ *               Number of command-line arguments; exactly 3 (program, corpus
+ *               directory, report path) is accepted.
+ *
+ * @param[in]    argv
+ *               Command-line arguments: argv[1] is the corpus directory,
+ *               argv[2] the report path to write.
+ *
+ * @return       0 after the report is written; 1 on a wrong argument count or
+ *               when the report file cannot be opened. Malformed capture files
+ *               do not change the exit code.
+ */
 int main(int argc, char *argv[])
 {
     if (argc != 3)

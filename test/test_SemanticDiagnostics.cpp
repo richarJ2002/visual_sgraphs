@@ -78,6 +78,11 @@ SemanticReportCacheEntry makeEntry(std::uint64_t               cycle_in,
 
 } // namespace
 
+/*!
+ * @brief        Checks that the first cycle emits a summary whose only
+ *               violation detail is the failing finding, with pass and unknown
+ *               findings left out.
+ */
 TEST(SemanticDiagnostics, FirstCycleEmitsSummaryAndOnlyFailAppeared)
 {
     SemanticDiagnosticState        state;
@@ -106,6 +111,10 @@ TEST(SemanticDiagnostics, FirstCycleEmitsSummaryAndOnlyFailAppeared)
     EXPECT_EQ(update.summary["omittedViolationCount"], 0U);
 }
 
+/*!
+ * @brief        Checks that cycles 2 to 9 emit nothing when the findings and
+ *               digest are unchanged since cycle 1.
+ */
 TEST(SemanticDiagnostics, UnchangedCycles2Through9EmitNothing)
 {
     SemanticDiagnosticState    state;
@@ -131,6 +140,10 @@ TEST(SemanticDiagnostics, UnchangedCycles2Through9EmitNothing)
     }
 }
 
+/*!
+ * @brief        Checks that an unchanged state emits a detail-free heartbeat on
+ *               cycle 10 and again on cycle 19, and nothing in between.
+ */
 TEST(SemanticDiagnostics, HeartbeatEmittedExactlyOnCycle10)
 {
     SemanticDiagnosticState    state;
@@ -184,6 +197,11 @@ TEST(SemanticDiagnostics, HeartbeatEmittedExactlyOnCycle10)
     EXPECT_TRUE(semanticDiagnosticUpdate4.shouldEmit);
 }
 
+/*!
+ * @brief        Checks that a failing finding reported for the first time is
+ *               marked appeared, one that disappears is marked resolved, and
+ *               one that persists is not reported.
+ */
 TEST(SemanticDiagnostics, AppearedChangedAndResolvedFailTransitions)
 {
     SemanticDiagnosticState  state;
@@ -228,6 +246,10 @@ TEST(SemanticDiagnostics, AppearedChangedAndResolvedFailTransitions)
     EXPECT_EQ(transitionById.count("f-stable"), 0U);
 }
 
+/*!
+ * @brief        Checks that a change in the full-geometry digest alone, with
+ *               the same topology digest and findings, emits nothing.
+ */
 TEST(SemanticDiagnostics, GeometryOnlyDriftNeverEmitsOrRepeatsDetails)
 {
     SemanticDiagnosticState    state;
@@ -253,6 +275,11 @@ TEST(SemanticDiagnostics, GeometryOnlyDriftNeverEmitsOrRepeatsDetails)
     EXPECT_FALSE(update.shouldEmit);
 }
 
+/*!
+ * @brief        Checks that 60 new failures emit only the capped number of
+ *               details and that the summary counts both the emitted and the
+ *               omitted ones.
+ */
 TEST(SemanticDiagnostics, DetailCapBoundsOutputAndCountsEverything)
 {
     SemanticDiagnosticState  state;
@@ -283,6 +310,11 @@ TEST(SemanticDiagnostics, DetailCapBoundsOutputAndCountsEverything)
               manyFailures.size() - kMaxViolationDetailsPerCycle);
 }
 
+/*!
+ * @brief        Checks that the same findings in opposite input order give
+ *               identical summary and detail text, and that all of it parses as
+ *               JSON.
+ */
 TEST(SemanticDiagnostics, OutputIsDeterministicAndJsonParseable)
 {
     SemanticDiagnosticState    stateA;

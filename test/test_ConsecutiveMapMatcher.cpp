@@ -42,51 +42,164 @@
 // Test geometry constants
 // ----------------------------------------------------------------------------
 
+/*!
+ * @brief        X component of wall A's plane normal; wall A is the plane x = 1
+ *               with normal (1, 0, 0) and d = -1.
+ */
 static const double WALL_A_NORMAL_X = 1.0;
+/*!
+ * @brief        Y component of wall A's plane normal.
+ */
 static const double WALL_A_NORMAL_Y = 0.0;
+/*!
+ * @brief        Z component of wall A's plane normal.
+ */
 static const double WALL_A_NORMAL_Z = 0.0;
-static const double WALL_A_D        = -1.0;
+/*!
+ * @brief        Offset d of wall A's plane equation n.x + d = 0; with the
+ *               normal (1, 0, 0) the plane is x = 1.
+ */
+static const double WALL_A_D = -1.0;
 
+/*!
+ * @brief        X component of wall B's plane normal; wall B is the plane y = 1
+ *               with normal (0, 1, 0) and d = -1.
+ */
 static const double WALL_B_NORMAL_X = 0.0;
+/*!
+ * @brief        Y component of wall B's plane normal.
+ */
 static const double WALL_B_NORMAL_Y = 1.0;
+/*!
+ * @brief        Z component of wall B's plane normal.
+ */
 static const double WALL_B_NORMAL_Z = 0.0;
-static const double WALL_B_D        = -1.0;
+/*!
+ * @brief        Offset d of wall B's plane equation n.x + d = 0; with the
+ *               normal (0, 1, 0) the plane is y = 1.
+ */
+static const double WALL_B_D = -1.0;
 
+/*!
+ * @brief        X component of wall C's plane normal; wall C is the plane x = 1
+ *               seen from the other side, normal (-1, 0, 0) and d = 1.
+ */
 static const double WALL_C_NORMAL_X = -1.0;
+/*!
+ * @brief        Y component of wall C's plane normal.
+ */
 static const double WALL_C_NORMAL_Y = 0.0;
+/*!
+ * @brief        Z component of wall C's plane normal.
+ */
 static const double WALL_C_NORMAL_Z = 0.0;
-static const double WALL_C_D        = 1.0;
+/*!
+ * @brief        Offset d of wall C's plane equation n.x + d = 0; with the
+ *               normal (-1, 0, 0) the plane is x = 1.
+ */
+static const double WALL_C_D = 1.0;
 
+/*!
+ * @brief        X component of wall D's plane normal; wall D is the plane y = 1
+ *               seen from the other side, normal (0, -1, 0) and d = 1.
+ */
 static const double WALL_D_NORMAL_X = 0.0;
+/*!
+ * @brief        Y component of wall D's plane normal.
+ */
 static const double WALL_D_NORMAL_Y = -1.0;
+/*!
+ * @brief        Z component of wall D's plane normal.
+ */
 static const double WALL_D_NORMAL_Z = 0.0;
-static const double WALL_D_D        = 1.0;
+/*!
+ * @brief        Offset d of wall D's plane equation n.x + d = 0; with the
+ *               normal (0, -1, 0) the plane is y = 1.
+ */
+static const double WALL_D_D = 1.0;
 
+/*!
+ * @brief        Centroid of the room tagged room_1, in the world frame, metres.
+ */
 static const Eigen::Vector3d ROOM1_CENTROID(0.0, 0.0, 1.0);
+/*!
+ * @brief        Centroid of the room tagged room_2, in the world frame, metres.
+ */
 static const Eigen::Vector3d ROOM2_CENTROID(3.0, 0.0, 1.0);
+/*!
+ * @brief        Centroid of the room tagged room_12 used by the aliasing case,
+ *               in the world frame, metres.
+ */
 static const Eigen::Vector3d ROOM_12_CENTROID(0.0, 3.0, 1.0);
+/*!
+ * @brief        Centroid of the room with id 6 used by the aliasing case in the
+ *               newer map, in the world frame, metres.
+ */
 static const Eigen::Vector3d ROOM_6_CENTROID(0.0, 6.0, 1.0);
 
-static const double PASSAGE_WIDTH      = 1.0;
-static const double PASSAGE_HEIGHT     = 2.0;
+/*!
+ * @brief        Width given to every test passage, metres.
+ */
+static const double PASSAGE_WIDTH = 1.0;
+/*!
+ * @brief        Height given to every test passage, metres.
+ */
+static const double PASSAGE_HEIGHT = 2.0;
+/*!
+ * @brief        First coefficient (normal X) of the passage aperture plane (1,
+ *               0, 0, 0), i.e. the plane x = 0.
+ */
 static const double PASSAGE_APERTURE_A = 1.0;
+/*!
+ * @brief        Second coefficient (normal Y) of the passage aperture plane.
+ */
 static const double PASSAGE_APERTURE_B = 0.0;
+/*!
+ * @brief        Third coefficient (normal Z) of the passage aperture plane.
+ */
 static const double PASSAGE_APERTURE_C = 0.0;
+/*!
+ * @brief        Fourth coefficient (offset d) of the passage aperture plane.
+ */
 static const double PASSAGE_APERTURE_D = 0.0;
 
+/*!
+ * @brief        Floor plane equation (a, b, c, d) with n.x + d = 0 given to the
+ *               test floors: the plane y = 0.
+ */
 static const Eigen::Vector4d FLOOR_EQ(0.0, 1.0, 0.0, 0.0);
 
 // =============================================================================
 // Test fixture
 // =============================================================================
 
+/*!
+ * @brief        Fixture that builds two maps in one atlas, with helpers to add
+ *               rooms, walls, passages and floors, so each test case can run
+ *               the consecutive-map merge gate on a chosen scenario.
+ */
 class ConsecutiveMapMatcherTest : public ::testing::Test
 {
   protected:
+    /*!
+     * @brief        Atlas owning both test maps; destroyed with the fixture.
+     */
     vs_graphs::core::Atlas atlas{0};
+    /*!
+     * @brief        Older map, the first one created in the atlas; the merge
+     *               gate treats it as the surviving map.
+     */
     vs_graphs::core::Map  *p_map0;
+    /*!
+     * @brief        Newer map, created second in the atlas; the merge gate
+     *               treats it as the absorbed map.
+     */
     vs_graphs::core::Map  *p_map1;
 
+    /*!
+     * @brief        Creates the two maps in the atlas, one after the other, and
+     *               stores them as p_map0 and p_map1.
+     */
     void SetUp() override
     {
         bool wasEventPending{};
@@ -112,12 +225,53 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         EXPECT_NE(p_map0, p_map1);
     }
 
+    /*!
+     * @brief        Clears the atlas, which releases both maps.
+     */
     void TearDown() override
     {
         ASSERT_EQ((atlas.clearAtlas()),
                   vs_graphs::core::AtlasStatus::ATLAS_STATUS_SUCCESS);
     }
 
+    /*!
+     * @brief        Builds a room with three walls (A, B and C) and,
+     *               optionally, one passage toward a far room, adds it to a map
+     *               and returns it. Wall ids are wallIdBase_in, +1 and +2.
+     *
+     * @param[in]    p_map
+     *               Map that receives the room, its walls and its passage;
+     *               borrowed, not null.
+     *
+     * @param[in]    roomId_in
+     *               Id given to the room.
+     *
+     * @param[in]    tag
+     *               Room tag used to recognise the same room across maps.
+     *
+     * @param[in]    centroid
+     *               Room centroid in the world frame, metres.
+     *
+     * @param[in]    passage_centroid
+     *               Passage centroid in the world frame, metres.
+     *
+     * @param[in]    passageId_in
+     *               Id given to the passage; ignored when withPassage_in is
+     *               false.
+     *
+     * @param[in]    wallIdBase_in
+     *               Id of wall A; walls B and C take the next two ids.
+     *
+     * @param[in]    p_farRoom_in
+     *               Room on the far side of the passage, set as its prospective
+     *               room; may be null.
+     *
+     * @param[in]    withPassage_in
+     *               True to also build the passage; false builds the room and
+     *               walls only.
+     *
+     * @return       The new room, which the map keeps; never null.
+     */
     vs_graphs::core::semantic::Room *addRoomWithWallsAndPassage(
         vs_graphs::core::Map            *p_map,
         int                              roomId_in,
@@ -498,6 +652,21 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
     }
 
     vs_graphs::core::semantic::Floor *
+        /*!
+         * @brief        Builds a floor with the given plane equation and adds
+         *               it to a map.
+         *
+         * @param[in]    p_map
+         *               Map that receives the floor; borrowed, not null.
+         *
+         * @param[in]    floorId_in
+         *               Id given to the floor.
+         *
+         * @param[in]    equation_in
+         *               Floor plane equation (a, b, c, d) with n.x + d = 0.
+         *
+         * @return       The new floor, which the map keeps; never null.
+         */
         addFloor(vs_graphs::core::Map  *p_map,
                  int                    floorId_in,
                  const Eigen::Vector4d &equation_in)
@@ -534,6 +703,22 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         return p_floor;
     }
 
+    /*!
+     * @brief        Marks the rooms where the two maps meet: the final room of
+     *               the old map and the starting room of the new map.
+     *
+     * @param[in]    p_oldMap
+     *               Older map whose final room is set.
+     *
+     * @param[in]    p_newMap
+     *               Newer map whose starting room is set.
+     *
+     * @param[in]    p_final_room0
+     *               Room that becomes the final room of the old map.
+     *
+     * @param[in]    p_start_room1
+     *               Room that becomes the starting room of the new map.
+     */
     void setSeedRooms(vs_graphs::core::Map            *p_oldMap,
                       vs_graphs::core::Map            *p_newMap,
                       vs_graphs::core::semantic::Room *p_final_room0,
@@ -546,6 +731,20 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
     }
 
     vs_graphs::core::semantic::SemanticMergeGateResult
+        /*!
+         * @brief        Runs the consecutive-map merge gate for two maps with
+         *               an identity map-to-map transform and the default merge
+         *               configuration.
+         *
+         * @param[in]    p_survivingMap
+         *               Map that would survive a merge.
+         *
+         * @param[in]    p_absorbedMap
+         *               Map that would be absorbed by a merge.
+         *
+         * @return       The gate result (decision and reason);
+         *               default-constructed if the gate call itself failed.
+         */
         runConsecutiveGate(vs_graphs::core::Map *p_survivingMap,
                            vs_graphs::core::Map *p_absorbedMap)
     {
@@ -572,6 +771,20 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
         return result;
     }
 
+    /*!
+     * @brief        Gives a wall a 5 by 5 grid of cloud points on the plane x =
+     *               1 spanning the given Y range, so the wall has a measurable
+     *               extent.
+     *
+     * @param[in]    p_wall
+     *               Wall plane that receives the point cloud.
+     *
+     * @param[in]    yMinimum_in
+     *               Smallest Y of the grid, metres.
+     *
+     * @param[in]    yMaximum_in
+     *               Largest Y of the grid, metres.
+     */
     void setWallSpanCloud(vs_graphs::core::geometric::Plane *p_wall,
                           double                             yMinimum_in,
                           double                             yMaximum_in)
@@ -604,7 +817,10 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
 // TEST CASES
 // =============================================================================
 
-// TC1: matching pair
+/*!
+ * @brief        Checks that two maps holding the same two rooms with consistent
+ *               walls and passages are accepted as ALIGNED.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC1_matchingPair)
 {
     vs_graphs::core::semantic::Room *r0_2 =
@@ -693,7 +909,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC1_matchingPair)
         << "TC1: expected ALIGNED, got " << p_name2;
 }
 
-// TC2: aliasing (different tags, different places -> no shared identity)
+/*!
+ * @brief        Checks that rooms with different tags in different places are
+ *               deferred with SHARED_ROOM_IDENTITY_MISSING.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC2_aliasing)
 {
     vs_graphs::core::semantic::Room *r0_1 =
@@ -767,7 +986,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC2_aliasing)
         << "TC2: expected SHARED_ROOM_IDENTITY_MISSING, got " << p_name2;
 }
 
-// TC3: single anchor (scheduler enforces the two-anchor minimum)
+/*!
+ * @brief        Checks that a single shared anchor room does not merge the
+ *               maps: both the old and the current map stay live.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC3_singleAnchor)
 {
     vs_graphs::core::semantic::Room *r0_1 =
@@ -818,7 +1040,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC3_singleAnchor)
         << "TC3: single anchor must not merge (current map stays live)";
 }
 
-// TC4: empty new map
+/*!
+ * @brief        Checks that two maps holding only a bare bootstrap room each,
+ *               with no walls or passages, make the merge gate defer.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC4_emptyNewMap)
 {
     vs_graphs::core::semantic::Room *bootstrap =
@@ -876,7 +1101,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC4_emptyNewMap)
         << "TC4: expected DEFER, got " << p_name;
 }
 
-// TC5: floor mismatch
+/*!
+ * @brief        Checks that floors with different plane equations are rejected
+ *               with FLOOR_CONTRADICTION.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC5_floorMismatch)
 {
     vs_graphs::core::semantic::Room *r0_2 =
@@ -970,7 +1198,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC5_floorMismatch)
         << "TC5: expected FLOOR_CONTRADICTION, got " << p_name2;
 }
 
-// TC6: wall rotated 10 deg
+/*!
+ * @brief        Checks that a wall rotated by 10 degrees between the maps is
+ *               rejected with WALL_ALIGNMENT_CONTRADICTION.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC6_wallRotated)
 {
     vs_graphs::core::semantic::Room *r0_2 =
@@ -1075,7 +1306,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC6_wallRotated)
         << "TC6: expected WALL_ALIGNMENT_CONTRADICTION, got " << p_name2;
 }
 
-// TC7: passage endpoint contradiction
+/*!
+ * @brief        Checks that contradicting passage endpoints between the maps
+ *               are rejected with PASSAGE_ENDPOINT_CONTRADICTION.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC7_passageEndpointContradiction)
 {
     vs_graphs::core::semantic::Room *r0_1 =
@@ -1166,7 +1400,11 @@ TEST_F(ConsecutiveMapMatcherTest, TC7_passageEndpointContradiction)
         << "TC7: expected PASSAGE_ENDPOINT_CONTRADICTION, got " << p_name2;
 }
 
-// TC8: cooldown
+/*!
+ * @brief        Checks that the first gated merge attempt logs a
+ *               consecutive_merge_attempt line; the immediate second attempt
+ *               exercises the cooldown but is not asserted.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC8_cooldown)
 {
     vs_graphs::core::semantic::Room *r0_2 =
@@ -1247,7 +1485,11 @@ TEST_F(ConsecutiveMapMatcherTest, TC8_cooldown)
     (void)count2;
 }
 
-// TC9: change-gate
+/*!
+ * @brief        Checks that, with the cooldown set to 0, a merge attempt after
+ *               the new map gains a wall still logs a consecutive_merge_attempt
+ *               line.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
 {
     vs_graphs::core::semantic::Room *r0_1 =
@@ -1370,7 +1612,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC9_changeGate)
     p_params2->mapMerge.mergeCooldown_s = 30U;
 }
 
-// TC10a: coplanar but disjoint wall extents contradict
+/*!
+ * @brief        Checks that coplanar walls with disjoint extents are rejected
+ *               with WALL_ALIGNMENT_CONTRADICTION.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC10a_disjointWallExtentsReject)
 {
     vs_graphs::core::semantic::Room *r0_2 =
@@ -1453,7 +1698,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC10a_disjointWallExtentsReject)
         << "TC10a: expected WALL_ALIGNMENT_CONTRADICTION, got " << p_name2;
 }
 
-// TC10b: overlapping wall extents accept
+/*!
+ * @brief        Checks that coplanar walls with overlapping extents are
+ *               accepted.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC10b_overlappingWallExtentsAccept)
 {
     vs_graphs::core::semantic::Room *r0_2 =
@@ -1526,7 +1774,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC10b_overlappingWallExtentsAccept)
         << "TC10b: expected ACCEPT, got " << p_name;
 }
 
-// TC11: passable mismatch on a lineage pair contradicts
+/*!
+ * @brief        Checks that a passage that is passable in one map and not in
+ *               the other is rejected with PASSAGE_IDENTITY_CONTRADICTION.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC11_passableMismatchRejects)
 {
     vs_graphs::core::semantic::Room *r0_2 =
@@ -1606,7 +1857,10 @@ TEST_F(ConsecutiveMapMatcherTest, TC11_passableMismatchRejects)
         << "TC11: expected PASSAGE_IDENTITY_CONTRADICTION, got " << p_name2;
 }
 
-// TC12: flipped known-side direction contradicts
+/*!
+ * @brief        Checks that a flipped known-side direction of a passage is
+ *               rejected with PASSAGE_DIRECTION_CONTRADICTION.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC12_directionFlipRejects)
 {
     vs_graphs::core::semantic::Room *r0_2 =
@@ -1687,7 +1941,11 @@ TEST_F(ConsecutiveMapMatcherTest, TC12_directionFlipRejects)
         << "TC12: expected PASSAGE_DIRECTION_CONTRADICTION, got " << p_name2;
 }
 
-// TC13: merged old doorway resurfaces the same-ID proxy with its history
+/*!
+ * @brief        Checks that merging resurfaces the old map's doorway proxy with
+ *               the same id, the transferred aperture and its traversal
+ *               history.
+ */
 TEST_F(ConsecutiveMapMatcherTest, TC13_proxyReunionOnMerge)
 {
     vs_graphs::core::semantic::Room *r0_2 =

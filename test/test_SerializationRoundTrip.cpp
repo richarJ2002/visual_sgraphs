@@ -200,6 +200,10 @@ void ExpectSetsEqualSorted(const std::set<Value> &expected_in,
 
 } // namespace
 
+/*!
+ * @brief        Checks that a Sophus SE3 pose, including the identity pose,
+ *               survives a Boost binary save and load unchanged.
+ */
 TEST(SerializationUtils, SophusSe3RoundTrip)
 {
     Sophus::SE3f original(
@@ -238,6 +242,11 @@ TEST(SerializationUtils, SophusSe3RoundTrip)
     ExpectSophusEqual(identity, identity_loaded);
 }
 
+/*!
+ * @brief        Checks that an OpenCV matrix survives a Boost binary round trip
+ *               when it is continuous, when it is a non-continuous region of a
+ *               larger matrix, and when it is empty.
+ */
 TEST(SerializationUtils, CvMatRoundTripContinuousAndRoi)
 {
     cv::Mat continuous(3, 3, CV_32F);
@@ -300,6 +309,10 @@ TEST(SerializationUtils, CvMatRoundTripContinuousAndRoi)
     EXPECT_TRUE(empty_loaded.empty());
 }
 
+/*!
+ * @brief        Checks that a vector of OpenCV key points, empty or with two
+ *               entries, survives a Boost binary round trip unchanged.
+ */
 TEST(SerializationUtils, VectorKeyPointsRoundTrip)
 {
     const std::vector<cv::KeyPoint> empty;
@@ -339,6 +352,10 @@ TEST(SerializationUtils, VectorKeyPointsRoundTrip)
     }
 }
 
+/*!
+ * @brief        Checks that IMU bias values, including the defaults, survive a
+ *               round trip through memory and through a temporary file.
+ */
 TEST(SerializationImu, BiasRoundTripMemoryAndTmpFile)
 {
     const IMU::Bias original(0.1F, -0.2F, 0.3F, 0.01F, -0.02F, 0.03F);
@@ -363,6 +380,11 @@ TEST(SerializationImu, BiasRoundTripMemoryAndTmpFile)
     EXPECT_FLOAT_EQ(0.0F, defaults_loaded.bwz);
 }
 
+/*!
+ * @brief        Checks that an IMU calibration, with its camera-to-IMU
+ *               transforms and covariances, survives a round trip, and that an
+ *               unset calibration stays unset.
+ */
 TEST(SerializationImu, CalibRoundTrip)
 {
     const Sophus::SE3f known_tbc(Eigen::Quaternionf(0.0F, 0.0F, 0.0F, 1.0F),
@@ -388,6 +410,11 @@ TEST(SerializationImu, CalibRoundTrip)
     EXPECT_FALSE(unset_loaded.isCalibrationSet);
 }
 
+/*!
+ * @brief        Checks that preintegrated IMU measurements survive a round trip
+ *               with their integrated terms and bias, and that the loaded
+ *               object still accepts new measurements.
+ */
 TEST(SerializationImu, PreintegratedRoundTrip)
 {
     const IMU::Bias    bias(0.01F, 0.02F, 0.03F, 0.001F, 0.002F, 0.003F);
@@ -431,6 +458,10 @@ TEST(SerializationImu, PreintegratedRoundTrip)
               IMU::PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS);
 }
 
+/*!
+ * @brief        Checks that a pinhole camera keeps its id, type, four
+ *               parameters and equality after a round trip.
+ */
 TEST(SerializationCamera, PinholeRoundTrip)
 {
     camera_models::pinhole::Pinhole original(
@@ -484,6 +515,11 @@ TEST(SerializationCamera, PinholeRoundTrip)
     // SKIP tvr raw pointer: not serialized by design; no assertion.
 }
 
+/*!
+ * @brief        Checks that a Kannala-Brandt8 fisheye camera keeps its id,
+ *               type, eight parameters, precision and equality after a round
+ *               trip.
+ */
 TEST(SerializationCamera, KannalaBrandt8RoundTrip)
 {
     const std::vector<float>
@@ -545,10 +581,15 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
     EXPECT_TRUE(isEqual2);
 }
 
-// Boost builds a loaded camera with the default constructor. Building one
-// over memory filled with a non-zero pattern and destroying it would delete
-// that pattern as a pointer if the constructor left the two-view helper
-// unset (it did, in both camera models).
+/*!
+ * @brief        Builds a camera over memory filled with a non-zero pattern and
+ *               destroys it, which would delete that pattern as a pointer if
+ *               the default constructor left the two-view reconstruction
+ *               helper unset. Boost builds a loaded camera this way.
+ *
+ * @tparam       Camera
+ *               Camera model to build, Pinhole or KannalaBrandt8.
+ */
 template <typename Camera> void ExpectDefaultBuiltCameraDestroysCleanly()
 {
     alignas(Camera) unsigned char storage[sizeof(Camera)];
@@ -557,6 +598,11 @@ template <typename Camera> void ExpectDefaultBuiltCameraDestroysCleanly()
     p_camera->~Camera();
 }
 
+/*!
+ * @brief        Checks that pinhole and Kannala-Brandt8 cameras built by the
+ *               default constructor, as Boost does when loading, can be
+ *               destroyed without deleting a stale reconstructor pointer.
+ */
 TEST(SerializationCamera, DefaultBuiltCamerasOwnNoReconstructor)
 {
     ExpectDefaultBuiltCameraDestroysCleanly<camera_models::pinhole::Pinhole>();
@@ -564,6 +610,10 @@ TEST(SerializationCamera, DefaultBuiltCamerasOwnNoReconstructor)
         camera_models::kannalabrandt8::KannalaBrandt8>();
 }
 
+/*!
+ * @brief        Checks that a camera pointer saved twice in one archive loads
+ *               as a single shared camera that keeps its id and type.
+ */
 TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
 {
     camera_models::pinhole::Pinhole *original_camera =
@@ -619,6 +669,11 @@ TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
     // free garbage.
 }
 
+/*!
+ * @brief        Checks that a map point keeps its id, first key frame id,
+ *               observation count, position, normal and distance limits across
+ *               a round trip, and can be moved afterwards.
+ */
 TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
 {
     Map      map;
@@ -685,6 +740,11 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
     EXPECT_EQ(setWorldPosStatus, MapPointStatus::MAP_POINT_STATUS_SUCCESS);
 }
 
+/*!
+ * @brief        Checks that an empty key frame database survives a round trip,
+ *               with a second save giving the same byte length, and that
+ *               clearing a map on the loaded database works.
+ */
 TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
 {
     // NB: KeyFrameDatabase::preSave() is declared in KeyFrameDatabase.h:82
@@ -720,6 +780,11 @@ TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
               KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS);
 }
 
+/*!
+ * @brief        Checks that a key frame without cameras keeps its id, key point
+ *               count, pose, velocity and IMU bias across a round trip, and can
+ *               still be given a new pose.
+ */
 TEST(SerializationKeyFrame, DefaultRoundTrip)
 {
     KeyFrame original;
@@ -785,6 +850,11 @@ TEST(SerializationKeyFrame, DefaultRoundTrip)
     EXPECT_EQ(setPoseStatus, KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
 }
 
+/*!
+ * @brief        Checks that a key frame saved without cameras loads with both
+ *               camera pointers null, even when they held stale values, and
+ *               adds nothing to the camera table.
+ */
 TEST(SerializationKeyFrame, AbsentCamerasLoadAsNull)
 {
     // A key frame saved without cameras stores the "no id" value for both;
@@ -824,6 +894,11 @@ TEST(SerializationKeyFrame, AbsentCamerasLoadAsNull)
     EXPECT_EQ(loaded.p_camera2, nullptr);
 }
 
+/*!
+ * @brief        Checks that an empty map keeps its id, key frame ids and flags
+ *               across a round trip through memory and through a temporary
+ *               file, and can be queried afterwards.
+ */
 TEST(SerializationMap, EmptyRoundTripMemoryAndTmpFile)
 {
     Map           original(5);
@@ -898,6 +973,10 @@ TEST(SerializationMap, EmptyRoundTripMemoryAndTmpFile)
     EXPECT_EQ(getAllKeyFramesStatus, MapStatus::MAP_STATUS_SUCCESS);
 }
 
+/*!
+ * @brief        Checks that an empty atlas with no cameras survives a round
+ *               trip with zero maps and can still be queried.
+ */
 TEST(SerializationAtlas, EmptyAndCameraRoundTrip)
 {
     Atlas original;
@@ -922,6 +1001,11 @@ TEST(SerializationAtlas, EmptyAndCameraRoundTrip)
     EXPECT_EQ(getAllMapsStatus, AtlasStatus::ATLAS_STATUS_SUCCESS);
 }
 
+/*!
+ * @brief        Checks that an atlas with one map and one pinhole camera
+ *               written to and read from a file keeps its last init key frame
+ *               id and the camera's id and type.
+ */
 TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
 {
     Atlas original(0);
@@ -998,6 +1082,11 @@ TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
     EXPECT_EQ(getAllMapsStatus, AtlasStatus::ATLAS_STATUS_SUCCESS);
 }
 
+/*!
+ * @brief        Checks that the sorted-set and sorted-map comparison helpers
+ *               treat equal contents in different insertion order as equal, and
+ *               that different values still compare unequal.
+ */
 TEST(SerializationOrdering, SortedSetMapComparisonIsDeterministic)
 {
     const std::set<long unsigned int> first{3U, 1U, 2U};

@@ -131,6 +131,11 @@ std::unique_ptr<geometric::Plane>
 
 } // namespace
 
+/*!
+ * @brief        Checks that two parallel wall faces 0.2 m apart, seen from
+ *               opposite sides and with overlapping footprints, are linked as
+ *               twins of each other.
+ */
 TEST(WallPairing, LinksAPlausibleTwinPairSymmetrically)
 {
     Atlas atlas(0);
@@ -180,6 +185,10 @@ TEST(WallPairing, LinksAPlausibleTwinPairSymmetrically)
     EXPECT_EQ(p_getTwinFace2, faceA.get());
 }
 
+/*!
+ * @brief        Checks that two faces only 0.01 m apart, thinner than any
+ *               plausible wall, are not linked as twins.
+ */
 TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
 {
     Atlas atlas(0);
@@ -227,6 +236,10 @@ TEST(WallPairing, DoesNotLinkPlanesThinnerThanAnyPlausibleWall)
     EXPECT_EQ(p_getTwinFace2, nullptr);
 }
 
+/*!
+ * @brief        Checks that two faces 3 m apart, too far to be two faces of one
+ *               wall, are not linked as twins.
+ */
 TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
 {
     Atlas atlas(0);
@@ -274,6 +287,10 @@ TEST(WallPairing, DoesNotLinkPlanesFartherApartThanAnyPlausibleWall)
     EXPECT_EQ(p_getTwinFace2, nullptr);
 }
 
+/*!
+ * @brief        Checks that two faces observed from the same side are not
+ *               linked as twins, since twins are seen from opposite sides.
+ */
 TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
 {
     Atlas atlas(0);
@@ -323,6 +340,10 @@ TEST(WallPairing, DoesNotLinkPlanesObservedFromTheSameExteriorSide)
     EXPECT_EQ(p_getTwinFace2, nullptr);
 }
 
+/*!
+ * @brief        Checks that two parallel faces of plausible thickness whose
+ *               footprints do not overlap are not linked as twins.
+ */
 TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
 {
     Atlas atlas(0);
@@ -372,6 +393,10 @@ TEST(WallPairing, DoesNotLinkPlanesWithNoFootprintOverlap)
     EXPECT_EQ(p_getTwinFace2, nullptr);
 }
 
+/*!
+ * @brief        Checks that a pair of linked twin faces is unlinked when a
+ *               later refit moves one face too far away to be a plausible twin.
+ */
 TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
 {
     Atlas atlas(0);

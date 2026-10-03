@@ -149,6 +149,11 @@ semantic::Room *bootstrap(SemanticsManager &manager_inout, Atlas &atlas_inout)
 }
 } // namespace
 
+/*!
+ * @brief        Checks that running the active-map bootstrap a second time
+ *               keeps the one room and floor it already made instead of adding
+ *               more.
+ */
 TEST(SemanticBootstrapPhase1, BootstrapInitializationIsIdempotent)
 {
     Atlas            atlas(0);
@@ -213,6 +218,11 @@ TEST(SemanticBootstrapPhase1, BootstrapInitializationIsIdempotent)
     EXPECT_EQ(name2, "semantic::Floor#0");
 }
 
+/*!
+ * @brief        Checks that after a new map starts, the last room, its floor
+ *               and its passage identity come back as recovery proxies, while
+ *               the old walls are not copied.
+ */
 TEST(SemanticBootstrapPhase1,
      NewMapRestoresLastRoomFloorAndPassageWithoutHistoricalWalls)
 {
@@ -352,6 +362,11 @@ TEST(SemanticBootstrapPhase1,
     EXPECT_EQ(passages2.front(), recoveredPassages.front());
 }
 
+/*!
+ * @brief        Checks that repeated map resets with no camera pose each give a
+ *               fresh floor without a plane identity and keep the current
+ *               room's identity (room 1, floor 0).
+ */
 TEST(SemanticBootstrapPhase1,
      RepeatedNoPoseMapRecoveryPreservesCurrentRoomFloorIdentity)
 {
@@ -481,6 +496,11 @@ TEST(SemanticBootstrapPhase1,
     }
 }
 
+/*!
+ * @brief        Checks that clearing the same map and bootstrapping with no
+ *               camera pose recreates room 0 and floor 0 from the snapshot
+ *               centroid and makes room 0 current.
+ */
 TEST(SemanticBootstrapPhase1,
      SameMapResetRecreatesSameRoomFloorWithoutCameraPose)
 {
@@ -554,6 +574,11 @@ TEST(SemanticBootstrapPhase1,
     EXPECT_EQ(getCurrentRoomId2, 0);
 }
 
+/*!
+ * @brief        Checks that a spurious room created during a reset is ignored:
+ *               the current room returns to the recovered room 0 rather than
+ *               the spurious one.
+ */
 TEST(SemanticBootstrapPhase1, BootstrapIgnoresSpuriousRoomWhenRecoveryPending)
 {
     Atlas            atlas(0);
@@ -603,6 +628,10 @@ TEST(SemanticBootstrapPhase1, BootstrapIgnoresSpuriousRoomWhenRecoveryPending)
     EXPECT_EQ(getCurrentSemanticRoomIdentity2, 0);
 }
 
+/*!
+ * @brief        Checks that after a recovery-map bootstrap, the next new blank
+ *               room candidate gets id 1, continuing the room numbering.
+ */
 TEST(SemanticBootstrapPhase1,
      RoomIdentityOrderingContinuesAfterRecoveryMapBootstrap)
 {
@@ -652,6 +681,11 @@ TEST(SemanticBootstrapPhase1,
     EXPECT_EQ(id, 1);
 }
 
+/*!
+ * @brief        Checks that merging an observed passage with the same id into a
+ *               recovery-proxy passage replaces the proxy geometry and clears
+ *               the proxy flag.
+ */
 TEST(SemanticBootstrapPhase1,
      SameIdentityObservedPassageReplacesRecoveryProxyGeometry)
 {
@@ -728,6 +762,11 @@ TEST(SemanticBootstrapPhase1,
         Eigen::Vector3d::UnitX()));
 }
 
+/*!
+ * @brief        Checks that merging a duplicate passage keeps one copy of each
+ *               supporting wall, the larger traversal counters and the known-
+ *               side direction, and leaves the recovery-proxy flag set.
+ */
 TEST(SemanticBootstrapPhase1,
      SameIdentityPassageMergePreservesUniqueTopologyAndMaximumCounters)
 {
@@ -802,6 +841,10 @@ TEST(SemanticBootstrapPhase1,
     EXPECT_TRUE(isRecoveryProxy2);
 }
 
+/*!
+ * @brief        Checks that the bootstrap room and floor point at each other:
+ *               the room's floor lists that room back.
+ */
 TEST(SemanticBootstrapPhase1, RoomAndFloorOwnershipIsReciprocal)
 {
     Atlas            atlas(0);
@@ -836,6 +879,10 @@ TEST(SemanticBootstrapPhase1, RoomAndFloorOwnershipIsReciprocal)
     EXPECT_EQ(rooms2.front(), p_room);
 }
 
+/*!
+ * @brief        Checks that the bootstrap makes the bootstrap room the current
+ *               room.
+ */
 TEST(SemanticBootstrapPhase1, BootstrapSeedsCurrentRoom)
 {
     Atlas            atlas(0);
@@ -851,6 +898,11 @@ TEST(SemanticBootstrapPhase1, BootstrapSeedsCurrentRoom)
     EXPECT_EQ(getCurrentRoomId2, id);
 }
 
+/*!
+ * @brief        Checks that a repeated bootstrap keeps the room the UAV has
+ *               moved into as current, and a new wall is assigned to that room
+ *               rather than room 0.
+ */
 TEST(SemanticBootstrapPhase1, IdempotentBootstrapPreservesTraversedCurrentRoom)
 {
     Atlas            atlas(0);
@@ -936,6 +988,10 @@ TEST(SemanticBootstrapPhase1, IdempotentBootstrapPreservesTraversedCurrentRoom)
     EXPECT_EQ(walls3.front(), p_wall.get());
 }
 
+/*!
+ * @brief        Checks that an ordinary admissible wall is assigned to the
+ *               current room and can be looked up by id from the atlas.
+ */
 TEST(SemanticBootstrapPhase1, OrdinaryAdmissibleWallBelongsToCurrentRoom)
 {
     Atlas atlas(0);
@@ -965,6 +1021,11 @@ TEST(SemanticBootstrapPhase1, OrdinaryAdmissibleWallBelongsToCurrentRoom)
     EXPECT_EQ(p_roomWallPlaneById, p_wall.get());
 }
 
+/*!
+ * @brief        Checks that a wall behind a passage goes to the passage's far-
+ *               side prospective room instead of falling back to the nearer
+ *               current room.
+ */
 TEST(SemanticBootstrapPhase1, PassageFarSideRoutingPrecedesCurrentRoomFallback)
 {
     Atlas atlas(0);
@@ -1030,6 +1091,11 @@ TEST(SemanticBootstrapPhase1, PassageFarSideRoutingPrecedesCurrentRoomFallback)
     EXPECT_EQ(walls3.front(), p_wall.get());
 }
 
+/*!
+ * @brief        Checks that a passage supported by the room's own wall stays
+ *               linked to the room over repeated cycles even when the room
+ *               centroid lies in the passage plane.
+ */
 TEST(SemanticBootstrapPhase1,
      ExactSupportingWallKeepsPassageLinkedWhenRoomCentroidIsCoplanar)
 {
@@ -1096,6 +1162,10 @@ TEST(SemanticBootstrapPhase1,
     EXPECT_EQ(passages2.front(), &passage);
 }
 
+/*!
+ * @brief        Checks that a room whose only wall is not the passage's
+ *               supporting wall does not get the passage just by being closest.
+ */
 TEST(SemanticBootstrapPhase1,
      SparseRoomWithoutExactWallCannotWinPassageByProximity)
 {
@@ -1166,6 +1236,11 @@ TEST(SemanticBootstrapPhase1,
     EXPECT_TRUE(passages.empty());
 }
 
+/*!
+ * @brief        Checks that an unowned wall is only retired after five
+ *               undefended cycles and that growth of its point cloud resets
+ *               that countdown.
+ */
 TEST(SemanticBootstrapPhase1, PendingWallHasFiveCycleGraceAndGrowthReset)
 {
     Atlas atlas(0);
@@ -1219,6 +1294,11 @@ TEST(SemanticBootstrapPhase1, PendingWallHasFiveCycleGraceAndGrowthReset)
     EXPECT_TRUE(isBad3);
 }
 
+/*!
+ * @brief        Checks that a wall owned by a room and a wall supporting a
+ *               passage are never retired as undefended, even after many
+ *               cycles.
+ */
 TEST(SemanticBootstrapPhase1, OwnedAndPassageWallsCannotRetireUndefended)
 {
     Atlas atlas(0);
@@ -1265,6 +1345,10 @@ TEST(SemanticBootstrapPhase1, OwnedAndPassageWallsCannotRetireUndefended)
     EXPECT_FALSE(isBad3);
 }
 
+/*!
+ * @brief        Checks that a newly constructed room reports it has not been
+ *               visited.
+ */
 TEST(SemanticBootstrapPhase1, NewRoomIsUnvisitedByDefault)
 {
     semantic::Room room;
@@ -1274,6 +1358,10 @@ TEST(SemanticBootstrapPhase1, NewRoomIsUnvisitedByDefault)
     EXPECT_FALSE(hasPreviouslyVisited2);
 }
 
+/*!
+ * @brief        Checks that the bootstrap room is marked visited when it is
+ *               created, because the UAV starts inside it.
+ */
 TEST(SemanticBootstrapPhase1, BootstrapRoomIsVisitedAtBirth)
 {
     Atlas            atlas(0);
@@ -1287,6 +1375,10 @@ TEST(SemanticBootstrapPhase1, BootstrapRoomIsVisitedAtBirth)
     EXPECT_TRUE(hasPreviouslyVisited2);
 }
 
+/*!
+ * @brief        Checks that the visited flag of the bootstrap room is restored
+ *               on the room recreated after a same-map reset.
+ */
 TEST(SemanticBootstrapPhase1, ResetRestoresVisitedFlag)
 {
     Atlas            atlas(0);
@@ -1330,6 +1422,11 @@ TEST(SemanticBootstrapPhase1, ResetRestoresVisitedFlag)
     EXPECT_EQ(getCurrentRoomId2, 0);
 }
 
+/*!
+ * @brief        Checks that a passage restored after a map break keeps its id,
+ *               passable flag and traversal count but gets no position,
+ *               orientation or size.
+ */
 TEST(SemanticBootstrapPhase1, ResetRestoresPassageIdentityWithoutGeometry)
 {
     /* Restored passages are new objects with stable IDs: frame-free state
@@ -1423,6 +1520,11 @@ TEST(SemanticBootstrapPhase1, ResetRestoresPassageIdentityWithoutGeometry)
     EXPECT_EQ(traversalKnownToFarCount, 1U);
 }
 
+/*!
+ * @brief        Checks that each map records its starting room, final room and
+ *               following map across new maps, and that a same-map clear adds
+ *               no link.
+ */
 TEST(SemanticBootstrapPhase1, MapChainLinksStartingFinalAndFollowingRooms)
 {
     /* Mission-chain trace: each map records its entry room, its departure
@@ -1479,6 +1581,11 @@ TEST(SemanticBootstrapPhase1, MapChainLinksStartingFinalAndFollowingRooms)
     EXPECT_EQ(p_followingMap3, nullptr);
 }
 
+/*!
+ * @brief        Checks that a keyframe with an exactly-zero pose is rejected
+ *               and the recovered room is placed at the snapshot centroid
+ *               instead of the origin.
+ */
 TEST(SemanticBootstrapPhase1, ZeroPoseKeyFrameFallsBackToSnapshotCentroid)
 {
     /* Live failure: a brand-new map's first keyframes carry identity poses,

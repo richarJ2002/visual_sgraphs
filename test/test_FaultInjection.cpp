@@ -43,6 +43,11 @@ bool DoBoolWork()
 
 } // namespace
 
+/*!
+ * @brief        Checks that an injected fault makes the probe function return
+ *               its injected-failure status; skipped when fault injection is
+ *               compiled out.
+ */
 TEST(FaultInjection, InjectedFailureTakesStatusPath)
 {
 #ifdef VS_GRAPHS_ENABLE_FAULT_INJECTION
@@ -54,6 +59,10 @@ TEST(FaultInjection, InjectedFailureTakesStatusPath)
 #endif
 }
 
+/*!
+ * @brief        Checks that, with no fault armed, the probe functions take
+ *               their normal success path.
+ */
 TEST(FaultInjection, DisabledPathSucceeds)
 {
     ::vs_graphs::testing::clearFaults();

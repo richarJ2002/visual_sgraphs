@@ -68,7 +68,14 @@ namespace semantic
 /*! @brief One legacy room entry: {"id", "centroid_xy"}. */
 struct LegacyRoomRecord
 {
+    /*!
+     * @brief        Room id as written in the legacy capture file ("id").
+     */
     int             id{0};
+    /*!
+     * @brief        Room centroid from "centroid_xy", horizontal x and y only;
+     *               the legacy schema does not name its frame or unit.
+     */
     Eigen::Vector2d centroidXy{Eigen::Vector2d::Zero()};
 };
 
@@ -77,16 +84,39 @@ struct LegacyRoomRecord
  *  the schema has no independent wall identity. */
 struct LegacyWallRecord
 {
+    /*!
+     * @brief        Id of the room this wall declares as its owner ("room_id");
+     *               it may name no declared room.
+     */
     int             ownerRoomId{0};
+    /*!
+     * @brief        Wall plane normal from "normal"; the legacy schema does not
+     *               name its frame.
+     */
     Eigen::Vector3d normal{Eigen::Vector3d::Zero()};
+    /*!
+     * @brief        Wall plane offset from "offset_d", the d of the plane n.x +
+     *               d = 0 as recorded in the file.
+     */
     double          offsetD{0.0};
+    /*!
+     * @brief        Wall extent from "extent_m", in metres.
+     */
     double          extentM{0.0};
 };
 
 /*! @brief The legacy "floor" entry: {"normal", "offset_d"}. */
 struct LegacyFloorRecord
 {
+    /*!
+     * @brief        Floor plane normal from the floor "normal"; the legacy
+     *               schema does not name its frame.
+     */
     Eigen::Vector3d normal{Eigen::Vector3d::Zero()};
+    /*!
+     * @brief        Floor plane offset from the floor "offset_d", as recorded
+     *               in the file.
+     */
     double          offsetD{0.0};
 };
 
@@ -95,8 +125,17 @@ struct LegacyFloorRecord
  *  room ids, if any, are kept, never deduplicated). */
 struct LegacyCapture
 {
+    /*!
+     * @brief        Scene name from the "scene" field.
+     */
     std::string                   scene;
+    /*!
+     * @brief        Rooms in file order, duplicates kept.
+     */
     std::vector<LegacyRoomRecord> rooms;
+    /*!
+     * @brief        Walls in file order, duplicates kept.
+     */
     std::vector<LegacyWallRecord> walls;
 
     /*! @brief Size of the legacy "passages" array. Every observed capture
@@ -106,6 +145,10 @@ struct LegacyCapture
      *  Capture()) rather than a guessed structure. */
     std::size_t passageCount{0U};
 
+    /*!
+     * @brief        Floor plane from "floor"; empty when the file has no floor
+     *               entry.
+     */
     std::optional<LegacyFloorRecord> floor;
 };
 
@@ -113,8 +156,20 @@ struct LegacyCapture
  *  explicit, never-silently-dropped malformed reason. */
 struct LegacyParseResult
 {
+    /*!
+     * @brief        True when the file could not be parsed into a capture; the
+     *               reason is then in malformedReason.
+     */
     bool          malformed{false};
+    /*!
+     * @brief        Human-readable cause of the parse failure; empty when
+     *               malformed is false.
+     */
     std::string   malformedReason;
+    /*!
+     * @brief        The parsed capture; only meaningful when malformed is
+     *               false.
+     */
     LegacyCapture capture;
 };
 
@@ -127,8 +182,19 @@ struct LegacyParseResult
  *  closed evaluator enum is out of this replay's scope). */
 struct LegacyAxiomResultRecord
 {
+    /*!
+     * @brief        Axiom this record replays.
+     */
     AxiomCode   axiomCode{AxiomCode::AX_FRAME_01};
+    /*!
+     * @brief        Replayed outcome for the axiom; FAIL or UNKNOWN, never
+     *               PASS.
+     */
     AxiomResult result{AxiomResult::UNKNOWN};
+    /*!
+     * @brief        Readable reason for the outcome: a ReasonCode name or a
+     *               LEGACY_SCHEMA_INSUFFICIENT sentinel.
+     */
     std::string reason;
 };
 
@@ -137,13 +203,37 @@ struct LegacyAxiomResultRecord
  *  fullGeometryDigest. */
 struct LegacyFileReplayResult
 {
+    /*!
+     * @brief        Name of the replayed capture file, for diagnostics only.
+     */
     std::string fileName;
+    /*!
+     * @brief        True when the file could not be parsed; counts and digests
+     *               are then empty.
+     */
     bool        malformed{false};
+    /*!
+     * @brief        Human-readable cause of the parse failure; empty when
+     *               malformed is false.
+     */
     std::string malformedReason;
 
+    /*!
+     * @brief        Number of rooms in the capture; 0 for a malformed file.
+     */
     std::size_t roomCount{0U};
+    /*!
+     * @brief        Number of walls in the capture; 0 for a malformed file.
+     */
     std::size_t wallCount{0U};
+    /*!
+     * @brief        Number of entries in the "passages" array; 0 for a
+     *               malformed file.
+     */
     std::size_t passageCount{0U};
+    /*!
+     * @brief        True when the capture has a floor entry.
+     */
     bool        hasFloor{false};
 
     /*! @brief sha256HexDigest() of a canonical projection containing only

@@ -81,6 +81,10 @@ void makeRefitWallPlane(geometric::Plane &wall_inout, int id_in, Map *p_map_in)
 
 } // namespace
 
+/*!
+ * @brief        Checks that exporting room context with no current map succeeds
+ *               and stores nothing.
+ */
 TEST(RoomContextPersist, NullCurrentMapExportIsNoOp)
 {
     Atlas atlas(0);
@@ -96,6 +100,10 @@ TEST(RoomContextPersist, NullCurrentMapExportIsNoOp)
     EXPECT_TRUE(history.empty());
 }
 
+/*!
+ * @brief        Checks that exporting a map that has no rooms succeeds and
+ *               stores no history for that map.
+ */
 TEST(RoomContextPersist, EmptyRoomCollectionExportIsNoOp)
 {
     Atlas atlas(0);
@@ -115,6 +123,10 @@ TEST(RoomContextPersist, EmptyRoomCollectionExportIsNoOp)
     EXPECT_EQ(history.count(mapId), 0U);
 }
 
+/*!
+ * @brief        Checks that the exported room context keeps the names, types
+ *               and values of its original fields.
+ */
 TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
 {
     Atlas atlas(0);
@@ -188,6 +200,10 @@ TEST(RoomContextPersist, ExistingFieldsRetainNamesTypesAndValues)
     EXPECT_EQ(roomTag2, "room_7");
 }
 
+/*!
+ * @brief        Checks that the exported snapshot carries the floor id of a
+ *               room that belongs to a floor.
+ */
 TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
 {
     /* A room is always floor-scoped (semantic::Room::getFloor()); the "last
@@ -239,6 +255,10 @@ TEST(RoomContextPersist, FloorIdCapturedWhenRoomHasFloorIdentity)
     EXPECT_EQ(snap.floorId, 42);
 }
 
+/*!
+ * @brief        Checks that the snapshot wall bounds stay index-aligned with
+ *               the walls when some walls are valid and others are not.
+ */
 TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
 {
     Atlas atlas(0);
@@ -312,6 +332,10 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
     EXPECT_FALSE(std::isfinite(snap.wallNormals[2].x()));
 }
 
+/*!
+ * @brief        Checks that the snapshot passage contexts stay index-aligned
+ *               with the passage getters, including invalid apertures.
+ */
 TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
 {
     Atlas atlas(0);
@@ -495,6 +519,10 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     EXPECT_FALSE(nonFinite.hasFarSideRoom);
 }
 
+/*!
+ * @brief        Checks that exporting a room with missing attributes does
+ *               not crash and marks its wall bounds and aperture invalid.
+ */
 TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
 {
     Atlas atlas(0);
@@ -548,6 +576,10 @@ TEST(RoomContextPersist, MissingAttributesCompleteWithoutCrash)
     EXPECT_FALSE(snap.passageContexts.front().hasFarSideRoom);
 }
 
+/*!
+ * @brief        Checks that clearing a map bumps its big-change index, so
+ *               revision tokens notice the reset.
+ */
 TEST(RoomContextPersist, ClearMapBumpsRevisionGeneration)
 {
     /* Same-map clears keep the map id, so the visualization/voxblox
@@ -569,6 +601,10 @@ TEST(RoomContextPersist, ClearMapBumpsRevisionGeneration)
     EXPECT_EQ(lastBigChangeIndex, changeIndexBefore + 1);
 }
 
+/*!
+ * @brief        Checks that the visited flag of rooms survives the export into
+ *               the room context history.
+ */
 TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
 {
     Atlas atlas(0);
@@ -630,6 +666,10 @@ TEST(RoomContextPersist, VisitedFlagRoundTripsThroughExport)
     EXPECT_TRUE(sawUnvisited);
 }
 
+/*!
+ * @brief        Checks that exported room context survives a real new-map
+ *               lifecycle boundary and is recorded under the old map id.
+ */
 TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
 {
     Atlas atlas(0);
@@ -685,6 +725,11 @@ TEST(RoomContextPersist, SurvivesRealNewMapLifecycleBoundary)
     EXPECT_EQ(history.count(id), 0U);
 }
 
+/*!
+ * @brief        Checks that, in 100 fresh atlases, the room exported when a new
+ *               map is created is recorded once under the old map id, with its
+ *               id and one valid wall bound.
+ */
 TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
 {
     unsigned int successCount = 0U;
@@ -737,6 +782,10 @@ TEST(RoomContextPersist, HundredRepeatedExportResetChecksPass)
     EXPECT_EQ(successCount, 100U);
 }
 
+/*!
+ * @brief        Checks that two worker threads copying exported room context at
+ *               the same time cause no observable corruption.
+ */
 TEST(RoomContextPersist,
      TwoWorkerExportCopyCharacterizationHasNoObservableCorruption)
 {

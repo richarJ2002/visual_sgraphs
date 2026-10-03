@@ -43,6 +43,11 @@ using semantic::PassageStatus;
 using semantic::RoomStatus;
 using semantic::SemanticVerifyStatus;
 
+/*!
+ * @brief        Checks that the room remove, replace and passage-association
+ *               functions return an invalid-argument status for null or
+ *               identical pointers and leave the room's walls empty.
+ */
 TEST(SemanticStatus, RoomRejectsNullOrRepeatedWallsAndPassages)
 {
     semantic::Room   room;
@@ -69,6 +74,11 @@ TEST(SemanticStatus, RoomRejectsNullOrRepeatedWallsAndPassages)
     EXPECT_TRUE(walls.empty());
 }
 
+/*!
+ * @brief        Checks that removing a wall the room does not hold returns
+ *               success with the removed flag false, since an absent wall is
+ *               data and not an error.
+ */
 TEST(SemanticStatus, RoomReportsAnAbsentWallAsDataNotFailure)
 {
     semantic::Room   room;
@@ -80,6 +90,11 @@ TEST(SemanticStatus, RoomReportsAnAbsentWallAsDataNotFailure)
     EXPECT_FALSE(wasWallRemoved);
 }
 
+/*!
+ * @brief        Checks that passage functions return an invalid-argument status
+ *               for null or identical rooms, planes and duplicates, and for a
+ *               zero or NaN known-side direction.
+ */
 TEST(SemanticStatus, PassageRejectsNullRepeatedAndDegenerateInputs)
 {
     semantic::Passage passage;
@@ -108,6 +123,11 @@ TEST(SemanticStatus, PassageRejectsNullRepeatedAndDegenerateInputs)
               PassageStatus::PASSAGE_STATUS_INVALID_ARGUMENT);
 }
 
+/*!
+ * @brief        Checks that a floor rejects null or identical rooms and an all-
+ *               zero plane, which leaves it without a plane identity, and
+ *               accepts a valid plane.
+ */
 TEST(SemanticStatus, FloorRejectsNullRoomsAndDegeneratePlanes)
 {
     semantic::Floor floor;
@@ -132,6 +152,11 @@ TEST(SemanticStatus, FloorRejectsNullRoomsAndDegeneratePlanes)
         FloorStatus::FLOOR_STATUS_SUCCESS);
 }
 
+/*!
+ * @brief        Checks that transformAbsorbedPoint applies a similarity
+ *               transform of scale 2 and translation (1,0,0) to a finite point
+ *               and returns success.
+ */
 TEST(SemanticStatus, TransformAbsorbedPointMapsAFinitePoint)
 {
     const g2o::Sim3 transform(Eigen::Matrix3d::Identity(),
@@ -145,6 +170,11 @@ TEST(SemanticStatus, TransformAbsorbedPointMapsAFinitePoint)
     EXPECT_TRUE(mapped.isApprox(Eigen::Vector3d(3.0, 4.0, 6.0)));
 }
 
+/*!
+ * @brief        Checks that transformAbsorbedPoint returns invalid-argument and
+ *               leaves the output untouched for a NaN point or a zero-scale
+ *               transform.
+ */
 TEST(SemanticStatus, TransformAbsorbedPointRejectsNonFiniteOrDegenerateInput)
 {
     const g2o::Sim3 identity;
@@ -166,6 +196,10 @@ TEST(SemanticStatus, TransformAbsorbedPointRejectsNonFiniteOrDegenerateInput)
     EXPECT_EQ(mapped, Eigen::Vector3d(7.0, 8.0, 9.0));
 }
 
+/*!
+ * @brief        Checks that transformAbsorbedPoint returns a numerical-failure
+ *               status when the scaled point overflows the double range.
+ */
 TEST(SemanticStatus, TransformAbsorbedPointReportsOverflowAsNumericalFailure)
 {
     /* Finite scale and point whose product exceeds the double range. */

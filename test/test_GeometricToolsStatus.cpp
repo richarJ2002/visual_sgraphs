@@ -31,6 +31,10 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief        Checks that GeometricTools::triangulate recovers the 3D point
+ *               seen by two cameras and returns success.
+ */
 TEST(GeometricToolsStatus, TriangulatesAPointSeenByTwoCameras)
 {
     /* Camera 1 at the world origin, camera 2 one metre along +x; both look
@@ -50,6 +54,11 @@ TEST(GeometricToolsStatus, TriangulatesAPointSeenByTwoCameras)
     EXPECT_NEAR(x3D(2), 4.0F, 1e-4F);
 }
 
+/*!
+ * @brief        Checks that triangulate returns a numerical-failure status, and
+ *               leaves the output point untouched, when the solution lies at
+ *               infinity.
+ */
 TEST(GeometricToolsStatus, ReportsASolutionAtInfinityAsNumericalFailure)
 {
     /* The projections make the linear system diag(1, 1, 0, 1): its null

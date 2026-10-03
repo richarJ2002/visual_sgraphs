@@ -163,6 +163,11 @@ semantic::RoomContextSnapshot
 }
 } // namespace
 
+/*!
+ * @brief        Checks that the candidate distance is the weighted numerator
+ *               divided by the weight denominator, with both computed
+ *               deterministically from the cues.
+ */
 TEST(CandidateGen, UsesDeterministicNumeratorAndDenominator)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -188,6 +193,10 @@ TEST(CandidateGen, UsesDeterministicNumeratorAndDenominator)
                      candidates.front().cues.weightedNumerator / 3.0);
 }
 
+/*!
+ * @brief        Checks that the candidate distance does not depend on the order
+ *               in which maps or rooms were inserted into the history.
+ */
 TEST(CandidateGen, DoesNotDependOnContainerInsertionOrder)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -212,6 +221,11 @@ TEST(CandidateGen, DoesNotDependOnContainerInsertionOrder)
     EXPECT_DOUBLE_EQ(left.front().distance, right.front().distance);
 }
 
+/*!
+ * @brief        Checks that rooms with different raw ids but the same local
+ *               topology get topology distance 0, and that removing a far-side
+ *               room makes it positive.
+ */
 TEST(CandidateGen, CanonicalizesLocalTopologyWithoutComparingRawIds)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -241,6 +255,10 @@ TEST(CandidateGen, CanonicalizesLocalTopologyWithoutComparingRawIds)
     EXPECT_GT(changed.front().cues.topologyDistance, 0.0);
 }
 
+/*!
+ * @brief        Checks that the angle tolerance decides whether near-zero angle
+ *               differences count as equivalent.
+ */
 TEST(CandidateGen, AngleToleranceControlsNearZeroEquivalence)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -267,6 +285,10 @@ TEST(CandidateGen, AngleToleranceControlsNearZeroEquivalence)
     EXPECT_GT(candidates2.front().cues.angleDistance, 0.0);
 }
 
+/*!
+ * @brief        Checks that an invalid candidate configuration is rejected with
+ *               a typed rejection reason.
+ */
 TEST(CandidateGen, RejectsInvalidConfigurationWithTypedReason)
 {
     semantic::SemanticCandidateConfig config;
@@ -337,6 +359,10 @@ TEST(CandidateGen, RejectsInvalidConfigurationWithTypedReason)
         semantic::SemanticCandidateConfigRejectionReason::WEIGHT_SUM_OVERFLOW);
 }
 
+/*!
+ * @brief        Checks that topology is left out of the cues when the node cap
+ *               would be exceeded.
+ */
 TEST(CandidateGen, OmitsTopologyWhenNodeCapWouldBeExceeded)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -354,6 +380,10 @@ TEST(CandidateGen, OmitsTopologyWhenNodeCapWouldBeExceeded)
     EXPECT_FALSE(candidates.front().cues.isTopologyAvailable);
 }
 
+/*!
+ * @brief        Checks that a randomly rotated copy of a room scores distance 0
+ *               against the original in all 100 seeded trials (angle cue only).
+ */
 TEST(CandidateGen, SeededTransformInvarianceIs100Of100)
 {
     const semantic::RoomContextSnapshot source = makeRoom(1, 1.0);
@@ -386,6 +416,11 @@ TEST(CandidateGen, SeededTransformInvarianceIs100Of100)
     }
 }
 
+/*!
+ * @brief        Checks that, under small seeded wall-angle perturbations, the
+ *               true pair stays the single top candidate in at least 45 of 50
+ *               trials.
+ */
 TEST(CandidateGen, SeededTopOneStabilityIsAtLeast45Of50)
 {
     semantic::SemanticCandidateConfig config;
@@ -421,6 +456,10 @@ TEST(CandidateGen, SeededTopOneStabilityIsAtLeast45Of50)
     EXPECT_GE(stableCount, 45U);
 }
 
+/*!
+ * @brief        Checks that the true room pair is found in at least 48 of 50
+ *               seeded trials.
+ */
 TEST(CandidateGen, SeededTruePairRecallIsAtLeast48Of50)
 {
     semantic::SemanticCandidateConfig config;
@@ -460,6 +499,10 @@ TEST(CandidateGen, SeededTruePairRecallIsAtLeast48Of50)
     EXPECT_GE(recallCount, 48U);
 }
 
+/*!
+ * @brief        Checks that the serialized candidate bytes are identical
+ *               whatever the insertion order of the input.
+ */
 TEST(CandidateGen, CandidateBytesAreInsertionOrderIndependent)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -483,6 +526,11 @@ TEST(CandidateGen, CandidateBytesAreInsertionOrderIndependent)
     EXPECT_EQ(left, right);
 }
 
+/*!
+ * @brief        Checks that applying a runtime budget never changes the
+ *               deterministic candidate bytes and leaves the budget-exceeded
+ *               flag clear.
+ */
 TEST(CandidateGen, RuntimeBudgetNeverChangesDeterministicBytes)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -507,8 +555,11 @@ TEST(CandidateGen, RuntimeBudgetNeverChangesDeterministicBytes)
     EXPECT_FALSE(right.front().cues.isRuntimeBudgetExceeded);
 }
 
-/* Required test (a): rooms with no passages still score wall
- * cues; topology/aperture are absent, not trivially "available". */
+/*!
+ * @brief        Checks that rooms without passages still score wall cues, with
+ *               topology and aperture cues absent rather than trivially
+ *               available.
+ */
 TEST(CandidateGen, WallOnlyRoomsScoreWallCuesWithTopologyAndApertureAbsent)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -527,9 +578,11 @@ TEST(CandidateGen, WallOnlyRoomsScoreWallCuesWithTopologyAndApertureAbsent)
     EXPECT_DOUBLE_EQ(candidates.front().cues.weightDenominator, 2.0);
 }
 
-/* Required test (b): a wall with invalid bounds omits only its
- * extent element while its (still finite) normal keeps contributing angle
- * evidence. */
+/*!
+ * @brief        Checks that a wall with invalid bounds omits only its extent
+ *               element while its finite normal still contributes angle
+ *               evidence.
+ */
 TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
 {
     semantic::RoomContextSnapshot baseline;
@@ -580,8 +633,11 @@ TEST(CandidateGen, PartiallyMissingBoundsOmitsExtentButRetainsAngleEvidence)
     EXPECT_DOUBLE_EQ(diffCandidates.front().cues.extentDistance, 0.0);
 }
 
-/* Required test (c): unequal signature counts exercise the
- * padded mean-L1 rule. */
+/*!
+ * @brief        Checks that rooms with unequal numbers of wall-angle signatures
+ *               are compared with the padded mean-L1 rule, using the
+ *               missing-angle penalty for the unmatched entries.
+ */
 TEST(CandidateGen, UnequalSignatureCountsExercisePadding)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -618,8 +674,11 @@ TEST(CandidateGen, UnequalSignatureCountsExercisePadding)
                      candidates.front().cues.angleDistance);
 }
 
-/* Required test (d): a zero/invalid median disables both the
- * extent and aperture families without rejecting the room outright. */
+/*!
+ * @brief        Checks that a zero or invalid median disables the extent and
+ *               aperture cues without rejecting the room, which still scores
+ *               through topology.
+ */
 TEST(CandidateGen, InvalidMedianDisablesExtentAndApertureCues)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -653,8 +712,10 @@ TEST(CandidateGen, InvalidMedianDisablesExtentAndApertureCues)
     EXPECT_DOUBLE_EQ(withTopology.front().cues.weightDenominator, 1.0);
 }
 
-/* Required test (f): only candidates within the configured
- * ambiguity margin of the best distance are marked ambiguous. */
+/*!
+ * @brief        Checks that only candidates within the configured ambiguity
+ *               margin of the best distance are marked ambiguous.
+ */
 TEST(CandidateGen, AmbiguityMarginMarksOnlyCandidatesWithinMargin)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -680,9 +741,11 @@ TEST(CandidateGen, AmbiguityMarginMarksOnlyCandidatesWithinMargin)
     EXPECT_FALSE(candidates[2].isAmbiguous);
 }
 
-/* Required test (j): a bounded global fallback finds the true
- * pair when the adjacency-prioritised tier admits nothing, without relaxing
- * minimum evidence for the anchor's own disqualifying pairs. */
+/*!
+ * @brief        Checks that a bounded global fallback finds the true pair when
+ *               the adjacency-prioritised tier admits nothing, without relaxing
+ *               the minimum evidence for the anchor.
+ */
 TEST(CandidateGen, FallbackFindsTruePairWhenAnchorHasNoUsableEvidence)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -707,8 +770,11 @@ TEST(CandidateGen, FallbackFindsTruePairWhenAnchorHasNoUsableEvidence)
     EXPECT_NEAR(candidates.front().distance, 0.0, 1.0e-12);
 }
 
-/* Required test (k): equal-distance candidates are ordered by
- * the (mapAId,roomAId,mapBId,roomBId) tie-break, never by distance alone. */
+/*!
+ * @brief        Checks that equal-distance candidates are ordered by the
+ *               (mapAId, roomAId, mapBId, roomBId) tie-break and not by
+ *               distance alone.
+ */
 TEST(CandidateGen, TieBreaksByMapAndRoomIdWhenDistancesAreEqual)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -740,10 +806,11 @@ TEST(CandidateGen, TieBreaksByMapAndRoomIdWhenDistancesAreEqual)
     EXPECT_EQ(candidates[1].roomBId, 20);
 }
 
-/* Apertures are compared as (width,height) pairs
- * via pairwise Manhattan error, not flattened into one sorted scalar list --
- * flattening would make a width/height swap indistinguishable (both rooms
- * would sort to the identical multiset {1,2}), scoring distance 0. */
+/*!
+ * @brief        Checks that apertures are compared as (width, height) pairs by
+ *               pairwise Manhattan error, so swapping width and height is
+ *               detected instead of scoring distance 0.
+ */
 TEST(CandidateGen, AperturePairwiseManhattanDistinguishesSwappedWidthHeight)
 {
     std::map<long unsigned int, std::vector<semantic::RoomContextSnapshot>>
@@ -765,6 +832,10 @@ TEST(CandidateGen, AperturePairwiseManhattanDistinguishesSwappedWidthHeight)
                      candidates.front().cues.apertureDistance);
 }
 
+/*!
+ * @brief        Checks that a configuration with zero topology refinement
+ *               iterations is rejected with TOPO_REFINEMENT_ITERS_ZERO.
+ */
 TEST(CandidateGen, RejectsZeroTopoRefinementIters)
 {
     semantic::SemanticCandidateConfig config;
@@ -780,13 +851,12 @@ TEST(CandidateGen, RejectsZeroTopoRefinementIters)
                   TOPO_REFINEMENT_ITERS_ZERO);
 }
 
-/* Required test (m): semantic::SemanticCandidates.cc links only against
- * itself in this target (see CMakeLists.txt's test_CandidateGen target,
- * which lists no Utils.cc/Optimizer.cc sources) -- the frame-dependent
- * matchWallsBetweenRooms()/collectCorrespondingWalls() are not declared to
- * this translation unit at all, so any call to them would be a compile
- * error, not merely a missed test. This test exists to document that
- * structural guarantee alongside the numbered requirement list. */
+/*!
+ * @brief        Checks, by compilation, that this target never links the legacy
+ *               transform-dependent wall matching helpers: they are not
+ *               declared to this translation unit, so any call would not
+ *               compile.
+ */
 TEST(CandidateGen, DoesNotLinkLegacyTransformDependentHelpers)
 {
     SUCCEED();

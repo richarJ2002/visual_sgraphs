@@ -25,6 +25,10 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief        Checks that computing the ground-plane height returns no value
+ *               for a plane with an empty support cloud.
+ */
 TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
 {
     Atlas atlas(0);
@@ -47,6 +51,10 @@ TEST(GroundPlaneFilter, ReturnsNulloptForAnEmptySupportCloud)
     EXPECT_FALSE(height.has_value());
 }
 
+/*!
+ * @brief        Checks that computing the ground-plane height returns no value
+ *               for a plane whose support cloud has a single point.
+ */
 TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
 {
     /* numPoint = yVals.size() / 2 is also 0 for a single-point cloud, not
@@ -78,6 +86,10 @@ TEST(GroundPlaneFilter, ReturnsNulloptForASinglePointSupportCloud)
     EXPECT_FALSE(height.has_value());
 }
 
+/*!
+ * @brief        Checks that computing the ground-plane height returns a value
+ *               for a plane whose support cloud has several points.
+ */
 TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
 {
     Atlas atlas(0);

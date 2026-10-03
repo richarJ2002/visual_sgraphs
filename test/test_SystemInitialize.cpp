@@ -69,6 +69,10 @@ class ReadableSettingsFile
 
 } // namespace
 
+/*!
+ * @brief        Checks that initializing with a settings file that does not
+ *               exist returns the settings-unreadable status.
+ */
 TEST(SystemInitialize, ReportsAnUnreadableSettingsFile)
 {
     System system;
@@ -80,6 +84,11 @@ TEST(SystemInitialize, ReportsAnUnreadableSettingsFile)
               SystemStatus::SYSTEM_STATUS_SETTINGS_UNREADABLE);
 }
 
+/*!
+ * @brief        Checks that initializing with a readable settings file but a
+ *               missing vocabulary file returns the vocabulary-unreadable
+ *               status.
+ */
 TEST(SystemInitialize, ReportsAnUnreadableVocabularyFile)
 {
     const ReadableSettingsFile settings;
@@ -92,6 +101,10 @@ TEST(SystemInitialize, ReportsAnUnreadableVocabularyFile)
               SystemStatus::SYSTEM_STATUS_VOCABULARY_UNREADABLE);
 }
 
+/*!
+ * @brief        Checks that a System that was never initialized can be
+ *               destroyed without waiting for or joining any worker thread.
+ */
 TEST(SystemInitialize, DestroysASystemThatNeverInitialised)
 {
     /* No thread was started, so the destructor must not wait for or join

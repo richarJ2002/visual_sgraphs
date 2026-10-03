@@ -16,6 +16,11 @@ namespace vs_graphs
 namespace core
 {
 
+/*!
+ * @brief        Checks that outlier rejection on an empty match list returns
+ *               success and leaves the right-image coordinates and depths
+ *               unchanged, instead of reading past the end of the list.
+ */
 TEST(StereoMatchOutlierRejection, NoOpsOnAnEmptyMatchList)
 {
     /* Before the fix, vDistIdx[vDistIdx.size() / 2] on an empty vDistIdx
@@ -33,6 +38,11 @@ TEST(StereoMatchOutlierRejection, NoOpsOnAnEmptyMatchList)
     EXPECT_EQ(mvDepth, std::vector<float>(3, -1.0f));
 }
 
+/*!
+ * @brief        Checks that a stereo match whose distance is far above the
+ *               median has its right-image coordinate and depth set to -1,
+ *               while the close matches keep theirs.
+ */
 TEST(StereoMatchOutlierRejection, RejectsMatchesFarAboveTheMedianDistance)
 {
     /* Three good matches clustered near distance 10, one clear outlier at
