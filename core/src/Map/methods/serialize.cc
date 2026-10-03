@@ -73,15 +73,27 @@ void Map::serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
     ar & hasInertialBA2;
 }
 
+/*!
+ * @brief        Instantiates Map::serialize() for binary_iarchive.
+ */
 template void Map::serialize<boost::archive::binary_iarchive>(
     boost::archive::binary_iarchive &,
     const unsigned int);
+/*!
+ * @brief        Instantiates Map::serialize() for binary_oarchive.
+ */
 template void Map::serialize<boost::archive::binary_oarchive>(
     boost::archive::binary_oarchive &,
     const unsigned int);
+/*!
+ * @brief        Instantiates Map::serialize() for text_iarchive.
+ */
 template void Map::serialize<boost::archive::text_iarchive>(
     boost::archive::text_iarchive &,
     const unsigned int);
+/*!
+ * @brief        Instantiates Map::serialize() for text_oarchive.
+ */
 template void Map::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,
     const unsigned int);

@@ -67,15 +67,31 @@ void Atlas::serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
     ar & lastInitKeyFrameId;
 }
 
+/*!
+ * @brief        Loads the Atlas through a binary archive; the template is
+ *               defined above.
+ */
 template void Atlas::serialize<boost::archive::binary_iarchive>(
     boost::archive::binary_iarchive &,
     const unsigned int);
+/*!
+ * @brief        Saves the Atlas through a binary archive; the template is
+ *               defined above.
+ */
 template void Atlas::serialize<boost::archive::binary_oarchive>(
     boost::archive::binary_oarchive &,
     const unsigned int);
+/*!
+ * @brief        Loads the Atlas through a text archive; the template is defined
+ *               above.
+ */
 template void Atlas::serialize<boost::archive::text_iarchive>(
     boost::archive::text_iarchive &,
     const unsigned int);
+/*!
+ * @brief        Saves the Atlas through a text archive; the template is defined
+ *               above.
+ */
 template void Atlas::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,
     const unsigned int);

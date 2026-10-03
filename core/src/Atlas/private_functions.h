@@ -41,6 +41,30 @@ namespace semantic
 class Passage;
 } // namespace semantic
 
+/*!
+ * @brief        Plans the ids that entities imported from a merged map receive
+ *               in the destination map. An imported entity keeps its id when
+ *               that id is not negative and the destination does not use it;
+ *               otherwise it gets the lowest unused id above the highest
+ *               reserved one.
+ *
+ * @param[in]    existingEntities_in
+ *               Entities already in the destination map; null entries are
+ *               skipped.
+ * @param[in]    importedEntities_in
+ *               Entities coming from the source map; null entries are skipped.
+ * @param[in]    entityName_in
+ *               Entity kind, only used in the abort message.
+ * @param[out]   assignments_out
+ *               Imported entity and its planned id, in ascending order of the
+ *               original id; cleared and refilled only when planning succeeds.
+ * @param[out]   isPlanned_out
+ *               False, with a message on stderr, when an imported entity is
+ *               already in the destination or two imported entities share an
+ *               id; true otherwise.
+ *
+ * @return       ATLAS_STATUS_SUCCESS always.
+ */
 template <typename Entity>
 [[nodiscard]] AtlasStatus
     planImportedIds(const std::vector<Entity *>           &existingEntities_in,
@@ -152,22 +176,93 @@ template <typename Entity>
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
+/*!
+ * @brief        Moves an identity counter past an identity that already exists,
+ *               so the next reservation cannot repeat it. The counter never
+ *               goes down; a negative identity is ignored.
+ *
+ * @param[in,out] nextIdentity_inout
+ *               Counter holding the next identity to hand out.
+ * @param[in]    observedIdentity_in
+ *               Identity already in use.
+ *
+ * @return       ATLAS_STATUS_SUCCESS always.
+ */
 [[nodiscard]] AtlasStatus
     advanceIdentityAllocator(std::atomic<int> &nextIdentity_inout,
                              const int         observedIdentity_in);
 
+/*!
+ * @brief        Counts the rooms that are not marked bad in a map. A null map
+ *               counts as 0.
+ *
+ * @param[in]    p_map_in
+ *               Map to inspect; borrowed.
+ * @param[out]   liveRooms_out
+ *               Number of live rooms.
+ *
+ * @return       ATLAS_STATUS_SUCCESS always.
+ */
 [[nodiscard]] AtlasStatus countLiveRooms(Map         *p_map_in,
                                          std::size_t &liveRooms_out);
 
+/*!
+ * @brief        Counts the planes that are not marked bad and are wall planes
+ *               in a map. A null map counts as 0.
+ *
+ * @param[in]    p_map_in
+ *               Map to inspect; borrowed.
+ * @param[out]   liveWallPlanes_out
+ *               Number of live wall planes.
+ *
+ * @return       ATLAS_STATUS_SUCCESS always.
+ */
 [[nodiscard]] AtlasStatus countLiveWallPlanes(Map         *p_map_in,
                                               std::size_t &liveWallPlanes_out);
 
+/*!
+ * @brief        Counts the passages that are not marked bad in a map. A null
+ *               map counts as 0.
+ *
+ * @param[in]    p_map_in
+ *               Map to inspect; borrowed.
+ * @param[out]   livePassages_out
+ *               Number of live passages.
+ *
+ * @return       ATLAS_STATUS_SUCCESS always.
+ */
 [[nodiscard]] AtlasStatus countLivePassages(Map         *p_map_in,
                                             std::size_t &livePassages_out);
 
+/*!
+ * @brief        Counts the floors that have a plane identity in a map. A null
+ *               map counts as 0.
+ *
+ * @param[in]    p_map_in
+ *               Map to inspect; borrowed.
+ * @param[out]   liveFloors_out
+ *               Number of live floors.
+ *
+ * @return       ATLAS_STATUS_SUCCESS always.
+ */
 [[nodiscard]] AtlasStatus countLiveFloors(Map         *p_map_in,
                                           std::size_t &liveFloors_out);
 
+/*!
+ * @brief        Condenses the live room, wall plane, passage and floor counts
+ *               of the old map and then of the current map into one number. Two
+ *               equal numbers mean neither map gained or lost such content, so
+ *               a merge attempt can be skipped. A null map counts as empty.
+ *
+ * @param[in]    p_oldMap_in
+ *               Older map of the pair; borrowed.
+ * @param[in]    p_currentMap_in
+ *               Current map of the pair; borrowed.
+ * @param[out]   contentHash_out
+ *               Combined count value (counts folded with a factor of 31).
+ *
+ * @return       ATLAS_STATUS_SUCCESS always.
+ */
 [[nodiscard]] AtlasStatus consecutiveContentHash(Map         *p_oldMap_in,
                                                  Map         *p_currentMap_in,
                                                  std::size_t &contentHash_out);
@@ -176,6 +271,21 @@ template <typename Entity>
                                                    Map  *p_currentMap_in,
                                                    bool &isMatch_out);
 
+/*!
+ * @brief        Collects the room tags that appear on a live room in both maps;
+ *               such rooms anchor the old map to the current one. Rooms that
+ *               are bad, untagged or have an empty tag are ignored. The set is
+ *               empty when either map is null.
+ *
+ * @param[in]    p_oldMap_in
+ *               Older map of the pair; borrowed.
+ * @param[in]    p_currentMap_in
+ *               Current map of the pair; borrowed.
+ * @param[out]   anchorTags_out
+ *               Tags present in both maps.
+ *
+ * @return       ATLAS_STATUS_SUCCESS always.
+ */
 [[nodiscard]] AtlasStatus
     collectAnchorTags(Map                   *p_oldMap_in,
                       Map                   *p_currentMap_in,

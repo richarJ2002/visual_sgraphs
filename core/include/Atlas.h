@@ -115,8 +115,21 @@ class KeyFrameDatabase;
  */
 struct MergeAttemptState
 {
+    /*!
+     * @brief        Steady-clock time of the latest merge attempt for this old
+     *               map. Only meaningful once hasEverAttempted is true.
+     */
     std::chrono::steady_clock::time_point lastAttemptTime{};
+    /*!
+     * @brief        Content hash (see consecutiveContentHash) of the old and
+     *               current map at the latest attempt; an unchanged hash lets
+     *               the scheduler skip the pair.
+     */
     std::size_t                           contentHashAtLastAttempt{0U};
+    /*!
+     * @brief        True once an attempt has been recorded for this old map;
+     *               false means no cooldown or hash check applies yet.
+     */
     bool                                  hasEverAttempted{false};
 };
 
@@ -134,27 +147,61 @@ class Atlas
 {
     friend class boost::serialization::access;
 
+    /*!
+     * @brief        Saves or loads the Atlas for map save and load: the maps
+     *               (as backupMaps), the cameras, the static id counters and
+     *               lastInitKeyFrameId.
+     *
+     * @param[in,out] ar
+     *               Boost archive that is written to or read from.
+     * @param[in]    version
+     *               Archive class version; unused.
+     */
     template <class Archive>
     void serialize(Archive &ar, const unsigned int version);
 
   public:
+    /*!
+     * @brief        Whether copyRoomContextForMapChecked could copy the room
+     *               snapshots: COMPLETE, or UNAVAILABLE_LIVE_GENERATION when
+     *               the caller did not own the semantic update lock.
+     */
     enum class SnapshotCopyStatus
     {
         COMPLETE,
         UNAVAILABLE_LIVE_GENERATION
     };
 
+    /*!
+     * @brief        Outcome of copyRoomContextForMapChecked: a status plus the
+     *               snapshots it copied.
+     */
     struct SnapshotCopyResult
     {
+        /*!
+         * @brief        COMPLETE once snapshots is filled;
+         *               UNAVAILABLE_LIVE_GENERATION (the default) when the copy
+         *               was refused.
+         */
         SnapshotCopyStatus status{
             SnapshotCopyStatus::UNAVAILABLE_LIVE_GENERATION};
+        /*!
+         * @brief        Room snapshots copied from a live map; empty unless
+         *               status is COMPLETE.
+         */
         std::vector<semantic::RoomContextSnapshot> snapshots;
     };
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     Atlas();
-    Atlas(int initialKeyFrameId_in); // When its initialization the first map is
-                                     // created
+    /*!
+     * @brief        Creates an Atlas and immediately creates its first map.
+     *
+     * @param[in]    initialKeyFrameId_in
+     *               Key frame id at which the first map starts; stored as
+     *               lastInitKeyFrameId.
+     */
+    Atlas(int initialKeyFrameId_in);
     ~Atlas();
     /*!
      * @brief        Copying is forbidden: the atlas owns its maps and
@@ -163,24 +210,144 @@ class Atlas
     Atlas(const Atlas &otherAtlas_in)            = delete;
     Atlas &operator=(const Atlas &otherAtlas_in) = delete;
 
+    /*!
+     * @brief        Creates a new empty map and makes it the current one. The
+     *               previous current map is stored and linked to its successor,
+     *               its room geometry is recorded for identity matching, and
+     *               the new-map event becomes pending. Takes atlasMutex.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus createNewMap();
+    /*!
+     * @brief        Makes an existing map the current one; the previous current
+     *               map is marked as stored. Takes atlasMutex.
+     *
+     * @param[in]    p_map_in
+     *               Map to make current; must not be null.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus changeMap(Map *p_map_in);
 
+    /*!
+     * @brief        Returns the key frame id at which the newest map was
+     *               initialised. createNewMap and preSave move it past the
+     *               active map's highest key frame id.
+     *
+     * @param[out]   lastInitKeyFrameId_out
+     *               Initial key frame id of the newest map.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getLastInitKeyFrameId(unsigned long &lastInitKeyFrameId_out);
 
+    /*!
+     * @brief        Remembers the viewer and records that one is attached.
+     *
+     * @param[in]    p_viewer_in
+     *               Viewer to remember; borrowed, the Atlas never deletes it.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus setViewer(Viewer *p_viewer_in);
 
     // Methods for adding new components in the current map
+    /*!
+     * @brief        Registers a floor with the map the floor belongs to and
+     *               moves the floor identity allocator past its id. A null
+     *               pointer is ignored.
+     *
+     * @param[in]    p_floor_in
+     *               Floor to register; borrowed, the owning map keeps it.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus addMapFloor(semantic::Floor *p_floor_in);
+    /*!
+     * @brief        Registers a plane with the map the plane belongs to.
+     *
+     * @param[in]    p_plane_in
+     *               Plane to register; must not be null.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus addMapPlane(geometric::Plane *p_plane_in);
+    /*!
+     * @brief        Registers a key frame with the map the key frame belongs
+     *               to.
+     *
+     * @param[in]    p_keyFrame_in
+     *               Key frame to register; must not be null.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus addKeyFrame(KeyFrame *p_keyFrame_in);
+    /*!
+     * @brief        Registers a map point with the map the map point belongs
+     *               to.
+     *
+     * @param[in]    p_mapPoint_in
+     *               Map point to register; must not be null.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus addMapPoint(MapPoint *p_mapPoint_in);
+    /*!
+     * @brief        Registers a marker with the map the marker belongs to.
+     *
+     * @param[in]    p_marker_in
+     *               Marker to register; must not be null.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus addMapMarker(semantic::Marker *p_marker_in);
+    /*!
+     * @brief        Registers a detected room with the map the room belongs to
+     *               and moves the room identity allocator past its id. A null
+     *               pointer is ignored.
+     *
+     * @param[in]    p_room_in
+     *               Detected room to register; borrowed, the owning map keeps
+     *               it.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus addDetectedMapRoom(semantic::Room *p_room_in);
+    /*!
+     * @brief        Registers a candidate room with the map the room belongs to
+     *               and moves the room identity allocator past its id. A null
+     *               pointer is ignored.
+     *
+     * @param[in]    p_room_in
+     *               Candidate room to register; borrowed, the owning map keeps
+     *               it.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus addCandidateMapRoom(semantic::Room *p_room_in);
+    /*!
+     * @brief        Registers a passage with the map the passage belongs to and
+     *               moves the passage identity allocator past its id. A null
+     *               pointer is ignored.
+     *
+     * @param[in]    p_passage_in
+     *               Passage to register; borrowed, the owning map keeps it.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         addMapPassage(vs_graphs::core::semantic::Passage *p_passage_in);
+    /*!
+     * @brief        Registers a room wall plane with the map the plane belongs
+     *               to.
+     *
+     * @param[in]    p_plane_in
+     *               Wall plane to register; must not be null.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in);
 
@@ -210,50 +377,229 @@ class Atlas
     [[nodiscard]] AtlasStatus getCurrentSemanticRoomIdentity(
         int &getCurrentSemanticRoomIdentity_out) const;
 
+    /*!
+     * @brief        Returns every camera model registered with the Atlas. Does
+     *               not take atlasMutex.
+     *
+     * @param[out]   allCameras_out
+     *               Copy of the camera pointer list; the pointers are borrowed
+     *               from the Atlas.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getAllCameras(
         std::vector<camera_models::geometriccamera::GeometricCamera *>
             &allCameras_out);
+    /*!
+     * @brief        Registers a camera model, reusing an equal one that is
+     *               already registered. Does not take atlasMutex.
+     *
+     * @param[in]    p_camera_in
+     *               Camera model to register; must not be null.
+     * @param[out]   p_camera_out
+     *               The equal camera that was already registered, or
+     *               p_camera_in itself when it was new.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus addCamera(
         camera_models::geometriccamera::GeometricCamera  *p_camera_in,
         camera_models::geometriccamera::GeometricCamera *&p_camera_out);
 
     /* All methods without Map pointer work on current map */
+    /*!
+     * @brief        Tells the active map that a large change happened (for
+     *               example a loop-closure correction) by advancing its
+     *               big-change index. Takes atlasMutex.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus informNewBigChange();
+    /*!
+     * @brief        Returns the active map's big-change index (see
+     *               informNewBigChange). Takes atlasMutex.
+     *
+     * @param[out]   lastBigChangeIndex_out
+     *               Number of big changes recorded by the active map.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getLastBigChangeIndex(int &lastBigChangeIndex_out);
+    /*!
+     * @brief        Stores the reference map points of the active map. Takes
+     *               atlasMutex.
+     *
+     * @param[in]    mapPoints_in
+     *               Map points to store; the points are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         setReferenceMapPoints(const std::vector<MapPoint *> &mapPoints_in);
 
+    /*!
+     * @brief        Returns the number of markers in the active map. Takes
+     *               atlasMutex.
+     *
+     * @param[out]   markerCount_out
+     *               Marker count of the active map.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getMarkerCount(unsigned long &markerCount_out);
+    /*!
+     * @brief        Returns the number of key frames in the active map. Takes
+     *               atlasMutex.
+     *
+     * @param[out]   keyFrameCount_out
+     *               Key frame count of the active map.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getKeyFrameCount(unsigned long &keyFrameCount_out);
+    /*!
+     * @brief        Returns the number of map points in the active map. Takes
+     *               atlasMutex.
+     *
+     * @param[out]   mapPointCount_out
+     *               Map point count of the active map.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getMapPointCount(unsigned long &mapPointCount_out);
 
-    // List of marker-ids placed on planes detected so far
+    /*!
+     * @brief        Ids of the markers that sit on planes detected so far.
+     */
     std::vector<int> visitedPlanesMarkerIds;
 
     // Method for get data in current map
+    /*!
+     * @brief        Returns the rooms of the active map. Takes atlasMutex.
+     *
+     * @param[out]   allRooms_out
+     *               Copy of the active map's room pointer list; the pointers
+     *               are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getAllRooms(std::vector<semantic::Room *> &allRooms_out);
+    /*!
+     * @brief        Returns the floors of the active map. Takes atlasMutex.
+     *
+     * @param[out]   allFloors_out
+     *               Copy of the active map's floor pointer list; the pointers
+     *               are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getAllFloors(std::vector<semantic::Floor *> &allFloors_out);
+    /*!
+     * @brief        Returns the markers of the active map. Takes atlasMutex.
+     *
+     * @param[out]   allMarkers_out
+     *               Copy of the active map's marker pointer list; the pointers
+     *               are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getAllMarkers(std::vector<semantic::Marker *> &allMarkers_out);
+    /*!
+     * @brief        Returns the key frames of the active map. Takes atlasMutex.
+     *
+     * @param[out]   allKeyFrames_out
+     *               Copy of the active map's key frame pointer list; the
+     *               pointers are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getAllKeyFrames(std::vector<KeyFrame *> &allKeyFrames_out);
+    /*!
+     * @brief        Returns the map points of the active map. Takes atlasMutex.
+     *
+     * @param[out]   allMapPoints_out
+     *               Copy of the active map's map point pointer list; the
+     *               pointers are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getAllMapPoints(std::vector<MapPoint *> &allMapPoints_out);
+    /*!
+     * @brief        Returns the detected rooms of the active map. Takes
+     *               atlasMutex.
+     *
+     * @param[out]   allDetectedMapRooms_out
+     *               Copy of the active map's detected room pointer list; the
+     *               pointers are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getAllDetectedMapRooms(
         std::vector<semantic::Room *> &allDetectedMapRooms_out);
+    /*!
+     * @brief        Returns the planes of the active map. Takes atlasMutex.
+     *
+     * @param[out]   allPlanes_out
+     *               Copy of the active map's plane pointer list; the pointers
+     *               are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getAllPlanes(
         std::vector<vs_graphs::core::geometric::Plane *> &allPlanes_out);
+    /*!
+     * @brief        Returns the marker-based rooms of the active map. Takes
+     *               atlasMutex.
+     *
+     * @param[out]   allMarkerBasedMapRooms_out
+     *               Copy of the active map's marker-based room pointer list;
+     *               the pointers are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getAllMarkerBasedMapRooms(
         std::vector<semantic::Room *> &allMarkerBasedMapRooms_out);
+    /*!
+     * @brief        Returns the candidate rooms of the active map. Takes
+     *               atlasMutex.
+     *
+     * @param[out]   allCandidateMapRooms_out
+     *               Copy of the active map's candidate room pointer list; the
+     *               pointers are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getAllCandidateMapRooms(
         std::vector<semantic::Room *> &allCandidateMapRooms_out);
+    /*!
+     * @brief        Returns the reference map points of the active map. Takes
+     *               atlasMutex.
+     *
+     * @param[out]   referenceMapPoints_out
+     *               Copy of the active map's reference map point list; the
+     *               pointers are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getReferenceMapPoints(std::vector<MapPoint *> &referenceMapPoints_out);
+    /*!
+     * @brief        Returns the passages of the active map. Takes atlasMutex.
+     *
+     * @param[out]   allPassages_out
+     *               Copy of the active map's passage pointer list; the pointers
+     *               are borrowed.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getAllPassages(
         std::vector<vs_graphs::core::semantic::Passage *> &allPassages_out);
 
@@ -286,9 +632,28 @@ class Atlas
     [[nodiscard]] AtlasStatus setSkeletonClusterPoints(
         const std::vector<std::vector<Eigen::Vector3d>> &newClusterPoints_in);
 
+    /*!
+     * @brief        Returns the biggest ground plane of the active map. Takes
+     *               atlasMutex.
+     *
+     * @param[out]   p_biggestGroundPlane_out
+     *               Borrowed plane pointer as reported by the active map;
+     *               nullptr when the Atlas has no active map.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getBiggestGroundPlane(geometric::Plane *&p_biggestGroundPlane_out);
 
+    /*!
+     * @brief        Returns every active, non-bad map, sorted by ascending map
+     *               id. Takes atlasMutex.
+     *
+     * @param[out]   allMaps_out
+     *               Borrowed map pointers; the Atlas owns the maps.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getAllMaps(std::vector<Map *> &allMaps_out);
 
     /*!
@@ -301,12 +666,47 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus isActiveMap(Map *p_map_in, bool &isActiveMap_out);
 
+    /*!
+     * @brief        Returns how many maps are in the active set. Takes
+     *               atlasMutex.
+     *
+     * @param[out]   maps_out
+     *               Number of active maps.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus countMaps(int &maps_out);
 
+    /*!
+     * @brief        Wipes the content of the current map in place without
+     *               creating a new map. The room geometry is recorded first so
+     *               the rooms can be re-identified later, and the map's
+     *               big-change index advances. Takes atlasMutex.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus clearMap();
 
+    /*!
+     * @brief        Empties the active map set, forgets the current map and
+     *               resets lastInitKeyFrameId to 0. The Map objects are not
+     *               deleted. Takes atlasMutex.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus clearAtlas();
 
+    /*!
+     * @brief        Returns the current map. Creates the first map when there
+     *               is none, and while the current map is marked bad (a merge
+     *               is in progress) polls every 3 ms until changeMap installs a
+     *               replacement. Takes atlasMutex.
+     *
+     * @param[out]   p_currentMap_out
+     *               Borrowed pointer to the current map; never null on return.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getCurrentMap(Map *&p_currentMap_out);
 
     /*!
@@ -493,46 +893,228 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus removeBadMaps();
 
+    /*!
+     * @brief        Reports whether the active map uses an inertial sensor.
+     *               Takes atlasMutex.
+     *
+     * @param[out]   isInertial_out
+     *               True when the active map is inertial.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus isInertial(bool &isInertial_out);
+    /*!
+     * @brief        Marks the active map as using an inertial sensor. Takes
+     *               atlasMutex.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus setInertialSensor();
+    /*!
+     * @brief        Marks the IMU of the active map as initialised. Takes
+     *               atlasMutex.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus setImuInitialized();
+    /*!
+     * @brief        Reports whether the IMU of the active map is initialised.
+     *               Takes atlasMutex.
+     *
+     * @param[out]   isImuInitialized_out
+     *               True when the active map's IMU is initialised.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus isImuInitialized(bool &isImuInitialized_out);
 
     // Function for garantee the correction of serialization of this object
+    /*!
+     * @brief        Prepares the Atlas for saving: advances lastInitKeyFrameId
+     *               past the active map's highest key frame id, copies the maps
+     *               sorted by id into backupMaps, marks empty maps bad, lets
+     *               each remaining map prepare itself, then calls
+     *               removeBadMaps.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus preSave();
+    /*!
+     * @brief        Restores run-time state after loading: refills the active
+     *               map set from backupMaps, lets each map re-link its key
+     *               frames to the key frame database, the vocabulary and the
+     *               cameras (looked up by id), then empties backupMaps.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus postLoad();
 
+    /*!
+     * @brief        Returns the key frames of every map in backupMaps, keyed by
+     *               key frame id. backupMaps is only filled between preSave and
+     *               postLoad.
+     *
+     * @param[out]   atlasKeyFrames_out
+     *               Borrowed key frame pointers keyed by key frame id.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getAtlasKeyFrames(
         std::map<unsigned long, KeyFrame *> &atlasKeyFrames_out);
 
     // Functions for getting the entities
+    /*!
+     * @brief        Looks up a plane of the active map by id. Takes atlasMutex.
+     *
+     * @param[in]    planeId_in
+     *               Id of the plane to find.
+     * @param[out]   p_planeById_out
+     *               Borrowed pointer; nullptr when there is no active map or no
+     *               such plane.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getPlaneById(int                planeId_in,
                                            geometric::Plane *&p_planeById_out);
+    /*!
+     * @brief        Looks up a floor of the active map by id. Takes atlasMutex.
+     *
+     * @param[in]    floorId_in
+     *               Id of the floor to find.
+     * @param[out]   p_floorById_out
+     *               Borrowed pointer; nullptr when there is no active map or no
+     *               such floor.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getFloorById(int               floorId_in,
                                            semantic::Floor *&p_floorById_out);
+    /*!
+     * @brief        Looks up a marker of the active map by id. Takes
+     *               atlasMutex.
+     *
+     * @param[in]    markerId_in
+     *               Id of the marker to find.
+     * @param[out]   p_markerById_out
+     *               Borrowed pointer; nullptr when there is no active map or no
+     *               such marker.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getMarkerById(int markerId_in, semantic::Marker *&p_markerById_out);
+    /*!
+     * @brief        Looks up a key frame of the active map by id. Takes
+     *               atlasMutex.
+     *
+     * @param[in]    idCount_in
+     *               Id of the key frame to find.
+     * @param[out]   p_keyFrameById_out
+     *               Borrowed pointer; nullptr when there is no active map or no
+     *               such key frame.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getKeyFrameById(long unsigned int idCount_in,
                                               KeyFrame *&p_keyFrameById_out);
+    /*!
+     * @brief        Looks up a passage of the active map by id. Takes
+     *               atlasMutex.
+     *
+     * @param[in]    passageId_in
+     *               Id of the passage to find.
+     * @param[out]   p_passageById_out
+     *               Borrowed pointer; nullptr when there is no active map or no
+     *               such passage.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
                               getPassageById(int                                  passageId_in,
                                              vs_graphs::core::semantic::Passage *&p_passageById_out);
+    /*!
+     * @brief        Looks up a room wall plane of the active map by id. Takes
+     *               atlasMutex.
+     *
+     * @param[in]    planeId_in
+     *               Id of the wall plane to find.
+     * @param[out]   p_roomWallPlaneById_out
+     *               Borrowed pointer; nullptr when there is no active map or no
+     *               such wall plane.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus getRoomWallPlaneById(
         int                                 planeId_in,
         vs_graphs::core::geometric::Plane *&p_roomWallPlaneById_out);
 
+    /*!
+     * @brief        Returns the key frame database that postLoad uses to
+     *               re-link key frames.
+     *
+     * @param[out]   p_keyFrameDatabase_out
+     *               Borrowed pointer; whatever setKeyFrameDatabase stored.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getKeyFrameDatabase(KeyFrameDatabase *&p_keyFrameDatabase_out);
+    /*!
+     * @brief        Stores the key frame database that postLoad uses to re-link
+     *               key frames.
+     *
+     * @param[in]    p_keyFrameDatabase_in
+     *               Database to remember; borrowed, the Atlas never deletes it.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         setKeyFrameDatabase(KeyFrameDatabase *p_keyFrameDatabase_in);
 
+    /*!
+     * @brief        Returns the ORB vocabulary that postLoad uses to re-link
+     *               key frames.
+     *
+     * @param[out]   p_oRBVocabulary_out
+     *               Borrowed pointer; whatever setORBVocabulary stored.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getORBVocabulary(ORBVocabulary *&p_oRBVocabulary_out);
+    /*!
+     * @brief        Stores the ORB vocabulary that postLoad uses to re-link key
+     *               frames.
+     *
+     * @param[in]    p_orbVocabulary_in
+     *               Vocabulary to remember; borrowed, the Atlas never deletes
+     *               it.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         setORBVocabulary(ORBVocabulary *p_orbVocabulary_in);
 
+    /*!
+     * @brief        Counts the key frames of every active map, not only the
+     *               current one. Takes atlasMutex.
+     *
+     * @param[out]   livedKeyFrameCount_out
+     *               Total key frame count over all active maps.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getLivedKeyFrameCount(unsigned long &livedKeyFrameCount_out);
+    /*!
+     * @brief        Counts the map points of every active map, not only the
+     *               current one. Takes atlasMutex.
+     *
+     * @param[out]   livedMapPointCount_out
+     *               Total map point count over all active maps.
+     *
+     * @return       ATLAS_STATUS_SUCCESS always.
+     */
     [[nodiscard]] AtlasStatus
         getLivedMapPointCount(unsigned long &livedMapPointCount_out);
 
@@ -542,30 +1124,70 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus createNewMapWhileAtlasLocked();
 
+    /*!
+     * @brief        Active maps. The Atlas owns them and deletes them in its
+     *               destructor.
+     */
     std::set<Map *> maps;
+    /*!
+     * @brief        Maps marked bad by setMapBad that removeBadMaps has not yet
+     *               moved to retiredMaps; still owned by the Atlas.
+     */
     std::set<Map *> badMaps;
 
     /*! Maps retired from active use but still owned until Atlas destruction. */
     std::set<Map *> retiredMaps;
 
-    // Its necessary change the container from set to vector because
-    // libboost 1.58 and Ubuntu 16.04 have an error with this cointainer
+    /*!
+     * @brief        Maps sorted by id, filled by preSave for serialisation and
+     *               emptied by postLoad. A vector rather than a set because
+     *               libboost 1.58 on Ubuntu 16.04 fails on a serialised set.
+     */
     std::vector<Map *> backupMaps;
 
+    /*!
+     * @brief        The current map, or nullptr before the first map exists and
+     *               after clearAtlas. Borrowed from maps; guarded by
+     *               atlasMutex.
+     */
     Map *p_activeMap;
 
+    /*!
+     * @brief        Distinct camera models used by the key frames; serialised.
+     *               The Atlas does not delete them.
+     */
     std::vector<camera_models::geometriccamera::GeometricCamera *> cameras;
 
+    /*!
+     * @brief        Key frame id at which the newest map was initialised;
+     *               serialised. createNewMap and preSave advance it.
+     */
     unsigned long int lastInitKeyFrameId;
 
+    /*!
+     * @brief        Viewer given to setViewer; borrowed and only meaningful
+     *               once hasViewer is true.
+     */
     Viewer *p_viewer;
+    /*!
+     * @brief        True once setViewer has stored a viewer.
+     */
     bool    hasViewer;
 
-    // Class references for the map reconstruction from the save file
+    /*!
+     * @brief        Key frame database that postLoad hands to the loaded maps;
+     *               borrowed, set by setKeyFrameDatabase.
+     */
     KeyFrameDatabase *p_keyFrameDatabase;
+    /*!
+     * @brief        ORB vocabulary that postLoad hands to the loaded maps;
+     *               borrowed, set by setORBVocabulary.
+     */
     ORBVocabulary    *p_orbVocabulary;
 
-    // Mutex
+    /*!
+     * @brief        Guards the map sets, p_activeMap and lastInitKeyFrameId.
+     */
     std::mutex atlasMutex;
 
     /*!
@@ -605,7 +1227,14 @@ class Atlas
 
     /*! Mission-wide semantic allocators survive active-map replacement. */
     std::atomic<int> nextRoomIdentity{0};
+    /*!
+     * @brief        Next passage identity that reservePassageIdentity hands
+     *               out.
+     */
     std::atomic<int> nextPassageIdentity{0};
+    /*!
+     * @brief        Next floor identity that reserveFloorIdentity hands out.
+     */
     std::atomic<int> nextFloorIdentity{0};
 
     /*! Last occupied semantic identity; map-local temporal resets do not clear
