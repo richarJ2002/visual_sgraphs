@@ -85,46 +85,51 @@ ORBextractorStatus computeOrbDescriptor(const cv::KeyPoint &kpt_in,
         &image_in.at<uchar>(cvRound(kpt_in.pt.y), cvRound(kpt_in.pt.x));
     const int step = static_cast<int>(image_in.step);
 
-#define GET_VALUE(idx)                                                         \
-    p_center[cvRound(p_briefPattern_in[idx].x * b +                            \
-                     p_briefPattern_in[idx].y * a) *                           \
-                 step +                                                        \
-             cvRound(p_briefPattern_in[idx].x * a -                            \
-                     p_briefPattern_in[idx].y * b)]
+    /*
+     * Brightness at the patternIndex_in-th point of the current 16-point
+     * slice of the sampling pattern, after rotating that point by the
+     * keypoint orientation (a = cos, b = sin of the angle).
+     */
+    const auto readRotatedPatternValue = [&](int patternIndex_in) -> int
+    {
+        return p_center[cvRound(p_briefPattern_in[patternIndex_in].x * b +
+                                p_briefPattern_in[patternIndex_in].y * a) *
+                            step +
+                        cvRound(p_briefPattern_in[patternIndex_in].x * a -
+                                p_briefPattern_in[patternIndex_in].y * b)];
+    };
 
     for (int descriptorByteIndex = 0; descriptorByteIndex < 32;
          ++descriptorByteIndex, p_briefPattern_in += 16)
     {
         int t0, t1, value;
-        t0    = GET_VALUE(0);
-        t1    = GET_VALUE(1);
+        t0    = readRotatedPatternValue(0);
+        t1    = readRotatedPatternValue(1);
         value = t0 < t1;
-        t0    = GET_VALUE(2);
-        t1    = GET_VALUE(3);
+        t0    = readRotatedPatternValue(2);
+        t1    = readRotatedPatternValue(3);
         value |= (t0 < t1) << 1;
-        t0 = GET_VALUE(4);
-        t1 = GET_VALUE(5);
+        t0 = readRotatedPatternValue(4);
+        t1 = readRotatedPatternValue(5);
         value |= (t0 < t1) << 2;
-        t0 = GET_VALUE(6);
-        t1 = GET_VALUE(7);
+        t0 = readRotatedPatternValue(6);
+        t1 = readRotatedPatternValue(7);
         value |= (t0 < t1) << 3;
-        t0 = GET_VALUE(8);
-        t1 = GET_VALUE(9);
+        t0 = readRotatedPatternValue(8);
+        t1 = readRotatedPatternValue(9);
         value |= (t0 < t1) << 4;
-        t0 = GET_VALUE(10);
-        t1 = GET_VALUE(11);
+        t0 = readRotatedPatternValue(10);
+        t1 = readRotatedPatternValue(11);
         value |= (t0 < t1) << 5;
-        t0 = GET_VALUE(12);
-        t1 = GET_VALUE(13);
+        t0 = readRotatedPatternValue(12);
+        t1 = readRotatedPatternValue(13);
         value |= (t0 < t1) << 6;
-        t0 = GET_VALUE(14);
-        t1 = GET_VALUE(15);
+        t0 = readRotatedPatternValue(14);
+        t1 = readRotatedPatternValue(15);
         value |= (t0 < t1) << 7;
 
         p_descriptor_inout[descriptorByteIndex] = static_cast<uchar>(value);
     }
-
-#undef GET_VALUE
 
     return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
