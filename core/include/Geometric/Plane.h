@@ -67,9 +67,17 @@ class Marker;
 namespace geometric
 {
 
+/*!
+ * @brief        A plane in the map: its observations from key frames, the point
+ *               cloud supporting it and its semantic class (wall, ground, door,
+ *               window).
+ */
 class Plane
 {
   public:
+    /*!
+     * @brief        Semantic class of a plane.
+     */
     enum class PlaneVariant : std::int8_t
     {
         /*!
@@ -151,21 +159,85 @@ class Plane
     /*! Immutable copy of one generation of finite plane geometry. */
     struct GeometrySnapshot
     {
+        /*!
+         * @brief        Read-only copy of the points supporting the plane, in
+         *               the world frame.
+         */
         pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr supportCloud;
+
+        /*!
+         * @brief        Plane coefficients [a, b, c, d] with a*x + b*y + c*z +
+         *               d = 0, in the world frame.
+         */
         Eigen::Vector4d planeEquation_world{Eigen::Vector4d::Zero()};
+
+        /*!
+         * @brief        Centroid of the plane, in the world frame, metres.
+         */
         Eigen::Vector3d planeCentroid_world_m{Eigen::Vector3d::Zero()};
-        double          minPlaneU_m{0.0};
-        double          maxPlaneU_m{0.0};
-        double          minPlaneV_m{0.0};
-        double          maxPlaneV_m{0.0};
-        std::size_t     finiteSupportCount{0U};
-        std::size_t     observationCount{0U};
-        std::uint64_t   cloudGeneration{0U};
-        std::uint64_t   successfulRefitGeneration{0U};
+
+        /*!
+         * @brief        Lower bound of the support cloud along the in-plane
+         *               axis U, metres. U and V are two perpendicular axes
+         *               lying in the plane; the bound is trimmed against
+         *               outliers when the cloud has at least 10 points.
+         */
+        double minPlaneU_m{0.0};
+
+        /*!
+         * @brief        Upper bound of the support cloud along the in-plane
+         *               axis U, metres.
+         */
+        double maxPlaneU_m{0.0};
+
+        /*!
+         * @brief        Lower bound of the support cloud along the in-plane
+         *               axis V, metres.
+         */
+        double minPlaneV_m{0.0};
+
+        /*!
+         * @brief        Upper bound of the support cloud along the in-plane
+         *               axis V, metres.
+         */
+        double maxPlaneV_m{0.0};
+
+        /*!
+         * @brief        Number of finite points in the support cloud at the
+         *               last successful refit; 0 after the clouds were
+         *               replaced.
+         */
+        std::size_t finiteSupportCount{0U};
+
+        /*!
+         * @brief        Number of key frames that have observed this plane.
+         */
+        std::size_t observationCount{0U};
+
+        /*!
+         * @brief        Counter raised every time the support cloud is replaced
+         *               or realigned, so a refit can tell that the cloud
+         *               changed under it.
+         */
+        std::uint64_t cloudGeneration{0U};
+
+        /*!
+         * @brief        Value of cloudGeneration that the last successful refit
+         *               was based on.
+         */
+        std::uint64_t successfulRefitGeneration{0U};
     };
 
+    /*!
+     * @brief        Summary of which side of the plane the cameras that
+     *               observed it were on, used when associating new
+     *               observations.
+     */
     struct ObservationSideSnapshot
     {
+        /*!
+         * @brief        Side of the plane that the observing cameras are on.
+         */
         enum class Face
         {
             UNKNOWN,
@@ -174,9 +246,31 @@ class Plane
             AMBIGUOUS
         };
 
-        Face                  face{Face::UNKNOWN};
-        std::size_t           evidenceCount{0U};
-        double                consensusRatio{0.0};
+        /*!
+         * @brief        UNKNOWN without usable evidence, POSITIVE or NEGATIVE
+         *               when at least 75 % of the usable camera centres lie on
+         *               that side of the plane equation, AMBIGUOUS when neither
+         *               side reaches 75 %.
+         */
+        Face face{Face::UNKNOWN};
+
+        /*!
+         * @brief        Number of usable camera centres: those of good key
+         *               frames that are at least 0.10 m from the plane.
+         */
+        std::size_t evidenceCount{0U};
+
+        /*!
+         * @brief        Fraction of the usable camera centres on the majority
+         *               side, 0 to 1; 0 without evidence.
+         */
+        double consensusRatio{0.0};
+
+        /*!
+         * @brief        Median signed distance from the plane to the camera
+         *               centres on the agreed side, metres; empty unless face
+         *               is POSITIVE or NEGATIVE.
+         */
         std::optional<double> medianSignedDistance_m;
     };
     /* ---------------------------------------------------------------------- *
@@ -753,14 +847,24 @@ class Plane
     Map *p_map{nullptr};
 
     /*!
-     * @brief       Protects the owning-map pointer and semantic type.
+     * @brief        Protects the owning-map pointer.
      */
-    std::mutex mapMutex, typeMutex;
+    std::mutex mapMutex;
+
+    /*!
+     * @brief        Protects the semantic type and the bad flag.
+     */
+    std::mutex typeMutex;
 
     /*!
      * @brief       Protects feature associations and geometric state.
      */
-    mutable std::mutex featuresMutex, positionMutex;
+    mutable std::mutex featuresMutex;
+
+    /*!
+     * @brief        Protects the plane equations, centroid and twin face.
+     */
+    mutable std::mutex positionMutex;
 };
 } // namespace geometric
 } // namespace core

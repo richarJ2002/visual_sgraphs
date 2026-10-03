@@ -39,6 +39,10 @@ namespace vs_graphs
 {
 namespace core
 {
+/*!
+ * @brief        Static helpers that create and update the planes, markers,
+ *               passages, rooms and floors of the semantic map in the atlas.
+ */
 class GeoSemHelpers
 {
   public:

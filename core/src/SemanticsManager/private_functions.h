@@ -85,6 +85,10 @@ struct FiniteWallSegment2d
     double supportScore = 0.0;
 };
 
+/*!
+ * @brief        Facts that decide whether a wall plane may join a room; filled
+ *               by evaluateWallAdmissionEvidence().
+ */
 struct WallAdmissionEvidence
 {
     /*!
@@ -135,7 +139,18 @@ struct WallAdmissionEvidence
  *  ordered, non-open loop. */
 struct WallLoopClosure
 {
-    bool                         hasOpenBoundary = true;
+    /*!
+     * @brief        True when the walls do not form a closed loop (the
+     *               default); false when every neighbouring pair of walls meets
+     *               within the allowed corner gap.
+     */
+    bool hasOpenBoundary = true;
+
+    /*!
+     * @brief        Corners of the closed loop in the order of the walls around
+     *               the room, in the world frame projected onto the two ground
+     *               axes, metres; empty when the boundary is open.
+     */
     std::vector<Eigen::Vector2d> loopCorners_world_m;
 };
 

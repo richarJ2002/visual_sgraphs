@@ -35,36 +35,44 @@ namespace core
 {
 
 SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
-    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_clsCloudPtrs_in,
+    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_classCloudPtrs_in,
     std::vector<std::vector<
         std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
         &planesFromClassClouds_out)
 {
+    /*!
+     * We have a vector, where each element in the vector represents a class.
+     * Then, for each class we have a vector of pairs. These pairs store
+     * the pointer to a point clouds points, and the equation of the plane that
+     * makes the plane.
+     */
     std::vector<std::vector<
         std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
         p_clsPlanes;
 
-    /* Downsample/filter the pointcloud and extract planes */
-    for (size_t clsCloudPtrIndex = 0;
-         clsCloudPtrIndex < p_clsCloudPtrs_in.size();
-         clsCloudPtrIndex++)
+    /* For each class of points, iterate through them */
+    for (size_t classCloudPtrIndex = 0;
+         classCloudPtrIndex < p_classCloudPtrs_in.size();
+         classCloudPtrIndex++)
     {
         // [TODO?] - Perhaps consider points in order of confidence instead of
         // downsampling Downsample the given pointcloud after filtering based on
-        // distance
+        // distance.
 
-        /* Init variable for the filtered point cloud */
+        /* Init variable to point to the outputted filtered point cloud */
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_filteredCloud;
 
         /*!
-         * Filter points based on depth from sensor.
+         * Filter points based on depth from sensor. If the distance of the
+         * point along the z-axis is outside the thresholds of the system,
+         * they are removed.
          *
          * @note        Parameter for min and max distance are defined as
          *              default values in:
          *              `visual_sgraphs/core/include/Types/SystemParams.h`
          */
         if (utils::utils::Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(
-                p_clsCloudPtrs_in[clsCloudPtrIndex],
+                p_classCloudPtrs_in[classCloudPtrIndex],
                 p_filteredCloud) !=
             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
         {
@@ -109,7 +117,7 @@ SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
 
         /* Copy the filtered cloud for later storage into the keyframe */
         pcl::copyPointCloud(*p_filteredCloud,
-                            *p_clsCloudPtrs_in[clsCloudPtrIndex]);
+                            *p_classCloudPtrs_in[classCloudPtrIndex]);
 
         /* Initialize object to contain extracted point clouds */
         std::vector<

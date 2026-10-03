@@ -51,6 +51,11 @@ namespace core
 {
 class Atlas;
 
+/*!
+ * @brief        Reasons about the map semantically on its own thread: builds
+ *               rooms, passages and floors from the walls, doors and free-space
+ *               evidence in the atlas, and tracks which room the camera is in.
+ */
 class SemanticsManager
 {
   private:
@@ -74,11 +79,38 @@ class SemanticsManager
     mutable std::mutex currentRoomMutex;
 
     // Shutdown control (LocalMapping-style handshake)
+    /*!
+     * @brief        Protects isFinishRequested and hasFinished.
+     */
     std::mutex finishMutex;
-    bool       isFinishRequested = false;
-    bool       hasFinished       = false;
+
+    /*!
+     * @brief        Set by requestFinish() to ask run() to leave its loop.
+     */
+    bool isFinishRequested = false;
+
+    /*!
+     * @brief        Set by setFinish() once run() has left its loop.
+     */
+    bool hasFinished = false;
+
+    /*!
+     * @brief        Tells whether a shutdown has been requested.
+     *
+     * @param[out]   isFinishRequested_out
+     *               True once requestFinish() has been called.
+     *
+     * @return       SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
     [[nodiscard]] SemanticsManagerStatus
         checkFinish(bool &isFinishRequested_out);
+
+    /*!
+     * @brief        Marks the semantic thread as finished; called by run() when
+     *               it leaves its loop.
+     *
+     * @return       SEMANTICS_MANAGER_STATUS_SUCCESS always.
+     */
     [[nodiscard]] SemanticsManagerStatus setFinish();
 
     /*!
@@ -118,23 +150,37 @@ class SemanticsManager
      * geometry or identity is inferred when the flag is clear.
      */
     semantic::VerificationVerdict verificationVerdict{};
-    bool                          isVerificationVerdictPending = false;
+
+    /*!
+     * @brief        True while verificationVerdict holds a result that
+     *               updateRoomTrackerState() has not consumed yet; guarded by
+     *               currentRoomMutex.
+     */
+    bool isVerificationVerdictPending = false;
 
     /*!
      * @brief       Set by updateTraversalEvidence() when a passable passage
      *              crossing was observed during this semantic cycle.
      */
-    bool isCrossingEventPending     = false;
+    bool isCrossingEventPending = false;
+
+    /*!
+     * @brief        Set together with isCrossingEventPending when the crossed
+     *               passage has traversal evidence in both directions; consumed
+     *               and cleared by updateRoomTrackerState(). Guarded by
+     *               currentRoomMutex.
+     */
     bool isCrossingBothSidesPending = false;
 
-    /*
-     * Test-only seam, always declared so production and test builds share one
-     * object layout; it stays empty outside tests, where
-     * updateTraversalEvidence() only moves an empty std::function. The
-     * callback is deliberately invoked while currentRoomMutex is held so the
-     * integration test proves real producer and consumer contention; it must
-     * not call back into this manager except through the non-blocking
-     * contention probe.
+    /*!
+     * @brief        Test-only seam, always declared so production and test
+     *               builds share one object layout; it stays empty outside
+     *               tests, where updateTraversalEvidence() only moves an empty
+     *               std::function. The callback is deliberately invoked while
+     *               currentRoomMutex is held so the integration test proves
+     *               real producer and consumer contention; it must not call
+     *               back into this manager except through the non-blocking
+     *               contention probe.
      */
     std::function<void()> roomTrackerPendingPublishHook;
 
@@ -142,10 +188,25 @@ class SemanticsManager
      * @brief       Set by onTrackingLost() (once per loss episode) and
      *              consumed by the room tracker during the next Run cycle.
      */
-    bool isTrackingLostPending       = false;
+    bool isTrackingLostPending = false;
+
+    /*!
+     * @brief        True from onTrackingLost() until onTrackingRecovered(), so
+     *               a loss is reported only once per episode.
+     */
     bool isTrackingLossEpisodeActive = false;
-    bool isNewMapCreatedDeferred     = false;
-    bool isNewMapCreatedPending      = false;
+
+    /*!
+     * @brief        True when a new-map event was held back for the next cycle
+     *               because tracking was reported lost in the same cycle.
+     */
+    bool isNewMapCreatedDeferred = false;
+
+    /*!
+     * @brief        True while a new-map event taken from the atlas has not yet
+     *               been committed by the room tracker.
+     */
+    bool isNewMapCreatedPending = false;
 
     /*!
      * @brief       Id of the room the camera most recently occupied.
@@ -181,16 +242,48 @@ class SemanticsManager
      */
     struct OpenPassageEvidence
     {
-        geometric::Plane *p_supportingWall        = nullptr;
-        Eigen::Vector3d   openingCentroid_world_m = Eigen::Vector3d::Zero();
-        std::size_t       confirmationCount       = 0U;
-        std::size_t       missedUpdateCount       = 0U;
-        std::uint64_t     lastConfirmedSkeletonFingerprint = 0U;
+        /*!
+         * @brief        Borrowed wall the opening lies in; replaced by the wall
+         *               of the latest matching crossing. The hypothesis is
+         *               dropped when it is null or bad.
+         */
+        geometric::Plane *p_supportingWall = nullptr;
+
+        /*!
+         * @brief        Running average of the opening centre in the world
+         *               frame, metres.
+         */
+        Eigen::Vector3d openingCentroid_world_m = Eigen::Vector3d::Zero();
+
+        /*!
+         * @brief        Number of distinct skeleton snapshots that have
+         *               confirmed the opening.
+         */
+        std::size_t confirmationCount = 0U;
+
+        /*!
+         * @brief        Number of updates in a row without a matching crossing;
+         *               reset to 0 on a match.
+         */
+        std::size_t missedUpdateCount = 0U;
+
+        /*!
+         * @brief        Fingerprint of the skeleton snapshot that last
+         *               confirmed the opening; a confirmation is counted only
+         *               when it changes.
+         */
+        std::uint64_t lastConfirmedSkeletonFingerprint = 0U;
         /*! Best (largest) opening radius / vertical span observed across all
          *  cycles this hypothesis has been confirmed in -- the running size
          *  estimate later written onto the confirmed Passage's width/height. */
-        double            openingRadius_m = 0.0;
-        double            heightSpan_m    = 0.0;
+        double        openingRadius_m = 0.0;
+
+        /*!
+         * @brief        Largest vertical span of the opening seen across
+         *               confirmations, metres; 0 when it was never measured
+         *               reliably.
+         */
+        double heightSpan_m = 0.0;
     };
 
     /*!
@@ -226,11 +319,20 @@ class SemanticsManager
      */
     bool hasCameraCenter = false;
 
-    /* Active map whose frame contains the tracked camera centres. */
+    /*!
+     * @brief        Active map whose frame contains the tracked camera centres;
+     *               borrowed, null until a camera centre has been tracked.
+     */
     Map *p_cameraCenterMap = nullptr;
 
     /*! @brief Last keyframe consumed by traversal sampling. */
-    long unsigned int lastTraversalFrameId    = 0U;
+    long unsigned int lastTraversalFrameId = 0U;
+
+    /*!
+     * @brief        Id of the last key frame consumed by traversal sampling;
+     *               paired with lastTraversalFrameId. 0 until one has been
+     *               consumed.
+     */
     long unsigned int lastTraversalKeyFrameId = 0U;
 
     /*! @brief Whether the traversal keyframe cursor is initialized. */
@@ -266,12 +368,35 @@ class SemanticsManager
      */
     std::unordered_map<int, std::size_t> passageZeroRoomCycles;
 
+    /*!
+     * @brief        Evidence bookkeeping for one wall that belongs to no room
+     *               or passage yet.
+     */
     struct UndefendedWallState
     {
-        geometric::Plane *p_wall           = nullptr;
-        unsigned int      unresolvedCycles = 0U;
-        std::size_t       cloudPointCount  = 0U;
-        std::size_t       observationCount = 0U;
+        /*!
+         * @brief        Borrowed wall being tracked; the entry is reset when
+         *               the same id maps to a different object.
+         */
+        geometric::Plane *p_wall = nullptr;
+
+        /*!
+         * @brief        Number of cycles in a row without growth of the wall
+         *               evidence; reset to 0 when the evidence grows.
+         */
+        unsigned int unresolvedCycles = 0U;
+
+        /*!
+         * @brief        Number of points in the wall support cloud at the last
+         *               cycle.
+         */
+        std::size_t cloudPointCount = 0U;
+
+        /*!
+         * @brief        Number of key frames that observed the wall at the last
+         *               cycle.
+         */
+        std::size_t observationCount = 0U;
     };
 
     /*! @brief Weak, unused wall hypotheses awaiting bounded retirement. */
@@ -293,16 +418,31 @@ class SemanticsManager
     };
 
     /*! @brief Suppresses repeated diagnostics for the same entity ID. */
-    std::unordered_set<int>              loggedOrphanWallIds;
+    std::unordered_set<int> loggedOrphanWallIds;
+
+    /*!
+     * @brief        Last logged reason (a text such as CLASS_NOT_WALL) for
+     *               which a wall was kept out of the rooms, by wall id, so a
+     *               reason is logged only when it changes.
+     */
     std::unordered_map<int, std::string> loggedWallRejectionReasons;
-    std::unordered_set<int>              loggedRetiredWallIds;
-    std::unordered_set<int>              loggedRoomCleanupIds;
+
+    /*!
+     * @brief        Ids of walls whose retirement has already been logged.
+     */
+    std::unordered_set<int> loggedRetiredWallIds;
+
+    /*!
+     * @brief        Ids of rooms whose orphan clean-up has already been logged.
+     */
+    std::unordered_set<int> loggedRoomCleanupIds;
+
     /*! @brief Suppresses repeated diagnostics for the same merged passage
      *  pair (survivor id, absorbed id). Passage has no isBad()/deletion
      *  lifecycle, so a merge re-detects the same overlap every cycle;
      *  the field-sync itself is idempotent, only the log line needs
      *  deduplicating. */
-    std::set<std::pair<int, int>>        loggedPassageMergeIds;
+    std::set<std::pair<int, int>> loggedPassageMergeIds;
 
     /*!
      * @brief       Maximum number of prospective rooms allowed simultaneously.
