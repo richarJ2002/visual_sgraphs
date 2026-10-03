@@ -106,6 +106,10 @@ namespace core
 class Verbose
 {
   public:
+    /*!
+     * @brief        Severity levels for core messages, from quietest to most
+     *               detailed.
+     */
     enum VerbosityLevel
     {
         /*!
@@ -140,6 +144,10 @@ class Verbose
         VERBOSITY_DEBUG = 4
     };
 
+    /*!
+     * @brief        Highest level that is still emitted; messages with a
+     *               higher level are dropped. Shared by all callers.
+     */
     static VerbosityLevel th;
 
   public:
@@ -283,6 +291,12 @@ class Settings;
 class SemanticSegmentation;
 class SemanticsManager;
 
+/*!
+ * @brief        Entry point of the SLAM core: creates the atlas, tracker,
+ *               local mapping, loop closing, viewer and semantic components,
+ *               runs them on their worker threads and receives the sensor
+ *               data.
+ */
 class System
 {
   public:
@@ -1111,6 +1125,19 @@ class System
      */
     [[nodiscard]] SystemStatus mapChanged(bool &hasMapChanged_out);
 
+    /*!
+     * @brief        Collects a consistent copy of the tracking, map, loop
+     *               closure, frontend and semantic counters used by the
+     *               mission health service.
+     *
+     * @param[out]   missionHealthSnapshot_out
+     *               The collected snapshot.
+     * @param[in]    includeSemantics_in
+     *               When true, also fills the room data and holds the atlas
+     *               semantic update lock while doing so; false skips both.
+     *
+     * @return       SYSTEM_STATUS_SUCCESS always.
+     */
     [[nodiscard]] SystemStatus getMissionHealthSnapshot(
         System::MissionHealthSnapshot &missionHealthSnapshot_out,
         bool                           includeSemantics_in = true);
@@ -1988,9 +2015,26 @@ class System
 
     /*! RGB-D frontend counters sampled by the mission-health service. */
     std::atomic<std::uint64_t> rgbdFrontendAcceptedCount{0U};
+    /*!
+     * @brief        Number of accepted RGB-D packets that reached a terminal
+     *               worker state. Written by updateRgbdFrontendHealth().
+     */
     std::atomic<std::uint64_t> rgbdFrontendProcessedCount{0U};
+    /*!
+     * @brief        Number of pending RGB-D packets replaced by a newer one.
+     *               Written by updateRgbdFrontendHealth().
+     */
     std::atomic<std::uint64_t> rgbdFrontendOverwrittenCount{0U};
+    /*!
+     * @brief        True while the RGB-D worker owns a packet. Written by
+     *               updateRgbdFrontendHealth().
+     */
     std::atomic<bool>          isRgbdFrontendWorkerInFlight{false};
+    /*!
+     * @brief        Sensor timestamp of the latest successfully tracked RGB-D
+     *               packet, in nanoseconds. Written by
+     *               updateRgbdFrontendHealth().
+     */
     std::atomic<std::int64_t>
         rgbdFrontendLastProcessedSensorTimestampNanoseconds{0};
 
