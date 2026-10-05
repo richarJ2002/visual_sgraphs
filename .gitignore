@@ -49,3 +49,11 @@ borrar/*
 
 !Dockerfile
 docker/docker-compose.yml
+
+# Coding-agent files: instructions, plans, knowledge graphs. They are local
+# working material and never part of the repository.
+.agents/
+.claude/
+AGENTS.md
+CLAUDE.md
+graphify-out/
