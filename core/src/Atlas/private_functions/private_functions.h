@@ -179,6 +179,7 @@ template <typename Entity>
     }
 
     isPlanned_out = true;
+
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 

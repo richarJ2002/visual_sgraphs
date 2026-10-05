@@ -1,7 +1,7 @@
 # LoopClosing object sources: per-method translation units, §4.5
 set(VS_GRAPHS_LOOPCLOSING_SOURCES
-  core/src/LoopClosing/collapseMergedFloors.cc
-  core/src/LoopClosing/mergeFloorEvidenceAndRooms.cc
+  core/src/LoopClosing/private_functions/collapseMergedFloors.cc
+  core/src/LoopClosing/private_functions/mergeFloorEvidenceAndRooms.cc
   core/src/LoopClosing/methods/checkFinish.cc
   core/src/LoopClosing/methods/checkNewKeyFrames.cc
   core/src/LoopClosing/methods/checkObservations.cc
@@ -33,5 +33,5 @@ set(VS_GRAPHS_LOOPCLOSING_SOURCES
   core/src/LoopClosing/methods/setMergeStatus.cc
   core/src/LoopClosing/methods/setTracker.cc
   core/src/LoopClosing/methods/stopGlobalBundleAdjustment.cc
-  core/src/LoopClosing/verifyLoopMergeFloors.cc
+  core/src/LoopClosing/private_functions/verifyLoopMergeFloors.cc
 )

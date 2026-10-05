@@ -66,7 +66,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 
-#include "../private_functions.h"
+#include "../private_functions/private_functions.h"
 
 namespace vs_graphs
 {

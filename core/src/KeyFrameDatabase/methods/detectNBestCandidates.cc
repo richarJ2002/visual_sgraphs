@@ -30,7 +30,7 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
-#include "../private_functions.h"
+#include "../private_functions/private_functions.h"
 #include "Map.h"
 
 namespace vs_graphs

@@ -34,7 +34,7 @@
 
 #include "G2oTypes.h"
 
-#include "../private_functions.h"
+#include "../private_functions/private_functions.h"
 #include "System.h"
 
 #include <mutex>

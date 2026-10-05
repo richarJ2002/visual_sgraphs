@@ -1,13 +1,13 @@
 # Atlas object sources: per-method translation units, §4.5
 set(VS_GRAPHS_ATLAS_SOURCES
-  core/src/Atlas/advanceIdentityAllocator.cc
-  core/src/Atlas/collectAnchorTags.cc
-  core/src/Atlas/consecutiveContentHash.cc
-  core/src/Atlas/consecutiveSeedTagsMatch.cc
-  core/src/Atlas/countLiveFloors.cc
-  core/src/Atlas/countLivePassages.cc
-  core/src/Atlas/countLiveRooms.cc
-  core/src/Atlas/countLiveWallPlanes.cc
+  core/src/Atlas/private_functions/advanceIdentityAllocator.cc
+  core/src/Atlas/private_functions/collectAnchorTags.cc
+  core/src/Atlas/private_functions/consecutiveContentHash.cc
+  core/src/Atlas/private_functions/consecutiveSeedTagsMatch.cc
+  core/src/Atlas/private_functions/countLiveFloors.cc
+  core/src/Atlas/private_functions/countLivePassages.cc
+  core/src/Atlas/private_functions/countLiveRooms.cc
+  core/src/Atlas/private_functions/countLiveWallPlanes.cc
   core/src/Atlas/methods/acknowledgeNewMapCreatedEvent.cc
   core/src/Atlas/methods/acquireSemanticUpdateLock.cc
   core/src/Atlas/methods/addCamera.cc
@@ -99,5 +99,5 @@ set(VS_GRAPHS_ATLAS_SOURCES
   core/src/Atlas/methods/setSkeletonClusterPoints.cc
   core/src/Atlas/methods/setSkeletonEdges.cc
   core/src/Atlas/methods/setViewer.cc
-  core/src/Atlas/resurfaceProxyFromTransferred.cc
+  core/src/Atlas/private_functions/resurfaceProxyFromTransferred.cc
 )

@@ -18,6 +18,6 @@ set(VS_GRAPHS_OPTIMIZER_SOURCES
   core/src/Optimizer/methods/poseInertialOptimizationLastFrame.cc
   core/src/Optimizer/methods/poseInertialOptimizationLastKeyFrame.cc
   core/src/Optimizer/methods/poseOptimization.cc
-  core/src/Optimizer/addPoseOnlyObservationEdges.cc
-  core/src/Optimizer/sortByVal.cc
+  core/src/Optimizer/private_functions/addPoseOnlyObservationEdges.cc
+  core/src/Optimizer/private_functions/sortByVal.cc
 )

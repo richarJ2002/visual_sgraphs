@@ -57,7 +57,7 @@
  *
  */
 
-#include "../private_functions.h"
+#include "../private_functions/private_functions.h"
 #include "ORBextractor.h"
 
 #include <iostream>

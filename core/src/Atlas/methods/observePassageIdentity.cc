@@ -31,7 +31,7 @@
 
 #include "Atlas.h"
 
-#include "../private_functions.h"
+#include "../private_functions/private_functions.h"
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs

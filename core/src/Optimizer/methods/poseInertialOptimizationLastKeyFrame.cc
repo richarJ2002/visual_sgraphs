@@ -33,7 +33,7 @@
 
 #include "Optimizer.h"
 
-#include "../private_functions.h"
+#include "../private_functions/private_functions.h"
 
 #include "G2oTypes.h"
 

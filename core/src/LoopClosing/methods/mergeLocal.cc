@@ -35,7 +35,7 @@
 #include "Optimizer.h"
 #include "Semantic/SemanticVerify.h"
 
-#include "../private_functions.h"
+#include "../private_functions/private_functions.h"
 #include "LocalMapping.h"
 #include "System.h"
 #include "Tracking.h"

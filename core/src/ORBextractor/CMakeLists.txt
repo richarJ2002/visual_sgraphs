@@ -9,9 +9,9 @@ set(VS_GRAPHS_ORBEXTRACTOR_SOURCES
   core/src/ORBextractor/methods/computeKeyPointsOld.cc
   core/src/ORBextractor/operators/call/withImage.cc
   core/src/ORBextractor/methods/computePyramid.cc
-  core/src/ORBextractor/icAngle.cc
-  core/src/ORBextractor/computeOrbDescriptor.cc
-  core/src/ORBextractor/computeOrientation.cc
-  core/src/ORBextractor/compareNodes.cc
-  core/src/ORBextractor/computeDescriptors.cc
+  core/src/ORBextractor/private_functions/icAngle.cc
+  core/src/ORBextractor/private_functions/computeOrbDescriptor.cc
+  core/src/ORBextractor/private_functions/computeOrientation.cc
+  core/src/ORBextractor/private_functions/compareNodes.cc
+  core/src/ORBextractor/private_functions/computeDescriptors.cc
 )

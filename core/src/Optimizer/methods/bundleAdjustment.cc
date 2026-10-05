@@ -36,7 +36,7 @@
 #include "OptimizerEdgeLookup.h"
 #include "Utils/Utils/objects/Utils.h"
 
-#include "../private_functions.h"
+#include "../private_functions/private_functions.h"
 #include "System.h"
 #include <rclcpp/logging.hpp>
 
