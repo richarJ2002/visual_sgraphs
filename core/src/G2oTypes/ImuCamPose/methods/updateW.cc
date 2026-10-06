@@ -78,6 +78,7 @@ ImuCamPoseStatus ImuCamPose::updateW(const double *p_updateVector_in)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
+        DR  = rotation2;
         its = 0;
     }
 

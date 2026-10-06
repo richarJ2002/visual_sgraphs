@@ -1027,11 +1027,20 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_lib
   )
 
-  # ImuCamPose rotations built from a two-camera (stereo-inertial) frame.
+  # G2oTypes: ImuCamPose rotations and their periodic re-orthonormalisation,
+  # ConstraintPoseImu.
   ament_add_gtest(test_G2oTypes
     test/test_G2oTypes.cpp
   )
   target_link_libraries(test_G2oTypes
+    ${PROJECT_NAME}_lib
+  )
+
+  # Sim3Solver inlier thresholds and convergence iterate on synthetic key frames.
+  ament_add_gtest(test_Sim3Solver
+    test/test_Sim3Solver.cpp
+  )
+  target_link_libraries(test_Sim3Solver
     ${PROJECT_NAME}_lib
   )
 

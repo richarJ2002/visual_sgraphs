@@ -308,7 +308,7 @@ SemanticVerifyStatus SemanticVerify::evaluateConsecutiveMergeGate(
     AlignmentCheck centroidCheck{};
     if (checkAnchorRoomCentroids(anchorPairs,
                                  mergeTransform_absorbedToSurviving_in,
-                                 configuration_in.passage_match_tolerance_m,
+                                 configuration_in.room_centroid_tolerance_m,
                                  centroidCheck) !=
         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
     {

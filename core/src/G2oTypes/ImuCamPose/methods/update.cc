@@ -60,7 +60,7 @@ ImuCamPoseStatus ImuCamPose::update(const double *p_updateVector_in)
     }
     Rwb = Rwb * rotation2;
 
-    // Normalize rotation after 5 updates
+    /* Re-orthonormalise the body rotation every 3 updates. */
     its++;
     if (its >= 3)
     {
@@ -73,6 +73,7 @@ ImuCamPoseStatus ImuCamPose::update(const double *p_updateVector_in)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
+        Rwb = rotation3;
         its = 0;
     }
 

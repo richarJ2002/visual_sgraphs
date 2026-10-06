@@ -16,9 +16,10 @@
 /*!
  * @file            test_G2oTypes.cpp
  *
- * @brief           ImuCamPose built from a two-camera frame: each camera's
- *                  camera-to-body rotation (Rbc) is the transpose of its
- *                  body-to-camera rotation (Rcb).
+ * @brief           G2oTypes regression tests: the camera-body rotations of an
+ *                  ImuCamPose built from a two-camera frame, the periodic
+ *                  rotation clean-up of ImuCamPose::update and updateW, and the
+ *                  symmetric information matrix of ConstraintPoseImu.
  */
 
 #include "G2oTypes.h"
@@ -63,6 +64,115 @@ TEST(ImuCamPose, BothCamerasGetTheTransposedBodyRotation)
     ASSERT_EQ(pose.Rbc.size(), 2U);
     EXPECT_TRUE(pose.Rbc[0].isApprox(pose.Rcb[0].transpose()));
     EXPECT_TRUE(pose.Rbc[1].isApprox(pose.Rcb[1].transpose()));
+}
+
+/*!
+ * @brief           Optimiser step that changes nothing: zero rotation vector
+ *                  (radians) and zero translation (metres).
+ */
+const double ZERO_UPDATE_STEP[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+/*!
+ * @brief           Scale applied to a rotation matrix to stand in for the
+ *                  rounding drift that many optimiser steps accumulate.
+ */
+constexpr double ROTATION_DRIFT_SCALE = 1.01;
+
+/*!
+ * @brief           Gives a pose one camera whose frame is the body frame,
+ *                  with the body frame at the world origin, no camera model
+ *                  and a zero update counter.
+ *
+ * @param[in,out]   pose_inout
+ *                  Pose to set up; its camera models, reference rotation Rwb0
+ *                  and accumulated rotation DR are not touched.
+ */
+void setUpSingleCameraPose(ImuCamPose &pose_inout)
+{
+    const std::vector<Eigen::Matrix3d> identityRotations(
+        1,
+        Eigen::Matrix3d::Identity());
+    const std::vector<Eigen::Vector3d> zeroTranslations(
+        1,
+        Eigen::Vector3d::Zero());
+    ASSERT_EQ(pose_inout.setParam(identityRotations,
+                                  zeroTranslations,
+                                  identityRotations,
+                                  zeroTranslations,
+                                  0.0),
+              ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS);
+    pose_inout.its = 0;
+}
+
+/*!
+ * @brief           Checks that the third update replaces a drifted body
+ *                  rotation by the closest rotation matrix.
+ */
+TEST(ImuCamPose, UpdateRestoresAnOrthonormalBodyRotationOnTheThirdCall)
+{
+    ImuCamPose pose;
+    setUpSingleCameraPose(pose);
+    const Eigen::Matrix3d bodyRotation_bodyToWorld =
+        Eigen::AngleAxisd(0.3, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+    pose.Rwb = ROTATION_DRIFT_SCALE * bodyRotation_bodyToWorld;
+
+    for (int callIndex = 0; callIndex < 3; callIndex++)
+    {
+        ASSERT_EQ(pose.update(ZERO_UPDATE_STEP),
+                  ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS);
+    }
+
+    EXPECT_TRUE((pose.Rwb * pose.Rwb.transpose())
+                    .isApprox(Eigen::Matrix3d::Identity(), 1.0e-12));
+    EXPECT_TRUE(pose.Rwb.isApprox(bodyRotation_bodyToWorld, 1.0e-12));
+}
+
+/*!
+ * @brief           Checks that the fifth world-frame update replaces a drifted
+ *                  accumulated yaw rotation by the closest rotation matrix.
+ */
+TEST(ImuCamPose, UpdateWRestoresAnOrthonormalYawRotationOnTheFifthCall)
+{
+    ImuCamPose pose;
+    setUpSingleCameraPose(pose);
+    pose.Rwb0 = Eigen::Matrix3d::Identity();
+    const Eigen::Matrix3d yawRotation_world =
+        Eigen::AngleAxisd(0.3, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+    pose.DR = ROTATION_DRIFT_SCALE * yawRotation_world;
+
+    for (int callIndex = 0; callIndex < 5; callIndex++)
+    {
+        ASSERT_EQ(pose.updateW(ZERO_UPDATE_STEP),
+                  ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS);
+    }
+
+    EXPECT_TRUE((pose.DR * pose.DR.transpose())
+                    .isApprox(Eigen::Matrix3d::Identity(), 1.0e-12));
+    EXPECT_TRUE(pose.DR.isApprox(yawRotation_world, 1.0e-12));
+}
+
+/*!
+ * @brief           Checks that a prior built from an asymmetric information
+ *                  matrix keeps the symmetric part of that matrix.
+ */
+TEST(ConstraintPoseImu, KeepsTheSymmetricPartOfTheInformationMatrix)
+{
+    /* Positive definite symmetric part; the asymmetry sits above the
+     * diagonal, which the eigen solver alone would never read. */
+    Matrix15d informationMatrix = 10.0 * Matrix15d::Identity();
+    informationMatrix(0, 1)     = 2.0;
+
+    const ConstraintPoseImu constraint(Eigen::Matrix3d::Identity(),
+                                       Eigen::Vector3d::Zero(),
+                                       Eigen::Vector3d::Zero(),
+                                       Eigen::Vector3d::Zero(),
+                                       Eigen::Vector3d::Zero(),
+                                       informationMatrix);
+
+    const Matrix15d symmetricPart =
+        (informationMatrix + informationMatrix.transpose()) / 2.0;
+    EXPECT_TRUE(constraint.H.isApprox(constraint.H.transpose(), 1.0e-12));
+    EXPECT_TRUE(constraint.H.isApprox(symmetricPart, 1.0e-12));
 }
 
 } // namespace

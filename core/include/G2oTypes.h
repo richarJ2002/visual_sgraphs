@@ -630,7 +630,9 @@ class ImuCamPose
      * @brief           Applies an optimiser step to the IMU pose in the body
      *                  frame, then recomputes every camera pose. The
      *                  translation step is rotated into the world by the body
-     *                  rotation before it is added.
+     *                  rotation before it is added. Every third call replaces
+     *                  the body rotation by its closest rotation matrix, so
+     *                  rounding drift does not accumulate.
      *
      * @param[in]       p_updateVector_in
      *                  Six values: rotation vector (radians) then translation
@@ -643,7 +645,10 @@ class ImuCamPose
      * @brief           Applies an optimiser step to the IMU pose in the world
      *                  frame, then recomputes every camera pose. The rotation
      *                  step accumulates in DR and acts on the reference
-     *                  rotation Rwb0.
+     *                  rotation Rwb0. Every fifth call keeps only the yaw part
+     *                  of DR and replaces DR by its closest rotation matrix;
+     *                  the body rotation of that call still uses DR from
+     *                  before the clean-up.
      *
      * @param[in]       p_updateVector_in
      *                  Six values: rotation vector (radians) then translation
@@ -2772,9 +2777,9 @@ class ConstraintPoseImu
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /*!
-     * @brief           Stores the prior values and the information matrix, with
-     *                  eigenvalues of the information matrix below 1e-12 set to
-     *                  zero.
+     * @brief           Stores the prior values and the symmetric part of the
+     *                  information matrix, (H_in + H_in^T) / 2, with its
+     *                  eigenvalues below 1e-12 set to zero.
      *
      * @param[in]       bodyRotation_bodyToWorld_in
      *                  Prior rotation of the IMU (body) frame in the world.
@@ -2810,7 +2815,8 @@ class ConstraintPoseImu
         ba(ba_in),
         H(H_in)
     {
-        H = (H + H) / 2;
+        /* eval() builds the sum before H is overwritten (no aliasing). */
+        H = (H + H.transpose()).eval() / 2;
         Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double, 15, 15>> es(H);
         Eigen::Matrix<double, 15, 1> eigs = es.eigenvalues();
         for (int i = 0; i < 15; i++)

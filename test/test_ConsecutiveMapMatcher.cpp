@@ -819,6 +819,93 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
             (p_wall->setMapClouds(spanCloud)),
             vs_graphs::core::geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     }
+
+    /*!
+     * @brief           Builds the matching two-room pair of TC1 in both maps,
+     *                  with room_1 of the absorbed map moved along x, and runs
+     *                  the consecutive-map merge gate with an identity
+     *                  transform, a 0.20 m passage tolerance and a 0.50 m
+     *                  anchor-room centroid tolerance.
+     *
+     * @param[in]       roomOffset_m_in
+     *                  Shift of the absorbed room_1 centroid along x, metres.
+     *
+     * @param[out]      result_out
+     *                  Gate result (decision and reason).
+     */
+    void runRoomOffsetGate(
+        double                                              roomOffset_m_in,
+        vs_graphs::core::semantic::SemanticMergeGateResult &result_out)
+    {
+        vs_graphs::core::semantic::Room *r0_2 =
+            addRoomWithWallsAndPassage(p_map0,
+                                       2,
+                                       "room_2",
+                                       ROOM2_CENTROID,
+                                       Eigen::Vector3d(4.5, 0.0, 1.0),
+                                       12,
+                                       11,
+                                       nullptr);
+        vs_graphs::core::semantic::Room *r0_1 = addRoomWithWallsAndPassage(
+            p_map0,
+            1,
+            "room_1",
+            ROOM1_CENTROID + Eigen::Vector3d(roomOffset_m_in, 0.0, 0.0),
+            Eigen::Vector3d(1.5, 0.0, 1.0),
+            11,
+            1,
+            r0_2);
+        std::vector<vs_graphs::core::semantic::Passage *> r0_2Passages{};
+        ASSERT_EQ((r0_2->getPassages(r0_2Passages)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        ASSERT_EQ(
+            (r0_2Passages[0]->setProspectiveRoom(r0_1)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        vs_graphs::core::semantic::Room *r1_2 =
+            addRoomWithWallsAndPassage(p_map1,
+                                       2,
+                                       "room_2",
+                                       ROOM2_CENTROID,
+                                       Eigen::Vector3d(4.5, 0.0, 1.0),
+                                       12,
+                                       11,
+                                       nullptr);
+        vs_graphs::core::semantic::Room *r1_1 =
+            addRoomWithWallsAndPassage(p_map1,
+                                       1,
+                                       "room_1",
+                                       ROOM1_CENTROID,
+                                       Eigen::Vector3d(1.5, 0.0, 1.0),
+                                       11,
+                                       1,
+                                       r1_2);
+        std::vector<vs_graphs::core::semantic::Passage *> r1_2Passages{};
+        ASSERT_EQ((r1_2->getPassages(r1_2Passages)),
+                  vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
+        ASSERT_EQ(
+            (r1_2Passages[0]->setProspectiveRoom(r1_1)),
+            vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+        EXPECT_NE(addFloor(p_map0, 0, FLOOR_EQ), nullptr);
+        EXPECT_NE(addFloor(p_map1, 0, FLOOR_EQ), nullptr);
+        setSeedRooms(p_map0, p_map1, r0_1, r1_1);
+        const g2o::Sim3 identityTransform(Eigen::Matrix3d::Identity(),
+                                          Eigen::Vector3d::Zero(),
+                                          1.0);
+        vs_graphs::core::semantic::SemanticVerify::MapMergeConfig config;
+        config.wall_coplanar_angle_deg   = 5.0;
+        config.wall_edge_overlap_m       = 0.50;
+        config.passage_match_tolerance_m = 0.20;
+        config.floor_match_tolerance_m   = 0.10;
+        config.room_centroid_tolerance_m = 0.50;
+        ASSERT_EQ((vs_graphs::core::semantic::SemanticVerify::
+                       evaluateConsecutiveMergeGate(p_map1,
+                                                    p_map0,
+                                                    identityTransform,
+                                                    result_out,
+                                                    config)),
+                  vs_graphs::core::semantic::SemanticVerifyStatus::
+                      SEMANTIC_VERIFY_STATUS_SUCCESS);
+    }
 };
 
 // =============================================================================
@@ -2073,4 +2160,35 @@ TEST_F(ConsecutiveMapMatcherTest, TC13_proxyReunionOnMerge)
     ASSERT_EQ((proxy12->isRecoveryProxy(isRecoveryProxy3)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     EXPECT_FALSE(isRecoveryProxy3) << "TC13: second proxy must surface as well";
+}
+
+/*!
+ * @brief           Checks that an anchor room whose centroid moved 0.30 m,
+ *                  beyond the passage tolerance but within the room-centroid
+ *                  tolerance, is accepted as ALIGNED.
+ */
+TEST_F(ConsecutiveMapMatcherTest, TC14a_roomOffsetWithinRoomToleranceAccepts)
+{
+    vs_graphs::core::semantic::SemanticMergeGateResult result{};
+    runRoomOffsetGate(0.30, result);
+    EXPECT_EQ(result.decision,
+              vs_graphs::core::semantic::SemanticMergeDecision::ACCEPT);
+    EXPECT_EQ(result.reason,
+              vs_graphs::core::semantic::SemanticMergeReason::ALIGNED);
+}
+
+/*!
+ * @brief           Checks that an anchor room whose centroid moved 0.60 m,
+ *                  beyond the room-centroid tolerance, is rejected as a
+ *                  WALL_ALIGNMENT_CONTRADICTION.
+ */
+TEST_F(ConsecutiveMapMatcherTest, TC14b_roomOffsetBeyondRoomToleranceRejects)
+{
+    vs_graphs::core::semantic::SemanticMergeGateResult result{};
+    runRoomOffsetGate(0.60, result);
+    EXPECT_EQ(result.decision,
+              vs_graphs::core::semantic::SemanticMergeDecision::REJECT);
+    EXPECT_EQ(result.reason,
+              vs_graphs::core::semantic::SemanticMergeReason::
+                  WALL_ALIGNMENT_CONTRADICTION);
 }

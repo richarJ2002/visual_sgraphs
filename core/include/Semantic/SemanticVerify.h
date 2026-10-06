@@ -530,8 +530,7 @@ class SemanticVerify
     {
         /*!
          * @brief           Largest distance between a mapped absorbed passage
-         *                  (or anchor room) centroid and its surviving partner,
-         *                  metres.
+         *                  centroid and its surviving partner, metres.
          */
         double passage_match_tolerance_m{0.20};
         /*!
@@ -551,8 +550,9 @@ class SemanticVerify
          */
         double floor_match_tolerance_m{0.10};
         /*!
-         * @brief           Loaded from the mapMerge parameters; no check reads
-         *                  it yet.
+         * @brief           Largest distance between a mapped absorbed anchor
+         *                  room centroid and its tag-matched surviving partner,
+         *                  metres.
          */
         double room_centroid_tolerance_m{0.50};
     };
@@ -567,11 +567,11 @@ class SemanticVerify
 
     /*!
      * @brief           Consecutive-map variant of evaluateMapMergeGate: same
-     *                  decision vocabulary, but wall/passage/floor tolerances
-     *                  come from MapMergeConfig (mapMerge params) instead of
-     *                  SemanticVerifyConfig, rooms pair by non-empty room tag
-     *                  only (never by map-local ID), and wall pairs must
-     *                  additionally overlap along the wall direction.
+     *                  decision vocabulary, but wall/passage/floor/anchor-room
+     *                  tolerances come from MapMergeConfig (mapMerge params)
+     *                  instead of SemanticVerifyConfig, rooms pair by non-empty
+     *                  room tag only (never by map-local ID), and wall pairs
+     *                  must additionally overlap along the wall direction.
      *                  Verification only: mutates nothing.
      */
     [[nodiscard]] static SemanticVerifyStatus evaluateConsecutiveMergeGate(

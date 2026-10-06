@@ -805,13 +805,13 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
     mapPointCount_out      = static_cast<int>(localMapPointList.size());
     edgeCount_out = static_cast<int>(edgesMonos.size() + edgesStereos.size());
 
+    if (p_pbStopFlag_in)
+        optimizer.setForceStopFlag(p_pbStopFlag_in);
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
     float error = optimizer.activeRobustChi2();
     optimizer.optimize(optimizationIterationCount); // Originally to 2
     float errorEnd = optimizer.activeRobustChi2();
-    if (p_pbStopFlag_in)
-        optimizer.setForceStopFlag(p_pbStopFlag_in);
 
     std::vector<std::pair<KeyFrame *, MapPoint *>> vToErase;
     vToErase.reserve(edgesMonos.size() + edgesStereos.size());

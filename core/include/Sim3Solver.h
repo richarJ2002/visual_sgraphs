@@ -240,8 +240,8 @@ class Sim3Solver
                 const float sigmaSquare2 =
                     pKFm->levelSigmaSquared[keyPoint2.octave];
 
-                maxError1.push_back(9.210 * sigmaSquare1);
-                maxError2.push_back(9.210 * sigmaSquare2);
+                maxError1.push_back(9.210F * sigmaSquare1);
+                maxError2.push_back(9.210F * sigmaSquare2);
 
                 mapPoints1.push_back(p_mapPoint1);
                 mapPoints2.push_back(p_mapPoint2);
@@ -626,15 +626,16 @@ class Sim3Solver
     /*!
      * @brief           Largest squared reprojection error, in pixels squared,
      *                  that counts as an inlier in the first image, per
-     *                  correspondence. Stored as integers, so fractions are
-     *                  truncated.
+     *                  correspondence: 9.210 (chi-square, two degrees of
+     *                  freedom, 99 %) times the key point's level sigma
+     *                  squared.
      */
-    std::vector<size_t> maxError1;
+    std::vector<float> maxError1;
 
     /*!
      * @brief           Same as maxError1 for the second image.
      */
-    std::vector<size_t> maxError2;
+    std::vector<float> maxError2;
 
     /*!
      * @brief           Number of usable 3D-3D correspondences.
