@@ -797,8 +797,8 @@ SemanticsManagerStatus SemanticsManager::consolidateRoomsInFreeSpaceCluster(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        std::cout << "[SemMgr] Fused semantic::Room#" << duplicateRoomId
-                  << " into semantic::Room#" << retainedRoom_inoutId
+        std::cout << "[SemMgr] Fused Room#" << duplicateRoomId << " into Room#"
+                  << retainedRoom_inoutId
                   << " using connected free-space evidence (centroid distance "
                   << centroidDistance_m << " m)." << std::endl;
     }

@@ -223,7 +223,7 @@ SemanticsManagerStatus
                          __func__);
         }
         std::cout << "[SemMgr] Wall#" << candidateWallGetId
-                  << " rejected from semantic::Room#" << room_inoutId
+                  << " rejected from Room#" << room_inoutId
                   << ": this face was observed from the opposite side, so it "
                      "bounds the neighbouring room."
                   << std::endl;
@@ -464,9 +464,8 @@ SemanticsManagerStatus
                              __func__);
             }
             std::cout << "[SemMgr] Replaced clashing Wall#" << weakerWallGetId
-                      << " in semantic::Room#" << room_inoutId2
-                      << " with stronger Wall#" << candidateWallGetId2 << "."
-                      << std::endl;
+                      << " in Room#" << room_inoutId2 << " with stronger Wall#"
+                      << candidateWallGetId2 << "." << std::endl;
         }
     }
 
@@ -624,8 +623,8 @@ SemanticsManagerStatus
                              __func__);
             }
             std::cout << "[SemMgr] Wall#" << candidateWallGetId3
-                      << " rejected from semantic::Room#" << room_inoutId3
-                      << ": crosses semantic::Room#" << otherRoomId
+                      << " rejected from Room#" << room_inoutId3
+                      << ": crosses Room#" << otherRoomId
                       << "'s already-admitted Wall#" << otherWallGetId << "."
                       << std::endl;
             wasAdmitted_out = false;

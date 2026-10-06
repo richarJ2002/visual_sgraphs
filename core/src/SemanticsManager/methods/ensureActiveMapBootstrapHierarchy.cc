@@ -394,7 +394,7 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        if (p_bootstrapRoom->setName("semantic::Room#" +
+        if (p_bootstrapRoom->setName("Room#" +
                                      std::to_string(bootstrapRoomId2)) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
         {

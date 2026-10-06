@@ -28,19 +28,24 @@
  * @brief           Checks that System::initialize() reports an unreadable
  *                  settings or vocabulary file as a status (it used to end the
  *                  process with exit(-1)), that a system that never
- *                  initialised can be destroyed safely, and that the tracker's
- *                  parameter-file reader rejects an unknown camera type.
+ *                  initialised can be destroyed safely, that the tracker's
+ *                  parameter-file reader rejects an unknown camera type, and
+ *                  that both camera readers accept Camera.type
+ *                  "KannalaBrandt8".
  */
 
 #include "Atlas.h"
+#include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 #include "System.h"
 #include "Tracking.h"
+#include "Utils/Settings/objects/Settings.h"
 
 #include <cstdio>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <opencv2/core/persistence.hpp>
 #include <string>
+#include <vector>
 
 namespace vs_graphs
 {
@@ -48,6 +53,15 @@ namespace core
 {
 namespace
 {
+
+/*!
+ * @brief           ORB extractor section of every settings file below; few
+ *                  features and levels keep the extractors small.
+ */
+const std::string ORB_EXTRACTOR_SETTINGS =
+    "ORBextractor.nFeatures: 100\nORBextractor.scaleFactor: 1.2\n"
+    "ORBextractor.nLevels: 2\nORBextractor.iniThFAST: 20\n"
+    "ORBextractor.minThFAST: 7\n";
 
 /*!
  * @brief           Settings file written for one test and removed when the test
@@ -152,10 +166,8 @@ TEST(TrackingCameraParameters, ReportsAnUnknownCameraType)
         "Camera.fx: 500.0\nCamera.fy: 500.0\n"
         "Camera.cx: 320.0\nCamera.cy: 240.0\n"
         "Camera.k1: 0.0\nCamera.k2: 0.0\nCamera.p1: 0.0\nCamera.p2: 0.0\n"
-        "Camera.fps: 30.0\nCamera.RGB: 1\n"
-        "ORBextractor.nFeatures: 100\nORBextractor.scaleFactor: 1.2\n"
-        "ORBextractor.nLevels: 2\nORBextractor.iniThFAST: 20\n"
-        "ORBextractor.minThFAST: 7\n");
+        "Camera.fps: 30.0\nCamera.RGB: 1\n" +
+            ORB_EXTRACTOR_SETTINGS);
     const ReadableSettingsFile unknownCameraSettings(
         "tracking_unknown_camera_settings.yaml",
         "%YAML:1.0\n---\nCamera.type: \"NoSuchModel\"\n");
@@ -184,6 +196,96 @@ TEST(TrackingCameraParameters, ReportsAnUnknownCameraType)
     EXPECT_EQ(parseStatus, TrackingStatus::TRACKING_STATUS_SUCCESS);
     EXPECT_FALSE(isParsed);
     EXPECT_NE(errorOutput.find("NoSuchModel"), std::string::npos);
+}
+
+/*!
+ * @brief           Checks that the tracker's parameter-file camera reader
+ *                  accepts Camera.type "KannalaBrandt8", the spelling the
+ *                  fisheye configuration files use, and builds a fisheye
+ *                  camera.
+ */
+TEST(TrackingCameraParameters, BuildsAKannalaBrandt8Camera)
+{
+    const ReadableSettingsFile fisheyeSettings(
+        "tracking_fisheye_settings.yaml",
+        "%YAML:1.0\n---\n"
+        "Camera.type: \"KannalaBrandt8\"\n"
+        "Camera.fx: 190.0\nCamera.fy: 190.0\n"
+        "Camera.cx: 254.0\nCamera.cy: 256.0\n"
+        "Camera.k1: 0.0\nCamera.k2: 0.0\nCamera.k3: 0.0\nCamera.k4: 0.0\n"
+        "Camera.fps: 30.0\nCamera.RGB: 1\n" +
+            ORB_EXTRACTOR_SETTINGS);
+
+    /* A monocular file needs no vocabulary, drawers or database. */
+    System   uninitialisedSystem;
+    Atlas    trackerAtlas(0);
+    Tracking fisheyeTracker(&uninitialisedSystem,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            &trackerAtlas,
+                            nullptr,
+                            fisheyeSettings.path,
+                            System::MONOCULAR,
+                            nullptr);
+
+    std::vector<camera_models::geometriccamera::GeometricCamera *>
+        atlasCameras{};
+    ASSERT_EQ(trackerAtlas.getAllCameras(atlasCameras),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ(atlasCameras.size(), 1U);
+    unsigned int cameraModelType{};
+    ASSERT_EQ(atlasCameras.front()->getType(cameraModelType),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    /* == reads CAM_FISHEYE by value; it has no out-of-class definition. */
+    EXPECT_TRUE(cameraModelType ==
+                camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE);
+}
+
+/*!
+ * @brief           Checks that the settings reader accepts Camera.type
+ *                  "KannalaBrandt8", the spelling the fisheye configuration
+ *                  files use, and builds a Kannala-Brandt camera.
+ */
+TEST(SettingsCamera, BuildsAKannalaBrandt8Camera)
+{
+    const ReadableSettingsFile fisheyeSettings(
+        "settings_fisheye_camera.yaml",
+        "%YAML:1.0\n---\n"
+        "Camera.type: \"KannalaBrandt8\"\n"
+        "Camera1.fx: 190.0\nCamera1.fy: 190.0\n"
+        "Camera1.cx: 254.0\nCamera1.cy: 256.0\n"
+        "Camera1.k1: 0.0\nCamera1.k2: 0.0\n"
+        "Camera1.k3: 0.0\nCamera1.k4: 0.0\n"
+        "Camera.width: 512\nCamera.height: 512\n"
+        "Camera.fps: 30\nCamera.RGB: 1\n" +
+            ORB_EXTRACTOR_SETTINGS +
+            "Viewer.KeyFrameSize: 0.05\nViewer.KeyFrameLineWidth: 1.0\n"
+            "Viewer.GraphLineWidth: 0.9\nViewer.PointSize: 2.0\n"
+            "Viewer.CameraSize: 0.08\nViewer.CameraLineWidth: 3.0\n"
+            "Viewer.ViewpointX: 0.0\nViewer.ViewpointY: -0.7\n"
+            "Viewer.ViewpointZ: -3.5\nViewer.ViewpointF: 500.0\n");
+
+    utils::settings::Settings fisheyeCameraSettings(fisheyeSettings.path,
+                                                    System::MONOCULAR);
+
+    utils::settings::Settings::CameraType cameraType{};
+    ASSERT_EQ(fisheyeCameraSettings.cameraType(cameraType),
+              utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS);
+    EXPECT_EQ(cameraType,
+              utils::settings::Settings::CameraType::KANNALA_BRANDT);
+    camera_models::geometriccamera::GeometricCamera *p_firstCamera = nullptr;
+    ASSERT_EQ(fisheyeCameraSettings.camera1(p_firstCamera),
+              utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS);
+    ASSERT_NE(p_firstCamera, nullptr);
+    unsigned int cameraModelType{};
+    ASSERT_EQ(p_firstCamera->getType(cameraModelType),
+              camera_models::geometriccamera::GeometricCameraStatus::
+                  GEOMETRIC_CAMERA_STATUS_SUCCESS);
+    /* == reads CAM_FISHEYE by value; it has no out-of-class definition. */
+    EXPECT_TRUE(cameraModelType ==
+                camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE);
 }
 
 } // namespace core

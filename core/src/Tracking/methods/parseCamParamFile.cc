@@ -214,7 +214,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
         }
         p_camera = p_atlasCamera;
 
-        std::cout << "- Camera: camera_models::Pinhole" << std::endl;
+        std::cout << "- Camera: Pinhole" << std::endl;
         std::cout << "- Image scale: " << imageScale << std::endl;
         std::cout << "- fx: " << fx << std::endl;
         std::cout << "- fy: " << fy << std::endl;
@@ -246,7 +246,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
         calibrationMatrixEigen(0, 2) = cx;
         calibrationMatrixEigen(1, 2) = cy;
     }
-    else if (cameraName == "camera_models::KannalaBrandt8")
+    else if (cameraName == "KannalaBrandt8")
     {
         float fx   = 0.0F;
         float fy   = 0.0F;

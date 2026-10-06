@@ -55,7 +55,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
     if (s_in.cameraModel == Settings::CameraType::PINHOLE ||
         s_in.cameraModel == Settings::CameraType::RECTIFIED)
     {
-        output_inout << "camera_models::Pinhole";
+        output_inout << "Pinhole";
     }
     else
     {
@@ -107,7 +107,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
         output_inout << "\t- Camera#2 parameters (";
         if (s_in.cameraModel == Settings::CameraType::PINHOLE)
         {
-            output_inout << "camera_models::Pinhole";
+            output_inout << "Pinhole";
         }
         else
         {

@@ -141,9 +141,8 @@ LoopClosingStatus collapseMergedFloors(Map *p_survivingMap_inout)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        std::cout << "[LoopClosing] Fused duplicate semantic::Floor#"
-                  << duplicateFloorId << " into semantic::Floor#"
-                  << keeperFloorId
+        std::cout << "[LoopClosing] Fused duplicate Floor#" << duplicateFloorId
+                  << " into Floor#" << keeperFloorId
                   << " and retained the better-observed plane identity."
                   << std::endl;
     }

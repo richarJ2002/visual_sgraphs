@@ -196,7 +196,7 @@ TEST(SemanticBootstrapPhase1, BootstrapInitializationIsIdempotent)
     std::string name{};
     ASSERT_EQ((p_firstRoom->getName(name)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    EXPECT_EQ(name, "semantic::Room#0");
+    EXPECT_EQ(name, "Room#0");
     int                            id2{};
     std::vector<semantic::Floor *> allFloors2{};
     Map                           *p_currentMap4 = nullptr;
@@ -216,7 +216,7 @@ TEST(SemanticBootstrapPhase1, BootstrapInitializationIsIdempotent)
               MapStatus::MAP_STATUS_SUCCESS);
     ASSERT_EQ((allFloors3.front()->getName(name2)),
               vs_graphs::core::semantic::FloorStatus::FLOOR_STATUS_SUCCESS);
-    EXPECT_EQ(name2, "semantic::Floor#0");
+    EXPECT_EQ(name2, "Floor#0");
 }
 
 /*!
@@ -288,7 +288,7 @@ TEST(SemanticBootstrapPhase1,
     std::string name{};
     ASSERT_EQ((p_recoveredRoom->getName(name)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    EXPECT_EQ(name, "semantic::Room#0");
+    EXPECT_EQ(name, "Room#0");
     bool isRecoveryProxy2{};
     ASSERT_EQ((p_recoveredRoom->isRecoveryProxy(isRecoveryProxy2)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -386,7 +386,7 @@ TEST(SemanticBootstrapPhase1,
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((roomOne.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    ASSERT_EQ((roomOne.setName("semantic::Room#1")),
+    ASSERT_EQ((roomOne.setName("Room#1")),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((roomOne.setCentroid(Eigen::Vector3d(4.0, 0.0, 1.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -601,7 +601,7 @@ TEST(SemanticBootstrapPhase1, BootstrapIgnoresSpuriousRoomWhenRecoveryPending)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((spuriousRoom.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    ASSERT_EQ((spuriousRoom.setName("semantic::Room#99")),
+    ASSERT_EQ((spuriousRoom.setName("Room#99")),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((spuriousRoom.setCentroid(Eigen::Vector3d(5.0, 5.0, 1.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -923,7 +923,7 @@ TEST(SemanticBootstrapPhase1, IdempotentBootstrapPreservesTraversedCurrentRoom)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((roomOne.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    ASSERT_EQ((roomOne.setName("semantic::Room#1")),
+    ASSERT_EQ((roomOne.setName("Room#1")),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((roomOne.setCentroid(Eigen::Vector3d(4.0, 0.0, 1.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -1611,7 +1611,7 @@ TEST(SemanticBootstrapPhase1, ZeroPoseKeyFrameFallsBackToSnapshotCentroid)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((roomTwo.setRoomVariant(semantic::Room::RoomVariant::ROOM)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
-    ASSERT_EQ((roomTwo.setName("semantic::Room#2")),
+    ASSERT_EQ((roomTwo.setName("Room#2")),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     ASSERT_EQ((roomTwo.setCentroid(Eigen::Vector3d(2.0, 3.0, 4.0))),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);

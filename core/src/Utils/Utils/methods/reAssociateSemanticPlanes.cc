@@ -785,9 +785,9 @@ UtilsStatus Utils::reAssociateSemanticPlanes(Atlas *p_atlas_in)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            std::cout << "[SemanticMerge] Fused geometric::Plane#"
-                      << retiredPlaneGetId << " into geometric::Plane#"
-                      << retainedPlaneGetId << '.' << std::endl;
+            std::cout << "[SemanticMerge] Fused Plane#" << retiredPlaneGetId
+                      << " into Plane#" << retainedPlaneGetId << '.'
+                      << std::endl;
 
             mergedPlaneInPass = true;
             break;

@@ -586,7 +586,7 @@ void SemanticsManager::run(void)
                     if (loggedRoomCleanupIds.insert(roomId).second)
                     {
                         std::cout << "[SemMgr] Cleaning up orphaned "
-                                     "prospective semantic::Room#"
+                                     "prospective Room#"
                                   << roomId
                                   << " (no active passage reference or invalid "
                                      "geometry)."

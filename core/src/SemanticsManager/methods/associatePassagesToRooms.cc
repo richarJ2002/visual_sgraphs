@@ -675,10 +675,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                 __func__);
                         }
                         std::cout
-                            << "[SemMgr] semantic::Passage#" << passageId3
-                            << " skipping semantic::Room#" << roomId2
-                            << " (only " << validWallCount
-                            << " valid wall(s); needs "
+                            << "[SemMgr] Passage#" << passageId3
+                            << " skipping Room#" << roomId2 << " (only "
+                            << validWallCount << " valid wall(s); needs "
                             << minimumWallsForProximityAssociation
                             << " without exact supporting-wall ownership)."
                             << std::endl;
@@ -935,15 +934,15 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout << "[SemMgr] semantic::Passage#" << passageId4
-                          << " matched semantic::Room#" << negativeSideRoomId
-                          << " (semantic::Floor#" << negativeFloorId2
-                          << ") and semantic::Room#" << positiveSideRoomId
-                          << " (semantic::Floor#" << positiveFloorId2
+                std::cout << "[SemMgr] Passage#" << passageId4
+                          << " matched Room#" << negativeSideRoomId
+                          << " (Floor#" << negativeFloorId2 << ") and Room#"
+                          << positiveSideRoomId << " (Floor#"
+                          << positiveFloorId2
                           << ") on different floors -- no vertical passage "
                              "mechanism exists, so this is a matching "
                              "error, not a real staircase; dropping the "
-                             "farther match semantic::Room#"
+                             "farther match Room#"
                           << droppedRoomId << " for this cycle." << std::endl;
 
                 if (negativeIsFarther)
@@ -1070,9 +1069,9 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    std::cout << "[SemMgr] Associated semantic::Passage#"
-                              << passageId2 << " with semantic::Room#"
-                              << room_inoutId << "." << std::endl;
+                    std::cout << "[SemMgr] Associated Passage#" << passageId2
+                              << " with Room#" << room_inoutId << "."
+                              << std::endl;
                 }
             }
         };
@@ -1149,8 +1148,8 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout << "[SemMgr] Revoked semantic::Passage#" << passageId5
-                          << " from semantic::Room#" << candidateRoomId
+                std::cout << "[SemMgr] Revoked Passage#" << passageId5
+                          << " from Room#" << candidateRoomId
                           << " (enforcing max-2-rooms-per-passage)."
                           << std::endl;
             }
@@ -1336,7 +1335,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout << "[SemMgr] semantic::Passage#" << passageId8
+                std::cout << "[SemMgr] Passage#" << passageId8
                           << " invalidated: 0 associated rooms for "
                           << zeroRoomCycles << " consecutive cycles."
                           << std::endl;
@@ -1363,7 +1362,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         "it cannot fail; continuing as before.",
                         __func__);
                 }
-                std::cout << "[SemMgr] semantic::Passage#" << passageId9
+                std::cout << "[SemMgr] Passage#" << passageId9
                           << " has 0 associated rooms (" << zeroRoomCycles
                           << "/" << maximumZeroRoomCycles
                           << " grace cycles); camera-side provenance="
@@ -1396,8 +1395,8 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            std::cout << "[SemMgr] WARNING: semantic::Passage#" << passageId11
-                      << " has " << associatedRoomCount
+            std::cout << "[SemMgr] WARNING: Passage#" << passageId11 << " has "
+                      << associatedRoomCount
                       << " associated rooms; expected max 2." << std::endl;
         }
 
@@ -1645,11 +1644,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    std::cout
-                        << "[SemMgr] semantic::Passage#" << passageId12
-                        << " resolved to opposite confirmed semantic::Room#"
-                        << farSideConfirmedRoomId
-                        << " with both sides observed." << std::endl;
+                    std::cout << "[SemMgr] Passage#" << passageId12
+                              << " resolved to opposite confirmed Room#"
+                              << farSideConfirmedRoomId
+                              << " with both sides observed." << std::endl;
                 }
             }
         }
@@ -1728,7 +1726,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout << "[SemMgr] semantic::Passage#" << passageId13
+                std::cout << "[SemMgr] Passage#" << passageId13
                           << " already has 2 associated rooms; skipping "
                              "prospective creation."
                           << std::endl;
@@ -2098,12 +2096,11 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                              "continuing as before.",
                                              __func__);
                             }
-                            std::cout
-                                << "[SemMgr] semantic::Passage#" << passageId14
-                                << " resolved directly to confirmed "
-                                   "semantic::Room#"
-                                << existingFarSideRoomId << " on the far side."
-                                << std::endl;
+                            std::cout << "[SemMgr] Passage#" << passageId14
+                                      << " resolved directly to confirmed "
+                                         "Room#"
+                                      << existingFarSideRoomId
+                                      << " on the far side." << std::endl;
                         }
                     }
                     else
@@ -2211,7 +2208,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             std::cout << "[SemMgr] Max prospective rooms ("
                                       << kMaxProspectiveRooms
                                       << ") reached; skipping creation for "
-                                         "semantic::Passage#"
+                                         "Passage#"
                                       << passageId15 << std::endl;
                         }
                         else
@@ -2412,12 +2409,12 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         // getId cannot fail; continue as
                                         // before.
                                     }
-                                    std::cout << "[SemMgr] Reusing existing "
-                                                 "prospective semantic::Room#"
-                                              << candidateId
-                                              << " (dist=" << distance
-                                              << "m) for semantic::Passage#"
-                                              << passageId16 << std::endl;
+                                    std::cout
+                                        << "[SemMgr] Reusing existing "
+                                           "prospective Room#"
+                                        << candidateId << " (dist=" << distance
+                                        << "m) for Passage#" << passageId16
+                                        << std::endl;
                                     break;
                                 }
                             }
@@ -2544,11 +2541,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         // before.
                                     }
                                     std::cout << "[SemMgr] Created prospective "
-                                                 "semantic::Room#"
+                                                 "Room#"
                                               << prospectiveRoomId3 << " at "
                                               << prospectiveCentroid.transpose()
-                                              << " for semantic::Passage#"
-                                              << passageId17
+                                              << " for Passage#" << passageId17
                                               << " (total prospective: "
                                               << prospectiveRoomCount + 1 << ")"
                                               << std::endl;
@@ -2627,7 +2623,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            std::cerr << "[SemMgr] WARNING: semantic::Passage#" << passageId18
+            std::cerr << "[SemMgr] WARNING: Passage#" << passageId18
                       << " has a confirmed side but no stable far-side handle; "
                          "it is not routable this cycle."
                       << std::endl;
@@ -3123,12 +3119,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    std::cout << "[SemMgr] Resolved prospective semantic::Room#"
-                              << prospectiveRoomId5
-                              << " with confirmed semantic::Room#"
-                              << farSideConfirmedRoomId2
-                              << " for semantic::Passage#" << passageId19 << "."
-                              << std::endl;
+                    std::cout << "[SemMgr] Resolved prospective Room#"
+                              << prospectiveRoomId5 << " with confirmed Room#"
+                              << farSideConfirmedRoomId2 << " for Passage#"
+                              << passageId19 << "." << std::endl;
                 }
             }
         }
@@ -3208,7 +3202,7 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            std::cout << "[SemMgr] semantic::Room#" << roomId5
+            std::cout << "[SemMgr] Room#" << roomId5
                       << " is not yet connected by a confirmed passage; "
                          "semantic routing will treat it as disconnected."
                       << std::endl;

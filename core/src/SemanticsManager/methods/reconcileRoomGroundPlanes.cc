@@ -243,8 +243,8 @@ SemanticsManagerStatus SemanticsManager::reconcileRoomGroundPlanes(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            std::cout << "[SemMgr] semantic::Room#" << roomId
-                      << "'s ground plane disagreed with semantic::Floor#"
+            std::cout << "[SemMgr] Room#" << roomId
+                      << "'s ground plane disagreed with Floor#"
                       << canonicalFloorId << "'s canonical level (normal "
                       << normalAngle_deg << " deg, offset " << offset_m
                       << " m) -- re-pointed to the canonical plane."
@@ -270,14 +270,14 @@ SemanticsManagerStatus SemanticsManager::reconcileRoomGroundPlanes(void)
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            std::cout
-                << "[SemMgr] semantic::Room#" << roomId2
-                << "'s ground plane is more observed than semantic::Floor#"
-                << canonicalFloorId2 << "'s current canonical level (normal "
-                << normalAngle_deg << " deg, offset " << offset_m
-                << " m) -- left as-is; the floor will re-select its "
-                   "canonical identity next cycle."
-                << std::endl;
+            std::cout << "[SemMgr] Room#" << roomId2
+                      << "'s ground plane is more observed than Floor#"
+                      << canonicalFloorId2
+                      << "'s current canonical level (normal "
+                      << normalAngle_deg << " deg, offset " << offset_m
+                      << " m) -- left as-is; the floor will re-select its "
+                         "canonical identity next cycle."
+                      << std::endl;
         }
     }
 

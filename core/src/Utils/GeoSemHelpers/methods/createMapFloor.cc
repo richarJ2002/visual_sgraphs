@@ -120,7 +120,7 @@ GeoSemHelpersStatus
                      "fail; continuing as before.",
                      __func__);
     }
-    if (p_newMapFloor->setName("semantic::Floor#" + std::to_string(floorId)) !=
+    if (p_newMapFloor->setName("Floor#" + std::to_string(floorId)) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -148,8 +148,8 @@ GeoSemHelpersStatus
                      "fail; continuing as before.",
                      __func__);
     }
-    std::cout << "[GeoSemHelper] Creating semantic::Floor#" << newMapFloorId
-              << " ..." << std::endl;
+    std::cout << "[GeoSemHelper] Creating Floor#" << newMapFloorId << " ..."
+              << std::endl;
 
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }

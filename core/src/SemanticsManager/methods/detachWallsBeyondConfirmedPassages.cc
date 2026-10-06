@@ -380,11 +380,10 @@ SemanticsManagerStatus
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout
-                    << "[SemMgr] Detached far-side Wall#" << wallGetId
-                    << " from semantic::Room#" << roomId
-                    << "; retained distinct confirmed owner semantic::Room#"
-                    << confirmedOwnerId << "." << std::endl;
+                std::cout << "[SemMgr] Detached far-side Wall#" << wallGetId
+                          << " from Room#" << roomId
+                          << "; retained distinct confirmed owner Room#"
+                          << confirmedOwnerId << "." << std::endl;
                 continue;
             }
 
@@ -469,9 +468,8 @@ SemanticsManagerStatus
                                  __func__);
                 }
                 std::cout << "[SemMgr] Redirected far-side Wall#" << wallGetId3
-                          << " from semantic::Room#" << roomId2
-                          << " through semantic::Passage#"
-                          << separatingPassageId << " to stable semantic::Room#"
+                          << " from Room#" << roomId2 << " through Passage#"
+                          << separatingPassageId << " to stable Room#"
                           << farSideRoomId << "." << std::endl;
                 continue;
             }
@@ -504,8 +502,8 @@ SemanticsManagerStatus
                              __func__);
             }
             std::cout << "[SemMgr] Detached far-side Wall#" << wallGetId4
-                      << " from semantic::Room#" << roomId3
-                      << "; semantic::Passage#" << separatingPassageId2
+                      << " from Room#" << roomId3 << "; Passage#"
+                      << separatingPassageId2
                       << " has no stable far-side room, so the wall remains "
                          "orphaned."
                       << std::endl;

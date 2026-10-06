@@ -863,8 +863,8 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout << "[SemMgr] Reusing existing semantic::Room#"
-                          << roomId2 << " for cluster " << clusterId
+                std::cout << "[SemMgr] Reusing existing Room#" << roomId2
+                          << " for cluster " << clusterId
                           << " (cluster walls already owned)." << std::endl;
             }
         }
@@ -995,7 +995,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
             if (pendingRecoveryRoomId >= 0 && atlasRoomContext.has_value())
             {
                 std::cout << "[SemMgr] Cluster " << clusterId
-                          << " deferred: recovery semantic::Room#"
+                          << " deferred: recovery Room#"
                           << pendingRecoveryRoomId
                           << " owns first-room creation on this map."
                           << std::endl;
@@ -1421,7 +1421,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                         }
                         std::cout
                             << "[SemMgr] Far-side Wall#" << wallGetId2
-                            << " at semantic::Passage#" << passageId
+                            << " at Passage#" << passageId
                             << " has no prospective yet; held unbound for the "
                                "far-side room."
                             << std::endl;
@@ -2147,8 +2147,8 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     }
                     std::cout << "[SemMgr] Transferred orphan Wall#"
                               << wallGetId6 << " from provisional SE#"
-                              << existingWallOwnerId << " to semantic::Room#"
-                              << roomId3 << "." << std::endl;
+                              << existingWallOwnerId << " to Room#" << roomId3
+                              << "." << std::endl;
                 }
                 else
                 {
@@ -2194,9 +2194,8 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                     }
                     std::cout
                         << "[SemMgr] Transferred Wall#" << wallGetId7
-                        << " from semantic::Room#" << existingWallOwnerId2
-                        << " to semantic::Room#" << roomId4
-                        << " through semantic::Passage#" << transferPassageId
+                        << " from Room#" << existingWallOwnerId2 << " to Room#"
+                        << roomId4 << " through Passage#" << transferPassageId
                         << " using wall-observation evidence." << std::endl;
                 }
             }
@@ -2534,8 +2533,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                if (p_room->setName("semantic::Room#" +
-                                    std::to_string(roomId5)) !=
+                if (p_room->setName("Room#" + std::to_string(roomId5)) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -2583,8 +2581,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout << "[SemMgr] Promoted prospective semantic::Room#"
-                          << roomId7
+                std::cout << "[SemMgr] Promoted prospective Room#" << roomId7
                           << " to ROOM from far-side cluster evidence."
                           << std::endl;
             }
@@ -2631,8 +2628,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                if (p_room->setName("semantic::Room#" +
-                                    std::to_string(roomId8)) !=
+                if (p_room->setName("Room#" + std::to_string(roomId8)) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(
@@ -2652,7 +2648,7 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                  __func__);
                 }
                 std::cout << "[SemMgr] Structural Element #" << roomId9
-                          << " classified as a semantic::Room from free-space "
+                          << " classified as a Room from free-space "
                              "cluster "
                           << clusterId << "." << std::endl;
             }

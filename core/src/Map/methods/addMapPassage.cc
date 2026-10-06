@@ -85,8 +85,7 @@ MapStatus vs_graphs::core::Map::addMapPassage(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        std::cerr << "[Map] semantic::Passage ID collision for "
-                  << passage_inoutId3
+        std::cerr << "[Map] Passage ID collision for " << passage_inoutId3
                   << "; caller must resolve it before destination insertion."
                   << std::endl;
         return MapStatus::MAP_STATUS_SUCCESS;

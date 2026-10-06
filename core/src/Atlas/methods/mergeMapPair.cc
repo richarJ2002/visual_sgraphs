@@ -1411,12 +1411,10 @@ AtlasStatus Atlas::mergeMapPair(Map *p_currentMap_inout, Map *p_otherMap_inout)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout
-                    << "[Atlas::MergeMapPair] Fused duplicate semantic::Floor#"
-                    << duplicateFloorId << " into semantic::Floor#"
-                    << keeperFloorId
-                    << " and retained the better-observed plane identity."
-                    << std::endl;
+                std::cout << "[Atlas::MergeMapPair] Fused duplicate Floor#"
+                          << duplicateFloorId << " into Floor#" << keeperFloorId
+                          << " and retained the better-observed plane identity."
+                          << std::endl;
             }
         }
 

@@ -181,7 +181,7 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        std::cout << "[SemMgr] semantic::Room#" << room_inId
+        std::cout << "[SemMgr] Room#" << room_inId
                   << " boundary=" << boundaryStatusName(boundaryStatus_in)
                   << " (" << room_inWalls.size() << " walls)" << std::endl;
     };
@@ -277,7 +277,7 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            std::cout << "[SemMgr] semantic::Room#" << roomId
+            std::cout << "[SemMgr] Room#" << roomId
                       << " boundary check: roomWalls=" << roomWalls3.size()
                       << ", wallSegments=" << wallSegments.size()
                       << ", minWallCount="
@@ -412,9 +412,8 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                                 __func__);
                         }
                         std::cout << "[SemMgr] Detached clashing Wall#"
-                                  << rejectedWallGetId
-                                  << " from semantic::Room#" << roomId2
-                                  << "; Wall#" << retainedWallGetId
+                                  << rejectedWallGetId << " from Room#"
+                                  << roomId2 << "; Wall#" << retainedWallGetId
                                   << " has decisively stronger finite support."
                                   << std::endl;
                     }
@@ -617,9 +616,9 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                             __func__);
                     }
                     std::cout
-                        << "[SemMgr] semantic::Room#" << roomId3
-                        << ": excluding Wall#" << getId2
-                        << " lets the remaining " << reducedWallSegments.size()
+                        << "[SemMgr] Room#" << roomId3 << ": excluding Wall#"
+                        << getId2 << " lets the remaining "
+                        << reducedWallSegments.size()
                         << " wall(s) close a valid loop; treating it as an "
                            "off-loop outlier."
                         << std::endl;
@@ -722,7 +721,7 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        std::cout << "[SemMgr] semantic::Room#" << roomId4
+        std::cout << "[SemMgr] Room#" << roomId4
                   << " boundary validation: walls=" << wallSegments.size()
                   << ", corners=" << boundaryCorners_world_m.size()
                   << ", selfIntersects="
@@ -915,7 +914,7 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    std::cout << "[SemMgr] semantic::Room#" << roomId5
+                    std::cout << "[SemMgr] Room#" << roomId5
                               << "'s boundary is COMPLETE; detached Wall#"
                               << ownedWallGetId
                               << ", which is neither part of the closed wall "

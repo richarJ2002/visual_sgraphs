@@ -350,7 +350,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                              __func__);
             }
             std::cout << "[SemMgr] Far-side Wall#" << wallGetId
-                      << " at semantic::Passage#" << passageId
+                      << " at Passage#" << passageId
                       << " has no opposite stable room; left unbound."
                       << std::endl;
             outcome_out = PassageSideEnforcementOutcome::REMOVED_UNBOUND;
@@ -424,7 +424,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                          __func__);
         }
         std::cout << "[SemMgr] Redirected far-side Wall#" << wallGetId3
-                  << " to prospective semantic::Room#" << prospectiveId << "."
+                  << " to prospective Room#" << prospectiveId << "."
                   << std::endl;
         outcome_out = PassageSideEnforcementOutcome::REROUTED;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
@@ -586,7 +586,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageApertureBackstop(
                   << " crosses an unconfirmed passage opening (evidence at "
                      "wall "
                   << (evidence.p_supportingWall != nullptr ? getId2 : -1)
-                  << "); removed from semantic::Room#" << room_inoutId
+                  << "); removed from Room#" << room_inoutId
                   << " pending confirmation." << std::endl;
         outcome_out = PassageSideEnforcementOutcome::REMOVED_UNBOUND;
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

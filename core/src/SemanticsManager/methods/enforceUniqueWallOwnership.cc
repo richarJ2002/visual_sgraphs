@@ -596,11 +596,10 @@ SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
                 std::cerr << "[SemMgr] Corrected duplicate ownership of Wall#"
                           << wallGetId << ": "
                           << (p_retainedOwner != nullptr
-                                  ? "retained semantic::Room#" +
+                                  ? "retained Room#" +
                                         std::to_string(retainedOwnerId2)
                                   : "left orphaned")
-                          << ", detached semantic::Room#" << ownerId << "."
-                          << std::endl;
+                          << ", detached Room#" << ownerId << "." << std::endl;
             }
         }
 

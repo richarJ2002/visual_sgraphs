@@ -649,7 +649,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        std::cout << "[GeoSemHelper] Updated existing semantic::Passage#"
+        std::cout << "[GeoSemHelper] Updated existing Passage#"
                   << existingPassageId
                   << ": centroid distance=" << centroidDistance
                   << " m, normal alignment=" << normalAlignment << ", state="
@@ -801,7 +801,7 @@ GeoSemHelpersStatus GeoSemHelpers::createMapPassage(
                      "fail; continuing as before.",
                      __func__);
     }
-    std::cout << "[GeoSemHelper] Creating semantic::Passage#" << passageId
+    std::cout << "[GeoSemHelper] Creating Passage#" << passageId
               << " associated with wall " << wallPlaneGetId4;
 
     if (p_doorPlane_in != nullptr)

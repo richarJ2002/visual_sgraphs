@@ -277,7 +277,7 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
         p_originalCalibration1 =
             std::make_unique<camera_models::pinhole::Pinhole>(calibrations);
     }
-    else if (cameraModelName == "camera_models::KannalaBrandt8")
+    else if (cameraModelName == "KannalaBrandt8")
     {
         cameraModel = CameraType::KANNALA_BRANDT;
 

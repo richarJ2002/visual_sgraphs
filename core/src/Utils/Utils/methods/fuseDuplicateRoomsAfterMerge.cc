@@ -772,9 +772,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                              "cannot fail; continuing as before.",
                              __func__);
             }
-            std::cout << "[SemanticMerge] Preserved semantic::Room#"
-                      << importedRoomId3 << " and semantic::Room#"
-                      << bestRetainedRoomId
+            std::cout << "[SemanticMerge] Preserved Room#" << importedRoomId3
+                      << " and Room#" << bestRetainedRoomId
                       << "; a passable passage separates their centroids."
                       << std::endl;
             continue;
@@ -988,7 +987,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                                  __func__);
                 }
                 std::cout << "[SemanticMerge] Far-side Wall#" << getId2
-                          << " at semantic::Passage#" << id
+                          << " at Passage#" << id
                           << " has no prospective; left unbound." << std::endl;
                 continue;
             }
@@ -1024,8 +1023,8 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                                  __func__);
                 }
                 std::cout << "[SemanticMerge] Redirected far-side Wall#"
-                          << getId3 << " to stable semantic::Room#" << id2
-                          << "." << std::endl;
+                          << getId3 << " to stable Room#" << id2 << "."
+                          << std::endl;
             }
         }
 
@@ -1336,10 +1335,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        std::cout << "[SemanticMerge] Fused duplicate semantic::Room#"
-                  << importedRoomId4 << " into semantic::Room#"
-                  << bestRetainedRoomId2 << " (centroid distance "
-                  << bestCentroidDistance_m << " m)." << std::endl;
+        std::cout << "[SemanticMerge] Fused duplicate Room#" << importedRoomId4
+                  << " into Room#" << bestRetainedRoomId2
+                  << " (centroid distance " << bestCentroidDistance_m << " m)."
+                  << std::endl;
     }
 
     return UtilsStatus::UTILS_STATUS_SUCCESS;

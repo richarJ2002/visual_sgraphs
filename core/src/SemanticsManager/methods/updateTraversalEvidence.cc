@@ -508,8 +508,7 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                                 __func__);
                         }
                         if (p_reachedRoom->setName(
-                                "semantic::Room#" +
-                                std::to_string(reachedRoomId2)) !=
+                                "Room#" + std::to_string(reachedRoomId2)) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                         {
                             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -702,7 +701,7 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                             "cannot fail; continuing as before.",
                             __func__);
                     }
-                    std::cout << "[SemMgr] semantic::Passage#" << passageId2
+                    std::cout << "[SemMgr] Passage#" << passageId2
                               << " traversed (traversal evidence settled)."
                               << std::endl;
                 }

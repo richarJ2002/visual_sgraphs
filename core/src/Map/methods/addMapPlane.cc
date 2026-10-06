@@ -112,7 +112,7 @@ MapStatus Map::addMapPlane(geometric::Plane *p_plane_inout)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        std::cerr << "[Map] geometric::Plane ID collision for " << planeGetId4
+        std::cerr << "[Map] Plane ID collision for " << planeGetId4
                   << "; reassigned to " << replacementPlaneId << "."
                   << std::endl;
 

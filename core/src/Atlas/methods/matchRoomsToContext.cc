@@ -369,9 +369,8 @@ AtlasStatus Atlas::matchRoomsToContext(Map *p_newMap_in)
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                std::cout << "[Atlas] Prior semantic::Room#" << priorRoomId
-                          << " has " << priorRoomWalls.size() << " walls"
-                          << std::endl;
+                std::cout << "[Atlas] Prior Room#" << priorRoomId << " has "
+                          << priorRoomWalls.size() << " walls" << std::endl;
 
                 /* Transfer walls from prior room to current room */
                 std::vector<geometric::Plane *> priorRoomWalls2{};
@@ -453,9 +452,8 @@ AtlasStatus Atlas::matchRoomsToContext(Map *p_newMap_in)
                             __func__);
                     }
                     std::cout << "[Atlas] Transferred Wall#" << wallGetId
-                              << " from prior semantic::Room#" << priorRoomId2
-                              << " to matched semantic::Room#" << roomId2
-                              << std::endl;
+                              << " from prior Room#" << priorRoomId2
+                              << " to matched Room#" << roomId2 << std::endl;
                 }
 
                 /* Passages will be re-associated by associatePassagesToRooms()
@@ -480,9 +478,9 @@ AtlasStatus Atlas::matchRoomsToContext(Map *p_newMap_in)
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                std::cout << "[Atlas] semantic::Room#" << roomId3 << " now has "
+                std::cout << "[Atlas] Room#" << roomId3 << " now has "
                           << roomWalls2.size()
-                          << " walls (continuing from prior semantic::Room#"
+                          << " walls (continuing from prior Room#"
                           << p_bestMatch->roomId << ")" << std::endl;
             }
             else

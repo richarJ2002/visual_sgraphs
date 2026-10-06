@@ -112,7 +112,7 @@ MapStatus Map::addMapFloor(semantic::Floor *p_floor_inout)
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        std::cerr << "[Map] semantic::Floor ID collision for " << floor_inoutId4
+        std::cerr << "[Map] Floor ID collision for " << floor_inoutId4
                   << "; reassigned to " << replacementFloorId << "."
                   << std::endl;
 

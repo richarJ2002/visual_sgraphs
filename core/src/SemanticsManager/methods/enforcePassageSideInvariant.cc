@@ -320,7 +320,7 @@ SemanticsManagerStatus SemanticsManager::enforcePassageSideInvariant(void)
                                  __func__);
                 }
                 std::cout << "[SemMgr] Wall#" << wallGetId
-                          << " removed from semantic::Room#" << roomId
+                          << " removed from Room#" << roomId
                           << ": this face was observed from the opposite side, "
                              "so it bounds the neighbouring room."
                           << std::endl;

@@ -513,10 +513,10 @@ SemanticsManagerStatus SemanticsManager::mergeOverlappingPassages(void)
                                  "it cannot fail; continuing as before.",
                                  __func__);
                 }
-                std::cout << "[SemMgr] semantic::Passage#" << absorbedId2
-                          << " overlaps semantic::Passage#" << survivorId2
+                std::cout << "[SemMgr] Passage#" << absorbedId2
+                          << " overlaps Passage#" << survivorId2
                           << " in their shared wall's 2D plane; merged "
-                             "evidence into semantic::Passage#"
+                             "evidence into Passage#"
                           << survivorId3 << "." << std::endl;
             }
         }
