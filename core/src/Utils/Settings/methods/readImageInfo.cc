@@ -317,20 +317,20 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
                 {
                     static_cast<
                         camera_models::kannalabrandt8::KannalaBrandt8 *>(
-                        p_calibration1)
+                        p_calibration1.get())
                         ->lappingArea[0] *= scaleColFactor;
                     static_cast<
                         camera_models::kannalabrandt8::KannalaBrandt8 *>(
-                        p_calibration1)
+                        p_calibration1.get())
                         ->lappingArea[1] *= scaleColFactor;
 
                     static_cast<
                         camera_models::kannalabrandt8::KannalaBrandt8 *>(
-                        p_calibration2)
+                        p_calibration2.get())
                         ->lappingArea[0] *= scaleColFactor;
                     static_cast<
                         camera_models::kannalabrandt8::KannalaBrandt8 *>(
-                        p_calibration2)
+                        p_calibration2.get())
                         ->lappingArea[1] *= scaleColFactor;
                 }
             }

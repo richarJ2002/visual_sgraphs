@@ -39,6 +39,7 @@
 #include "Utils/Converter/objects/Converter.h"
 
 #include <iostream>
+#include <memory>
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -198,11 +199,12 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
 
         std::vector<float> cameraCalibrations{fx, fy, cx, cy};
 
-        p_camera = new camera_models::pinhole::Pinhole(cameraCalibrations);
+        p_parsedCamera = std::make_unique<camera_models::pinhole::Pinhole>(
+            cameraCalibrations);
 
         camera_models::geometriccamera::GeometricCamera *p_atlasCamera =
             nullptr;
-        if (p_atlas->addCamera(p_camera, p_atlasCamera) !=
+        if (p_atlas->addCamera(p_parsedCamera.get(), p_atlasCamera) !=
             AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -379,11 +381,12 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
 
             std::vector<float>
                 cameraCalibrations{fx, fy, cx, cy, k1, k2, k3, k4};
-            p_camera = new camera_models::kannalabrandt8::KannalaBrandt8(
-                cameraCalibrations);
+            p_parsedCamera =
+                std::make_unique<camera_models::kannalabrandt8::KannalaBrandt8>(
+                    cameraCalibrations);
             camera_models::geometriccamera::GeometricCamera *p_atlasCamera2 =
                 nullptr;
-            if (p_atlas->addCamera(p_camera, p_atlasCamera2) !=
+            if (p_atlas->addCamera(p_parsedCamera.get(), p_atlasCamera2) !=
                 AtlasStatus::ATLAS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -619,11 +622,12 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
 
                 std::vector<float>
                     cameraCalibration2{fx, fy, cx, cy, k1, k2, k3, k4};
-                p_camera2 = new camera_models::kannalabrandt8::KannalaBrandt8(
+                p_parsedCamera2 = std::make_unique<
+                    camera_models::kannalabrandt8::KannalaBrandt8>(
                     cameraCalibration2);
                 camera_models::geometriccamera::GeometricCamera
                     *p_atlasCamera3 = nullptr;
-                if (p_atlas->addCamera(p_camera2, p_atlasCamera3) !=
+                if (p_atlas->addCamera(p_parsedCamera2.get(), p_atlasCamera3) !=
                     AtlasStatus::ATLAS_STATUS_SUCCESS)
                 {
                     RCLCPP_ERROR(

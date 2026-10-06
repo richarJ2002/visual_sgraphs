@@ -32,6 +32,8 @@
 
 #include "Utils/Settings/objects/Settings.h"
 
+#include <memory>
+
 #include <opencv2/core/persistence.hpp>
 #include <rclcpp/logging.hpp>
 
@@ -97,9 +99,10 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
 
         calibrations = {fx, fy, cx, cy};
 
-        p_calibration2 = new camera_models::pinhole::Pinhole(calibrations);
+        p_calibration2 =
+            std::make_unique<camera_models::pinhole::Pinhole>(calibrations);
         p_originalCalibration2 =
-            new camera_models::pinhole::Pinhole(calibrations);
+            std::make_unique<camera_models::pinhole::Pinhole>(calibrations);
 
         // Check if it is a distorted Pinhole
         float parameter{};
@@ -286,9 +289,11 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
         calibrations = {fx, fy, cx, cy, k0, k1, k2, k3};
 
         p_calibration2 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(calibrations);
+            std::make_unique<camera_models::kannalabrandt8::KannalaBrandt8>(
+                calibrations);
         p_originalCalibration2 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(calibrations);
+            std::make_unique<camera_models::kannalabrandt8::KannalaBrandt8>(
+                calibrations);
 
         int colBegin{};
         if (readParameter<int>(storage_inout,
@@ -317,7 +322,7 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
         std::vector<int> overlappings = {colBegin, colEnd};
 
         static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
-            p_calibration2)
+            p_calibration2.get())
             ->lappingArea = overlappings;
     }
 

@@ -311,11 +311,11 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
         {
             std::vector<int> overlapping1 =
                 static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
-                    s_in.p_calibration1)
+                    s_in.p_calibration1.get())
                     ->lappingArea;
             std::vector<int> overlapping2 =
                 static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
-                    s_in.p_calibration2)
+                    s_in.p_calibration2.get())
                     ->lappingArea;
             output_inout << "\t- Camera 1 overlapping area: [ "
                          << overlapping1[0] << " , " << overlapping1[1] << " ]"

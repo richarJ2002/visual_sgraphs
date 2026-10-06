@@ -32,6 +32,7 @@
 
 #include "Utils/Settings/objects/Settings.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -115,9 +116,10 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
         }
         calibrations = {fx, fy, cx, cy};
 
-        p_calibration1 = new camera_models::pinhole::Pinhole(calibrations);
+        p_calibration1 =
+            std::make_unique<camera_models::pinhole::Pinhole>(calibrations);
         p_originalCalibration1 =
-            new camera_models::pinhole::Pinhole(calibrations);
+            std::make_unique<camera_models::pinhole::Pinhole>(calibrations);
 
         // Check if the Pinhole is distorted
         float parameter{};
@@ -270,9 +272,10 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
         }
         calibrations = {fx, fy, cx, cy};
 
-        p_calibration1 = new camera_models::pinhole::Pinhole(calibrations);
+        p_calibration1 =
+            std::make_unique<camera_models::pinhole::Pinhole>(calibrations);
         p_originalCalibration1 =
-            new camera_models::pinhole::Pinhole(calibrations);
+            std::make_unique<camera_models::pinhole::Pinhole>(calibrations);
     }
     else if (cameraModelName == "camera_models::KannalaBrandt8")
     {
@@ -355,9 +358,11 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
 
         calibrations = {fx, fy, cx, cy, k0, k1, k2, k3};
         p_calibration1 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(calibrations);
+            std::make_unique<camera_models::kannalabrandt8::KannalaBrandt8>(
+                calibrations);
         p_originalCalibration1 =
-            new camera_models::kannalabrandt8::KannalaBrandt8(calibrations);
+            std::make_unique<camera_models::kannalabrandt8::KannalaBrandt8>(
+                calibrations);
 
         if (sensor == System::STEREO || sensor == System::IMU_STEREO)
         {
@@ -387,7 +392,7 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
             }
             std::vector<int> overlappings = {colBegin, colEnd};
             static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
-                p_calibration1)
+                p_calibration1.get())
                 ->lappingArea = overlappings;
         }
     }

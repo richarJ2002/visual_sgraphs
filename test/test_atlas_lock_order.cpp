@@ -13,8 +13,9 @@
  *
  * @brief           Tests the order in which Atlas takes its locks
  *                  (AtlasLockOrder), through the test hook in
- *                  Atlas::matchRoomsToContext(), and that the camera registry
- *                  takes atlasMutex.
+ *                  Atlas::matchRoomsToContext(), that the camera registry
+ *                  takes atlasMutex, and that clearAtlas() keeps the cleared
+ *                  maps owned by the Atlas (AtlasLifetime).
  */
 
 #include "Atlas.h"
@@ -29,6 +30,7 @@
 #include <functional>
 #include <mutex>
 #include <rclcpp/logging.hpp>
+#include <set>
 #include <thread>
 #include <vector>
 
@@ -93,6 +95,16 @@ class TestAtlas : public Atlas
 
         roomContextMutex.unlock();
         return true;
+    }
+
+    /*!
+     * @brief           Returns a copy of the retired maps; the maps stay owned
+     *                  by the Atlas.
+     */
+    std::set<Map *> copyRetiredMaps()
+    {
+        std::unique_lock<std::mutex> atlasLock(atlasMutex);
+        return retiredMaps;
     }
 };
 
@@ -284,6 +296,30 @@ TEST(AtlasLockOrder, CameraRegistryWaitsForAtlasMutex)
                                  });
     ASSERT_EQ(allCameras.size(), 1U);
     EXPECT_EQ(allCameras[0], &pinholeCamera);
+}
+
+/*!
+ * @brief           Checks that clearAtlas() moves every active map to the
+ *                  retired maps, which the Atlas destructor frees, instead of
+ *                  dropping the pointers.
+ */
+TEST(AtlasLifetime, ClearAtlasRetiresTheClearedMaps)
+{
+    TestAtlas testAtlas(0);
+    ASSERT_EQ((testAtlas.createNewMap()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+    std::vector<Map *> activeMaps{};
+    ASSERT_EQ((testAtlas.getAllMaps(activeMaps)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    ASSERT_EQ(activeMaps.size(), 2U);
+
+    ASSERT_EQ((testAtlas.clearAtlas()), AtlasStatus::ATLAS_STATUS_SUCCESS);
+
+    std::vector<Map *> remainingMaps{};
+    ASSERT_EQ((testAtlas.getAllMaps(remainingMaps)),
+              AtlasStatus::ATLAS_STATUS_SUCCESS);
+    EXPECT_TRUE(remainingMaps.empty());
+    EXPECT_EQ(testAtlas.copyRetiredMaps(),
+              std::set<Map *>(activeMaps.begin(), activeMaps.end()));
 }
 
 } // namespace

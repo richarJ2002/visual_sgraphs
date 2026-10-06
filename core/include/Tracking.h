@@ -52,6 +52,7 @@
 #include <pcl/point_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 
+#include <memory>
 #include <mutex>
 #include <unordered_set>
 
@@ -153,11 +154,12 @@ class Tracking
 
     /*!
      * @brief           Reads the camera section of the settings file: builds
-     *                  the camera model (registered in the Atlas), the
-     *                  calibration matrix, distortion coefficients, image
-     *                  scale, stereo baseline times focal length, close/far
-     *                  depth threshold, depth scale and colour order, and sets
-     *                  maxFrames from the frame rate.
+     *                  the camera model (owned by Tracking in p_parsedCamera,
+     *                  registered in the Atlas), the calibration matrix,
+     *                  distortion coefficients, image scale, stereo baseline
+     *                  times focal length, close/far depth threshold, depth
+     *                  scale and colour order, and sets maxFrames from the
+     *                  frame rate.
      *
      * @param[in]       settings_in
      *                  Opened settings file, only read.
@@ -985,10 +987,11 @@ class Tracking
 
     /*!
      * @brief           IMU calibration read from the settings: camera-to-body
-     *                  extrinsic and noise. Allocated by the settings parser
-     *                  for IMU sensors, never deleted.
+     *                  extrinsic and noise. Created by the settings parser for
+     *                  IMU sensors, null otherwise; owned by Tracking. Frames
+     *                  and key frames copy it.
      */
-    IMU::Calib *p_imuCalibration;
+    std::unique_ptr<IMU::Calib> p_imuCalibration;
 
     /*!
      * @brief           IMU bias estimated at the last key frame.
@@ -1017,22 +1020,25 @@ class Tracking
 
     // ORB
     /*!
-     * @brief           ORB extractor for the left (or only) image. Allocated by
-     *                  the settings parser, never deleted.
+     * @brief           ORB extractor for the left (or only) image. Created by
+     *                  the settings parser; owned by Tracking. Frames borrow it
+     *                  (get()) and never delete it; they are Tracking members
+     *                  or temporaries, so none outlives it.
      */
-    ORBextractor *p_orbExtractorLeft;
+    std::unique_ptr<ORBextractor> p_orbExtractorLeft;
     /*!
      * @brief           ORB extractor for the right image; stereo sensors only,
-     *                  null otherwise. Allocated by the settings parser, never
-     *                  deleted.
+     *                  null otherwise. Created by the settings parser; owned by
+     *                  Tracking, borrowed by frames like p_orbExtractorLeft.
      */
-    ORBextractor *p_orbExtractorRight{nullptr};
+    std::unique_ptr<ORBextractor> p_orbExtractorRight;
     /*!
      * @brief           ORB extractor with five times the features, used before
      *                  a monocular map is initialized; null for other sensors.
-     *                  Allocated by the settings parser, never deleted.
+     *                  Created by the settings parser; owned by Tracking,
+     *                  borrowed by frames like p_orbExtractorLeft.
      */
-    ORBextractor *p_iniOrbExtractor{nullptr};
+    std::unique_ptr<ORBextractor> p_iniOrbExtractor;
 
     // BoW
     /*!
@@ -1341,15 +1347,34 @@ class Tracking
     int baseMinimumFastThreshold{0};
 
     /*!
-     * @brief           Camera model of the left (or only) camera. Owned by the
-     *                  Atlas; borrowed.
+     * @brief           Camera model of the left (or only) camera, as returned
+     *                  by Atlas::addCamera(); nullptr until a settings loader
+     *                  sets it. Borrowed, never deleted: owned by Settings, by
+     *                  p_parsedCamera, or by the Atlas when an equal camera was
+     *                  loaded with a saved atlas.
      */
     camera_models::geometriccamera::GeometricCamera *p_camera{nullptr};
     /*!
      * @brief           Camera model of the second camera, only for fisheye
-     *                  stereo; null otherwise. Owned by the Atlas; borrowed.
+     *                  stereo; null otherwise. Borrowed, never deleted; owned
+     *                  like p_camera (p_parsedCamera2 on the file path).
      */
     camera_models::geometriccamera::GeometricCamera *p_camera2;
+    /*!
+     * @brief           Left (or only) camera that parseCamParamFile() created;
+     *                  owned by Tracking and null on the Settings path. The
+     *                  Atlas, frames and key frames borrow it: System never
+     *                  destroys Tracking, and the Atlas destructor does not
+     *                  dereference borrowed cameras.
+     */
+    std::unique_ptr<camera_models::geometriccamera::GeometricCamera>
+        p_parsedCamera;
+    /*!
+     * @brief           Second fisheye camera that parseCamParamFile() created;
+     *                  owned by Tracking like p_parsedCamera, null otherwise.
+     */
+    std::unique_ptr<camera_models::geometriccamera::GeometricCamera>
+        p_parsedCamera2;
 
     /*!
      * @brief           Monocular: id of the key frame created when the map was

@@ -34,6 +34,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <memory>
 
 namespace vs_graphs
 {
@@ -190,11 +191,11 @@ TrackingStatus Tracking::parseIMUParamFile(cv::FileStorage &settings_in,
     std::cout << "IMU accelerometer walk: " << awCount << " m/s^3/sqrt(Hz)"
               << std::endl;
 
-    p_imuCalibration = new IMU::Calib(extrinsicPose_cameraToBody,
-                                      Ng * sf,
-                                      Na * sf,
-                                      gwCount / sf,
-                                      awCount / sf);
+    p_imuCalibration = std::make_unique<IMU::Calib>(extrinsicPose_cameraToBody,
+                                                    Ng * sf,
+                                                    Na * sf,
+                                                    gwCount / sf,
+                                                    awCount / sf);
 
     p_imuPreintegratedFromLastKF =
         new IMU::Preintegrated(IMU::Bias(), *p_imuCalibration);

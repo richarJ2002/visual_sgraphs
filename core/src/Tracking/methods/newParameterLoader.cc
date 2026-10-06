@@ -35,6 +35,7 @@
 #include "Tracking.h"
 
 #include <cmath>
+#include <memory>
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -369,25 +370,27 @@ TrackingStatus
     }
     float scaleFactor = static_cast<float>(scaleFactorValue);
 
-    p_orbExtractorLeft = new ORBextractor(featureCount,
-                                          scaleFactor,
-                                          levelCount,
-                                          initialThresholdFast,
-                                          minimumThresholdFast);
+    p_orbExtractorLeft = std::make_unique<ORBextractor>(featureCount,
+                                                        scaleFactor,
+                                                        levelCount,
+                                                        initialThresholdFast,
+                                                        minimumThresholdFast);
 
     if (sensor == System::STEREO || sensor == System::IMU_STEREO)
-        p_orbExtractorRight = new ORBextractor(featureCount,
-                                               scaleFactor,
-                                               levelCount,
-                                               initialThresholdFast,
-                                               minimumThresholdFast);
+        p_orbExtractorRight =
+            std::make_unique<ORBextractor>(featureCount,
+                                           scaleFactor,
+                                           levelCount,
+                                           initialThresholdFast,
+                                           minimumThresholdFast);
 
     if (sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR)
-        p_iniOrbExtractor = new ORBextractor(5 * featureCount,
-                                             scaleFactor,
-                                             levelCount,
-                                             initialThresholdFast,
-                                             minimumThresholdFast);
+        p_iniOrbExtractor =
+            std::make_unique<ORBextractor>(5 * featureCount,
+                                           scaleFactor,
+                                           levelCount,
+                                           initialThresholdFast,
+                                           minimumThresholdFast);
 
     // Adaptive FAST threshold initialization
     lastFrameFeatures        = 0;
@@ -489,12 +492,13 @@ TrackingStatus
         }
         float awCount = static_cast<float>(accWalkValue);
 
-        const float sf   = std::sqrt(imuFrequency);
-        p_imuCalibration = new IMU::Calib(extrinsicPose_cameraToBody,
-                                          Ng * sf,
-                                          Na * sf,
-                                          gwCount / sf,
-                                          awCount / sf);
+        const float sf = std::sqrt(imuFrequency);
+        p_imuCalibration =
+            std::make_unique<IMU::Calib>(extrinsicPose_cameraToBody,
+                                         Ng * sf,
+                                         Na * sf,
+                                         gwCount / sf,
+                                         awCount / sf);
 
         p_imuPreintegratedFromLastKF =
             new IMU::Preintegrated(IMU::Bias(), *p_imuCalibration);

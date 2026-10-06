@@ -54,10 +54,12 @@ SettingsStatus Settings::precomputeRectificationMaps()
 {
     // Precompute rectification maps, new calibrations, ...
     cv::Mat K1 =
-        static_cast<camera_models::pinhole::Pinhole *>(p_calibration1)->toK();
+        static_cast<camera_models::pinhole::Pinhole *>(p_calibration1.get())
+            ->toK();
     K1.convertTo(K1, CV_64F);
     cv::Mat K2 =
-        static_cast<camera_models::pinhole::Pinhole *>(p_calibration2)->toK();
+        static_cast<camera_models::pinhole::Pinhole *>(p_calibration2.get())
+            ->toK();
     K2.convertTo(K2, CV_64F);
 
     cv::Mat cvTlr;

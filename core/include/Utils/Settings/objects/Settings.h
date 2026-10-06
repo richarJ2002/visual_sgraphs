@@ -39,6 +39,7 @@
 #include "Utils/Settings/objects/SettingsStatus.h"
 
 #include <cstdint>
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -134,28 +135,31 @@ class Settings
      * @brief           Returns the first calibrated camera.
      *
      * @param[out]      p_camera1_out
-     *                  Non-owning pointer to the first calibration.
+     *                  Borrowed pointer to the first calibration, never deleted
+     *                  by the caller; valid while the settings live.
      *
      * @return          SETTINGS_STATUS_SUCCESS.
      */
     [[nodiscard]] SettingsStatus
         camera1(camera_models::geometriccamera::GeometricCamera *&p_camera1_out)
     {
-        p_camera1_out = p_calibration1;
+        p_camera1_out = p_calibration1.get();
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
      * @brief           Returns the second calibrated camera.
      *
      * @param[out]      p_camera2_out
-     *                  Non-owning pointer to the second calibration.
+     *                  Borrowed pointer to the second calibration, nullptr
+     *                  unless the sensor is stereo; never deleted by the
+     *                  caller and valid while the settings live.
      *
      * @return          SETTINGS_STATUS_SUCCESS.
      */
     [[nodiscard]] SettingsStatus
         camera2(camera_models::geometriccamera::GeometricCamera *&p_camera2_out)
     {
-        p_camera2_out = p_calibration2;
+        p_camera2_out = p_calibration2.get();
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
     /*!
@@ -925,37 +929,44 @@ class Settings
      */
     /*!
      * @brief           Calibration of the first camera, created by readCamera1;
-     *                  Settings never deletes it.
+     *                  owned by Settings. Tracking, the Atlas, frames and key
+     *                  frames borrow it through camera1(); System never
+     *                  destroys Settings once they exist.
      */
-    camera_models::geometriccamera::GeometricCamera *p_calibration1;
+    std::unique_ptr<camera_models::geometriccamera::GeometricCamera>
+        p_calibration1;
     /*!
      * @brief           Calibration of the second camera, created by readCamera2
-     *                  for stereo sensors only (not initialised otherwise);
-     *                  Settings never deletes it.
+     *                  for stereo sensors only, null otherwise; owned by
+     *                  Settings and borrowed like p_calibration1.
      */
-    camera_models::geometriccamera::GeometricCamera *p_calibration2;
+    std::unique_ptr<camera_models::geometriccamera::GeometricCamera>
+        p_calibration2;
     /*!
      * @brief           Calibration of the first camera as read from the file,
-     *                  before resizing or rectification; Settings never deletes
-     *                  it.
+     *                  before resizing or rectification; owned by Settings,
+     *                  only printed.
      */
-    camera_models::geometriccamera::GeometricCamera *p_originalCalibration1;
+    std::unique_ptr<camera_models::geometriccamera::GeometricCamera>
+        p_originalCalibration1;
     /*!
      * @brief           Calibration of the second camera as read from the file,
      *                  before resizing or rectification; created by readCamera2
-     *                  for stereo sensors only; Settings never deletes it.
+     *                  for stereo sensors only, null otherwise; owned by
+     *                  Settings, only printed.
      */
-    camera_models::geometriccamera::GeometricCamera *p_originalCalibration2;
+    std::unique_ptr<camera_models::geometriccamera::GeometricCamera>
+                        p_originalCalibration2;
     /*!
      * @brief           Pinhole distortion coefficients of the first camera.
      */
-    std::vector<double>                              pinholeDistortion1;
+    std::vector<double> pinholeDistortion1;
     /*!
      * @brief           Pinhole distortion coefficients of the second camera in
      *                  OpenCV order k1, k2, p1, p2 and optionally k3; empty
      *                  unless Camera2 is a distorted pinhole.
      */
-    std::vector<double>                              pinholeDistortion2;
+    std::vector<double> pinholeDistortion2;
 
     /*!
      * @brief           Image size stored in the settings file, in pixels.

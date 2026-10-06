@@ -55,6 +55,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <set>
@@ -153,7 +154,8 @@ class Atlas
     /*!
      * @brief           Saves or loads the Atlas for map save and load: the maps
      *                  (as backupMaps), the cameras, the static id counters and
-     *                  lastInitKeyFrameId.
+     *                  lastInitKeyFrameId. When loading, the cameras Boost
+     *                  creates are added to loadedCameras, which owns them.
      *
      * @param[in,out]   ar
      *                  Boost archive that is written to or read from.
@@ -420,7 +422,8 @@ class Atlas
      *
      * @param[out]      allCameras_out
      *                  Copy of the camera pointer list; the pointers are
-     *                  borrowed from the Atlas.
+     *                  borrowed, never deleted by the caller (see cameras for
+     *                  their owners).
      *
      * @return          ATLAS_STATUS_SUCCESS always.
      */
@@ -436,11 +439,15 @@ class Atlas
      *                  (no Atlas method calls this).
      *
      * @param[in]       p_camera_in
-     *                  Camera model to register; must not be null.
+     *                  Camera model to register; must not be null. Borrowed,
+     *                  never deleted by the Atlas: it stays with its creator
+     *                  (Settings or Tracking), which must keep it alive while
+     *                  the Atlas or a key frame may use it, also when an equal
+     *                  camera is returned instead.
      *
      * @param[out]      p_camera_out
      *                  The equal camera that was already registered, or
-     *                  p_camera_in itself when it was new.
+     *                  p_camera_in itself when it was new; borrowed.
      *
      * @return          ATLAS_STATUS_SUCCESS always.
      */
@@ -740,8 +747,10 @@ class Atlas
 
     /*!
      * @brief           Empties the active map set, forgets the current map and
-     *                  resets lastInitKeyFrameId to 0. The Map objects are not
-     *                  deleted. Takes atlasMutex.
+     *                  resets lastInitKeyFrameId to 0. The maps are moved to
+     *                  retiredMaps, not deleted, because key frames, map points
+     *                  and other threads can still hold pointers to them; the
+     *                  destructor deletes them. Takes atlasMutex.
      *
      * @return          ATLAS_STATUS_SUCCESS always.
      */
@@ -1240,8 +1249,8 @@ class Atlas
     std::set<Map *> badMaps;
 
     /*!
-     * @brief           Maps retired from active use but still owned until Atlas
-     *                  destruction.
+     * @brief           Maps retired from active use (by removeBadMaps or
+     *                  clearAtlas) but still owned until Atlas destruction.
      */
     std::set<Map *> retiredMaps;
 
@@ -1262,9 +1271,22 @@ class Atlas
 
     /*!
      * @brief           Distinct camera models used by the key frames;
-     *                  serialised. The Atlas does not delete them.
+     *                  serialised; guarded by atlasMutex in getAllCameras and
+     *                  addCamera. Borrowed, never deleted through this list:
+     *                  Settings or Tracking own the cameras they created and
+     *                  registered, loadedCameras owns those Boost created when
+     *                  this Atlas was loaded.
      */
     std::vector<camera_models::geometriccamera::GeometricCamera *> cameras;
+
+    /*!
+     * @brief           Owner of the cameras Boost created while loading this
+     *                  Atlas (the content of cameras right after loading);
+     *                  freed with the Atlas. Not serialised.
+     */
+    std::vector<
+        std::unique_ptr<camera_models::geometriccamera::GeometricCamera>>
+        loadedCameras;
 
     /*!
      * @brief           Key frame id at which the newest map was initialised;

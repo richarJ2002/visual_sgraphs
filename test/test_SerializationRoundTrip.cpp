@@ -1111,15 +1111,16 @@ TEST(SerializationAtlas, BuiltAtlasHasNoBorrowedLinks)
  */
 TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
 {
+    /* The test made the camera, so it owns it; the atlases only borrow it. */
+    const std::unique_ptr<camera_models::pinhole::Pinhole> p_pinholeCamera =
+        std::make_unique<camera_models::pinhole::Pinhole>(
+            std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
     Atlas original(0);
     int   maps2{};
     ASSERT_EQ((original.countMaps(maps2)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     EXPECT_EQ(1, maps2);
-    camera_models::pinhole::Pinhole *camera =
-        new camera_models::pinhole::Pinhole(
-            std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
     camera_models::geometriccamera::GeometricCamera *p_originalCamera = nullptr;
-    ASSERT_EQ((original.addCamera(camera, p_originalCamera)),
+    ASSERT_EQ((original.addCamera(p_pinholeCamera.get(), p_originalCamera)),
               AtlasStatus::ATLAS_STATUS_SUCCESS);
     std::vector<camera_models::geometriccamera::GeometricCamera *> allCameras{};
     ASSERT_EQ((original.getAllCameras(allCameras)),
@@ -1156,7 +1157,7 @@ TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
               AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_EQ(1U, allCameras2.size());
     unsigned int id{};
-    ASSERT_EQ((camera->getId(id)),
+    ASSERT_EQ((p_pinholeCamera->getId(id)),
               camera_models::geometriccamera::GeometricCameraStatus::
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
     unsigned int id2{};

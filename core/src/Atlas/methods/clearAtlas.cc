@@ -39,6 +39,8 @@ namespace core
 AtlasStatus Atlas::clearAtlas()
 {
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
+    /* Readers may still hold these maps: retire them; ~Atlas frees them. */
+    retiredMaps.insert(maps.begin(), maps.end());
     maps.clear();
     p_activeMap        = static_cast<Map *>(nullptr);
     lastInitKeyFrameId = 0;

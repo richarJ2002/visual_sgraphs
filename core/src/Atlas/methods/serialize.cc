@@ -38,6 +38,7 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/vector.hpp>
+#include <memory>
 
 namespace vs_graphs
 {
@@ -57,6 +58,15 @@ void Atlas::serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
     // mspMaps;
     ar & backupMaps;
     ar & cameras;
+    if constexpr (Archive::is_loading::value)
+    {
+        /* Boost created every loaded camera: this Atlas owns them. */
+        for (camera_models::geometriccamera::GeometricCamera *p_loadedCamera :
+             cameras)
+        {
+            loadedCameras.emplace_back(p_loadedCamera);
+        }
+    }
     // Need to save/load the static Id from Frame, KeyFrame, MapPoint and
     // Map
     ar &Map::nextId;

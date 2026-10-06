@@ -34,6 +34,7 @@
 #include "Tracking.h"
 
 #include <iostream>
+#include <memory>
 
 namespace vs_graphs
 {
@@ -121,25 +122,27 @@ TrackingStatus Tracking::parseORBParamFile(cv::FileStorage &settings_in,
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    p_orbExtractorLeft = new ORBextractor(featureCount,
-                                          scaleFactor,
-                                          levelCount,
-                                          initialThresholdFast,
-                                          minimumThresholdFast);
+    p_orbExtractorLeft = std::make_unique<ORBextractor>(featureCount,
+                                                        scaleFactor,
+                                                        levelCount,
+                                                        initialThresholdFast,
+                                                        minimumThresholdFast);
 
     if (sensor == System::STEREO || sensor == System::IMU_STEREO)
-        p_orbExtractorRight = new ORBextractor(featureCount,
-                                               scaleFactor,
-                                               levelCount,
-                                               initialThresholdFast,
-                                               minimumThresholdFast);
+        p_orbExtractorRight =
+            std::make_unique<ORBextractor>(featureCount,
+                                           scaleFactor,
+                                           levelCount,
+                                           initialThresholdFast,
+                                           minimumThresholdFast);
 
     if (sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR)
-        p_iniOrbExtractor = new ORBextractor(5 * featureCount,
-                                             scaleFactor,
-                                             levelCount,
-                                             initialThresholdFast,
-                                             minimumThresholdFast);
+        p_iniOrbExtractor =
+            std::make_unique<ORBextractor>(5 * featureCount,
+                                           scaleFactor,
+                                           levelCount,
+                                           initialThresholdFast,
+                                           minimumThresholdFast);
 
     // Adaptive FAST threshold initialization
     lastFrameFeatures        = 0;
