@@ -41,12 +41,21 @@ namespace core
 
 bool VertexPose::read(std::istream &inputStream_inout)
 {
-    std::vector<Eigen::Matrix<double, 3, 3>> cameraRotation_worldToCamera;
-    std::vector<Eigen::Matrix<double, 3, 1>> cameraTranslation_worldToCamera;
-    std::vector<Eigen::Matrix<double, 3, 3>> extrinsicRotation_cameraToBody;
-    std::vector<Eigen::Matrix<double, 3, 1>> extrinsicTranslation_cameraToBody;
-
     const int cameraCount = _estimate.Rbc.size();
+
+    /* One zeroed entry per camera; a value the stream cannot give stays 0. */
+    std::vector<Eigen::Matrix<double, 3, 3>> cameraRotation_worldToCamera(
+        cameraCount,
+        Eigen::Matrix3d::Zero());
+    std::vector<Eigen::Matrix<double, 3, 1>> cameraTranslation_worldToCamera(
+        cameraCount,
+        Eigen::Vector3d::Zero());
+    std::vector<Eigen::Matrix<double, 3, 3>> extrinsicRotation_cameraToBody(
+        cameraCount,
+        Eigen::Matrix3d::Zero());
+    std::vector<Eigen::Matrix<double, 3, 1>> extrinsicTranslation_cameraToBody(
+        cameraCount,
+        Eigen::Vector3d::Zero());
     for (int cameraIndex = 0; cameraIndex < cameraCount; cameraIndex++)
     {
         for (int componentIndex = 0; componentIndex < 3; componentIndex++)
@@ -75,7 +84,7 @@ bool VertexPose::read(std::istream &inputStream_inout)
                 extrinsicTranslation_cameraToBody[cameraIndex](componentIndex);
         }
 
-        float  nextParam;
+        float  nextParam{};
         size_t size2{};
         if (_estimate.pCamera[cameraIndex]->size(size2) !=
             camera_models::geometriccamera::GeometricCameraStatus::
@@ -103,7 +112,7 @@ bool VertexPose::read(std::istream &inputStream_inout)
         }
     }
 
-    double baselineFocalProduct;
+    double baselineFocalProduct{};
     inputStream_inout >> baselineFocalProduct;
     if (_estimate.setParam(cameraRotation_worldToCamera,
                            cameraTranslation_worldToCamera,
@@ -119,7 +128,7 @@ bool VertexPose::read(std::istream &inputStream_inout)
     }
     updateCache();
 
-    return true;
+    return !inputStream_inout.fail();
 }
 
 } // namespace core

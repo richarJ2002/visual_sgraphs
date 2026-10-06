@@ -18,8 +18,9 @@
  *
  * @brief           G2oTypes regression tests: the camera-body rotations of an
  *                  ImuCamPose built from a two-camera frame, the periodic
- *                  rotation clean-up of ImuCamPose::update and updateW, and the
- *                  symmetric information matrix of ConstraintPoseImu.
+ *                  rotation clean-up of ImuCamPose::update and updateW, the
+ *                  symmetric information matrix of ConstraintPoseImu, and the
+ *                  VertexPose write/read round trip.
  */
 
 #include "G2oTypes.h"
@@ -31,6 +32,7 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Geometry>
+#include <sstream>
 #include <vector>
 
 namespace vs_graphs
@@ -173,6 +175,100 @@ TEST(ConstraintPoseImu, KeepsTheSymmetricPartOfTheInformationMatrix)
         (informationMatrix + informationMatrix.transpose()) / 2.0;
     EXPECT_TRUE(constraint.H.isApprox(constraint.H.transpose(), 1.0e-12));
     EXPECT_TRUE(constraint.H.isApprox(symmetricPart, 1.0e-12));
+}
+
+/*!
+ * @brief           Checks that reading what write produced restores the camera
+ *                  poses, extrinsics, camera parameters and baseline-focal
+ *                  product of a one-camera vertex.
+ */
+TEST(VertexPose, ReadRestoresWhatWriteProduced)
+{
+    camera_models::pinhole::Pinhole writtenCamera(
+        std::vector<float>{500.0F, 501.0F, 320.0F, 240.0F});
+    camera_models::pinhole::Pinhole readCamera(
+        std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F});
+
+    const std::vector<Eigen::Matrix3d> cameraRotations_worldToCamera(
+        1,
+        Eigen::AngleAxisd(0.4, Eigen::Vector3d::UnitY()).toRotationMatrix());
+    const std::vector<Eigen::Vector3d> cameraTranslations_worldToCamera(
+        1,
+        Eigen::Vector3d(0.5, -0.25, 2.0));
+    const std::vector<Eigen::Matrix3d> extrinsicRotations_cameraToBody(
+        1,
+        Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitX()).toRotationMatrix());
+    const std::vector<Eigen::Vector3d> extrinsicTranslations_cameraToBody(
+        1,
+        Eigen::Vector3d(0.1, 0.0, 0.05));
+    const double baselineFocalProduct = 40.0;
+
+    ImuCamPose writtenPose;
+    ASSERT_EQ(writtenPose.setParam(cameraRotations_worldToCamera,
+                                   cameraTranslations_worldToCamera,
+                                   extrinsicRotations_cameraToBody,
+                                   extrinsicTranslations_cameraToBody,
+                                   baselineFocalProduct),
+              ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS);
+    writtenPose.pCamera = {&writtenCamera};
+    VertexPose writtenVertex;
+    writtenVertex.setEstimate(writtenPose);
+
+    /* Seventeen digits make the text round trip exact. */
+    std::stringstream poseStream;
+    poseStream.precision(17);
+    ASSERT_TRUE(writtenVertex.write(poseStream));
+
+    ImuCamPose readPose;
+    setUpSingleCameraPose(readPose);
+    readPose.pCamera = {&readCamera};
+    VertexPose readVertex;
+    readVertex.setEstimate(readPose);
+    EXPECT_TRUE(readVertex.read(poseStream));
+
+    const ImuCamPose &restoredPose = readVertex.estimate();
+    ASSERT_EQ(restoredPose.Rcw.size(), 1U);
+    EXPECT_TRUE(restoredPose.Rcw[0].isApprox(cameraRotations_worldToCamera[0],
+                                             1.0e-12));
+    EXPECT_TRUE(
+        restoredPose.tcw[0].isApprox(cameraTranslations_worldToCamera[0],
+                                     1.0e-12));
+    EXPECT_TRUE(restoredPose.Rbc[0].isApprox(extrinsicRotations_cameraToBody[0],
+                                             1.0e-12));
+    EXPECT_TRUE(
+        restoredPose.tbc[0].isApprox(extrinsicTranslations_cameraToBody[0],
+                                     1.0e-12));
+    EXPECT_DOUBLE_EQ(restoredPose.bf, baselineFocalProduct);
+    for (int parameterIndex = 0; parameterIndex < 4; parameterIndex++)
+    {
+        float writtenParameter{};
+        float readParameter{};
+        ASSERT_EQ(writtenCamera.getParameter(parameterIndex, writtenParameter),
+                  camera_models::geometriccamera::GeometricCameraStatus::
+                      GEOMETRIC_CAMERA_STATUS_SUCCESS);
+        ASSERT_EQ(readCamera.getParameter(parameterIndex, readParameter),
+                  camera_models::geometriccamera::GeometricCameraStatus::
+                      GEOMETRIC_CAMERA_STATUS_SUCCESS);
+        EXPECT_FLOAT_EQ(readParameter, writtenParameter);
+    }
+}
+
+/*!
+ * @brief           Checks that reading a stream that ends too early reports a
+ *                  failure.
+ */
+TEST(VertexPose, ReadReportsATruncatedStream)
+{
+    camera_models::pinhole::Pinhole readCamera(
+        std::vector<float>{1.0F, 1.0F, 1.0F, 1.0F});
+    ImuCamPose readPose;
+    setUpSingleCameraPose(readPose);
+    readPose.pCamera = {&readCamera};
+    VertexPose readVertex;
+    readVertex.setEstimate(readPose);
+
+    std::stringstream truncatedStream("1 0 0");
+    EXPECT_FALSE(readVertex.read(truncatedStream));
 }
 
 } // namespace

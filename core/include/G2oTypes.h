@@ -826,12 +826,15 @@ class VertexPose : public g2o::BaseVertex<6, ImuCamPose>
      * @brief           Reads the camera poses, extrinsics, camera model
      *                  parameters and baseline-focal product from a stream into
      *                  the estimate, in the order write() produces them. The
-     *                  stream state is not checked.
+     *                  number of cameras is that of the current estimate, whose
+     *                  camera models receive the parameters. On a failed read
+     *                  every value the stream could not give is taken as 0.
      *
      * @param[in,out]   inputStream_inout
      *                  Stream to read from.
      *
-     * @return          true always.
+     * @return          true when every value was read (the stream has not
+     *                  failed); false otherwise.
      */
     virtual bool read(std::istream &inputStream_inout);
     /*!

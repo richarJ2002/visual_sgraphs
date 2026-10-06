@@ -1028,7 +1028,7 @@ if(BUILD_TESTING)
   )
 
   # G2oTypes: ImuCamPose rotations and their periodic re-orthonormalisation,
-  # ConstraintPoseImu.
+  # ConstraintPoseImu, VertexPose read/write.
   ament_add_gtest(test_G2oTypes
     test/test_G2oTypes.cpp
   )
@@ -1041,6 +1041,22 @@ if(BUILD_TESTING)
     test/test_Sim3Solver.cpp
   )
   target_link_libraries(test_Sim3Solver
+    ${PROJECT_NAME}_lib
+  )
+
+  # KeyFrame scene median depth failures and repeated point-cloud release.
+  ament_add_gtest(test_KeyFrame
+    test/test_KeyFrame.cpp
+  )
+  target_link_libraries(test_KeyFrame
+    ${PROJECT_NAME}_lib
+  )
+
+  # MapPoint::postLoad with a missing right key point index.
+  ament_add_gtest(test_MapPoint
+    test/test_MapPoint.cpp
+  )
+  target_link_libraries(test_MapPoint
     ${PROJECT_NAME}_lib
   )
 

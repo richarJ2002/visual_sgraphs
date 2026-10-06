@@ -70,8 +70,11 @@ MapPointStatus
         KeyFrame *p_keyFrame = keyFrameId_in[mapPointIdIt->first];
         std::map<long unsigned int, int>::const_iterator it2 =
             backupObservationIds2.find(mapPointIdIt->first);
+        /* A missing right index means the right camera did not see it. */
+        const int rightIndex =
+            it2 != backupObservationIds2.end() ? it2->second : -1;
         std::tuple<int, int> indexes =
-            std::tuple<int, int>(mapPointIdIt->second, it2->second);
+            std::tuple<int, int>(mapPointIdIt->second, rightIndex);
         if (p_keyFrame)
         {
             observations[p_keyFrame] = indexes;

@@ -164,7 +164,9 @@ class Tracking
      *
      * @param[out]      isParsed_out
      *                  True when every required entry was present and valid,
-     *                  false otherwise.
+     *                  false otherwise. An unknown Camera.type is logged with
+     *                  its name and gives false; no camera is built and the
+     *                  rest of the section is not read.
      *
      * @return          TRACKING_STATUS_SUCCESS always.
      */

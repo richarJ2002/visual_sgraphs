@@ -47,6 +47,9 @@ namespace core
 KeyFrameStatus KeyFrame::computeSceneMedianDepth(const int q_in,
                                                  float    &sceneMedianDepth_out)
 {
+    if (q_in <= 0)
+        return KeyFrameStatus::KEY_FRAME_STATUS_INVALID_ARGUMENT;
+
     if (keyPointCount == 0)
     {
         sceneMedianDepth_out = -1.0;
@@ -71,9 +74,9 @@ KeyFrameStatus KeyFrame::computeSceneMedianDepth(const int q_in,
     float zcw = cameraTranslation_worldToCamera(2);
     for (int keyPointIndex = 0; keyPointIndex < keyPointCount; keyPointIndex++)
     {
-        if (mapPoints[keyPointIndex])
+        if (keyFrameMapPoints[keyPointIndex])
         {
-            MapPoint       *p_mapPoint = mapPoints[keyPointIndex];
+            MapPoint       *p_mapPoint = keyFrameMapPoints[keyPointIndex];
             Eigen::Vector3f x3Dw{};
             if (p_mapPoint->getWorldPos(x3Dw) !=
                 MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -87,6 +90,10 @@ KeyFrameStatus KeyFrame::computeSceneMedianDepth(const int q_in,
             mapPointDepths.push_back(z);
         }
     }
+
+    /* Without a matched map point there is no depth to index. */
+    if (mapPointDepths.empty())
+        return KeyFrameStatus::KEY_FRAME_STATUS_NO_MAP_POINTS;
 
     std::sort(mapPointDepths.begin(), mapPointDepths.end());
 

@@ -171,11 +171,8 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                     medianDepthKeyFrame2) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
-                RCLCPP_ERROR(
-                    rclcpp::get_logger("vs_graphs"),
-                    "%s: computeSceneMedianDepth returned a failure status "
-                    "although it cannot fail; continuing as before.",
-                    __func__);
+                /* No matched map point gives no scene depth: skip it. */
+                continue;
             }
             const float ratioBaselineDepth = baseline / medianDepthKeyFrame2;
 

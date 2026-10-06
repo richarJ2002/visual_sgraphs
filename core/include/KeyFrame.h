@@ -864,13 +864,17 @@ class KeyFrame
      *
      * @param[in]       q_in
      *                  Divisor selecting the element of the sorted depths; must
-     *                  not be 0.
+     *                  be positive.
      *
      * @param[out]      sceneMedianDepth_out
      *                  Depth along the camera z axis, metres; -1 when the key
-     *                  frame has no key points.
+     *                  frame has no key points. Left unchanged on a failure.
      *
-     * @return          KEY_FRAME_STATUS_SUCCESS always.
+     * @return          KEY_FRAME_STATUS_SUCCESS when the depth was written;
+     *                  KEY_FRAME_STATUS_INVALID_ARGUMENT when q_in is not
+     *                  positive; KEY_FRAME_STATUS_NO_MAP_POINTS when the key
+     *                  frame has key points but none is matched to a map
+     *                  point.
      */
     [[nodiscard]] KeyFrameStatus
         computeSceneMedianDepth(const int q_in, float &sceneMedianDepth_out);
@@ -1960,8 +1964,9 @@ class KeyFrame
         const;
     /*!
      * @brief           Releases the colour point cloud and the colour image
-     *                  once semantic segmentation no longer needs them. The
-     *                  point cloud must not already be null.
+     *                  once semantic segmentation no longer needs them. Safe to
+     *                  call again: a point cloud that is already null is
+     *                  skipped.
      *
      * @return          KEY_FRAME_STATUS_SUCCESS always.
      */

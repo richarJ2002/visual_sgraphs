@@ -683,10 +683,14 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
     }
     else
     {
-        std::cerr << "*Not Supported Camera Sensor*" << std::endl;
+        std::cerr << "*Not Supported Camera Sensor: '" << cameraName << "'*"
+                  << std::endl;
         std::cerr
             << "Check an example configuration file with the desired sensor"
             << std::endl;
+        /* No camera was built, so the steps below cannot run. */
+        isParsed_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
     if (sensor == System::STEREO || sensor == System::RGBD ||

@@ -479,7 +479,9 @@ class MapPoint
     /*!
      * @brief           Restores the pointers of the point after loading from
      *                  the ids stored by preSave(), then discards the stored
-     *                  ids. Observers that cannot be found are dropped.
+     *                  ids. Observers that cannot be found are dropped; an
+     *                  observer without a stored right key point index gets -1
+     *                  (not seen by the right camera).
      *
      * @param[in]       keyFrameId_in
      *                  Loaded key frames by id.

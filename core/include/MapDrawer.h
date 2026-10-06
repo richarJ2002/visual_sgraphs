@@ -280,7 +280,8 @@ class MapDrawer
 
     /*!
      * @brief           RGB colours (0 to 1) of key frames from other maps,
-     *                  indexed by the key frame's origin map id.
+     *                  indexed by the key frame's origin map id modulo the
+     *                  number of rows, so the colours repeat after six maps.
      */
     float frameColors[6][3] = {{0.0f, 0.0f, 1.0f},
                                {0.8f, 0.4f, 1.0f},

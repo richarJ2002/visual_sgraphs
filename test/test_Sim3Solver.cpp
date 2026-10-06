@@ -18,7 +18,8 @@
  *
  * @brief           Sim3Solver regression tests on two synthetic key frames at
  *                  the world origin: the inlier thresholds keep their
- *                  fractional part.
+ *                  fractional part, and the convergence overload of iterate
+ *                  returns the identity when it runs no round.
  */
 
 #include "Sim3Solver.h"
@@ -32,6 +33,7 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <cstddef>
 #include <memory>
 #include <opencv2/core.hpp>
@@ -285,6 +287,75 @@ TEST_F(Sim3SolverTest, BorderlineReprojectionErrorIsAnInlier)
               static_cast<std::size_t>(CORRESPONDENCE_COUNT));
     for (int pointIndex = 0; pointIndex < CORRESPONDENCE_COUNT; pointIndex++)
         EXPECT_TRUE(inlierFlags[pointIndex]) << "point " << pointIndex;
+}
+
+/*!
+ * @brief           Checks that the convergence overload of iterate, called
+ *                  after the iteration limit is used up, reports no transform
+ *                  and returns the identity.
+ */
+TEST_F(Sim3SolverTest, IterateAfterTheLastRoundReturnsTheIdentity)
+{
+    /*!
+     * The second key frame sees every point 1 m further along -x and turned
+     * by 0.05 rad about y: p2 = R (p1 - s), so the transform from its camera
+     * to the first one is p1 = R^T p2 + s, a 1 m shift along x. A rotation
+     * of exactly zero is a singular case of computeSim3 (0 / 0 axis).
+     */
+    const Eigen::Vector3f secondCameraShift_world(1.0F, 0.0F, 0.0F);
+    const Eigen::Matrix3f secondCameraRotation_firstCameraToSecondCamera =
+        Eigen::AngleAxisf(0.05F, Eigen::Vector3f::UnitY()).toRotationMatrix();
+    for (int pointIndex = 0; pointIndex < CORRESPONDENCE_COUNT; pointIndex++)
+    {
+        const Eigen::Vector3f firstPosition_world =
+            getPointPosition_world(pointIndex);
+        addCorrespondence(pointIndex,
+                          firstPosition_world,
+                          secondCameraRotation_firstCameraToSecondCamera *
+                              (firstPosition_world - secondCameraShift_world));
+    }
+
+    Sim3Solver solver(p_firstKeyFrame.get(),
+                      p_secondKeyFrame.get(),
+                      matchedMapPoints,
+                      true,
+                      std::vector<KeyFrame *>());
+    /* One round in total; convergence needs more inliers than exist. */
+    ASSERT_EQ(solver.setRansacParameters(0.99, CORRESPONDENCE_COUNT, 1),
+              Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS);
+
+    bool              areIterationsExhausted = false;
+    std::vector<bool> inliersFlags;
+    int               inlierCount  = -1;
+    bool              hasConverged = true;
+    Eigen::Matrix4f   lastRoundTransform{};
+    ASSERT_EQ(solver.iterate(5,
+                             areIterationsExhausted,
+                             inliersFlags,
+                             inlierCount,
+                             hasConverged,
+                             lastRoundTransform),
+              Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS);
+    ASSERT_TRUE(areIterationsExhausted);
+    ASSERT_FALSE(hasConverged);
+    /* Parentheses keep the comma in block<3, 1> out of the macro. */
+    ASSERT_TRUE(
+        (lastRoundTransform.block<3, 1>(0, 3).isApprox(secondCameraShift_world,
+                                                       1.0e-3F)));
+
+    Eigen::Matrix4f transform{};
+    ASSERT_EQ(solver.iterate(5,
+                             areIterationsExhausted,
+                             inliersFlags,
+                             inlierCount,
+                             hasConverged,
+                             transform),
+              Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS);
+    EXPECT_TRUE(areIterationsExhausted);
+    EXPECT_FALSE(hasConverged);
+    EXPECT_EQ(inlierCount, 0);
+    EXPECT_EQ(inliersFlags, std::vector<bool>(CORRESPONDENCE_COUNT, false));
+    EXPECT_TRUE(transform.isIdentity());
 }
 
 } // namespace

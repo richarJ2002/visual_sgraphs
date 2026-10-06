@@ -33,6 +33,8 @@
 #include "KeyFrame.h"
 #include "MapDrawer.h"
 #include "MapPoint.h"
+#include <cstddef>
+#include <iterator>
 #include <mutex>
 #include <pangolin/pangolin.h>
 #include <rclcpp/logging.hpp>
@@ -60,12 +62,12 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                      "cannot fail; continuing as before.",
                      __func__);
     }
+    if (!p_activeMap)
+        return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
+
     // DEBUG LBA
     std::set<long unsigned int> optKeyFrames   = p_activeMap->optKeyFrameIds;
     std::set<long unsigned int> fixedKeyFrames = p_activeMap->fixedKeyFrameIds;
-
-    if (!p_activeMap)
-        return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 
     std::vector<KeyFrame *> keyFrames{};
     if (p_activeMap->getAllKeyFrames(keyFrames) !=
@@ -390,7 +392,9 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                 }
                 Eigen::Matrix4f cameraPose_cameraToWorld =
                     keyFramePoseInverse2.matrix();
-                unsigned int indexColor = p_keyFrame->originMapId;
+                /* The colour rows repeat for origin map ids past the end. */
+                const std::size_t indexColor =
+                    p_keyFrame->originMapId % std::size(frameColors);
 
                 glPushMatrix();
 

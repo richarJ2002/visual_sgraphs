@@ -65,7 +65,8 @@ Sim3SolverStatus Sim3Solver::iterate(int   iterationCount_in,
 
     int currentIterationCount = 0;
 
-    Eigen::Matrix4f bestSim3;
+    /* Identity unless a round of this call reaches the best inlier count. */
+    Eigen::Matrix4f bestSim3 = Eigen::Matrix4f::Identity();
 
     while (iterationCount < ransacMaxIterations &&
            currentIterationCount < iterationCount_in)

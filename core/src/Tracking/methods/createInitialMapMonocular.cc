@@ -272,10 +272,12 @@ TrackingStatus Tracking::createInitialMapMonocular()
     if (p_keyFrameInitial->computeSceneMedianDepth(2, medianDepth) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
+        /* No scene depth: the negative value takes the reset path below. */
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: computeSceneMedianDepth returned a failure status "
-                     "although it cannot fail; continuing as before.",
+                     "%s: the initial key frame has no scene depth; "
+                     "resetting the initialisation.",
                      __func__);
+        medianDepth = -1.0F;
     }
     float invMedianDepth;
     if (sensor == System::IMU_MONOCULAR)

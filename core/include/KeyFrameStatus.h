@@ -47,7 +47,14 @@ enum class KeyFrameStatus : std::uint8_t
      * @brief           An input was null, repeated or not finite; the object
      *                  and the outputs were left unchanged.
      */
-    KEY_FRAME_STATUS_INVALID_ARGUMENT = 1U
+    KEY_FRAME_STATUS_INVALID_ARGUMENT = 1U,
+
+    /*!
+     * @brief           The key frame has key points but no matched map point,
+     *                  so there is nothing to compute from; the outputs were
+     *                  left unchanged.
+     */
+    KEY_FRAME_STATUS_NO_MAP_POINTS = 2U
 };
 
 } // namespace core

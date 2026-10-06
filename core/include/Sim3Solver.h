@@ -410,8 +410,10 @@ class Sim3Solver
      * @param[out]      transform_out
      *                  4x4 similarity transform from the second keyframe's
      *                  camera frame to the first's: the accepted one, else the
-     *                  best candidate of this call, else the identity when
-     *                  there are too few correspondences.
+     *                  best candidate of this call, else the identity (too few
+     *                  correspondences, or no round of this call at least as
+     *                  good as the best so far, for example because the
+     *                  iteration limit was already used up).
      *
      * @return          SIM3_SOLVER_STATUS_SUCCESS always.
      */

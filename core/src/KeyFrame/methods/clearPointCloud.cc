@@ -44,7 +44,9 @@ namespace core
 
 KeyFrameStatus KeyFrame::clearPointCloud()
 {
-    currentFramePointClouds->clear();
+    /* Null after an earlier call, or when the frame had no point cloud. */
+    if (currentFramePointClouds)
+        currentFramePointClouds->clear();
     currentFramePointClouds = nullptr;
 
     // clear images
