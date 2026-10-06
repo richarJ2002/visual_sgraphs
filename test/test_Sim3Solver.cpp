@@ -18,8 +18,9 @@
  *
  * @brief           Sim3Solver regression tests on two synthetic key frames at
  *                  the world origin: the inlier thresholds keep their
- *                  fractional part, and the convergence overload of iterate
- *                  returns the identity when it runs no round.
+ *                  fractional part, the convergence overload of iterate
+ *                  returns the identity when it runs no round, and a pure
+ *                  shift gives the identity rotation instead of aborting.
  */
 
 #include "Sim3Solver.h"
@@ -300,7 +301,7 @@ TEST_F(Sim3SolverTest, IterateAfterTheLastRoundReturnsTheIdentity)
      * The second key frame sees every point 1 m further along -x and turned
      * by 0.05 rad about y: p2 = R (p1 - s), so the transform from its camera
      * to the first one is p1 = R^T p2 + s, a 1 m shift along x. A rotation
-     * of exactly zero is a singular case of computeSim3 (0 / 0 axis).
+     * of exactly zero has its own test (PureShiftGivesTheIdentityRotation).
      */
     const Eigen::Vector3f secondCameraShift_world(1.0F, 0.0F, 0.0F);
     const Eigen::Matrix3f secondCameraRotation_firstCameraToSecondCamera =
@@ -356,6 +357,57 @@ TEST_F(Sim3SolverTest, IterateAfterTheLastRoundReturnsTheIdentity)
     EXPECT_EQ(inlierCount, 0);
     EXPECT_EQ(inliersFlags, std::vector<bool>(CORRESPONDENCE_COUNT, false));
     EXPECT_TRUE(transform.isIdentity());
+}
+
+/*!
+ * @brief           Checks that correspondences that differ by a pure 1 m shift
+ *                  give the identity rotation and the 1 m translation instead
+ *                  of aborting the process.
+ */
+TEST_F(Sim3SolverTest, PureShiftGivesTheIdentityRotation)
+{
+    /*!
+     * The second key frame sees every point 1 m closer along the optical axis
+     * z: p2 = p1 - s, so the transform from its camera to the first one is
+     * p1 = p2 + s, no rotation and a 1 m shift along z. Along z both point
+     * sets keep the same x and y and a constant depth, so their centred
+     * coordinates are equal to the bit and the best rotation is exactly the
+     * identity: the zero-norm case of computeSim3.
+     */
+    const Eigen::Vector3f secondCameraShift_world(0.0F, 0.0F, 1.0F);
+    for (int pointIndex = 0; pointIndex < CORRESPONDENCE_COUNT; pointIndex++)
+    {
+        const Eigen::Vector3f firstPosition_world =
+            getPointPosition_world(pointIndex);
+        addCorrespondence(pointIndex,
+                          firstPosition_world,
+                          firstPosition_world - secondCameraShift_world);
+    }
+
+    Sim3Solver solver(p_firstKeyFrame.get(),
+                      p_secondKeyFrame.get(),
+                      matchedMapPoints,
+                      true,
+                      std::vector<KeyFrame *>());
+
+    bool              areIterationsExhausted = true;
+    std::vector<bool> inliersFlags;
+    int               inlierCount  = 0;
+    bool              hasConverged = false;
+    Eigen::Matrix4f   transform{};
+    ASSERT_EQ(solver.iterate(5,
+                             areIterationsExhausted,
+                             inliersFlags,
+                             inlierCount,
+                             hasConverged,
+                             transform),
+              Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS);
+    ASSERT_TRUE(hasConverged);
+    EXPECT_EQ(inlierCount, CORRESPONDENCE_COUNT);
+    /* Parentheses keep the commas in block<3, 3> out of the macro. */
+    EXPECT_TRUE((transform.block<3, 3>(0, 0).isIdentity()));
+    EXPECT_TRUE((transform.block<3, 1>(0, 3).isApprox(secondCameraShift_world,
+                                                      1.0e-6F)));
 }
 
 } // namespace

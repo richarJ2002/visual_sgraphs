@@ -113,10 +113,18 @@ Sim3SolverStatus Sim3Solver::computeSim3(Eigen::Matrix3f &P1_inout,
     // part
     double angle = std::atan2(vector.norm(), evec(0, maximumIndex));
 
-    vector =
-        2 * angle * vector /
-        vector
-            .norm(); // Angle-axis representation. quaternion angle is the half
+    /*!
+     * The imaginary part is sin(angle) times the unit rotation axis. A zero
+     * norm means the best rotation is the identity (rotation angle 0, no
+     * axis), whose angle-axis vector is the zero vector this already is.
+     * Dividing by the norm would give 0 / 0 = NaN, and Sophus::SO3f::exp
+     * aborts on it.
+     */
+    if (vector.norm() > 0.0F)
+    {
+        /* Angle-axis vector; the quaternion angle is half the rotation. */
+        vector = 2 * angle * vector / vector.norm();
+    }
     mR12i = Sophus::SO3f::exp(vector).matrix();
 
     // Step 5: Rotate set 2
