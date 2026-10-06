@@ -8262,7 +8262,9 @@ void setVoxbloxSkeletonCluster(
          */
         const bool isConnectedVertexMarker =
             skeletonMarker.type == visualization_msgs::msg::Marker::CUBE_LIST &&
-            skeletonMarker.ns.rfind("connected_vertices_", 0) == 0;
+            skeletonMarker.ns.rfind(
+                vs_graphs::sparse::SPARSE_CLUSTER_NAMESPACE_PREFIX,
+                0) == 0;
 
         /* Ignore marker types that are not required by this pipeline */
         if (markerVerdict == SparseMarkerVerdict::SPARSE_MARKER_IGNORED)
@@ -8489,7 +8491,9 @@ void logSparseGraphCallbackSummary(
 
         const bool isClusterMarker =
             sparseMarker.type == visualization_msgs::msg::Marker::CUBE_LIST &&
-            sparseMarker.ns.rfind("connected_vertices_", 0) == 0;
+            sparseMarker.ns.rfind(
+                vs_graphs::sparse::SPARSE_CLUSTER_NAMESPACE_PREFIX,
+                0) == 0;
         const bool isEdgeMarker =
             sparseMarker.type == visualization_msgs::msg::Marker::LINE_LIST &&
             sparseMarker.ns == "edges";

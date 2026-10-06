@@ -49,11 +49,11 @@ MapStatus Map::addKeyFrame(KeyFrame *p_keyFrame_inout)
     // later keyframes are inserted with no id-duplicate check.
     if (keyFrames.empty())
     {
-        std::cout << "\n[Mapping] Map initialized with initial KeyFrame #"
-                  << initKeyFrameId << "." << std::endl;
         initKeyFrameId    = p_keyFrame_inout->id;
         p_initialKeyFrame = p_keyFrame_inout;
         p_lowerIdKeyFrame = p_keyFrame_inout;
+        std::cout << "\n[Mapping] Map initialized with initial KeyFrame #"
+                  << initKeyFrameId << "." << std::endl;
     }
 
     // Add the KeyFrame to the map

@@ -41,16 +41,14 @@ namespace vs_graphs
 namespace core
 {
 
-OptimizerStatus
-    Optimizer::optimizeSim3(KeyFrame                    *p_keyFrame1_in,
-                            KeyFrame                    *p_keyFrame2_in,
-                            std::vector<MapPoint *>     &matches1_inout,
-                            g2o::Sim3                   &g2oS12_inout,
-                            const float                  threshold2_in,
-                            const bool                   isScaleFixed_in,
-                            Eigen::Matrix<double, 7, 7> &acumHessian_out,
-                            int                         &inlierCount_out,
-                            const bool                   shouldUseAllPoints_in)
+OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
+                                        KeyFrame                *p_keyFrame2_in,
+                                        std::vector<MapPoint *> &matches1_inout,
+                                        g2o::Sim3               &g2oS12_inout,
+                                        const float              threshold2_in,
+                                        const bool isScaleFixed_in,
+                                        int       &inlierCount_out,
+                                        const bool shouldUseAllPoints_in)
 {
     g2o::SparseOptimizer                 optimizer;
     g2o::BlockSolverX::LinearSolverType *p_linearSolver;
@@ -440,8 +438,7 @@ OptimizerStatus
     optimizer.initializeOptimization();
     optimizer.optimize(moreIterationCount);
 
-    int inCount     = 0;
-    acumHessian_out = Eigen::MatrixXd::Zero(7, 7);
+    int inCount = 0;
     for (size_t edges12Index = 0; edges12Index < edges12.size(); edges12Index++)
     {
         vs_graphs::core::EdgeSim3ProjectXYZ        *e12 = edges12[edges12Index];

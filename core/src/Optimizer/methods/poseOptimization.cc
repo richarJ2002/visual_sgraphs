@@ -338,21 +338,10 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                                          "fail; continuing as before.",
                                          __func__);
                         }
-                        Sophus::SE3f frameRelativePoseTrl2{};
-                        if (p_frame_inout->getRelativePoseTrl(
-                                frameRelativePoseTrl2) !=
-                            FrameStatus::FRAME_STATUS_SUCCESS)
-                        {
-                            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                                         "%s: getRelativePoseTrl returned a "
-                                         "failure status although it cannot "
-                                         "fail; continuing as before.",
-                                         __func__);
-                        }
                         e->mTrl = g2o::SE3Quat(
                             frameRelativePoseTrl.unit_quaternion()
                                 .cast<double>(),
-                            frameRelativePoseTrl2.translation().cast<double>());
+                            frameRelativePoseTrl.translation().cast<double>());
 
                         optimizer.addEdge(e);
 

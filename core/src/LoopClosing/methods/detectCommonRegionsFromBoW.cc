@@ -530,8 +530,6 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                 if (numProjMatches >= projectionMatchCount)
                 {
                     // Optimize Sim3 transformation with every matches
-                    Eigen::Matrix<double, 7, 7> hessian7x7;
-
                     int optMatchCount{};
                     if (Optimizer::optimizeSim3(p_currentKF,
                                                 p_keyFrame,
@@ -539,7 +537,6 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                                                 gScm,
                                                 10,
                                                 isScaleFixed,
-                                                hessian7x7,
                                                 optMatchCount,
                                                 true) !=
                         OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)

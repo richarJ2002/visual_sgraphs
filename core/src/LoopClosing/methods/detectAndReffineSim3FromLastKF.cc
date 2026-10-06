@@ -88,7 +88,6 @@ LoopClosingStatus LoopClosing::detectAndReffineSim3FromLastKF(
         Sophus::SE3d mTwm = matchedKeyFramePoseInverse.cast<double>();
         g2o::Sim3    gSwm(mTwm.unit_quaternion(), mTwm.translation(), 1.0);
         g2o::Sim3    gScm = gScw_inout * gSwm;
-        Eigen::Matrix<double, 7, 7> hessian7x7;
 
         bool isFixedScale =
             isScaleFixed; // TODO CHECK; Solo para el monocular inertial
@@ -121,7 +120,6 @@ LoopClosingStatus LoopClosing::detectAndReffineSim3FromLastKF(
                                     gScm,
                                     10,
                                     isFixedScale,
-                                    hessian7x7,
                                     optMatchCount,
                                     true) !=
             OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)

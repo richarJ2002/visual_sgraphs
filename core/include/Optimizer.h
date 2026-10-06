@@ -494,10 +494,6 @@ class Optimizer
      *                  True to keep the scale fixed (SE3, stereo or RGB-D);
      *                  false to estimate it (Sim3, monocular).
      *
-     * @param[out]      acumHessian_out
-     *                  7x7 matrix set to zero when the refinement runs; it is
-     *                  never accumulated and is left untouched otherwise.
-     *
      * @param[out]      inlierCount_out
      *                  Number of matches that remain inliers.
      *
@@ -508,15 +504,14 @@ class Optimizer
      * @return          OPTIMIZER_STATUS_SUCCESS always.
      */
     [[nodiscard]] static OptimizerStatus
-        optimizeSim3(KeyFrame                    *p_keyFrame1_in,
-                     KeyFrame                    *p_keyFrame2_in,
-                     std::vector<MapPoint *>     &matches1_inout,
-                     g2o::Sim3                   &g2oS12_inout,
-                     const float                  threshold2_in,
-                     const bool                   isScaleFixed_in,
-                     Eigen::Matrix<double, 7, 7> &acumHessian_out,
-                     int                         &inlierCount_out,
-                     const bool shouldUseAllPoints_in = false);
+        optimizeSim3(KeyFrame                *p_keyFrame1_in,
+                     KeyFrame                *p_keyFrame2_in,
+                     std::vector<MapPoint *> &matches1_inout,
+                     g2o::Sim3               &g2oS12_inout,
+                     const float              threshold2_in,
+                     const bool               isScaleFixed_in,
+                     int                     &inlierCount_out,
+                     const bool               shouldUseAllPoints_in = false);
 
     // For inertial systems
 

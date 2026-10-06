@@ -116,7 +116,8 @@ void Viewer::run()
 
     pangolin::OpenGlMatrix cameraPose_cameraToWorld;
     cameraPose_cameraToWorld.SetIdentity();
-    pangolin::OpenGlMatrix cameraCenter_world; // Oriented with g in the z axis
+    /* Camera centre in the world frame, with the world axes (no rotation). */
+    pangolin::OpenGlMatrix cameraCenter_world;
     cameraCenter_world.SetIdentity();
     cv::namedWindow("ORB-SLAM3: Current Frame");
 
