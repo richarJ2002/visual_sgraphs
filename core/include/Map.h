@@ -121,6 +121,12 @@ class Map
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    /*!
+     * @brief           Creates an empty map that takes the next free map id;
+     *                  its first and highest key frame ids start at 0 and it
+     *                  has no origin or lowest-id key frame yet. Boost builds a
+     *                  map this way before loading a saved one.
+     */
     Map();
     /*!
      * @brief           Creates an empty map that takes the next free map id and
@@ -683,8 +689,9 @@ class Map
      *                  pose anchors the map. Does not lock.
      *
      * @param[out]      p_originKeyFrame_out
-     *                  Receives the origin key frame, or nullptr when it was
-     *                  erased and no key frame remains; borrowed.
+     *                  Receives the origin key frame, or nullptr before the
+     *                  first key frame is added and when it was erased and no
+     *                  key frame remains; borrowed.
      *
      * @return          MAP_STATUS_SUCCESS always.
      */
@@ -1200,11 +1207,13 @@ class Map
 
     /*!
      * @brief           Origin key frame of this map, the one that anchors it;
-     *                  borrowed, set by the first addKeyFrame().
+     *                  borrowed, nullptr until the first addKeyFrame().
      */
     KeyFrame *p_initialKeyFrame;
     /*!
-     * @brief           Key frame with the lowest id in this map; borrowed.
+     * @brief           Key frame with the lowest id in this map; borrowed,
+     *                  nullptr until the first addKeyFrame() and after the
+     *                  last key frame is erased.
      */
     KeyFrame *p_lowerIdKeyFrame;
 
@@ -1226,12 +1235,12 @@ class Map
 
     /*!
      * @brief           Id of p_lowerIdKeyFrame saved by preSave(); NO_SAVED_ID
-     *                  when there was none.
+     *                  when there was none and before the first preSave().
      */
     unsigned long int backupLowerKeyFrameId;
     /*!
      * @brief           Id of p_initialKeyFrame saved by preSave(); NO_SAVED_ID
-     *                  when there was none.
+     *                  when there was none and before the first preSave().
      */
     unsigned long int backupInitialKeyFrameId;
 

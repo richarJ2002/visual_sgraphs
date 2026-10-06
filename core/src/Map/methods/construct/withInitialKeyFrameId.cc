@@ -31,6 +31,7 @@
  */
 
 #include "Map.h"
+#include "SerializationUtils.h"
 
 #include <algorithm>
 #include <iterator>
@@ -45,6 +46,10 @@ namespace core
  * cycle. */
 
 Map::Map(int initialKeyFrameId_in) :
+    p_initialKeyFrame(nullptr),
+    p_lowerIdKeyFrame(nullptr),
+    backupLowerKeyFrameId(NO_SAVED_ID<unsigned long int>),
+    backupInitialKeyFrameId(NO_SAVED_ID<unsigned long int>),
     hasImuInitialization(false),
     mapChange(0),
     mapChangeNotified(0),

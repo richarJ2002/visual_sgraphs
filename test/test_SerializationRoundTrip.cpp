@@ -33,6 +33,7 @@
 #include <cstring>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <new>
 #include <set>
 #include <sstream>
@@ -781,6 +782,44 @@ TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
               KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS);
 }
 
+namespace
+{
+
+/*!
+ * @brief           Key frame database that shows its vocabulary pointer, so a
+ *                  test can read the value the default constructor leaves.
+ */
+class InspectableKeyFrameDatabase : public KeyFrameDatabase
+{
+  public:
+    /*!
+     * @brief           Returns the vocabulary pointer; borrowed.
+     */
+    const ORBVocabulary *getVocabulary() const
+    {
+        return p_vocabulary;
+    }
+};
+
+} // namespace
+
+/*!
+ * @brief           Checks that a key frame database built by the default
+ *                  constructor over memory filled with a non-zero pattern, as
+ *                  Boost builds a loaded database, has no vocabulary.
+ */
+TEST(SerializationKeyFrameDatabase, DefaultBuiltDatabaseHasNoVocabulary)
+{
+    alignas(InspectableKeyFrameDatabase) unsigned char
+        objectStorage[sizeof(InspectableKeyFrameDatabase)];
+    std::memset(objectStorage, 0xA5, sizeof(objectStorage));
+    /* No "()": value-initialisation would zero the memory first. */
+    InspectableKeyFrameDatabase *p_builtDatabase =
+        new (objectStorage) InspectableKeyFrameDatabase;
+    EXPECT_EQ(p_builtDatabase->getVocabulary(), nullptr);
+    p_builtDatabase->~InspectableKeyFrameDatabase();
+}
+
 /*!
  * @brief           Checks that a key frame without cameras keeps its id, key
  *                  point count, pose, velocity and IMU bias across a round
@@ -975,6 +1014,38 @@ TEST(SerializationMap, EmptyRoundTripMemoryAndTmpFile)
 }
 
 /*!
+ * @brief           Checks that a map built by either constructor over memory
+ *                  filled with a non-zero pattern (Boost builds a loaded map
+ *                  with the default one) has no origin or lowest-id key frame
+ *                  and starts its first key frame id at the given value.
+ */
+TEST(SerializationMap, BuiltMapHasNoKeyFrameLinks)
+{
+    for (const bool isDefaultBuilt : {true, false})
+    {
+        alignas(Map) unsigned char objectStorage[sizeof(Map)];
+        std::memset(objectStorage, 0xA5, sizeof(objectStorage));
+        Map *p_builtMap = isDefaultBuilt ? new (objectStorage) Map()
+                                         : new (objectStorage) Map(7);
+
+        KeyFrame *p_originKeyFrame = nullptr;
+        ASSERT_EQ((p_builtMap->getOriginKeyFrame(p_originKeyFrame)),
+                  MapStatus::MAP_STATUS_SUCCESS);
+        EXPECT_EQ(p_originKeyFrame, nullptr);
+        unsigned long initKeyFrameId{};
+        ASSERT_EQ((p_builtMap->getInitKeyFrameId(initKeyFrameId)),
+                  MapStatus::MAP_STATUS_SUCCESS);
+        EXPECT_EQ(initKeyFrameId, isDefaultBuilt ? 0U : 7U);
+        /* Reads the lowest-id key frame when it is not null. */
+        unsigned int lowerKeyFrameId = 1U;
+        ASSERT_EQ((p_builtMap->getLowerKeyFrameId(lowerKeyFrameId)),
+                  MapStatus::MAP_STATUS_SUCCESS);
+        EXPECT_EQ(lowerKeyFrameId, 0U);
+        p_builtMap->~Map();
+    }
+}
+
+/*!
  * @brief           Checks that an empty atlas with no cameras survives a round
  *                  trip with zero maps and can still be queried.
  */
@@ -1000,6 +1071,37 @@ TEST(SerializationAtlas, EmptyAndCameraRoundTrip)
     AtlasStatus        getAllMapsStatus{};
     EXPECT_NO_THROW(getAllMapsStatus = loaded.getAllMaps(loadedMaps));
     EXPECT_EQ(getAllMapsStatus, AtlasStatus::ATLAS_STATUS_SUCCESS);
+}
+
+/*!
+ * @brief           Checks that an atlas built by either constructor over memory
+ *                  filled with a non-zero pattern (Boost builds a loaded atlas
+ *                  with the default one) has no key frame database and no
+ *                  vocabulary, and the given last init key frame id.
+ */
+TEST(SerializationAtlas, BuiltAtlasHasNoBorrowedLinks)
+{
+    for (const bool isDefaultBuilt : {true, false})
+    {
+        alignas(Atlas) unsigned char objectStorage[sizeof(Atlas)];
+        std::memset(objectStorage, 0xA5, sizeof(objectStorage));
+        Atlas *p_builtAtlas = isDefaultBuilt ? new (objectStorage) Atlas()
+                                             : new (objectStorage) Atlas(3);
+
+        unsigned long lastInitKeyFrameId{};
+        ASSERT_EQ((p_builtAtlas->getLastInitKeyFrameId(lastInitKeyFrameId)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        EXPECT_EQ(lastInitKeyFrameId, isDefaultBuilt ? 0U : 3U);
+        KeyFrameDatabase *p_keyFrameDatabase = nullptr;
+        ASSERT_EQ((p_builtAtlas->getKeyFrameDatabase(p_keyFrameDatabase)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        EXPECT_EQ(p_keyFrameDatabase, nullptr);
+        ORBVocabulary *p_orbVocabulary = nullptr;
+        ASSERT_EQ((p_builtAtlas->getORBVocabulary(p_orbVocabulary)),
+                  AtlasStatus::ATLAS_STATUS_SUCCESS);
+        EXPECT_EQ(p_orbVocabulary, nullptr);
+        p_builtAtlas->~Atlas();
+    }
 }
 
 /*!

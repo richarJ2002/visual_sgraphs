@@ -318,19 +318,20 @@ class LocalMapping
 
     /*!
      * @brief           Rotation from the gravity-aligned frame to the world
-     *                  frame, estimated by IMU initialisation; scale
-     *                  refinement resets it to identity first.
+     *                  frame, estimated by IMU initialisation; identity before
+     *                  that, and scale refinement resets it to identity first.
      */
     Eigen::Matrix3d mRwg;
 
     /*!
-     * @brief           Gyroscope bias, rad/s, from the last IMU initialisation.
+     * @brief           Gyroscope bias, rad/s, from the last IMU initialisation;
+     *                  zero before the first one.
      */
     Eigen::Vector3d mbg;
 
     /*!
      * @brief           Accelerometer bias, m/s^2, from the last IMU
-     *                  initialisation.
+     *                  initialisation; zero before the first one.
      */
     Eigen::Vector3d mba;
 
@@ -342,7 +343,8 @@ class LocalMapping
 
     /*!
      * @brief           Time span, seconds, between the first key frame and the
-     *                  tracker's last frame at the last IMU initialisation.
+     *                  tracker's last frame at the last IMU initialisation; 0
+     *                  before the first one.
      */
     double initTime;
 
@@ -360,7 +362,8 @@ class LocalMapping
 
     /*!
      * @brief           Timestamp, seconds, of the first key frame of the
-     *                  initialisation window.
+     *                  initialisation window; 0 before the first IMU
+     *                  initialisation.
      */
     double firstTimestamp;
 
@@ -541,12 +544,12 @@ class LocalMapping
     Atlas *p_atlas;
 
     /*!
-     * @brief           Loop closer; borrowed, set by setLoopCloser().
+     * @brief           Loop closer; borrowed, nullptr until setLoopCloser().
      */
     LoopClosing *p_loopCloser;
 
     /*!
-     * @brief           Tracker; borrowed, set by setTracker().
+     * @brief           Tracker; borrowed, nullptr until setTracker().
      */
     Tracking *p_tracker;
 

@@ -79,6 +79,11 @@ class KeyFrameDatabase
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    /*!
+     * @brief           Creates an empty database with no vocabulary and no word
+     *                  list, as Boost does before loading one. clear() needs a
+     *                  vocabulary, so call setORBVocabulary() first.
+     */
     KeyFrameDatabase() {}
     /*!
      * @brief           Creates an empty database with one empty key frame list
@@ -299,9 +304,10 @@ class KeyFrameDatabase
 
   protected:
     /*!
-     * @brief           Vocabulary that defines the visual words; borrowed.
+     * @brief           Vocabulary that defines the visual words; borrowed,
+     *                  nullptr until a vocabulary is given.
      */
-    const ORBVocabulary *p_vocabulary;
+    const ORBVocabulary *p_vocabulary{nullptr};
 
     /*!
      * @brief           For each visual word, the key frames whose bag-of-words

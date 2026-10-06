@@ -605,7 +605,7 @@ class Tracking
      *                  that call changed it. The frame drawer reads it to know
      *                  what to show.
      */
-    TrackingState lastProcessedState;
+    TrackingState lastProcessedState{NO_IMAGES_YET};
 
     /*!
      * @brief           Sensor configuration, as a System sensor type value
@@ -961,9 +961,9 @@ class Tracking
     /*!
      * @brief           IMU measurements preintegrated since the last key frame;
      *                  replaced by a fresh object at each key frame. Set up for
-     *                  IMU sensors only.
+     *                  IMU sensors only; nullptr otherwise.
      */
-    IMU::Preintegrated *p_imuPreintegratedFromLastKF;
+    IMU::Preintegrated *p_imuPreintegratedFromLastKF{nullptr};
 
     /*!
      * @brief           IMU measurements waiting to be used; filled by
@@ -1006,14 +1006,14 @@ class Tracking
     // Other Thread Pointers
     /*!
      * @brief           Loop closing thread, reset together with the tracker.
-     *                  Borrowed, set by setLoopClosing().
+     *                  Borrowed, nullptr until setLoopClosing().
      */
-    LoopClosing  *p_loopClosing;
+    LoopClosing  *p_loopClosing{nullptr};
     /*!
      * @brief           Local mapping thread that receives key frames. Borrowed,
-     *                  set by setLocalMapper().
+     *                  nullptr until setLocalMapper().
      */
-    LocalMapping *p_localMapper;
+    LocalMapping *p_localMapper{nullptr};
 
     // ORB
     /*!
@@ -1054,9 +1054,10 @@ class Tracking
     // Local Map
     /*!
      * @brief           Reference key frame of the current frame: the local key
-     *                  frame sharing the most map points with it. Borrowed.
+     *                  frame sharing the most map points with it. Borrowed,
+     *                  nullptr before the first key frame.
      */
-    KeyFrame               *p_referenceKF;
+    KeyFrame               *p_referenceKF{nullptr};
     /*!
      * @brief           Key frames of the local map. Borrowed.
      */
@@ -1117,29 +1118,29 @@ class Tracking
      * @brief           Stereo baseline times focal length, in metres times
      *                  pixels.
      */
-    float           mbf;
+    float           mbf{0.0F};
     /*!
      * @brief           Factor between the input images and the calibration (1
      *                  means unscaled).
      */
-    float           imageScale;
+    float           imageScale{1.0F};
 
     // IMU parameters
     /*!
      * @brief           IMU sample rate, hertz.
      */
-    float  imuFrequency;
+    float  imuFrequency{0.0F};
     /*!
      * @brief           Smallest change of the average acceleration between two
      *                  frames, in the accelerometer unit, that lets stereo and
      *                  RGB-D IMU initialization proceed.
      */
-    float  imuThresh;
+    float  imuThresh{0.0F};
     /*!
      * @brief           True when key frames may still be created while
      *                  RECENTLY_LOST with an IMU (InsertKFsWhenLost setting).
      */
-    bool   shouldInsertKeyFramesWhenLost;
+    bool   shouldInsertKeyFramesWhenLost{false};
     /*!
      * @brief           Time between IMU samples, seconds; used to decide which
      *                  queued samples belong to a frame.
@@ -1151,39 +1152,39 @@ class Tracking
      * @brief           Fewest frames that must pass after a key frame before
      *                  another one may be created; always 0.
      */
-    int minFrames;
+    int minFrames{0};
     /*!
      * @brief           Frames after which a new key frame is forced; set to the
      *                  camera frame rate.
      */
-    int maxFrames;
+    int maxFrames{0};
 
     /*!
      * @brief           Frames after a relocalization during which IMU tracking
      *                  is treated as unreliable; set to maxFrames for IMU
-     *                  sensors.
+     *                  sensors, 0 otherwise.
      */
-    int framesToResetIMU;
+    int framesToResetIMU{0};
 
     /*!
      * @brief           Depth in metres that separates close points from far
      *                  points. Close points are reliable and are inserted from
      *                  one frame; far points need a match in two key frames.
      */
-    float depthThreshold;
+    float depthThreshold{0.0F};
 
     /*!
      * @brief           RGB-D only: factor that converts the raw depth values to
      *                  metres (the inverse of the DepthMapFactor setting, 1
      *                  when that is zero).
      */
-    float depthMapFactor;
+    float depthMapFactor{1.0F};
 
     /*!
      * @brief           Inlier matches of the current frame after the last local
      *                  map tracking.
      */
-    int matchesInliers;
+    int matchesInliers{0};
 
     // Keyframe insertion thresholds (configurable for aggressive corridor
     // tracking)
@@ -1247,7 +1248,7 @@ class Tracking
     /*!
      * @brief           Id of the frame that became the last key frame.
      */
-    unsigned int lastKeyFrameId;
+    unsigned int lastKeyFrameId{0};
     /*!
      * @brief           Id of the frame at which the tracker last relocalized or
      *                  restarted; 0 at the start.
@@ -1257,7 +1258,7 @@ class Tracking
      * @brief           Timestamp of the frame at which the state became
      *                  RECENTLY_LOST, seconds.
      */
-    double       timeStampLost;
+    double       timeStampLost{0.0};
     /*!
      * @brief           Longest time in RECENTLY_LOST before an IMU tracker
      *                  gives up and becomes LOST, seconds.
@@ -1276,7 +1277,7 @@ class Tracking
     /*!
      * @brief           Id of the last frame before the latest map was started.
      */
-    unsigned int lastInitFrameId;
+    unsigned int lastInitFrameId{0};
 
     /*!
      * @brief           True from createMapInAtlas() until the next track()
@@ -1301,7 +1302,7 @@ class Tracking
      * @brief           True when colour images are in RGB order, false for BGR;
      *                  ignored for grayscale.
      */
-    bool isRgbEnabled;
+    bool isRgbEnabled{false};
 
     /*!
      * @brief           Temporary visual odometry map points; owned by the
@@ -1322,28 +1323,28 @@ class Tracking
      * @brief           Keypoint count of the previous frame, for the adaptive
      *                  FAST threshold.
      */
-    int lastFrameFeatures;
+    int lastFrameFeatures{0};
     /*!
      * @brief           Frames in a row with few keypoints; drives how far
      *                  adjustFASTThreshold() lowers the thresholds.
      */
-    int consecutiveLowFeatures;
+    int consecutiveLowFeatures{0};
     /*!
      * @brief           Initial FAST threshold from the settings, the value the
      *                  adaptive threshold starts from and returns to.
      */
-    int baseInitialFastThreshold;
+    int baseInitialFastThreshold{0};
     /*!
      * @brief           Minimum FAST threshold from the settings, the value the
      *                  adaptive threshold starts from and returns to.
      */
-    int baseMinimumFastThreshold;
+    int baseMinimumFastThreshold{0};
 
     /*!
      * @brief           Camera model of the left (or only) camera. Owned by the
      *                  Atlas; borrowed.
      */
-    camera_models::geometriccamera::GeometricCamera *p_camera;
+    camera_models::geometriccamera::GeometricCamera *p_camera{nullptr};
     /*!
      * @brief           Camera model of the second camera, only for fisheye
      *                  stereo; null otherwise. Owned by the Atlas; borrowed.

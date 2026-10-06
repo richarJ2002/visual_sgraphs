@@ -197,6 +197,12 @@ class Atlas
     };
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    /*!
+     * @brief           Creates an Atlas with no map, no viewer, no key frame
+     *                  database and no vocabulary; lastInitKeyFrameId is 0.
+     *                  Boost builds an Atlas this way before loading a saved
+     *                  one.
+     */
     Atlas();
     /*!
      * @brief           Creates an Atlas and immediately creates its first map.
@@ -1142,7 +1148,8 @@ class Atlas
      *                  re-link key frames.
      *
      * @param[out]      p_keyFrameDatabase_out
-     *                  Borrowed pointer; whatever setKeyFrameDatabase stored.
+     *                  Borrowed pointer; whatever setKeyFrameDatabase stored,
+     *                  nullptr before that.
      *
      * @return          ATLAS_STATUS_SUCCESS always.
      */
@@ -1166,7 +1173,8 @@ class Atlas
      *                  key frames.
      *
      * @param[out]      p_oRBVocabulary_out
-     *                  Borrowed pointer; whatever setORBVocabulary stored.
+     *                  Borrowed pointer; whatever setORBVocabulary stored,
+     *                  nullptr before that.
      *
      * @return          ATLAS_STATUS_SUCCESS always.
      */
@@ -1256,28 +1264,28 @@ class Atlas
      * @brief           Key frame id at which the newest map was initialised;
      *                  serialised. createNewMap and preSave advance it.
      */
-    unsigned long int lastInitKeyFrameId;
+    unsigned long int lastInitKeyFrameId{0};
 
     /*!
      * @brief           Viewer given to setViewer; borrowed and only meaningful
      *                  once hasViewer is true.
      */
-    Viewer *p_viewer;
+    Viewer *p_viewer{nullptr};
     /*!
      * @brief           True once setViewer has stored a viewer.
      */
-    bool    hasViewer;
+    bool    hasViewer{false};
 
     /*!
      * @brief           Key frame database that postLoad hands to the loaded
-     *                  maps; borrowed, set by setKeyFrameDatabase.
+     *                  maps; borrowed, nullptr until setKeyFrameDatabase.
      */
-    KeyFrameDatabase *p_keyFrameDatabase;
+    KeyFrameDatabase *p_keyFrameDatabase{nullptr};
     /*!
      * @brief           ORB vocabulary that postLoad hands to the loaded maps;
-     *                  borrowed, set by setORBVocabulary.
+     *                  borrowed, nullptr until setORBVocabulary.
      */
-    ORBVocabulary    *p_orbVocabulary;
+    ORBVocabulary    *p_orbVocabulary{nullptr};
 
     /*!
      * @brief           Guards the map sets, p_activeMap and lastInitKeyFrameId.
