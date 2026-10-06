@@ -556,6 +556,12 @@ class KeyFrame
      *                  this key frame.
      *
      * @return          KEY_FRAME_STATUS_SUCCESS always.
+     *
+     * @note            Thread safety: reads the indices from the map point
+     *                  (under its featuresMutex) first, then takes this key
+     *                  frame's featuresMutex for the write; the two locks are
+     *                  never held together, so no lock order is added. The
+     *                  caller must not hold this key frame's featuresMutex.
      */
     [[nodiscard]] KeyFrameStatus eraseMapPointMatch(MapPoint *p_mapPoint_in);
     /*!
@@ -569,6 +575,12 @@ class KeyFrame
      *                  New map point; borrowed, may be null.
      *
      * @return          KEY_FRAME_STATUS_SUCCESS always.
+     *
+     * @note            Thread safety: writes under this key frame's
+     *                  featuresMutex and calls nothing while holding it. The
+     *                  caller must not hold this key frame's featuresMutex;
+     *                  MapPoint::replace, the only caller, holds no map point
+     *                  lock when it calls this.
      */
     [[nodiscard]] KeyFrameStatus replaceMapPointMatch(const int &index_in,
                                                       MapPoint  *p_mapPoint_in);

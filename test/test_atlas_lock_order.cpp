@@ -13,7 +13,8 @@
  *
  * @brief           Tests the order in which Atlas takes its locks
  *                  (AtlasLockOrder), through the test hook in
- *                  Atlas::matchRoomsToContext().
+ *                  Atlas::matchRoomsToContext(), and that the camera registry
+ *                  takes atlasMutex.
  */
 
 #include "Atlas.h"
@@ -23,10 +24,13 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <rclcpp/logging.hpp>
 #include <thread>
+#include <vector>
 
 namespace vs_graphs
 {
@@ -91,6 +95,36 @@ class TestAtlas : public Atlas
         return true;
     }
 };
+
+/*!
+ * @brief           Runs a call on another thread while the test holds
+ *                  atlasMutex and checks that the call waits for the mutex,
+ *                  then finishes once the mutex is released.
+ *
+ * @param[in,out]   testAtlas_inout
+ *                  Atlas whose mutex is held during the wait.
+ *
+ * @param[in]       atlasCall_in
+ *                  Call that must take atlasMutex.
+ */
+void expectCallWaitsForAtlasMutex(TestAtlas                   &testAtlas_inout,
+                                  const std::function<void()> &atlasCall_in)
+{
+    std::atomic<bool>            hasFinished{false};
+    std::unique_lock<std::mutex> atlasLock = testAtlas_inout.lockAtlas();
+    std::thread                  callerThread(
+        [&atlasCall_in, &hasFinished]()
+        {
+            atlasCall_in();
+            hasFinished.store(true);
+        });
+    /* Long enough for a call that skips the mutex to finish. */
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EXPECT_FALSE(hasFinished.load());
+    atlasLock.unlock();
+    callerThread.join();
+    EXPECT_TRUE(hasFinished.load());
+}
 
 TEST(AtlasLockOrder, MatchingDoesNotHoldRoomContextWhileWaitingForAtlas)
 {
@@ -215,6 +249,41 @@ TEST(AtlasLockOrder, EventAndHistoryCopiesAreSafeWithoutBorrowedEntities)
     }
     reader.join();
     EXPECT_TRUE(complete.load(std::memory_order_acquire));
+}
+
+/*!
+ * @brief           Checks that addCamera() and getAllCameras() wait for
+ *                  atlasMutex, and that the camera they register and return is
+ *                  the borrowed one the caller passed in.
+ */
+TEST(AtlasLockOrder, CameraRegistryWaitsForAtlasMutex)
+{
+    /* Declared first: the camera outlives the Atlas that borrows it. */
+    camera_models::pinhole::Pinhole pinholeCamera(
+        std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
+    TestAtlas testAtlas(0);
+
+    camera_models::geometriccamera::GeometricCamera *p_registeredCamera =
+        nullptr;
+    expectCallWaitsForAtlasMutex(
+        testAtlas,
+        [&testAtlas, &pinholeCamera, &p_registeredCamera]()
+        {
+            EXPECT_EQ((testAtlas.addCamera(&pinholeCamera, p_registeredCamera)),
+                      AtlasStatus::ATLAS_STATUS_SUCCESS);
+        });
+    EXPECT_EQ(p_registeredCamera, &pinholeCamera);
+
+    std::vector<camera_models::geometriccamera::GeometricCamera *> allCameras{};
+    expectCallWaitsForAtlasMutex(testAtlas,
+                                 [&testAtlas, &allCameras]()
+                                 {
+                                     EXPECT_EQ(
+                                         (testAtlas.getAllCameras(allCameras)),
+                                         AtlasStatus::ATLAS_STATUS_SUCCESS);
+                                 });
+    ASSERT_EQ(allCameras.size(), 1U);
+    EXPECT_EQ(allCameras[0], &pinholeCamera);
 }
 
 } // namespace

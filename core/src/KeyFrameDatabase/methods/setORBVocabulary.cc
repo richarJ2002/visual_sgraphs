@@ -37,6 +37,7 @@ namespace core
 KeyFrameDatabaseStatus
     KeyFrameDatabase::setORBVocabulary(ORBVocabulary *p_orbVocabulary_in)
 {
+    std::unique_lock<std::mutex> lock(databaseMutex);
     p_vocabulary = p_orbVocabulary_in;
 
     invertedFile.clear();

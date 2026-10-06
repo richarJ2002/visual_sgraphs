@@ -30,6 +30,8 @@
  */
 
 #include "Atlas.h"
+
+#include <mutex>
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs
@@ -41,6 +43,9 @@ AtlasStatus Atlas::addCamera(
     camera_models::geometriccamera::GeometricCamera  *p_camera_in,
     camera_models::geometriccamera::GeometricCamera *&p_camera_out)
 {
+    /* Only camera methods run under the lock; they take no lock. */
+    std::unique_lock<std::mutex> atlasLock(atlasMutex);
+
     // Check if the camera already exists
     bool isAlreadyInMap     = false;
     int  matchedCameraIndex = -1;

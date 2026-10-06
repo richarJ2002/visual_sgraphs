@@ -56,6 +56,9 @@ KeyFrameStatus KeyFrame::eraseMapPointMatch(MapPoint *p_mapPoint_in)
                      __func__);
     }
     int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
+
+    /* Taken after getIndexInKeyFrame released the map point's lock. */
+    std::unique_lock<std::mutex> lock(featuresMutex);
     if (leftIndex != -1)
         mapPoints[leftIndex] = static_cast<MapPoint *>(nullptr);
     if (rightIndex != -1)

@@ -414,7 +414,9 @@ class Atlas
 
     /*!
      * @brief           Returns every camera model registered with the Atlas.
-     *                  Does not take atlasMutex.
+     *                  Takes atlasMutex while it copies the list and takes no
+     *                  other lock under it, so the caller must not hold
+     *                  atlasMutex (no Atlas method calls this).
      *
      * @param[out]      allCameras_out
      *                  Copy of the camera pointer list; the pointers are
@@ -427,7 +429,11 @@ class Atlas
             &allCameras_out);
     /*!
      * @brief           Registers a camera model, reusing an equal one that is
-     *                  already registered. Does not take atlasMutex.
+     *                  already registered. Takes atlasMutex for the whole
+     *                  search and insertion. Lock order: atlasMutex is the only
+     *                  lock held, because the comparison calls camera methods,
+     *                  which take no lock; the caller must not hold atlasMutex
+     *                  (no Atlas method calls this).
      *
      * @param[in]       p_camera_in
      *                  Camera model to register; must not be null.

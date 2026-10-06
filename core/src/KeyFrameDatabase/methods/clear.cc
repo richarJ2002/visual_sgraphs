@@ -36,6 +36,7 @@ namespace core
 
 KeyFrameDatabaseStatus KeyFrameDatabase::clear()
 {
+    std::unique_lock<std::mutex> lock(databaseMutex);
     invertedFile.clear();
     invertedFile.resize(p_vocabulary->size());
 

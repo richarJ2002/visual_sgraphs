@@ -45,6 +45,7 @@ namespace core
 KeyFrameStatus KeyFrame::replaceMapPointMatch(const int &index_in,
                                               MapPoint  *p_mapPoint_in)
 {
+    std::unique_lock<std::mutex> lock(featuresMutex);
     mapPoints[index_in] = p_mapPoint_in;
 
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;

@@ -123,7 +123,12 @@ class KeyFrameDatabase
 
     /*!
      * @brief           Empties every word list and keeps the vocabulary size.
-     *                  Does not take databaseMutex.
+     *                  Takes databaseMutex and no other lock under it (it
+     *                  touches only invertedFile and the vocabulary size), so
+     *                  it adds no lock-order edge; the caller must not hold
+     *                  databaseMutex (no database method calls this).
+     *
+     * @pre             A vocabulary is set.
      *
      * @return          KEY_FRAME_DATABASE_STATUS_SUCCESS always.
      */
@@ -291,7 +296,9 @@ class KeyFrameDatabase
     /*!
      * @brief           Replaces the vocabulary and resets the inverted file to
      *                  one empty list per word, so every key frame must be
-     *                  added again. Does not take databaseMutex.
+     *                  added again. Takes databaseMutex and no other lock
+     *                  under it, so it adds no lock-order edge; the caller must
+     *                  not hold databaseMutex (no database method calls this).
      *
      * @param[in]       p_orbVocabulary_in
      *                  New vocabulary; only its address is kept, so it must
@@ -323,8 +330,8 @@ class KeyFrameDatabase
     std::vector<std::list<long unsigned int>> backupInvertedFileIds;
 
     /*!
-     * @brief           Guards invertedFile in add, erase, clearMap and the
-     *                  detect functions.
+     * @brief           Guards invertedFile in add, erase, clear, clearMap,
+     *                  setORBVocabulary and the detect functions.
      */
     std::mutex databaseMutex;
 };

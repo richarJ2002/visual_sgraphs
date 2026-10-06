@@ -31,6 +31,8 @@
 
 #include "Atlas.h"
 
+#include <mutex>
+
 namespace vs_graphs
 {
 namespace core
@@ -40,6 +42,7 @@ AtlasStatus Atlas::getAllCameras(
     std::vector<camera_models::geometriccamera::GeometricCamera *>
         &allCameras_out)
 {
+    std::unique_lock<std::mutex> atlasLock(atlasMutex);
     allCameras_out = cameras;
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
