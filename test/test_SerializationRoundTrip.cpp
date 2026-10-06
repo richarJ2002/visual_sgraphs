@@ -1046,6 +1046,30 @@ TEST(SerializationMap, BuiltMapHasNoKeyFrameLinks)
 }
 
 /*!
+ * @brief           Checks that clearing a map that holds a key frame leaves it
+ *                  with no origin or lowest-id key frame, so preSave() cannot
+ *                  record the id of a key frame the map no longer holds.
+ */
+TEST(SerializationMap, ClearedMapHasNoKeyFrameLinks)
+{
+    KeyFrame clearedKeyFrame;
+    clearedKeyFrame.id = 3U;
+    Map clearedMap(0);
+    ASSERT_EQ((clearedMap.addKeyFrame(&clearedKeyFrame)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    ASSERT_EQ((clearedMap.clear()), MapStatus::MAP_STATUS_SUCCESS);
+
+    KeyFrame *p_originKeyFrame = &clearedKeyFrame;
+    ASSERT_EQ((clearedMap.getOriginKeyFrame(p_originKeyFrame)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(p_originKeyFrame, nullptr);
+    unsigned int lowerKeyFrameId = 1U;
+    ASSERT_EQ((clearedMap.getLowerKeyFrameId(lowerKeyFrameId)),
+              MapStatus::MAP_STATUS_SUCCESS);
+    EXPECT_EQ(lowerKeyFrameId, 0U);
+}
+
+/*!
  * @brief           Checks that an empty atlas with no cameras survives a round
  *                  trip with zero maps and can still be queried.
  */

@@ -77,6 +77,10 @@ MapStatus Map::clear()
     skeletonClusterPoints.clear();
     skeletonEdges.clear();
 
+    /* Like erasing the last key frame: no origin or lowest-id key frame. */
+    p_initialKeyFrame = nullptr;
+    p_lowerIdKeyFrame = nullptr;
+
     maxKeyFrameId        = initKeyFrameId;
     hasImuInitialization = false;
     detectedRooms.clear();

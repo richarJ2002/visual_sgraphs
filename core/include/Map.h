@@ -690,8 +690,8 @@ class Map
      *
      * @param[out]      p_originKeyFrame_out
      *                  Receives the origin key frame, or nullptr before the
-     *                  first key frame is added and when it was erased and no
-     *                  key frame remains; borrowed.
+     *                  first key frame is added, when it was erased and no
+     *                  key frame remains, and after clear(); borrowed.
      *
      * @return          MAP_STATUS_SUCCESS always.
      */
@@ -849,8 +849,9 @@ class Map
      * @brief           Empties this map: key frames (their map link is reset to
      *                  null), map points, semantic entities, id indexes,
      *                  reference points, origins and skeleton data are dropped,
-     *                  the highest key frame id goes back to the first key
-     *                  frame id and the IMU initialisation and inertial bundle
+     *                  the origin and lowest-id key frames become nullptr, the
+     *                  highest key frame id goes back to the first key frame id
+     *                  and the IMU initialisation and inertial bundle
      *                  adjustment flags are reset. The objects are not deleted.
      *                  Does not lock mapMutex.
      *
@@ -1207,13 +1208,14 @@ class Map
 
     /*!
      * @brief           Origin key frame of this map, the one that anchors it;
-     *                  borrowed, nullptr until the first addKeyFrame().
+     *                  borrowed, nullptr until the first addKeyFrame() and
+     *                  after clear().
      */
     KeyFrame *p_initialKeyFrame;
     /*!
      * @brief           Key frame with the lowest id in this map; borrowed,
-     *                  nullptr until the first addKeyFrame() and after the
-     *                  last key frame is erased.
+     *                  nullptr until the first addKeyFrame(), after the last
+     *                  key frame is erased and after clear().
      */
     KeyFrame *p_lowerIdKeyFrame;
 
