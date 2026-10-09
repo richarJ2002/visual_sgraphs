@@ -163,7 +163,8 @@ class Floor
         name(""),
         centroid(Eigen::Vector3d::Zero()),
         p_map(nullptr)
-    {}
+    {
+    }
 
     /*!
      * @brief           Apply a rigid/similarity transform to the plane

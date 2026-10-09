@@ -165,8 +165,7 @@ class ScopedFault
         {                                                                      \
             return false;                                                      \
         }                                                                      \
-    }                                                                          \
-    while (0)
+    } while (0)
 /*!
  * @brief           Evaluates to true when the named probe is armed; always
  *                  false when fault injection is disabled.

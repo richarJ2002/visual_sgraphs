@@ -84,7 +84,8 @@ class GeometricCamera
      */
     GeometricCamera(const std::vector<float> &parameters_in) :
         parameters(parameters_in)
-    {}
+    {
+    }
     /*!
      * @brief           Destroys the camera; virtual so that deleting a camera
      *                  through this base type runs the derived destructor.

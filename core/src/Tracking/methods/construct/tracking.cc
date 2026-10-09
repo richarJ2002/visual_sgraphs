@@ -161,7 +161,8 @@ Tracking::Tracking(System                    *p_sys_in,
                 throw -1;
             }
             catch (std::exception &e)
-            {}
+            {
+            }
         }
     }
 

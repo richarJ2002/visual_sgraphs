@@ -162,8 +162,7 @@ std::vector<std::size_t>
                 }
             }
             currentCol = nextCol;
-        }
-        while (rowAssignedToCol[currentCol] != 0);
+        } while (rowAssignedToCol[currentCol] != 0);
 
         while (currentCol != 0)
         {

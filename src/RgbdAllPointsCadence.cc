@@ -14,7 +14,8 @@ namespace vs_graphs::rgbd
 AllPointsCadence::AllPointsCadence(
     const std::int64_t periodNanoseconds_in) noexcept :
     periodNanoseconds(periodNanoseconds_in)
-{}
+{
+}
 
 bool AllPointsCadence::shouldPublish(
     const std::int64_t  messageTimeNanoseconds_in,

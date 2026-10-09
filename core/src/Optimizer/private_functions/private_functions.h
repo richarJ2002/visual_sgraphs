@@ -60,7 +60,8 @@ class AtomicOptimizerStopBridge final : public g2o::HyperGraphAction
                               bool                   *p_localStopFlag_inout) :
         p_stopRequested(p_stopRequested_in),
         p_localStopFlag(p_localStopFlag_inout)
-    {}
+    {
+    }
 
     /*!
      * @brief           Copies a pending stop request into the g2o stop flag;

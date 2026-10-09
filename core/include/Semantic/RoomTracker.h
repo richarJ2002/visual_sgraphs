@@ -315,7 +315,8 @@ class RoomTracker
     explicit RoomTracker(
         const RoomTrackerConfig &configuration_in = RoomTrackerConfig()) :
         config(configuration_in)
-    {}
+    {
+    }
 
     /*!
      * @brief           Resets state, timers, retry counters and event history.

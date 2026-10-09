@@ -84,7 +84,8 @@ System::System() :
     isLocalizationModeDeactivationRequested(false),
     isShutdownRequested(false),
     p_settings(nullptr)
-{}
+{
+}
 
 } // namespace core
 } // namespace vs_graphs

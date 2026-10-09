@@ -98,7 +98,8 @@ SemanticSegmentationStatus SemanticSegmentation::addSegmentedFrameToBuffer(
                    priorHighWatermark,
                    queueDepth,
                    std::memory_order_relaxed))
-        {}
+        {
+        }
     }
 
     if (didDrop)

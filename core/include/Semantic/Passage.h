@@ -256,7 +256,8 @@ class Passage
         traversalFarToKnownCount(0U),
         traversalUnknownCount(0U),
         p_map(nullptr)
-    {}
+    {
+    }
 
     /*!
      * @brief           Apply a rigid/similarity transform to the plane

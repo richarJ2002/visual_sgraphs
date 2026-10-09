@@ -127,7 +127,7 @@ struct WallRecord
     std::uint64_t cloudGeneration{0U};
 
     /*!
-     * @brief           PlaneGeometryMetadataSnapshot::successfulRefitGeneration.
+     * @brief PlaneGeometryMetadataSnapshot::successfulRefitGeneration.
      */
     std::uint64_t successfulRefitGeneration{0U};
 

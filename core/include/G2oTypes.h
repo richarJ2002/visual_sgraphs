@@ -1303,7 +1303,8 @@ class GDirection
         gravityRotation_gravityToWorld(Eigen::Matrix3d::Identity()),
         gravityRotation_worldToGravity(Eigen::Matrix3d::Identity()),
         its(0)
-    {}
+    {
+    }
 
     /*!
      * @brief           Creates the gravity direction from a known rotation.
@@ -1318,7 +1319,8 @@ class GDirection
         gravityRotation_worldToGravity(
             gravityRotation_gravityToWorld_in.transpose()),
         its(0)
-    {}
+    {
+    }
 
     /*!
      * @brief           Applies an optimiser step by rotating the
@@ -1540,7 +1542,8 @@ class EdgeMono
      */
     EdgeMono(int cameraIndex_in = 0) :
         cam_idx(cameraIndex_in)
-    {}
+    {
+    }
 
     /*!
      * @brief           Does nothing: reading this edge from a stream is not
@@ -1698,7 +1701,8 @@ class EdgeMonoOnlyPose
     EdgeMonoOnlyPose(const Eigen::Vector3f &Xw_in, int cameraIndex_in = 0) :
         Xw(Xw_in.cast<double>()),
         cam_idx(cameraIndex_in)
-    {}
+    {
+    }
 
     /*!
      * @brief           Does nothing: reading this edge from a stream is not
@@ -1823,7 +1827,8 @@ class EdgeStereo
      */
     EdgeStereo(int cameraIndex_in = 0) :
         cam_idx(cameraIndex_in)
-    {}
+    {
+    }
 
     /*!
      * @brief           Does nothing: reading this edge from a stream is not
@@ -1962,7 +1967,8 @@ class EdgeStereoOnlyPose
     EdgeStereoOnlyPose(const Eigen::Vector3f &Xw_in, int cameraIndex_in = 0) :
         Xw(Xw_in.cast<double>()),
         cam_idx(cameraIndex_in)
-    {}
+    {
+    }
 
     /*!
      * @brief           Does nothing: reading this edge from a stream is not
@@ -3020,7 +3026,8 @@ class EdgePriorAcc
      */
     EdgePriorAcc(const Eigen::Vector3f &bprior_in) :
         bprior(bprior_in.cast<double>())
-    {}
+    {
+    }
 
     /*!
      * @brief           Does nothing: reading this edge from a stream is not
@@ -3108,7 +3115,8 @@ class EdgePriorGyro
      */
     EdgePriorGyro(const Eigen::Vector3f &bprior_in) :
         bprior(bprior_in.cast<double>())
-    {}
+    {
+    }
 
     /*!
      * @brief           Does nothing: reading this edge from a stream is not

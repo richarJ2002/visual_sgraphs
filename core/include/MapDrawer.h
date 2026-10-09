@@ -114,7 +114,8 @@ class MapDrawer
                     throw -1;
                 }
                 catch (std::exception &caughtException)
-                {}
+                {
+                }
             }
         }
     }

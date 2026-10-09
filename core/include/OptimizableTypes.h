@@ -325,7 +325,8 @@ class EdgeSE3ProjectXYZ : public g2o::BaseBinaryEdge<2,
                        Eigen::Vector2d,
                        g2o::VertexSBAPointXYZ,
                        g2o::VertexSE3Expmap>()
-    {}
+    {
+    }
 
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the 2D
@@ -415,7 +416,8 @@ class EdgeSE3ProjectXYZToBody
                        Eigen::Vector2d,
                        g2o::VertexSBAPointXYZ,
                        g2o::VertexSE3Expmap>()
-    {}
+    {
+    }
 
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the 2D
@@ -597,7 +599,8 @@ class EdgeSim3ProjectXYZ
                             Eigen::Vector2d,
                             g2o::VertexSBAPointXYZ,
                             VertexSim3Expmap>()
-    {}
+    {
+    }
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the 2D
      *                  pixel measurement (u, v), then the information matrix.
@@ -658,7 +661,8 @@ class EdgeInverseSim3ProjectXYZ
                             Eigen::Vector2d,
                             g2o::VertexSBAPointXYZ,
                             VertexSim3Expmap>()
-    {}
+    {
+    }
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the 2D
      *                  pixel measurement (u, v), then the information matrix.
@@ -720,7 +724,8 @@ class EdgeSE3ProjectSE3 : public g2o::BaseBinaryEdge<6,
                             g2o::Isometry3D,
                             g2o::VertexSE3Expmap,
                             g2o::VertexSE3Expmap>()
-    {}
+    {
+    }
     /*!
      * @brief           Reads the measurement pose (translation and unit
      *                  quaternion) and the information matrix from a g2o graph
@@ -797,7 +802,8 @@ class EdgeSE3DoorwayProjectSE3Room : public EdgeSE3ProjectSE3
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     EdgeSE3DoorwayProjectSE3Room() :
         EdgeSE3ProjectSE3()
-    {}
+    {
+    }
 
     /*!
      * @brief           Computes the 6D pose error: the measured pose compared
@@ -846,7 +852,8 @@ class EdgeSE3KFPointToPlane : public g2o::BaseBinaryEdge<1,
                             Eigen::Matrix4d,
                             g2o::VertexSE3Expmap,
                             g2o::VertexPlane>()
-    {}
+    {
+    }
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the
      *                  information matrix.
@@ -945,7 +952,8 @@ class EdgeVertexPlaneProjectSE3KF
                             g2o::Plane3D,
                             g2o::VertexSE3Expmap,
                             g2o::VertexPlane>()
-    {}
+    {
+    }
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the
      *                  information matrix.
@@ -1046,7 +1054,8 @@ class EdgeVertexPlaneProjectPointXYZ
                             double,
                             g2o::VertexSBAPointXYZ,
                             g2o::VertexPlane>()
-    {}
+    {
+    }
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the
      *                  information matrix.
@@ -1109,7 +1118,8 @@ class EdgeVertexPlaneProjectSE3M
                             Eigen::Vector4d,
                             g2o::VertexSE3Expmap,
                             g2o::VertexPlane>()
-    {}
+    {
+    }
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the
      *                  information matrix.
@@ -1187,7 +1197,8 @@ class EdgeVertexPlaneParallelism
 
     EdgeVertexPlaneParallelism() :
         g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>()
-    {}
+    {
+    }
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the
      *                  information matrix.
@@ -1244,7 +1255,8 @@ class EdgeVertexPlanePerpendicularity
 
     EdgeVertexPlanePerpendicularity() :
         g2o::BaseBinaryEdge<1, double, g2o::VertexPlane, g2o::VertexPlane>()
-    {}
+    {
+    }
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the
      *                  information matrix.
@@ -1526,7 +1538,8 @@ class EdgeVertexSE3RoomProjectSE3Marker
                             Eigen::Vector4d,
                             g2o::VertexSE3Expmap,
                             g2o::VertexSE3Expmap>()
-    {}
+    {
+    }
     /*!
      * @brief           Reads this edge from a g2o graph file stream: the
      *                  information matrix.
@@ -1613,7 +1626,8 @@ struct PlanePairMeasurement
         n_B(Eigen::Vector3d::Zero()),
         d_B(0.0),
         sigma(1)
-    {}
+    {
+    }
 };
 
 /*!

@@ -48,25 +48,29 @@ namespace config
  * @brief           Viewer configuration container.
  */
 class ViewerConfig
-{};
+{
+};
 
 /*!
  * @brief           Camera configuration container.
  */
 class CameraConfig
-{};
+{
+};
 
 /*!
  * @brief           ORB extractor configuration container.
  */
 class ORBExtractorConfig
-{};
+{
+};
 
 /*!
  * @brief           IMU configuration container.
  */
 class IMUConfig
-{};
+{
+};
 
 /*!
  * @brief           Parses the estimator configuration file.

@@ -102,7 +102,8 @@ class Point
         a(accelerometerX_in, accelerometerY_in, accelerometerZ_in),
         w(gyroscopeX_in, gyroscopeY_in, gyroscopeZ_in),
         t(timestamp_in)
-    {}
+    {
+    }
     /*!
      * @brief           Creates a sample from OpenCV vectors.
      *
@@ -122,7 +123,8 @@ class Point
         a(accelerometer_in.x, accelerometer_in.y, accelerometer_in.z),
         w(gyroscope_in.x, gyroscope_in.y, gyroscope_in.z),
         t(timestamp_in)
-    {}
+    {
+    }
 
   public:
     /*!
@@ -171,7 +173,8 @@ class Bias
         bwx(0),
         bwy(0),
         bwz(0)
-    {}
+    {
+    }
     /*!
      * @brief           Creates biases from raw components.
      *
@@ -205,7 +208,8 @@ class Bias
         bwx(gyroscopeBiasX_in),
         bwy(gyroscopeBiasY_in),
         bwz(gyroscopeBiasZ_in)
-    {}
+    {
+    }
     /*!
      * @brief           Copies every component from another bias.
      *
@@ -531,7 +535,8 @@ class Preintegrated
         bu(p_sourcePreintegration_in->bu),
         db(p_sourcePreintegration_in->db),
         measurements(p_sourcePreintegration_in->measurements)
-    {}
+    {
+    }
     /*!
      * @brief           Creates an empty preintegration.
      */
@@ -942,7 +947,8 @@ class Preintegrated
             a(acceleration_in),
             w(angularVelocity_in),
             t(sampleInterval_in)
-        {}
+        {
+        }
         /*!
          * @brief           Stored accelerometer sample, m/s^2.
          */

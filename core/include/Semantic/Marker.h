@@ -132,7 +132,8 @@ class Marker
         globalPose(Sophus::SE3f()),
         markerType(MarkerVariant::UNKNOWN),
         p_map(nullptr)
-    {}
+    {
+    }
 
     /*!
      * @brief           Applies a map-frame similarity transform to the marker.

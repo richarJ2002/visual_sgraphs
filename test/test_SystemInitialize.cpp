@@ -74,7 +74,8 @@ class ReadableSettingsFile
     ReadableSettingsFile() :
         ReadableSettingsFile("system_initialize_settings.yaml",
                              "%YAML:1.0\n---\nunused: 1\n")
-    {}
+    {
+    }
     /*!
      * @brief           Writes the given text to a file in the test directory.
      *

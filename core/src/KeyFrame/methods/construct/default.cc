@@ -104,7 +104,8 @@ KeyFrame::KeyFrame() :
     halfBaseline(0),
     leftKeyPointCount(0),
     rightKeyPointCount(0)
-{}
+{
+}
 
 } // namespace core
 } // namespace vs_graphs

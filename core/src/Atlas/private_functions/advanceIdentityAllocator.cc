@@ -55,7 +55,8 @@ AtlasStatus advanceIdentityAllocator(std::atomic<int> &nextIdentity_inout,
                                                      requiredNextIdentity,
                                                      std::memory_order_relaxed,
                                                      std::memory_order_relaxed))
-    {}
+    {
+    }
 
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }

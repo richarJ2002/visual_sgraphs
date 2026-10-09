@@ -79,7 +79,8 @@ class TestAtlas : public Atlas
   public:
     explicit TestAtlas(int initialKeyFrameId_in) :
         Atlas(initialKeyFrameId_in)
-    {}
+    {
+    }
 
     std::unique_lock<std::mutex> lockAtlas()
     {

@@ -51,7 +51,8 @@ namespace semantic
  *                  other type in this module.
  */
 struct TransitionEvaluationContext
-{};
+{
+};
 
 } // namespace semantic
 } // namespace core

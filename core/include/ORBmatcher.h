@@ -61,7 +61,8 @@ class ORBmatcher
     ORBmatcher(float nnRatio_in = 0.6, bool checkOrientation_in = true) :
         nearestNeighborRatio(nnRatio_in),
         shouldCheckOrientation(checkOrientation_in)
-    {}
+    {
+    }
 
     /*!
      * @brief           Computes the Hamming distance between two

@@ -48,7 +48,8 @@ class ExtractorNode
      */
     ExtractorNode() :
         isExhausted(false)
-    {}
+    {
+    }
 
     /*!
      * @brief           Splits the node into four quadrant children.

@@ -138,7 +138,8 @@ class Viewer
                     throw -1;
                 }
                 catch (std::exception &parseError)
-                {}
+                {
+                }
             }
         }
     }
