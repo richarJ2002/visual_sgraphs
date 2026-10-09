@@ -76,7 +76,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
     ORBmatcher matcherBow(0.9, true);
     ORBmatcher matcher(0.75, true);
 
-    // Varibles to select the best numbe
+    /* Varibles to select the best numbe */
     KeyFrame               *p_bestMatchedKeyFrame;
     int                     bestMatchesReprojCount    = 0;
     int                     bestCountCoindicendeCount = 0;
@@ -89,9 +89,6 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
     std::vector<int> matchStageCounts(candidateCount, 0);
 
     int index = 0;
-    // Verbose::PrintMess("BoW candidates: There are " +
-    // to_string(vpBowCand.size()) + " possible candidates ",
-    // Verbose::VERBOSITY_DEBUG);
     for (KeyFrame *p_keyFrame : bowCandidates_in)
     {
         bool keyFrameIsBad{};
@@ -106,8 +103,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
         if (!p_keyFrame || keyFrameIsBad)
             continue;
 
-        // std::cout << "KF candidate: " << pKFi->id << std::endl;
-        // Current KF against KF with covisibles version
+        /* Current KF against KF with covisibles version */
         std::vector<KeyFrame *> covisibleKeyFrames{};
         if (p_keyFrame->getBestCovisibilityKeyFrames(countCovisibleCount,
                                                      covisibleKeyFrames) !=
@@ -121,7 +117,6 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
         }
         if (covisibleKeyFrames.empty())
         {
-            // std::cout << "Covisible list empty" << std::endl;
             covisibleKeyFrames.push_back(p_keyFrame);
         }
         else
@@ -145,12 +140,8 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
         }
         if (isAbortedByNearKeyFrame)
         {
-            // std::cout << "Check BoW aborted because is close to the matched
-            // one " << std::endl;
             continue;
         }
-        // std::cout << "Check BoW continue because is far to the matched one "
-        // << std::endl;
 
         std::vector<std::vector<MapPoint *>> vvpMatchedMapPoints;
         vvpMatchedMapPoints.resize(covisibleKeyFrames.size());
@@ -252,11 +243,9 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
             }
         }
 
-        // pMostBoWMatchesKF = vpCovKFi[pMostBoWMatchesKF];
-
-        if (numBoWMatches >= bowMatchCount) // TODO pick a good threshold
+        if (numBoWMatches >= bowMatchCount) /* TODO pick a good threshold */
         {
-            // Geometric validation
+            /* Geometric validation */
             bool isFixedScale   = isScaleFixed;
             Map *p_currentKFMap = nullptr;
             if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
@@ -294,7 +283,7 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                     "%s: setRansacParameters returned a failure status "
                     "although it cannot fail; continuing as before.",
                     __func__);
-            } // at least 15 inliers
+            } /* at least 15 inliers */
 
             bool              areIterationsExhausted = false;
             std::vector<bool> inliersFlags;
@@ -319,21 +308,11 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                         __func__);
                 }
                 mTcm = solverTransform;
-                // Verbose::PrintMess("BoW guess: Solver achieve " +
-                // to_string(nInliers) + " geometrical inliers among " +
-                // to_string(nBoWInliers) + " BoW matches",
-                // Verbose::VERBOSITY_DEBUG);
             }
 
             if (hasConverged)
             {
-                // std::cout << "Check BoW: SolverSim3 converged" << std::endl;
-
-                // Verbose::PrintMess("BoW guess: Convergende with " +
-                // to_string(nInliers) + " geometrical inliers among " +
-                // to_string(nBoWInliers) + " BoW matches",
-                // Verbose::VERBOSITY_DEBUG);
-                //  Match by reprojection
+                /*  Match by reprojection */
                 covisibleKeyFrames.clear();
                 std::vector<KeyFrame *>
                     mostBowMatchesKeyFrameBestCovisibilityKeyFrames{};
@@ -353,9 +332,6 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                 covisibleKeyFrames.push_back(p_mostBowMatchesKeyFrame);
                 std::set<KeyFrame *> checkKeyFrames(covisibleKeyFrames.begin(),
                                                     covisibleKeyFrames.end());
-
-                // std::cout << "There are " << vpCovKFi.size() <<" near KFs" <<
-                // std::endl;
 
                 std::set<MapPoint *>    mapPoints;
                 std::vector<MapPoint *> candidateMapPoints;
@@ -400,9 +376,6 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                         }
                     }
                 }
-
-                // std::cout << "There are " << vpKeyFrames.size() <<" KFs which
-                // view all the mappoints" << std::endl;
 
                 Eigen::Matrix3f solverEstimatedRotation{};
                 if (solver.getEstimatedRotation(solverEstimatedRotation) !=
@@ -463,8 +436,8 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                 g2o::Sim3 gSmw(mostBowMatchesKeyFrameRotation.cast<double>(),
                                mostBowMatchesKeyFrameTranslation.cast<double>(),
                                1.0);
-                g2o::Sim3 gScw = gScm * gSmw; // Similarity matrix of current
-                                              // from the world position
+                /* Similarity matrix of current from the world position */
+                g2o::Sim3 gScw = gScm * gSmw;
                 Sophus::Sim3f candidateCorrectedPose{};
                 if (utils::converter::Converter::toSophus(
                         gScw,
@@ -524,12 +497,10 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                         "although it cannot fail; continuing as before.",
                         __func__);
                 }
-                // cout <<"BoW: " << numProjMatches << " matches between " <<
-                // vpMapPoints.size() << " points with coarse Sim3" << endl;
 
                 if (numProjMatches >= projectionMatchCount)
                 {
-                    // Optimize Sim3 transformation with every matches
+                    /* Optimize Sim3 transformation with every matches */
                     int optMatchCount{};
                     if (Optimizer::optimizeSim3(p_currentKF,
                                                 p_keyFrame,
@@ -576,9 +547,10 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                             mostBowMatchesKeyFrameRotation2.cast<double>(),
                             mostBowMatchesKeyFrameTranslation2.cast<double>(),
                             1.0);
-                        g2o::Sim3 gScw2 =
-                            gScm * gSmw2; // Similarity matrix of current from
-                                          // the world position
+                        /*!
+                         * Similarity matrix of current from the world position
+                         */
+                        g2o::Sim3     gScw2 = gScm * gSmw2;
                         Sophus::Sim3f refinedCorrectedPose{};
                         if (utils::converter::Converter::toSophus(
                                 gScw2,
@@ -697,10 +669,10 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
                             }
 
                             int                     countKeyFrameCount = 0;
-                            // vpMatchedMPs = vpMatchedMP;
-                            // vpMPs = vpMapPoints;
-                            //  Check the Sim3 transformation with the current
-                            //  KeyFrame covisibles
+                            /*!
+                             *  Check the Sim3 transformation with the current
+                             *  KeyFrame covisibles
+                             */
                             std::vector<KeyFrame *> currentCovisibleKeyFrames{};
                             if (p_currentKF->getBestCovisibilityKeyFrames(
                                     countCovisibleCount,
@@ -848,5 +820,5 @@ LoopClosingStatus LoopClosing::detectCommonRegionsFromBoW(
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

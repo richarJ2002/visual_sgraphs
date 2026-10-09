@@ -2389,12 +2389,14 @@ LoopClosingStatus
             }
         }
 
-        // Get Merge Map Mutex
+        /* Get Merge Map Mutex */
         std::scoped_lock mapLocks(p_currentMap->mapUpdateMutex,
                                   p_mergeMap->mapUpdateMutex);
 
-        // Loop over the KeyFrames of the current map and move them to the
-        // new map
+        /*!
+         * Loop over the KeyFrames of the current map and move them to the
+         * new map
+         */
         for (KeyFrame *p_keyFrame : currentMapKeyFrames)
         {
             bool keyFrameIsBad9{};
@@ -2445,8 +2447,10 @@ LoopClosingStatus
             }
         }
 
-        // Loop over the MapPoints of the current map and move them to the
-        // new map
+        /*!
+         * Loop over the MapPoints of the current map and move them to the
+         * new map
+         */
         for (MapPoint *p_currentMapPoint : currentMapMapPoints)
         {
             bool currentMapPointIsBad4{};
@@ -2586,8 +2590,10 @@ LoopClosingStatus
             }
         }
 
-        // Loop over the Markers of the current map and move them to the new
-        // map
+        /*!
+         * Loop over the Markers of the current map and move them to the new
+         * map
+         */
         for (semantic::Marker *p_marker : currentMapMarkers)
         {
             if (!p_marker)
@@ -2874,8 +2880,10 @@ LoopClosingStatus
             }
         }
 
-        // Loop over the Marker-based Rooms of the current map and move them
-        // to the new map
+        /*!
+         * Loop over the Marker-based Rooms of the current map and move them
+         * to the new map
+         */
         for (vs_graphs::core::semantic::Room *pRoom :
              currentMarkerBasedMapRooms)
         {
@@ -3327,5 +3335,5 @@ LoopClosingStatus
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

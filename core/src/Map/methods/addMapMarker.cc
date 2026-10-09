@@ -47,7 +47,7 @@ MapStatus Map::addMapMarker(semantic::Marker *p_marker_in)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
     markers.insert(p_marker_in);
-    // Add the marker to the hashmap
+    /* Add the marker to the hashmap */
     int marker_inId{};
     if (p_marker_in->getId(marker_inId) !=
         semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
@@ -62,5 +62,5 @@ MapStatus Map::addMapMarker(semantic::Marker *p_marker_in)
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

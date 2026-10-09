@@ -87,5 +87,5 @@ LoopClosingStatus LoopClosing::stopGlobalBundleAdjustment(bool &wasRunning_out)
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -47,5 +47,5 @@ TrackingStatus Tracking::isStopped(bool &isStopped_out)
 }
 #endif
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

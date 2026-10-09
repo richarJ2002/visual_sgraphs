@@ -45,7 +45,7 @@ PlaneStatus
 {
     std::unique_lock<std::mutex> lock(typeMutex);
 
-    // get the maximum vote
+    /* get the maximum vote */
     double       maximumVotes = 0;
     PlaneVariant maximumType  = PlaneVariant::UNDEFINED;
     for (const std::pair<const Plane::PlaneVariant, double> &vote :
@@ -61,6 +61,6 @@ PlaneStatus
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
-} // namespace geometric
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometric */
+} /* namespace core */
+} /* namespace vs_graphs */

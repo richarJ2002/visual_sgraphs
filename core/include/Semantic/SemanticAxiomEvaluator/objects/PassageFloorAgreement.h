@@ -100,8 +100,8 @@ enum class PassageFloorAgreement : std::uint8_t
     ENDPOINT_ROOM_FLOOR_UNVERIFIED = 6U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_PASSAGE_FLOOR_AGREEMENT_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_PASSAGE_FLOOR_AGREEMENT_H */

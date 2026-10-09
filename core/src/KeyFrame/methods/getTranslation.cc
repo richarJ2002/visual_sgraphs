@@ -49,5 +49,5 @@ KeyFrameStatus KeyFrame::getTranslation(Eigen::Vector3f &translation_out)
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

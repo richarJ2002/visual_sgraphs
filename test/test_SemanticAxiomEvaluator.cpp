@@ -103,7 +103,7 @@ const AxiomCapabilityEntry *
     }
     return nullptr;
 }
-} // namespace
+} /* namespace */
 
 /* ------------------------------------------------------------------------
  * Structural / aggregation / determinism
@@ -7099,6 +7099,6 @@ TEST(SemanticAxiomEvaluator,
               nullptr);
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

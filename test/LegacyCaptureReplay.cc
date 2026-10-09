@@ -152,7 +152,7 @@ nlohmann::json topologyJson(const LegacyCapture &capture_in)
     return json;
 }
 
-} // namespace
+} /* namespace */
 
 LegacyParseResult parseLegacyCapture(const nlohmann::json &json_in)
 {
@@ -604,6 +604,6 @@ LegacyReplayResult
     return result;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

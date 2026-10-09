@@ -45,7 +45,7 @@ enum class EdgeVertexPlaneProjectSE3KFStatus : std::uint8_t
     EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_H
+#endif /* EDGE_VERTEX_PLANE_PROJECT_SE3_KFSTATUS_H */

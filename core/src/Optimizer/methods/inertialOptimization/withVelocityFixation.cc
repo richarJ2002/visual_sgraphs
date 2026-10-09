@@ -81,7 +81,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                      __func__);
     }
 
-    // Setup optimizer
+    /* Setup optimizer */
     g2o::SparseOptimizer                 optimizer;
     g2o::BlockSolverX::LinearSolverType *p_linearSolver;
 
@@ -98,7 +98,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
 
     optimizer.setAlgorithm(p_solver);
 
-    // Set KeyFrame vertices (fixed poses and optimizable velocities)
+    /* Set KeyFrame vertices (fixed poses and optimizable velocities) */
     for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
          keyFrameIndex++)
     {
@@ -120,7 +120,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
         optimizer.addVertex(p_velocityVertex);
     }
 
-    // Biases
+    /* Biases */
     VertexGyroBias *p_gyroBiasVertex = new VertexGyroBias(keyFrames.front());
     p_gyroBiasVertex->setId(maximumKeyFrameId * 2 + 2);
     if (isFixedVelocity_in)
@@ -137,7 +137,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
         p_accelerometerBiasVertex->setFixed(false);
 
     optimizer.addVertex(p_accelerometerBiasVertex);
-    // prior acc bias
+    /* prior acc bias */
     Eigen::Vector3f bprior;
     bprior.setZero();
 
@@ -156,23 +156,24 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
     p_epg->setInformation(informationPriorG * Eigen::Matrix3d::Identity());
     optimizer.addEdge(p_epg);
 
-    // Gravity and scale
+    /* Gravity and scale */
     VertexGDir *p_gravityDirectionVertex = new VertexGDir(Rwg_inout);
     p_gravityDirectionVertex->setId(maximumKeyFrameId * 2 + 4);
     p_gravityDirectionVertex->setFixed(false);
     optimizer.addVertex(p_gravityDirectionVertex);
     VertexScale *p_scaleVertex = new VertexScale(scale_inout);
     p_scaleVertex->setId(maximumKeyFrameId * 2 + 5);
-    p_scaleVertex->setFixed(!isMono_in); // Fixed for stereo case
+    p_scaleVertex->setFixed(!isMono_in); /* Fixed for stereo case */
     optimizer.addVertex(p_scaleVertex);
 
-    // Graph edges
-    // IMU links with gravity and scale
+    /*!
+     * Graph edges
+     * IMU links with gravity and scale
+     */
     std::vector<EdgeInertialGS *> vpei;
     vpei.reserve(keyFrames.size());
     std::vector<std::pair<KeyFrame *, KeyFrame *>> vppUsedKeyFrame;
     vppUsedKeyFrame.reserve(keyFrames.size());
-    // std::cout << "build optimization graph" << std::endl;
 
     for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
          keyFrameIndex++)
@@ -279,7 +280,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
         }
     }
 
-    // Compute error for different scales
+    /* Compute error for different scales */
     std::set<g2o::HyperGraph::Edge *> setEdges = optimizer.edges();
 
     optimizer.setVerbose(false);
@@ -288,8 +289,10 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
 
     scale_inout = p_scaleVertex->estimate();
 
-    // Recover optimized data
-    // Biases
+    /*!
+     * Recover optimized data
+     * Biases
+     */
     p_gyroBiasVertex = static_cast<VertexGyroBias *>(
         optimizer.vertex(maximumKeyFrameId * 2 + 2));
     p_accelerometerBiasVertex = static_cast<VertexAccBias *>(
@@ -304,7 +307,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
     Rwg_inout =
         p_gravityDirectionVertex->estimate().gravityRotation_gravityToWorld;
 
-    // Keyframes velocities and biases
+    /* Keyframes velocities and biases */
     const size_t N = keyFrames.size();
     for (size_t keyFrameIndex = 0; keyFrameIndex < N; keyFrameIndex++)
     {
@@ -315,7 +318,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
         VertexVelocity *p_velocityVertex = static_cast<VertexVelocity *>(
             optimizer.vertex(maximumKeyFrameId + (p_keyFrame->id) + 1));
         Eigen::Vector3d Vw =
-            p_velocityVertex->estimate(); // Velocity is scaled after
+            p_velocityVertex->estimate(); /* Velocity is scaled after */
         if (p_keyFrame->setVelocity(Vw.cast<float>()) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
@@ -373,5 +376,5 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

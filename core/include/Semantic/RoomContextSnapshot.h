@@ -236,8 +236,8 @@ struct RoomContextSnapshot
      */
     int                          boundaryStatus{0};
 };
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // ROOM_CONTEXT_SNAPSHOT_H
+#endif /* ROOM_CONTEXT_SNAPSHOT_H */

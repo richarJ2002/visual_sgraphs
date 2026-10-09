@@ -103,13 +103,13 @@ Frame::Frame(const cv::Mat &imageColor_in,
     imgLeft  = imageLeft_in.clone();
     imgRight = imageRight_in.clone();
 
-    // Setting the color image for Semantic Segmentation
+    /* Setting the color image for Semantic Segmentation */
     colorImg = imageColor_in.clone();
 
-    // Frame ID
+    /* Frame ID */
     id = nextId++;
 
-    // Scale Level Info
+    /* Scale Level Info */
     int orbExtractorLeftLevelCount{};
     if (p_orbExtractorLeft->getLevelCount(orbExtractorLeftLevelCount) !=
         ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
@@ -175,7 +175,7 @@ Frame::Frame(const cv::Mat &imageColor_in,
     }
     invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
-    // ORB extraction
+    /* ORB extraction */
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point timeStartExtOrb =
         std::chrono::steady_clock::now();
@@ -217,8 +217,10 @@ Frame::Frame(const cv::Mat &imageColor_in,
     if (keyPointCount == 0)
         return;
 
-    // This is done only for the first Frame (or after a change in the
-    // calibration)
+    /*!
+     * This is done only for the first Frame (or after a change in the
+     * calibration)
+     */
     if (areInitialComputationsDone)
     {
         if (computeImageBounds(imageLeft_in) !=
@@ -247,7 +249,7 @@ Frame::Frame(const cv::Mat &imageColor_in,
 
     mb = mbf / fx;
 
-    // Sophus/Eigen
+    /* Sophus/Eigen */
     poseTlr        = Tlr_in;
     poseTrl        = poseTlr.inverse();
     rotationRlr    = poseTlr.rotationMatrix();
@@ -274,14 +276,14 @@ Frame::Frame(const cv::Mat &imageColor_in,
             .count();
 #endif
 
-    // Put all descriptors in the same matrix
+    /* Put all descriptors in the same matrix */
     cv::vconcat(descriptors, descriptorsRight, descriptors);
 
-    // Initialize MapPoints
+    /* Initialize MapPoints */
     mapPoints = std::vector<MapPoint *>(keyPointCount,
                                         static_cast<MapPoint *>(nullptr));
 
-    // Initialize MapMarkers
+    /* Initialize MapMarkers */
     mapMarkers = markers_in;
 
     outlierFlags = std::vector<bool>(keyPointCount, false);
@@ -303,5 +305,5 @@ Frame::Frame(const cv::Mat &imageColor_in,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

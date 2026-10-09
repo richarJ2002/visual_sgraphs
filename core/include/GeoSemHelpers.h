@@ -292,7 +292,7 @@ class GeoSemHelpers
         vs_graphs::core::geometric::Plane *p_plane_inout,
         bool                              &wasPlaneRefit_out);
 };
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // GEOSEMHELPERS_H
+#endif /* GEOSEMHELPERS_H */

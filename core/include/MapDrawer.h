@@ -292,7 +292,7 @@ class MapDrawer
                                {0.0f, 1.0f, 1.0f}};
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // MAPDRAWER_H
+#endif /* MAPDRAWER_H */

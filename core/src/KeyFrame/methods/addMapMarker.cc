@@ -49,5 +49,5 @@ KeyFrameStatus KeyFrame::addMapMarker(semantic::Marker *p_marker_in)
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

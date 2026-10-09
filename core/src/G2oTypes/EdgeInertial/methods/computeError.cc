@@ -42,8 +42,10 @@ namespace core
 
 void EdgeInertial::computeError()
 {
-    // TODO Maybe Reintegrate inertial measurments when difference between
-    // linearization point and current estimate is too big
+    /*!
+     * TODO Maybe Reintegrate inertial measurments when difference between
+     * linearization point and current estimate is too big
+     */
     const VertexPose *p_previousPoseVertex =
         static_cast<const VertexPose *>(_vertices[0]);
     const VertexVelocity *p_previousVelocityVertex =
@@ -125,5 +127,5 @@ void EdgeInertial::computeError()
     _error << rotationError, velocityError, positionError;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

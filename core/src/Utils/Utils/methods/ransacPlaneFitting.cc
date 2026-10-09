@@ -193,7 +193,7 @@ template UtilsStatus
         std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                               Eigen::Vector4d>> &);
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -284,5 +284,5 @@ TEST(MissionHealthTopologyJson,
     EXPECT_EQ(entityKeysJson[1]["entityId"], 9);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -247,5 +247,5 @@ TEST(RoomCreationBudget, ThirdRoomRequiresATwoPassablePassages)
     EXPECT_NE(thirdRoomRetry, nullptr);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

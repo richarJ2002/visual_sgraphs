@@ -80,7 +80,7 @@ ExtractorNodeStatus ExtractorNode::divideNode(ExtractorNode &node1_inout,
     const int halfY =
         std::ceil(static_cast<float>(bottomRight.y - topLeft.y) / 2);
 
-    // Define boundaries of childs
+    /* Define boundaries of childs */
     node1_inout.topLeft     = topLeft;
     node1_inout.topRight    = cv::Point2i(topLeft.x + halfX, topLeft.y);
     node1_inout.bottomLeft  = cv::Point2i(topLeft.x, topLeft.y + halfY);
@@ -106,7 +106,7 @@ ExtractorNodeStatus ExtractorNode::divideNode(ExtractorNode &node1_inout,
     node4_inout.bottomRight = bottomRight;
     node4_inout.keys.reserve(keys.size());
 
-    // Associate points to childs
+    /* Associate points to childs */
     for (size_t keyIndex = 0; keyIndex < keys.size(); keyIndex++)
     {
         const cv::KeyPoint &keyPoint = keys[keyIndex];
@@ -135,5 +135,5 @@ ExtractorNodeStatus ExtractorNode::divideNode(ExtractorNode &node1_inout,
     return ExtractorNodeStatus::EXTRACTOR_NODE_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

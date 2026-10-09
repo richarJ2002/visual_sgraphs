@@ -63,5 +63,5 @@ MapPoint::MapPoint() :
     p_replaced = static_cast<MapPoint *>(nullptr);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

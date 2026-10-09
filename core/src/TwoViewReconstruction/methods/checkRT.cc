@@ -51,7 +51,7 @@ TwoViewReconstructionStatus
                                    float                    &parallax_out,
                                    int                      &goodPointCount_out)
 {
-    // Calibration parameters
+    /* Calibration parameters */
     const float fx = K_in(0, 0);
     const float fy = K_in(1, 1);
     const float cx = K_in(0, 2);
@@ -63,7 +63,7 @@ TwoViewReconstructionStatus
     std::vector<float> cosParallaxes;
     cosParallaxes.reserve(keys1_in.size());
 
-    // Camera 1 Projection Matrix K[I|0]
+    /* Camera 1 Projection Matrix K[I|0] */
     Eigen::Matrix<float, 3, 4> P1;
     P1.setZero();
     P1.block<3, 3>(0, 0) = K_in;
@@ -71,7 +71,7 @@ TwoViewReconstructionStatus
     Eigen::Vector3f O1;
     O1.setZero();
 
-    // Camera 2 Projection Matrix K[R|t]
+    /* Camera 2 Projection Matrix K[R|t] */
     Eigen::Matrix<float, 3, 4> P2;
     P2.block<3, 3>(0, 0) = R_in;
     P2.block<3, 1>(0, 3) = t_in;
@@ -116,7 +116,7 @@ TwoViewReconstructionStatus
             continue;
         }
 
-        // Check parallax
+        /* Check parallax */
         Eigen::Vector3f normal1   = p3dC1 - O1;
         float           distance1 = normal1.norm();
 
@@ -125,19 +125,23 @@ TwoViewReconstructionStatus
 
         float cosParallax = normal1.dot(normal2) / (distance1 * distance2);
 
-        // Check depth in front of first camera (only if enough parallax, as
-        // "infinite" points can easily go to negative depth)
+        /*!
+         * Check depth in front of first camera (only if enough parallax, as
+         * "infinite" points can easily go to negative depth)
+         */
         if (p3dC1(2) <= 0 && cosParallax < 0.99998)
             continue;
 
-        // Check depth in front of second camera (only if enough parallax, as
-        // "infinite" points can easily go to negative depth)
+        /*!
+         * Check depth in front of second camera (only if enough parallax, as
+         * "infinite" points can easily go to negative depth)
+         */
         Eigen::Vector3f p3dC2 = R_in * p3dC1 + t_in;
 
         if (p3dC2(2) <= 0 && cosParallax < 0.99998)
             continue;
 
-        // Check reprojection error in first image
+        /* Check reprojection error in first image */
         float image1X, image1Y;
         float invZ1 = 1.0 / p3dC1(2);
         image1X     = fx * p3dC1(0) * invZ1 + cx;
@@ -150,7 +154,7 @@ TwoViewReconstructionStatus
         if (squareError1 > threshold2_in)
             continue;
 
-        // Check reprojection error in second image
+        /* Check reprojection error in second image */
         float image2X, image2Y;
         float invZ2 = 1.0 / p3dC2(2);
         image2X     = fx * p3dC2(0) * invZ2 + cx;
@@ -187,5 +191,5 @@ TwoViewReconstructionStatus
     return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

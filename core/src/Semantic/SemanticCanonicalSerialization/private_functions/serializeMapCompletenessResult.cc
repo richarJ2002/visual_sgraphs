@@ -104,6 +104,6 @@ nlohmann::json
     return json;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

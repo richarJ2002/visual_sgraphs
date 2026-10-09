@@ -51,6 +51,6 @@ bool isVector3dLess(const Eigen::Vector3d &lhs_in,
     return std::tie(lhsX, lhsY, lhsZ) < std::tie(rhsX, rhsY, rhsZ);
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

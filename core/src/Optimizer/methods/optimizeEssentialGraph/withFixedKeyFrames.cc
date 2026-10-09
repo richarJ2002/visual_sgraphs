@@ -53,11 +53,11 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     std::vector<vs_graphs::core::MapPoint *> &nonCorrectedMapPoints_in,
     const g2o::Sim3 &mergeTransform_mergeWorldToCurrentWorld_in)
 {
-    // Variables
+    /* Variables */
     g2o::SparseOptimizer optimizer;
     optimizer.setVerbose(false);
 
-    // Linear solver and block solver
+    /* Linear solver and block solver */
     g2o::BlockSolver_7_3::LinearSolverType *p_linearSolver =
         new g2o::LinearSolverEigen<g2o::BlockSolver_7_3::PoseMatrixType>();
     g2o::BlockSolver_7_3 *solver_ptr = new g2o::BlockSolver_7_3(p_linearSolver);
@@ -67,7 +67,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     p_solver->setUserLambdaInit(1e-16);
     optimizer.setAlgorithm(p_solver);
 
-    // Get map
+    /* Get map */
     Map *p_map = nullptr;
     if (p_currentKeyFrame_in->getMap(p_map) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -123,7 +123,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
 
     const int minimumFeature = 100;
 
-    // Loop over fixed KeyFrames
+    /* Loop over fixed KeyFrames */
     for (KeyFrame *p_fixedKeyFrame : fixedKeyFrames_in)
     {
         bool fixedKeyFrameIsBad{};
@@ -173,7 +173,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         badPoses[idCount]  = false;
     }
 
-    // Loop over fixed corrected KeyFrames
+    /* Loop over fixed corrected KeyFrames */
     std::set<unsigned long> idKeyFrames;
     for (KeyFrame *p_fixedKeyFrame : fixedCorrectedKeyFrames_in)
     {
@@ -230,7 +230,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         badPoses[idCount]  = true;
     }
 
-    // Loop over non-fixed KeyFrames
+    /* Loop over non-fixed KeyFrames */
     for (KeyFrame *p_fixedKeyFrame : nonFixedKeyFrames_in)
     {
         bool fixedKeyFrameIsBad3{};
@@ -249,7 +249,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         const int idCount = p_fixedKeyFrame->id;
 
         if (idKeyFrames.count(
-                idCount)) // It has already added in the corrected merge KFs
+                idCount)) /* It has already added in the corrected merge KFs */
             continue;
 
         g2o::VertexSim3Expmap *p_sim3Vertex = new g2o::VertexSim3Expmap();
@@ -349,7 +349,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          __func__);
         }
 
-        // Spanning tree edge
+        /* Spanning tree edge */
         if (p_parentKeyFrame &&
             keyFrames.find(p_parentKeyFrame) != keyFrames.end())
         {
@@ -386,7 +386,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
             }
         }
 
-        // Loop edges
+        /* Loop edges */
         std::set<KeyFrame *> loopEdges{};
         if (p_fixedKeyFrame->getLoopEdges(loopEdges) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -437,7 +437,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
             }
         }
 
-        // Covisibility graph edges
+        /* Covisibility graph edges */
         std::vector<KeyFrame *> connectedKeyFrames{};
         if (p_fixedKeyFrame->getCovisiblesByWeight(minimumFeature,
                                                    connectedKeyFrames) !=
@@ -530,17 +530,19 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         }
     }
 
-    // Optimize!
+    /* Optimize! */
     optimizer.initializeOptimization();
     optimizer.optimize(20);
 
     std::unique_lock<std::mutex> lock(p_map->mapUpdateMutex);
 
-    // Inform the user
+    /* Inform the user */
     std::cout << "\n[Optimizer]" << std::endl;
 
-    // Loop over non-fixed KeyFrames to correct them
-    // [hint] Sim3 [sR t | 0 1] --> SE3 [R t/s| 0 1]
+    /*!
+     * Loop over non-fixed KeyFrames to correct them
+     * [hint] Sim3 [sR t | 0 1] --> SE3 [R t/s| 0 1]
+     */
     std::cout << "- Correcting the poses of KeyFrames ..." << std::endl;
     for (KeyFrame *p_fixedKeyFrame : nonFixedKeyFrames_in)
     {
@@ -604,8 +606,10 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         }
     }
 
-    // Transform to "non-optimized" reference keyframe pose and transform back
-    // with optimized pose
+    /*!
+     * Transform to "non-optimized" reference keyframe pose and transform back
+     * with optimized pose
+     */
     std::cout << "- Correcting the poses of 3D mapped points ..." << std::endl;
     for (MapPoint *p_mapPoint : nonCorrectedMapPoints_in)
     {
@@ -884,5 +888,5 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

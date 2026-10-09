@@ -44,7 +44,7 @@ enum class DBParserStatus : std::uint8_t
     DBPARSER_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // DBPARSER_STATUS_H
+#endif /* DBPARSER_STATUS_H */

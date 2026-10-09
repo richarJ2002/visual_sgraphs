@@ -54,8 +54,10 @@ SemanticAxiomEvaluatorStatus
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // evaluateOneRoomFloorReciprocity cannot fail; continue as
-                // before.
+                /*!
+                 * evaluateOneRoomFloorReciprocity cannot fail; continue as
+                 * before.
+                 */
             }
         }
         for (const PassageRecord &passage : mapSnapshot.passages)
@@ -70,8 +72,10 @@ SemanticAxiomEvaluatorStatus
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // evaluateOnePassageFloorIdentity cannot fail; continue as
-                // before.
+                /*!
+                 * evaluateOnePassageFloorIdentity cannot fail; continue as
+                 * before.
+                 */
             }
         }
     }
@@ -80,6 +84,6 @@ SemanticAxiomEvaluatorStatus
         SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

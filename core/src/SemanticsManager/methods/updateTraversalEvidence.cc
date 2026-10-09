@@ -359,8 +359,10 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                                     passageKnownSideProvenance) !=
                                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                             {
-                                // getKnownSideProvenance cannot fail; continue
-                                // as before.
+                                /*!
+                                 * getKnownSideProvenance cannot fail; continue
+                                 * as before.
+                                 */
                             }
                             knownSide = passageKnownSideProvenance;
                         }
@@ -521,8 +523,10 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                                 semantic::Room::BoundaryStatus::UNOBSERVED) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                         {
-                            // setBoundaryStatus cannot fail; continue as
-                            // before.
+                            /*!
+                             * setBoundaryStatus cannot fail; continue as
+                             * before.
+                             */
                         }
                         int reachedRoomId3{};
                         if (p_reachedRoom->getId(reachedRoomId3) !=
@@ -552,8 +556,10 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
                                 p_floor) !=
                             semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
                         {
-                            // selectBestObservedFloor cannot fail; continue as
-                            // before.
+                            /*!
+                             * selectBestObservedFloor cannot fail; continue as
+                             * before.
+                             */
                         }
                         if (p_floor != nullptr)
                         {
@@ -717,5 +723,5 @@ SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

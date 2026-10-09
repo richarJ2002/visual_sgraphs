@@ -58,19 +58,19 @@ SystemParamsStatus
         exit(1);
     }
 
-    // Set parameters
+    /* Set parameters */
     try
     {
-        // General Parameters
+        /* General Parameters */
         general.envDatabase =
             config["general"]["env_database"].as<std::string>();
         general.modeOfOperation = static_cast<General::ModeOfOperation>(
             config["general"]["mode_of_operation"].as<int>());
 
-        // Marker Parameters
+        /* Marker Parameters */
         markers.impact = config["markers"]["impact"].as<float>();
 
-        // Tracking Refinement Parameters
+        /* Tracking Refinement Parameters */
         refineMapPoints.enabled =
             config["refine_map_points"]["enabled"].as<bool>();
         refineMapPoints.maxDistanceForDelete =
@@ -83,7 +83,7 @@ SystemParamsStatus
             config["refine_map_points"]["octree"]["min_neighbors"]
                 .as<unsigned int>();
 
-        // Plane based Covisibility Parameters
+        /* Plane based Covisibility Parameters */
         planeBasedCovisibility.enabled =
             config["plane_based_covisibility"]["enabled"].as<bool>();
         planeBasedCovisibility.maxKeyframes =
@@ -93,7 +93,7 @@ SystemParamsStatus
             config["plane_based_covisibility"]["score_per_plane"]
                 .as<unsigned int>();
 
-        // Common Segmentation Parameters
+        /* Common Segmentation Parameters */
         seg.pointcloudsThresh =
             config["seg"]["pointclouds_thresh"].as<unsigned int>();
         seg.planePointDistThresh =
@@ -126,7 +126,7 @@ SystemParamsStatus
         seg.ransac.maxIterations =
             config["seg"]["ransac"]["max_iterations"].as<unsigned int>();
 
-        // Optimization Parameters
+        /* Optimization Parameters */
         optimization.shouldMarginalizePlanes =
             config["optimization"]["marginalize_planes"].as<bool>();
         optimization.planeKf.enabled =
@@ -144,7 +144,7 @@ SystemParamsStatus
             config["optimization"]["plane_map_point"]["information_gain"]
                 .as<float>();
 
-        // Geometric Segmentation Parameters
+        /* Geometric Segmentation Parameters */
         geoSeg.pointcloud.downsample.leafSize =
             config["geo_seg"]["pointcloud"]["downsample"]["leaf_size"]
                 .as<float>();
@@ -153,7 +153,7 @@ SystemParamsStatus
                   ["min_points_per_voxel"]
                       .as<unsigned int>();
 
-        // Semantic Segmentation Parameters
+        /* Semantic Segmentation Parameters */
         semSeg.minVotes      = config["sem_seg"]["min_votes"].as<float>();
         semSeg.probThresh    = config["sem_seg"]["prob_thresh"].as<float>();
         semSeg.confThresh    = config["sem_seg"]["conf_thresh"].as<float>();
@@ -278,7 +278,7 @@ SystemParamsStatus
                   ["minimum_orthogonal_overlap"]
                       .as<float>();
 
-        // Room Segmentation Parameters
+        /* Room Segmentation Parameters */
         roomSeg.gnnVersion =
             config["room_seg"]["gnn_based"]["gnn_version"].as<int>();
         roomSeg.method = static_cast<RoomSeg::Method>(
@@ -376,7 +376,7 @@ SystemParamsStatus
                   ["wall_centroid_minimum_side_distance"]
                       .as<float>();
 
-        // Map-merge and axiom thresholds.
+        /* Map-merge and axiom thresholds. */
         mapMerge.passageMatchTolerance_m =
             config["map_merge"]["passage_match_tolerance_m"].as<float>();
         mapMerge.wallCoplanarAngle_deg =
@@ -398,7 +398,7 @@ SystemParamsStatus
         mapMerge.roomCentroidTolerance_m =
             config["map_merge"]["room_centroid_tolerance_m"].as<float>();
 
-        // Room-Tracking State Machine Parameters
+        /* Room-Tracking State Machine Parameters */
         roomTracking.crossingDwell_s =
             config["room_tracking"]["crossing_dwell_s"].as<float>();
         roomTracking.crossingConfidence =
@@ -611,6 +611,6 @@ SystemParamsStatus
 
     return SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS;
 }
-} // namespace types
-} // namespace core
-} // namespace vs_graphs
+} /* namespace types */
+} /* namespace core */
+} /* namespace vs_graphs */

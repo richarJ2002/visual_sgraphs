@@ -38,6 +38,6 @@ MarkerStatus Marker::setOpId(int opId_in)
     return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

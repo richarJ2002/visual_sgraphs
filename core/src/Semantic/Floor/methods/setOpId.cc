@@ -41,6 +41,6 @@ FloorStatus Floor::setOpId(int value_in)
     return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

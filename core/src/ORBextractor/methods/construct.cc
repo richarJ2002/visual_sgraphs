@@ -394,8 +394,10 @@ ORBextractor::ORBextractor(int   featureCount_in,
                                   orbBitPattern31[2 * pointIndex + 1]);
     }
 
-    // This is for orientation
-    //  pre-compute the end of a row in a circular patch
+    /*!
+     * This is for orientation
+     *  pre-compute the end of a row in a circular patch
+     */
     orientationMaxOffset.resize(HALF_PATCH_SIZE + 1);
 
     int v, v0, vmax = cvFloor(HALF_PATCH_SIZE * std::sqrt(2.f) / 2 + 1);
@@ -404,7 +406,7 @@ ORBextractor::ORBextractor(int   featureCount_in,
     for (v = 0; v <= vmax; ++v)
         orientationMaxOffset[v] = cvRound(sqrt(hp2 - v * v));
 
-    // Make sure we are symmetric
+    /* Make sure we are symmetric */
     for (v = HALF_PATCH_SIZE, v0 = 0; v >= vmin; --v)
     {
         while (orientationMaxOffset[v0] == orientationMaxOffset[v0 + 1])
@@ -414,5 +416,5 @@ ORBextractor::ORBextractor(int   featureCount_in,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -101,5 +101,5 @@ bool VertexSim3Expmap::write(std::ostream &outputStream_inout) const
     return outputStream_inout.good();
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

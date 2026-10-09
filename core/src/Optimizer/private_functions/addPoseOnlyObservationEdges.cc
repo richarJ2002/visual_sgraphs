@@ -78,12 +78,12 @@ OptimizerStatus addPoseOnlyObservationEdges(
             if (p_mapPoint)
             {
                 cv::KeyPoint keyPointUn;
-                // Left monocular observation
+                /* Left monocular observation */
                 if ((!isRightCamera &&
                      p_frame_inout->uRight[keyPointIndex] < 0) ||
                     keyPointIndex < leftCount)
                 {
-                    if (keyPointIndex < leftCount) // pair left-right
+                    if (keyPointIndex < leftCount) /* pair left-right */
                         keyPointUn = p_frame_inout->keyPoints[keyPointIndex];
                     else
                         keyPointUn =
@@ -111,7 +111,7 @@ OptimizerStatus addPoseOnlyObservationEdges(
                     e->setVertex(0, p_poseVertex_in);
                     e->setMeasurement(observation);
 
-                    // Add here uncerteinty
+                    /* Add here uncerteinty */
                     const float unc2 =
                         p_frame_inout->p_camera->uncertainty2(observation);
 
@@ -130,7 +130,7 @@ OptimizerStatus addPoseOnlyObservationEdges(
                     edgesMonos_inout.push_back(e);
                     monoEdgeIndices_inout.push_back(keyPointIndex);
                 }
-                // Stereo observation
+                /* Stereo observation */
                 else if (!isRightCamera)
                 {
                     initialStereoCorrespondenceCount_inout++;
@@ -160,7 +160,7 @@ OptimizerStatus addPoseOnlyObservationEdges(
                     e->setVertex(0, p_poseVertex_in);
                     e->setMeasurement(observation);
 
-                    // Add here uncerteinty
+                    /* Add here uncerteinty */
                     const float unc2 = p_frame_inout->p_camera->uncertainty2(
                         observation.head(2));
 
@@ -180,7 +180,7 @@ OptimizerStatus addPoseOnlyObservationEdges(
                     stereoEdgeIndices_inout.push_back(keyPointIndex);
                 }
 
-                // Right monocular observation
+                /* Right monocular observation */
                 if (isRightCamera && keyPointIndex >= leftCount)
                 {
                     initialMonoCorrespondenceCount_inout++;
@@ -208,7 +208,7 @@ OptimizerStatus addPoseOnlyObservationEdges(
                     e->setVertex(0, p_poseVertex_in);
                     e->setMeasurement(observation);
 
-                    // Add here uncerteinty
+                    /* Add here uncerteinty */
                     const float unc2 =
                         p_frame_inout->p_camera->uncertainty2(observation);
 
@@ -234,5 +234,5 @@ OptimizerStatus addPoseOnlyObservationEdges(
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

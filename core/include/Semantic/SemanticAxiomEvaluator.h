@@ -31,4 +31,4 @@
 #include "Semantic/SemanticAxiomEvaluator/objects.h"
 #include "Semantic/SemanticAxiomEvaluator/public_functions.h"
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_H */

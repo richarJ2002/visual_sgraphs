@@ -85,8 +85,10 @@ TwoViewReconstructionStatus TwoViewReconstruction::checkHomography(
         const float u2 = keyPoint2.pt.x;
         const float v2 = keyPoint2.pt.y;
 
-        // Reprojection error in first image
-        // x2in1 = H12*x2
+        /*!
+         * Reprojection error in first image
+         * x2in1 = H12*x2
+         */
 
         const float w2in1inv = 1.0 / (h31inv * u2 + h32inv * v2 + h33inv);
         const float u2in1    = (h11inv * u2 + h12inv * v2 + h13inv) * w2in1inv;
@@ -102,8 +104,10 @@ TwoViewReconstructionStatus TwoViewReconstruction::checkHomography(
         else
             score += threshold - chiSquare1;
 
-        // Reprojection error in second image
-        // x1in2 = H21*x1
+        /*!
+         * Reprojection error in second image
+         * x1in2 = H21*x1
+         */
 
         const float w1in2inv = 1.0 / (h31 * u1 + h32 * v1 + h33);
         const float u1in2    = (h11 * u1 + h12 * v1 + h13) * w1in2inv;
@@ -129,5 +133,5 @@ TwoViewReconstructionStatus TwoViewReconstruction::checkHomography(
     return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

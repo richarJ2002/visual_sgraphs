@@ -48,7 +48,7 @@ namespace semantic
 namespace
 {
 constexpr double DEGENERATE_EDGE_LENGTH_SQUARED_M2 = 1e-12;
-} // namespace
+} /* namespace */
 
 SemanticAxiomEvaluatorStatus
     checkRoomBoundaryGeometry(const std::vector<Eigen::Vector3d> &corners_in,
@@ -191,6 +191,6 @@ SemanticAxiomEvaluatorStatus
         SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

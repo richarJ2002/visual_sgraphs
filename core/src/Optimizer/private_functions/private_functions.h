@@ -24,7 +24,7 @@
 namespace g2o
 {
 class SparseOptimizer;
-} // namespace g2o
+} /* namespace g2o */
 
 namespace vs_graphs
 {
@@ -166,7 +166,7 @@ bool sortByVal(const std::pair<MapPoint *, int> &firstEntry_in,
     int                               &initialMonoCorrespondenceCount_inout,
     int                               &initialStereoCorrespondenceCount_inout);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif /* VS_GRAPHS_CORE_OPTIMIZER_PRIVATE_FUNCTIONS_H */

@@ -42,6 +42,6 @@ BiasStatus Bias::copyFrom(Bias &b_in)
     return BiasStatus::BIAS_STATUS_SUCCESS;
 }
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */

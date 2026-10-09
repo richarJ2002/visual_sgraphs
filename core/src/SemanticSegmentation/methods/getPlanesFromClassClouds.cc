@@ -55,9 +55,11 @@ SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
          classCloudPtrIndex < p_classCloudPtrs_in.size();
          classCloudPtrIndex++)
     {
-        // [TODO?] - Perhaps consider points in order of confidence instead of
-        // downsampling Downsample the given pointcloud after filtering based on
-        // distance.
+        /*!
+         * [TODO?] - Perhaps consider points in order of confidence instead of
+         * downsampling Downsample the given pointcloud after filtering based on
+         * distance.
+         */
 
         /* Init variable to point to the outputted filtered point cloud */
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_filteredCloud;
@@ -149,5 +151,5 @@ SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
     return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

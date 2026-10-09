@@ -101,7 +101,6 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
              */
             if (probability >= probThreshold)
             {
-                // /* Inject coordinates as a point to respective point cloud */
                 /* Initialize point to be filtered into class point cloud */
                 pcl::PointXYZRGBA point;
 
@@ -190,5 +189,5 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
     return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

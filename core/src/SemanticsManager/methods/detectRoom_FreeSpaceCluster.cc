@@ -1986,8 +1986,10 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                     passageGlobalEquation2) !=
                                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                             {
-                                // getGlobalEquation cannot fail; continue as
-                                // before.
+                                /*!
+                                 * getGlobalEquation cannot fail; continue as
+                                 * before.
+                                 */
                             }
                             Eigen::Vector4d passageEquation_world =
                                 passageGlobalEquation2.coeffs();
@@ -2359,8 +2361,10 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
                                                           inwardNormal_world) !=
                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                 {
-                    // getWallNormalTowardRoom_world cannot fail; continue as
-                    // before.
+                    /*!
+                     * getWallNormalTowardRoom_world cannot fail; continue as
+                     * before.
+                     */
                 }
 
                 const Eigen::Vector3d nudgedCentroid_world_m =
@@ -2658,5 +2662,5 @@ SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -84,5 +84,5 @@ TrackingStatus Tracking::localMapStats2File()
 }
 #endif
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

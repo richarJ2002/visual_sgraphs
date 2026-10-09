@@ -36,6 +36,6 @@ bool operator!=(const EntityKey &lhs_in, const EntityKey &rhs_in)
     return !(lhs_in == rhs_in);
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

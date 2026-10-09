@@ -124,7 +124,6 @@ class GeometricTools
                       bool &areMatricesEqual_out)
     {
         const float epsilon = 1e-3;
-        // std::cout << cvMat.cols - cols << cvMat.rows - rows << std::endl;
         if (rows != cvMat.rows || cols != cvMat.cols)
         {
             std::cout << "wrong cvmat size\n";
@@ -189,7 +188,7 @@ class GeometricTools
     }
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // GEOMETRIC_TOOLS_H
+#endif /* GEOMETRIC_TOOLS_H */

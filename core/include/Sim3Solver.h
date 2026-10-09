@@ -166,7 +166,7 @@ class Sim3Solver
 
         size_t idx = 0;
 
-        KeyFrame *pKFm = p_keyFrame2_inout; // Default variable
+        KeyFrame *pKFm = p_keyFrame2_inout; /* Default variable */
         for (int i1 = 0; i1 < firstMatchCount; i1++)
         {
             if (matched12_in[i1])
@@ -579,7 +579,7 @@ class Sim3Solver
         camera_models::geometriccamera::GeometricCamera *p_camera_inout);
 
   protected:
-    // KeyFrames and matches
+    /* KeyFrames and matches */
     /*!
      * @brief           First keyframe. Borrowed.
      */
@@ -650,7 +650,7 @@ class Sim3Solver
      */
     int firstMatchCount;
 
-    // Current Estimation
+    /* Current Estimation */
     /*!
      * @brief           Rotation of the current estimate, camera 2 to camera 1.
      */
@@ -690,7 +690,7 @@ class Sim3Solver
      */
     int inlierCount;
 
-    // Current Ransac State
+    /* Current Ransac State */
     /*!
      * @brief           RANSAC iterations run so far, across all iterate()
      *                  calls.
@@ -728,20 +728,20 @@ class Sim3Solver
      */
     float bestScale;
 
-    // Scale is fixed to 1 in the stereo/RGBD case
+    /* Scale is fixed to 1 in the stereo/RGBD case */
     /*!
      * @brief           True when the scale is fixed to 1 (stereo, RGB-D).
      */
     bool isScaleFixed;
 
-    // Indices for random selection
+    /* Indices for random selection */
     /*!
      * @brief           Correspondence indices 0 to correspondenceCount - 1, the
      *                  pool that RANSAC samples from.
      */
     std::vector<size_t> allIndices;
 
-    // Projections
+    /* Projections */
     /*!
      * @brief           Image position, in pixels, of each correspondence's
      *                  point in the first image.
@@ -754,28 +754,25 @@ class Sim3Solver
      */
     std::vector<Eigen::Vector2f> points2im2;
 
-    // RANSAC probability
+    /* RANSAC probability */
     /*!
      * @brief           Desired probability of drawing one outlier-free sample.
      */
     double ransacProb;
 
-    // RANSAC min inliers
+    /* RANSAC min inliers */
     /*!
      * @brief           Minimum inlier count to accept a transform.
      */
     int ransacMinInliers;
 
-    // RANSAC max iterations
+    /* RANSAC max iterations */
     /*!
      * @brief           Upper bound on RANSAC iterations, after adaptation.
      */
     int ransacMaxIterations;
 
-    // Calibration
-    // cv::Mat mK1;
-    // cv::Mat mK2;
-
+    /* Calibration */
     /*!
      * @brief           Camera model of the first keyframe. Borrowed.
      */
@@ -787,7 +784,7 @@ class Sim3Solver
     camera_models::geometriccamera::GeometricCamera *p_secondCamera;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SIM3SOLVER_H
+#endif /* SIM3SOLVER_H */

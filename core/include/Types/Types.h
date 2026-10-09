@@ -29,4 +29,4 @@
 
 #include "Types/objects.h"
 
-#endif // TYPES_H
+#endif /* TYPES_H */

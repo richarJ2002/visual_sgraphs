@@ -43,13 +43,14 @@ std::istream &operator>>(std::istream &inputStream_inout,
     float nextParameter;
     for (size_t parameterIndex = 0; parameterIndex < 4; parameterIndex++)
     {
-        assert(inputStream_inout.good()); // Make sure the input stream is good
+        /* Make sure the input stream is good */
+        assert(inputStream_inout.good());
         inputStream_inout >> nextParameter;
         pinhole_inout.parameters[parameterIndex] = nextParameter;
     }
     return inputStream_inout;
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

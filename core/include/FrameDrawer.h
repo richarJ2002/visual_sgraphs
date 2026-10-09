@@ -141,7 +141,7 @@ class FrameDrawer
                                                  int      trackingState_in,
                                                  cv::Mat &annotatedImage_out);
 
-    // Info of the frame to be drawn
+    /* Info of the frame to be drawn */
 
     /*!
      * @brief           Left grayscale image of the last processed frame.
@@ -240,7 +240,7 @@ class FrameDrawer
     std::mutex frameStateMutex;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // FRAMEDRAWER_H
+#endif /* FRAMEDRAWER_H */

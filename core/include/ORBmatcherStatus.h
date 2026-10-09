@@ -44,7 +44,7 @@ enum class ORBmatcherStatus : std::uint8_t
     ORBMATCHER_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // ORBMATCHER_STATUS_H
+#endif /* ORBMATCHER_STATUS_H */

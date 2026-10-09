@@ -68,8 +68,8 @@ enum class EntityKind : std::uint8_t
     FLOOR = 3U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_ENTITY_KIND_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_ENTITY_KIND_H */

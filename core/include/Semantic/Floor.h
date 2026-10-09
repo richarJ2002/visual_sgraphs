@@ -41,8 +41,8 @@ namespace vs_graphs
 namespace core
 {
 class Map;
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -443,8 +443,8 @@ class Floor
      */
     mutable std::mutex geometryMutex;
 };
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif

@@ -105,8 +105,8 @@ enum class MissingProofOwner : std::uint8_t
     SCOPE_DECISION_REQUIRED = 9U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_MISSING_PROOF_OWNER_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_MISSING_PROOF_OWNER_H */

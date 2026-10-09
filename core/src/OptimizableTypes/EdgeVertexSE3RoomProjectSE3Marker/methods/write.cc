@@ -43,5 +43,5 @@ bool EdgeVertexSE3RoomProjectSE3Marker::write(
     return writeInformationMatrix(outputStream_inout);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

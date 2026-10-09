@@ -567,8 +567,8 @@ class RoomTracker
     bool wasTrackingLost = false;
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // ROOMTRACKER_H
+#endif /* ROOMTRACKER_H */

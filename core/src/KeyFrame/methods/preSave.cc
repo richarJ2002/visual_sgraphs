@@ -49,8 +49,10 @@ KeyFrameStatus KeyFrame::preSave(
     std::set<MapPoint *>                                        &mapPoints_in,
     std::set<camera_models::geometriccamera::GeometricCamera *> &cameras_in)
 {
-    // Save the id of each MapPoint in this KF, there can be null pointer in the
-    // vector
+    /*!
+     * Save the id of each MapPoint in this KF, there can be null pointer in the
+     * vector
+     */
     backupMapPointsId.clear();
     backupMapPointsId.reserve(keyPointCount);
     for (int keyPointIndex = 0; keyPointIndex < keyPointCount; ++keyPointIndex)
@@ -58,17 +60,20 @@ KeyFrameStatus KeyFrame::preSave(
 
         if (mapPoints[keyPointIndex] &&
             mapPoints_in.find(mapPoints[keyPointIndex]) !=
-                mapPoints_in.end()) // Checks if the element is not null
+                mapPoints_in.end()) /* Checks if the element is not null */
         {
             backupMapPointsId.push_back(mapPoints[keyPointIndex]->id);
         }
-        else // If the element is null his value is -1 because all the id are
-             // positives
+        /*!
+         * If the element is null his value is -1 because all the id are
+         * positives
+         */
+        else
         {
             backupMapPointsId.push_back(-1);
         }
     }
-    // Save the id of each connected KF with it weight
+    /* Save the id of each connected KF with it weight */
     backupConnectedKeyFrameIdWeights.clear();
     for (std::map<KeyFrame *, int>::const_iterator
              connectionWeightIt = connectedKeyFrameWeights.begin(),
@@ -83,14 +88,14 @@ KeyFrameStatus KeyFrame::preSave(
         }
     }
 
-    // Save the parent id
+    /* Save the parent id */
     backupParentId = -1;
     if (p_parent && keyFrames_in.find(p_parent) != keyFrames_in.end())
     {
         backupParentId = p_parent->id;
     }
 
-    // Save the id of the childrens KF
+    /* Save the id of the childrens KF */
     backupChildrensId.clear();
     backupChildrensId.reserve(childrens.size());
     for (KeyFrame *p_keyFrame : childrens)
@@ -101,7 +106,7 @@ KeyFrameStatus KeyFrame::preSave(
         }
     }
 
-    // Save the id of the loop edge KF
+    /* Save the id of the loop edge KF */
     backupLoopEdgesId.clear();
     backupLoopEdgesId.reserve(loopEdges.size());
     for (KeyFrame *p_keyFrame : loopEdges)
@@ -112,7 +117,7 @@ KeyFrameStatus KeyFrame::preSave(
         }
     }
 
-    // Save the id of the merge edge KF
+    /* Save the id of the merge edge KF */
     backupMergeEdgesId.clear();
     backupMergeEdgesId.reserve(mergeEdges.size());
     for (KeyFrame *p_keyFrame : mergeEdges)
@@ -123,7 +128,7 @@ KeyFrameStatus KeyFrame::preSave(
         }
     }
 
-    // Camera data
+    /* Camera data */
     backupCameraId = NO_SAVED_ID<unsigned int>;
     if (p_camera && cameras_in.find(p_camera) != cameras_in.end())
     {
@@ -156,7 +161,7 @@ KeyFrameStatus KeyFrame::preSave(
         backupCamera2Id = camera2Id;
     }
 
-    // Inertial data
+    /* Inertial data */
     backupPrevKFId = -1;
     if (p_prevKF && keyFrames_in.find(p_prevKF) != keyFrames_in.end())
     {
@@ -184,5 +189,5 @@ KeyFrameStatus KeyFrame::preSave(
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

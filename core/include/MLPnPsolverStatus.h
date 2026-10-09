@@ -44,7 +44,7 @@ enum class MLPnPsolverStatus : std::uint8_t
     MLPN_PSOLVER_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // MLPN_PSOLVER_STATUS_H
+#endif /* MLPN_PSOLVER_STATUS_H */

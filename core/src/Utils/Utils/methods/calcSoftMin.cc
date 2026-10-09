@@ -39,18 +39,20 @@ namespace utils
 UtilsStatus Utils::calcSoftMin(std::vector<double> &values_in,
                                double              &softMin_out)
 {
-    // parameter controlling the softness/sharpness of the soft-min
-    // the smaller the value, the more conservative the soft-min
+    /*!
+     * parameter controlling the softness/sharpness of the soft-min
+     * the smaller the value, the more conservative the soft-min
+     */
     const double tau = 0.1;
 
-    // soft-min = sum(exp(-value/tau) * value) / sum(exp(-value/tau))
+    /* soft-min = sum(exp(-value/tau) * value) / sum(exp(-value/tau)) */
     Eigen::Map<Eigen::VectorXd> confs(values_in.data(), values_in.size());
     Eigen::VectorXd             term = ((1.0 - confs.array()) / tau).exp();
     softMin_out = ((term / term.sum()).array() * confs.array()).sum();
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

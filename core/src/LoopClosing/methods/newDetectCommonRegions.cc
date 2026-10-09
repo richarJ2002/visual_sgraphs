@@ -46,8 +46,10 @@ namespace core
 
 LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
 {
-    // To deactivate placerecognition. No loopclosing nor merging will be
-    // performed
+    /*!
+     * To deactivate placerecognition. No loopclosing nor merging will be
+     * performed
+     */
     if (!isLoopClosingActive)
     {
         isDetected_out = false;
@@ -58,8 +60,10 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
         std::unique_lock<std::mutex> lock(loopQueueMutex);
         p_currentKF = loopKeyFrameQueue.front();
         loopKeyFrameQueue.pop_front();
-        // Avoid that a keyframe can be erased while it is being process by this
-        // thread
+        /*!
+         * Avoid that a keyframe can be erased while it is being process by this
+         * thread
+         */
         if (p_currentKF->setNotErase() !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
@@ -132,7 +136,7 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
                      __func__);
     }
     if (p_tracker->sensor == System::STEREO &&
-        lastMapAllKeyFrames.size() < 5) // 12
+        lastMapAllKeyFrames.size() < 5) /* 12 */
     {
         if (p_keyFrameDatabase->add(p_currentKF) !=
             KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
@@ -183,8 +187,10 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
         return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
-    // Check the last candidates with geometric validation
-    //  Loop candidates
+    /*!
+     * Check the last candidates with geometric validation
+     *  Loop candidates
+     */
     bool isLoopDetectedInKeyFrame = false;
 
 #ifdef REGISTER_TIMES
@@ -193,7 +199,7 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
 #endif
     if (loopNumCoincidences > 0)
     {
-        // Find from the last KF candidates
+        /* Find from the last KF candidates */
         Sophus::SE3f currentKFPose{};
         if (p_currentKF->getPose(currentKFPose) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -297,11 +303,11 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
         }
     }
 
-    // Merge candidates
+    /* Merge candidates */
     bool isMergeDetectedInKeyFrame = false;
     if (mergeNumCoincidences > 0)
     {
-        // Find from the last KF candidates
+        /* Find from the last KF candidates */
         Sophus::SE3f currentKFPose2{};
         if (p_currentKF->getPose(currentKFPose2) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -423,8 +429,10 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
         return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
-    // TODO: This is only necessary if we use a minimun score for pick the best
-    // candidates
+    /*!
+     * TODO: This is only necessary if we use a minimun score for pick the best
+     * candidates
+     */
     std::vector<KeyFrame *> connectedKeyFrames{};
     if (p_currentKF->getVectorCovisibleKeyFrames(connectedKeyFrames) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -435,11 +443,11 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
                      __func__);
     }
 
-    // Extract candidates from the bag of words
+    /* Extract candidates from the bag of words */
     std::vector<KeyFrame *> mergeBowCandidates, loopBowCandidates;
     if (!isMergeDetectedInKeyFrame || !isLoopDetectedInKeyFrame)
     {
-        // Search in BoW
+        /* Search in BoW */
 #ifdef REGISTER_TIMES
         std::chrono::steady_clock::time_point timeStartQuery =
             std::chrono::steady_clock::now();
@@ -471,8 +479,10 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
     std::chrono::steady_clock::time_point time_StartEstSim3_2 =
         std::chrono::steady_clock::now();
 #endif
-    // Check the BoW candidates if the geometric candidate list is empty
-    // Loop candidates
+    /*!
+     * Check the BoW candidates if the geometric candidate list is empty
+     * Loop candidates
+     */
     if (!isLoopDetectedInKeyFrame && !loopBowCandidates.empty())
     {
         bool isDetected{};
@@ -494,7 +504,7 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
         }
         isLoopDetected = isDetected;
     }
-    // Merge candidates
+    /* Merge candidates */
     if (!isMergeDetectedInKeyFrame && !mergeBowCandidates.empty())
     {
         bool isDetected2{};
@@ -556,5 +566,5 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

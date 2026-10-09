@@ -44,7 +44,7 @@ enum class EdgeGyroRWStatus : std::uint8_t
     EDGE_GYRO_RWSTATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // EDGE_GYRO_RWSTATUS_H
+#endif /* EDGE_GYRO_RWSTATUS_H */

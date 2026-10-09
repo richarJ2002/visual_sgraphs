@@ -67,10 +67,12 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in,
     }
     std::sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
-    // Transform all keyframes so that the first keyframe is at the origin.
-    // After a loop closure the first keyframe might not be at the origin.
-    Sophus::SE3f bodyPose_bodyToWorld; // Can be word to cam0 or world to b
-                                       // dependingo on IMU or not.
+    /*!
+     * Transform all keyframes so that the first keyframe is at the origin.
+     * After a loop closure the first keyframe might not be at the origin.
+     */
+    /* Can be word to cam0 or world to b dependingo on IMU or not. */
+    Sophus::SE3f bodyPose_bodyToWorld;
     if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO || sensor == IMU_RGBD)
     {
         Sophus::SE3f imuPose{};
@@ -102,13 +104,17 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in,
     f.open(filename_in.c_str());
     f << std::fixed;
 
-    // Frame pose is stored relative to its reference keyframe (which is
-    // optimized by BA and pose graph). We need to get first the keyframe pose
-    // and then concatenate the relative transformation. Frames not localized
-    // (tracking failure) are not saved.
+    /*!
+     * Frame pose is stored relative to its reference keyframe (which is
+     * optimized by BA and pose graph). We need to get first the keyframe pose
+     * and then concatenate the relative transformation. Frames not localized
+     * (tracking failure) are not saved.
+     */
 
-    // For each frame we have a reference keyframe (lRit), the timestamp (lT)
-    // and a flag which is true when tracking failed (lbL).
+    /*!
+     * For each frame we have a reference keyframe (lRit), the timestamp (lT)
+     * and a flag which is true when tracking failed (lbL).
+     */
     list<vs_graphs::core::KeyFrame *>::iterator rits =
         p_tracker->referenceKeyFrames.begin();
     std::list<double>::iterator lT  = p_tracker->frameTimes.begin();
@@ -127,8 +133,10 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in,
 
         Sophus::SE3f referenceKeyFramePose_firstKeyFrameToCamera;
 
-        // If the reference keyframe was culled, traverse the spanning tree to
-        // get a suitable keyframe.
+        /*!
+         * If the reference keyframe was culled, traverse the spanning tree to
+         * get a suitable keyframe.
+         */
         if (!p_keyFrame)
             continue;
 
@@ -182,10 +190,10 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in,
                          "cannot fail; continuing as before.",
                          __func__);
         }
+        /* Tcp*Tpw*Twb0=Tcb0 where b0 is the new world reference */
         referenceKeyFramePose_firstKeyFrameToCamera =
             referenceKeyFramePose_firstKeyFrameToCamera * keyFramePose *
-            bodyPose_bodyToWorld; // Tcp*Tpw*Twb0=Tcb0 where b0
-                                  // is the new world reference
+            bodyPose_bodyToWorld;
 
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
             sensor == IMU_RGBD)
@@ -226,5 +234,5 @@ SystemStatus System::saveTrajectoryEuRoC(const std::string &filename_in,
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -55,5 +55,5 @@ FrameStatus Frame::getVelocity(Eigen::Vector3f &getVelocity_out) const
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

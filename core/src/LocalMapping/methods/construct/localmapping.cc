@@ -78,5 +78,5 @@ LocalMapping::LocalMapping(Atlas      *p_atlas_in,
 #endif
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

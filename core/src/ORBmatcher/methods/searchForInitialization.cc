@@ -196,7 +196,7 @@ ORBmatcherStatus ORBmatcher::searchForInitialization(
         }
     }
 
-    // Update prev matched
+    /* Update prev matched */
     for (size_t i1 = 0, iend1 = matches12_out.size(); i1 < iend1; i1++)
         if (matches12_out[i1] >= 0)
             previousMatched_inout[i1] =
@@ -206,5 +206,5 @@ ORBmatcherStatus ORBmatcher::searchForInitialization(
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

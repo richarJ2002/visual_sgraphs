@@ -163,11 +163,13 @@ LoopClosingStatus
     }
 #endif
 
-    // Update all MapPoints and KeyFrames
-    // Local Mapping was active during BA, that means that there might be new
-    // keyframes not included in the Global BA and they are not consistent with
-    // the updated map. We need to propagate the correction through the spanning
-    // tree
+    /*!
+     * Update all MapPoints and KeyFrames
+     * Local Mapping was active during BA, that means that there might be new
+     * keyframes not included in the Global BA and they are not consistent with
+     * the updated map. We need to propagate the correction through the spanning
+     * tree
+     */
     {
         std::unique_lock<std::mutex> lock(gbaMutex);
         if (generation_in != fullBundleAdjustmentIndex)
@@ -223,7 +225,7 @@ LoopClosingStatus
                              "although it cannot fail; continuing as before.",
                              __func__);
             }
-            // Wait until Local Mapping has effectively stopped
+            /* Wait until Local Mapping has effectively stopped */
 
             for (;;)
             {
@@ -266,14 +268,14 @@ LoopClosingStatus
                     __func__);
             }
 
-            // Get Map Mutex
+            /* Get Map Mutex */
             std::unique_lock<std::mutex> mapUpdateLock(
                 p_activeMap_inout->mapUpdateMutex);
 
             KeyFrameAndPose keyFramePosesBefore_worldToCamera;
             KeyFrameAndPose keyFramePosesAfter_worldToCamera;
 
-            //  Correct keyframes starting at map first keyframe
+            /*  Correct keyframes starting at map first keyframe */
             std::list<KeyFrame *> keyFramesToCheck(
                 p_activeMap_inout->keyFrameOrigins.begin(),
                 p_activeMap_inout->keyFrameOrigins.end());
@@ -334,8 +336,7 @@ LoopClosingStatus
                         }
                         Sophus::SE3f tchildc =
                             childPose * cameraPose_cameraToWorld;
-                        p_child->tcwGBA =
-                            tchildc * p_keyFrame->tcwGBA; //*Tcorc*pKF->mTcwGBA;
+                        p_child->tcwGBA = tchildc * p_keyFrame->tcwGBA;
 
                         Sophus::SE3f childPose2{};
                         if (p_child->getPose(childPose2) !=
@@ -492,7 +493,7 @@ LoopClosingStatus
                 keyFramesToCheck.pop_front();
             }
 
-            // Correct MapPoints
+            /* Correct MapPoints */
             std::vector<MapPoint *> mapPoints{};
             if (p_activeMap_inout->getAllMapPoints(mapPoints) !=
                 MapStatus::MAP_STATUS_SUCCESS)
@@ -525,7 +526,7 @@ LoopClosingStatus
 
                 if (p_mapPoint->baGlobalKeyFrameId == loopKeyFrameCount_in)
                 {
-                    // If optimized by Global BA, just update
+                    /* If optimized by Global BA, just update */
                     if (p_mapPoint->setWorldPos(p_mapPoint->posGBA) !=
                         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
                     {
@@ -539,8 +540,10 @@ LoopClosingStatus
                 }
                 else
                 {
-                    // Update according to the correction of its reference
-                    // keyframe
+                    /*!
+                     * Update according to the correction of its reference
+                     * keyframe
+                     */
                     KeyFrame *p_referenceKeyFrame = nullptr;
                     if (p_mapPoint->getReferenceKeyFrame(p_referenceKeyFrame) !=
                         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -648,13 +651,7 @@ LoopClosingStatus
                         continue;
                     }
 
-                    /*if(pRefKF->mTcwBefGBA.empty())
-                        continue;*/
-
-                    // Map to non-corrected camera
-                    // cv::Mat Rcw =
-                    // pRefKF->mTcwBefGBA.rowRange(0,3).colRange(0,3); cv::Mat
-                    // tcw = pRefKF->mTcwBefGBA.rowRange(0,3).col(3);
+                    /* Map to non-corrected camera */
                     Eigen::Vector3f mapPointWorldPos{};
                     if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
                         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -668,7 +665,7 @@ LoopClosingStatus
                     Eigen::Vector3f Xc =
                         p_referenceKeyFrame->tcwBefGBA * mapPointWorldPos;
 
-                    // Backproject using corrected camera
+                    /* Backproject using corrected camera */
                     Sophus::SE3f referenceKeyFramePoseInverse{};
                     if (p_referenceKeyFrame->getPoseInverse(
                             referenceKeyFramePoseInverse) !=
@@ -720,8 +717,10 @@ LoopClosingStatus
                     identityTransform_worldToWorld) !=
                 utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // propagateSemanticPoseCorrections cannot fail; continue as
-                // before.
+                /*!
+                 * propagateSemanticPoseCorrections cannot fail; continue as
+                 * before.
+                 */
             }
 
             /* Preserve plane variables which were optimized directly by GBA. */
@@ -781,11 +780,7 @@ LoopClosingStatus
                     __func__);
             }
 
-            // TODO Check this update
-            // mpTracker->UpdateFrameIMU(1.0f,
-            // mpTracker->GetLastKeyFrame()->getImuBias(),
-            // mpTracker->GetLastKeyFrame());
-
+            /* TODO Check whether Tracking::updateFrameIMU belongs here */
             if (p_localMapper->release() !=
                 LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
             {
@@ -829,5 +824,5 @@ LoopClosingStatus
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

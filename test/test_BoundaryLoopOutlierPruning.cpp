@@ -273,7 +273,7 @@ RectangleWithOutlier makeRectangleWithOutlier(Map *p_map_in)
     return walls;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that a room whose four walls form a closed rectangle
@@ -418,5 +418,5 @@ TEST(BoundaryLoopOutlierPruning, KeepsAnOutlierExplainedByAPassage)
               remainingWalls.end());
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

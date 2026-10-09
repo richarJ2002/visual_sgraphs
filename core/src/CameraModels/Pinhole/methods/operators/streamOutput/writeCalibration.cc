@@ -43,7 +43,7 @@ std::ostream &operator<<(std::ostream  &outputStream_inout,
                        << pinhole_in.parameters[3];
     return outputStream_inout;
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

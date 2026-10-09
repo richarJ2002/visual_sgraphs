@@ -110,7 +110,7 @@ std::unique_ptr<geometric::Plane>
     return ground;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that reconciling room ground planes repoints a room
@@ -206,5 +206,5 @@ TEST(FloorFlatness, LeavesAnAgreeingRoomGroundPlaneUntouched)
     EXPECT_EQ(p_groundPlane, roomGround.get());
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

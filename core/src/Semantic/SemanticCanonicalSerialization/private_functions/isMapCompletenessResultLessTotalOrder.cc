@@ -156,6 +156,6 @@ bool isMapCompletenessResultLessTotalOrder(const MapCompletenessResult &lhs_in,
            static_cast<int>(rhs_in.doLegacyAndConservativeDiverge);
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

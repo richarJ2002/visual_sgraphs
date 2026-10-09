@@ -45,7 +45,7 @@ enum class EdgePriorAccStatus : std::uint8_t
     EDGE_PRIOR_ACC_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // EDGE_PRIOR_ACC_STATUS_H
+#endif /* EDGE_PRIOR_ACC_STATUS_H */

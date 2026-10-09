@@ -67,8 +67,8 @@ enum class AxiomResult : std::uint8_t
     UNKNOWN = 2U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_AXIOM_RESULT_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_AXIOM_RESULT_H */

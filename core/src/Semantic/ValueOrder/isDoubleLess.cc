@@ -43,6 +43,6 @@ bool isDoubleLess(double lhs_in, double rhs_in)
     return doubleTotalOrderKey(lhs_in) < doubleTotalOrderKey(rhs_in);
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

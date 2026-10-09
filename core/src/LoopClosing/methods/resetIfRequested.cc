@@ -48,7 +48,7 @@ LoopClosingStatus LoopClosing::resetIfRequested()
         std::cout << "Loop closer reset requested..." << std::endl;
         loopKeyFrameQueue.clear();
         lastLoopKeyFrameId =
-            0; // TODO old variable, it is not use in the new algorithm
+            0; /* TODO old variable, it is not use in the new algorithm */
         isResetRequested          = false;
         isResetActiveMapRequested = false;
     }
@@ -86,14 +86,13 @@ LoopClosingStatus LoopClosing::resetIfRequested()
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        lastLoopKeyFrameId =
-            atlasLastInitKeyFrameId; // TODO old variable, it is not
-                                     // use in the new algorithm
+        /* TODO old variable, it is not use in the new algorithm */
+        lastLoopKeyFrameId        = atlasLastInitKeyFrameId;
         isResetActiveMapRequested = false;
     }
 
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

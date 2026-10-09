@@ -46,7 +46,7 @@ namespace core
 
 TrackingStatus Tracking::trackReferenceKeyFrame(bool &isTracked_out)
 {
-    // Compute Bag of Words vector
+    /* Compute Bag of Words vector */
     if (currentFrame.computeBagOfWords() != FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -55,8 +55,10 @@ TrackingStatus Tracking::trackReferenceKeyFrame(bool &isTracked_out)
                      __func__);
     }
 
-    // We perform first an ORB matching with the reference keyframe
-    // If enough matches are found we setup a PnP solver
+    /*!
+     * We perform first an ORB matching with the reference keyframe
+     * If enough matches are found we setup a PnP solver
+     */
     ORBmatcher              matcher(0.7, true);
     std::vector<MapPoint *> mapPointMatches;
 
@@ -110,12 +112,11 @@ TrackingStatus Tracking::trackReferenceKeyFrame(bool &isTracked_out)
                      __func__);
     }
 
-    // Discard outliers
+    /* Discard outliers */
     int nmatchesMap = 0;
     for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
          keyPointIndex++)
     {
-        // if(i >= mCurrentFrame.Nleft) break;
         if (currentFrame.mapPoints[keyPointIndex])
         {
             if (currentFrame.outlierFlags[keyPointIndex])
@@ -171,5 +172,5 @@ TrackingStatus Tracking::trackReferenceKeyFrame(bool &isTracked_out)
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

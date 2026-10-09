@@ -49,9 +49,9 @@ enum class GeometricCameraStatus : std::uint8_t
     GEOMETRIC_CAMERA_STATUS_SUCCESS = 0U
 };
 
-} // namespace geometriccamera
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometriccamera */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // GEOMETRIC_CAMERA_STATUS_H
+#endif /* GEOMETRIC_CAMERA_STATUS_H */

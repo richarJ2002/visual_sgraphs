@@ -40,7 +40,7 @@ namespace core
 
 LocalMappingStatus LocalMapping::mapPointCulling()
 {
-    // Check Recent Added MapPoints
+    /* Check Recent Added MapPoints */
     std::list<MapPoint *>::iterator recentMapPointIt =
         recentAddedMapPoints.begin();
     const unsigned long int currentKeyFrameId = p_currentKeyFrame->id;
@@ -143,5 +143,5 @@ LocalMappingStatus LocalMapping::mapPointCulling()
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

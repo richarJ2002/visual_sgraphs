@@ -45,7 +45,7 @@ enum class EdgeMonoOnlyPoseStatus : std::uint8_t
     EDGE_MONO_ONLY_POSE_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // EDGE_MONO_ONLY_POSE_STATUS_H
+#endif /* EDGE_MONO_ONLY_POSE_STATUS_H */

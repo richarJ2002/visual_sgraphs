@@ -112,7 +112,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
 
     int N = optimizableKeyFrames.size();
 
-    // Optimizable points seen by temporal optimizable keyframes
+    /* Optimizable points seen by temporal optimizable keyframes */
     std::list<MapPoint *> localMapPointList;
     for (int neighborIndex = 0; neighborIndex < N; neighborIndex++)
     {
@@ -154,7 +154,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         }
     }
 
-    // Fixed Keyframe: First frame previous KF to optimization window)
+    /* Fixed Keyframe: First frame previous KF to optimization window) */
     std::list<KeyFrame *> fixedKeyFrames;
     if (optimizableKeyFrames.back()->p_prevKF)
     {
@@ -170,7 +170,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         optimizableKeyFrames.pop_back();
     }
 
-    // Optimizable visual KFs
+    /* Optimizable visual KFs */
     const int maximumCovisibleKeyFrameCount = 0;
     for (int neighborIndex = 0, iend = neighborsKeyFrames.size();
          neighborIndex < iend;
@@ -248,7 +248,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         }
     }
 
-    // Fixed KFs which are not covisible optimizable
+    /* Fixed KFs which are not covisible optimizable */
     const int maximumFixKeyFrame = 200;
 
     for (std::list<MapPoint *>::iterator lit  = localMapPointList.begin(),
@@ -297,7 +297,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
             break;
     }
 
-    // Setup optimizer
+    /* Setup optimizer */
     g2o::SparseOptimizer                 optimizer;
     g2o::BlockSolverX::LinearSolverType *p_linearSolver;
     p_linearSolver =
@@ -310,7 +310,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         g2o::OptimizationAlgorithmLevenberg *p_solver =
             new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
         p_solver->setUserLambdaInit(
-            1e-2); // to avoid iterating for finding optimal lambda
+            1e-2); /* to avoid iterating for finding optimal lambda */
         optimizer.setAlgorithm(p_solver);
     }
     else
@@ -321,7 +321,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         optimizer.setAlgorithm(p_solver);
     }
 
-    // Set Local temporal KeyFrame vertices
+    /* Set Local temporal KeyFrame vertices */
     N = optimizableKeyFrames.size();
     for (int neighborIndex = 0; neighborIndex < N; neighborIndex++)
     {
@@ -353,7 +353,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         }
     }
 
-    // Set Local visual KeyFrame vertices
+    /* Set Local visual KeyFrame vertices */
     for (std::list<KeyFrame *>::iterator
              optimizedVisualKeyFrameIt = optVisKeyFrames.begin(),
              itEnd                     = optVisKeyFrames.end();
@@ -367,7 +367,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         optimizer.addVertex(p_poseVertex);
     }
 
-    // Set Fixed KeyFrame vertices
+    /* Set Fixed KeyFrame vertices */
     for (std::list<KeyFrame *>::iterator lit  = fixedKeyFrames.begin(),
                                          lend = fixedKeyFrames.end();
          lit != lend;
@@ -379,8 +379,8 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         p_poseVertex->setFixed(true);
         optimizer.addVertex(p_poseVertex);
 
-        if (p_keyFrame->isImu) // This should be done only for keyframe just
-                               // before temporal window
+        /* This should be done only for keyframe just before temporal window */
+        if (p_keyFrame->isImu)
         {
             VertexVelocity *p_velocityVertex = new VertexVelocity(p_keyFrame);
             p_velocityVertex->setId(maximumKeyFrameId + 3 * (p_keyFrame->id) +
@@ -401,7 +401,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         }
     }
 
-    // Create intertial constraints
+    /* Create intertial constraints */
     std::vector<EdgeInertial *> vei(N, nullptr);
     std::vector<EdgeGyroRW *>   vegr(N, nullptr);
     std::vector<EdgeAccRW *>    vear(N, nullptr);
@@ -499,12 +499,14 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
 
             if (neighborIndex == N - 1 || isRecentlyInitialized_in)
             {
-                // All inertial residuals are included without robust cost
-                // function, but not that one linking the last optimizable
-                // keyframe inside of the local window and the first fixed
-                // keyframe out. The information matrix for this measurement is
-                // also downweighted. This is done to avoid accumulating error
-                // due to fixing variables.
+                /*!
+                 * All inertial residuals are included without robust cost
+                 * function, but not that one linking the last optimizable
+                 * keyframe inside of the local window and the first fixed
+                 * keyframe out. The information matrix for this measurement is
+                 * also downweighted. This is done to avoid accumulating error
+                 * due to fixing variables.
+                 */
                 g2o::RobustKernelHuber *p_rki = new g2o::RobustKernelHuber;
                 vei[neighborIndex]->setRobustKernel(p_rki);
                 if (neighborIndex == N - 1)
@@ -539,11 +541,11 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
             std::cout << "ERROR building inertial edge" << std::endl;
     }
 
-    // Set MapPoint vertices
+    /* Set MapPoint vertices */
     const int expectedSizeCount =
         (N + fixedKeyFrames.size()) * localMapPointList.size();
 
-    // Mono
+    /* Mono */
     std::vector<EdgeMono *> edgesMonos;
     edgesMonos.reserve(expectedSizeCount);
 
@@ -553,7 +555,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
     std::vector<MapPoint *> mapPointEdgeMonos;
     mapPointEdgeMonos.reserve(expectedSizeCount);
 
-    // Stereo
+    /* Stereo */
     std::vector<EdgeStereo *> edgesStereos;
     edgesStereos.reserve(expectedSizeCount);
 
@@ -616,7 +618,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                          __func__);
         }
 
-        // Create visual constraints
+        /* Create visual constraints */
         for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
                  mit  = observations.begin(),
                  mend = observations.end();
@@ -654,7 +656,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
 
                 cv::KeyPoint keyPointUn;
 
-                // Monocular left observation
+                /* Monocular left observation */
                 if (leftIndex != -1 && p_keyFrame->uRight[leftIndex] < 0)
                 {
                     visibleEdgeCounts[p_keyFrame->id]++;
@@ -673,7 +675,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                                      optimizer.vertex(p_keyFrame->id)));
                     e->setMeasurement(observation);
 
-                    // Add here uncerteinty
+                    /* Add here uncerteinty */
                     const float unc2 =
                         p_keyFrame->p_camera->uncertainty2(observation);
 
@@ -692,8 +694,8 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                     edgeKeyFrameMonos.push_back(p_keyFrame);
                     mapPointEdgeMonos.push_back(p_mapPoint);
                 }
-                // Stereo-observation
-                else if (leftIndex != -1) // Stereo observation
+                /* Stereo-observation */
+                else if (leftIndex != -1) /* Stereo observation */
                 {
                     keyPointUn = p_keyFrame->keyPointsUndistorted[leftIndex];
                     visibleEdgeCounts[p_keyFrame->id]++;
@@ -713,7 +715,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                                      optimizer.vertex(p_keyFrame->id)));
                     e->setMeasurement(observation);
 
-                    // Add here uncerteinty
+                    /* Add here uncerteinty */
                     const float unc2 =
                         p_keyFrame->p_camera->uncertainty2(observation.head(2));
 
@@ -733,7 +735,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                     mapPointEdgeStereos.push_back(p_mapPoint);
                 }
 
-                // Monocular right observation
+                /* Monocular right observation */
                 if (p_keyFrame->p_camera2)
                 {
                     int rightIndex = std::get<1>(mit->second);
@@ -762,7 +764,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
                                 optimizer.vertex(p_keyFrame->id)));
                         e->setMeasurement(observation);
 
-                        // Add here uncerteinty
+                        /* Add here uncerteinty */
                         const float unc2 =
                             p_keyFrame->p_camera->uncertainty2(observation);
 
@@ -788,7 +790,6 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         }
     }
 
-    // cout << "Total map points: " << localMapPointList.size() << endl;
     for (std::map<int, int>::iterator mit  = visibleEdgeCounts.begin(),
                                       mend = visibleEdgeCounts.end();
          mit != mend;
@@ -810,14 +811,16 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
     float error = optimizer.activeRobustChi2();
-    optimizer.optimize(optimizationIterationCount); // Originally to 2
+    optimizer.optimize(optimizationIterationCount); /* Originally to 2 */
     float errorEnd = optimizer.activeRobustChi2();
 
     std::vector<std::pair<KeyFrame *, MapPoint *>> vToErase;
     vToErase.reserve(edgesMonos.size() + edgesStereos.size());
 
-    // Check inlier observations
-    // Mono
+    /*!
+     * Check inlier observations
+     * Mono
+     */
     for (size_t neighborIndex = 0, iend = edgesMonos.size();
          neighborIndex < iend;
          neighborIndex++)
@@ -847,7 +850,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         }
     }
 
-    // Stereo
+    /* Stereo */
     for (size_t neighborIndex = 0, iend = edgesStereos.size();
          neighborIndex < iend;
          neighborIndex++)
@@ -874,12 +877,12 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         }
     }
 
-    // Get Map Mutex and erase outliers
+    /* Get Map Mutex and erase outliers */
     std::unique_lock<std::mutex> lock(p_map_inout->mapUpdateMutex);
 
-    // TODO: Some convergence problems have been detected here
+    /* TODO: Some convergence problems have been detected here */
     if ((2 * error < errorEnd || std::isnan(error) || std::isnan(errorEnd)) &&
-        !isLargeWindow_in) // bGN)
+        !isLargeWindow_in) /* bGN) */
     {
         std::cout << "FAIL LOCAL-INERTIAL BA!!!!" << std::endl;
         return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
@@ -917,8 +920,10 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
          lit++)
         (*lit)->baFixedKeyFrameId = 0;
 
-    // Recover optimized data
-    // Local temporal Keyframes
+    /*!
+     * Recover optimized data
+     * Local temporal Keyframes
+     */
     N = optimizableKeyFrames.size();
     for (int neighborIndex = 0; neighborIndex < N; neighborIndex++)
     {
@@ -972,7 +977,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         }
     }
 
-    // Local visual KeyFrame
+    /* Local visual KeyFrame */
     for (std::list<KeyFrame *>::iterator
              optimizedVisualKeyFrameIt = optVisKeyFrames.begin(),
              itEnd                     = optVisKeyFrames.end();
@@ -996,7 +1001,7 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
         p_keyFrame->baLocalKeyFrameId = 0;
     }
 
-    // Points
+    /* Points */
     for (std::list<MapPoint *>::iterator lit  = localMapPointList.begin(),
                                          lend = localMapPointList.end();
          lit != lend;
@@ -1035,5 +1040,5 @@ OptimizerStatus Optimizer::localInertialBA(KeyFrame *p_keyFrame_inout,
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

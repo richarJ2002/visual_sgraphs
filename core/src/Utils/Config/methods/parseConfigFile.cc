@@ -51,7 +51,7 @@ ConfigParserStatus
     return ConfigParserStatus::CONFIG_PARSER_STATUS_SUCCESS;
 }
 
-} // namespace config
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace config */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

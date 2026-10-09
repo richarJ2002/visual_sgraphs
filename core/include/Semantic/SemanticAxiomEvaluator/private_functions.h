@@ -718,10 +718,10 @@ template <typename RecordT>
     const MapSnapshot           &mapSnapshot_in,
     MapCompletenessResult       &conservativeMapCompleteness_out);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #include "Semantic/SemanticAxiomEvaluator/private_functions/findRecordByKey.tpp"
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_PRIVATE_FUNCTIONS_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_PRIVATE_FUNCTIONS_H */

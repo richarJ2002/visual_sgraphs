@@ -58,10 +58,10 @@ ImuCamPoseStatus ImuCamPose::updateW(const double *p_updateVector_in)
     }
     DR  = deltaRotation * DR;
     Rwb = DR * Rwb0;
-    // Update body pose
+    /* Update body pose */
     twb += translationUpdate;
 
-    // Normalize rotation after 5 updates
+    /* Normalize rotation after 5 updates */
     its++;
     if (its >= 5)
     {
@@ -82,7 +82,7 @@ ImuCamPoseStatus ImuCamPose::updateW(const double *p_updateVector_in)
         its = 0;
     }
 
-    // Update camera pose
+    /* Update camera pose */
     const Eigen::Matrix3d bodyRotation_worldToBody = Rwb.transpose();
     const Eigen::Vector3d bodyTranslation_worldToBody =
         -bodyRotation_worldToBody * twb;
@@ -98,5 +98,5 @@ ImuCamPoseStatus ImuCamPose::updateW(const double *p_updateVector_in)
     return ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

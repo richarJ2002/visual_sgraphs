@@ -42,7 +42,7 @@ namespace core
 
 LocalMappingStatus LocalMapping::searchInNeighbors()
 {
-    // Retrieve neighbor keyframes
+    /* Retrieve neighbor keyframes */
     int neighborKeyFrameCount = 10;
     if (isMonocular)
         neighborKeyFrameCount = 30;
@@ -80,8 +80,10 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
         p_targetKeyFrame->fuseTargetKeyFrameId = p_currentKeyFrame->id;
     }
 
-    // Add some covisible of covisible
-    // Extend to some second neighbors if abort is not requested
+    /*!
+     * Add some covisible of covisible
+     * Extend to some second neighbors if abort is not requested
+     */
     for (int elementIndex = 0, targetKeyFrameCount = targetKeyFrames.size();
          elementIndex < targetKeyFrameCount;
          elementIndex++)
@@ -127,7 +129,7 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
             break;
     }
 
-    // Extend to temporal neighbors
+    /* Extend to temporal neighbors */
     if (isInertial)
     {
         KeyFrame *p_targetKeyFrame = p_currentKeyFrame->p_prevKF;
@@ -154,7 +156,7 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
         }
     }
 
-    // Search matches by projection from current KF in target KFs
+    /* Search matches by projection from current KF in target KFs */
     ORBmatcher              matcher;
     std::vector<MapPoint *> currentMapPointMatches{};
     if (p_currentKeyFrame->getMapPointMatches(currentMapPointMatches) !=
@@ -204,7 +206,7 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
     if (shouldAbortBa)
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
-    // Search matches by projection from target KFs in current KF
+    /* Search matches by projection from target KFs in current KF */
     std::vector<MapPoint *> fuseCandidateMapPoints;
     fuseCandidateMapPoints.reserve(targetKeyFrames.size() *
                                    currentMapPointMatches.size());
@@ -279,7 +281,7 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
         }
     }
 
-    // Update points
+    /* Update points */
     std::vector<MapPoint *> currentKeyFrameMapPointMatches{};
     if (p_currentKeyFrame->getMapPointMatches(currentKeyFrameMapPointMatches) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -330,7 +332,7 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
         }
     }
 
-    // Update connections in covisibility graph
+    /* Update connections in covisibility graph */
     if (p_currentKeyFrame->updateConnections() !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -343,5 +345,5 @@ LocalMappingStatus LocalMapping::searchInNeighbors()
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

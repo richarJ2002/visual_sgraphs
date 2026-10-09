@@ -44,7 +44,7 @@ namespace core
 
 MapPointStatus MapPoint::computeDistinctiveDescriptors()
 {
-    // Retrieve all observed descriptors
+    /* Retrieve all observed descriptors */
     std::vector<cv::Mat> descriptors;
 
     std::map<KeyFrame *, std::tuple<int, int>> observedKeyFrames;
@@ -98,11 +98,13 @@ MapPointStatus MapPoint::computeDistinctiveDescriptors()
     if (descriptors.empty())
         return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 
-    // Compute distances between them
+    /* Compute distances between them */
     const size_t N = descriptors.size();
 
-    // Symmetric N x N distance matrix held row-major, so row i occupies the
-    // contiguous range [i * N, i * N + N).
+    /*!
+     * Symmetric N x N distance matrix held row-major, so row i occupies the
+     * contiguous range [i * N, i * N + N).
+     */
     std::vector<float> distances(N * N);
     for (size_t keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
     {
@@ -128,7 +130,7 @@ MapPointStatus MapPoint::computeDistinctiveDescriptors()
         }
     }
 
-    // Take the descriptor with least median distance to the rest
+    /* Take the descriptor with least median distance to the rest */
     int bestMedian = INT_MAX;
     int bestIndex  = 0;
     for (size_t keyPointIndex = 0; keyPointIndex < N; keyPointIndex++)
@@ -153,5 +155,5 @@ MapPointStatus MapPoint::computeDistinctiveDescriptors()
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

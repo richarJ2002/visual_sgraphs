@@ -65,7 +65,7 @@ AtlasStatus Atlas::preSave()
             }
             lastInitKeyFrameId =
                 activeMapMaxKeyFrameId2 +
-                1; // The init KF is the next of current maximum
+                1; /* The init KF is the next of current maximum */
         }
     }
 
@@ -125,7 +125,7 @@ AtlasStatus Atlas::preSave()
         }
         if (mapAllKeyFrames.size() == 0)
         {
-            // Empty map, erase before of save it.
+            /* Empty map, erase before of save it. */
             if (setMapBad(p_map) != AtlasStatus::ATLAS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -154,5 +154,5 @@ AtlasStatus Atlas::preSave()
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

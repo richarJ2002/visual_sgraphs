@@ -45,7 +45,7 @@ enum class SemanticsManagerStatus : std::uint8_t
     SEMANTICS_MANAGER_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTICS_MANAGER_STATUS_H
+#endif /* SEMANTICS_MANAGER_STATUS_H */

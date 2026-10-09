@@ -41,6 +41,6 @@ PreintegratedStatus Preintegrated::getOriginalDeltaVelocity(
     return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */

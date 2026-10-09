@@ -67,5 +67,5 @@ KeyFrameStatus KeyFrame::eraseMapPointMatch(MapPoint *p_mapPoint_in)
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -43,5 +43,5 @@ bool sortByVal(const std::pair<MapPoint *, int> &firstEntry_in,
     return (firstEntry_in.second < secondEntry_in.second);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

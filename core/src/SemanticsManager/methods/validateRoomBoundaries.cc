@@ -869,8 +869,10 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
                         if (p_passage->getAssociateWalls(supportingWalls) !=
                             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                         {
-                            // getAssociateWalls cannot fail; continue as
-                            // before.
+                            /*!
+                             * getAssociateWalls cannot fail; continue as
+                             * before.
+                             */
                         }
                         return std::find(supportingWalls.begin(),
                                          supportingWalls.end(),
@@ -929,5 +931,5 @@ SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -125,8 +125,8 @@ nlohmann::json
 nlohmann::json serializeMapCompletenessResults(
     const std::vector<MapCompletenessResult> &results_in);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_CANONICAL_SERIALIZATION_PUBLIC_FUNCTIONS_H
+#endif /* SEMANTIC_CANONICAL_SERIALIZATION_PUBLIC_FUNCTIONS_H */

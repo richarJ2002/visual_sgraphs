@@ -45,7 +45,7 @@ enum class SemanticSegmentationStatus : std::uint8_t
     SEMANTIC_SEGMENTATION_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_SEGMENTATION_STATUS_H
+#endif /* SEMANTIC_SEGMENTATION_STATUS_H */

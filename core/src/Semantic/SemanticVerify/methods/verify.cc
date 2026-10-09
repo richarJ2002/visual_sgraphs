@@ -252,8 +252,10 @@ SemanticVerifyStatus
                                                  supportDistance_m) !=
                         SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS)
                     {
-                        // symmetricSupportDistance cannot fail; continue as
-                        // before.
+                        /*!
+                         * symmetricSupportDistance cannot fail; continue as
+                         * before.
+                         */
                     }
                     if (supportDistance_m > configuration_in.maxSupportDist_m)
                     {
@@ -591,6 +593,6 @@ SemanticVerifyStatus
     return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

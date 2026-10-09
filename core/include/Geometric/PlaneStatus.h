@@ -46,8 +46,8 @@ enum class PlaneStatus : std::uint8_t
     PLANE_STATUS_SUCCESS = 0U
 };
 
-} // namespace geometric
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometric */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // PLANE_STATUS_H
+#endif /* PLANE_STATUS_H */

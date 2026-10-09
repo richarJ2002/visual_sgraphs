@@ -87,6 +87,6 @@ FloorStatus Floor::addRoom(vs_graphs::core::semantic::Room *p_value_inout)
     return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

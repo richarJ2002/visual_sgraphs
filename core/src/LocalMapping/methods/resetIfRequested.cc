@@ -52,7 +52,7 @@ LocalMappingStatus LocalMapping::resetIfRequested()
             isResetRequested          = false;
             isResetActiveMapRequested = false;
 
-            // Inertial parameters
+            /* Inertial parameters */
             initializationStartTime = 0.f;
             initIndex               = 0;
             isImuBad                = false;
@@ -67,7 +67,7 @@ LocalMappingStatus LocalMapping::resetIfRequested()
             newKeyFrames.clear();
             recentAddedMapPoints.clear();
 
-            // Inertial parameters
+            /* Inertial parameters */
             initializationStartTime   = 0.f;
             isImuBad                  = false;
             isResetRequested          = false;
@@ -78,5 +78,5 @@ LocalMappingStatus LocalMapping::resetIfRequested()
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -44,5 +44,5 @@ LoopClosingStatus LoopClosing::setMergeStatus(bool mergeStatus_in)
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

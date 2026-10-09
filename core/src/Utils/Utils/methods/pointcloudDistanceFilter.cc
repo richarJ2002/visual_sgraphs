@@ -45,7 +45,7 @@ UtilsStatus Utils::pointcloudDistanceFilter(
     const typename pcl::PointCloud<PointT>::Ptr &p_cloud_in,
     typename pcl::PointCloud<PointT>::Ptr       &p_filteredCloud_out)
 {
-    // Variables
+    /* Variables */
     double               distance;
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=
@@ -61,12 +61,12 @@ UtilsStatus Utils::pointcloudDistanceFilter(
     const float thresholdNear = thresholds.first;
     const float thresholdFar  = thresholds.second;
 
-    // Define the filtered point p_cloud_in object
+    /* Define the filtered point p_cloud_in object */
     typename pcl::PointCloud<PointT>::Ptr p_filteredCloud(
         new pcl::PointCloud<PointT>());
     p_filteredCloud->reserve(p_cloud_in->size());
 
-    // Filter the point p_cloud_in
+    /* Filter the point p_cloud_in */
     std::copy_if(p_cloud_in->begin(),
                  p_cloud_in->end(),
                  std::back_inserter(p_filteredCloud->points),
@@ -100,7 +100,7 @@ template UtilsStatus Utils::pointcloudDistanceFilter<pcl::PointXYZRGBA>(
     const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &,
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -145,7 +145,7 @@ class KeyFrameDatabase
      */
     [[nodiscard]] KeyFrameDatabaseStatus clearMap(Map *p_map_in);
 
-    // Loop Detection(DEPRECATED)
+    /* Loop Detection(DEPRECATED) */
     /*!
      * @brief           Deprecated, see detectCandidates. Finds loop closure
      *                  candidates: key frames of the same map that share visual
@@ -173,7 +173,7 @@ class KeyFrameDatabase
                              float                    minScore_in,
                              std::vector<KeyFrame *> &loopCandidates_out);
 
-    // Loop and Merge Detection
+    /* Loop and Merge Detection */
     /*!
      * @brief           Finds loop closure candidates (same map as the current
      *                  key frame) and merge candidates (another map that is not
@@ -268,7 +268,7 @@ class KeyFrameDatabase
         std::vector<KeyFrame *> &mergeCandidateKeyFrames_out,
         int                      candidateCount_in);
 
-    // Relocalization
+    /* Relocalization */
     /*!
      * @brief           Finds key frames of one map that could re-localise a
      *                  lost frame: the key frames sharing enough visual words
@@ -336,7 +336,7 @@ class KeyFrameDatabase
     std::mutex databaseMutex;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif

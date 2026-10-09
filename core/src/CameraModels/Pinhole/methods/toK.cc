@@ -47,7 +47,7 @@ cv::Mat Pinhole::toK()
                             1.f);
     return cameraMatrix;
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

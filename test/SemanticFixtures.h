@@ -334,6 +334,6 @@ g2o::Sim3 makeNonTrivialSim3(
         Eigen::Vector3d(1.5, -0.8, 0.4),
     double scale_in = 1.2);
 
-} // namespace test
-} // namespace core
-} // namespace vs_graphs
+} /* namespace test */
+} /* namespace core */
+} /* namespace vs_graphs */

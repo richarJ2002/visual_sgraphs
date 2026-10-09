@@ -92,8 +92,8 @@ struct OpenPassageHypothesisRecord
     double heightSpan_m{0.0};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_OPEN_PASSAGE_HYPOTHESIS_RECORD_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_OPEN_PASSAGE_HYPOTHESIS_RECORD_H */

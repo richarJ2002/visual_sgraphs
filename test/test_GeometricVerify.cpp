@@ -197,7 +197,7 @@ double rotationAngle_deg(const Eigen::Matrix3d &first_in,
     return delta.angle() * 180.0 / M_PI;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that two rooms whose walls are related by a known
@@ -372,7 +372,7 @@ TEST(GeometricVerify, CorrectHypothesisWinsOverOutlierCorrespondences)
         buildRoom(2, wallsB, centroidB);
 
     semantic::SemanticVerifyConfig config;
-    config.minInlierRatio = 0.5; // 4 true inliers out of min(5,5)=5 walls
+    config.minInlierRatio = 0.5; /* 4 true inliers out of min(5,5)=5 walls */
     std::vector<semantic::VerifyWallObservation> observationsA{};
     ASSERT_EQ(
         (semantic::SemanticVerify::collectWallObservations(&roomA->room,
@@ -1234,5 +1234,5 @@ TEST(GeometricVerify,
     EXPECT_NEAR(orientationResidualNorm, M_PI, 1e-6);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

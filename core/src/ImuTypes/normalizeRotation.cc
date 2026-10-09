@@ -40,6 +40,6 @@ ImuTypesStatus normalizeRotation(const Eigen::Matrix3f &rotationMatrix_in,
     return ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS;
 }
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */

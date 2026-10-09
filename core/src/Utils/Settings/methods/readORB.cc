@@ -117,7 +117,7 @@ SettingsStatus Settings::readORB(cv::FileStorage &storage_inout)
     return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
-} // namespace settings
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace settings */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

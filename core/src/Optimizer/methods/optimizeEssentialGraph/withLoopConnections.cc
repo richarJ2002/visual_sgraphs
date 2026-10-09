@@ -51,7 +51,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     const std::map<KeyFrame *, std::set<KeyFrame *>> &loopConnections_in,
     const bool                                       &isScaleFixed_in)
 {
-    // Setup optimizer
+    /* Setup optimizer */
     g2o::SparseOptimizer optimizer;
     optimizer.setVerbose(false);
     g2o::BlockSolver_7_3::LinearSolverType *p_linearSolver =
@@ -101,13 +101,13 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     std::vector<g2o::VertexSim3Expmap *> vertices(maximumKeyFrameIdCount + 1);
 
     std::vector<Eigen::Vector3d> zvectors(maximumKeyFrameIdCount +
-                                          1); // For debugging
+                                          1); /* For debugging */
     Eigen::Vector3d              z_vec;
     z_vec << 0.0, 0.0, 1.0;
 
     const int minimumFeature = 100;
 
-    // Set KeyFrame vertices
+    /* Set KeyFrame vertices */
     for (size_t keyFrameIndex = 0, iend = keyFrames.size();
          keyFrameIndex < iend;
          keyFrameIndex++)
@@ -172,7 +172,8 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         p_sim3Vertex->_fix_scale = isScaleFixed_in;
 
         optimizer.addVertex(p_sim3Vertex);
-        zvectors[idCount] = vScw[idCount].rotation() * z_vec; // For debugging
+        /* For debugging */
+        zvectors[idCount] = vScw[idCount].rotation() * z_vec;
 
         vertices[idCount] = p_sim3Vertex;
     }
@@ -182,7 +183,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     const Eigen::Matrix<double, 7, 7> matrixLambda =
         Eigen::Matrix<double, 7, 7>::Identity();
 
-    // Set Loop edges
+    /* Set Loop edges */
     int loopCount = 0;
     for (std::map<KeyFrame *, std::set<KeyFrame *>>::const_iterator
              mit  = loopConnections_in.begin(),
@@ -240,7 +241,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         }
     }
 
-    // Set normal edges
+    /* Set normal edges */
     for (size_t keyFrameIndex = 0, iend = keyFrames.size();
          keyFrameIndex < iend;
          keyFrameIndex++)
@@ -269,7 +270,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                          __func__);
         }
 
-        // Spanning tree edge
+        /* Spanning tree edge */
         if (p_parentKeyFrame)
         {
             int loopKeyFrameId = p_parentKeyFrame->id;
@@ -298,7 +299,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
             optimizer.addEdge(e);
         }
 
-        // Loop edges
+        /* Loop edges */
         std::set<KeyFrame *> loopEdges{};
         if (p_keyFrame->getLoopEdges(loopEdges) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -340,7 +341,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
             }
         }
 
-        // Covisibility graph edges
+        /* Covisibility graph edges */
         std::vector<KeyFrame *> connectedKeyFrames{};
         if (p_keyFrame->getCovisiblesByWeight(minimumFeature,
                                               connectedKeyFrames) !=
@@ -412,7 +413,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
             }
         }
 
-        // Inertial edges if inertial
+        /* Inertial edges if inertial */
         if (p_keyFrame->isImu && p_keyFrame->p_prevKF)
         {
             g2o::Sim3                                    Spw;
@@ -443,7 +444,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     optimizer.computeActiveErrors();
     std::unique_lock<std::mutex> lock(p_map_inout->mapUpdateMutex);
 
-    // SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1]
+    /* SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1] */
     for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
          keyFrameIndex++)
     {
@@ -471,8 +472,10 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
         }
     }
 
-    // Correct points. Transform to "non-optimized" reference keyframe pose and
-    // transform back with optimized pose
+    /*!
+     * Correct points. Transform to "non-optimized" reference keyframe pose and
+     * transform back with optimized pose
+     */
     for (size_t keyFrameIndex = 0, iend = mapPoints.size();
          keyFrameIndex < iend;
          keyFrameIndex++)
@@ -556,5 +559,5 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -97,8 +97,8 @@ enum class UnavailableReason : std::uint8_t
     NOT_CAPTURED_IN_FOUNDATION_SLICE = 5U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_UNAVAILABLE_REASON_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_UNAVAILABLE_REASON_H */

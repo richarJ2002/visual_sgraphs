@@ -74,8 +74,8 @@ struct AggregateAxiomResult
     std::size_t contributingFindingCount{0U};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_AGGREGATE_AXIOM_RESULT_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_AGGREGATE_AXIOM_RESULT_H */

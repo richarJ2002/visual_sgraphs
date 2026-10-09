@@ -40,20 +40,20 @@ DBParserStatus DBParser::getEnvironmentRooms(
 {
     environmentRooms.clear();
 
-    // Check if the JSON file contains rooms
+    /* Check if the JSON file contains rooms */
     Json &roomsData = environmentData_in["rooms"];
     if (roomsData.size() != 0)
     {
-        // "rooms" is an array: each room's id is its index in it.
+        /* "rooms" is an array: each room's id is its index in it. */
         for (std::size_t roomIndex = 0; roomIndex < roomsData.size();
              ++roomIndex)
         {
             Json &environmentDatum = roomsData[roomIndex];
 
-            // Initialization
+            /* Initialization */
             semantic::Room *p_environmentRoom = new semantic::Room();
 
-            // Fill the room entity
+            /* Fill the room entity */
             if (p_environmentRoom->setOpId(-1) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
@@ -96,8 +96,10 @@ DBParserStatus DBParser::getEnvironmentRooms(
                              __func__);
             }
 
-            // Set the room variant (corridors are incomplete rooms, not a
-            // distinct semantic type, so every env room is a plain ROOM)
+            /*!
+             * Set the room variant (corridors are incomplete rooms, not a
+             * distinct semantic type, so every env room is a plain ROOM)
+             */
             if (p_environmentRoom->setRoomVariant(
                     semantic::Room::RoomVariant::ROOM) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -108,11 +110,11 @@ DBParserStatus DBParser::getEnvironmentRooms(
                              __func__);
             }
 
-            // Fill the vector
+            /* Fill the vector */
             environmentRooms.push_back(p_environmentRoom);
         }
 
-        // Print the loaded rooms
+        /* Print the loaded rooms */
         std::string name2{};
         if (environmentRooms[0]->getName(name2) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -132,5 +134,5 @@ DBParserStatus DBParser::getEnvironmentRooms(
     environmentRooms_out = environmentRooms;
     return DBParserStatus::DBPARSER_STATUS_SUCCESS;
 }
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

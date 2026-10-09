@@ -47,8 +47,8 @@ enum class KnownSideProvenanceStatus : std::uint8_t
     KNOWN_SIDE_PROVENANCE_STATUS_SUCCESS = 0U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // KNOWN_SIDE_PROVENANCE_STATUS_H
+#endif /* KNOWN_SIDE_PROVENANCE_STATUS_H */

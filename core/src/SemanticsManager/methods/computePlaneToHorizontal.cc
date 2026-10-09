@@ -35,11 +35,11 @@ SemanticsManagerStatus SemanticsManager::computePlaneToHorizontal(
     const geometric::Plane *p_plane_in,
     Eigen::Matrix4f        &plane_out)
 {
-    // initialize the transformation with translation set to a zero vector
+    /* initialize the transformation with translation set to a zero vector */
     Eigen::Isometry3d planePose;
     planePose.translation() = Eigen::Vector3d(0, 0, 0);
 
-    // normalize the normal vector
+    /* normalize the normal vector */
     g2o::Plane3D planeGetGlobalEquation{};
     if (p_plane_in->getGlobalEquation(planeGetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -51,14 +51,16 @@ SemanticsManagerStatus SemanticsManager::computePlaneToHorizontal(
     }
     Eigen::Vector3d planeNormal = planeGetGlobalEquation.coeffs().head<3>();
 
-    // get the rotation from the ground plane to the plane with y-facing
-    // vertical downwards
+    /*!
+     * get the rotation from the ground plane to the plane with y-facing
+     * vertical downwards
+     */
     Eigen::Vector3d    verticalAxis = Eigen::Vector3d(0, -1, 0);
     Eigen::Quaterniond rotationQuaternion;
     rotationQuaternion.setFromTwoVectors(planeNormal, verticalAxis);
     planePose.linear() = rotationQuaternion.toRotationMatrix();
 
-    // form homogenous transformation matrix
+    /* form homogenous transformation matrix */
     Eigen::Matrix4f planePoseMatrix = planePose.matrix().cast<float>();
     planePoseMatrix(3, 3)           = 1.0;
 
@@ -66,5 +68,5 @@ SemanticsManagerStatus SemanticsManager::computePlaneToHorizontal(
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

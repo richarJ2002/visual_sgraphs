@@ -56,7 +56,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
 {
     sensor = sensor_in;
 
-    // Open settings file
+    /* Open settings file */
     cv::FileStorage storage_in(configurationFilePath_in, cv::FileStorage::READ);
     if (!storage_in.isOpened())
     {
@@ -69,7 +69,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
         VSLAM_LOG_INFO("\n[Settings] Loading configurations from '%s'...\n",
                        configurationFilePath_in.c_str());
 
-    // Read Camera#1 (monocular, stereo or RGB-D)
+    /* Read Camera#1 (monocular, stereo or RGB-D) */
     if (readCamera1(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -79,7 +79,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
     }
     VSLAM_LOG_INFO("[Settings] Camera#1 settings loaded!\n");
 
-    // Read Camera#2 (stereo)
+    /* Read Camera#2 (stereo) */
     if (sensor == System::STEREO || sensor == System::IMU_STEREO)
     {
         if (readCamera2(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
@@ -92,7 +92,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
         VSLAM_LOG_INFO("[Settings] Camera#2 settings loaded!\n");
     }
 
-    // Read image info
+    /* Read image info */
     if (readImageInfo(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -102,7 +102,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
     }
     VSLAM_LOG_INFO("[Settings] Camera info loaded!\n");
 
-    // Read IMU params
+    /* Read IMU params */
     if (sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
         sensor == System::IMU_RGBD)
     {
@@ -128,7 +128,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
         VSLAM_LOG_INFO("[Settings] RGB-D settings loaded!\n");
     }
 
-    // Read ORB parameters
+    /* Read ORB parameters */
     if (readORB(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -138,7 +138,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
     }
     VSLAM_LOG_INFO("[Settings] ORB settings loaded!\n");
 
-    // Read Viewer parameters
+    /* Read Viewer parameters */
     if (readViewer(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -148,7 +148,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
     }
     VSLAM_LOG_INFO("[Settings] Viewer settings loaded!\n");
 
-    // Read Atlas parameters
+    /* Read Atlas parameters */
     if (readLoadAndSave(storage_in) != SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -158,7 +158,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
     }
     VSLAM_LOG_INFO("[Settings] ATLAS settings loaded!\n");
 
-    // Read other parameters
+    /* Read other parameters */
     if (readOtherParameters(storage_in) !=
         SettingsStatus::SETTINGS_STATUS_SUCCESS)
     {
@@ -184,7 +184,7 @@ Settings::Settings(const std::string &configurationFilePath_in,
     }
 }
 
-} // namespace settings
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace settings */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -283,14 +283,15 @@ semantic::SemanticCandidate makeCandidate(Map            *p_mapA_in,
     }
     candidate.roomBId                    = roomB_inId;
     candidate.isMinimumEvidenceSatisfied = true;
-    candidate.isAmbiguous                = true; // see production comment: the
-                                                 // winner's own flag is
-                                                 // always true and unused as
-                                                 // a gate by itself.
+    /*!
+     * see production comment: the winner's own flag is always true and unused
+     * as a gate by itself.
+     */
+    candidate.isAmbiguous = true;
     return candidate;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that two matching rooms in different maps, once
@@ -508,5 +509,5 @@ TEST(VerificationWiringIntegration, GenuineTiedLeaderIsSkipped)
     EXPECT_TRUE((*p_getRoomTrackerEventHistoryForTest).empty());
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

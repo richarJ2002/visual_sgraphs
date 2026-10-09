@@ -74,5 +74,5 @@ void EdgePriorPoseImu::linearizeOplus()
     _jacobianOplus[3].block<3, 3>(12, 0) = Eigen::Matrix3d::Identity();
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

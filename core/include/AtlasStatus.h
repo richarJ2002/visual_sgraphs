@@ -44,7 +44,7 @@ enum class AtlasStatus : std::uint8_t
     ATLAS_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // ATLAS_STATUS_H
+#endif /* ATLAS_STATUS_H */

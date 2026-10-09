@@ -45,7 +45,7 @@ Eigen::Vector2f Pinhole::project(const Eigen::Vector3f &point3d_in)
 
     return projectedPoint;
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

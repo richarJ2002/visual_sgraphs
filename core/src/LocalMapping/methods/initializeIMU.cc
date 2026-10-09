@@ -76,7 +76,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
     if (atlasKeyFrameCount < minKeyFrameCount)
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
-    // Retrieve all keyframe in temporal order
+    /* Retrieve all keyframe in temporal order */
     std::list<KeyFrame *> temporalKeyFrames;
     KeyFrame             *p_walkKeyFrame = p_currentKeyFrame;
     while (p_walkKeyFrame->p_prevKF)
@@ -156,7 +156,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
     const int orderedKeyFrameCount = orderedKeyFrames.size();
     IMU::Bias zeroImuBias(0, 0, 0, 0, 0, 0);
 
-    // Compute and KF velocities mRwg estimation
+    /* Compute and KF velocities mRwg estimation */
     Map *p_currentKeyFrameMap = nullptr;
     if (p_currentKeyFrame->getMap(p_currentKeyFrameMap) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -259,7 +259,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         const float gravityCosine =
             referenceGravityDirection.dot(gravityDirection);
         const float     rotationAngle = std::acos(gravityCosine);
-        Eigen::Vector3f rotationVector(0.0f, 0.0f, 0.0f); // = v*ang/nv;
+        Eigen::Vector3f rotationVector(0.0f, 0.0f, 0.0f);
         if (rotationAxisNorm != 0 && !std::isnan(gravityCosine) &&
             !std::isnan(rotationAngle))
             rotationVector = rotationAxis * rotationAngle / rotationAxisNorm;
@@ -331,7 +331,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
     }
 
-    // Before this line we are not changing the map
+    /* Before this line we are not changing the map */
     {
         std::unique_lock<std::mutex> semanticUpdateLock{};
         if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
@@ -404,7 +404,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
             }
         }
 
-        // Check if initialization OK
+        /* Check if initialization OK */
         if (!imuWasInitialized)
             for (int elementIndex = 0; elementIndex < orderedKeyFrameCount;
                  elementIndex++)
@@ -529,7 +529,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                      __func__);
     }
 
-    // Get Map Mutex
+    /* Get Map Mutex */
     Map *p_atlasCurrentMap4 = nullptr;
     if (p_atlas->getCurrentMap(p_atlasCurrentMap4) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -544,7 +544,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
 
     unsigned long globalBaId = p_currentKeyFrame->id;
 
-    // Process keyframes in the queue
+    /* Process keyframes in the queue */
     for (;;)
     {
         bool hasNewKeyFrames2{};
@@ -572,7 +572,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         temporalKeyFrames.push_back(p_currentKeyFrame);
     }
 
-    // Correct keyframes starting at map first keyframe
+    /* Correct keyframes starting at map first keyframe */
     Map *p_atlasCurrentMap5 = nullptr;
     if (p_atlas->getCurrentMap(p_atlasCurrentMap5) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -778,7 +778,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         keyFramesToCorrect.pop_front();
     }
 
-    // Correct MapPoints
+    /* Correct MapPoints */
     std::vector<MapPoint *> allMapPoints{};
     Map                    *p_atlasCurrentMap7 = nullptr;
     if (p_atlas->getCurrentMap(p_atlasCurrentMap7) !=
@@ -817,7 +817,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
 
         if (p_mapPoint->baGlobalKeyFrameId == globalBaId)
         {
-            // If optimized by Global BA, just update
+            /* If optimized by Global BA, just update */
             if (p_mapPoint->setWorldPos(p_mapPoint->posGBA) !=
                 MapPointStatus::MAP_POINT_STATUS_SUCCESS)
             {
@@ -829,7 +829,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
         }
         else
         {
-            // Update according to the correction of its reference keyframe
+            /* Update according to the correction of its reference keyframe */
             KeyFrame *p_referenceKeyFrame = nullptr;
             if (p_mapPoint->getReferenceKeyFrame(p_referenceKeyFrame) !=
                 MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -844,7 +844,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
             if (p_referenceKeyFrame->baGlobalKeyFrameId != globalBaId)
                 continue;
 
-            // Map to non-corrected camera
+            /* Map to non-corrected camera */
             Eigen::Vector3f mapPointWorldPos{};
             if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
                 MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -857,7 +857,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
             Eigen::Vector3f Xc =
                 p_referenceKeyFrame->tcwBefGBA * mapPointWorldPos;
 
-            // Backproject using corrected camera
+            /* Backproject using corrected camera */
             Sophus::SE3f referenceKeyFramePoseInverse{};
             if (p_referenceKeyFrame->getPoseInverse(
                     referenceKeyFramePoseInverse) !=
@@ -932,5 +932,5 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -49,7 +49,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
     const DBoW2::FeatureVector &featureVector1 = p_keyframe1_in->featureVector;
     const DBoW2::FeatureVector &featureVector2 = p_keyframe2_in->featureVector;
 
-    // Compute epipole in second image
+    /* Compute epipole in second image */
     Sophus::SE3f T1w{};
     if (p_keyframe1_in->getPose(T1w) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -76,7 +76,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                      "%s: getPoseInverse returned a failure status although it "
                      "cannot fail; continuing as before.",
                      __func__);
-    } // for convenience
+    } /* for convenience */
     Eigen::Vector3f Cw{};
     if (p_keyframe1_in->getCameraCenter(Cw) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -94,8 +94,8 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
         relativePose_rightCamera2ToLeftCamera1,
         relativePose_leftCamera2ToRightCamera1,
         relativePose_rightCamera2ToRightCamera1;
-    Eigen::Matrix3f R12; // for fastest computation
-    Eigen::Vector3f t12; // for fastest computation
+    Eigen::Matrix3f R12; /* for fastest computation */
+    Eigen::Vector3f t12; /* for fastest computation */
 
     camera_models::geometriccamera::GeometricCamera
         *p_camera1 = p_keyframe1_in->p_camera,
@@ -154,9 +154,11 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                     relativeTranslation_rightCamera2ToRightCamera1 =
                         relativePose_rightCamera2ToRightCamera1.translation();
 
-    // Find matches between not tracked keypoints
-    // Matching speed-up by ORB Vocabulary
-    // Compare only ORB that share the same node
+    /*!
+     * Find matches between not tracked keypoints
+     * Matching speed-up by ORB Vocabulary
+     * Compare only ORB that share the same node
+     */
     int               nmatches = 0;
     std::vector<bool> matched2Flags(p_keyframe2_in->keyPointCount, false);
     std::vector<int>  matches12(p_keyframe1_in->keyPointCount, -1);
@@ -198,7 +200,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                         __func__);
                 }
 
-                // If there is already a MapPoint skip
+                /* If there is already a MapPoint skip */
                 if (p_mapPoint1)
                 {
                     continue;
@@ -249,7 +251,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                             __func__);
                     }
 
-                    // If we have already matched or there is a MapPoint skip
+                    /* If we have already matched or there is a MapPoint skip */
                     if (matched2Flags[index2] || p_mapPoint2)
                         continue;
 
@@ -345,6 +347,7 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                         }
                     }
 
+                    /* MODIFICATION_2 */
                     if (coarse_in ||
                         p_camera1->epipolarConstrain(
                             p_camera2,
@@ -353,8 +356,8 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
                             R12,
                             t12,
                             p_keyframe1_in->levelSigmaSquared[keyPoint1.octave],
-                            p_keyframe2_in->levelSigmaSquared
-                                [keyPoint2.octave])) // MODIFICATION_2
+                            p_keyframe2_in
+                                ->levelSigmaSquared[keyPoint2.octave]))
                     {
                         bestIndex2   = index2;
                         bestDistance = distance;
@@ -450,5 +453,5 @@ ORBmatcherStatus ORBmatcher::searchForTriangulation(
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

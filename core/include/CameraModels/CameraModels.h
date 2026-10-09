@@ -28,4 +28,4 @@
 
 #include "CameraModels/objects.h"
 
-#endif // CAMERAMODELS_H
+#endif /* CAMERAMODELS_H */

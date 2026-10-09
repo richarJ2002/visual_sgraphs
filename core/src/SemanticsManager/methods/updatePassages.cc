@@ -38,7 +38,7 @@ namespace core
 SemanticsManagerStatus
     SemanticsManager::updatePassages(vs_graphs::core::Atlas *p_atlas_in)
 {
-    // Get the ground plane
+    /* Get the ground plane */
     vs_graphs::core::geometric::Plane *p_groundPlane = nullptr;
     if (p_atlas_in->getBiggestGroundPlane(p_groundPlane) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -51,8 +51,10 @@ SemanticsManagerStatus
     if (p_groundPlane == nullptr)
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 
-    // Get all passages and update their global pose to be consistent with the
-    // ground plane
+    /*!
+     * Get all passages and update their global pose to be consistent with the
+     * ground plane
+     */
     std::vector<vs_graphs::core::semantic::Passage *> allPassages{};
     if (p_atlas_in->getAllPassages(allPassages) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -80,8 +82,10 @@ SemanticsManagerStatus
             continue;
         }
 
-        // Updating the dimensions of the passage based on the associated door
-        // plane
+        /*!
+         * Updating the dimensions of the passage based on the associated door
+         * plane
+         */
         vs_graphs::core::geometric::Plane *p_doorPlane = nullptr;
         if (passage->getAssociateDoor(p_doorPlane) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -92,8 +96,10 @@ SemanticsManagerStatus
                          __func__);
         }
 
-        // Blocked passages (closed doors) should be aligned with the ground
-        // plane normal
+        /*!
+         * Blocked passages (closed doors) should be aligned with the ground
+         * plane normal
+         */
         bool passageIsPassable{};
         if (passage->isPassable(passageIsPassable) !=
             semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -519,8 +525,10 @@ SemanticsManagerStatus
             }
             if (!arePlanesPerpendicular3)
             {
-                // Project the passage normal onto the horizontal plane to
-                // remove tilt
+                /*!
+                 * Project the passage normal onto the horizontal plane to
+                 * remove tilt
+                 */
                 g2o::Plane3D groundPlaneGetGlobalEquation{};
                 if (p_groundPlane->getGlobalEquation(
                         groundPlaneGetGlobalEquation) !=
@@ -557,7 +565,7 @@ SemanticsManagerStatus
                     continue;
                 correctedNormal.normalize();
 
-                // Recompute d so the plane still passes through the centroid
+                /* Recompute d so the plane still passes through the centroid */
                 Eigen::Vector3d passageCentroid{};
                 if (passage->getCentroid(passageCentroid) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
@@ -591,5 +599,5 @@ SemanticsManagerStatus
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

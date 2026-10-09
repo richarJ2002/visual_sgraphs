@@ -55,7 +55,7 @@ ConverterStatus
     return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
-} // namespace converter
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace converter */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

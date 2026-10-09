@@ -42,8 +42,7 @@
 namespace vs_graphs::core::camera_models::kannalabrandt8
 {
 
-// Explicitly instantiated below for every archive the map save/load
-// code uses, so that no other translation unit compiles this body.
+/* Instantiated below for every archive used, so only this file compiles it */
 template <class Archive>
 void KannalaBrandt8::serialize(Archive                            &ar,
                                [[maybe_unused]] const unsigned int version)
@@ -86,4 +85,4 @@ template void KannalaBrandt8::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,
     const unsigned int);
 
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

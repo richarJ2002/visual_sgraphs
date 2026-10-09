@@ -51,5 +51,5 @@ MapStatus Map::getSkeletonEdges(
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

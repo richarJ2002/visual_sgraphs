@@ -141,7 +141,7 @@ class MLPnPsolver
                     sigmaSquared.push_back(
                         frame_in.levelSigmaSquared[keyPoint.octave]);
 
-                    // Bearing vector should be normalized
+                    /* Bearing vector should be normalized */
                     cv::Point3f bearingVectorCv =
                         p_camera->unproject(keyPoint.pt);
                     bearingVectorCv /= bearingVectorCv.z;
@@ -150,7 +150,7 @@ class MLPnPsolver
                                                 bearingVectorCv.z);
                     bearingVectors.push_back(bearingVector);
 
-                    // 3D coordinates
+                    /* 3D coordinates */
                     Eigen::Matrix<float, 3, 1> worldPositionEigen{};
                     if (p_mapPoint->getWorldPos(worldPositionEigen) !=
                         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -223,7 +223,7 @@ class MLPnPsolver
                             float  epsilon_in           = 0.4,
                             float  threshold2_in        = 5.991);
 
-    // Find metod is necessary?
+    /* Find metod is necessary? */
 
     /*!
      * @brief           Runs RANSAC rounds until a pose is found or the
@@ -260,7 +260,7 @@ class MLPnPsolver
                                             Eigen::Matrix4f   &Tout_out,
                                             bool              &isSolved_out);
 
-    // Type definitions needed by the original code
+    /* Type definitions needed by the original code */
 
     /*!
      * @brief           A 3-vector of unit length used to describe landmark
@@ -364,7 +364,7 @@ class MLPnPsolver
      */
     [[nodiscard]] MLPnPsolverStatus refine(bool &isRefined_out);
 
-    // Functions from de original MLPnP code
+    /* Functions from de original MLPnP code */
 
     /*!
      * @brief           Computes the camera pose from bearing vectors and the
@@ -507,7 +507,7 @@ class MLPnPsolver
                   const TranslationVector &t_in,
                   Eigen::MatrixXd         &jacs_in);
 
-    // Auxiliar methods
+    /* Auxiliar methods */
 
     /*!
      * @brief           Compute a rotation matrix from Rodrigues axis angle.
@@ -539,16 +539,14 @@ class MLPnPsolver
         rot2rodrigues(const Eigen::Matrix3d &R_in,
                       Eigen::Vector3d       &rodrigues_out);
 
-    //----------------------------------------------------
-    // Fields of the solver
-    //----------------------------------------------------
+    /* Fields of the solver */
     /*!
      * @brief           Map point matched to each key point of the frame, by key
      *                  point index; null entries mean no match. Borrowed.
      */
     std::vector<MapPoint *> mapPointMatches;
 
-    // 2D Points
+    /* 2D Points */
     /*!
      * @brief           Undistorted key point positions of the usable
      *                  correspondences, in pixels.
@@ -568,21 +566,21 @@ class MLPnPsolver
      */
     std::vector<float> sigmaSquared;
 
-    // 3D Points
+    /* 3D Points */
     /*!
      * @brief           World-frame position of the map point of each usable
      *                  correspondence, in metres.
      */
     Points3 points3Dw;
 
-    // Index in Frame
+    /* Index in Frame */
     /*!
      * @brief           Key point index in the frame of each usable
      *                  correspondence.
      */
     std::vector<size_t> keypointIndices;
 
-    // Current Estimation
+    /* Current Estimation */
     /*!
      * @brief           Rotation of the current pose estimate, world to camera.
      */
@@ -605,7 +603,7 @@ class MLPnPsolver
      */
     int inlierCount;
 
-    // Current Ransac State
+    /* Current Ransac State */
     /*!
      * @brief           RANSAC iterations run so far, across all iterate()
      *                  calls.
@@ -628,7 +626,7 @@ class MLPnPsolver
      */
     Eigen::Matrix4f mBestTcw;
 
-    // Refined
+    /* Refined */
     /*!
      * @brief           Refined pose as a world-to-camera 4x4 transform.
      */
@@ -644,56 +642,56 @@ class MLPnPsolver
      */
     int refinedInlierCount;
 
-    // Number of Correspondences
+    /* Number of Correspondences */
     /*!
      * @brief           Number of usable 2D-3D correspondences.
      */
     int correspondenceCount;
 
-    // Indices for random selection [0 .. N-1]
+    /* Indices for random selection [0 .. N-1] */
     /*!
      * @brief           Correspondence indices 0 to correspondenceCount - 1, the
      *                  pool that RANSAC samples from.
      */
     std::vector<size_t> allIndices;
 
-    // RANSAC probability
+    /* RANSAC probability */
     /*!
      * @brief           Desired probability of drawing one outlier-free sample.
      */
     double ransacProb;
 
-    // RANSAC min inliers
+    /* RANSAC min inliers */
     /*!
      * @brief           Minimum inlier count to accept a pose, after adaptation
      *                  to the correspondence count.
      */
     int ransacMinInliers;
 
-    // RANSAC max iterations
+    /* RANSAC max iterations */
     /*!
      * @brief           Upper bound on RANSAC iterations, after adaptation.
      */
     int ransacMaxIterations;
 
-    // RANSAC expected inliers/total ratio
+    /* RANSAC expected inliers/total ratio */
     /*!
      * @brief           Expected fraction of inliers among all correspondences.
      */
     float ransacEpsilon;
 
-    // RANSAC Minimun Set used at each iteration
+    /* RANSAC Minimun Set used at each iteration */
     /*!
      * @brief           Number of correspondences drawn for each pose
      *                  hypothesis.
      */
     int ransacMinSet;
 
-    // Max square error associated with scale level. Max error =
-    // th*th*sigma(level)*sigma(level)
     /*!
      * @brief           Largest squared reprojection error, in pixels squared,
-     *                  that still counts as an inlier, per correspondence.
+     *                  that still counts as an inlier, per correspondence:
+     *                  th*th*sigma(level)*sigma(level) for the scale level of
+     *                  its key point.
      */
     std::vector<float> maxError;
 
@@ -704,6 +702,6 @@ class MLPnPsolver
     camera_models::geometriccamera::GeometricCamera *p_camera;
 };
 
-} // namespace core
-} // namespace vs_graphs
-#endif // VS_GRAPHS_CORE_MLPNPSOLVER_H
+} /* namespace core */
+} /* namespace vs_graphs */
+#endif /* VS_GRAPHS_CORE_MLPNPSOLVER_H */

@@ -45,17 +45,17 @@ namespace vs_graphs
 namespace core
 {
 
-// Explicitly instantiated below for every archive the map save/load
-// code uses, so that no other translation unit compiles this body.
+/* Instantiated below for every archive used, so only this file compiles it */
 template <class Archive>
 void Atlas::serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
 {
     ar.template register_type<camera_models::pinhole::Pinhole>();
     ar.template register_type<camera_models::kannalabrandt8::KannalaBrandt8>();
 
-    // Save/load a set structure, the set structure is broken in
-    // libboost 1.58 for ubuntu 16.04, a vector is serializated ar &
-    // mspMaps;
+    /*!
+     * Save/load a set structure, the set structure is broken in
+     * libboost 1.58 for ubuntu 16.04, a vector is serializated
+     */
     ar & backupMaps;
     ar & cameras;
     if constexpr (Archive::is_loading::value)
@@ -67,8 +67,10 @@ void Atlas::serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
             loadedCameras.emplace_back(p_loadedCamera);
         }
     }
-    // Need to save/load the static Id from Frame, KeyFrame, MapPoint and
-    // Map
+    /*!
+     * Need to save/load the static Id from Frame, KeyFrame, MapPoint and
+     * Map
+     */
     ar &Map::nextId;
     ar &Frame::nextId;
     ar &KeyFrame::nextId;
@@ -106,5 +108,5 @@ template void Atlas::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,
     const unsigned int);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

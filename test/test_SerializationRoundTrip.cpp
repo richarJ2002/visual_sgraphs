@@ -199,7 +199,7 @@ void ExpectSetsEqualSorted(const std::set<Value> &expected_in,
     }
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that a Sophus SE3 pose, including the identity pose,
@@ -275,7 +275,7 @@ TEST(SerializationUtils, CvMatRoundTripContinuousAndRoi)
     ExpectCvMatEqual(continuous, continuous_loaded);
 
     cv::Mat parent(4, 4, CV_32F, cv::Scalar(1.0F));
-    // Width 2 < parent width 4 guarantees a non-continuous step.
+    /* Width 2 < parent width 4 guarantees a non-continuous step. */
     cv::Mat roi = parent(cv::Range(0, 2), cv::Range(0, 2));
     ASSERT_FALSE(roi.isContinuous());
     cv::Mat roi_loaded;
@@ -324,8 +324,10 @@ TEST(SerializationUtils, VectorKeyPointsRoundTrip)
             boost::archive::binary_oarchive output_archive(stream);
             serializeVectorKeyPoints(output_archive, empty, 0U);
         }
-        // NB: helper copies the target then appends, so the target must
-        // start empty (it cannot shrink a non-empty target).
+        /*!
+         * NB: helper copies the target then appends, so the target must
+         * start empty (it cannot shrink a non-empty target).
+         */
         std::vector<cv::KeyPoint> loaded;
         {
             boost::archive::binary_iarchive input_archive(stream);
@@ -448,8 +450,10 @@ TEST(SerializationImu, PreintegratedRoundTrip)
     EXPECT_FLOAT_EQ(original.b.bwz, loaded.b.bwz);
     EXPECT_TRUE(original.C.isApprox(loaded.C, 1.0e-4F));
 
-    // SKIP mutex: post-load object must remain usable (default-constructed
-    // lock state). Integrating one more sample must not deadlock or crash.
+    /*!
+     * SKIP mutex: post-load object must remain usable (default-constructed
+     * lock state). Integrating one more sample must not deadlock or crash.
+     */
     IMU::PreintegratedStatus integrateStatus{};
     EXPECT_NO_THROW(integrateStatus = loaded.integrateNewMeasurement(
                         Eigen::Vector3f(0.0F, 0.0F, 9.81F),
@@ -479,8 +483,10 @@ TEST(SerializationCamera, PinholeRoundTrip)
               camera_models::geometriccamera::GeometricCameraStatus::
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
     EXPECT_EQ(original_id, id);
-    // NB: compare by value (== 0U) not EXPECT_EQ(CAM_*): CAM_* has no
-    // out-of-line definition, EXPECT_EQ would ODR-use and fail to link.
+    /*!
+     * NB: compare by value (== 0U) not EXPECT_EQ(CAM_*): CAM_* has no
+     * out-of-line definition, EXPECT_EQ would ODR-use and fail to link.
+     */
     unsigned int type{};
     ASSERT_EQ((loaded.getType(type)),
               camera_models::geometriccamera::GeometricCameraStatus::
@@ -513,7 +519,7 @@ TEST(SerializationCamera, PinholeRoundTrip)
                   isEqual2)),
               camera_models::pinhole::PinholeStatus::PINHOLE_STATUS_SUCCESS);
     EXPECT_TRUE(isEqual2);
-    // SKIP tvr raw pointer: not serialized by design; no assertion.
+    /* SKIP tvr raw pointer: not serialized by design; no assertion. */
 }
 
 /*!
@@ -538,7 +544,7 @@ TEST(SerializationCamera, KannalaBrandt8RoundTrip)
               camera_models::geometriccamera::GeometricCameraStatus::
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
     EXPECT_EQ(original_id, id);
-    // NB: see PinholeRoundTrip: avoid ODR-use of CAM_* (no definition).
+    /* NB: see PinholeRoundTrip: avoid ODR-use of CAM_* (no definition). */
     unsigned int type{};
     ASSERT_EQ((loaded.getType(type)),
               camera_models::geometriccamera::GeometricCameraStatus::
@@ -646,7 +652,7 @@ TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
         }
     }
     ASSERT_EQ(2U, loaded_ptrs.size());
-    // Boost tracking IDs: the same saved pointer must load as one object.
+    /* Boost tracking IDs: the same saved pointer must load as one object. */
     EXPECT_EQ(loaded_ptrs[0], loaded_ptrs[1]);
     EXPECT_NE(original_camera, loaded_ptrs[0]);
     unsigned int id{};
@@ -666,9 +672,11 @@ TEST(SerializationCamera, PolymorphicTrackingPreservesIdentity)
                 camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE);
 
     delete original_camera;
-    // Intentional leak: loaded camera_models::pinhole::Pinhole
-    // tvr is untouched by serialize() (see PinholeRoundTrip); deleting would
-    // free garbage.
+    /*!
+     * Intentional leak: loaded camera_models::pinhole::Pinhole
+     * tvr is untouched by serialize() (see PinholeRoundTrip); deleting would
+     * free garbage.
+     */
 }
 
 /*!
@@ -734,8 +742,10 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
     ASSERT_EQ((loaded.getMaxDistanceInvariance(maxDistanceInvariance2)),
               MapPointStatus::MAP_POINT_STATUS_SUCCESS);
     EXPECT_FLOAT_EQ(maxDistanceInvariance, maxDistanceInvariance2);
-    // SKIP mutexes (positionMutex/featuresMutex/mapMutex): post-load object
-    // must be usable through its public getters (exercised above).
+    /*!
+     * SKIP mutexes (positionMutex/featuresMutex/mapMutex): post-load object
+     * must be usable through its public getters (exercised above).
+     */
     MapPointStatus setWorldPosStatus{};
     EXPECT_NO_THROW(setWorldPosStatus =
                         loaded.setWorldPos(Eigen::Vector3f(4.0F, 5.0F, 6.0F)));
@@ -749,16 +759,20 @@ TEST(SerializationMapPoint, RoundTripWithRefKeyFrame)
  */
 TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
 {
-    // NB: KeyFrameDatabase::preSave() is declared in KeyFrameDatabase.h:82
-    // but has no definition in KeyFrameDatabase.cc on this branch, so it
-    // must not be called (would fail to link). The empty DB backup vector
-    // is already deterministically empty without it.
+    /*!
+     * NB: KeyFrameDatabase::preSave() is declared in KeyFrameDatabase.h:82
+     * but has no definition in KeyFrameDatabase.cc on this branch, so it
+     * must not be called (would fail to link). The empty DB backup vector
+     * is already deterministically empty without it.
+     */
     KeyFrameDatabase original;
     KeyFrameDatabase loaded;
     RoundTripBinaryInto(original, loaded);
-    // Empty inverted file: backup IDs empty on both sides. No public
-    // getter exists, so self-consistency is proven by a second
-    // serialization producing identical byte length.
+    /*!
+     * Empty inverted file: backup IDs empty on both sides. No public
+     * getter exists, so self-consistency is proven by a second
+     * serialization producing identical byte length.
+     */
     std::stringstream first_stream(std::ios::in | std::ios::out |
                                    std::ios::binary);
     std::stringstream second_stream(std::ios::in | std::ios::out |
@@ -773,8 +787,10 @@ TEST(SerializationKeyFrameDatabase, EmptyRoundTrip)
     }
     EXPECT_EQ(first_stream.str().size(), second_stream.str().size());
 
-    // SKIP mutex/vocabulary pointer: post-load DB must accept clearMap
-    // on an empty map without crashing (mutex default-constructed).
+    /*!
+     * SKIP mutex/vocabulary pointer: post-load DB must accept clearMap
+     * on an empty map without crashing (mutex default-constructed).
+     */
     Map                    empty_map;
     KeyFrameDatabaseStatus clearMapStatus{};
     EXPECT_NO_THROW(clearMapStatus = loaded.clearMap(&empty_map));
@@ -801,7 +817,7 @@ class InspectableKeyFrameDatabase : public KeyFrameDatabase
     }
 };
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that a key frame database built by the default
@@ -883,8 +899,10 @@ TEST(SerializationKeyFrame, DefaultRoundTrip)
     ASSERT_EQ((loaded.getImuBias(imuBias2)),
               KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
     EXPECT_FLOAT_EQ(imuBias.bax, imuBias2.bax);
-    // SKIP mutexes/atomic/thread handles: loaded frame must remain
-    // usable (pose getter + new pose set must not deadlock).
+    /*!
+     * SKIP mutexes/atomic/thread handles: loaded frame must remain
+     * usable (pose getter + new pose set must not deadlock).
+     */
     KeyFrameStatus setPoseStatus{};
     EXPECT_NO_THROW(setPoseStatus = loaded.setPose(Sophus::SE3f()));
     EXPECT_EQ(setPoseStatus, KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
@@ -897,10 +915,12 @@ TEST(SerializationKeyFrame, DefaultRoundTrip)
  */
 TEST(SerializationKeyFrame, AbsentCamerasLoadAsNull)
 {
-    // A key frame saved without cameras stores the "no id" value for both;
-    // loading must leave both pointers null and must not look that value up
-    // in the camera table (the old ">= 0" test on an unsigned id did, which
-    // added a null entry to the table).
+    /*!
+     * A key frame saved without cameras stores the "no id" value for both;
+     * loading must leave both pointers null and must not look that value up
+     * in the camera table (the old ">= 0" test on an unsigned id did, which
+     * added a null entry to the table).
+     */
     KeyFrame original;
     original.id                 = 12U;
     original.isImu              = false;
@@ -913,8 +933,10 @@ TEST(SerializationKeyFrame, AbsentCamerasLoadAsNull)
     ASSERT_EQ((original.preSave(keyframe_set, mappoint_set, camera_set)),
               KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS);
 
-    // Stale pointers show that postLoad sets both cameras, not that the
-    // default constructor happened to leave them null.
+    /*!
+     * Stale pointers show that postLoad sets both cameras, not that the
+     * default constructor happened to leave them null.
+     */
     camera_models::pinhole::Pinhole stale(
         std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
     KeyFrame loaded;
@@ -1005,7 +1027,7 @@ TEST(SerializationMap, EmptyRoundTripMemoryAndTmpFile)
     EXPECT_EQ(id3, id4);
     std::remove(path.c_str());
 
-    // SKIP mutex/atomic: post-load map must be queryable.
+    /* SKIP mutex/atomic: post-load map must be queryable. */
     std::vector<KeyFrame *> loadedKeyFrames;
     MapStatus               getAllKeyFramesStatus{};
     EXPECT_NO_THROW(getAllKeyFramesStatus =
@@ -1090,7 +1112,7 @@ TEST(SerializationAtlas, EmptyAndCameraRoundTrip)
     ASSERT_EQ((loaded.getAllCameras(allCameras)),
               AtlasStatus::ATLAS_STATUS_SUCCESS);
     EXPECT_TRUE(allCameras.empty());
-    // SKIP mutex/atomic/viewer/DB pointers: loaded atlas must be queryable.
+    /* SKIP mutex/atomic/viewer/DB pointers: loaded atlas must be queryable. */
     std::vector<Map *> loadedMaps;
     AtlasStatus        getAllMapsStatus{};
     EXPECT_NO_THROW(getAllMapsStatus = loaded.getAllMaps(loadedMaps));
@@ -1151,9 +1173,11 @@ TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
               AtlasStatus::ATLAS_STATUS_SUCCESS);
     ASSERT_EQ(1U, allCameras.size());
 
-    // Direct serialize saves backup maps (empty until preSave) + cameras +
-    // static IDs. Active sets are rebuilt by postLoad, so compare the
-    // serialized state (cameras + init ID), not the transient active set.
+    /*!
+     * Direct serialize saves backup maps (empty until preSave) + cameras +
+     * static IDs. Active sets are rebuilt by postLoad, so compare the
+     * serialized state (cameras + init ID), not the transient active set.
+     */
     const std::string path = TmpPath("atlas.bin");
     Atlas             loaded;
     {
@@ -1203,7 +1227,7 @@ TEST(SerializationAtlas, SeededMapAndCameraFileRoundTrip)
                   GEOMETRIC_CAMERA_STATUS_SUCCESS);
     EXPECT_TRUE(type ==
                 camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE);
-    // SKIP mutex/atomic/thread handles: loaded atlas must stay queryable.
+    /* SKIP mutex/atomic/thread handles: loaded atlas must stay queryable. */
     std::vector<Map *> loadedMaps;
     AtlasStatus        getAllMapsStatus{};
     EXPECT_NO_THROW(getAllMapsStatus = loaded.getAllMaps(loadedMaps));
@@ -1229,5 +1253,5 @@ TEST(SerializationOrdering, SortedSetMapComparisonIsDeterministic)
     EXPECT_NE(first_map, different);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

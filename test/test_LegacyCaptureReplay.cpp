@@ -84,7 +84,7 @@ void writeFile(const std::filesystem::path &path_in,
     out << json_in.dump();
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that replaying a nonexistent directory returns an
@@ -312,6 +312,6 @@ TEST(LegacyCaptureReplay, ReplaysTheReal147FileAcceptanceCorpus)
     EXPECT_NO_THROW(nlohmann::json::parse(result.report.dump()));
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

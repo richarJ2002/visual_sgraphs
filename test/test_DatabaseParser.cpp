@@ -65,7 +65,7 @@ TEST(DBParser, EnvironmentRoomsTakeTheirArrayIndexAsId)
         EXPECT_EQ(metaMarkerId, expectedMetaMarkers[roomIndex]);
     }
 
-    // The parser hands out non-owning views and never frees its rooms.
+    /* The parser hands out non-owning views and never frees its rooms. */
     for (semantic::Room *p_room : rooms)
     {
         delete p_room;
@@ -82,6 +82,6 @@ TEST(DBParser, NoRoomsGivesAnEmptyList)
     EXPECT_TRUE(rooms.empty());
 }
 
-} // namespace
-} // namespace core
-} // namespace vs_graphs
+} /* namespace */
+} /* namespace core */
+} /* namespace vs_graphs */

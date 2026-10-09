@@ -56,10 +56,10 @@ namespace camera_models
 namespace geometriccamera
 {
 class GeometricCamera;
-} // namespace geometriccamera
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometriccamera */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -1155,7 +1155,7 @@ class Map
      */
     std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> skeletonEdges;
 
-    // Hashmaps and indices for fetching elements
+    /* Hashmaps and indices for fetching elements */
 
     /*!
      * @brief           Floors by floor id.
@@ -1318,7 +1318,7 @@ class Map
     std::mutex mapMutex;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif

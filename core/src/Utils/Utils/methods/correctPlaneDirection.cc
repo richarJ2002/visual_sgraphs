@@ -37,7 +37,7 @@ namespace utils
 UtilsStatus Utils::correctPlaneDirection(const Eigen::Vector4d &plane_in,
                                          Eigen::Vector4d &planeDirection_out)
 {
-    // Check if the transformation is needed
+    /* Check if the transformation is needed */
     if (plane_in(3) > 0)
     {
         planeDirection_out = -plane_in;
@@ -50,7 +50,7 @@ UtilsStatus Utils::correctPlaneDirection(const Eigen::Vector4d &plane_in,
     }
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -169,7 +169,7 @@ semantic::RoomContextSnapshot
         rotation * transformed.centroid + Eigen::Vector3d(4.0, -2.0, 1.0);
     return transformed;
 }
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that the candidate distance is the weighted numerator
@@ -870,5 +870,5 @@ TEST(CandidateGen, DoesNotLinkLegacyTransformDependentHelpers)
 {
     SUCCEED();
 }
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

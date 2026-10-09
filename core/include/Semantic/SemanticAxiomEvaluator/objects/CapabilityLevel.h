@@ -76,8 +76,8 @@ enum class CapabilityLevel : std::uint8_t
     DEFERRED = 2U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_CAPABILITY_LEVEL_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_CAPABILITY_LEVEL_H */

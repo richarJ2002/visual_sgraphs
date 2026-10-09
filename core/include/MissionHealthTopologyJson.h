@@ -77,7 +77,7 @@ namespace core
         bool                                      cacheAvailable_in,
         nlohmann::json                           &augmentedJson_out);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // MISSION_HEALTH_TOPOLOGY_JSON_H
+#endif /* MISSION_HEALTH_TOPOLOGY_JSON_H */

@@ -220,8 +220,10 @@ AtlasStatus Atlas::matchRoomsToContext(Map *p_newMap_in)
                                                       newRoomNormal) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWallNormalTowardRoom_world cannot fail; continue as
-                // before.
+                /*!
+                 * getWallNormalTowardRoom_world cannot fail; continue as
+                 * before.
+                 */
             }
             if (!newRoomNormal)
                 continue;
@@ -273,8 +275,10 @@ AtlasStatus Atlas::matchRoomsToContext(Map *p_newMap_in)
                         if (p_room->setMatchedContext(&storedSnap) !=
                             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                         {
-                            // setMatchedContext cannot fail; continue as
-                            // before.
+                            /*!
+                             * setMatchedContext cannot fail; continue as
+                             * before.
+                             */
                         }
                         break;
                     }
@@ -519,5 +523,5 @@ AtlasStatus Atlas::matchRoomsToContext(Map *p_newMap_in)
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

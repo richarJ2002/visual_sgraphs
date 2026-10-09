@@ -43,5 +43,5 @@ TrackingStatus Tracking::getStepByStep(bool &stepByStep_out) const
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

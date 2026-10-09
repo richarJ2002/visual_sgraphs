@@ -40,7 +40,7 @@ namespace core
 
 TrackingStatus Tracking::updateLocalMap()
 {
-    // This is for visualization
+    /* This is for visualization */
     if (p_atlas->setReferenceMapPoints(localMapPoints) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -50,7 +50,7 @@ TrackingStatus Tracking::updateLocalMap()
                      __func__);
     }
 
-    // Update
+    /* Update */
     if (updateLocalKeyFrames() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -69,5 +69,5 @@ TrackingStatus Tracking::updateLocalMap()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

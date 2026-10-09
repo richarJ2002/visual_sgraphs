@@ -53,8 +53,10 @@ SemanticAxiomEvaluatorStatus evaluateMapCompleteness(
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
         {
-            // computeConservativeMapCompleteness cannot fail; continue as
-            // before.
+            /*!
+             * computeConservativeMapCompleteness cannot fail; continue as
+             * before.
+             */
         }
         LegacyMapCompletenessResult legacyMapCompleteness{};
         if (computeLegacyMapCompleteness(snapshot_in,
@@ -80,6 +82,6 @@ SemanticAxiomEvaluatorStatus evaluateMapCompleteness(
         SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

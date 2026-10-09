@@ -45,7 +45,7 @@ enum class EdgeInertialGSStatus : std::uint8_t
     EDGE_INERTIAL_GSSTATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // EDGE_INERTIAL_GSSTATUS_H
+#endif /* EDGE_INERTIAL_GSSTATUS_H */

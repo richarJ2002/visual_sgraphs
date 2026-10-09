@@ -41,7 +41,7 @@ namespace core
 
 TrackingStatus Tracking::updateLastFrame()
 {
-    // Update pose according to reference keyframe
+    /* Update pose according to reference keyframe */
     KeyFrame    *p_reference = lastFrame.p_referenceKeyFrame;
     Sophus::SE3f relativePose_referenceKeyFrameToLastFrame =
         relativeFramePoses.empty() ? Sophus::SE3f() : relativeFramePoses.back();
@@ -67,9 +67,11 @@ TrackingStatus Tracking::updateLastFrame()
         sensor == System::IMU_MONOCULAR || !isTrackingOnlyMode)
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
 
-    // Create "visual odometry" MapPoints
-    // We sort points according to their measured depth by the stereo/RGB-D
-    // sensor
+    /*!
+     * Create "visual odometry" MapPoints
+     * We sort points according to their measured depth by the stereo/RGB-D
+     * sensor
+     */
     std::vector<std::pair<float, int>> depthIndices;
     const int featureCount = lastFrame.leftKeyPointCount == -1
                                  ? lastFrame.keyPointCount
@@ -89,8 +91,10 @@ TrackingStatus Tracking::updateLastFrame()
 
     std::sort(depthIndices.begin(), depthIndices.end());
 
-    // We insert all close points (depth<mThDepth)
-    // If less than 100 close points, we insert the 100 closest ones.
+    /*!
+     * We insert all close points (depth<mThDepth)
+     * If less than 100 close points, we insert the 100 closest ones.
+     */
     int pointCount = 0;
     for (size_t depthIndexIndex = 0; depthIndexIndex < depthIndices.size();
          depthIndexIndex++)
@@ -187,5 +191,5 @@ TrackingStatus Tracking::updateLastFrame()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -144,8 +144,8 @@ struct MapCompletenessResult
     bool doLegacyAndConservativeDiverge{false};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_MAP_COMPLETENESS_RESULT_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_MAP_COMPLETENESS_RESULT_H */

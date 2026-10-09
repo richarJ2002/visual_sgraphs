@@ -79,8 +79,8 @@ namespace camera_models
 namespace geometriccamera
 {
 class GeometricCamera;
-} // namespace geometriccamera
-} // namespace camera_models
+} /* namespace geometriccamera */
+} /* namespace camera_models */
 
 /*!
  * @brief           Column vector of six doubles.
@@ -327,7 +327,7 @@ class ImuCamPose
     ImuCamPose(KeyFrame *p_keyFrame_inout) :
         its(0)
     {
-        // Load IMU pose
+        /* Load IMU pose */
         Eigen::Vector3f keyFrameImuPosition{};
         if (p_keyFrame_inout->getImuPosition(keyFrameImuPosition) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -349,7 +349,7 @@ class ImuCamPose
         }
         Rwb = keyFrameImuRotation.cast<double>();
 
-        // Load camera poses
+        /* Load camera poses */
         int camCount;
         if (p_keyFrame_inout->p_camera2)
             camCount = 2;
@@ -364,7 +364,7 @@ class ImuCamPose
         tbc.resize(camCount);
         pCamera.resize(camCount);
 
-        // Left camera
+        /* Left camera */
         Eigen::Vector3f keyFrameTranslation{};
         if (p_keyFrame_inout->getTranslation(keyFrameTranslation) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -423,7 +423,7 @@ class ImuCamPose
             pCamera[1] = p_keyFrame_inout->p_camera2;
         }
 
-        // For posegraph 4DoF
+        /* For posegraph 4DoF */
         Rwb0 = Rwb;
         DR.setIdentity();
     }
@@ -443,7 +443,7 @@ class ImuCamPose
     ImuCamPose(Frame *p_pF_inout) :
         its(0)
     {
-        // Load IMU pose
+        /* Load IMU pose */
         Eigen::Matrix<float, 3, 1> pFGetImuPosition{};
         if (p_pF_inout->getImuPosition(pFGetImuPosition) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
@@ -465,7 +465,7 @@ class ImuCamPose
         }
         Rwb = pFImuRotation.cast<double>();
 
-        // Load camera poses
+        /* Load camera poses */
         int camCount;
         if (p_pF_inout->p_camera2)
             camCount = 2;
@@ -480,7 +480,7 @@ class ImuCamPose
         tbc.resize(camCount);
         pCamera.resize(camCount);
 
-        // Left camera
+        /* Left camera */
         Sophus::SE3<float> pFGetPose{};
         if (p_pF_inout->getPose(pFGetPose) != FrameStatus::FRAME_STATUS_SUCCESS)
         {
@@ -536,7 +536,7 @@ class ImuCamPose
             pCamera[1] = p_pF_inout->p_camera2;
         }
 
-        // For posegraph 4DoF
+        /* For posegraph 4DoF */
         Rwb0 = Rwb;
         DR.setIdentity();
     }
@@ -564,7 +564,7 @@ class ImuCamPose
                KeyFrame        *p_keyFrame_inout) :
         its(0)
     {
-        // This is only for posegrpah, we do not care about multicamera
+        /* This is only for posegrpah, we do not care about multicamera */
         tcw.resize(1);
         Rcw.resize(1);
         tcb.resize(1);
@@ -588,7 +588,7 @@ class ImuCamPose
         pCamera[0] = p_keyFrame_inout->p_camera;
         bf         = p_keyFrame_inout->mbf;
 
-        // For posegraph 4DoF
+        /* For posegraph 4DoF */
         Rwb0 = Rwb;
         DR.setIdentity();
     }
@@ -715,7 +715,7 @@ class ImuCamPose
                                                    int                    cameraIndex_in = 0) const;
 
   public:
-    // For IMU
+    /* For IMU */
     /*!
      * @brief           Rotation of the IMU (body) frame in the world frame;
      *                  maps body vectors to world vectors.
@@ -727,7 +727,7 @@ class ImuCamPose
      */
     Eigen::Vector3d twb;
 
-    // For set of cameras
+    /* For set of cameras */
     /*!
      * @brief           Rotation from the world frame to each camera frame,
      *                  indexed by camera (0 left, 1 right).
@@ -769,7 +769,7 @@ class ImuCamPose
      */
     std::vector<camera_models::geometriccamera::GeometricCamera *> pCamera;
 
-    // For posegraph 4DoF
+    /* For posegraph 4DoF */
     /*!
      * @brief           Body rotation when the pose was built; the fixed
      *                  reference of the 4DoF update, Rwb = DR * Rwb0.
@@ -2091,7 +2091,7 @@ class EdgeInertial : public g2o::BaseMultiEdge<9, Vector9d>
         p_preintegrated(p_int_inout),
         dt(p_int_inout->dT)
     {
-        // This edge links 6 vertices
+        /* This edge links 6 vertices */
         resize(6);
         g << 0, 0, -IMU::GRAVITY_VALUE;
 
@@ -2276,7 +2276,6 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    // EdgeInertialGS(IMU::Preintegrated* pInt);
     /*!
      * @brief           Creates the edge from a preintegration. The information
      *                  matrix is the inverse of the preintegrated covariance
@@ -2298,7 +2297,7 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9, Vector9d>
         p_preintegrated(p_int_inout),
         dt(p_int_inout->dT)
     {
-        // This edge links 8 vertices
+        /* This edge links 8 vertices */
         resize(8);
         gI << 0, 0, -IMU::GRAVITY_VALUE;
 
@@ -3267,7 +3266,7 @@ class Edge4DoF
                 VPi->estimate().tcw[0] - dtij;
     }
 
-    // virtual void linearizeOplus(); // numerical implementation
+    /* No linearizeOplus override: g2o estimates the Jacobian numerically */
 
     /*!
      * @brief           Measured relative transform from the camera of vertex 1
@@ -3284,7 +3283,7 @@ class Edge4DoF
     Eigen::Vector3d dtij;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // G2OTYPES_H
+#endif /* G2OTYPES_H */

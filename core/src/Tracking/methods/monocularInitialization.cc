@@ -45,7 +45,7 @@ TrackingStatus Tracking::monocularInitialization()
 {
     if (!isReadyToInitialize)
     {
-        // Set Reference Frame
+        /* Set Reference Frame */
         if (currentFrame.keyPoints.size() > 100)
         {
             initialFrame = Frame(currentFrame);
@@ -87,7 +87,7 @@ TrackingStatus Tracking::monocularInitialization()
             return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
 
-        // Find correspondences
+        /* Find correspondences */
         ORBmatcher matcher(0.9, true);
         int        nmatches{};
         if (matcher.searchForInitialization(initialFrame,
@@ -105,7 +105,7 @@ TrackingStatus Tracking::monocularInitialization()
                 __func__);
         }
 
-        // Check if there are enough correspondences
+        /* Check if there are enough correspondences */
         if (nmatches < 100)
         {
             isReadyToInitialize = false;
@@ -114,7 +114,7 @@ TrackingStatus Tracking::monocularInitialization()
 
         Sophus::SE3f cameraPose_worldToCamera;
         std::vector<bool>
-            triangulatedFlags; // Triangulated Correspondences (mvIniMatches)
+            triangulatedFlags; /* Triangulated Correspondences (mvIniMatches) */
 
         if (p_camera->reconstructWithTwoViews(initialFrame.keyPointsUndistorted,
                                               currentFrame.keyPointsUndistorted,
@@ -135,8 +135,7 @@ TrackingStatus Tracking::monocularInitialization()
                 }
             }
 
-            // Set Frame Poses
-            // mInitialFrame.setPose(Sophus::SE3f());
+            /* Set Frame Poses */
             if (initialFrame.setPose(poseTc0w) !=
                 FrameStatus::FRAME_STATUS_SUCCESS)
             {
@@ -169,5 +168,5 @@ TrackingStatus Tracking::monocularInitialization()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

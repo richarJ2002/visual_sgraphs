@@ -49,7 +49,7 @@ namespace core
 
 LoopClosingStatus LoopClosing::correctLoop()
 {
-    // Avoid new keyframes are inserted while correcting the loop
+    /* Avoid new keyframes are inserted while correcting the loop */
     if (p_localMapper->requestStop() !=
         LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
     {
@@ -78,7 +78,7 @@ LoopClosingStatus LoopClosing::correctLoop()
                      __func__);
     }
 
-    // Wait until Local Mapping has effectively stopped
+    /* Wait until Local Mapping has effectively stopped */
     for (;;)
     {
         bool localMapperIsStopped{};
@@ -97,7 +97,7 @@ LoopClosingStatus LoopClosing::correctLoop()
         usleep(1000);
     }
 
-    // Ensure current keyframe is updated
+    /* Ensure current keyframe is updated */
     if (p_currentKF->updateConnections() !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -107,8 +107,10 @@ LoopClosingStatus LoopClosing::correctLoop()
                      __func__);
     }
 
-    // Retrive keyframes connected to the current keyframe and compute corrected
-    // Sim3 pose by propagation
+    /*!
+     * Retrive keyframes connected to the current keyframe and compute corrected
+     * Sim3 pose by propagation
+     */
     std::vector<KeyFrame *> currentKFVectorCovisibleKeyFrames{};
     if (p_currentKF->getVectorCovisibleKeyFrames(
             currentKFVectorCovisibleKeyFrames) !=
@@ -147,8 +149,10 @@ LoopClosingStatus LoopClosing::correctLoop()
                      1.0);
     NonCorrectedSim3[p_currentKF] = g2oScw;
 
-    // Update keyframe pose with corrected Sim3. First transform Sim3 to SE3
-    // (scale translation)
+    /*!
+     * Update keyframe pose with corrected Sim3. First transform Sim3 to SE3
+     * (scale translation)
+     */
     Sophus::SE3d correctedTcw(mg2oLoopScw.rotation(),
                               mg2oLoopScw.translation() / mg2oLoopScw.scale());
     if (p_currentKF->setPose(correctedTcw.cast<float>()) !=
@@ -176,7 +180,7 @@ LoopClosingStatus LoopClosing::correctLoop()
 #endif
 
     {
-        // Get Map Mutex
+        /* Get Map Mutex */
         std::unique_lock<std::mutex> lock(p_loopMap->mapUpdateMutex);
 
         bool isImuInitialized{};
@@ -219,11 +223,13 @@ LoopClosingStatus LoopClosing::correctLoop()
                                      .translation(),
                                  1.0);
                 g2o::Sim3 g2oCorrectedSiw = g2oSic * mg2oLoopScw;
-                // Pose corrected with the Sim3 of the loop closure
+                /* Pose corrected with the Sim3 of the loop closure */
                 CorrectedSim3[p_keyFrame] = g2oCorrectedSiw;
 
-                // Update keyframe pose with corrected Sim3. First transform
-                // Sim3 to SE3 (scale translation)
+                /*!
+                 * Update keyframe pose with corrected Sim3. First transform
+                 * Sim3 to SE3 (scale translation)
+                 */
                 Sophus::SE3d correctedTiw(g2oCorrectedSiw.rotation(),
                                           g2oCorrectedSiw.translation() /
                                               g2oCorrectedSiw.scale());
@@ -237,7 +243,7 @@ LoopClosingStatus LoopClosing::correctLoop()
                         __func__);
                 }
 
-                // Pose without correction
+                /* Pose without correction */
                 g2o::Sim3 g2oSiw(
                     connectedKeyFramePose_worldToCamera.unit_quaternion()
                         .cast<double>(),
@@ -248,8 +254,10 @@ LoopClosingStatus LoopClosing::correctLoop()
             }
         }
 
-        // Correct all MapPoints obsrved by current keyframe and neighbors, so
-        // that they align with the other side of the loop
+        /*!
+         * Correct all MapPoints obsrved by current keyframe and neighbors, so
+         * that they align with the other side of the loop
+         */
         for (KeyFrameAndPose::iterator mit  = CorrectedSim3.begin(),
                                        mend = CorrectedSim3.end();
              mit != mend;
@@ -260,13 +268,6 @@ LoopClosingStatus LoopClosing::correctLoop()
             g2o::Sim3 g2oCorrectedSwi = g2oCorrectedSiw.inverse();
 
             g2o::Sim3 g2oSiw = NonCorrectedSim3[p_keyFrame];
-
-            // Update keyframe pose with corrected Sim3. First transform Sim3 to
-            // SE3 (scale translation)
-            /*Sophus::SE3d
-            correctedTiw(g2oCorrectedSiw.rotation(),g2oCorrectedSiw.translation()
-            / g2oCorrectedSiw.scale());
-            pKFi->setPose(correctedTiw.cast<float>());*/
 
             std::vector<MapPoint *> mapPoints{};
             if (p_keyFrame->getMapPointMatches(mapPoints) !=
@@ -298,8 +299,10 @@ LoopClosingStatus LoopClosing::correctLoop()
                 if (p_mapPoint->correctedByKeyFrameId == p_currentKF->id)
                     continue;
 
-                // Project with non-corrected pose and project back with
-                // corrected pose
+                /*!
+                 * Project with non-corrected pose and project back with
+                 * corrected pose
+                 */
                 Eigen::Vector3f mapPointWorldPos{};
                 if (p_mapPoint->getWorldPos(mapPointWorldPos) !=
                     MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -336,7 +339,7 @@ LoopClosingStatus LoopClosing::correctLoop()
                 }
             }
 
-            // Correct velocity according to orientation correction
+            /* Correct velocity according to orientation correction */
             if (isImuInitialized)
             {
                 Eigen::Quaternionf Rcor =
@@ -363,7 +366,7 @@ LoopClosingStatus LoopClosing::correctLoop()
                 }
             }
 
-            // Make sure connections are updated
+            /* Make sure connections are updated */
             if (p_keyFrame->updateConnections() !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
@@ -373,7 +376,7 @@ LoopClosingStatus LoopClosing::correctLoop()
                              __func__);
             }
         }
-        // TODO Check this index increasement
+        /* TODO Check this index increasement */
         Map *p_atlasCurrentMap = nullptr;
         if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
             AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -392,8 +395,10 @@ LoopClosingStatus LoopClosing::correctLoop()
                          __func__);
         }
 
-        // Start Loop Fusion
-        // Update matched map points and replace if duplicated
+        /*!
+         * Start Loop Fusion
+         * Update matched map points and replace if duplicated
+         */
         for (size_t loopMatchedMapPointIndex = 0;
              loopMatchedMapPointIndex < loopMatchedMPs.size();
              loopMatchedMapPointIndex++)
@@ -460,12 +465,13 @@ LoopClosingStatus LoopClosing::correctLoop()
                 }
             }
         }
-        // cout << "LC: end replacing duplicated" << endl;
     }
 
-    // Project MapPoints observed in the neighborhood of the loop keyframe
-    // into the current keyframe and neighbors using corrected poses.
-    // Fuse duplications.
+    /*!
+     * Project MapPoints observed in the neighborhood of the loop keyframe
+     * into the current keyframe and neighbors using corrected poses.
+     * Fuse duplications.
+     */
     if (searchAndFuse(CorrectedSim3, loopMapPoints) !=
         LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
     {
@@ -475,8 +481,10 @@ LoopClosingStatus LoopClosing::correctLoop()
                      __func__);
     }
 
-    // After the MapPoint fusion, new links in the covisibility graph will
-    // appear attaching both sides of the loop
+    /*!
+     * After the MapPoint fusion, new links in the covisibility graph will
+     * appear attaching both sides of the loop
+     */
     std::map<KeyFrame *, std::set<KeyFrame *>> loopConnections;
 
     for (std::vector<KeyFrame *>::iterator vit  = currentConnectedKFs.begin(),
@@ -496,7 +504,7 @@ LoopClosingStatus LoopClosing::correctLoop()
                 __func__);
         }
 
-        // Update connections. Detect new links.
+        /* Update connections. Detect new links. */
         if (p_keyFrame->updateConnections() !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
@@ -533,9 +541,9 @@ LoopClosingStatus LoopClosing::correctLoop()
         }
     }
 
-    // Optimize graph
+    /* Optimize graph */
     bool isFixedScale = isScaleFixed;
-    // TODO CHECK; Solo para el monocular inertial
+    /* TODO CHECK; Solo para el monocular inertial */
     Map *p_currentKFMap = nullptr;
     if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
         p_currentKF->getMap(p_currentKFMap) !=
@@ -569,7 +577,6 @@ LoopClosingStatus LoopClosing::correctLoop()
             .count();
     loopFusionTimes_ms.push_back(timeFusion);
 #endif
-    // cout << "Optimize essential graph" << endl;
     bool loopMapIsInertial{};
     if (p_loopMap->isInertial(loopMapIsInertial) !=
         MapStatus::MAP_STATUS_SUCCESS)
@@ -608,7 +615,6 @@ LoopClosingStatus LoopClosing::correctLoop()
     }
     else
     {
-        // cout << "Loop -> Scale correction: " << mg2oLoopScw.scale() << endl;
         if (Optimizer::optimizeEssentialGraph(p_loopMap,
                                               p_loopMatchedKF,
                                               p_currentKF,
@@ -643,7 +649,7 @@ LoopClosingStatus LoopClosing::correctLoop()
                      __func__);
     }
 
-    // Add loop edge
+    /* Add loop edge */
     if (p_loopMatchedKF->addLoopEdge(p_currentKF) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -661,8 +667,10 @@ LoopClosingStatus LoopClosing::correctLoop()
                      __func__);
     }
 
-    // Launch a new thread to perform Global Bundle Adjustment (Only if few
-    // keyframes, if not it would take too much time)
+    /*!
+     * Launch a new thread to perform Global Bundle Adjustment (Only if few
+     * keyframes, if not it would take too much time)
+     */
     bool loopMapIsImuInitialized2{};
     if (p_loopMap->isImuInitialized(loopMapIsImuInitialized2) !=
         MapStatus::MAP_STATUS_SUCCESS)
@@ -708,7 +716,7 @@ LoopClosingStatus LoopClosing::correctLoop()
                                       fullBundleAdjustmentIndex);
     }
 
-    // Loop closed. Release Local Mapping.
+    /* Loop closed. Release Local Mapping. */
     if (p_localMapper->release() !=
         LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
     {
@@ -718,11 +726,11 @@ LoopClosingStatus LoopClosing::correctLoop()
                      __func__);
     }
 
-    lastLoopKeyFrameId =
-        p_currentKF->id; // TODO old varible, it is not use in the new algorithm
+    /* TODO old varible, it is not use in the new algorithm */
+    lastLoopKeyFrameId = p_currentKF->id;
 
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

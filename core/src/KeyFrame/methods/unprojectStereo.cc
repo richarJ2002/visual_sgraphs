@@ -67,5 +67,5 @@ KeyFrameStatus KeyFrame::unprojectStereo(int              index_in,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -44,7 +44,7 @@ enum class ImuCamPoseStatus : std::uint8_t
     IMU_CAM_POSE_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // IMU_CAM_POSE_STATUS_H
+#endif /* IMU_CAM_POSE_STATUS_H */

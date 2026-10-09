@@ -41,7 +41,7 @@ namespace core
 
 TrackingStatus Tracking::updateLocalKeyFrames()
 {
-    // Each map point vote for the keyframes in which it has been observed
+    /* Each map point vote for the keyframes in which it has been observed */
     std::map<KeyFrame *, int> keyframeCounter;
     bool                      atlasIsImuInitialized{};
     if (p_atlas->isImuInitialized(atlasIsImuInitialized) !=
@@ -101,7 +101,7 @@ TrackingStatus Tracking::updateLocalKeyFrames()
         for (int keyPointIndex = 0; keyPointIndex < lastFrame.keyPointCount;
              keyPointIndex++)
         {
-            // Using lastframe since current frame has not matches yet
+            /* Using lastframe since current frame has not matches yet */
             if (lastFrame.mapPoints[keyPointIndex])
             {
                 MapPoint *p_mapPoint = lastFrame.mapPoints[keyPointIndex];
@@ -138,7 +138,7 @@ TrackingStatus Tracking::updateLocalKeyFrames()
                 }
                 else
                 {
-                    // MODIFICATION
+                    /* MODIFICATION */
                     lastFrame.mapPoints[keyPointIndex] = nullptr;
                 }
             }
@@ -151,8 +151,10 @@ TrackingStatus Tracking::updateLocalKeyFrames()
     localKeyFrames.clear();
     localKeyFrames.reserve(3 * keyframeCounter.size());
 
-    // All keyframes that observe a map point are included in the local map.
-    // Also check which keyframe shares most points
+    /*!
+     * All keyframes that observe a map point are included in the local map.
+     * Also check which keyframe shares most points
+     */
     for (std::map<KeyFrame *, int>::const_iterator
              keyFrameCounterIt = keyframeCounter.begin(),
              itEnd             = keyframeCounter.end();
@@ -183,16 +185,20 @@ TrackingStatus Tracking::updateLocalKeyFrames()
         p_keyFrame->trackReferenceFrameId = currentFrame.id;
     }
 
-    // Include also some not-already-included keyframes that are neighbors to
-    // already-included keyframes
+    /*!
+     * Include also some not-already-included keyframes that are neighbors to
+     * already-included keyframes
+     */
     for (std::vector<KeyFrame *>::const_iterator
              itKeyFrame    = localKeyFrames.begin(),
              itEndKeyFrame = localKeyFrames.end();
          itKeyFrame != itEndKeyFrame;
          itKeyFrame++)
     {
-        // Limit the number of keyframes - use configurable max (200 for
-        // corridors)
+        /*!
+         * Limit the number of keyframes - use configurable max (200 for
+         * corridors)
+         */
         if (localKeyFrames.size() > static_cast<size_t>(maxKFsInLocalMap))
         {
             break;
@@ -294,7 +300,7 @@ TrackingStatus Tracking::updateLocalKeyFrames()
         }
     }
 
-    // Add 10 last temporal KFs (mainly for IMU)
+    /* Add 10 last temporal KFs (mainly for IMU) */
     if ((sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
          sensor == System::IMU_RGBD) &&
         localKeyFrames.size() < 80)
@@ -324,5 +330,5 @@ TrackingStatus Tracking::updateLocalKeyFrames()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

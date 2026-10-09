@@ -48,9 +48,6 @@ LoopClosingStatus LoopClosing::searchAndFuse(
 {
     ORBmatcher matcher(0.8);
 
-    // cout << "FUSE-POSE: Initially there are " << vpMapPoints.size() << " MPs"
-    // << endl; cout << "FUSE-POSE: Intially there are " << vConectedKFs.size()
-    // << " KFs" << endl;
     for (std::vector<KeyFrame *>::const_iterator
              mit  = conectedKeyFrames_in.begin(),
              mend = conectedKeyFrames_in.end();
@@ -80,10 +77,6 @@ LoopClosingStatus LoopClosing::searchAndFuse(
         Sophus::Sim3f Scw(cameraPose_worldToCamera.unit_quaternion(),
                           cameraPose_worldToCamera.translation());
         Scw.setScale(1.f);
-        /*std::cout << "These should be zeros: " <<
-            Scw.rotationMatrix() - Tcw.rotationMatrix() << std::endl <<
-            Scw.translation() - Tcw.translation() << std::endl <<
-            Scw.scale() - 1.f << std::endl;*/
         std::vector<MapPoint *> replacePoints(mapPoints_in.size(),
                                               static_cast<MapPoint *>(nullptr));
         int                     matcherFusedCount{};
@@ -101,7 +94,7 @@ LoopClosingStatus LoopClosing::searchAndFuse(
                          __func__);
         }
 
-        // Get Map Mutex
+        /* Get Map Mutex */
         std::unique_lock<std::mutex> lock(p_map->mapUpdateMutex);
         const int                    lpCount = mapPoints_in.size();
         for (int lpIndex = 0; lpIndex < lpCount; lpIndex++)
@@ -121,13 +114,10 @@ LoopClosingStatus LoopClosing::searchAndFuse(
                 }
             }
         }
-        /*cout << "FUSE-POSE: KF " << pKF->id << " ->" << num_replaces << "
-        MPs fused" << endl; total_replaces += num_replaces;*/
     }
-    // cout << "FUSE-POSE: " << total_replaces << " MPs had been fused" << endl;
 
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

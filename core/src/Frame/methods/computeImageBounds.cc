@@ -74,7 +74,7 @@ FrameStatus Frame::computeImageBounds(const cv::Mat &imageLeft_in)
             calibrationMatrix);
         matrix = matrix.reshape(1);
 
-        // Undistort corners
+        /* Undistort corners */
         gridMinX = std::min(matrix.at<float>(0, 0), matrix.at<float>(2, 0));
         gridMaxX = std::max(matrix.at<float>(1, 0), matrix.at<float>(3, 0));
         gridMinY = std::min(matrix.at<float>(0, 1), matrix.at<float>(1, 1));
@@ -91,5 +91,5 @@ FrameStatus Frame::computeImageBounds(const cv::Mat &imageLeft_in)
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

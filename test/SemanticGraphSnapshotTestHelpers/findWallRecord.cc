@@ -45,6 +45,6 @@ const WallRecord *findWallRecord(const MapSnapshot &mapSnapshot_in,
     return nullptr;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

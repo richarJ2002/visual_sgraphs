@@ -49,9 +49,9 @@ KeyFrameStatus KeyFrame::postLoad(
     std::map<unsigned int, camera_models::geometriccamera::GeometricCamera *>
         &cameraId_in)
 {
-    // Rebuild the empty variables
+    /* Rebuild the empty variables */
 
-    // Pose
+    /* Pose */
     if (setPose(poseTcw) != KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -62,8 +62,10 @@ KeyFrameStatus KeyFrame::postLoad(
 
     poseTrl = poseTlr.inverse();
 
-    // Reference reconstruction
-    // Each MapPoint sight from this KeyFrame
+    /*!
+     * Reference reconstruction
+     * Each MapPoint sight from this KeyFrame
+     */
     mapPoints.clear();
     mapPoints.resize(keyPointCount);
     for (int keyPointIndex = 0; keyPointIndex < keyPointCount; ++keyPointIndex)
@@ -75,7 +77,7 @@ KeyFrameStatus KeyFrame::postLoad(
             mapPoints[keyPointIndex] = static_cast<MapPoint *>(nullptr);
     }
 
-    // Conected KeyFrames with him weight
+    /* Conected KeyFrames with him weight */
     connectedKeyFrameWeights.clear();
     for (std::map<long unsigned int, int>::const_iterator
              mergeEdgeIdIt = backupConnectedKeyFrameIdWeights.begin(),
@@ -87,11 +89,11 @@ KeyFrameStatus KeyFrame::postLoad(
         connectedKeyFrameWeights[p_keyFrame] = mergeEdgeIdIt->second;
     }
 
-    // Restore parent KeyFrame
+    /* Restore parent KeyFrame */
     if (backupParentId >= 0)
         p_parent = keyFrameId_in[backupParentId];
 
-    // KeyFrame childrens
+    /* KeyFrame childrens */
     childrens.clear();
     for (std::vector<long unsigned int>::const_iterator
              mergeEdgeIdIt = backupChildrensId.begin(),
@@ -102,7 +104,7 @@ KeyFrameStatus KeyFrame::postLoad(
         childrens.insert(keyFrameId_in[*mergeEdgeIdIt]);
     }
 
-    // Loop edge KeyFrame
+    /* Loop edge KeyFrame */
     loopEdges.clear();
     for (std::vector<long unsigned int>::const_iterator
              mergeEdgeIdIt = backupLoopEdgesId.begin(),
@@ -113,7 +115,7 @@ KeyFrameStatus KeyFrame::postLoad(
         loopEdges.insert(keyFrameId_in[*mergeEdgeIdIt]);
     }
 
-    // Merge edge KeyFrame
+    /* Merge edge KeyFrame */
     mergeEdges.clear();
     for (std::vector<long unsigned int>::const_iterator
              mergeEdgeIdIt = backupMergeEdgesId.begin(),
@@ -124,9 +126,11 @@ KeyFrameStatus KeyFrame::postLoad(
         mergeEdges.insert(keyFrameId_in[*mergeEdgeIdIt]);
     }
 
-    // Camera data
-    // An absent camera stays null (the default constructor leaves both
-    // pointers unset).
+    /*!
+     * Camera data
+     * An absent camera stays null (the default constructor leaves both
+     * pointers unset).
+     */
     if (backupCameraId != NO_SAVED_ID<unsigned int>)
     {
         p_camera = cameraId_in[backupCameraId];
@@ -146,7 +150,7 @@ KeyFrameStatus KeyFrame::postLoad(
         p_camera2 = nullptr;
     }
 
-    // Inertial data
+    /* Inertial data */
     if (backupPrevKFId != -1)
     {
         p_prevKF = keyFrameId_in[backupPrevKFId];
@@ -157,7 +161,7 @@ KeyFrameStatus KeyFrame::postLoad(
     }
     p_imuPreintegrated = &backupImuPreintegrated;
 
-    // Remove all backup container
+    /* Remove all backup container */
     backupMapPointsId.clear();
     backupConnectedKeyFrameIdWeights.clear();
     backupChildrensId.clear();
@@ -174,5 +178,5 @@ KeyFrameStatus KeyFrame::postLoad(
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

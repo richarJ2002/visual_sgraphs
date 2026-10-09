@@ -65,6 +65,6 @@ bool isEntityIdLess(const EntityT *p_first_in, const EntityT *p_second_in)
     return firstId < secondId;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

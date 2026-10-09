@@ -227,9 +227,9 @@ struct ProjectedPlaneBounds
     const double                        minimumSideDistance_m_in,
     bool                               &crossesOpening_out);
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // UTILS_UTILS_PRIVATE_FUNCTIONS_H
+#endif /* UTILS_UTILS_PRIVATE_FUNCTIONS_H */

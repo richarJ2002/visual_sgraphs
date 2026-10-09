@@ -52,8 +52,8 @@ enum class FloorStatus : std::uint8_t
     FLOOR_STATUS_INVALID_ARGUMENT = 1U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // FLOOR_STATUS_H
+#endif /* FLOOR_STATUS_H */

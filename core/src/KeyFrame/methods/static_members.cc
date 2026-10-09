@@ -44,5 +44,5 @@ namespace core
 
 long unsigned int KeyFrame::nextId = 0;
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

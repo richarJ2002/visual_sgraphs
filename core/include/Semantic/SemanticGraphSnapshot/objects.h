@@ -41,4 +41,4 @@
 #include "Semantic/SemanticGraphSnapshot/objects/UnresolvedWallHypothesisRecord.h"
 #include "Semantic/SemanticGraphSnapshot/objects/WallRecord.h"
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_OBJECTS_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_OBJECTS_H */

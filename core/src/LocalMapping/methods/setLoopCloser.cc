@@ -44,5 +44,5 @@ LocalMappingStatus LocalMapping::setLoopCloser(LoopClosing *p_loopCloser_in)
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

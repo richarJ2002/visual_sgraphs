@@ -520,7 +520,7 @@ class MapPoint
      */
     int                      observationCount;
 
-    // Variables used by the tracking
+    /* Variables used by the tracking */
     /*!
      * @brief           Pixel x of the projection into the current frame set by
      *                  the frustum test; -1 when not visible.
@@ -591,7 +591,7 @@ class MapPoint
      */
     long unsigned int lastSeenFrameId;
 
-    // Variables used by local mapping
+    /* Variables used by local mapping */
     /*!
      * @brief           Id of the key frame whose local bundle adjustment last
      *                  included the point.
@@ -603,7 +603,7 @@ class MapPoint
      */
     long unsigned int fuseCandidateKeyFrameId;
 
-    // Variables used by loop closing
+    /* Variables used by loop closing */
     /*!
      * @brief           Id of the key frame whose loop correction last moved the
      *                  point.
@@ -630,7 +630,7 @@ class MapPoint
      */
     long unsigned int baLocalMergeId;
 
-    // Variable used by merging
+    /* Variable used by merging */
     /*!
      * @brief           Position of the point in the merged map world frame,
      *                  computed during a map merge.
@@ -746,7 +746,7 @@ class MapPoint
      */
     Map *p_map;
 
-    // Mutex
+    /* Mutex */
     /*!
      * @brief           Guards worldPos, normalVector, minDistance and
      *                  maxDistance.
@@ -763,7 +763,7 @@ class MapPoint
     std::mutex mapMutex;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // MAPPOINT_H
+#endif /* MAPPOINT_H */

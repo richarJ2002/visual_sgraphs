@@ -118,5 +118,5 @@ bool VertexPose::write(std::ostream &outputStream_out) const
     return outputStream_out.good();
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

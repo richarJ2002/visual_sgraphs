@@ -36,4 +36,4 @@ Eigen::Vector3f KannalaBrandt8::unprojectEig(const cv::Point2f &point2d_in)
                            unprojectedRay.y,
                            unprojectedRay.z);
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

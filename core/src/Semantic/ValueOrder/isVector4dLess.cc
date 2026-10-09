@@ -52,6 +52,6 @@ bool isVector4dLess(const Eigen::Vector4d &lhs_in,
     return std::tie(lhs0, lhs1, lhs2, lhs3) < std::tie(rhs0, rhs1, rhs2, rhs3);
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

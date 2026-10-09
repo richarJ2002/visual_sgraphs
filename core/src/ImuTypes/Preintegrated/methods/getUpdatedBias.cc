@@ -40,6 +40,6 @@ PreintegratedStatus Preintegrated::getUpdatedBias(Bias &updatedBias_out)
     return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */

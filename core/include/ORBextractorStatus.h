@@ -45,7 +45,7 @@ enum class ORBextractorStatus : std::uint8_t
     ORBEXTRACTOR_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // ORBEXTRACTOR_STATUS_H
+#endif /* ORBEXTRACTOR_STATUS_H */

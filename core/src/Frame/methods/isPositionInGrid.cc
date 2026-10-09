@@ -59,8 +59,10 @@ FrameStatus Frame::isPositionInGrid(const cv::KeyPoint &keyPoint_in,
     positionY_out =
         std::round((keyPoint_in.pt.y - gridMinY) * gridElementHeightInverse);
 
-    // Keypoint's coordinates are undistorted, which could cause to go out of
-    // the image
+    /*!
+     * Keypoint's coordinates are undistorted, which could cause to go out of
+     * the image
+     */
     if (positionX_out < 0 || positionX_out >= FRAME_GRID_COLS ||
         positionY_out < 0 || positionY_out >= FRAME_GRID_ROWS)
     {
@@ -72,5 +74,5 @@ FrameStatus Frame::isPositionInGrid(const cv::KeyPoint &keyPoint_in,
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -286,10 +286,10 @@ bool isValueLessForCollisionTiebreak(const FloorRecord &lhs_in,
                  long unsigned int mapId_in,
                  FloorRecord      &floorRecord_out);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #include "Semantic/SemanticGraphSnapshot/private_functions/sortByKey.tpp"
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_PRIVATE_FUNCTIONS_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_PRIVATE_FUNCTIONS_H */

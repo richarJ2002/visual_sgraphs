@@ -74,7 +74,7 @@ class ImuGrabber : public rclcpp::Node
      */
     void GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr &imu_msg);
 
-    // Variables
+    /* Variables */
     /*!
      * @brief           Guards imuBuf; taken by GrabImu() and by the
      *                  synchronisation thread.
@@ -153,7 +153,7 @@ class ImageGrabber : public rclcpp::Node
             std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
     }
 
-    // Variables
+    /* Variables */
     /*!
      * @brief           Guards the RGB-D packet buffer, the admission state and
      *                  the latest point cloud; when taken together with the IMU
@@ -287,6 +287,29 @@ class ImageGrabber : public rclcpp::Node
      */
     void GrabPointCloud(
         const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msgPC);
+    /*!
+     * @brief           Pairs a synchronised RGB-D image pair with the newest
+     *                  point cloud and queues it for the processing thread,
+     *                  without blocking ROS input.
+     *
+     *                  Drops the pair while no point cloud has arrived, when
+     *                  the image stamps differ by more than 10 ms, when the
+     *                  cloud is more than 33 ms from the images, when the pair
+     *                  is not newer than the last one queued, or when it comes
+     *                  faster than the tracking rate allows. When the queue is
+     *                  full it stops admitting pairs; once the queue has
+     *                  drained it clears the IMU buffer and asks the system to
+     *                  reset the active map.
+     *
+     *                  Runs on an executor thread in the visual callback group
+     *                  and holds mBufMutex throughout.
+     *
+     * @param[in]       msgRGB
+     *                  RGB image message.
+     *
+     * @param[in]       msgD
+     *                  Registered depth image message.
+     */
     void GrabRGBD(const sensor_msgs::msg::Image::ConstSharedPtr &msgRGB,
                   const sensor_msgs::msg::Image::ConstSharedPtr &msgD);
 };
@@ -321,7 +344,7 @@ void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr &imu_msg)
 cv::Mat ImageGrabber::GetImage(
     const sensor_msgs::msg::Image::ConstSharedPtr &img_msg)
 {
-    // Copy the ros image message to cv::Mat.
+    /* Copy the ros image message to cv::Mat. */
     cv_bridge::CvImageConstPtr cv_ptr;
 
     try
@@ -676,7 +699,7 @@ int main(int argc, char **argv)
 
     std::string nodeName = node->get_name();
 
-    // Parameters
+    /* Parameters */
     node->declare_parameter<double>("yaw", 0.0);
     node->declare_parameter<double>("roll", 0.0);
     node->declare_parameter<double>("pitch", 0.0);
@@ -775,7 +798,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // Initializing system threads and getting ready to process frames
+    /* Initializing system threads and getting ready to process frames */
     const bool useSimTime = node->get_parameter("use_sim_time").as_bool();
     std::shared_ptr<ImuGrabber> imugb =
         std::make_shared<ImuGrabber>(useSimTime);
@@ -806,7 +829,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    // Subscribe to get raw images (message_filters in ROS2)
+    /* Subscribe to get raw images (message_filters in ROS2) */
     using message_filters::Subscriber;
     using message_filters::Synchronizer;
     using message_filters::sync_policies::ApproximateTime;
@@ -814,7 +837,7 @@ int main(int argc, char **argv)
     using sensor_msgs::msg::Imu;
     using sensor_msgs::msg::PointCloud2;
 
-    // Subscriber to IMU data with reliable QoS
+    /* Subscriber to IMU data with reliable QoS */
     rclcpp::QoS imu_qos(
         rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data));
     imu_qos.reliability(rclcpp::ReliabilityPolicy::BestEffort);
@@ -887,7 +910,9 @@ int main(int argc, char **argv)
                                      std::placeholders::_1,
                                      std::placeholders::_2));
 
-    // Subscriber to get segmentation results from the SemanticSegmenter module
+    /*!
+     * Subscriber to get segmentation results from the SemanticSegmenter module
+     */
     std::shared_ptr<rclcpp::Subscription<segmenter_ros::msg::SegmenterDataMsg>>
         subSegmentedImage =
             node->create_subscription<segmenter_ros::msg::SegmenterDataMsg>(
@@ -897,9 +922,11 @@ int main(int argc, char **argv)
                 { addSegmentationToSystem(*msg, igb->get_logger()); },
                 semanticSubscriptionOptions);
 
-    // Subsriber to get skeletonized graph from the `voxblox` module
-    // Match the skeletonizer transient-local publisher so the latest usable
-    // graph is received even when this node joins after publication.
+    /*!
+     * Subsriber to get skeletonized graph from the `voxblox` module
+     * Match the skeletonizer transient-local publisher so the latest usable
+     * graph is received even when this node joins after publication.
+     */
     std::shared_ptr<rclcpp::Subscription<visualization_msgs::msg::MarkerArray>>
         subVoxbloxSkeletonMesh =
             node->create_subscription<visualization_msgs::msg::MarkerArray>(
@@ -912,8 +939,10 @@ int main(int argc, char **argv)
                 },
                 skeletonSubscriptionOptions);
 
-    // Match the skeletonizer transient-local publisher so the latest usable
-    // cloud is received even when this node joins after publication.
+    /*!
+     * Match the skeletonizer transient-local publisher so the latest usable
+     * cloud is received even when this node joins after publication.
+     */
     std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>>
         subVoxbloxSkeleton =
             node->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -928,7 +957,7 @@ int main(int argc, char **argv)
     setupPublishers(node, image_transport, nodeName);
     setupServices(node, nodeName);
 
-    // Syncing images with IMU
+    /* Syncing images with IMU */
     std::thread sync_thread(&ImageGrabber::SyncWithImu, igb);
 
     rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(),
@@ -938,11 +967,11 @@ int main(int argc, char **argv)
     executor.add_node(igb);
     executor.spin();
 
-    // Signal the sync thread to stop and wait for it
+    /* Signal the sync thread to stop and wait for it */
     igb->mustStop = true;
     sync_thread.join();
 
-    // No sensor worker may call TrackRGBD while SLAM threads are stopping.
+    /* No sensor worker may call TrackRGBD while SLAM threads are stopping. */
     if (p_slamSystem->shutdown() !=
         vs_graphs::core::SystemStatus::SYSTEM_STATUS_SUCCESS)
     {
@@ -1129,7 +1158,9 @@ void ImageGrabber::GrabRGBD(
 void ImageGrabber::GrabVoxbloxSkeletonGraph(
     const visualization_msgs::msg::MarkerArray &msgSkeletonGraph)
 {
-    // Pass the skeleton graph to a buffer to be processed by the
-    // SemanticSegmentation thread
+    /*!
+     * Pass the skeleton graph to a buffer to be processed by the
+     * SemanticSegmentation thread
+     */
     setVoxbloxSkeletonCluster(msgSkeletonGraph);
 }

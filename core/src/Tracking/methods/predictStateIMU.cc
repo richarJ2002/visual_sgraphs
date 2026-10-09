@@ -295,5 +295,5 @@ TrackingStatus Tracking::predictStateIMU(bool &isPredicted_out)
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -66,7 +66,7 @@ MapPointStatus MapPoint::replace(MapPoint *p_mapPoint_inout)
          mit != mend;
          mit++)
     {
-        // Replace measurement in keyframe
+        /* Replace measurement in keyframe */
         KeyFrame *p_keyFrame = mit->first;
 
         std::tuple<int, int> indexes = mit->second;
@@ -192,5 +192,5 @@ MapPointStatus MapPoint::replace(MapPoint *p_mapPoint_inout)
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

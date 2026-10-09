@@ -46,15 +46,17 @@ namespace core
 
 Map::~Map()
 {
-    // NOTE: map elements are intentionally not freed here; the destructor
-    // only drops the set references (ownership lives in the atlas/optimizer).
+    /*!
+     * NOTE: map elements are intentionally not freed here; the destructor
+     * only drops the set references (ownership lives in the atlas/optimizer).
+     */
     mapPoints.clear();
     keyFrames.clear();
 
-    // Erase all markers from memory
+    /* Erase all markers from memory */
     markers.clear();
 
-    // Erase all semantic entities from memory
+    /* Erase all semantic entities from memory */
     floors.clear();
     planes.clear();
     passages.clear();
@@ -65,5 +67,5 @@ Map::~Map()
     keyFrameOrigins.clear();
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

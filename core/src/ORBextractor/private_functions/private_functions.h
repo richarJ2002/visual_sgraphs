@@ -108,7 +108,7 @@ bool compareNodes(std::pair<int, ExtractorNode *> &e1_in,
                        cv::Mat                      &descriptors_out,
                        const std::vector<cv::Point> &briefPattern_in);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif /* VS_GRAPHS_CORE_ORBEXTRACTOR_PRIVATE_FUNCTIONS_H */

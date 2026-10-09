@@ -47,8 +47,8 @@ enum class SystemParamsStatus : std::uint8_t
     SYSTEM_PARAMS_STATUS_SUCCESS = 0U
 };
 
-} // namespace types
-} // namespace core
-} // namespace vs_graphs
+} /* namespace types */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SYSTEM_PARAMS_STATUS_H
+#endif /* SYSTEM_PARAMS_STATUS_H */

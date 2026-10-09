@@ -46,7 +46,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
 {
     int nmatches = 0;
 
-    // Rotation Histogram (to check rotation consistency)
+    /* Rotation Histogram (to check rotation consistency) */
     std::vector<int> rotHist[HISTO_LENGTH];
     for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
          histogramBinIndex++)
@@ -89,7 +89,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
         {
             if (!lastFrame_in.outlierFlags[histogramBinIndex])
             {
-                // Project
+                /* Project */
                 Eigen::Vector3f x3Dw{};
                 if (p_mapPoint->getWorldPos(x3Dw) !=
                     MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -125,7 +125,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
                                               lastFrame_in.leftKeyPointCount]
                               .octave;
 
-                // Search in a window. Size depends on scale
+                /* Search in a window. Size depends on scale */
                 float radius = threshold_in *
                                currentFrame_inout.scaleFactors[lastOctaveCount];
 
@@ -331,7 +331,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
                                                       .leftKeyPointCount]
                                   .octave;
 
-                    // Search in a window. Size depends on scale
+                    /* Search in a window. Size depends on scale */
                     float radiusRight =
                         threshold_in *
                         currentFrame_inout.scaleFactors[lastOctaveCountRight];
@@ -508,7 +508,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
         }
     }
 
-    // Apply rotation consistency
+    /* Apply rotation consistency */
     if (shouldCheckOrientation)
     {
         int ind1 = -1;
@@ -548,5 +548,5 @@ ORBmatcherStatus ORBmatcher::searchByProjection(Frame       &currentFrame_inout,
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -47,7 +47,7 @@ UtilsStatus Utils::applyPoseToPlane(const Eigen::Matrix4d &keyframePose_in,
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -41,4 +41,4 @@ cv::Mat KannalaBrandt8::toK()
                                  1.f);
     return calibrationMatrix;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

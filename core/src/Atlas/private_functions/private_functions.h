@@ -34,12 +34,12 @@ class Map;
 namespace geometric
 {
 class Plane;
-} // namespace geometric
+} /* namespace geometric */
 
 namespace semantic
 {
 class Passage;
-} // namespace semantic
+} /* namespace semantic */
 
 /*!
  * @brief           Plans the ids that entities imported from a merged map
@@ -79,8 +79,10 @@ template <typename Entity>
                     std::vector<std::pair<Entity *, int>> &assignments_out,
                     bool                                  &isPlanned_out)
 {
-    // Identity of an imported or existing entity. Every semantic status
-    // enumeration uses 0 for SUCCESS; getId cannot fail.
+    /*!
+     * Identity of an imported or existing entity. Every semantic status
+     * enumeration uses 0 for SUCCESS; getId cannot fail.
+     */
     const auto idOf = [](const Entity *p_entity_in)
     {
         int entityId = -1;
@@ -313,7 +315,7 @@ template <typename Entity>
                                   semantic::Passage *p_transferred_in,
                                   bool              &wasResurfaced_out);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif /* VS_GRAPHS_CORE_ATLAS_PRIVATE_FUNCTIONS_H */

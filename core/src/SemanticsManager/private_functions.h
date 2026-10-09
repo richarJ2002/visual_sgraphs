@@ -30,12 +30,12 @@ class Map;
 namespace geometric
 {
 class Plane;
-} // namespace geometric
+} /* namespace geometric */
 
 namespace semantic
 {
 class Passage;
-} // namespace semantic
+} /* namespace semantic */
 
 /*!
  * @brief           Finite horizontal representation of one observed room wall.
@@ -667,7 +667,7 @@ struct WallLoopClosure
                               const Eigen::Vector3d &groundNormal_world_in,
                               bool &arePlausibleTwinWallFaces_out);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif /* VS_GRAPHS_CORE_SEMANTICSMANAGER_PRIVATE_FUNCTIONS_H */

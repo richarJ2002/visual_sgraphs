@@ -325,7 +325,7 @@ std::pair<std::set<std::size_t>, std::set<std::size_t>>
     return {matchedTruth, matchedGen};
 }
 
-} // namespace
+} /* namespace */
 
 WallPrfResult computeGlobalWallMetrics(const nlohmann::json &truth_in,
                                        const nlohmann::json &generated_in)
@@ -397,6 +397,6 @@ WallPrfResult computeGlobalWallMetrics(const nlohmann::json &truth_in,
     return result;
 }
 
-} // namespace test
-} // namespace core
-} // namespace vs_graphs
+} /* namespace test */
+} /* namespace core */
+} /* namespace vs_graphs */

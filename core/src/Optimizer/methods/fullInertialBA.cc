@@ -91,7 +91,7 @@ OptimizerStatus
 
     AtomicOptimizerStopBridge stopBridge(p_stopRequested_in, p_stopFlag_inout);
 
-    // Setup optimizer
+    /* Setup optimizer */
     g2o::SparseOptimizer                 optimizer;
     g2o::BlockSolverX::LinearSolverType *p_linearSolver;
 
@@ -117,7 +117,7 @@ OptimizerStatus
 
     int nonFixedKeyFrameCount = 0;
 
-    // Set KeyFrame vertices
+    /* Set KeyFrame vertices */
     KeyFrame *p_initializationKeyFrame = nullptr;
     for (size_t elementIndex = 0; elementIndex < keyFrames.size();
          elementIndex++)
@@ -138,7 +138,7 @@ OptimizerStatus
                 nonFixedKeyFrameCount++;
             p_poseVertex->setFixed(isKeyFrameFixed);
         }
-        if (elementIndex == 0) // Fix the first keyframe at origin
+        if (elementIndex == 0) /* Fix the first keyframe at origin */
             p_poseVertex->setFixed(true);
         optimizer.addVertex(p_poseVertex);
 
@@ -191,7 +191,7 @@ OptimizerStatus
             return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
     }
 
-    // IMU links
+    /* IMU links */
     for (size_t elementIndex = 0; elementIndex < keyFrames.size();
          elementIndex++)
     {
@@ -392,7 +392,7 @@ OptimizerStatus
         g2o::HyperGraph::Vertex *p_accelBiasVertex =
             optimizer.vertex(4 * maxKeyFrameId + 3);
 
-        // Add prior to comon biases
+        /* Add prior to comon biases */
         Eigen::Vector3f biasPrior;
         biasPrior.setZero();
 
@@ -400,7 +400,7 @@ OptimizerStatus
         p_accelBiasPriorEdge->setVertex(
             0,
             dynamic_cast<g2o::OptimizableGraph::Vertex *>(p_accelBiasVertex));
-        double accelBiasPriorInformation = accelBiasPriorWeight_in; //
+        double accelBiasPriorInformation = accelBiasPriorWeight_in;
         p_accelBiasPriorEdge->setInformation(accelBiasPriorInformation *
                                              Eigen::Matrix3d::Identity());
         optimizer.addEdge(p_accelBiasPriorEdge);
@@ -409,7 +409,7 @@ OptimizerStatus
         p_gyroBiasPriorEdge->setVertex(
             0,
             dynamic_cast<g2o::OptimizableGraph::Vertex *>(p_gyroBiasVertex));
-        double gyroBiasPriorInformation = gyroBiasPriorWeight_in; //
+        double gyroBiasPriorInformation = gyroBiasPriorWeight_in;
         p_gyroBiasPriorEdge->setInformation(gyroBiasPriorInformation *
                                             Eigen::Matrix3d::Identity());
         optimizer.addEdge(p_gyroBiasPriorEdge);
@@ -455,7 +455,7 @@ OptimizerStatus
 
         bool allVerticesFixed = true;
 
-        // Set edges
+        /* Set edges */
         for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
                  featureObservationIt  = observations.begin(),
                  featureObservationEnd = observations.end();
@@ -483,7 +483,7 @@ OptimizerStatus
 
                 if (leftIndex != -1 && p_keyFrame->uRight[std::get<0>(
                                            featureObservationIt->second)] <
-                                           0) // Monocular observation
+                                           0) /* Monocular observation */
                 {
                     undistortedKeyPoint =
                         p_keyFrame->keyPointsUndistorted[leftIndex];
@@ -521,7 +521,7 @@ OptimizerStatus
                     optimizer.addEdge(p_edge);
                 }
                 else if (leftIndex != -1 && p_keyFrame->uRight[leftIndex] >=
-                                                0) // stereo observation
+                                                0) /* stereo observation */
                 {
                     undistortedKeyPoint =
                         p_keyFrame->keyPointsUndistorted[leftIndex];
@@ -562,7 +562,7 @@ OptimizerStatus
                 }
 
                 if (p_keyFrame->p_camera2)
-                { // Monocular right observation
+                { /* Monocular right observation */
                     int rightIndex = std::get<1>(featureObservationIt->second);
 
                     if (rightIndex != -1 &&
@@ -625,8 +625,10 @@ OptimizerStatus
     optimizer.removePreIterationAction(&stopBridge);
     optimizer.removePostIterationAction(&stopBridge);
 
-    // Recover optimized data
-    // Keyframes
+    /*!
+     * Recover optimized data
+     * Keyframes
+     */
     for (size_t elementIndex = 0; elementIndex < keyFrames.size();
          elementIndex++)
     {
@@ -723,7 +725,7 @@ OptimizerStatus
         }
     }
 
-    // Points
+    /* Points */
     for (size_t elementIndex = 0; elementIndex < mapPoints.size();
          elementIndex++)
     {
@@ -774,5 +776,5 @@ OptimizerStatus
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -73,8 +73,8 @@ void EdgeMono::linearizeOplus()
         1.0;
 
     _jacobianOplusXj = projectionJacobian * extrinsicRotation_bodyToCamera *
-                       se3Derivative; // TODO optimize this product
+                       se3Derivative; /* TODO optimize this product */
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -127,7 +127,7 @@ class KeyFrame
              Map              *p_map_in,
              KeyFrameDatabase *p_keyFrameDatabase_in);
 
-    // Pose functions
+    /* Pose functions */
     /*!
      * @brief           Stores the camera pose and refreshes everything derived
      *                  from it: the inverse pose, both rotation matrices and,
@@ -257,7 +257,7 @@ class KeyFrame
      */
     [[nodiscard]] KeyFrameStatus isVelocitySet(bool &isVelocitySet_out);
 
-    // Bag of Words Representation
+    /* Bag of Words Representation */
     /*!
      * @brief           Computes the bag-of-words and feature vectors from the
      *                  descriptors when either is still empty. Needs the ORB
@@ -267,7 +267,7 @@ class KeyFrame
      */
     [[nodiscard]] KeyFrameStatus computeBagOfWords();
 
-    // Covisibility graph functions
+    /* Covisibility graph functions */
     /*!
      * @brief           Records that this key frame shares weight observations
      *                  with another key frame, and re-sorts the covisibility
@@ -387,7 +387,7 @@ class KeyFrame
     [[nodiscard]] KeyFrameStatus getWeight(KeyFrame *p_keyFrame_in,
                                            int      &weight_out);
 
-    // Spanning tree functions
+    /* Spanning tree functions */
     /*!
      * @brief           Adds a key frame as a child of this one in the spanning
      *                  tree.
@@ -465,7 +465,7 @@ class KeyFrame
      */
     [[nodiscard]] KeyFrameStatus setFirstConnection(bool isFirst_in);
 
-    // Loop Edges
+    /* Loop Edges */
     /*!
      * @brief           Records a loop-closure edge to a key frame and protects
      *                  this key frame from being erased.
@@ -488,7 +488,7 @@ class KeyFrame
     [[nodiscard]] KeyFrameStatus
         getLoopEdges(std::set<KeyFrame *> &loopEdges_out);
 
-    // Merge Edges
+    /* Merge Edges */
     /*!
      * @brief           Records a map-merge edge to a key frame and protects
      *                  this key frame from being erased.
@@ -511,7 +511,7 @@ class KeyFrame
     [[nodiscard]] KeyFrameStatus
         getMergeEdges(std::set<KeyFrame *> &mergeEdges_out);
 
-    // MapPoint observation functions
+    /* MapPoint observation functions */
     /*!
      * @brief           Counts the key points that currently have a map point,
      *                  including map points flagged bad.
@@ -637,7 +637,7 @@ class KeyFrame
     [[nodiscard]] KeyFrameStatus getMapPoint(const size_t &index_in,
                                              MapPoint    *&p_mapPoint_out);
 
-    // MapMarker observation functions
+    /* MapMarker observation functions */
     /*!
      * @brief           Adds a marker observed by this key frame; duplicates are
      *                  not filtered.
@@ -659,7 +659,7 @@ class KeyFrame
     [[nodiscard]] KeyFrameStatus
         getMapMarkers(std::vector<semantic::Marker *> &mapMarkers_out);
 
-    // MapPlane observation functions
+    /* MapPlane observation functions */
     /*!
      * @brief           Adds a plane observed by this key frame. A null plane or
      *                  one already present is ignored.
@@ -759,7 +759,7 @@ class KeyFrame
     [[nodiscard]] KeyFrameStatus getMapPassages(
         std::vector<vs_graphs::core::semantic::Passage *> &mapPassages_out);
 
-    // KeyPoint functions
+    /* KeyPoint functions */
     /*!
      * @brief           Finds the key points that lie inside a square around an
      *                  image position, using the key point grid. Undistorted
@@ -809,7 +809,7 @@ class KeyFrame
                                                  Eigen::Vector3f &x3D_out,
                                                  bool &isUnprojected_out);
 
-    // Image
+    /* Image */
     /*!
      * @brief           Tells whether a pixel lies inside the image bounds of
      *                  this key frame.
@@ -829,7 +829,7 @@ class KeyFrame
                                            const float &y_in,
                                            bool        &isInImage_out) const;
 
-    // Enable/Disable bad flag changes
+    /* Enable/Disable bad flag changes */
     /*!
      * @brief           Protects this key frame from being erased until setErase
      *                  is called.
@@ -846,7 +846,7 @@ class KeyFrame
      */
     [[nodiscard]] KeyFrameStatus setErase();
 
-    // Set/check bad flag
+    /* Set/check bad flag */
     /*!
      * @brief           Removes this key frame from the map: unlinks it from the
      *                  covisibility graph and from its observations, gives its
@@ -1120,8 +1120,7 @@ class KeyFrame
      */
     bool isImu;
 
-    // The following variables are accesed from only 1 thread or never change
-    // (no mutex needed).
+    /* The members below are used by one thread or never change: no mutex */
   public:
     /*!
      * @brief           Id given to the next key frame created from a Frame;
@@ -1144,7 +1143,7 @@ class KeyFrame
      */
     const double timeStamp;
 
-    // Grid (to speed up feature matching)
+    /* Grid (to speed up feature matching) */
     /*!
      * @brief           Number of columns of the key point grid laid over the
      *                  image (FRAME_GRID_COLS).
@@ -1166,7 +1165,7 @@ class KeyFrame
      */
     const float gridElementHeightInverse;
 
-    // Variables used by the tracking
+    /* Variables used by the tracking */
     /*!
      * @brief           Id of the last frame whose local map Tracking collected
      *                  this key frame into; stops it being added twice for one
@@ -1180,7 +1179,7 @@ class KeyFrame
      */
     long unsigned int fuseTargetKeyFrameId;
 
-    // Variables used by the local mapping
+    /* Variables used by the local mapping */
     /*!
      * @brief           Id of the key frame whose local bundle adjustment last
      *                  included this key frame as optimised; 0 when none.
@@ -1193,7 +1192,7 @@ class KeyFrame
      */
     long unsigned int baFixedKeyFrameId;
 
-    // Variables used by the keyframe database
+    /* Variables used by the keyframe database */
     /*!
      * @brief           Id of the query key frame for which the loop candidate
      *                  search last counted this key frame.
@@ -1261,7 +1260,7 @@ class KeyFrame
      */
     bool isInCurrentPlaceRecognition;
 
-    // Variables used by loop closing
+    /* Variables used by loop closing */
     /*!
      * @brief           Camera pose computed by global bundle adjustment, world
      *                  to camera; LoopClosing applies it with setPose.
@@ -1294,7 +1293,7 @@ class KeyFrame
      */
     long unsigned int baGlobalKeyFrameId;
 
-    // Variables used by merging
+    /* Variables used by merging */
     /*!
      * @brief           Camera pose after the map merge correction, world to
      *                  camera of the surviving map.
@@ -1332,7 +1331,7 @@ class KeyFrame
      */
     float correctedScale;
 
-    // Calibration parameters
+    /* Calibration parameters */
     /*!
      * @brief           Focal length along x, pixels.
      */
@@ -1383,7 +1382,7 @@ class KeyFrame
      */
     const int keyPointCount;
 
-    // KeyPoints, stereo coordinate and descriptors (all associated by an index)
+    /* Key points, stereo coordinates and descriptors, all sharing one index */
     /*!
      * @brief           Key points as detected, in image pixels; same index as
      *                  uRight, depths, descriptors and mapPoints.
@@ -1409,7 +1408,7 @@ class KeyFrame
      */
     const cv::Mat                   descriptors;
 
-    // BoW
+    /* BoW */
     /*!
      * @brief           Bag-of-words vector of the descriptors; filled by
      *                  computeBagOfWords unless copied from the frame.
@@ -1428,7 +1427,7 @@ class KeyFrame
      */
     Sophus::SE3f tcp;
 
-    // Scale
+    /* Scale */
     /*!
      * @brief           Number of levels of the ORB image pyramid.
      */
@@ -1455,7 +1454,7 @@ class KeyFrame
      */
     const std::vector<float> invLevelSigmaSquared;
 
-    // Image bounds and calibration
+    /* Image bounds and calibration */
     /*!
      * @brief           Smallest pixel column of the undistorted image area.
      */
@@ -1473,7 +1472,7 @@ class KeyFrame
      */
     const int gridMaxY;
 
-    // Preintegrated IMU measurements from previous keyframe
+    /* Preintegrated IMU measurements from previous keyframe */
     /*!
      * @brief           Previous key frame in time order for the inertial chain;
      *                  null for the first one; borrowed.
@@ -1513,10 +1512,7 @@ class KeyFrame
      */
     int datasetId;
 
-    // bool mbHasHessian;
-    // cv::Mat mHessianPose;
-
-    // For Semantic Segmentation
+    /* For Semantic Segmentation */
     /*!
      * @brief           Colour image of the source frame, sent to semantic
      *                  segmentation and released by clearPointCloud.
@@ -1528,8 +1524,7 @@ class KeyFrame
      */
     bool    isPublished;
 
-    // The following variables need to be accessed trough a mutex to be thread
-    // safe.
+    /* The members below must be accessed through a mutex to be thread safe */
   protected:
     /*!
      * @brief           Camera pose, world to camera. Guarded by poseMutex.
@@ -1655,7 +1650,7 @@ class KeyFrame
      */
     std::map<long unsigned int, int> backupConnectedKeyFrameIdWeights;
 
-    // Spanning Tree and Loop Edges
+    /* Spanning Tree and Loop Edges */
     /*!
      * @brief           True until updateConnections has chosen the
      *                  spanning-tree parent. Guarded by connectionsMutex.
@@ -1702,7 +1697,7 @@ class KeyFrame
      */
     std::vector<long unsigned int> backupMergeEdgesId;
 
-    // Bad flags
+    /* Bad flags */
     /*!
      * @brief           True while this key frame must not be erased (it is
      *                  being processed or has a loop or merge edge); setBadFlag
@@ -1726,7 +1721,7 @@ class KeyFrame
      */
     float halfBaseline;
 
-    // Variables to be passed to GeometricSegmentation
+    /* Variables to be passed to GeometricSegmentation */
     /*!
      * @brief           Markers detected in the source frame, copied at
      *                  construction for the semantic analysis.
@@ -1738,7 +1733,7 @@ class KeyFrame
      */
     std::vector<MapPoint *>         currentFrameMapPoints;
 
-    // point clouds
+    /* point clouds */
     /*!
      * @brief           Colour point cloud of the source frame for semantic
      *                  segmentation; set to null by clearPointCloud.
@@ -1756,7 +1751,7 @@ class KeyFrame
      */
     Map *p_map;
 
-    // Backup variables for inertial
+    /* Backup variables for inertial */
     /*!
      * @brief           Id of p_prevKF, -1 for none; filled by preSave and
      *                  consumed by postLoad.
@@ -1773,7 +1768,7 @@ class KeyFrame
      */
     IMU::Preintegrated backupImuPreintegrated;
 
-    // Backup for Cameras
+    /* Backup for Cameras */
     /*!
      * @brief           Id of p_camera for saving, NO_SAVED_ID when it is
      *                  absent; filled by preSave and consumed by postLoad.
@@ -1790,7 +1785,7 @@ class KeyFrame
      */
     Eigen::Matrix3f calibrationMatrixEigen;
 
-    // Mutex
+    /* Mutex */
     /*!
      * @brief           Guards the pose, velocity, stereo fisheye transform and
      *                  IMU bias members.
@@ -1960,7 +1955,7 @@ class KeyFrame
     [[nodiscard]] KeyFrameStatus getCurrentFrameMapPoints(
         std::vector<MapPoint *> &getCurrentFrameMapPoints_out) const;
 
-    // getters and setter for point clouds
+    /* getters and setter for point clouds */
     /*!
      * @brief           Returns the colour point cloud of the frame this key
      *                  frame was created from.
@@ -2016,7 +2011,7 @@ class KeyFrame
     [[nodiscard]] KeyFrameStatus clearClsClouds();
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // KEYFRAME_H
+#endif /* KEYFRAME_H */

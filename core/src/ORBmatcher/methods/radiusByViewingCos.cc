@@ -52,5 +52,5 @@ ORBmatcherStatus ORBmatcher::radiusByViewingCos(const float &viewCos,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

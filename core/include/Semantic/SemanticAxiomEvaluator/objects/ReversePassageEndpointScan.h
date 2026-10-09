@@ -120,8 +120,8 @@ struct ReversePassageEndpointScan
     std::vector<EntityKey> livenessUnavailableReverseRoomKeys;
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_REVERSE_PASSAGE_ENDPOINT_SCAN_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_REVERSE_PASSAGE_ENDPOINT_SCAN_H */

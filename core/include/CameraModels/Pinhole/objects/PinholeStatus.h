@@ -48,9 +48,9 @@ enum class PinholeStatus : std::uint8_t
     PINHOLE_STATUS_SUCCESS = 0U
 };
 
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // PINHOLE_STATUS_H
+#endif /* PINHOLE_STATUS_H */

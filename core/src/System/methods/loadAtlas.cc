@@ -49,7 +49,7 @@ SystemStatus System::loadAtlas(int type_in, bool &isLoaded_out)
     pathLoadFileName             = pathLoadFileName.append(loadAtlasFile);
     pathLoadFileName             = pathLoadFileName.append(".osa");
 
-    if (type_in == TEXT_FILE) // File text
+    if (type_in == TEXT_FILE) /* File text */
     {
         std::cout << "Starting to read the save text file "
                   << pathLoadFileName.c_str() << std::endl;
@@ -67,7 +67,7 @@ SystemStatus System::loadAtlas(int type_in, bool &isLoaded_out)
         std::cout << "End to load the save text file " << std::endl;
         isRead = true;
     }
-    else if (type_in == BINARY_FILE) // File binary
+    else if (type_in == BINARY_FILE) /* File binary */
     {
         std::cout << "Starting to read the save binary file "
                   << pathLoadFileName.c_str() << std::endl;
@@ -88,7 +88,7 @@ SystemStatus System::loadAtlas(int type_in, bool &isLoaded_out)
 
     if (isRead)
     {
-        // Check if the vocabulary is the same
+        /* Check if the vocabulary is the same */
         std::string inputVocabularyChecksum{};
         if (calculateCheckSum(vocabularyFilePath,
                               TEXT_FILE,
@@ -109,7 +109,8 @@ SystemStatus System::loadAtlas(int type_in, bool &isLoaded_out)
                 << std::endl;
             std::cout << "-Vocabulary name: " << fileVocabulary << std::endl;
             isLoaded_out = false;
-            return SystemStatus::SYSTEM_STATUS_SUCCESS; // Both are differents
+            /* Both are differents */
+            return SystemStatus::SYSTEM_STATUS_SUCCESS;
         }
 
         if (p_atlas->setKeyFrameDatabase(p_keyFrameDatabase) !=
@@ -143,5 +144,5 @@ SystemStatus System::loadAtlas(int type_in, bool &isLoaded_out)
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

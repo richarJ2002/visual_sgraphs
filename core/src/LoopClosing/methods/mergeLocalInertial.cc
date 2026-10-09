@@ -154,8 +154,10 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
         return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
     }
 
-    // Relationship to rebuild the essential graph, it is used two times, first
-    // in the local window and later in the rest of the map
+    /*!
+     * Relationship to rebuild the essential graph, it is used two times, first
+     * in the local window and later in the rest of the map
+     */
     KeyFrame *p_newChild;
     KeyFrame *p_newParent;
 
@@ -164,8 +166,10 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
 
     KeyFrameAndPose CorrectedSim3, NonCorrectedSim3;
 
-    // Flag that is true only when we stopped a running BA, in this case we need
-    // relaunch at the end of the merge
+    /*!
+     * Flag that is true only when we stopped a running BA, in this case we need
+     * relaunch at the end of the merge
+     */
     bool shouldRelaunchBa = false;
 
     /* Stop and reclaim GBA before either map changes frame or ownership. */
@@ -189,7 +193,7 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                      __func__);
     }
 
-    // Wait until Local Mapping has effectively stopped
+    /* Wait until Local Mapping has effectively stopped */
     for (;;)
     {
         bool localMapperIsStopped{};
@@ -657,7 +661,7 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                 continue;
             }
 
-            // Make sure connections are updated
+            /* Make sure connections are updated */
             if (p_keyFrame->updateMap(p_currentMap) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
             {
@@ -1282,7 +1286,7 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
             }
         }
 
-        // Save non corrected poses (already merged maps)
+        /* Save non corrected poses (already merged maps) */
         std::vector<KeyFrame *> keyFrames{};
         if (p_currentMap->getAllKeyFrames(keyFrames) !=
             MapStatus::MAP_STATUS_SUCCESS)
@@ -1350,11 +1354,13 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    p_newChild = p_mergeMatchedKFParent; // Old parent, it will be the new child
-                                         // of this KF
-    p_newParent = p_mergeMatchedKF; // Old child, now it will be the parent of
-                                    // its own parent(we need eliminate this KF
-                                    // from children list in its old parent)
+    /* Old parent, it will be the new child of this KF */
+    p_newChild = p_mergeMatchedKFParent;
+    /*!
+     * Old child, now it will be the parent of its own parent(we need eliminate
+     * this KF from children list in its old parent)
+     */
+    p_newParent = p_mergeMatchedKF;
     if (p_mergeMatchedKF->changeParent(p_currentKF) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -1365,6 +1371,10 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
     }
     while (p_newChild)
     {
+        /*!
+         * We remove the relation between the old parent and the new for avoid
+         * loop
+         */
         if (p_newChild->eraseChild(p_newParent) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
         {
@@ -1372,8 +1382,7 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
                          "%s: eraseChild returned a failure status although it "
                          "cannot fail; continuing as before.",
                          __func__);
-        } // We remove the relation between the old parent and
-          // the new for avoid loop
+        }
         KeyFrame *p_oldParent = nullptr;
         if (p_newChild->getParent(p_oldParent) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -1395,9 +1404,11 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
         p_newChild  = p_oldParent;
     }
 
-    std::vector<MapPoint *>
-        checkFuseMapPoints; // MapPoint vector from current map to allow to
-                            // fuse duplicated points with the old map (merge)
+    /*!
+     * MapPoint vector from current map to allow to fuse duplicated points with
+     * the old map (merge)
+     */
+    std::vector<MapPoint *> checkFuseMapPoints;
     std::vector<KeyFrame *> currentConnectedKeyFrames;
 
     mergeConnectedKFs.clear();
@@ -1842,5 +1853,5 @@ LoopClosingStatus LoopClosing::mergeLocalInertial(
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

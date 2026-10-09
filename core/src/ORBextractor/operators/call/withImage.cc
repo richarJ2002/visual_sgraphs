@@ -80,14 +80,13 @@ int ORBextractor::operator()(cv::InputArray                  image_in,
                              cv::OutputArray                 descriptors_in,
                              std::vector<int>               &lappingArea_in)
 {
-    // cout << "[ORBextractor]: Max Features: " << featureCount << endl;
     if (image_in.empty())
         return -1;
 
     cv::Mat image = image_in.getMat();
     assert(image.type() == CV_8UC1);
 
-    // Pre-compute the scale pyramid
+    /* Pre-compute the scale pyramid */
     if (computePyramid(image) !=
         ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
     {
@@ -106,7 +105,6 @@ int ORBextractor::operator()(cv::InputArray                  image_in,
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    // computeKeyPointsOld(allKeypoints);
 
     cv::Mat descriptors;
 
@@ -121,12 +119,10 @@ int ORBextractor::operator()(cv::InputArray                  image_in,
         descriptors = descriptors_in.getMat();
     }
 
-    // keypoints_out.clear();
-    // keypoints_out.reserve(nkeypoints);
     keypoints_inout = std::vector<cv::KeyPoint>(nkeypoints);
 
     int offset = 0;
-    // Modified for speeding up stereo fisheye matching
+    /* Modified for speeding up stereo fisheye matching */
     int monoIndex = 0, stereoIndex = nkeypoints - 1;
     for (int level = 0; level < levelCount; ++level)
     {
@@ -136,7 +132,7 @@ int ORBextractor::operator()(cv::InputArray                  image_in,
         if (nkeypointsLevel == 0)
             continue;
 
-        // preprocess the resized image
+        /* preprocess the resized image */
         cv::Mat workingMatrix = imagePyramid[level].clone();
         cv::GaussianBlur(workingMatrix,
                          workingMatrix,
@@ -145,8 +141,7 @@ int ORBextractor::operator()(cv::InputArray                  image_in,
                          2,
                          cv::BORDER_REFLECT_101);
 
-        // Compute the descriptors
-        // Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
+        /* Compute the descriptors */
         cv::Mat descriptor = cv::Mat(nkeypointsLevel, 32, CV_8U);
         if (computeDescriptors(workingMatrix,
                                keypoints,
@@ -162,16 +157,15 @@ int ORBextractor::operator()(cv::InputArray                  image_in,
 
         offset += nkeypointsLevel;
 
-        float scale =
-            scaleFactors[level]; // getScale(level, firstLevel, scaleFactor);
-        int i = 0;
+        float scale = scaleFactors[level];
+        int   i     = 0;
         for (std::vector<cv::KeyPoint>::iterator keypoint = keypoints.begin(),
                                                  keypointEnd = keypoints.end();
              keypoint != keypointEnd;
              ++keypoint)
         {
 
-            // Scale keypoint coordinates
+            /* Scale keypoint coordinates */
             if (level != 0)
             {
                 keypoint->pt *= scale;
@@ -193,10 +187,8 @@ int ORBextractor::operator()(cv::InputArray                  image_in,
             i++;
         }
     }
-    // cout << "[ORBextractor]: extracted " << keypoints_out.size() << "
-    // KeyPoints" << endl;
     return monoIndex;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

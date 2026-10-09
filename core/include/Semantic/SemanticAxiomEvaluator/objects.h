@@ -47,4 +47,4 @@
 #include "Semantic/SemanticAxiomEvaluator/objects/RoomBoundaryWallEvidenceStatus.h"
 #include "Semantic/SemanticAxiomEvaluator/objects/TransitionEvaluationContext.h"
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_OBJECTS_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_OBJECTS_H */

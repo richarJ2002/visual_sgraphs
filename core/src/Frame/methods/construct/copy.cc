@@ -190,5 +190,5 @@ Frame::Frame(const Frame &frame_in) :
 #endif
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

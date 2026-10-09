@@ -38,26 +38,26 @@ UtilsStatus Utils::computeCentroidFromPoints(
     const std::vector<Eigen::Vector3d> &points_in,
     Eigen::Vector3d                    &centroid_out)
 {
-    // Check if there are points_in in the vector
+    /* Check if there are points_in in the vector */
     if (points_in.empty())
     {
         centroid_out = Eigen::Vector3d(0.0, 0.0, 0.0);
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    // Variables
+    /* Variables */
     Eigen::Vector3d sum(0.0, 0.0, 0.0);
 
-    // Calculate the sum of the points_in
+    /* Calculate the sum of the points_in */
     for (const Eigen::Vector3d &point : points_in)
         sum += point;
 
-    // Return the centroid of the cluster
+    /* Return the centroid of the cluster */
     centroid_out = sum / points_in.size();
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

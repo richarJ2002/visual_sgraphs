@@ -51,7 +51,7 @@ namespace core
 #ifdef REGISTER_TIMES
 TrackingStatus Tracking::printTimeStats()
 {
-    // Save data in files
+    /* Save data in files */
     if (trackStats2File() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -70,7 +70,7 @@ TrackingStatus Tracking::printTimeStats()
     std::ofstream f;
     f.open("ExecMean.txt");
     f << std::fixed;
-    // Report the mean and std of each one
+    /* Report the mean and std of each one */
     std::cout << std::endl << " TIME STATS in ms (mean$\\pm$std)" << std::endl;
     f << " TIME STATS in ms (mean$\\pm$std)" << std::endl;
     std::cout << "OpenCV version: " << CV_VERSION << std::endl;
@@ -310,7 +310,7 @@ TrackingStatus Tracking::printTimeStats()
               << std::endl;
     f << "Total Tracking: " << average << "$\\pm$" << deviation << std::endl;
 
-    // Local Mapping time stats
+    /* Local Mapping time stats */
     std::cout << std::endl << std::endl << std::endl;
     std::cout << "Local Mapping" << std::endl << std::endl;
     f << std::endl << "Local Mapping" << std::endl << std::endl;
@@ -464,7 +464,7 @@ TrackingStatus Tracking::printTimeStats()
     f << "Total Local Mapping: " << average << "$\\pm$" << deviation
       << std::endl;
 
-    // Local Mapping LBA complexity
+    /* Local Mapping LBA complexity */
     std::cout << "---------------------------" << std::endl;
     std::cout << std::endl << "LBA complexity (mean$\\pm$std)" << std::endl;
     f << "---------------------------" << std::endl;
@@ -577,7 +577,7 @@ TrackingStatus Tracking::printTimeStats()
       << std::endl;
     f << "LBA aborts: " << p_localMapper->localBaAbortCount << std::endl;
 
-    // Map complexity
+    /* Map complexity */
     std::cout << "---------------------------" << std::endl;
     std::cout << std::endl << "Map complexity" << std::endl;
     std::vector<KeyFrame *> atlasAllKeyFrames{};
@@ -1126,5 +1126,5 @@ TrackingStatus Tracking::printTimeStats()
 }
 #endif
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

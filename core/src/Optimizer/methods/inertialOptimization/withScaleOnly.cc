@@ -66,7 +66,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                      __func__);
     }
 
-    // Setup optimizer
+    /* Setup optimizer */
     g2o::SparseOptimizer                 optimizer;
     g2o::BlockSolverX::LinearSolverType *p_linearSolver;
 
@@ -79,7 +79,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
         new g2o::OptimizationAlgorithmGaussNewton(solver_ptr);
     optimizer.setAlgorithm(p_solver);
 
-    // Set KeyFrame vertices (all variables are fixed)
+    /* Set KeyFrame vertices (all variables are fixed) */
     for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
          keyFrameIndex++)
     {
@@ -96,7 +96,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
         p_velocityVertex->setFixed(true);
         optimizer.addVertex(p_velocityVertex);
 
-        // Vertex of fixed biases
+        /* Vertex of fixed biases */
         VertexGyroBias *p_gyroBiasVertex =
             new VertexGyroBias(keyFrames.front());
         p_gyroBiasVertex->setId(2 * (maximumKeyFrameId + 1) + (p_keyFrame->id));
@@ -110,7 +110,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
         optimizer.addVertex(p_accelerometerBiasVertex);
     }
 
-    // Gravity and scale
+    /* Gravity and scale */
     VertexGDir *p_gravityDirectionVertex = new VertexGDir(Rwg_inout);
     p_gravityDirectionVertex->setId(4 * (maximumKeyFrameId + 1));
     p_gravityDirectionVertex->setFixed(false);
@@ -120,7 +120,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
     p_scaleVertex->setFixed(false);
     optimizer.addVertex(p_scaleVertex);
 
-    // Graph edges
+    /* Graph edges */
     int edgeCount = 0;
     for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
          keyFrameIndex++)
@@ -222,7 +222,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
         }
     }
 
-    // Compute error for different scales
+    /* Compute error for different scales */
     optimizer.setVerbose(false);
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
@@ -232,7 +232,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
     optimizer.optimize(its);
     optimizer.computeActiveErrors();
     optimizer.activeRobustChi2();
-    // Recover optimized data
+    /* Recover optimized data */
     scale_inout = p_scaleVertex->estimate();
     Rwg_inout =
         p_gravityDirectionVertex->estimate().gravityRotation_gravityToWorld;
@@ -240,5 +240,5 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

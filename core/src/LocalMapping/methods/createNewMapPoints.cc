@@ -44,9 +44,9 @@ namespace core
 
 LocalMappingStatus LocalMapping::createNewMapPoints()
 {
-    // Retrieve neighbor keyframes in covisibility graph
+    /* Retrieve neighbor keyframes in covisibility graph */
     int neighborKeyFrameCount = 10;
-    // For stereo inertial case
+    /* For stereo inertial case */
     if (isMonocular)
         neighborKeyFrameCount = 30;
     std::vector<KeyFrame *> neighborKeyFrames{};
@@ -64,8 +64,10 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
     {
         KeyFrame *p_walkKeyFrame         = p_currentKeyFrame;
         int       temporalChainStepCount = 0;
-        // nn is the fixed covisibility budget set above (10, or 30 when
-        // monocular), so it is always positive here.
+        /*!
+         * nn is the fixed covisibility budget set above (10, or 30 when
+         * monocular), so it is always positive here.
+         */
         while ((neighborKeyFrames.size() <=
                 static_cast<std::size_t>(neighborKeyFrameCount)) &&
                (p_walkKeyFrame->p_prevKF) &&
@@ -120,7 +122,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
     int         stereoGoodProjectionCount = 0;
     int         stereoAttemptCount        = 0;
     int         totalStereoPointCount     = 0;
-    // Search matches with epipolar restriction and triangulate
+    /* Search matches with epipolar restriction and triangulate */
     for (size_t neighborKeyFrameIndex = 0;
          neighborKeyFrameIndex < neighborKeyFrames.size();
          neighborKeyFrameIndex++)
@@ -144,7 +146,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             *p_camera1 = p_currentKeyFrame->p_camera,
             *p_camera2 = p_neighborKeyFrame->p_camera;
 
-        // Check first that baseline is not too short
+        /* Check first that baseline is not too short */
         Eigen::Vector3f cameraCenter2_world{};
         if (p_neighborKeyFrame->getCameraCenter(cameraCenter2_world) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -180,7 +182,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                 continue;
         }
 
-        // Search matches that fullfil epipolar constraint
+        /* Search matches that fullfil epipolar constraint */
         std::vector<std::pair<size_t, size_t>> matchedKeyPointIndices;
         Map                                   *p_currentKeyFrameMap = nullptr;
         if ((isInertial && p_tracker->state == Tracking::RECENTLY_LOST) &&
@@ -244,7 +246,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
         const float &principalPointX2 = p_neighborKeyFrame->cx;
         const float &principalPointY2 = p_neighborKeyFrame->cy;
 
-        // Triangulate each match
+        /* Triangulate each match */
         const int matchCount = matchedKeyPointIndices.size();
         for (int matchIndex = 0; matchIndex < matchCount; matchIndex++)
         {
@@ -525,7 +527,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                 cameraTranslation_worldToCamera2 = sophTcw2.translation();
             }
 
-            // Check parallax between rays
+            /* Check parallax between rays */
             Eigen::Vector3f unprojectedRay1 =
                 p_camera1->unprojectEig(keyPoint1.pt);
             Eigen::Vector3f unprojectedRay2 =
@@ -617,7 +619,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             }
             else
             {
-                continue; // No stereo and very low parallax
+                continue; /* No stereo and very low parallax */
             }
 
             if (wasTriangulationSuccessful && isStereoTriangulatedPoint)
@@ -626,7 +628,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             if (!wasTriangulationSuccessful)
                 continue;
 
-            // Check triangulation in front of cameras
+            /* Check triangulation in front of cameras */
             float cameraFrameZ1 =
                 cameraRotation_worldToCamera1.row(2).dot(triangulatedPoint) +
                 cameraTranslation_worldToCamera1(2);
@@ -639,7 +641,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
             if (cameraFrameZ2 <= 0)
                 continue;
 
-            // Check reprojection error in first keyframe
+            /* Check reprojection error in first keyframe */
             const float &levelSigmaSquared1 =
                 p_currentKeyFrame->levelSigmaSquared[keyPoint1.octave];
             const float cameraFrameX1 =
@@ -680,7 +682,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                     continue;
             }
 
-            // Check reprojection error in second keyframe
+            /* Check reprojection error in second keyframe */
             const float levelSigmaSquared2 =
                 p_neighborKeyFrame->levelSigmaSquared[keyPoint2.octave];
             const float cameraFrameX2 =
@@ -719,7 +721,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                     continue;
             }
 
-            // Check scale consistency
+            /* Check scale consistency */
             Eigen::Vector3f pointViewVector1 =
                 triangulatedPoint - cameraCenter1_world;
             float pointDistance1 = pointViewVector1.norm();
@@ -733,7 +735,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
 
             if (shouldSkipFarPoints &&
                 (pointDistance1 >= farPointsThreshold ||
-                 pointDistance2 >= farPointsThreshold)) // MODIFICATION
+                 pointDistance2 >= farPointsThreshold)) /* MODIFICATION */
                 continue;
 
             const float ratioDistance = pointDistance2 / pointDistance1;
@@ -745,7 +747,7 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
                 ratioDistance > ratioOctave * ratioFactor)
                 continue;
 
-            // Triangulation is succesfull
+            /* Triangulation is succesfull */
             Map *p_atlasCurrentMap = nullptr;
             if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
                 AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -831,5 +833,5 @@ LocalMappingStatus LocalMapping::createNewMapPoints()
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

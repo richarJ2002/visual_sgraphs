@@ -47,5 +47,5 @@ MapPointStatus MapPoint::getMap(Map *&p_map_out)
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

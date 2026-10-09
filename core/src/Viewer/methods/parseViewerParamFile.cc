@@ -140,5 +140,5 @@ ViewerStatus Viewer::parseViewerParamFile(cv::FileStorage &settings_in,
     return ViewerStatus::VIEWER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

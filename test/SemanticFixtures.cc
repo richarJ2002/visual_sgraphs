@@ -444,6 +444,6 @@ g2o::Sim3
                      scale_in);
 }
 
-} // namespace test
-} // namespace core
-} // namespace vs_graphs
+} /* namespace test */
+} /* namespace core */
+} /* namespace vs_graphs */

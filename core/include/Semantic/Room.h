@@ -38,8 +38,8 @@ namespace vs_graphs
 namespace core
 {
 class Map;
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -48,9 +48,9 @@ namespace core
 namespace semantic
 {
 class Marker;
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -59,9 +59,9 @@ namespace core
 namespace geometric
 {
 class Plane;
-} // namespace geometric
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometric */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -70,9 +70,9 @@ namespace core
 namespace semantic
 {
 class Passage;
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -1014,8 +1014,8 @@ class Room
      */
     mutable std::mutex boundaryStatusMutex;
 };
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif

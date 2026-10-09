@@ -54,5 +54,5 @@ SemanticSegmentation::SemanticSegmentation(Atlas *p_atlas_in)
           types::SystemParams::General::ModeOfOperation::SEM);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

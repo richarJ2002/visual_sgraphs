@@ -138,7 +138,7 @@ SemanticsManagerStatus
             continue;
         }
 
-        // Quality gate: minimum observations, not room confirmation status
+        /* Quality gate: minimum observations, not room confirmation status */
         std::size_t wallGetObservationCount{};
         if (p_wall->getObservationCount(wallGetObservationCount) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -290,5 +290,5 @@ SemanticsManagerStatus
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

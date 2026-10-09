@@ -322,8 +322,10 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                                 wallDimensions) !=
                             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                         {
-                            // computePlaneWidthHeight cannot fail; continue as
-                            // before.
+                            /*!
+                             * computePlaneWidthHeight cannot fail; continue as
+                             * before.
+                             */
                         }
 
                         /* Extract the larger planar dimension */
@@ -527,8 +529,10 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
                                 wasPlaneRefit) !=
                             GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
                         {
-                            // refitMappedPlaneFromCloud cannot fail; continue
-                            // as before.
+                            /*!
+                             * refitMappedPlaneFromCloud cannot fail; continue
+                             * as before.
+                             */
                         }
                     }
                 }
@@ -565,5 +569,5 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
     return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -42,22 +42,26 @@ OptimizerStatus Optimizer::marginalize(const Eigen::MatrixXd &H_in,
                                        const int             &end_in,
                                        Eigen::MatrixXd       &marginalized_out)
 {
-    // Goal
-    // a  | ab | ac       a*  | 0 | ac*
-    // ba | b  | bc  -->  0   | 0 | 0
-    // ca | cb | c        ca* | 0 | c*
+    /*!
+     * Goal
+     * a  | ab | ac       a*  | 0 | ac*
+     * ba | b  | bc  -->  0   | 0 | 0
+     * ca | cb | c        ca* | 0 | c*
+     */
 
-    // Size of block before block to marginalize
+    /* Size of block before block to marginalize */
     const int a = start_in;
-    // Size of block to marginalize
+    /* Size of block to marginalize */
     const int b = end_in - start_in + 1;
-    // Size of block after block to marginalize
+    /* Size of block after block to marginalize */
     const int c = H_in.cols() - (end_in + 1);
 
-    // Reorder as follows:
-    // a  | ab | ac       a  | ac | ab
-    // ba | b  | bc  -->  ca | c  | cb
-    // ca | cb | c        ba | bc | b
+    /*!
+     * Reorder as follows:
+     * a  | ab | ac       a  | ac | ab
+     * ba | b  | bc  -->  ca | c  | cb
+     * ca | cb | c        ba | bc | b
+     */
 
     Eigen::MatrixXd Hn = Eigen::MatrixXd::Zero(H_in.rows(), H_in.cols());
     if (a > 0)
@@ -79,7 +83,7 @@ OptimizerStatus Optimizer::marginalize(const Eigen::MatrixXd &H_in,
     }
     Hn.block(a + c, a + c, b, b) = H_in.block(a, a, b, b);
 
-    // Perform marginalization (Schur complement)
+    /* Perform marginalization (Schur complement) */
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(Hn.block(a + c, a + c, b, b),
                                           Eigen::ComputeThinU |
                                               Eigen::ComputeThinV);
@@ -101,10 +105,12 @@ OptimizerStatus Optimizer::marginalize(const Eigen::MatrixXd &H_in,
     Hn.block(0, a + c, a + c, b) = Eigen::MatrixXd::Zero(a + c, b);
     Hn.block(a + c, 0, b, a + c) = Eigen::MatrixXd::Zero(b, a + c);
 
-    // Inverse reorder
-    // a*  | ac* | 0       a*  | 0 | ac*
-    // ca* | c*  | 0  -->  0   | 0 | 0
-    // 0   | 0   | 0       ca* | 0 | c*
+    /*!
+     * Inverse reorder
+     * a*  | ac* | 0       a*  | 0 | ac*
+     * ca* | c*  | 0  -->  0   | 0 | 0
+     * 0   | 0   | 0       ca* | 0 | c*
+     */
     Eigen::MatrixXd result = Eigen::MatrixXd::Zero(H_in.rows(), H_in.cols());
     if (a > 0)
     {
@@ -130,5 +136,5 @@ OptimizerStatus Optimizer::marginalize(const Eigen::MatrixXd &H_in,
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -125,9 +125,9 @@ void EdgeInertialGS::linearizeOplus()
                      __func__);
     }
 
-    // Jacobians wrt Pose 1
+    /* Jacobians wrt Pose 1 */
     _jacobianOplus[0].setZero();
-    // rotation
+    /* rotation */
     _jacobianOplus[0].block<3, 3>(0, 0) =
         -inverseRightJacobian * bodyRotation_body2ToWorld.transpose() *
         bodyRotation_body1ToWorld;
@@ -142,20 +142,20 @@ void EdgeInertialGS::linearizeOplus()
                           p_previousPoseVertex->estimate().twb -
                           p_previousVelocityVertex->estimate() * dt) -
          0.5 * g * dt * dt));
-    // translation
+    /* translation */
     _jacobianOplus[0].block<3, 3>(6, 3) =
         Eigen::DiagonalMatrix<double, 3>(-scaleEstimate,
                                          -scaleEstimate,
                                          -scaleEstimate);
 
-    // Jacobians wrt Velocity 1
+    /* Jacobians wrt Velocity 1 */
     _jacobianOplus[1].setZero();
     _jacobianOplus[1].block<3, 3>(3, 0) =
         -scaleEstimate * bodyRotation_worldToBody1;
     _jacobianOplus[1].block<3, 3>(6, 0) =
         -scaleEstimate * bodyRotation_worldToBody1 * dt;
 
-    // Jacobians wrt Gyro bias
+    /* Jacobians wrt Gyro bias */
     _jacobianOplus[2].setZero();
     Eigen::Matrix3d rightJacobian{};
     if (rightJacobianSO3(JRg * deltaGyroBias, rightJacobian) !=
@@ -172,32 +172,32 @@ void EdgeInertialGS::linearizeOplus()
     _jacobianOplus[2].block<3, 3>(3, 0) = -JVg;
     _jacobianOplus[2].block<3, 3>(6, 0) = -JPg;
 
-    // Jacobians wrt Accelerometer bias
+    /* Jacobians wrt Accelerometer bias */
     _jacobianOplus[3].setZero();
     _jacobianOplus[3].block<3, 3>(3, 0) = -JVa;
     _jacobianOplus[3].block<3, 3>(6, 0) = -JPa;
 
-    // Jacobians wrt Pose 2
+    /* Jacobians wrt Pose 2 */
     _jacobianOplus[4].setZero();
-    // rotation
+    /* rotation */
     _jacobianOplus[4].block<3, 3>(0, 0) = inverseRightJacobian;
-    // translation
+    /* translation */
     _jacobianOplus[4].block<3, 3>(6, 3) =
         scaleEstimate * bodyRotation_worldToBody1 * bodyRotation_body2ToWorld;
 
-    // Jacobians wrt Velocity 2
+    /* Jacobians wrt Velocity 2 */
     _jacobianOplus[5].setZero();
     _jacobianOplus[5].block<3, 3>(3, 0) =
         scaleEstimate * bodyRotation_worldToBody1;
 
-    // Jacobians wrt Gravity direction
+    /* Jacobians wrt Gravity direction */
     _jacobianOplus[6].setZero();
     _jacobianOplus[6].block<3, 2>(3, 0) =
         -bodyRotation_worldToBody1 * gravityDirectionJacobian * dt;
     _jacobianOplus[6].block<3, 2>(6, 0) =
         -0.5 * bodyRotation_worldToBody1 * gravityDirectionJacobian * dt * dt;
 
-    // Jacobians wrt scale factor
+    /* Jacobians wrt scale factor */
     _jacobianOplus[7].setZero();
     _jacobianOplus[7].block<3, 1>(3, 0) =
         bodyRotation_worldToBody1 * (p_currentVelocityVertex->estimate() -
@@ -208,5 +208,5 @@ void EdgeInertialGS::linearizeOplus()
                                      p_previousVelocityVertex->estimate() * dt);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

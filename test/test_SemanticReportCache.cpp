@@ -371,6 +371,6 @@ TEST(SemanticReportCache, ConcurrentWriterAndReaderStayConsistent)
     (void)sawAnyUpdate;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

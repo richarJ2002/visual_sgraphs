@@ -854,7 +854,7 @@ class Frame
     [[nodiscard]] FrameStatus hasVelocity(bool &hasVelocity_out) const;
 
   private:
-    // Sophus/Eigen migration
+    /* Sophus/Eigen migration */
     /*!
      * @brief           Camera pose mapping world-frame points into the camera
      *                  frame.
@@ -884,12 +884,6 @@ class Frame
      *                  pose.
      */
     bool                       isPoseAvailable;
-
-    // Rcw_ not necessary as Sophus has a method for extracting the rotation
-    // matrix: Tcw_.rotationMatrix() tcw_ not necessary as Sophus has a method
-    // for extracting the translation vector: Tcw_.translation() Twc_ not
-    // necessary as Sophus has a method for easily computing the inverse pose:
-    // Tcw_.inverse()
 
     /*!
      * @brief           Stereo transform from the right to the left camera
@@ -1433,7 +1427,7 @@ class Frame
     cv::Mat imgRight;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // FRAME_H
+#endif /* FRAME_H */

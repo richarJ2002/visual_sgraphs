@@ -61,8 +61,8 @@ namespace vs_graphs
 namespace core
 {
 class KeyFrameDatabase;
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -72,9 +72,9 @@ namespace semantic
 {
 class Marker;
 class Room;
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -91,8 +91,8 @@ namespace utils
 namespace settings
 {
 class Settings;
-} // namespace settings
-} // namespace utils
+} /* namespace settings */
+} /* namespace utils */
 
 /*!
  * @brief           Front end of the SLAM pipeline. It turns every incoming
@@ -326,7 +326,7 @@ class Tracking
     [[nodiscard]] TrackingStatus
         grabImuData(const IMU::Point &imuMeasurement_in);
 
-    // Setters of various classes
+    /* Setters of various classes */
     /*!
      * @brief           Tells the tracker which viewer to stop and release while
      *                  it resets.
@@ -496,9 +496,8 @@ class Tracking
      * @return          TRACKING_STATUS_SUCCESS always.
      */
     [[nodiscard]] TrackingStatus createMapInAtlas();
-    // std::mutex mMutexTracks;
 
-    //--
+    /* -- */
     /*!
      * @brief           Counts one more dataset, so frames from now on carry the
      *                  next dataset id.
@@ -538,7 +537,7 @@ class Tracking
      */
     [[nodiscard]] TrackingStatus getImageScale(float &imageScale_out) const;
 
-    // Semantic Entities
+    /* Semantic Entities */
     /*!
      * @brief           Get the points close to a given marker
      *
@@ -581,7 +580,7 @@ class Tracking
 #endif
 
   public:
-    // Tracking states
+    /* Tracking states */
     /*!
      * @brief           Where the tracker stands: before any image,
      *                  initializing, tracking normally, recently lost (still
@@ -615,7 +614,7 @@ class Tracking
      */
     int sensor;
 
-    // Current Frame
+    /* Current Frame */
     /*!
      * @brief           Frame being tracked.
      */
@@ -631,7 +630,7 @@ class Tracking
      */
     cv::Mat imageGray;
 
-    // Initialization Variables (Monocular)
+    /* Initialization Variables (Monocular) */
     /*!
      * @brief           Monocular initialization: for each keypoint of
      *                  initialFrame, the index of its match in the current
@@ -786,7 +785,6 @@ class Tracking
      */
     [[nodiscard]] TrackingStatus monocularInitialization();
 
-    // void CreateNewMapPoints();
     /*!
      * @brief           Builds the first two key frames and the map points from
      *                  the triangulated matches, optimizes them, and scales the
@@ -1006,7 +1004,7 @@ class Tracking
      */
     bool isVisualOdometry;
 
-    // Other Thread Pointers
+    /* Other Thread Pointers */
     /*!
      * @brief           Loop closing thread, reset together with the tracker.
      *                  Borrowed, nullptr until setLoopClosing().
@@ -1018,7 +1016,7 @@ class Tracking
      */
     LocalMapping *p_localMapper{nullptr};
 
-    // ORB
+    /* ORB */
     /*!
      * @brief           ORB extractor for the left (or only) image. Created by
      *                  the settings parser; owned by Tracking. Frames borrow it
@@ -1040,7 +1038,7 @@ class Tracking
      */
     std::unique_ptr<ORBextractor> p_iniOrbExtractor;
 
-    // BoW
+    /* BoW */
     /*!
      * @brief           Bag-of-words vocabulary. Borrowed.
      */
@@ -1050,14 +1048,14 @@ class Tracking
      */
     KeyFrameDatabase *p_keyFrameDatabase;
 
-    // Initalization (only for monocular)
+    /* Initalization (only for monocular) */
     /*!
      * @brief           Monocular initialization: true once a reference frame
      *                  was chosen and later frames are matched against it.
      */
     bool isReadyToInitialize;
 
-    // Local Map
+    /* Local Map */
     /*!
      * @brief           Reference key frame of the current frame: the local key
      *                  frame sharing the most map points with it. Borrowed,
@@ -1073,13 +1071,13 @@ class Tracking
      */
     std::vector<MapPoint *> localMapPoints;
 
-    // System
+    /* System */
     /*!
      * @brief           System that owns this tracker. Borrowed.
      */
     System *p_system;
 
-    // Drawers
+    /* Drawers */
     /*!
      * @brief           Viewer, null until setViewer() is called. Borrowed.
      */
@@ -1098,13 +1096,13 @@ class Tracking
      */
     bool         isStepByStepMode;
 
-    // Atlas
+    /* Atlas */
     /*!
      * @brief           Atlas holding the maps and the camera models. Borrowed.
      */
     Atlas *p_atlas;
 
-    // Calibration matrix
+    /* Calibration matrix */
     /*!
      * @brief           Camera intrinsic matrix (3x3, fx, fy, cx, cy in pixels),
      *                  scaled by imageScale.
@@ -1131,7 +1129,7 @@ class Tracking
      */
     float           imageScale{1.0F};
 
-    // IMU parameters
+    /* IMU parameters */
     /*!
      * @brief           IMU sample rate, hertz.
      */
@@ -1153,7 +1151,7 @@ class Tracking
      */
     double imuPeriod = 0.001;
 
-    // New KeyFrame rules (according to fps)
+    /* New KeyFrame rules (according to fps) */
     /*!
      * @brief           Fewest frames that must pass after a key frame before
      *                  another one may be created; always 0.
@@ -1192,8 +1190,7 @@ class Tracking
      */
     int matchesInliers{0};
 
-    // Keyframe insertion thresholds (configurable for aggressive corridor
-    // tracking)
+    /* Keyframe insertion thresholds (configurable for aggressive corridors) */
     /*!
      * @brief           Fewest inlier matches a frame needs before it may become
      *                  a key frame (Tracking.MinInliersForKF).
@@ -1211,14 +1208,14 @@ class Tracking
      */
     double minKeyFrameTemporalSpacing = 1.0;
 
-    // Local map size (configurable)
+    /* Local map size (configurable) */
     /*!
      * @brief           Most key frames kept in the local map
      *                  (Tracking.MaxKFsInLocalMap).
      */
     int maxKFsInLocalMap = 300;
 
-    // Motion model search radius expansion
+    /* Motion model search radius expansion */
     /*!
      * @brief           Factor by which the motion model search window grows
      *                  each time it finds too few matches
@@ -1231,21 +1228,21 @@ class Tracking
      */
     int   motionModelMaxSearchRadius = 30;
 
-    // Initialization parameters
+    /* Initialization parameters */
     /*!
      * @brief           Fewest keypoints or points needed to initialize the map
      *                  (Tracking.InitializationMinPoints).
      */
     int initializationMinPoints = 100;
 
-    // Relocalization parameters
+    /* Relocalization parameters */
     /*!
      * @brief           Fewest inliers that make a relocalization pose
      *                  acceptable (Tracking.RelocalizationMinInliers).
      */
     int relocalizationMinInliers = 10;
 
-    // Last Frame, KeyFrame and Relocalisation Info
+    /* Last Frame, KeyFrame and Relocalisation Info */
     /*!
      * @brief           Key frame created most recently; null before the first
      *                  one. Borrowed.
@@ -1291,7 +1288,7 @@ class Tracking
      */
     bool hasCreatedMap;
 
-    // Motion Model
+    /* Motion Model */
     /*!
      * @brief           True when velocity holds a valid motion between the last
      *                  two frames.
@@ -1316,15 +1313,13 @@ class Tracking
      */
     std::list<MapPoint *> temporalMapPoints;
 
-    // int nMapChangeIndex;
-
     /*!
      * @brief           Id of the current dataset, stored in each frame; counted
      *                  up by newDataset().
      */
     int numDataset;
 
-    // Adaptive FAST threshold: track feature count to adjust threshold
+    /* Adaptive FAST threshold: track feature count to adjust threshold */
     /*!
      * @brief           Keypoint count of the previous frame, for the adaptive
      *                  FAST threshold.
@@ -1429,6 +1424,10 @@ class Tracking
      *                  400), and restores them when a frame has more than 2500.
      *
      * @return          TRACKING_STATUS_SUCCESS always.
+     *
+     * @note            Meant for low-texture corridors: fewer features are
+     *                  extracted there, so the thresholds are lowered when
+     *                  tracking degrades.
      */
     [[nodiscard]] TrackingStatus adjustFASTThreshold();
 
@@ -1449,7 +1448,7 @@ class Tracking
     cv::Mat imageRight;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // TRACKING_H
+#endif /* TRACKING_H */

@@ -42,10 +42,10 @@ TwoViewReconstructionStatus TwoViewReconstruction::findFundamental(
     float             &score_inout,
     Eigen::Matrix3f   &F21_out)
 {
-    // Number of putative matches
+    /* Number of putative matches */
     const int N = inliersFlags_inout.size();
 
-    // Normalize coordinates
+    /* Normalize coordinates */
     std::vector<cv::Point2f> normalizedPoints1, normalizedPoints2;
     Eigen::Matrix3f          T1, T2;
     if (normalize(keys1, normalizedPoints1, T1) !=
@@ -66,22 +66,22 @@ TwoViewReconstructionStatus TwoViewReconstruction::findFundamental(
     }
     Eigen::Matrix3f T2t = T2.transpose();
 
-    // Best Results variables
+    /* Best Results variables */
     score_inout        = 0.0;
     inliersFlags_inout = std::vector<bool>(N, false);
 
-    // Iteration variables
+    /* Iteration variables */
     std::vector<cv::Point2f> sampledPoints1(8);
     std::vector<cv::Point2f> sampledPoints2(8);
     Eigen::Matrix3f          F21i;
     std::vector<bool>        currentInliersFlags(N, false);
     float                    currentScore;
 
-    // Perform all RANSAC iterations and save the solution with highest score
+    /* Perform all RANSAC iterations and save the solution with highest score */
     for (int iterationIndex = 0; iterationIndex < maxIterations;
          iterationIndex++)
     {
-        // Select a minimum set
+        /* Select a minimum set */
         for (int setPointIndex = 0; setPointIndex < 8; setPointIndex++)
         {
             int matchIndex = sets[iterationIndex][setPointIndex];
@@ -126,5 +126,5 @@ TwoViewReconstructionStatus TwoViewReconstruction::findFundamental(
     return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

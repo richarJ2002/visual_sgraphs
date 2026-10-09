@@ -113,30 +113,33 @@ void EdgeInertial::linearizeOplus()
                      __func__);
     }
 
-    // Jacobians wrt Pose 1
+    /* Jacobians wrt Pose 1 */
     _jacobianOplus[0].setZero();
-    // rotation
+    /* rotation */
     _jacobianOplus[0].block<3, 3>(0, 0) =
         -inverseRightJacobian * bodyRotation_body2ToWorld.transpose() *
-        bodyRotation_body1ToWorld; // OK
+        bodyRotation_body1ToWorld; /* OK */
     _jacobianOplus[0].block<3, 3>(3, 0) = Sophus::SO3d::hat(
         bodyRotation_worldToBody1 *
         (p_currentVelocityVertex->estimate() -
-         p_previousVelocityVertex->estimate() - g * dt)); // OK
+         p_previousVelocityVertex->estimate() - g * dt)); /* OK */
+    /* OK */
     _jacobianOplus[0].block<3, 3>(6, 0) = Sophus::SO3d::hat(
         bodyRotation_worldToBody1 *
         (p_currentPoseVertex->estimate().twb -
          p_previousPoseVertex->estimate().twb -
-         p_previousVelocityVertex->estimate() * dt - 0.5 * g * dt * dt)); // OK
-    // translation
-    _jacobianOplus[0].block<3, 3>(6, 3) = -Eigen::Matrix3d::Identity(); // OK
+         p_previousVelocityVertex->estimate() * dt - 0.5 * g * dt * dt));
+    /* translation */
+    _jacobianOplus[0].block<3, 3>(6, 3) = -Eigen::Matrix3d::Identity(); /* OK */
 
-    // Jacobians wrt Velocity 1
+    /* Jacobians wrt Velocity 1 */
     _jacobianOplus[1].setZero();
-    _jacobianOplus[1].block<3, 3>(3, 0) = -bodyRotation_worldToBody1;      // OK
-    _jacobianOplus[1].block<3, 3>(6, 0) = -bodyRotation_worldToBody1 * dt; // OK
+    /* OK */
+    _jacobianOplus[1].block<3, 3>(3, 0) = -bodyRotation_worldToBody1;
+    /* OK */
+    _jacobianOplus[1].block<3, 3>(6, 0) = -bodyRotation_worldToBody1 * dt;
 
-    // Jacobians wrt Gyro 1
+    /* Jacobians wrt Gyro 1 */
     _jacobianOplus[2].setZero();
     Eigen::Matrix3d rightJacobian{};
     if (rightJacobianSO3(JRg * deltaGyroBias, rightJacobian) !=
@@ -149,27 +152,27 @@ void EdgeInertial::linearizeOplus()
     }
     _jacobianOplus[2].block<3, 3>(0, 0) = -inverseRightJacobian *
                                           rotationErrorMatrix.transpose() *
-                                          rightJacobian * JRg; // OK
-    _jacobianOplus[2].block<3, 3>(3, 0) = -JVg;                // OK
-    _jacobianOplus[2].block<3, 3>(6, 0) = -JPg;                // OK
+                                          rightJacobian * JRg; /* OK */
+    _jacobianOplus[2].block<3, 3>(3, 0) = -JVg;                /* OK */
+    _jacobianOplus[2].block<3, 3>(6, 0) = -JPg;                /* OK */
 
-    // Jacobians wrt Accelerometer 1
+    /* Jacobians wrt Accelerometer 1 */
     _jacobianOplus[3].setZero();
-    _jacobianOplus[3].block<3, 3>(3, 0) = -JVa; // OK
-    _jacobianOplus[3].block<3, 3>(6, 0) = -JPa; // OK
+    _jacobianOplus[3].block<3, 3>(3, 0) = -JVa; /* OK */
+    _jacobianOplus[3].block<3, 3>(6, 0) = -JPa; /* OK */
 
-    // Jacobians wrt Pose 2
+    /* Jacobians wrt Pose 2 */
     _jacobianOplus[4].setZero();
-    // rotation
-    _jacobianOplus[4].block<3, 3>(0, 0) = inverseRightJacobian; // OK
-    // translation
+    /* rotation */
+    _jacobianOplus[4].block<3, 3>(0, 0) = inverseRightJacobian; /* OK */
+    /* translation */
     _jacobianOplus[4].block<3, 3>(6, 3) =
-        bodyRotation_worldToBody1 * bodyRotation_body2ToWorld; // OK
+        bodyRotation_worldToBody1 * bodyRotation_body2ToWorld; /* OK */
 
-    // Jacobians wrt Velocity 2
+    /* Jacobians wrt Velocity 2 */
     _jacobianOplus[5].setZero();
-    _jacobianOplus[5].block<3, 3>(3, 0) = bodyRotation_worldToBody1; // OK
+    _jacobianOplus[5].block<3, 3>(3, 0) = bodyRotation_worldToBody1; /* OK */
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

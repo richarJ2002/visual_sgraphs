@@ -45,5 +45,5 @@ AtlasStatus Atlas::acknowledgeNewMapCreatedEvent()
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

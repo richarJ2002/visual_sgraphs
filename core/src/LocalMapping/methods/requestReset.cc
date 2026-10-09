@@ -43,11 +43,11 @@ LocalMappingStatus LocalMapping::requestReset()
 {
     {
         std::unique_lock<std::mutex> resetLock(resetMutex);
-        // Request to reset the map
+        /* Request to reset the map */
         isResetRequested = true;
     }
 
-    // Wait until the mutex is free
+    /* Wait until the mutex is free */
     while (1)
     {
         {
@@ -61,5 +61,5 @@ LocalMappingStatus LocalMapping::requestReset()
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

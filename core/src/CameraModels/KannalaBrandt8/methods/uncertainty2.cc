@@ -31,12 +31,6 @@ namespace vs_graphs::core::camera_models::kannalabrandt8
 float KannalaBrandt8::uncertainty2(
     [[maybe_unused]] const Eigen::Matrix<double, 2, 1> &point2d_in)
 {
-    /*Eigen::Matrix<double,2,1> c;
-    c << parameters[2], parameters[3];
-    if ((point2D_in-c).squaredNorm()>57600) // 240*240 (256)
-        return 100.f;
-    else
-        return 1.0f;*/
     return 1.f;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

@@ -28,5 +28,5 @@ FrameDrawer::FrameDrawer(Atlas *p_atlas_in) :
     imageRight = cv::Mat(480, 640, CV_8UC3, cv::Scalar(0, 0, 0));
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

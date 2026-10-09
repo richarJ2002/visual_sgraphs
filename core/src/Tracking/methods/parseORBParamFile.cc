@@ -144,7 +144,7 @@ TrackingStatus Tracking::parseORBParamFile(cv::FileStorage &settings_in,
                                            initialThresholdFast,
                                            minimumThresholdFast);
 
-    // Adaptive FAST threshold initialization
+    /* Adaptive FAST threshold initialization */
     lastFrameFeatures        = 0;
     consecutiveLowFeatures   = 0;
     baseInitialFastThreshold = initialThresholdFast;
@@ -163,5 +163,5 @@ TrackingStatus Tracking::parseORBParamFile(cv::FileStorage &settings_in,
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

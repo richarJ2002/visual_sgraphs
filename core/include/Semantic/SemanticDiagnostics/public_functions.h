@@ -114,8 +114,8 @@ inline constexpr std::size_t kMaxViolationDetailsPerCycle = 50U;
     SemanticDiagnosticState        &state_in_out,
     SemanticDiagnosticUpdate       &semanticDiagnosticUpdate_out);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_DIAGNOSTICS_PUBLIC_FUNCTIONS_H
+#endif /* SEMANTIC_DIAGNOSTICS_PUBLIC_FUNCTIONS_H */

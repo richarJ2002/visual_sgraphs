@@ -52,5 +52,5 @@ ImuCamPoseStatus ImuCamPose::projectStereo(const Eigen::Vector3d &Xw_in,
     return ImuCamPoseStatus::IMU_CAM_POSE_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

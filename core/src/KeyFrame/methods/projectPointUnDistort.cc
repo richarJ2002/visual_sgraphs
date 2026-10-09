@@ -51,7 +51,7 @@ KeyFrameStatus KeyFrame::projectPointUnDistort(MapPoint    *p_mapPoint_in,
                                                bool        &isProjected_out)
 {
 
-    // 3D in absolute coordinates
+    /* 3D in absolute coordinates */
     Eigen::Vector3f P{};
     if (p_mapPoint_in->getWorldPos(P) !=
         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -62,13 +62,13 @@ KeyFrameStatus KeyFrame::projectPointUnDistort(MapPoint    *p_mapPoint_in,
                      __func__);
     }
 
-    // 3D in camera coordinates
+    /* 3D in camera coordinates */
     Eigen::Vector3f Pc  = rotationRcw * P + poseTcw.translation();
     float          &PcX = Pc(0);
     float          &PcY = Pc(1);
     float          &PcZ = Pc(2);
 
-    // Check positive depth
+    /* Check positive depth */
     if (PcZ < 0.0f)
     {
         std::cout << "Negative depth: " << PcZ << std::endl;
@@ -76,7 +76,7 @@ KeyFrameStatus KeyFrame::projectPointUnDistort(MapPoint    *p_mapPoint_in,
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
     }
 
-    // Project in image and check it is not outside
+    /* Project in image and check it is not outside */
     const float invz = 1.0f / PcZ;
     u_out            = fx * PcX * invz + cx;
     v_out            = fy * PcY * invz + cy;
@@ -98,5 +98,5 @@ KeyFrameStatus KeyFrame::projectPointUnDistort(MapPoint    *p_mapPoint_in,
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -65,7 +65,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
     if (!p_activeMap)
         return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 
-    // DEBUG LBA
+    /* DEBUG LBA */
     std::set<long unsigned int> optKeyFrames   = p_activeMap->optKeyFrameIds;
     std::set<long unsigned int> fixedKeyFrames = p_activeMap->fixedKeyFrameIds;
 
@@ -110,7 +110,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                              "it cannot fail; continuing as before.",
                              __func__);
             }
-            if (!p_keyFrameParent) // It is the first KF in the map
+            if (!p_keyFrameParent) /* It is the first KF in the map */
             {
                 glLineWidth(keyFrameLineWidth * 5);
                 glColor3f(1.0f, 0.0f, 0.0f);
@@ -118,27 +118,26 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
             }
             else
             {
-                // cout << "Child KF: " << vpKFs[i]->id << endl;
                 glLineWidth(keyFrameLineWidth);
                 if (shouldDrawOptimizedLba_in)
                 {
                     if (optKeyFrames.find(p_keyFrame->id) != optKeyFrames.end())
                     {
-                        glColor3f(0.0f, 1.0f, 0.0f); // Green -> Opt KFs
+                        glColor3f(0.0f, 1.0f, 0.0f); /* Green -> Opt KFs */
                     }
                     else if (fixedKeyFrames.find(p_keyFrame->id) !=
                              fixedKeyFrames.end())
                     {
-                        glColor3f(1.0f, 0.0f, 0.0f); // Red -> Fixed KFs
+                        glColor3f(1.0f, 0.0f, 0.0f); /* Red -> Fixed KFs */
                     }
                     else
                     {
-                        glColor3f(0.0f, 0.0f, 1.0f); // Basic color
+                        glColor3f(0.0f, 0.0f, 1.0f); /* Basic color */
                     }
                 }
                 else
                 {
-                    glColor3f(0.0f, 0.0f, 1.0f); // Basic color
+                    glColor3f(0.0f, 0.0f, 1.0f); /* Basic color */
                 }
                 glBegin(GL_LINES);
             }
@@ -177,11 +176,10 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
         glColor4f(0.0f, 1.0f, 0.0f, 0.6f);
         glBegin(GL_LINES);
 
-        // cout << "-----------------Draw graph-----------------" << endl;
         for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
              keyFrameIndex++)
         {
-            // Covisibility Graph
+            /* Covisibility Graph */
             std::vector<KeyFrame *> covisibleKeyFrames{};
             if (keyFrames[keyFrameIndex]->getCovisiblesByWeight(
                     100,
@@ -232,7 +230,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                 }
             }
 
-            // Spanning tree
+            /* Spanning tree */
             KeyFrame *p_parent = nullptr;
             if (keyFrames[keyFrameIndex]->getParent(p_parent) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -260,7 +258,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                 glVertex3f(Owp(0), Owp(1), Owp(2));
             }
 
-            // Loops
+            /* Loops */
             std::set<KeyFrame *> loopKeyFrames{};
             if (keyFrames[keyFrameIndex]->getLoopEdges(loopKeyFrames) !=
                 KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -313,7 +311,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
         glColor4f(1.0f, 0.0f, 0.0f, 0.6f);
         glBegin(GL_LINES);
 
-        // Draw inertial links
+        /* Draw inertial links */
         for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
              keyFrameIndex++)
         {
@@ -410,7 +408,7 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                if (!p_parent2) // It is the first KF in the map
+                if (!p_parent2) /* It is the first KF in the map */
                 {
                     glLineWidth(keyFrameLineWidth * 5);
                     glColor3f(1.0f, 0.0f, 0.0f);
@@ -455,5 +453,5 @@ MapDrawerStatus MapDrawer::drawKeyFrames(const bool shouldDrawKeyFrames_in,
     return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

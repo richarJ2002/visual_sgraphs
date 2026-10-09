@@ -48,6 +48,6 @@ SemanticVerifyResultStatus SemanticVerifyResult::toVerificationVerdict(
     return SemanticVerifyResultStatus::SEMANTIC_VERIFY_RESULT_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

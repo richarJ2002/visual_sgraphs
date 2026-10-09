@@ -69,5 +69,5 @@ G2oTypesStatus
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

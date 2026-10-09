@@ -38,10 +38,11 @@ std::istream &operator>>(std::istream   &inputStream_inout,
     float nextParameter;
     for (size_t parameterIndex = 0; parameterIndex < 8; parameterIndex++)
     {
-        assert(inputStream_inout.good()); // Make sure the input stream is good
+        /* Make sure the input stream is good */
+        assert(inputStream_inout.good());
         inputStream_inout >> nextParameter;
         kannala_out.parameters[parameterIndex] = nextParameter;
     }
     return inputStream_inout;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

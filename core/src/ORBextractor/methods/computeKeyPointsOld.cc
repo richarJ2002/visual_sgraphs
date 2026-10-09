@@ -199,7 +199,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
             }
         }
 
-        // Retain by score
+        /* Retain by score */
 
         while (toDistributeCount > 0 && noMoreCount < cellCount)
         {
@@ -243,7 +243,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
 
         const int scaledPatchSize = PATCH_SIZE * scaleFactors[level];
 
-        // Retain by score and transform coordinates
+        /* Retain by score and transform coordinates */
         for (int rowIndex = 0; rowIndex < levelRows; rowIndex++)
         {
             for (int columnIndex = 0; columnIndex < levelCols; columnIndex++)
@@ -278,7 +278,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
         }
     }
 
-    // and compute orientations
+    /* and compute orientations */
     for (int level = 0; level < levelCount; ++level)
     {
         if (computeOrientation(imagePyramid[level],
@@ -296,5 +296,5 @@ ORBextractorStatus ORBextractor::computeKeyPointsOld(
     return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

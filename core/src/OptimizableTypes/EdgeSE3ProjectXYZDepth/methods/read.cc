@@ -44,5 +44,5 @@ bool EdgeSE3ProjectXYZDepth::read(std::istream &inputStream_inout)
     return true;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

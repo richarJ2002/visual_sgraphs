@@ -46,8 +46,8 @@ enum class CalibStatus : std::uint8_t
     CALIB_STATUS_SUCCESS = 0U
 };
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // CALIB_STATUS_H
+#endif /* CALIB_STATUS_H */

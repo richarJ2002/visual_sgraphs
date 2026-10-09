@@ -46,8 +46,7 @@ namespace vs_graphs
 namespace core
 {
 
-// Explicitly instantiated below for every archive the map save/load
-// code uses, so that no other translation unit compiles this body.
+/* Instantiated below for every archive used, so only this file compiles it */
 template <class Archive>
 void Map::serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
 {
@@ -56,9 +55,10 @@ void Map::serialize(Archive &ar, [[maybe_unused]] const unsigned int version)
     ar & maxKeyFrameId;
     ar & bigChangeIndex;
 
-    // Save/load a set structure, the set structure is broken in
-    // libboost 1.58 for ubuntu 16.04, a vector is serializated ar &
-    // mspKeyFrames; ar & mspMapPoints;
+    /*!
+     * Save/load a set structure, the set structure is broken in
+     * libboost 1.58 for ubuntu 16.04, a vector is serializated
+     */
     ar & backupKeyFrames;
     ar & backupMapPoints;
 
@@ -98,5 +98,5 @@ template void Map::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,
     const unsigned int);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

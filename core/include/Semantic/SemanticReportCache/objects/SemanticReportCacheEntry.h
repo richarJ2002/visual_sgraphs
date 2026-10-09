@@ -162,8 +162,8 @@ struct SemanticReportCacheEntry
         std::chrono::steady_clock::time_point::min()};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_REPORT_CACHE_ENTRY_H
+#endif /* SEMANTIC_REPORT_CACHE_ENTRY_H */

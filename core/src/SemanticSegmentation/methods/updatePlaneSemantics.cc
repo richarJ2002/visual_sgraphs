@@ -38,7 +38,7 @@ SemanticSegmentationStatus
                                                int    clsId_in,
                                                double confidence_in)
 {
-    // retrieve the plane from the map
+    /* retrieve the plane from the map */
     geometric::Plane *p_matchedPlane = nullptr;
     if (p_atlas->getPlaneById(planeId_in, p_matchedPlane) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -49,7 +49,7 @@ SemanticSegmentationStatus
                      __func__);
     }
 
-    // plane type compatible with the Plane class
+    /* plane type compatible with the Plane class */
     vs_graphs::core::geometric::Plane::PlaneVariant planeType{};
     if (utils::utils::Utils::getPlaneTypeFromClassId(clsId_in, planeType) !=
         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
@@ -60,7 +60,7 @@ SemanticSegmentationStatus
                      __func__);
     }
 
-    // cast a vote for the plane semantics
+    /* cast a vote for the plane semantics */
     if (p_matchedPlane->castWeightedVote(planeType, confidence_in) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
     {
@@ -73,5 +73,5 @@ SemanticSegmentationStatus
     return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

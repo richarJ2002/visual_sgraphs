@@ -61,7 +61,7 @@ MapStatus Map::applyScaledRotation(
 {
     std::unique_lock<std::mutex> lock(mapMutex);
 
-    // Body position (IMU) of first keyframe is fixed to (0,0,0)
+    /* Body position (IMU) of first keyframe is fixed to (0,0,0) */
     Sophus::SE3f alignmentPose_oldWorldToNewWorld =
         alignmentPose_oldWorldToNewWorld_in;
     Eigen::Matrix3f alignmentRotation_oldWorldToNewWorld =
@@ -320,5 +320,5 @@ MapStatus Map::applyScaledRotation(
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -141,7 +141,6 @@ MapPointStatus MapPoint::updateNormalAndDepth()
                 .octave;
     }
 
-    // const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;
     const float levelScaleFactor =
         p_localReferenceKeyFrame->scaleFactors[level];
     const int levelCount = p_localReferenceKeyFrame->scaleLevelCount;
@@ -157,5 +156,5 @@ MapPointStatus MapPoint::updateNormalAndDepth()
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

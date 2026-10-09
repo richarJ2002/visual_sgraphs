@@ -92,12 +92,12 @@ MLPnPsolverStatus MLPnPsolver::iterate(int   iterationCount_in,
 
         availableIndices = allIndices;
 
-        // Bearing vectors and 3D points used for this ransac iteration
+        /* Bearing vectors and 3D points used for this ransac iteration */
         BearingVectors   bearingVecs(ransacMinSet);
         Points3          p3DS(ransacMinSet);
         std::vector<int> indexes(ransacMinSet);
 
-        // Get min set of points
+        /* Get min set of points */
         for (short pointIndex = 0; pointIndex < ransacMinSet; ++pointIndex)
         {
             int randi =
@@ -113,13 +113,13 @@ MLPnPsolverStatus MLPnPsolver::iterate(int   iterationCount_in,
             availableIndices.pop_back();
         }
 
-        // By the moment, we are using MLPnP without covariance info
+        /* By the moment, we are using MLPnP without covariance info */
         Covariance3Matrices covs(1);
 
-        // Result
+        /* Result */
         TransformationMatrix result;
 
-        // Compute camera pose
+        /* Compute camera pose */
         if (computePose(bearingVecs, p3DS, covs, indexes, result) !=
             MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
         {
@@ -129,7 +129,7 @@ MLPnPsolverStatus MLPnPsolver::iterate(int   iterationCount_in,
                          __func__);
         }
 
-        // Save result
+        /* Save result */
         mRi[0][0] = result(0, 0);
         mRi[0][1] = result(0, 1);
         mRi[0][2] = result(0, 2);
@@ -146,7 +146,7 @@ MLPnPsolverStatus MLPnPsolver::iterate(int   iterationCount_in,
         mti[1] = result(1, 3);
         mti[2] = result(2, 3);
 
-        // Check inliers
+        /* Check inliers */
         if (checkInliers() != MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -157,7 +157,7 @@ MLPnPsolverStatus MLPnPsolver::iterate(int   iterationCount_in,
 
         if (inlierCount >= ransacMinInliers)
         {
-            // If it is the best solution so far, save it
+            /* If it is the best solution so far, save it */
             if (inlierCount > bestInlierCount)
             {
                 bestInlierFlags = inlierFlags;
@@ -254,5 +254,5 @@ MLPnPsolverStatus MLPnPsolver::iterate(int   iterationCount_in,
     return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

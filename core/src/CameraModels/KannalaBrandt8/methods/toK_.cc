@@ -35,4 +35,4 @@ Eigen::Matrix3f KannalaBrandt8::toK_()
         parameters[3], 0.f, 0.f, 1.f;
     return calibrationMatrix;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

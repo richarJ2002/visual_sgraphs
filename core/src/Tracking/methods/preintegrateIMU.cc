@@ -233,11 +233,8 @@ TrackingStatus Tracking::preintegrateIMU()
                      __func__);
     }
 
-    // Verbose::PrintMess("Preintegration is finished!! ",
-    // Verbose::VERBOSITY_DEBUG);
-
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

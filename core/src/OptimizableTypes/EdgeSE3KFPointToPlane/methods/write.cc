@@ -42,5 +42,5 @@ bool EdgeSE3KFPointToPlane::write(std::ostream &outputStream_inout) const
     return writeInformationMatrix(outputStream_inout);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

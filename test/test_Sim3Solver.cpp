@@ -410,6 +410,6 @@ TEST_F(Sim3SolverTest, PureShiftGivesTheIdentityRotation)
                                                       1.0e-6F)));
 }
 
-} // namespace
-} // namespace core
-} // namespace vs_graphs
+} /* namespace */
+} /* namespace core */
+} /* namespace vs_graphs */

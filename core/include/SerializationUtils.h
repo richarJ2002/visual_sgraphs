@@ -105,24 +105,6 @@ void serializeSophusSE3(Archive                            &ar,
     }
 }
 
-/*template <class Archive, size_t dim>
-void serializeDiagonalMatrix(Archive &ar, Eigen::DiagonalMatrix<float, dim> &D,
-const unsigned int version)
-{
-    Eigen::Matrix<float,dim,dim> dense;
-    if(Archive::is_saving::value)
-    {
-        dense = D.toDenseMatrix();
-    }
-
-    ar & boost::serialization::make_array(dense.data(), dense.size());
-
-    if (Archive::is_loading::value)
-    {
-        D = dense.diagonal().asDiagonal();
-    }
-}*/
-
 /*!
  * @brief           Saves or loads an OpenCV matrix as its size, type and
  *                  continuity flag followed by the raw element bytes.
@@ -279,7 +261,7 @@ void serializeVectorKeyPoints(Archive                            &ar,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SERIALIZATION_UTILS_H
+#endif /* SERIALIZATION_UTILS_H */

@@ -48,7 +48,7 @@ SystemStatus System::calculateCheckSum(std::string  filename_in,
     std::string checksum = "";
 
     std::ios_base::openmode flags = std::ios::in;
-    if (type_in == BINARY_FILE) // Binary file
+    if (type_in == BINARY_FILE) /* Binary file */
         flags = std::ios::in | std::ios::binary;
 
     std::ifstream f(filename_in.c_str(), flags);
@@ -124,5 +124,5 @@ SystemStatus System::calculateCheckSum(std::string  filename_in,
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

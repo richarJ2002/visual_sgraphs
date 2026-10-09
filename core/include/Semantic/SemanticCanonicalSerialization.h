@@ -32,4 +32,4 @@
 
 #include "Semantic/SemanticCanonicalSerialization/public_functions.h"
 
-#endif // SEMANTIC_CANONICAL_SERIALIZATION_H
+#endif /* SEMANTIC_CANONICAL_SERIALIZATION_H */

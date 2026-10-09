@@ -30,4 +30,4 @@
 #include "Semantic/SemanticGraphSnapshot/objects.h"
 #include "Semantic/SemanticGraphSnapshot/public_functions.h"
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_H */

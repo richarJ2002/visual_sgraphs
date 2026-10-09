@@ -48,7 +48,7 @@ TrackingStatus Tracking::grabImageRGBD(
     const std::vector<semantic::Marker *>         markers_in,
     Sophus::SE3f                                 &cameraPose_out)
 {
-    // Adaptive FAST threshold: adjust before feature extraction
+    /* Adaptive FAST threshold: adjust before feature extraction */
     if (adjustFASTThreshold() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -79,7 +79,7 @@ TrackingStatus Tracking::grabImageRGBD(
         imageDepth.type() != CV_32F)
         imageDepth.convertTo(imageDepth, CV_32F, depthMapFactor);
 
-    // RGB-D
+    /* RGB-D */
     if (sensor == System::RGBD)
         currentFrame = Frame(imageRgb_in,
                              imageGray,
@@ -96,7 +96,7 @@ TrackingStatus Tracking::grabImageRGBD(
                              nullptr,
                              IMU::Calib(),
                              markers_in);
-    // RGB-D Intertial
+    /* RGB-D Intertial */
     else if (sensor == System::IMU_RGBD)
         currentFrame = Frame(imageRgb_in,
                              imageGray,
@@ -142,5 +142,5 @@ TrackingStatus Tracking::grabImageRGBD(
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

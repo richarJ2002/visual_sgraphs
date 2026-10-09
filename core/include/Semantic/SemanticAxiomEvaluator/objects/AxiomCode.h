@@ -126,8 +126,8 @@ enum class AxiomCode : std::uint8_t
     AX_MERGE_01 = 15U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_AXIOM_CODE_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_AXIOM_CODE_H */

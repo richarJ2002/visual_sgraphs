@@ -48,9 +48,9 @@ enum class SettingsStatus : std::uint8_t
     SETTINGS_STATUS_SUCCESS = 0U
 };
 
-} // namespace settings
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace settings */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SETTINGS_STATUS_H
+#endif /* SETTINGS_STATUS_H */

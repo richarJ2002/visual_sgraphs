@@ -101,7 +101,7 @@ TrackingStatus Tracking::createNewKeyFrame()
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    if (atlasIsImuInitialized2) //  || mpLocalMapper->IsInitializing())
+    if (atlasIsImuInitialized2)
     {
         p_keyFrame->isImu = true;
     }
@@ -135,7 +135,7 @@ TrackingStatus Tracking::createNewKeyFrame()
         }
     }
 
-    // Reset preintegration from last KF (Create new object)
+    /* Reset preintegration from last KF (Create new object) */
     if (sensor == System::IMU_MONOCULAR || sensor == System::IMU_STEREO ||
         sensor == System::IMU_RGBD)
     {
@@ -162,10 +162,12 @@ TrackingStatus Tracking::createNewKeyFrame()
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        // We sort points by the measured depth by the stereo/RGBD sensor.
-        // We create all those MapPoints whose depth < mThDepth.
-        // If there are less than 100 close points we create the 100 closest.
-        // Both sensor branches intentionally use the same cap of 100.
+        /*!
+         * We sort points by the measured depth by the stereo/RGBD sensor.
+         * We create all those MapPoints whose depth < mThDepth.
+         * If there are less than 100 close points we create the 100 closest.
+         * Both sensor branches intentionally use the same cap of 100.
+         */
         int maximumPoint = 100;
         if (sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
         {
@@ -284,8 +286,10 @@ TrackingStatus Tracking::createNewKeyFrame()
                             __func__);
                     }
 
-                    // Check if it is a stereo observation in order to not
-                    // duplicate mappoints
+                    /*!
+                     * Check if it is a stereo observation in order to not
+                     * duplicate mappoints
+                     */
                     if (currentFrame.leftKeyPointCount != -1 &&
                         currentFrame.leftToRightMatches[keyPointIndex] >= 0)
                     {
@@ -375,8 +379,10 @@ TrackingStatus Tracking::createNewKeyFrame()
         }
     }
 
-    // Check if the marker ids fromt he current frame exist in all the previous
-    // keyframes first get the mapped marker from the keyframes
+    /*!
+     * Check if the marker ids fromt he current frame exist in all the previous
+     * keyframes first get the mapped marker from the keyframes
+     */
     std::vector<semantic::Marker *> atlasAllMarkers{};
     if (p_atlas->getAllMarkers(atlasAllMarkers) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -388,7 +394,7 @@ TrackingStatus Tracking::createNewKeyFrame()
     }
     for (semantic::Marker *const p_currentMapMarker : atlasAllMarkers)
     {
-        // Check if the marker is already in the Global map
+        /* Check if the marker is already in the Global map */
         for (semantic::Marker *p_currentFrameMaker : currentFrame.mapMarkers)
         {
             int currentFrameMakerId{};
@@ -449,5 +455,5 @@ TrackingStatus Tracking::createNewKeyFrame()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

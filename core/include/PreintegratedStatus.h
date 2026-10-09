@@ -47,8 +47,8 @@ enum class PreintegratedStatus : std::uint8_t
     PREINTEGRATED_STATUS_SUCCESS = 0U
 };
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // PREINTEGRATED_STATUS_H
+#endif /* PREINTEGRATED_STATUS_H */

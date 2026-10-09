@@ -96,8 +96,8 @@ struct FloorRecord
     std::vector<EntityRef> roomRefs;
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_FLOOR_RECORD_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_FLOOR_RECORD_H */

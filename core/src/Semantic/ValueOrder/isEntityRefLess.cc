@@ -66,6 +66,6 @@ bool isEntityRefLess(const EntityRef &lhs_in, const EntityRef &rhs_in)
     return lhs_in.livenessUnavailableReason < rhs_in.livenessUnavailableReason;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

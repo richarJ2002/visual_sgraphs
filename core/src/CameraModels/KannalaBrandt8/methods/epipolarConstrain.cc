@@ -61,4 +61,4 @@ bool KannalaBrandt8::epipolarConstrain(
     }
     return parallax > 0.0001f;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

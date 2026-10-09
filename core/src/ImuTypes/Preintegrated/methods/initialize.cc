@@ -54,6 +54,6 @@ PreintegratedStatus Preintegrated::initialize(const Bias &referenceBias_in)
     return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */

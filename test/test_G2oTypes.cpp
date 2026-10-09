@@ -49,8 +49,10 @@ TEST(ImuCamPose, BothCamerasGetTheTransposedBodyRotation)
     camera_models::pinhole::Pinhole rightCamera(
         std::vector<float>{500.0F, 500.0F, 320.0F, 240.0F});
 
-    // A stereo-inertial frame at the world origin whose IMU is rotated
-    // 0.3 rad about z and offset 0.1 m along x from the left camera.
+    /*!
+     * A stereo-inertial frame at the world origin whose IMU is rotated
+     * 0.3 rad about z and offset 0.1 m along x from the left camera.
+     */
     Frame frame;
     frame.p_camera  = &leftCamera;
     frame.p_camera2 = &rightCamera;
@@ -271,6 +273,6 @@ TEST(VertexPose, ReadReportsATruncatedStream)
     EXPECT_FALSE(readVertex.read(truncatedStream));
 }
 
-} // namespace
-} // namespace core
-} // namespace vs_graphs
+} /* namespace */
+} /* namespace core */
+} /* namespace vs_graphs */

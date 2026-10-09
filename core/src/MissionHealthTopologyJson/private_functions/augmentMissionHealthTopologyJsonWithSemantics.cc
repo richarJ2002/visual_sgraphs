@@ -256,5 +256,5 @@ MissionHealthTopologyJsonStatus augmentMissionHealthTopologyJsonWithSemantics(
         MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

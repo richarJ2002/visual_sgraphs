@@ -170,4 +170,4 @@ bool KannalaBrandt8::matchAndTriangulate(
 
     return true;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

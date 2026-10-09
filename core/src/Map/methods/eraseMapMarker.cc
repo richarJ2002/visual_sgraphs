@@ -57,5 +57,5 @@ MapStatus Map::eraseMapMarker(semantic::Marker *p_marker_in)
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

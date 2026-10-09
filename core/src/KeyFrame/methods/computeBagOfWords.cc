@@ -58,9 +58,11 @@ KeyFrameStatus KeyFrame::computeBagOfWords()
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-        // Feature vector associate features with nodes in the 4th level (from
-        // leaves up) We assume the vocabulary tree has 6 levels, change the 4
-        // otherwise
+        /*!
+         * Feature vector associate features with nodes in the 4th level (from
+         * leaves up) We assume the vocabulary tree has 6 levels, change the 4
+         * otherwise
+         */
         p_orbVocabulary->transform(currentDescriptors,
                                    bowVector,
                                    featureVector,
@@ -70,5 +72,5 @@ KeyFrameStatus KeyFrame::computeBagOfWords()
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

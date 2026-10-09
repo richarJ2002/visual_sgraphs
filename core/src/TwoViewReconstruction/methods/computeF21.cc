@@ -82,5 +82,5 @@ TwoViewReconstructionStatus TwoViewReconstruction::computeF21(
     return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

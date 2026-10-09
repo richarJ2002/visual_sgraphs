@@ -51,7 +51,7 @@ namespace settings
 SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
 {
     bool found;
-    // Read original and desired image dimensions
+    /* Read original and desired image dimensions */
     int  originalRows{};
     if (readParameter<int>(storage_inout,
                            "Camera.height",
@@ -99,7 +99,7 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
 
         if (!isRectificationNeeded)
         {
-            // Update calibration
+            /* Update calibration */
             float scaleRowFactor = static_cast<float>(newImageSize.height) /
                                    static_cast<float>(originalImageSize.height);
             float calibration1Parameter{};
@@ -217,7 +217,7 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
 
         if (!isRectificationNeeded)
         {
-            // Update calibration
+            /* Update calibration */
             float scaleColFactor = static_cast<float>(newImageSize.width) /
                                    static_cast<float>(originalImageSize.width);
             float calibration1Parameter3{};
@@ -361,7 +361,7 @@ SettingsStatus Settings::readImageInfo(cv::FileStorage &storage_inout)
     return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
-} // namespace settings
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace settings */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

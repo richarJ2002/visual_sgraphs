@@ -106,5 +106,5 @@ ResetCauseStatus resetCauseToString(const ResetCause cause_in,
     return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

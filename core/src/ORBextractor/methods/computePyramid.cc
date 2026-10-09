@@ -86,7 +86,7 @@ ORBextractorStatus ORBextractor::computePyramid(cv::Mat image_in)
         imagePyramid[level] = temp(
             cv::Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, size.width, size.height));
 
-        // Compute the resized image_in
+        /* Compute the resized image_in */
         if (level != 0)
         {
             cv::resize(imagePyramid[level - 1],
@@ -119,5 +119,5 @@ ORBextractorStatus ORBextractor::computePyramid(cv::Mat image_in)
     return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

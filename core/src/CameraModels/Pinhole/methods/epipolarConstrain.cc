@@ -47,14 +47,14 @@ bool Pinhole::epipolarConstrain(
     [[maybe_unused]] const float      sigmaLevel_in,
     const float                       uncertainty_in)
 {
-    // Compute Fundamental Matrix
+    /* Compute Fundamental Matrix */
     Eigen::Matrix3f t12x          = Sophus::SO3f::hat(translation12_in);
     Eigen::Matrix3f cameraMatrix1 = this->toK_();
     Eigen::Matrix3f cameraMatrix2 = p_otherCamera_inout->toK_();
     Eigen::Matrix3f F12           = cameraMatrix1.transpose().inverse() * t12x *
                           rotation12_in * cameraMatrix2.inverse();
 
-    // Epipolar line in second image l = x1'F12 = [a b c]
+    /* Epipolar line in second image l = x1'F12 = [a b c] */
     const float epipolarLineA = keypoint1_in.pt.x * F12(0, 0) +
                                 keypoint1_in.pt.y * F12(1, 0) + F12(2, 0);
     const float epipolarLineB = keypoint1_in.pt.x * F12(0, 1) +
@@ -75,7 +75,7 @@ bool Pinhole::epipolarConstrain(
 
     return squaredDistance < 3.84 * uncertainty_in;
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

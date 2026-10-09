@@ -48,5 +48,5 @@ KeyFrameDatabaseStatus KeyFrameDatabase::add(KeyFrame *p_keyFrame_in)
     return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

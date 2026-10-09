@@ -79,8 +79,8 @@ struct SemanticDiagnosticState
     std::uint64_t cyclesSinceLastDiagnosticSummary{0U};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_DIAGNOSTICS_STATE_H
+#endif /* SEMANTIC_DIAGNOSTICS_STATE_H */

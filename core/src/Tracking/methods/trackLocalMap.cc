@@ -45,9 +45,11 @@ namespace core
 TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
 {
 
-    // We have an estimation of the camera pose and some map points tracked in
-    // the frame. We retrieve the local map and try to find matches to points in
-    // the local map.
+    /*!
+     * We have an estimation of the camera pose and some map points tracked in
+     * the frame. We retrieve the local map and try to find matches to points in
+     * the local map.
+     */
     if (updateLocalMap() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -63,7 +65,7 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
                      __func__);
     }
 
-    // TOO check outliers before PO
+    /* TOO check outliers before PO */
     int aux1 = 0, aux2 = 0;
     for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
          keyPointIndex++)
@@ -120,8 +122,7 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
         }
         else
         {
-            // if(!mbMapUpdated && mState == OK) //  && (mnMatchesInliers>30))
-            if (!isMapUpdated) //  && (mnMatchesInliers>30))
+            if (!isMapUpdated)
             {
                 if (Verbose::printMess(
                         "TLM: PoseInertialOptimizationLastFrame ",
@@ -145,8 +146,7 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
                                  "returned a failure status although it cannot "
                                  "fail; continuing as before.",
                                  __func__);
-                } // ,
-                  // !mpLastKeyFrame->getMap()->getInertialBA1());
+                }
             }
             else
             {
@@ -172,8 +172,7 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
                                  "returned a failure status although it cannot "
                                  "fail; continuing as before.",
                                  __func__);
-                } // ,
-                  // !mpLastKeyFrame->getMap()->getInertialBA1());
+                }
             }
         }
     }
@@ -190,7 +189,7 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
 
     matchesInliers = 0;
 
-    // Update MapPoints Statistics
+    /* Update MapPoints Statistics */
     int closeInlierCount = 0;
     int farInlierCount   = 0;
     for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
@@ -228,7 +227,7 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
                 else
                     matchesInliers++;
 
-                // Track close vs far inliers for adaptive acceptance
+                /* Track close vs far inliers for adaptive acceptance */
                 if ((sensor == System::RGBD || sensor == System::IMU_RGBD ||
                      sensor == System::STEREO ||
                      sensor == System::IMU_STEREO) &&
@@ -248,8 +247,10 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
         }
     }
 
-    // Decide if the tracking was succesful
-    // More restrictive if there was a relocalization recently
+    /*!
+     * Decide if the tracking was succesful
+     * More restrictive if there was a relocalization recently
+     */
     p_localMapper->matchesInliers = matchesInliers;
     if (currentFrame.id < lastRelocFrameId + maxFrames && matchesInliers < 25)
     {
@@ -263,13 +264,17 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    // AGGRESSIVE TRACKING ACCEPTANCE for corridors: Require only 5 close
-    // inliers In featureless corridors, close points (walls/floor) are more
-    // reliable than far points
+    /*!
+     * AGGRESSIVE TRACKING ACCEPTANCE for corridors: Require only 5 close
+     * inliers In featureless corridors, close points (walls/floor) are more
+     * reliable than far points
+     */
     if (sensor == System::IMU_MONOCULAR)
     {
-        // For IMU monocular, rely on IMU + minimum visual inliers - very
-        // permissive LOWERED: 8->5 with IMU, 25->15 without IMU
+        /*!
+         * For IMU monocular, rely on IMU + minimum visual inliers - very
+         * permissive LOWERED: 8->5 with IMU, 25->15 without IMU
+         */
         bool atlasIsImuInitialized2{};
         if ((matchesInliers < 5) &&
             p_atlas->isImuInitialized(atlasIsImuInitialized2) !=
@@ -305,15 +310,17 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
     }
     else if (sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
     {
-        // For IMU stereo/RGBD: require only 5 close inliers (AGGRESSIVE)
-        // In corridors, close points (walls) provide strong geometric
-        // constraints
+        /*!
+         * For IMU stereo/RGBD: require only 5 close inliers (AGGRESSIVE)
+         * In corridors, close points (walls) provide strong geometric
+         * constraints
+         */
         if (closeInlierCount >= 5 && matchesInliers >= 5)
         {
             isTracked_out = true;
             return TrackingStatus::TRACKING_STATUS_SUCCESS;
         }
-        else if (matchesInliers >= 10) // fallback with more total inliers
+        else if (matchesInliers >= 10) /* fallback with more total inliers */
         {
             isTracked_out = true;
             return TrackingStatus::TRACKING_STATUS_SUCCESS;
@@ -326,9 +333,11 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
     }
     else if (sensor == System::RGBD || sensor == System::STEREO)
     {
-        // For visual-only stereo/RGBD: require only 5 close inliers
-        // (AGGRESSIVE) Close points are more reliable in corridors (wall/floor
-        // planes)
+        /*!
+         * For visual-only stereo/RGBD: require only 5 close inliers
+         * (AGGRESSIVE) Close points are more reliable in corridors (wall/floor
+         * planes)
+         */
         if (closeInlierCount >= 5)
         {
             isTracked_out = true;
@@ -352,7 +361,7 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
     }
     else
     {
-        // Monocular: lowered threshold
+        /* Monocular: lowered threshold */
         if (matchesInliers < 10)
         {
             isTracked_out = false;
@@ -366,5 +375,5 @@ TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

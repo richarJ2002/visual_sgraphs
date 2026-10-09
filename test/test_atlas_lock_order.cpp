@@ -51,7 +51,7 @@ struct SnapshotHookBarrier
 
 SnapshotHookBarrier *pSnapshotHookBarrier = nullptr;
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Test hook that Atlas::matchRoomsToContext() calls, when
@@ -323,6 +323,6 @@ TEST(AtlasLifetime, ClearAtlasRetiresTheClearedMaps)
               std::set<Map *>(activeMaps.begin(), activeMaps.end()));
 }
 
-} // namespace
-} // namespace core
-} // namespace vs_graphs
+} /* namespace */
+} /* namespace core */
+} /* namespace vs_graphs */

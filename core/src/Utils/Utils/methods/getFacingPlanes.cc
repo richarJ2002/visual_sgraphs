@@ -43,7 +43,7 @@ UtilsStatus Utils::getFacingPlanes(
                           vs_graphs::core::geometric::Plane *>>
         &facingPlanes_out)
 {
-    // Variables
+    /* Variables */
     vs_graphs::core::types::SystemParams *p_sysParams = nullptr;
     if (vs_graphs::core::types::SystemParams::getParams(p_sysParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -58,15 +58,15 @@ UtilsStatus Utils::getFacingPlanes(
            facingPlanes;
     double minimumValidSpace = p_sysParams->roomSeg.minWallDistanceThresh;
 
-    // Loop through all the planes_in
+    /* Loop through all the planes_in */
     for (size_t index1 = 0; index1 < planes_in.size(); ++index1)
     {
         vs_graphs::core::geometric::Plane *p_plane1 = planes_in[index1];
         for (size_t index2 = index1 + 1; index2 < planes_in.size(); ++index2)
         {
-            // Variables
+            /* Variables */
             vs_graphs::core::geometric::Plane *p_plane2 = planes_in[index2];
-            // Check if the planes_in are facing each other
+            /* Check if the planes_in are facing each other */
             bool                               isFacing{};
             if (Utils::arePlanesFacingEachOther(p_plane1, p_plane2, isFacing) !=
                 UtilsStatus::UTILS_STATUS_SUCCESS)
@@ -101,7 +101,7 @@ UtilsStatus Utils::getFacingPlanes(
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

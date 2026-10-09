@@ -545,8 +545,8 @@ constexpr double kConsecutiveMaxPlaneOffset_m = 0.35;
     double                                    minimumOverlap_m_in,
     AlignmentCheck                           &alignmentCheck_out);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // VS_GRAPHS_CORE_SEMANTIC_SEMANTICVERIFY_PRIVATE_FUNCTIONS_H
+#endif /* VS_GRAPHS_CORE_SEMANTIC_SEMANTICVERIFY_PRIVATE_FUNCTIONS_H */

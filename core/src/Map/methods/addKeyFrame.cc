@@ -45,8 +45,10 @@ MapStatus Map::addKeyFrame(KeyFrame *p_keyFrame_inout)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
 
-    // First keyframe seeds the map (origin and lowest-id keyframe references);
-    // later keyframes are inserted with no id-duplicate check.
+    /*!
+     * First keyframe seeds the map (origin and lowest-id keyframe references);
+     * later keyframes are inserted with no id-duplicate check.
+     */
     if (keyFrames.empty())
     {
         initKeyFrameId    = p_keyFrame_inout->id;
@@ -56,10 +58,10 @@ MapStatus Map::addKeyFrame(KeyFrame *p_keyFrame_inout)
                   << initKeyFrameId << "." << std::endl;
     }
 
-    // Add the KeyFrame to the map
+    /* Add the KeyFrame to the map */
     keyFrames.insert(p_keyFrame_inout);
 
-    // Update the maximum KeyFrame id
+    /* Update the maximum KeyFrame id */
     if (p_keyFrame_inout->id > maxKeyFrameId)
         maxKeyFrameId = p_keyFrame_inout->id;
 
@@ -71,5 +73,5 @@ MapStatus Map::addKeyFrame(KeyFrame *p_keyFrame_inout)
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

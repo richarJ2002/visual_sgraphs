@@ -63,7 +63,7 @@ ConverterStatus Converter::toCvMat(const g2o::Sim3 &similarity_in,
     return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
-} // namespace converter
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace converter */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

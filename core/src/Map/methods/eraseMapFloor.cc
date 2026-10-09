@@ -57,5 +57,5 @@ MapStatus Map::eraseMapFloor(vs_graphs::core::semantic::Floor *p_floor_in)
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

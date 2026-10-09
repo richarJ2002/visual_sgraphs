@@ -53,7 +53,7 @@ namespace core
 
 FrameStatus Frame::assignFeaturesToGrid()
 {
-    // Fill matrix with points
+    /* Fill matrix with points */
     const int cellCount = FRAME_GRID_COLS * FRAME_GRID_ROWS;
 
     int reserveCount = 0.5f * keyPointCount / (cellCount);
@@ -104,5 +104,5 @@ FrameStatus Frame::assignFeaturesToGrid()
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

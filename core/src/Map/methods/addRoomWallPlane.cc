@@ -46,7 +46,7 @@ namespace core
 MapStatus Map::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
 {
     std::unique_lock<std::mutex> lock(mapMutex);
-    // Add the plane to the hashmap
+    /* Add the plane to the hashmap */
     int                          planeGetId{};
     if (p_plane_in->getId(planeGetId) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -61,5 +61,5 @@ MapStatus Map::addRoomWallPlane(vs_graphs::core::geometric::Plane *p_plane_in)
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

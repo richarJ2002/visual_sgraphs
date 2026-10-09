@@ -41,7 +41,7 @@ Eigen::Vector3f Pinhole::unprojectEig(const cv::Point2f &point2d_in)
                            (point2d_in.y - parameters[3]) / parameters[1],
                            1.f);
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

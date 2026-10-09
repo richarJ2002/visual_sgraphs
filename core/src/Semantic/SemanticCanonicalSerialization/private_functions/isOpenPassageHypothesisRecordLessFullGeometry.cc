@@ -68,6 +68,6 @@ bool isOpenPassageHypothesisRecordLessFullGeometry(
     return isDoubleLess(lhs_in.heightSpan_m, rhs_in.heightSpan_m);
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

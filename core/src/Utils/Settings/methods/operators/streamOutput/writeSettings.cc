@@ -50,7 +50,7 @@ namespace settings
 
 std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
 {
-    // Camera#1
+    /* Camera#1 */
     output_inout << "\t- Camera#1 parameters (";
     if (s_in.cameraModel == Settings::CameraType::PINHOLE ||
         s_in.cameraModel == Settings::CameraType::RECTIFIED)
@@ -296,10 +296,10 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
         }
     }
 
-    // Frame rate
+    /* Frame rate */
     output_inout << "\t- Sequence FPS: " << s_in.framesPerSecond << std::endl;
 
-    // Stereo stuff
+    /* Stereo stuff */
     if (s_in.sensor == System::STEREO || s_in.sensor == System::IMU_STEREO)
     {
         output_inout << "\t- Stereo baseline: " << s_in.stereoBaseline
@@ -326,7 +326,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
         }
     }
 
-    // IMU parameters
+    /* IMU parameters */
     if (s_in.sensor == System::IMU_MONOCULAR ||
         s_in.sensor == System::IMU_STEREO || s_in.sensor == System::IMU_RGBD)
     {
@@ -342,7 +342,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                      << std::endl;
     }
 
-    // RGB-D parameters
+    /* RGB-D parameters */
     if (s_in.sensor == System::RGBD || s_in.sensor == System::IMU_RGBD)
     {
         output_inout << "\t- RGB-D depth map factor: " << s_in.depthMapScale
@@ -353,7 +353,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
                      << s_in.stereoBaseline * s_in.depthThreshold << std::endl;
     }
 
-    // ORB parameters
+    /* ORB parameters */
     output_inout << "\t- Features per image: " << s_in.featureCount
                  << std::endl;
     output_inout << "\t- ORB scale factor: " << s_in.orbScaleFactor
@@ -368,7 +368,7 @@ std::ostream &operator<<(std::ostream &output_inout, const Settings &s_in)
     return output_inout;
 }
 
-} // namespace settings
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace settings */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

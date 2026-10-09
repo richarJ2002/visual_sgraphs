@@ -44,6 +44,6 @@ bool operator<(const EntityKey &lhs_in, const EntityKey &rhs_in)
     return lhs_in.entityId < rhs_in.entityId;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

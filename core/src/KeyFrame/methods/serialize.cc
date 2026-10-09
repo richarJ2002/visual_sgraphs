@@ -47,58 +47,22 @@ namespace vs_graphs
 namespace core
 {
 
-// Explicitly instantiated below for every archive the map save/load
-// code uses, so that no other translation unit compiles this body.
+/* Instantiated below for every archive used, so only this file compiles it */
 template <class Archive>
 void KeyFrame::serialize(Archive &ar, const unsigned int version)
 {
     ar & id;
     ar &const_cast<long unsigned int &>(frameId);
     ar &const_cast<double &>(timeStamp);
-    // Grid
+    /* Grid */
     ar &const_cast<int &>(gridCols);
     ar &const_cast<int &>(gridRows);
     ar &const_cast<float &>(gridElementWidthInverse);
     ar &const_cast<float &>(gridElementHeightInverse);
 
-    // Variables of tracking
-    // ar & trackReferenceFrameId;
-    // ar & fuseTargetKeyFrameId;
-    // Variables of local mapping
-    // ar & baLocalKeyFrameId;
-    // ar & baFixedKeyFrameId;
-    // Variables used by KeyFrameDatabase
-    // ar & mnLoopQuery;
-    // ar & mnLoopWords;
-    // ar & mLoopScore;
-    // ar & mnRelocQuery;
-    // ar & mnRelocWords;
-    // ar & mRelocScore;
-    // ar & mnMergeQuery;
-    // ar & mnMergeWords;
-    // ar & mMergeScore;
-    // ar & mnPlaceRecognitionQuery;
-    // ar & mnPlaceRecognitionWords;
-    // ar & mPlaceRecognitionScore;
-    // ar & mbCurrentPlaceRecognition;
-    // Variables of loop closing
-    // serializeMatrix(ar,mTcwGBA,version);
-    // serializeMatrix(ar,mTcwBefGBA,version);
-    // serializeMatrix(ar,mVwbGBA,version);
-    // serializeMatrix(ar,mVwbBefGBA,version);
-    // ar & mBiasGBA;
-    // ar & baGlobalKeyFrameId;
-    // Variables of Merging
-    // serializeMatrix(ar,mTcwMerge,version);
-    // serializeMatrix(ar,mTcwBefMerge,version);
-    // serializeMatrix(ar,mTwcBefMerge,version);
-    // serializeMatrix(ar,mVwbMerge,version);
-    // ar & mergeCorrectedKeyFrameId;
-    // ar & baLocalMergeId;
-
-    // Scale
+    /* Scale */
     ar & correctedScale;
-    // Calibration parameters
+    /* Calibration parameters */
     ar &const_cast<float &>(fx);
     ar &const_cast<float &>(fy);
     ar &const_cast<float &>(invfx);
@@ -109,48 +73,48 @@ void KeyFrame::serialize(Archive &ar, const unsigned int version)
     ar &const_cast<float &>(mb);
     ar &const_cast<float &>(depthThreshold);
     serializeMatrix(ar, distortionCoefficients, version);
-    // Number of Keypoints
+    /* Number of Keypoints */
     ar &const_cast<int &>(keyPointCount);
-    // KeyPoints
+    /* KeyPoints */
     serializeVectorKeyPoints<Archive>(ar, keyPoints, version);
     serializeVectorKeyPoints<Archive>(ar, keyPointsUndistorted, version);
     ar &const_cast<std::vector<float> &>(uRight);
     ar &const_cast<std::vector<float> &>(depths);
     serializeMatrix<Archive>(ar, descriptors, version);
-    // BOW
+    /* BOW */
     ar & bowVector;
     ar & featureVector;
-    // Pose relative to parent
+    /* Pose relative to parent */
     serializeSophusSE3<Archive>(ar, tcp, version);
-    // Scale
+    /* Scale */
     ar &const_cast<int &>(scaleLevelCount);
     ar &const_cast<float &>(scaleFactor);
     ar &const_cast<float &>(logScaleFactor);
     ar &const_cast<std::vector<float> &>(scaleFactors);
     ar &const_cast<std::vector<float> &>(levelSigmaSquared);
     ar &const_cast<std::vector<float> &>(invLevelSigmaSquared);
-    // Image bounds and calibration
+    /* Image bounds and calibration */
     ar &const_cast<int &>(gridMinX);
     ar &const_cast<int &>(gridMinY);
     ar &const_cast<int &>(gridMaxX);
     ar &const_cast<int &>(gridMaxY);
     ar &boost::serialization::make_array(calibrationMatrixEigen.data(),
                                          calibrationMatrixEigen.size());
-    // Pose
+    /* Pose */
     serializeSophusSE3<Archive>(ar, poseTcw, version);
-    // MapPointsId associated to keypoints
+    /* MapPointsId associated to keypoints */
     ar & backupMapPointsId;
-    // Grid
+    /* Grid */
     ar & grid;
-    // Connected KeyFrameWeight
+    /* Connected KeyFrameWeight */
     ar & backupConnectedKeyFrameIdWeights;
-    // Spanning Tree and Loop Edges
+    /* Spanning Tree and Loop Edges */
     ar & isFirstConnection;
     ar & backupParentId;
     ar & backupChildrensId;
     ar & backupLoopEdgesId;
     ar & backupMergeEdgesId;
-    // Bad flags
+    /* Bad flags */
     ar & isEraseProtected;
     ar & isPendingErase;
     ar & isFlaggedBad;
@@ -159,11 +123,11 @@ void KeyFrame::serialize(Archive &ar, const unsigned int version)
 
     ar & originMapId;
 
-    // Camera variables
+    /* Camera variables */
     ar & backupCameraId;
     ar & backupCamera2Id;
 
-    // Fisheye variables
+    /* Fisheye variables */
     ar & leftToRightMatches;
     ar & rightToLeftMatches;
     ar &const_cast<int &>(leftKeyPointCount);
@@ -172,7 +136,7 @@ void KeyFrame::serialize(Archive &ar, const unsigned int version)
     serializeVectorKeyPoints<Archive>(ar, keyPointsRight, version);
     ar & gridRight;
 
-    // Inertial variables
+    /* Inertial variables */
     ar & imuBias;
     ar & backupImuPreintegrated;
     ar & imuCalibration;
@@ -209,5 +173,5 @@ template void KeyFrame::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,
     const unsigned int);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

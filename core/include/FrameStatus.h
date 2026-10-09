@@ -44,7 +44,7 @@ enum class FrameStatus : std::uint8_t
     FRAME_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // FRAME_STATUS_H
+#endif /* FRAME_STATUS_H */

@@ -43,7 +43,7 @@ UtilsStatus Utils::arePlanesParallel(
     const vs_graphs::core::geometric::Plane *p_plane2_in,
     bool                                    &arePlanesParallel_out)
 {
-    // Get the threshold value
+    /* Get the threshold value */
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -56,7 +56,7 @@ UtilsStatus Utils::arePlanesParallel(
     double threshold =
         p_params->roomSeg.wallsParallelismThresh * Utils::DEG_TO_RAD;
 
-    // Extract and normalize plane normals
+    /* Extract and normalize plane normals */
     g2o::Plane3D plane1GetGlobalEquation{};
     if (p_plane1_in->getGlobalEquation(plane1GetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -78,19 +78,21 @@ UtilsStatus Utils::arePlanesParallel(
     }
     Eigen::Vector3d normal2 = plane2GetGlobalEquation.normal().normalized();
 
-    // Compute the dot product (clamped to avoid floating-point domain errors)
+    /*!
+     * Compute the dot product (clamped to avoid floating-point domain errors)
+     */
     double dotProduct = std::clamp(std::abs(normal1.dot(normal2)), -1.0, 1.0);
 
-    // Compute the angle between normals in radians
+    /* Compute the angle between normals in radians */
     double angle = std::acos(dotProduct);
 
-    // Planes are parallel if their normals are within threshold (0° or 180°)
+    /* Planes are parallel if their normals are within threshold (0° or 180°) */
     arePlanesParallel_out =
         (angle < threshold) || (std::abs(angle - M_PI) < threshold);
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

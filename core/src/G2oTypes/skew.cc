@@ -49,5 +49,5 @@ G2oTypesStatus computeSkewMatrix(const Eigen::Vector3d &angularVelocity_in,
     return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -45,5 +45,5 @@ ResetCauseStatus consumeResetCause(const void *const p_owner_in,
     return ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

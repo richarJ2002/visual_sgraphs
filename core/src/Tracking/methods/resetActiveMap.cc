@@ -144,7 +144,7 @@ TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
         }
     }
 
-    // Reset Loop Closing
+    /* Reset Loop Closing */
     if (Verbose::printMess("[Tracking] Reseting 'LoopClosing' ...",
                            Verbose::VERBOSITY_NORMAL) !=
         VerboseStatus::VERBOSE_STATUS_SUCCESS)
@@ -172,7 +172,7 @@ TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
                      __func__);
     }
 
-    // Clear BoW Database
+    /* Clear BoW Database */
     if (Verbose::printMess("[Tracking] Reseting 'Database' ...",
                            Verbose::VERBOSITY_NORMAL) !=
         VerboseStatus::VERBOSE_STATUS_SUCCESS)
@@ -200,7 +200,7 @@ TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
                      __func__);
     }
 
-    // Clear Map (this erase MapPoints and KeyFrames)
+    /* Clear Map (this erase MapPoints and KeyFrames) */
     if (p_atlas->clearMap() != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -262,7 +262,7 @@ TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
         }
     }
 
-    // Count lost frames
+    /* Count lost frames */
     std::list<bool> lbLost;
     int             lostFrameCount = 0;
     for (std::list<bool>::iterator ilbL = lostFlags.begin();
@@ -308,5 +308,5 @@ TrackingStatus Tracking::resetActiveMap(bool isRequestedByLocalMapping_in)
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

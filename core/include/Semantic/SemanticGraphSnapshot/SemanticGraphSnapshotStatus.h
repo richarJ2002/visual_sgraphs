@@ -47,8 +47,8 @@ enum class SemanticGraphSnapshotStatus : std::uint8_t
     SEMANTIC_GRAPH_SNAPSHOT_STATUS_SUCCESS = 0U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_STATUS_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_STATUS_H */

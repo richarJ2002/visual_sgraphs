@@ -73,9 +73,6 @@ LoopClosingStatus LoopClosing::detectAndReffineSim3FromLastKF(
 
     if (countProjectionMatchCount_out >= projectionMatchCount)
     {
-        // Verbose::PrintMess("Sim3 reffine: There are " +
-        // to_string(nNumProjMatches) + " initial matches ",
-        // Verbose::VERBOSITY_DEBUG);
         Sophus::SE3f matchedKeyFramePoseInverse{};
         if (p_matchedKeyFrame_in->getPoseInverse(matchedKeyFramePoseInverse) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -90,7 +87,7 @@ LoopClosingStatus LoopClosing::detectAndReffineSim3FromLastKF(
         g2o::Sim3    gScm = gScw_inout * gSwm;
 
         bool isFixedScale =
-            isScaleFixed; // TODO CHECK; Solo para el monocular inertial
+            isScaleFixed; /* TODO CHECK; Solo para el monocular inertial */
         Map *p_currentKeyFrameMap = nullptr;
         if ((p_tracker->sensor == System::IMU_MONOCULAR) &&
             p_currentKeyFrame_in->getMap(p_currentKeyFrameMap) !=
@@ -129,10 +126,6 @@ LoopClosingStatus LoopClosing::detectAndReffineSim3FromLastKF(
                          "it cannot fail; continuing as before.",
                          __func__);
         }
-
-        // Verbose::PrintMess("Sim3 reffine: There are " +
-        // to_string(numOptMatches) + " matches after of the optimization ",
-        // Verbose::VERBOSITY_DEBUG);
 
         if (optMatchCount > projectionOptMatchCount)
         {
@@ -181,5 +174,5 @@ LoopClosingStatus LoopClosing::detectAndReffineSim3FromLastKF(
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

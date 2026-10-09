@@ -51,8 +51,8 @@ KeyFrameStatus
     twc         = poseTcw.inverse();
     rotationRwc = twc.rotationMatrix();
 
-    if (imuCalibration
-            .isCalibrationSet) // TODO Use a flag instead of the OpenCV matrix
+    /* TODO Use a flag instead of the OpenCV matrix */
+    if (imuCalibration.isCalibrationSet)
     {
         owb =
             rotationRwc * imuCalibration.mTcb.translation() + twc.translation();
@@ -61,5 +61,5 @@ KeyFrameStatus
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

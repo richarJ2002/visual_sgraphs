@@ -274,7 +274,7 @@ void observeVoxbloxInput(const std::uint32_t width_in,
         voxbloxHealth.wasStalled = stalled;
     }
 }
-} // namespace
+} /* namespace */
 
 /* -------------------------------------------------------------------------- *
  * PUBLICATION STATE
@@ -523,7 +523,7 @@ void addSegmentationToSystem(
         return;
     }
 
-    // Convert to PCL PointCloud2 from `sensor_msgs` PointCloud2
+    /* Convert to PCL PointCloud2 from `sensor_msgs` PointCloud2 */
     pcl::PCLPointCloud2::Ptr pclPc2SegPrb(new pcl::PCLPointCloud2);
     pcl_conversions::toPCL(msgSegImage_in.segmented_image_probability,
                            *pclPc2SegPrb);
@@ -549,7 +549,7 @@ const char *sensorModeName()
     return sensorType == vs_graphs::core::System::IMU_RGBD ? "rgbd_inertial"
                                                            : "rgbd";
 }
-} // namespace
+} /* namespace */
 
 /* -------------------------------------------------------------------------- *
  * PUBLIC METHODS
@@ -2706,7 +2706,7 @@ sensor_msgs::msg::PointCloud2
     cloud.row_step        = cloud.point_step * cloud.width;
     cloud.fields.resize(numChannels);
 
-    // Set the fields of the point cloud
+    /* Set the fields of the point cloud */
     for (int idx = 0; idx < numChannels; idx++)
     {
         cloud.fields[idx].count    = 1;
@@ -2715,11 +2715,11 @@ sensor_msgs::msg::PointCloud2
         cloud.fields[idx].datatype = sensor_msgs::msg::PointField::FLOAT32;
     }
 
-    // Set the data of the point cloud
+    /* Set the data of the point cloud */
     cloud.data.resize(cloud.row_step * cloud.height);
     unsigned char *cloudDataPtr = &(cloud.data[0]);
 
-    // Populate the point cloud with the map points
+    /* Populate the point cloud with the map points */
     for (unsigned int idx = 0; idx < cloud.width; idx++)
     {
         bool isBad2{};
@@ -3394,7 +3394,7 @@ void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
         fileNames.erase(fileNames.begin());
     }
 }
-} // namespace
+} /* namespace */
 
 void maybeArchiveSGraph(
     const std::vector<vs_graphs::core::semantic::Floor *>   &mappedFloors_in,
@@ -4243,8 +4243,10 @@ void maybeArchiveSGraph(
                         vs_graphs::core::geometric::PlaneStatus::
                             PLANE_STATUS_SUCCESS)
                     {
-                        // getGeometryMetadataSnapshot cannot fail; continue as
-                        // before.
+                        /*!
+                         * getGeometryMetadataSnapshot cannot fail; continue as
+                         * before.
+                         */
                     }
                     g2o::Plane3D planeEquation_world{};
                     if (p_wall->getGlobalEquation(planeEquation_world) !=

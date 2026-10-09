@@ -12,6 +12,9 @@ EXTENSION_MAPPING      = tpp=C++
 EXCLUDE_PATTERNS       = */Thirdparty/* */Examples/*
 EXTRACT_PRIVATE        = YES
 EXTRACT_STATIC         = YES
+# /*! notes inside function bodies are implementation comments: they must not
+# join the function's documentation, which lives once, on the declaration.
+HIDE_IN_BODY_DOCS      = YES
 ALIASES                = "frame=@par Frame:^^" "units=@par Units:^^"
 QUIET                  = YES
 WARN_IF_UNDOCUMENTED   = YES

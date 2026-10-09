@@ -89,8 +89,8 @@ namespace camera_models
 namespace pinhole
 {
 class Pinhole;
-} // namespace pinhole
-} // namespace camera_models
+} /* namespace pinhole */
+} /* namespace camera_models */
 namespace semantic
 {
 class Passage;
@@ -102,8 +102,8 @@ namespace camera_models
 namespace kannalabrandt8
 {
 class KannalaBrandt8;
-} // namespace kannalabrandt8
-} // namespace camera_models
+} /* namespace kannalabrandt8 */
+} /* namespace camera_models */
 class KeyFrameDatabase;
 
 /*!
@@ -267,7 +267,7 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus setViewer(Viewer *p_viewer_in);
 
-    // Methods for adding new components in the current map
+    /* Methods for adding new components in the current map */
     /*!
      * @brief           Registers a floor with the map the floor belongs to and
      *                  moves the floor identity allocator past its id. A null
@@ -525,7 +525,7 @@ class Atlas
      */
     std::vector<int> visitedPlanesMarkerIds;
 
-    // Method for get data in current map
+    /* Method for get data in current map */
     /*!
      * @brief           Returns the rooms of the active map. Takes atlasMutex.
      *
@@ -1029,7 +1029,7 @@ class Atlas
      */
     [[nodiscard]] AtlasStatus isImuInitialized(bool &isImuInitialized_out);
 
-    // Function for garantee the correction of serialization of this object
+    /* Function for garantee the correction of serialization of this object */
     /*!
      * @brief           Prepares the Atlas for saving: advances
      *                  lastInitKeyFrameId past the active map's highest key
@@ -1064,7 +1064,7 @@ class Atlas
     [[nodiscard]] AtlasStatus getAtlasKeyFrames(
         std::map<unsigned long, KeyFrame *> &atlasKeyFrames_out);
 
-    // Functions for getting the entities
+    /* Functions for getting the entities */
     /*!
      * @brief           Looks up a plane of the active map by id. Takes
      *                  atlasMutex.
@@ -1386,7 +1386,7 @@ class Atlas
     bool isNewMapCreatedPending{false};
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif

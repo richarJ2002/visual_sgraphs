@@ -84,7 +84,7 @@ ORBextractorStatus ORBextractor::distributeOctTree(
     [[maybe_unused]] const int      &level_in,
     std::vector<cv::KeyPoint>       &keyPoints_out) const
 {
-    // Compute how many initial nodes
+    /* Compute how many initial nodes */
     const int initialNodeCount =
         std::round(static_cast<float>(maximumX_in - minimumX_in) /
                    (maximumY_in - minimumY_in));
@@ -112,7 +112,7 @@ ORBextractorStatus ORBextractor::distributeOctTree(
         initialNodes[keyPointIndex] = &nodes.back();
     }
 
-    // Associate points to childs
+    /* Associate points to childs */
     for (size_t keyPointIndex = 0; keyPointIndex < keysToDistribute_in.size();
          keyPointIndex++)
     {
@@ -158,13 +158,15 @@ ORBextractorStatus ORBextractor::distributeOctTree(
         {
             if (nodeIterator->isExhausted)
             {
-                // If node only contains one point do not subdivide and continue
+                /*!
+                 * If node only contains one point do not subdivide and continue
+                 */
                 nodeIterator++;
                 continue;
             }
             else
             {
-                // If more than one point, subdivide
+                /* If more than one point, subdivide */
                 ExtractorNode node1_out, node2_out, node3_out, node4_out;
                 if (nodeIterator->divideNode(node1_out,
                                              node2_out,
@@ -179,7 +181,7 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                         __func__);
                 }
 
-                // Add childs if they contain points
+                /* Add childs if they contain points */
                 if (node1_out.keys.size() > 0)
                 {
                     nodes.push_front(node1_out);
@@ -234,8 +236,10 @@ ORBextractorStatus ORBextractor::distributeOctTree(
             }
         }
 
-        // Finish if there are more nodes than required features
-        // or all nodes contain just one point
+        /*!
+         * Finish if there are more nodes than required features
+         * or all nodes contain just one point
+         */
         if (static_cast<int>(nodes.size()) >= featureCount_in ||
             static_cast<int>(nodes.size()) == previousSize)
         {
@@ -276,7 +280,7 @@ ORBextractorStatus ORBextractor::distributeOctTree(
                             __func__);
                     }
 
-                    // Add childs if they contain points
+                    /* Add childs if they contain points */
                     if (node1_out.keys.size() > 0)
                     {
                         nodes.push_front(node1_out);
@@ -336,7 +340,7 @@ ORBextractorStatus ORBextractor::distributeOctTree(
         }
     }
 
-    // Retain the best point in each node
+    /* Retain the best point in each node */
     std::vector<cv::KeyPoint> resultKeys;
     resultKeys.reserve(featureCount);
     for (std::list<ExtractorNode>::iterator finalNodeIterator = nodes.begin();
@@ -364,5 +368,5 @@ ORBextractorStatus ORBextractor::distributeOctTree(
     return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

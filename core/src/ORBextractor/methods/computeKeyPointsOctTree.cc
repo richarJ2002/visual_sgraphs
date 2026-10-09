@@ -129,19 +129,6 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
                          initialFastThreshold,
                          true);
 
-                /*if(bRight && j <= 13){
-                    FAST(imagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                         vKeysCell,10,true);
-                }
-                else if(!bRight && j >= 16){
-                    FAST(imagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                         vKeysCell,10,true);
-                }
-                else{
-                    FAST(imagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                         vKeysCell,initialFastThreshold,true);
-                }*/
-
                 if (keysCells.empty())
                 {
                     cv::FAST(imagePyramid[level]
@@ -150,18 +137,6 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
                              keysCells,
                              minimumFastThreshold,
                              true);
-                    /*if(bRight && j <= 13){
-                        FAST(imagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                             vKeysCell,5,true);
-                    }
-                    else if(!bRight && j >= 16){
-                        FAST(imagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                             vKeysCell,5,true);
-                    }
-                    else{
-                        FAST(imagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                             vKeysCell,minimumFastThreshold,true);
-                    }*/
                 }
 
                 if (!keysCells.empty())
@@ -202,7 +177,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
 
         const int scaledPatchSize = PATCH_SIZE * scaleFactors[level];
 
-        // Add border to coordinates and scale information
+        /* Add border to coordinates and scale information */
         const int nkps = keypoints.size();
         for (int rowIndex = 0; rowIndex < nkps; rowIndex++)
         {
@@ -213,7 +188,7 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
         }
     }
 
-    // compute orientations
+    /* compute orientations */
     for (int level = 0; level < levelCount; ++level)
     {
         if (computeOrientation(imagePyramid[level],
@@ -231,5 +206,5 @@ ORBextractorStatus ORBextractor::computeKeyPointsOctTree(
     return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

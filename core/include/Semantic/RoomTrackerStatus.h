@@ -46,8 +46,8 @@ enum class RoomTrackerStatus : std::uint8_t
     ROOM_TRACKER_STATUS_SUCCESS = 0U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // ROOM_TRACKER_STATUS_H
+#endif /* ROOM_TRACKER_STATUS_H */

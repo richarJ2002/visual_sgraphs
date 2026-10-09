@@ -88,5 +88,5 @@ AtlasStatus countLiveWallPlanes(Map *p_map_in, std::size_t &liveWallPlanes_out)
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

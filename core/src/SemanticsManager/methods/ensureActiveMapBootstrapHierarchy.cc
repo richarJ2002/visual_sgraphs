@@ -696,8 +696,10 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                                 KNOWN_TO_FAR) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // addTraversalObservation cannot fail; continue as
-                        // before.
+                        /*!
+                         * addTraversalObservation cannot fail; continue as
+                         * before.
+                         */
                     }
                 }
                 for (std::size_t observationIndex = 0U;
@@ -709,8 +711,10 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                                 FAR_TO_KNOWN) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // addTraversalObservation cannot fail; continue as
-                        // before.
+                        /*!
+                         * addTraversalObservation cannot fail; continue as
+                         * before.
+                         */
                     }
                 }
                 for (std::size_t observationIndex = 0U;
@@ -721,8 +725,10 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
                             semantic::Passage::TraversalDirection::UNKNOWN) !=
                         semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                     {
-                        // addTraversalObservation cannot fail; continue as
-                        // before.
+                        /*!
+                         * addTraversalObservation cannot fail; continue as
+                         * before.
+                         */
                     }
                 }
                 if (p_atlas->addMapPassage(p_recoveryPassage) !=
@@ -914,5 +920,5 @@ SemanticsManagerStatus SemanticsManager::ensureActiveMapBootstrapHierarchy(
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -40,7 +40,7 @@ namespace core
 
 SystemStatus System::parseJsonDatabase(std::string jsonFilePath_in)
 {
-    // Skip the parsing
+    /* Skip the parsing */
     if (jsonFilePath_in.empty())
     {
         std::cout << "[System] No JSON file describing the environment is "
@@ -48,9 +48,9 @@ SystemStatus System::parseJsonDatabase(std::string jsonFilePath_in)
                   << std::endl;
         return SystemStatus::SYSTEM_STATUS_SUCCESS;
     }
-    // Creating an object of the database loader
+    /* Creating an object of the database loader */
     vs_graphs::core::DBParser parser;
-    // Load JSON file
+    /* Load JSON file */
     Json                      envData{};
     if (parser.parseJsonFile(jsonFilePath_in, envData) !=
         DBParserStatus::DBPARSER_STATUS_SUCCESS)
@@ -60,7 +60,7 @@ SystemStatus System::parseJsonDatabase(std::string jsonFilePath_in)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    // Getting semantic entities
+    /* Getting semantic entities */
     std::vector<semantic::Room *> parserEnvironmentRooms{};
     if (parser.getEnvironmentRooms(envData, parserEnvironmentRooms) !=
         DBParserStatus::DBPARSER_STATUS_SUCCESS)
@@ -71,11 +71,11 @@ SystemStatus System::parseJsonDatabase(std::string jsonFilePath_in)
                      __func__);
     }
     envRooms = parserEnvironmentRooms;
-    // Printing the success message
+    /* Printing the success message */
     std::cout << "- JSON loaded and candidates created!\n";
 
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -48,5 +48,5 @@ TrackingStatus Tracking::stopRequested(bool &isStopRequested_out)
 }
 #endif
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

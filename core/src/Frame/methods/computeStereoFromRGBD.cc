@@ -75,5 +75,5 @@ FrameStatus Frame::computeStereoFromRGBD(const cv::Mat &imageDepth_in)
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

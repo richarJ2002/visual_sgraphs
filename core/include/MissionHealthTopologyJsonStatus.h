@@ -45,7 +45,7 @@ enum class MissionHealthTopologyJsonStatus : std::uint8_t
     MISSION_HEALTH_TOPOLOGY_JSON_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // MISSION_HEALTH_TOPOLOGY_JSON_STATUS_H
+#endif /* MISSION_HEALTH_TOPOLOGY_JSON_STATUS_H */

@@ -29,4 +29,4 @@
 
 #include "Utils/objects.h"
 
-#endif // UTILS_H
+#endif /* UTILS_H */

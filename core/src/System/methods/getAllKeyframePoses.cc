@@ -71,11 +71,13 @@ SystemStatus
         if (keyFrameIsBad)
             continue;
 
-        // The "body" is the IMU when the sensor has one, otherwise the first
-        // camera (cam0).
+        /*!
+         * The "body" is the IMU when the sensor has one, otherwise the first
+         * camera (cam0).
+         */
         Sophus::SE3f bodyPose_bodyToWorld;
         if (sensor == IMU_MONOCULAR || sensor == IMU_STEREO ||
-            sensor == IMU_RGBD) // with IMU
+            sensor == IMU_RGBD) /* with IMU */
         {
             Sophus::SE3f imuPose{};
             if (keyFrames[keyFrameIndex]->getImuPose(imuPose) !=
@@ -88,7 +90,7 @@ SystemStatus
             }
             bodyPose_bodyToWorld = imuPose;
         }
-        else // without IMU
+        else /* without IMU */
         {
             Sophus::SE3f poseInverse{};
             if (keyFrames[keyFrameIndex]->getPoseInverse(poseInverse) !=
@@ -109,5 +111,5 @@ SystemStatus
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

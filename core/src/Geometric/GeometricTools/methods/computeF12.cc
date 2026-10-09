@@ -71,5 +71,5 @@ GeometricToolsStatus GeometricTools::computeF12(KeyFrame       *&keyFrame1_in,
     return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

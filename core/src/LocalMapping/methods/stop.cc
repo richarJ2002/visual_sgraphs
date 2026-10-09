@@ -42,7 +42,7 @@ LocalMappingStatus LocalMapping::stop(bool &isStopped_out)
 {
     std::unique_lock<std::mutex> stopLock(stopMutex);
 
-    // Check the conditions for stopping the Local Mapping
+    /* Check the conditions for stopping the Local Mapping */
     if (isStopRequested && !isStopBlocked)
     {
         hasStopped    = true;
@@ -53,5 +53,5 @@ LocalMappingStatus LocalMapping::stop(bool &isStopped_out)
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

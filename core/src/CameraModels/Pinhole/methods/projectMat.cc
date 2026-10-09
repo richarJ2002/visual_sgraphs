@@ -40,7 +40,7 @@ Eigen::Vector2f Pinhole::projectMat(const cv::Point3f &point3d_in)
     cv::Point2f projectedPoint = this->project(point3d_in);
     return Eigen::Vector2f(projectedPoint.x, projectedPoint.y);
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

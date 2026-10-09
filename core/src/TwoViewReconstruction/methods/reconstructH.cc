@@ -53,10 +53,12 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructH(
         if (matchesInliersFlags_inout[i])
             N++;
 
-    // We recover 8 motion hypotheses using the method of Faugeras et al.
-    // Motion and structure from motion in a piecewise planar environment.
-    // International Journal of Pattern Recognition and Artificial Intelligence,
-    // 1988
+    /*!
+     * We recover 8 motion hypotheses using the method of Faugeras et al.
+     * Motion and structure from motion in a piecewise planar environment.
+     * International Journal of Pattern Recognition and Artificial Intelligence,
+     * 1988
+     */
     Eigen::Matrix3f invK = K_in.inverse();
     Eigen::Matrix3f A    = invK * H21_in * K_in;
 
@@ -87,13 +89,13 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructH(
     vt.reserve(8);
     vn.reserve(8);
 
-    // n'=[x1 0 x3] 4 posibilities e1=e3=1, e1=1 e3=-1, e1=-1 e3=1, e1=e3=-1
+    /* n'=[x1 0 x3] 4 posibilities e1=e3=1, e1=1 e3=-1, e1=-1 e3=1, e1=e3=-1 */
     float aux1 = std::sqrt((d1 * d1 - d2 * d2) / (d1 * d1 - d3 * d3));
     float aux3 = std::sqrt((d2 * d2 - d3 * d3) / (d1 * d1 - d3 * d3));
     float x1[] = {aux1, aux1, -aux1, -aux1};
     float x3[] = {aux3, -aux3, aux3, -aux3};
 
-    // case d'=d2
+    /* case d'=d2 */
     float auxStheta =
         std::sqrt((d1 * d1 - d2 * d2) * (d2 * d2 - d3 * d3)) / ((d1 + d3) * d2);
 
@@ -133,7 +135,7 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructH(
         vn.push_back(n);
     }
 
-    // case d'=-d2
+    /* case d'=-d2 */
     float auxSphi =
         std::sqrt((d1 * d1 - d2 * d2) * (d2 * d2 - d3 * d3)) / ((d1 - d3) * d2);
 
@@ -180,9 +182,11 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructH(
     std::vector<cv::Point3f> bestP3d;
     std::vector<bool>        bestTriangulated;
 
-    // Instead of applying the visibility constraints proposed in the Faugeras'
-    // paper (which could fail for points seen with low parallax) We reconstruct
-    // all hypotheses and check in terms of triangulated points and parallax
+    /*!
+     * Instead of applying the visibility constraints proposed in the Faugeras'
+     * paper (which could fail for points seen with low parallax) We reconstruct
+     * all hypotheses and check in terms of triangulated points and parallax
+     */
     for (size_t i = 0; i < 8; i++)
     {
         float                    parallaxi;
@@ -230,10 +234,12 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructH(
     {
         T21_out = Sophus::SE3f(vR[bestSolutionIndex], vt[bestSolutionIndex]);
 
-        // Publish the winning hypothesis' structure, matching the output
-        // contract reconstructF() honours: the monocular initializer reads
-        // vP3D straight after Reconstruct() returns, so leaving it untouched
-        // on this branch would hand it stale or empty map points.
+        /*!
+         * Publish the winning hypothesis' structure, matching the output
+         * contract reconstructF() honours: the monocular initializer reads
+         * vP3D straight after Reconstruct() returns, so leaving it untouched
+         * on this branch would hand it stale or empty map points.
+         */
         vP3D_inout            = bestP3d;
         triangulatedFlags_out = bestTriangulated;
 
@@ -246,5 +252,5 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructH(
     return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

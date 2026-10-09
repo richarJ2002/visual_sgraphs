@@ -40,10 +40,12 @@ namespace core
 
 LocalMappingStatus LocalMapping::keyFrameCulling()
 {
-    // Check redundant keyframes (only local keyframes)
-    // A keyframe is considered redundant if the 90% of the MapPoints it sees,
-    // are seen in at least other 3 keyframes (in the same or finer scale) We
-    // only consider close stereo points
+    /*!
+     * Check redundant keyframes (only local keyframes)
+     * A keyframe is considered redundant if the 90% of the MapPoints it sees,
+     * are seen in at least other 3 keyframes (in the same or finer scale) We
+     * only consider close stereo points
+     */
     const int temporalWindowSize = 21;
     if (p_currentKeyFrame->updateBestCovisibles() !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -82,7 +84,7 @@ LocalMappingStatus LocalMapping::keyFrameCulling()
     }
     int processedKeyFrameCount = 0;
 
-    // Compute the oldest keyframe in the optimizable inertial window.
+    /* Compute the oldest keyframe in the optimizable inertial window. */
     unsigned long lastOptimizableKeyFrameId = p_currentKeyFrame->id;
     if (isInertial)
     {
@@ -190,8 +192,10 @@ LocalMappingStatus LocalMapping::keyFrameCulling()
                     }
                     if (mapPointObservationCount > observationThreshold)
                     {
-                        // Reached only when Nleft != -1, i.e. the fisheye
-                        // stereo case, where Nleft is a keypoint count >= 0.
+                        /*!
+                         * Reached only when Nleft != -1, i.e. the fisheye
+                         * stereo case, where Nleft is a keypoint count >= 0.
+                         */
                         const int &scaleLevel =
                             (p_neighborKeyFrame->leftKeyPointCount == -1)
                                 ? p_neighborKeyFrame
@@ -449,5 +453,5 @@ LocalMappingStatus LocalMapping::keyFrameCulling()
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

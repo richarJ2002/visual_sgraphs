@@ -21,5 +21,5 @@ void clearFaults()
 #endif
 }
 
-} // namespace testing
-} // namespace vs_graphs
+} /* namespace testing */
+} /* namespace vs_graphs */

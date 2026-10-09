@@ -42,12 +42,12 @@ UtilsStatus
                                          const Eigen::Vector3d &point_in,
                                          double                &distance_out)
 {
-    // Find the distance of the point_in from a given plane_in
+    /* Find the distance of the point_in from a given plane_in */
     distance_out = fabs(plane_in.head<3>().dot(point_in) + plane_in(3));
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

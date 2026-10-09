@@ -43,9 +43,7 @@
 #include <utility>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// Test geometry constants
-// ----------------------------------------------------------------------------
+/* Test geometry constants */
 
 /*!
  * @brief           X component of wall A's plane normal; wall A is the plane x
@@ -176,9 +174,7 @@ static const double PASSAGE_APERTURE_D = 0.0;
  */
 static const Eigen::Vector4d FLOOR_EQ(0.0, 1.0, 0.0, 0.0);
 
-// =============================================================================
-// Test fixture
-// =============================================================================
+/* Test fixture */
 
 /*!
  * @brief           Fixture that builds two maps in one atlas, with helpers to
@@ -335,7 +331,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                          __func__);
         }
 
-        // Wall A: x = 1
+        /* Wall A: x = 1 */
         vs_graphs::core::geometric::Plane *wallA =
             new vs_graphs::core::geometric::Plane();
         if (wallA->setId(wallIdBase_in) !=
@@ -400,7 +396,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                          __func__);
         }
 
-        // Wall B: y = 1
+        /* Wall B: y = 1 */
         vs_graphs::core::geometric::Plane *wallB =
             new vs_graphs::core::geometric::Plane();
         if (wallB->setId(wallIdBase_in + 1) !=
@@ -465,7 +461,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                          __func__);
         }
 
-        // Wall C: x = -1 face (normal +X after toward-room orientation)
+        /* Wall C: x = -1 face (normal +X after toward-room orientation) */
         vs_graphs::core::geometric::Plane *wallC =
             new vs_graphs::core::geometric::Plane();
         if (wallC->setId(wallIdBase_in + 2) !=
@@ -530,7 +526,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
                          __func__);
         }
 
-        // Passage
+        /* Passage */
         if (withPassage_in)
         {
             vs_graphs::core::semantic::Passage *passage =
@@ -908,9 +904,7 @@ class ConsecutiveMapMatcherTest : public ::testing::Test
     }
 };
 
-// =============================================================================
-// TEST CASES
-// =============================================================================
+/* Test cases */
 
 /*!
  * @brief           Checks that two maps holding the same two rooms with

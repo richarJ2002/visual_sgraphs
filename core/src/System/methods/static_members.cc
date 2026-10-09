@@ -39,5 +39,5 @@ namespace core
 
 Verbose::VerbosityLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -83,5 +83,5 @@ SystemStatus System::getTimeFromIMUInit(double &timeFromIMUInit_out)
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

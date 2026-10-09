@@ -70,5 +70,5 @@ void EdgePriorPoseImu::computeError()
         accBiasError;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

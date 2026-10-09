@@ -844,6 +844,6 @@ TEST(SemanticCanonicalSerialization, VisitedFlagDoesNotChangeDigests)
     EXPECT_EQ(serializeSnapshotFullGeometry(snapshot4).dump(), geometryBefore);
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

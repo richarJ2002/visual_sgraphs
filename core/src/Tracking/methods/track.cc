@@ -122,9 +122,6 @@ TrackingStatus Tracking::track()
         }
         else if (currentFrame.timeStamp > lastFrame.timeStamp + 1.0)
         {
-            // cout << mCurrentFrame.timeStamp << ", " << mLastFrame.timeStamp
-            // << endl; cout << "id last: " << mLastFrame.id << "    id curr:
-            // " << mCurrentFrame.id << endl;
             bool atlasIsInertial{};
             if (p_atlas->isInertial(atlasIsInertial) !=
                 AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -184,8 +181,10 @@ TrackingStatus Tracking::track()
                                 ResetAction::CREATE_MAP_EXECUTION) !=
                             ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
                         {
-                            // reportResetAttribution cannot fail; continue as
-                            // before.
+                            /*!
+                             * reportResetAttribution cannot fail; continue as
+                             * before.
+                             */
                         }
                         if (createMapInAtlas() !=
                             TrackingStatus::TRACKING_STATUS_SUCCESS)
@@ -276,7 +275,7 @@ TrackingStatus Tracking::track()
     }
     hasCreatedMap = false;
 
-    // Get Map Mutex -> Map cannot be changed
+    /* Get Map Mutex -> Map cannot be changed */
     std::unique_lock<std::mutex> lock(p_currentMap->mapUpdateMutex);
 
     isMapUpdated = false;
@@ -340,7 +339,7 @@ TrackingStatus Tracking::track()
             }
         }
 
-        // If initialization succesful, save frame pose
+        /* If initialization succesful, save frame pose */
         if (state != OK)
         {
             lastFrame = Frame(currentFrame);
@@ -361,7 +360,7 @@ TrackingStatus Tracking::track()
     }
     else
     {
-        // System is initialized. Track Frame.
+        /* System is initialized. Track Frame. */
         bool isOk = false;
 
 #ifdef REGISTER_TIMES
@@ -369,19 +368,25 @@ TrackingStatus Tracking::track()
             std::chrono::steady_clock::now();
 #endif
 
-        // Initial camera pose estimation using motion model or relocalization
-        // (if tracking is lost)
+        /*!
+         * Initial camera pose estimation using motion model or relocalization
+         * (if tracking is lost)
+         */
         if (!isTrackingOnlyMode)
         {
 
-            // State OK
-            // Local Mapping is activated. This is the normal behaviour, unless
-            // you explicitly activate the "only tracking" mode.
+            /*!
+             * State OK
+             * Local Mapping is activated. This is the normal behaviour, unless
+             * you explicitly activate the "only tracking" mode.
+             */
             if (state == OK)
             {
 
-                // Local Mapping might have changed some MapPoints tracked in
-                // last frame
+                /*!
+                 * Local Mapping might have changed some MapPoints tracked in
+                 * last frame
+                 */
                 if (checkReplacedInLastFrame() !=
                     TrackingStatus::TRACKING_STATUS_SUCCESS)
                 {
@@ -493,8 +498,6 @@ TrackingStatus Tracking::track()
                         }
                         if (currentMapKeyFrameCount > 10)
                         {
-                            // cout << "KF in map: " <<
-                            // pCurrentMap->KeyFramesInMap() << endl;
                             state         = RECENTLY_LOST;
                             timeStampLost = currentFrame.timeStamp;
                         }
@@ -575,7 +578,7 @@ TrackingStatus Tracking::track()
                     }
                     else
                     {
-                        // Relocalization
+                        /* Relocalization */
                         bool isRelocalized{};
                         if (relocalization(isRelocalized) !=
                             TrackingStatus::TRACKING_STATUS_SUCCESS)
@@ -587,10 +590,6 @@ TrackingStatus Tracking::track()
                                          __func__);
                         }
                         isOk = isRelocalized;
-                        // std::cout << "mCurrentFrame.timeStamp:" <<
-                        // to_string(mCurrentFrame.timeStamp) << std::endl;
-                        // std::cout << "mTimeStampLost:" <<
-                        // to_string(mTimeStampLost) << std::endl;
                         if (currentFrame.timeStamp - timeStampLost > 3.0f &&
                             !isOk)
                         {
@@ -665,8 +664,10 @@ TrackingStatus Tracking::track()
                                 ResetAction::CREATE_MAP_EXECUTION) !=
                             ResetCauseStatus::RESET_CAUSE_STATUS_SUCCESS)
                         {
-                            // reportResetAttribution cannot fail; continue as
-                            // before.
+                            /*!
+                             * reportResetAttribution cannot fail; continue as
+                             * before.
+                             */
                         }
                         if (createMapInAtlas() !=
                             TrackingStatus::TRACKING_STATUS_SUCCESS)
@@ -698,8 +699,10 @@ TrackingStatus Tracking::track()
         }
         else
         {
-            // Localization Mode: Local Mapping is deactivated (TODO Not
-            // available in inertial mode)
+            /*!
+             * Localization Mode: Local Mapping is deactivated (TODO Not
+             * available in inertial mode)
+             */
             if (state == LOST)
             {
                 if (sensor == System::IMU_MONOCULAR ||
@@ -732,7 +735,7 @@ TrackingStatus Tracking::track()
             {
                 if (!isVisualOdometry)
                 {
-                    // In last frame we tracked enough MapPoints in the map
+                    /* In last frame we tracked enough MapPoints in the map */
                     if (isVelocityAvailable)
                     {
                         bool isTracked4{};
@@ -764,12 +767,16 @@ TrackingStatus Tracking::track()
                 }
                 else
                 {
-                    // In last frame we tracked mainly "visual odometry" points.
+                    /*!
+                     * In last frame we tracked mainly "visual odometry" points.
+                     */
 
-                    // We compute two camera poses, one from motion model and
-                    // one doing relocalization. If relocalization is sucessfull
-                    // we choose that solution, otherwise we retain the "visual
-                    // odometry" solution.
+                    /*!
+                     * We compute two camera poses, one from motion model and
+                     * one doing relocalization. If relocalization is sucessfull
+                     * we choose that solution, otherwise we retain the "visual
+                     * odometry" solution.
+                     */
 
                     bool                    bOKMM     = false;
                     bool                    isOkReloc = false;
@@ -882,8 +889,10 @@ TrackingStatus Tracking::track()
         std::chrono::steady_clock::time_point timeStartLmTrack =
             std::chrono::steady_clock::now();
 #endif
-        // If we have an initial estimation of the camera pose and matching.
-        // Track the local map.
+        /*!
+         * If we have an initial estimation of the camera pose and matching.
+         * Track the local map.
+         */
         if (!isTrackingOnlyMode)
         {
             if (isOk)
@@ -908,10 +917,12 @@ TrackingStatus Tracking::track()
         }
         else
         {
-            // mbVO true means that there are few matches to MapPoints in the
-            // map. We cannot retrieve a local map and therefore we do not
-            // perform TrackLocalMap(). Once the system relocalizes the camera
-            // we will use the local map again.
+            /*!
+             * mbVO true means that there are few matches to MapPoints in the
+             * map. We cannot retrieve a local map and therefore we do not
+             * perform TrackLocalMap(). Once the system relocalizes the camera
+             * we will use the local map again.
+             */
             if (isOk && !isVisualOdometry)
             {
                 bool isTracked8{};
@@ -954,12 +965,9 @@ TrackingStatus Tracking::track()
                 state = RECENTLY_LOST;
             }
             else
-                state = RECENTLY_LOST; // visual to lost
+                state = RECENTLY_LOST; /* visual to lost */
 
-            /*if(mCurrentFrame.id>mnLastRelocFrameId+mMaxFrames)
-            {*/
             timeStampLost = currentFrame.timeStamp;
-            //}
         }
 
         bool currentMapIsImuInitialized3{};
@@ -995,7 +1003,7 @@ TrackingStatus Tracking::track()
         localMapTrackTimes_ms.push_back(timeLmTrack);
 #endif
 
-        // Update drawer
+        /* Update drawer */
         if (p_frameDrawer->update(this) !=
             FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS)
         {
@@ -1037,7 +1045,7 @@ TrackingStatus Tracking::track()
 
         if (isOk || state == RECENTLY_LOST)
         {
-            // Update motion model
+            /* Update motion model */
             bool lastFrameIsSet{};
             if (lastFrame.isSet(lastFrameIsSet) !=
                 FrameStatus::FRAME_STATUS_SUCCESS)
@@ -1111,7 +1119,7 @@ TrackingStatus Tracking::track()
                 }
             }
 
-            // Clean VO matches
+            /* Clean VO matches */
             for (int keyPointIndex = 0;
                  keyPointIndex < currentFrame.keyPointCount;
                  keyPointIndex++)
@@ -1139,7 +1147,7 @@ TrackingStatus Tracking::track()
                 }
             }
 
-            // Delete temporal MapPoints
+            /* Delete temporal MapPoints */
             for (std::list<MapPoint *>::iterator
                      lit  = temporalMapPoints.begin(),
                      lend = temporalMapPoints.end();
@@ -1165,14 +1173,14 @@ TrackingStatus Tracking::track()
                              __func__);
             }
 
-            // Check if we need to insert a new keyframe
+            /* Check if we need to insert a new keyframe */
             if (isNeedKeyFrame && (isOk || (shouldInsertKeyFramesWhenLost &&
                                             state == RECENTLY_LOST &&
                                             (sensor == System::IMU_MONOCULAR ||
                                              sensor == System::IMU_STEREO ||
                                              sensor == System::IMU_RGBD))))
             {
-                // Create a new KeyFrame
+                /* Create a new KeyFrame */
                 if (createNewKeyFrame() !=
                     TrackingStatus::TRACKING_STATUS_SUCCESS)
                 {
@@ -1196,12 +1204,14 @@ TrackingStatus Tracking::track()
             newKeyFrameTimes_ms.push_back(timeNewKeyFrame);
 #endif
 
-            // We allow points with high innovation (considererd outliers by the
-            // Huber Function) pass to the new keyframe, so that bundle
-            // adjustment will finally decide if they are outliers or not. We
-            // don't want next frame to estimate its position with those points
-            // so we discard them in the frame. Only has effect if lastframe is
-            // tracked
+            /*!
+             * We allow points with high innovation (considererd outliers by the
+             * Huber Function) pass to the new keyframe, so that bundle
+             * adjustment will finally decide if they are outliers or not. We
+             * don't want next frame to estimate its position with those points
+             * so we discard them in the frame. Only has effect if lastframe is
+             * tracked
+             */
             for (int keyPointIndex = 0;
                  keyPointIndex < currentFrame.keyPointCount;
                  keyPointIndex++)
@@ -1213,7 +1223,7 @@ TrackingStatus Tracking::track()
             }
         }
 
-        // Reset if the camera get lost soon after initialization
+        /* Reset if the camera get lost soon after initialization */
         if (state == LOST)
         {
             unsigned long currentMapKeyFrameCount3{};
@@ -1310,8 +1320,10 @@ TrackingStatus Tracking::track()
 
     if (state == OK || state == RECENTLY_LOST)
     {
-        // Store frame pose information to retrieve the complete camera
-        // trajectory afterwards.
+        /*!
+         * Store frame pose information to retrieve the complete camera
+         * trajectory afterwards.
+         */
         bool currentFrameIsSet3{};
         if (currentFrame.isSet(currentFrameIsSet3) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
@@ -1349,9 +1361,11 @@ TrackingStatus Tracking::track()
         }
         else
         {
-            // The current frame carries no pose (e.g. tracking was lost):
-            // append the last stored entry to keep the trajectory aligned,
-            // when one exists.
+            /*!
+             * The current frame carries no pose (e.g. tracking was lost):
+             * append the last stored entry to keep the trajectory aligned,
+             * when one exists.
+             */
             if (!relativeFramePoses.empty() && !referenceKeyFrames.empty() &&
                 !frameTimes.empty())
             {
@@ -1375,7 +1389,7 @@ TrackingStatus Tracking::track()
     if (isStopped2)
     {
 
-        // Safe area to stop
+        /* Safe area to stop */
         for (;;)
         {
             bool isStopped3{};
@@ -1399,5 +1413,5 @@ TrackingStatus Tracking::track()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

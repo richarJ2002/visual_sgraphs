@@ -44,7 +44,7 @@ enum class VerboseStatus : std::uint8_t
     VERBOSE_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // VERBOSE_STATUS_H
+#endif /* VERBOSE_STATUS_H */

@@ -48,5 +48,5 @@ KeyFrameStatus KeyFrame::getVelocity(Eigen::Vector3f &velocity_out)
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

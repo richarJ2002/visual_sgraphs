@@ -71,6 +71,6 @@ SemanticCandidatesStatus angleSignature(const RoomContextSnapshot &snapshot_in,
     return SemanticCandidatesStatus::SEMANTIC_CANDIDATES_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

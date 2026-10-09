@@ -46,13 +46,13 @@ void EdgeSE3ProjectXYZDepth::linearizeOplus()
     double transformedX = transformedPointPosition[0];
     double transformedY = transformedPointPosition[1];
 
-    // Derivative of depth (z-coordinate in camera frame) w.r.t SE3 pose
+    /* Derivative of depth (z-coordinate in camera frame) w.r.t SE3 pose */
     Eigen::Matrix<double, 1, 6> se3DepthDerivative;
     se3DepthDerivative << transformedY, -transformedX, 0, 0, 0,
-        1; // d(z)/d(xi) where xi = [rot, trans]
+        1; /* d(z)/d(xi) where xi = [rot, trans] */
 
     _jacobianOplusXi = -se3DepthDerivative;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

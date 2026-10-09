@@ -62,5 +62,5 @@ ViewerStatus Viewer::stop(bool &isStopped_out)
     return ViewerStatus::VIEWER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -69,8 +69,10 @@ ORBmatcherStatus
         rotHist[histogramBinIndex].reserve(500);
     const float factor = 1.0f / HISTO_LENGTH;
 
-    // We perform the matching over ORB that belong to the same vocabulary node
-    // (at a certain level)
+    /*!
+     * We perform the matching over ORB that belong to the same vocabulary node
+     * (at a certain level)
+     */
     DBoW2::FeatureVector::const_iterator KFit = featureVectorKeyFrame.begin();
     DBoW2::FeatureVector::const_iterator Fit =
         frame_inout.featureVector.begin();
@@ -358,5 +360,5 @@ ORBmatcherStatus
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

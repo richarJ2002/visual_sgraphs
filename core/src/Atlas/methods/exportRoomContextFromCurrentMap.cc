@@ -210,8 +210,10 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
             if (p_room->getWallNormalTowardRoom_world(p_wall, orientedNormal) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWallNormalTowardRoom_world cannot fail; continue as
-                // before.
+                /*!
+                 * getWallNormalTowardRoom_world cannot fail; continue as
+                 * before.
+                 */
             }
             if (orientedNormal)
                 snap.wallNormals.push_back(*orientedNormal);
@@ -440,8 +442,10 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
                     passageHasBidirectionalTraversalEvidence) !=
                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
             {
-                // hasBidirectionalTraversalEvidence cannot fail; continue as
-                // before.
+                /*!
+                 * hasBidirectionalTraversalEvidence cannot fail; continue as
+                 * before.
+                 */
             }
             context.hasBidirectionalTraversalEvidence =
                 passageHasBidirectionalTraversalEvidence;
@@ -548,5 +552,5 @@ AtlasStatus Atlas::exportRoomContextFromCurrentMap()
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

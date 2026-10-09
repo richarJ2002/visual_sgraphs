@@ -49,9 +49,9 @@ enum class ConfigParserStatus : std::uint8_t
     CONFIG_PARSER_STATUS_SUCCESS = 0U
 };
 
-} // namespace config
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace config */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // CONFIG_PARSER_STATUS_H
+#endif /* CONFIG_PARSER_STATUS_H */

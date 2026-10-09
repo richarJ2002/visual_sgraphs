@@ -179,8 +179,8 @@ namespace semantic
     missingProofOwnerName(MissingProofOwner owner_in,
                           std::string      &missingProofOwnerName_out);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_ENUM_NAMES_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_ENUM_NAMES_H */

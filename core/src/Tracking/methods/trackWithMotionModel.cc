@@ -46,8 +46,10 @@ TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
 {
     ORBmatcher matcher(0.9, true);
 
-    // Update last frame pose according to its reference keyframe
-    // Create "visual odometry" points if in Localization Mode
+    /*!
+     * Update last frame pose according to its reference keyframe
+     * Create "visual odometry" points if in Localization Mode
+     */
     if (updateLastFrame() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -68,7 +70,9 @@ TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
     if (atlasIsImuInitialized &&
         (currentFrame.id > lastRelocFrameId + framesToResetIMU))
     {
-        // Predict state with IMU if it is initialized and it doesnt need reset
+        /*!
+         * Predict state with IMU if it is initialized and it doesnt need reset
+         */
         bool isPredicted{};
         if (predictStateIMU(isPredicted) !=
             TrackingStatus::TRACKING_STATUS_SUCCESS)
@@ -106,7 +110,7 @@ TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
               currentFrame.mapPoints.end(),
               static_cast<MapPoint *>(nullptr));
 
-    // Project points seen in previous frame
+    /* Project points seen in previous frame */
     int threshold;
 
     if (sensor == System::STEREO)
@@ -128,7 +132,7 @@ TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
                      __func__);
     }
 
-    // If few matches, use progressively wider window searches.
+    /* If few matches, use progressively wider window searches. */
     int searchStep   = 1;
     int searchRadius = threshold;
     while (nmatches < 20 && searchRadius < motionModelMaxSearchRadius)
@@ -211,7 +215,7 @@ TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
         }
     }
 
-    // Optimize frame pose with all matches
+    /* Optimize frame pose with all matches */
     int inlierCount{};
     if (Optimizer::poseOptimization(&currentFrame, inlierCount) !=
         OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
@@ -222,7 +226,7 @@ TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
                      __func__);
     }
 
-    // Discard outliers
+    /* Discard outliers */
     int nmatchesMap = 0;
     for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
          keyPointIndex++)
@@ -288,5 +292,5 @@ TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -52,7 +52,7 @@ SystemStatus System::trackRGBD(
     std::string                                   filename_in,
     const std::vector<semantic::Marker *>         markers_in)
 {
-    // Check if the sensor is correctly set as RGB-D
+    /* Check if the sensor is correctly set as RGB-D */
     if (sensor != RGBD && sensor != IMU_RGBD)
     {
         std::cerr
@@ -62,7 +62,7 @@ SystemStatus System::trackRGBD(
         exit(-1);
     }
 
-    // Obtain the images
+    /* Obtain the images */
     cv::Mat imToFeed      = colorImage_in.clone();
     cv::Mat imDepthToFeed = depthmap_in.clone();
     bool    settingsNeedToResize{};
@@ -110,7 +110,7 @@ SystemStatus System::trackRGBD(
                      __func__);
     }
 
-    // Apply IMU measurements
+    /* Apply IMU measurements */
     if (sensor == System::IMU_RGBD)
     {
         for (size_t imuMeasurementIndex = 0;
@@ -128,7 +128,7 @@ SystemStatus System::trackRGBD(
         }
     }
 
-    // Track RGB-D images
+    /* Track RGB-D images */
     Sophus::SE3f cameraPose_worldToCamera{};
     if (p_tracker->grabImageRGBD(imToFeed,
                                  imDepthToFeed,
@@ -254,5 +254,5 @@ SystemStatus System::trackRGBD(
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

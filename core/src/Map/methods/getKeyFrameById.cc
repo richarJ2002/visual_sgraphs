@@ -52,5 +52,5 @@ MapStatus Map::getKeyFrameById(long unsigned int idCount_in,
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

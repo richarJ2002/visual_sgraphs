@@ -48,7 +48,7 @@ LocalMappingStatus LocalMapping::processNewKeyFrame()
         newKeyFrames.pop_front();
     }
 
-    // Compute Bags of Words structures
+    /* Compute Bags of Words structures */
     if (p_currentKeyFrame->computeBagOfWords() !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -58,7 +58,9 @@ LocalMappingStatus LocalMapping::processNewKeyFrame()
                      __func__);
     }
 
-    // Associate MapPoints to the new keyframe and update normal and descriptor
+    /*!
+     * Associate MapPoints to the new keyframe and update normal and descriptor
+     */
     std::vector<MapPoint *> matchedMapPoints{};
     if (p_currentKeyFrame->getMapPointMatches(matchedMapPoints) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -128,8 +130,11 @@ LocalMappingStatus LocalMapping::processNewKeyFrame()
                                      __func__);
                     }
                 }
-                else // this can only happen for new stereo points inserted by
-                     // the Tracking
+                /*!
+                 * this can only happen for new stereo points inserted by the
+                 * Tracking
+                 */
+                else
                 {
                     recentAddedMapPoints.push_back(p_mapPoint);
                 }
@@ -137,7 +142,7 @@ LocalMappingStatus LocalMapping::processNewKeyFrame()
         }
     }
 
-    // Update links in the Covisibility Graph
+    /* Update links in the Covisibility Graph */
     if (p_currentKeyFrame->updateConnections() !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -147,7 +152,7 @@ LocalMappingStatus LocalMapping::processNewKeyFrame()
                      __func__);
     }
 
-    // Insert Keyframe in Map
+    /* Insert Keyframe in Map */
     if (p_atlas->addKeyFrame(p_currentKeyFrame) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -160,5 +165,5 @@ LocalMappingStatus LocalMapping::processNewKeyFrame()
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

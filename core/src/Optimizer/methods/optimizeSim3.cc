@@ -62,7 +62,7 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
         new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
     optimizer.setAlgorithm(p_solver);
 
-    // Camera poses
+    /* Camera poses */
     Eigen::Matrix3f R1w{};
     if (p_keyFrame1_in->getRotation(R1w) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -100,7 +100,7 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
                      __func__);
     }
 
-    // Set Sim3 vertex
+    /* Set Sim3 vertex */
     vs_graphs::core::VertexSim3Expmap *vSim3 =
         new vs_graphs::core::VertexSim3Expmap();
     vSim3->isScaleFixed = isScaleFixed_in;
@@ -111,7 +111,7 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
     vSim3->p_secondCamera = p_keyFrame2_in->p_camera;
     optimizer.addVertex(vSim3);
 
-    // Set MapPoint vertices
+    /* Set MapPoint vertices */
     const int               N = matches1_inout.size();
     std::vector<MapPoint *> mapPoints1{};
     if (p_keyFrame1_in->getMapPointMatches(mapPoints1) !=
@@ -237,7 +237,7 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
         {
             matchWithoutMapPointCount++;
 
-            // TODO The 3D position in KF1 doesn't exist
+            /* TODO The 3D position in KF1 doesn't exist */
             bool mapPoint2IsBad2{};
             if (p_mapPoint2->isBad(mapPoint2IsBad2) !=
                 MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -304,7 +304,7 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
 
         correspondenceCount++;
 
-        // Set edge x1 = S12*X2
+        /* Set edge x1 = S12*X2 */
         Eigen::Matrix<double, 2, 1> observation1;
         const cv::KeyPoint         &undistortedKeyPoint1 =
             p_keyFrame1_in->keyPointsUndistorted[edges12Index];
@@ -329,7 +329,7 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
         p_robustKernel1->setDelta(deltaHuber);
         optimizer.addEdge(e12);
 
-        // Set edge x2 = S21*X1
+        /* Set edge x2 = S21*X1 */
         Eigen::Matrix<double, 2, 1> observation2;
         cv::KeyPoint                undistortedKeyPoint2;
         bool                        inKeyFrame2;
@@ -383,11 +383,11 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
         isInKeyFrame2Flags.push_back(inKeyFrame2);
     }
 
-    // Optimize!
+    /* Optimize! */
     optimizer.initializeOptimization();
     optimizer.optimize(5);
 
-    // Check inliers
+    /* Check inliers */
     int badCount             = 0;
     int badOutKeyFrame2Count = 0;
     for (size_t edges12Index = 0; edges12Index < edges12.size(); edges12Index++)
@@ -417,7 +417,7 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
             continue;
         }
 
-        // Check if remove the robust adjustment improve the result
+        /* Check if remove the robust adjustment improve the result */
         e12->setRobustKernel(0);
         e21->setRobustKernel(0);
     }
@@ -434,7 +434,7 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
         return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
     }
 
-    // Optimize again only with inliers
+    /* Optimize again only with inliers */
     optimizer.initializeOptimization();
     optimizer.optimize(moreIterationCount);
 
@@ -460,7 +460,7 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
         }
     }
 
-    // Recover optimized Sim3
+    /* Recover optimized Sim3 */
     g2o::VertexSim3Expmap *vSim3_recov =
         static_cast<g2o::VertexSim3Expmap *>(optimizer.vertex(0));
     g2oS12_inout = vSim3_recov->estimate();
@@ -469,5 +469,5 @@ OptimizerStatus Optimizer::optimizeSim3(KeyFrame                *p_keyFrame1_in,
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

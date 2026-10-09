@@ -31,4 +31,4 @@
 #include "Semantic/SemanticDiagnostics/objects.h"
 #include "Semantic/SemanticDiagnostics/public_functions.h"
 
-#endif // SEMANTIC_DIAGNOSTICS_H
+#endif /* SEMANTIC_DIAGNOSTICS_H */

@@ -81,7 +81,7 @@ TrackingStatus Tracking::reset(bool isRequestedByLocalMapping_in)
         }
     }
 
-    // Reset Local Mapping
+    /* Reset Local Mapping */
     if (!isRequestedByLocalMapping_in)
     {
         if (Verbose::printMess("Reseting Local Mapper...",
@@ -111,7 +111,7 @@ TrackingStatus Tracking::reset(bool isRequestedByLocalMapping_in)
         }
     }
 
-    // Reset Loop Closing
+    /* Reset Loop Closing */
     if (Verbose::printMess("Reseting Loop Closing...",
                            Verbose::VERBOSITY_NORMAL) !=
         VerboseStatus::VERBOSE_STATUS_SUCCESS)
@@ -138,7 +138,7 @@ TrackingStatus Tracking::reset(bool isRequestedByLocalMapping_in)
                      __func__);
     }
 
-    // Clear BoW Database
+    /* Clear BoW Database */
     if (Verbose::printMess("Reseting Database...", Verbose::VERBOSITY_NORMAL) !=
         VerboseStatus::VERBOSE_STATUS_SUCCESS)
     {
@@ -164,7 +164,7 @@ TrackingStatus Tracking::reset(bool isRequestedByLocalMapping_in)
                      __func__);
     }
 
-    // Clear Map (this erase MapPoints and KeyFrames)
+    /* Clear Map (this erase MapPoints and KeyFrames) */
     if (p_atlas->clearAtlas() != AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -232,5 +232,5 @@ TrackingStatus Tracking::reset(bool isRequestedByLocalMapping_in)
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

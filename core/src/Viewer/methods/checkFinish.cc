@@ -47,5 +47,5 @@ ViewerStatus Viewer::checkFinish(bool &isFinishRequested_out)
     return ViewerStatus::VIEWER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

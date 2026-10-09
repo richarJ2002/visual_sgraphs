@@ -47,8 +47,8 @@ enum class Sha256DigestStatus : std::uint8_t
     SHA256_DIGEST_STATUS_SUCCESS = 0U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SHA256_DIGEST_STATUS_H
+#endif /* SHA256_DIGEST_STATUS_H */

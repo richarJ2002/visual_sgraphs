@@ -83,5 +83,5 @@ TEST(OptimizerEdgeLookup, ReturnsNullptrForAnEmptyVector)
     EXPECT_EQ(p_keyFrame, nullptr);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

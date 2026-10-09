@@ -50,5 +50,5 @@ MapStatus Map::getFloorById(int floorId_in, semantic::Floor *&p_floorById_out)
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

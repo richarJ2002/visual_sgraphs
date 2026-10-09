@@ -52,5 +52,5 @@ SystemStatus System::getAllKeyFrames(std::vector<KeyFrame *> &allKeyFrames_out)
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

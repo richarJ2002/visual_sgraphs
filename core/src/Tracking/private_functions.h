@@ -49,7 +49,7 @@ namespace core
                                            double          &deviation_out);
 #endif
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif /* VS_GRAPHS_CORE_TRACKING_PRIVATE_FUNCTIONS_H */

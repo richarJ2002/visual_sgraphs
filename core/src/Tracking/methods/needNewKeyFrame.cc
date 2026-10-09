@@ -95,7 +95,7 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    // If Local Mapping is freezed by a Loop Closure do not insert keyframes
+    /* If Local Mapping is freezed by a Loop Closure do not insert keyframes */
     bool localMapperIsStopped{};
     if (p_localMapper->isStopped(localMapperIsStopped) !=
         LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
@@ -117,10 +117,6 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
     }
     if (localMapperIsStopped || localMapperIsStopRequested)
     {
-        /*if(mSensor == System::MONOCULAR)
-        {
-            std::cout << "NeedNewKeyFrame: localmap stopped" << std::endl;
-        }*/
         needNewKeyFrame_out = false;
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
@@ -136,8 +132,10 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
     }
     const int keyFrameCount = static_cast<int>(keyFrameCountValue);
 
-    // Do not insert keyframes if not enough frames have passed from last
-    // relocalisation
+    /*!
+     * Do not insert keyframes if not enough frames have passed from last
+     * relocalisation
+     */
     if (currentFrame.id < lastRelocFrameId + maxFrames &&
         keyFrameCount > maxFrames)
     {
@@ -145,7 +143,7 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    // Tracked MapPoints in the reference keyframe
+    /* Tracked MapPoints in the reference keyframe */
     int minimumObservationCount = 3;
     if (keyFrameCount <= 2)
         minimumObservationCount = 2;
@@ -160,8 +158,10 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
                      __func__);
     }
 
-    // Check how many "close" points are being tracked and how many could be
-    // potentially created.
+    /*!
+     * Check how many "close" points are being tracked and how many could be
+     * potentially created.
+     */
     int nonTrackedCloseCount = 0;
     int trackedCloseCount    = 0;
 
@@ -188,8 +188,10 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
     bNeedToInsertClose =
         (trackedCloseCount < 100) && (nonTrackedCloseCount > 70);
 
-    // AGGRESSIVE CORRIDOR TRACKING: Stricter KF insertion criteria
-    // Require minimum 30 total inliers, 15 close inliers, 1.0s temporal spacing
+    /*!
+     * AGGRESSIVE CORRIDOR TRACKING: Stricter KF insertion criteria
+     * Require minimum 30 total inliers, 15 close inliers, 1.0s temporal spacing
+     */
     const bool hasEnoughTotalInliers = (matchesInliers >= minInliersForKF);
     const bool hasEnoughCloseInliers =
         (trackedCloseCount >= minCloseInliersForKF);
@@ -197,7 +199,7 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
         p_lastKeyFrame && (currentFrame.timeStamp - p_lastKeyFrame->timeStamp >=
                            minKeyFrameTemporalSpacing);
 
-    // Thresholds
+    /* Thresholds */
     float thresholdReferenceRatio = 0.75f;
     if (keyFrameCount < 2)
         thresholdReferenceRatio = 0.4f;
@@ -216,7 +218,7 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
             thresholdReferenceRatio = 0.90f;
     }
 
-    // Local Mapping accept keyframes?
+    /* Local Mapping accept keyframes? */
     bool isLocalMappingIdle{};
     if (p_localMapper->isAcceptingKeyFrames(isLocalMappingIdle) !=
         LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
@@ -227,10 +229,14 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
                      __func__);
     }
 
-    // Condition 1a: More than "MaxFrames" have passed from last keyframe
-    // insertion
+    /*!
+     * Condition 1a: More than "MaxFrames" have passed from last keyframe
+     * insertion
+     */
     const bool c1a = currentFrame.id >= lastKeyFrameId + maxFrames;
-    // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
+    /*!
+     * Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
+     */
     int        localMapperKeyFrameCount{};
     if (((currentFrame.id >= lastKeyFrameId + minFrames) &&
          isLocalMappingIdle) &&
@@ -244,20 +250,22 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
     }
     const bool c1b = ((currentFrame.id >= lastKeyFrameId + minFrames) &&
                       isLocalMappingIdle && localMapperKeyFrameCount < 5);
-    // Condition 1c: tracking is weak
+    /* Condition 1c: tracking is weak */
     const bool c1c =
         sensor != System::MONOCULAR && sensor != System::IMU_MONOCULAR &&
         sensor != System::IMU_STEREO && sensor != System::IMU_RGBD &&
         (matchesInliers < referenceMatchCount * 0.25 || bNeedToInsertClose) &&
         matchesInliers > 20;
-    // Condition 2: Few tracked points compared to reference keyframe.
+    /* Condition 2: Few tracked points compared to reference keyframe. */
     const bool c2 =
         (((matchesInliers < referenceMatchCount * thresholdReferenceRatio ||
            bNeedToInsertClose)) &&
          matchesInliers > minInliersForKF);
 
-    // AGGRESSIVE: Additional corridor-specific conditions
-    // Condition 3: Temporal spacing (1.0s minimum)
+    /*!
+     * AGGRESSIVE: Additional corridor-specific conditions
+     * Condition 3: Temporal spacing (1.0s minimum)
+     */
     bool c3 = false;
     if (p_lastKeyFrame)
     {
@@ -270,15 +278,17 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
         }
     }
 
-    // Condition 4: Enough inliers but temporal spacing met
+    /* Condition 4: Enough inliers but temporal spacing met */
     bool c4 = false;
     if (hasEnoughTotalInliers && hasEnoughCloseInliers &&
         hasEnoughTimeSinceLastKeyFrame)
     {
         c4 = true;
     }
-    // Also insert if tracking is weak (RECENTLY_LOST) and we have minimum
-    // inliers
+    /*!
+     * Also insert if tracking is weak (RECENTLY_LOST) and we have minimum
+     * inliers
+     */
     else if (state == RECENTLY_LOST && matchesInliers > minInliersForKF)
     {
         c4 = true;
@@ -286,8 +296,10 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
 
     if (((c1a || c1b || c1c) && c2) || c3 || c4)
     {
-        // If the mapping accepts keyframes, insert keyframe.
-        // Otherwise send a signal to interrupt BA
+        /*!
+         * If the mapping accepts keyframes, insert keyframe.
+         * Otherwise send a signal to interrupt BA
+         */
         bool localMapperIsInitializing{};
         if (!(isLocalMappingIdle) &&
             p_localMapper->isInitializing(localMapperIsInitializing) !=
@@ -351,5 +363,5 @@ TrackingStatus Tracking::needNewKeyFrame(bool &needNewKeyFrame_out)
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

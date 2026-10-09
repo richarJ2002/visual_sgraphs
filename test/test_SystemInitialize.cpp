@@ -14,15 +14,6 @@
  */
 
 /*!
- * @file            test_GeometricToolsStatus.cpp
- *
- * @brief           Statuses of GeometricTools::triangulate: a point at a
- *                  finite depth succeeds; a solution at infinity (zero
- *                  homogeneous scale) is a numerical failure that leaves the
- *                  output unchanged.
- */
-
-/*!
  * @file            test_SystemInitialize.cpp
  *
  * @brief           Checks that System::initialize() reports an unreadable
@@ -105,7 +96,7 @@ class ReadableSettingsFile
     const std::string path;
 };
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that initializing with a settings file that does not
@@ -289,5 +280,5 @@ TEST(SettingsCamera, BuildsAKannalaBrandt8Camera)
                 camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

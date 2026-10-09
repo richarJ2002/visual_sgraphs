@@ -37,8 +37,10 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
     vs_graphs::core::geometric::Plane                *p_groundPlane_in,
     size_t                                           &groundPlanePoints_out)
 {
-    // [TODO] - verify the correctness of this function
-    // the point cloud of the ground plane
+    /*!
+     * [TODO] - verify the correctness of this function
+     * the point cloud of the ground plane
+     */
     geometric::Plane::GeometrySnapshot groundGeometry{};
     if (p_groundPlane_in->getGeometrySnapshot(groundGeometry) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -51,10 +53,10 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
     pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr p_groundCloud =
         groundGeometry.supportCloud;
 
-    // the number of points within the walls
+    /* the number of points within the walls */
     size_t count = 0;
 
-    // store the wall equations
+    /* store the wall equations */
     std::vector<Eigen::Vector4d> wallEquations;
     for (geometric::Plane *const &wall : roomWalls_in)
     {
@@ -70,22 +72,24 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
         wallEquations.push_back(wallGetGlobalEquation.coeffs());
     }
 
-    // for each point in the ground plane, check if it is within the walls
+    /* for each point in the ground plane, check if it is within the walls */
     for (const pcl::PointXYZRGBA &point : p_groundCloud->points)
     {
         bool isWithinWalls = true;
         for (const Eigen::Vector4d &wallEquation : wallEquations)
         {
-            // convert the point to Eigen vector
+            /* convert the point to Eigen vector */
             Eigen::Vector3d pointVector =
                 Eigen::Vector3d(point.x, point.y, point.z);
 
-            // substitute the point into the wall equation to get the signed
-            // distance
+            /*!
+             * substitute the point into the wall equation to get the signed
+             * distance
+             */
             float signedDistance = static_cast<float>(
                 wallEquation.head<3>().dot(pointVector) + wallEquation(3));
 
-            // if the point is outside the wall, break the loop
+            /* if the point is outside the wall, break the loop */
             if (signedDistance < 0)
             {
                 isWithinWalls = false;
@@ -93,7 +97,7 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
             }
         }
 
-        // if the point is within the walls, increment the count
+        /* if the point is within the walls, increment the count */
         if (isWithinWalls)
         {
             count++;
@@ -103,5 +107,5 @@ GeoSemHelpersStatus GeoSemHelpers::countGroundPlanePointsWithinWalls(
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

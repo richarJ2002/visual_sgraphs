@@ -83,15 +83,15 @@ ORBextractorStatus
     const uchar *p_center =
         &image_in.at<uchar>(cvRound(point_in.y), cvRound(point_in.x));
 
-    // Treat the center line differently, v=0
+    /* Treat the center line differently, v=0 */
     for (int u = -HALF_PATCH_SIZE; u <= HALF_PATCH_SIZE; ++u)
         momentX += u * p_center[u];
 
-    // Go line by line in the circuI853lar patch
+    /* Go line by line in the circuI853lar patch */
     int step = static_cast<int>(image_in.step1());
     for (int v = 1; v <= HALF_PATCH_SIZE; ++v)
     {
-        // Proceed over the two lines
+        /* Proceed over the two lines */
         int sum = 0;
         int d   = maximumU_in[v];
         for (int u = -d; u <= d; ++u)
@@ -109,5 +109,5 @@ ORBextractorStatus
     return ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

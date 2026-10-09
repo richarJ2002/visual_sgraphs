@@ -125,5 +125,5 @@ TEST(GroundPlaneFilter, ReturnsAValueForAMultiPointSupportCloud)
     EXPECT_TRUE(height.has_value());
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

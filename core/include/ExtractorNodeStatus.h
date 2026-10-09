@@ -45,7 +45,7 @@ enum class ExtractorNodeStatus : std::uint8_t
     EXTRACTOR_NODE_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // EXTRACTOR_NODE_STATUS_H
+#endif /* EXTRACTOR_NODE_STATUS_H */

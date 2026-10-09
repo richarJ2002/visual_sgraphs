@@ -73,7 +73,7 @@ MLPnPsolverStatus
     assert(numberCorrespondences > 5);
 
     bool                         planar = false;
-    // compute the nullspace of all vectors
+    /* compute the nullspace of all vectors */
     std::vector<Eigen::MatrixXd> nullspaces(numberCorrespondences);
     Eigen::MatrixXd              points3(3, numberCorrespondences);
     Points3                      points3v(numberCorrespondences);
@@ -85,31 +85,33 @@ MLPnPsolverStatus
         BearingVector currentBearing = f_in[indices_in[correspondenceIndex]];
         points3.col(correspondenceIndex) =
             p_in[indices_in[correspondenceIndex]];
-        // nullspace of right vector
+        /* nullspace of right vector */
         Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::HouseholderQRPreconditioner>
             svd_f(currentBearing.transpose(), Eigen::ComputeFullV);
         nullspaces[correspondenceIndex] = svd_f.matrixV().block(0, 1, 3, 2);
         points3v[correspondenceIndex]   = p_in[indices_in[correspondenceIndex]];
     }
 
-    //////////////////////////////////////
-    // 1. test if we have a planar scene
-    //////////////////////////////////////
+    /*!
+     * ////////////////////////////////////
+     * 1. test if we have a planar scene
+     * ////////////////////////////////////
+     */
 
     Eigen::Matrix3d planarTest = points3 * points3.transpose();
     Eigen::FullPivHouseholderQR<Eigen::Matrix3d> rankTest(planarTest);
     Eigen::Matrix3d                              eigenRot;
     eigenRot.setIdentity();
 
-    // if yes -> transform points to new eigen frame
-    // if (minEigenVal < 1e-3 || minEigenVal == 0.0)
-    // rankTest.setThreshold(1e-10);
+    /* if yes -> transform points to new eigen frame */
     if (rankTest.rank() == 2)
     {
         planar = true;
-        // self adjoint is faster and more accurate than general eigen solvers
-        // also has closed form solution for 3x3 self-adjoint matrices
-        // in addition this solver sorts the eigenvalues in increasing order
+        /*!
+         * self adjoint is faster and more accurate than general eigen solvers
+         * also has closed form solution for 3x3 self-adjoint matrices
+         * in addition this solver sorts the eigenvalues in increasing order
+         */
         Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigenSolver(planarTest);
         eigenRot = eigenSolver.eigenvectors().real();
         eigenRot.transposeInPlace();
@@ -119,16 +121,20 @@ MLPnPsolverStatus
             points3.col(correspondenceIndex) =
                 eigenRot * points3.col(correspondenceIndex);
     }
-    //////////////////////////////////////
-    // 2. stochastic model
-    //////////////////////////////////////
+    /*!
+     * ////////////////////////////////////
+     * 2. stochastic model
+     * ////////////////////////////////////
+     */
     Eigen::SparseMatrix<double> P(2 * numberCorrespondences,
                                   2 * numberCorrespondences);
     bool                        shouldUseCovariance = false;
-    P.setIdentity(); // standard
+    P.setIdentity(); /* standard */
 
-    // if we do have covariance information
-    // -> fill covariance matrix
+    /*!
+     * if we do have covariance information
+     * -> fill covariance matrix
+     */
     if (covMats_in.size() == numberCorrespondences)
     {
         shouldUseCovariance = true;
@@ -137,7 +143,7 @@ MLPnPsolverStatus
              correspondenceIndex < numberCorrespondences;
              ++correspondenceIndex)
         {
-            // invert matrix
+            /* invert matrix */
             Covariance2Matrix temp =
                 nullspaces[correspondenceIndex].transpose() *
                 covMats_in[correspondenceIndex] *
@@ -151,9 +157,11 @@ MLPnPsolverStatus
         }
     }
 
-    //////////////////////////////////////
-    // 3. fill the design matrix A
-    //////////////////////////////////////
+    /*!
+     * ////////////////////////////////////
+     * 3. fill the design matrix A
+     * ////////////////////////////////////
+     */
     const int       rowsA = 2 * numberCorrespondences;
     int             colsA = 12;
     Eigen::MatrixXd A;
@@ -166,7 +174,7 @@ MLPnPsolverStatus
         A = Eigen::MatrixXd(rowsA, 12);
     A.setZero();
 
-    // fill design matrix
+    /* fill design matrix */
     if (planar)
     {
         for (size_t correspondenceIndex = 0;
@@ -175,47 +183,47 @@ MLPnPsolverStatus
         {
             Point3 point3Current = points3.col(correspondenceIndex);
 
-            // r12
+            /* r12 */
             A(2 * correspondenceIndex, 0) =
                 nullspaces[correspondenceIndex](0, 0) * point3Current[1];
             A(2 * correspondenceIndex + 1, 0) =
                 nullspaces[correspondenceIndex](0, 1) * point3Current[1];
-            // r13
+            /* r13 */
             A(2 * correspondenceIndex, 1) =
                 nullspaces[correspondenceIndex](0, 0) * point3Current[2];
             A(2 * correspondenceIndex + 1, 1) =
                 nullspaces[correspondenceIndex](0, 1) * point3Current[2];
-            // r22
+            /* r22 */
             A(2 * correspondenceIndex, 2) =
                 nullspaces[correspondenceIndex](1, 0) * point3Current[1];
             A(2 * correspondenceIndex + 1, 2) =
                 nullspaces[correspondenceIndex](1, 1) * point3Current[1];
-            // r23
+            /* r23 */
             A(2 * correspondenceIndex, 3) =
                 nullspaces[correspondenceIndex](1, 0) * point3Current[2];
             A(2 * correspondenceIndex + 1, 3) =
                 nullspaces[correspondenceIndex](1, 1) * point3Current[2];
-            // r32
+            /* r32 */
             A(2 * correspondenceIndex, 4) =
                 nullspaces[correspondenceIndex](2, 0) * point3Current[1];
             A(2 * correspondenceIndex + 1, 4) =
                 nullspaces[correspondenceIndex](2, 1) * point3Current[1];
-            // r33
+            /* r33 */
             A(2 * correspondenceIndex, 5) =
                 nullspaces[correspondenceIndex](2, 0) * point3Current[2];
             A(2 * correspondenceIndex + 1, 5) =
                 nullspaces[correspondenceIndex](2, 1) * point3Current[2];
-            // t1
+            /* t1 */
             A(2 * correspondenceIndex, 6) =
                 nullspaces[correspondenceIndex](0, 0);
             A(2 * correspondenceIndex + 1, 6) =
                 nullspaces[correspondenceIndex](0, 1);
-            // t2
+            /* t2 */
             A(2 * correspondenceIndex, 7) =
                 nullspaces[correspondenceIndex](1, 0);
             A(2 * correspondenceIndex + 1, 7) =
                 nullspaces[correspondenceIndex](1, 1);
-            // t3
+            /* t3 */
             A(2 * correspondenceIndex, 8) =
                 nullspaces[correspondenceIndex](2, 0);
             A(2 * correspondenceIndex + 1, 8) =
@@ -230,62 +238,62 @@ MLPnPsolverStatus
         {
             Point3 point3Current = points3.col(correspondenceIndex);
 
-            // r11
+            /* r11 */
             A(2 * correspondenceIndex, 0) =
                 nullspaces[correspondenceIndex](0, 0) * point3Current[0];
             A(2 * correspondenceIndex + 1, 0) =
                 nullspaces[correspondenceIndex](0, 1) * point3Current[0];
-            // r12
+            /* r12 */
             A(2 * correspondenceIndex, 1) =
                 nullspaces[correspondenceIndex](0, 0) * point3Current[1];
             A(2 * correspondenceIndex + 1, 1) =
                 nullspaces[correspondenceIndex](0, 1) * point3Current[1];
-            // r13
+            /* r13 */
             A(2 * correspondenceIndex, 2) =
                 nullspaces[correspondenceIndex](0, 0) * point3Current[2];
             A(2 * correspondenceIndex + 1, 2) =
                 nullspaces[correspondenceIndex](0, 1) * point3Current[2];
-            // r21
+            /* r21 */
             A(2 * correspondenceIndex, 3) =
                 nullspaces[correspondenceIndex](1, 0) * point3Current[0];
             A(2 * correspondenceIndex + 1, 3) =
                 nullspaces[correspondenceIndex](1, 1) * point3Current[0];
-            // r22
+            /* r22 */
             A(2 * correspondenceIndex, 4) =
                 nullspaces[correspondenceIndex](1, 0) * point3Current[1];
             A(2 * correspondenceIndex + 1, 4) =
                 nullspaces[correspondenceIndex](1, 1) * point3Current[1];
-            // r23
+            /* r23 */
             A(2 * correspondenceIndex, 5) =
                 nullspaces[correspondenceIndex](1, 0) * point3Current[2];
             A(2 * correspondenceIndex + 1, 5) =
                 nullspaces[correspondenceIndex](1, 1) * point3Current[2];
-            // r31
+            /* r31 */
             A(2 * correspondenceIndex, 6) =
                 nullspaces[correspondenceIndex](2, 0) * point3Current[0];
             A(2 * correspondenceIndex + 1, 6) =
                 nullspaces[correspondenceIndex](2, 1) * point3Current[0];
-            // r32
+            /* r32 */
             A(2 * correspondenceIndex, 7) =
                 nullspaces[correspondenceIndex](2, 0) * point3Current[1];
             A(2 * correspondenceIndex + 1, 7) =
                 nullspaces[correspondenceIndex](2, 1) * point3Current[1];
-            // r33
+            /* r33 */
             A(2 * correspondenceIndex, 8) =
                 nullspaces[correspondenceIndex](2, 0) * point3Current[2];
             A(2 * correspondenceIndex + 1, 8) =
                 nullspaces[correspondenceIndex](2, 1) * point3Current[2];
-            // t1
+            /* t1 */
             A(2 * correspondenceIndex, 9) =
                 nullspaces[correspondenceIndex](0, 0);
             A(2 * correspondenceIndex + 1, 9) =
                 nullspaces[correspondenceIndex](0, 1);
-            // t2
+            /* t2 */
             A(2 * correspondenceIndex, 10) =
                 nullspaces[correspondenceIndex](1, 0);
             A(2 * correspondenceIndex + 1, 10) =
                 nullspaces[correspondenceIndex](1, 1);
-            // t3
+            /* t3 */
             A(2 * correspondenceIndex, 11) =
                 nullspaces[correspondenceIndex](2, 0);
             A(2 * correspondenceIndex + 1, 11) =
@@ -293,48 +301,54 @@ MLPnPsolverStatus
         }
     }
 
-    //////////////////////////////////////
-    // 4. solve least squares
-    //////////////////////////////////////
+    /*!
+     * ////////////////////////////////////
+     * 4. solve least squares
+     * ////////////////////////////////////
+     */
     Eigen::MatrixXd AtPA;
     if (shouldUseCovariance)
-        AtPA = A.transpose() * P *
-               A; // setting up the full normal equations seems to be unstable
+        /* setting up the full normal equations seems to be unstable */
+        AtPA = A.transpose() * P * A;
     else
         AtPA = A.transpose() * A;
 
     Eigen::JacobiSVD<Eigen::MatrixXd> svd_A(AtPA, Eigen::ComputeFullV);
     Eigen::MatrixXd                   result1 = svd_A.matrixV().col(colsA - 1);
 
-    ////////////////////////////////
-    // now we treat the results differently,
-    // depending on the scene (planar or not)
-    ////////////////////////////////
+    /*!
+     * //////////////////////////////
+     * now we treat the results differently,
+     * depending on the scene (planar or not)
+     * //////////////////////////////
+     */
     RotationMatrix    Rout;
     TranslationVector tout;
-    if (planar) // planar case
+    if (planar) /* planar case */
     {
         RotationMatrix temporary;
-        // until now, we only estimated
-        // row one and two of the transposed rotation matrix
+        /*!
+         * until now, we only estimated
+         * row one and two of the transposed rotation matrix
+         */
         temporary << 0.0, result1(0, 0), result1(1, 0), 0.0, result1(2, 0),
             result1(3, 0), 0.0, result1(4, 0), result1(5, 0);
-        // row 3
+        /* row 3 */
         temporary.col(0) = temporary.col(1).cross(temporary.col(2));
         temporary.transposeInPlace();
 
         double scale = 1.0 / std::sqrt(std::abs(temporary.col(1).norm() *
                                                 temporary.col(2).norm()));
-        // find best rotation matrix in frobenius sense
+        /* find best rotation matrix in frobenius sense */
         Eigen::JacobiSVD<Eigen::MatrixXd> svd_R_frob(temporary,
                                                      Eigen::ComputeFullU |
                                                          Eigen::ComputeFullV);
         RotationMatrix                    rout1 =
             svd_R_frob.matrixU() * svd_R_frob.matrixV().transpose();
-        // test if we found a good rotation matrix
+        /* test if we found a good rotation matrix */
         if (rout1.determinant() < 0)
             rout1 *= -1.0;
-        // rotate this matrix back using the eigen frame
+        /* rotate this matrix back using the eigen frame */
         rout1 = eigenRot.transpose() * rout1;
 
         TranslationVector t =
@@ -344,7 +358,7 @@ MLPnPsolverStatus
         rout1 *= -1;
         if (rout1.determinant() < 0.0)
             rout1.col(2) *= -1;
-        // now we have to find the best out of 4 combinations
+        /* now we have to find the best out of 4 combinations */
         RotationMatrix R1, R2;
         R1.col(0) = rout1.col(0);
         R1.col(1) = rout1.col(1);
@@ -388,34 +402,34 @@ MLPnPsolverStatus
         Rout = Ts[minimumReprojectionIndex].block<3, 3>(0, 0);
         tout = Ts[minimumReprojectionIndex].block<3, 1>(0, 3);
     }
-    else // non-planar
+    else /* non-planar */
     {
         RotationMatrix temporary;
         temporary << result1(0, 0), result1(3, 0), result1(6, 0), result1(1, 0),
             result1(4, 0), result1(7, 0), result1(2, 0), result1(5, 0),
             result1(8, 0);
-        // get the scale
+        /* get the scale */
         double scale = 1.0 / std::pow(std::abs(temporary.col(0).norm() *
                                                temporary.col(1).norm() *
                                                temporary.col(2).norm()),
                                       1.0 / 3.0);
-        // double scale = 1.0 / std::sqrt(std::abs(tmp.col(0).norm() *
-        // tmp.col(1).norm()));
-        //  find best rotation matrix in frobenius sense
+        /*  find best rotation matrix in frobenius sense */
         Eigen::JacobiSVD<Eigen::MatrixXd> svd_R_frob(temporary,
                                                      Eigen::ComputeFullU |
                                                          Eigen::ComputeFullV);
         Rout = svd_R_frob.matrixU() * svd_R_frob.matrixV().transpose();
-        // test if we found a good rotation matrix
+        /* test if we found a good rotation matrix */
         if (Rout.determinant() < 0)
             Rout *= -1.0;
-        // scale translation
+        /* scale translation */
         tout = Rout * (scale * TranslationVector(result1(9, 0),
                                                  result1(10, 0),
                                                  result1(11, 0)));
 
-        // find correct direction in terms of reprojection error, just take the
-        // first 6 correspondences
+        /*!
+         * find correct direction in terms of reprojection error, just take the
+         * first 6 correspondences
+         */
         std::vector<double> error(2);
         std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>
             Ts(2);
@@ -444,9 +458,11 @@ MLPnPsolverStatus
         Rout = Ts[0].block<3, 3>(0, 0);
     }
 
-    //////////////////////////////////////
-    // 5. gauss newton
-    //////////////////////////////////////
+    /*!
+     * ////////////////////////////////////
+     * 5. gauss newton
+     * ////////////////////////////////////
+     */
     RodriguesVector omega{};
     if (rot2rodrigues(Rout, omega) !=
         MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
@@ -484,12 +500,12 @@ MLPnPsolverStatus
     }
     Rout = rotation2;
     tout = TranslationVector(minx[3], minx[4], minx[5]);
-    // result inverse as opengv uses this convention
+    /* result inverse as opengv uses this convention */
     result_inout.block<3, 3>(0, 0) = Rout;
     result_inout.block<3, 1>(0, 3) = tout;
 
     return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

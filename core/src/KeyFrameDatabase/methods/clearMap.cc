@@ -39,14 +39,14 @@ KeyFrameDatabaseStatus KeyFrameDatabase::clearMap(Map *p_map_in)
 {
     std::unique_lock<std::mutex> lock(databaseMutex);
 
-    // Erase elements in the Inverse File for the entry
+    /* Erase elements in the Inverse File for the entry */
     for (std::vector<std::list<KeyFrame *>>::iterator
              invertedFileRowIt  = invertedFile.begin(),
              invertedFileRowEnd = invertedFile.end();
          invertedFileRowIt != invertedFileRowEnd;
          invertedFileRowIt++)
     {
-        // List of keyframes that share the word
+        /* List of keyframes that share the word */
         std::list<KeyFrame *> &keyFramesForWord = *invertedFileRowIt;
 
         for (std::list<KeyFrame *>::iterator
@@ -67,8 +67,10 @@ KeyFrameDatabaseStatus KeyFrameDatabase::clearMap(Map *p_map_in)
             if (p_map_in == p_candidateKeyFrameMap)
             {
                 keyFrameIt = keyFramesForWord.erase(keyFrameIt);
-                // Dont delete the KF because the class Map clean all the KF
-                // when it is destroyed
+                /*!
+                 * Dont delete the KF because the class Map clean all the KF
+                 * when it is destroyed
+                 */
             }
             else
             {
@@ -80,5 +82,5 @@ KeyFrameDatabaseStatus KeyFrameDatabase::clearMap(Map *p_map_in)
     return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

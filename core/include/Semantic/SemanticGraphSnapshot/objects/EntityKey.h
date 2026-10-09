@@ -84,8 +84,8 @@ bool operator!=(const EntityKey &lhs_in, const EntityKey &rhs_in);
  */
 bool operator<(const EntityKey &lhs_in, const EntityKey &rhs_in);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_ENTITY_KEY_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_ENTITY_KEY_H */

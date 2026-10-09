@@ -256,8 +256,8 @@ struct TopologyNode
                    const std::vector<std::string> &right_in,
                    double                         &distance_out);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // VS_GRAPHS_CORE_SEMANTIC_SEMANTICCANDIDATES_PRIVATE_FUNCTIONS_H
+#endif /* VS_GRAPHS_CORE_SEMANTIC_SEMANTICCANDIDATES_PRIVATE_FUNCTIONS_H */

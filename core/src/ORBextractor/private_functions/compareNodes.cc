@@ -95,5 +95,5 @@ bool compareNodes(std::pair<int, ExtractorNode *> &e1_in,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -66,6 +66,6 @@ Sha256DigestStatus sha256HexDigest(const std::string &bytes_in,
     return Sha256DigestStatus::SHA256_DIGEST_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

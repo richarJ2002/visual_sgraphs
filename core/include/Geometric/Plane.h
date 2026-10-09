@@ -51,8 +51,8 @@ namespace vs_graphs
 namespace core
 {
 class KeyFrame;
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -918,8 +918,8 @@ class Plane
      */
     mutable std::mutex positionMutex;
 };
-} // namespace geometric
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometric */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif

@@ -39,27 +39,26 @@ namespace vs_graphs
 namespace core
 {
 
-// Adaptive FAST threshold: lower thresholds when tracking degrades
-// In low-texture corridors, fewer features are extracted, so we lower the
-// threshold
 TrackingStatus Tracking::adjustFASTThreshold()
 {
-    // Count features in current frame
+    /* Count features in current frame */
     int currentFeatureCount = currentFrame.keyPointCount;
 
-    // If this is the first frame after initialization, just record
+    /* If this is the first frame after initialization, just record */
     if (lastFrameFeatures == 0)
     {
         lastFrameFeatures = currentFeatureCount;
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    // Check if feature count dropped significantly
+    /* Check if feature count dropped significantly */
     float featureRatio = static_cast<float>(currentFeatureCount) /
                          static_cast<float>(std::max(1, lastFrameFeatures));
 
-    // If features dropped below 50% of previous (more sensitive), or absolute
-    // count is very low
+    /*!
+     * If features dropped below 50% of previous (more sensitive), or absolute
+     * count is very low
+     */
     bool lowFeatures = (featureRatio < 0.5f) || (currentFeatureCount < 400);
 
     if (lowFeatures)
@@ -71,15 +70,19 @@ TrackingStatus Tracking::adjustFASTThreshold()
         consecutiveLowFeatures = 0;
     }
 
-    // Adjust thresholds based on consecutive low-feature frames
-    // Lower thresholds to extract more features in textureless areas
+    /*!
+     * Adjust thresholds based on consecutive low-feature frames
+     * Lower thresholds to extract more features in textureless areas
+     */
     int newInitialThresholdFast = baseInitialFastThreshold;
     int newMinimumThresholdFast = baseMinimumFastThreshold;
 
-    if (consecutiveLowFeatures >= 1) // React faster - after just 1 frame
+    if (consecutiveLowFeatures >= 1) /* React faster - after just 1 frame */
     {
-        // Progressively lower thresholds (but not below minimum)
-        // Each step reduces by 3, minimum of 1 for both (more aggressive)
+        /*!
+         * Progressively lower thresholds (but not below minimum)
+         * Each step reduces by 3, minimum of 1 for both (more aggressive)
+         */
         int reduction = std::min(consecutiveLowFeatures, 6) * 3;
         newInitialThresholdFast =
             std::max(baseInitialFastThreshold - reduction, 1);
@@ -88,12 +91,12 @@ TrackingStatus Tracking::adjustFASTThreshold()
     }
     else if (consecutiveLowFeatures == 0 && currentFeatureCount > 2500)
     {
-        // Plenty of features - can restore base thresholds
+        /* Plenty of features - can restore base thresholds */
         newInitialThresholdFast = baseInitialFastThreshold;
         newMinimumThresholdFast = baseMinimumFastThreshold;
     }
 
-    // Apply new thresholds if changed
+    /* Apply new thresholds if changed */
     int orbExtractorLeftGetInitialFastThreshold{};
     if (p_orbExtractorLeft->getInitialFastThreshold(
             orbExtractorLeftGetInitialFastThreshold) !=
@@ -206,5 +209,5 @@ TrackingStatus Tracking::adjustFASTThreshold()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

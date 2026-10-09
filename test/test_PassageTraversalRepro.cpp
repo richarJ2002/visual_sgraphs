@@ -4,13 +4,13 @@
  * @brief           Regression test: reproduce the silent-passage-traversal
  *                  miss.
  *
- *                  The gate run 20260911-105315 showed UAV crossing
- *                  semantic::Passage#1 around t ≈ 7056-7065 sim seconds with
- *                  traversal counters staying zero.
+ *                  The gate run 20260911-105315 showed UAV crossing Passage#1
+ *                  around t ≈ 7056-7065 sim seconds with traversal counters
+ *                  staying zero.
  *
  *                  This test builds a minimal synthetic scenario with exactly 3
  *                  keyframes and a passage whose geometry is derived from the
- *                  gate run's sgraph output (semantic::Passage#1: centroid ≈
+ *                  gate run's sgraph output (Passage#1: centroid ≈
  *                  (-0.21,-0.75,5.72), width ≈ 1.135, height 2.0). It calls
  *                  updateTraversalEvidence() and asserts that
  *                  passage.getTraversalKnownToFarCount() > 0.
@@ -52,14 +52,7 @@ namespace core
 namespace test
 {
 
-// --------------------------------------------------------------------------
-// semantic::Passage geometry (derived from gate run
-// 20260911-105315__gate_verification):
-//   centroid: (-0.21, -0.75, 5.72) m
-//   width:  1.135355933026258 m
-//   height: 2.0 m
-//   connects room1 ↔ room2
-//
+/* Passage geometry from gate run 20260911-105315, between room1 and room2 */
 /*!
  * @brief           X of the passage centroid in the world frame, metres.
  */
@@ -115,11 +108,7 @@ static const double GROUND_NORMAL_Y = -1.0;
  */
 static const double GROUND_NORMAL_Z = 0.0;
 
-// --------------------------------------------------------------------------
-// Keyframe camera-centre positions (world frames).  These form a trajectory
-// that enters the passage from the known side (-X), passes through the
-// aperture, and exits to the far side (+X).
-// --------------------------------------------------------------------------
+/* Key frame camera centres: known side (-X), aperture, then far side (+X) */
 /*!
  * @brief           X of the entry key frame camera centre in the world frame,
  *                  metres; well on the known side (-X) of the aperture.
@@ -169,16 +158,16 @@ static const double FAR_SIDE_CAMERA_CENTER_Y = -1.0;
  */
 static const double FAR_SIDE_CAMERA_CENTER_Z = 6.0;
 
-// --------------------------------------------------------------------------
-// TEST_F case
-// --------------------------------------------------------------------------
+/* Test case */
 /*!
  * @brief           Checks that a trajectory from the known side, through the
  *                  aperture, to the far side records exactly one crossing.
  */
 TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
 {
-    // --- Atlas / map / passage setup ---------------------------------------
+    /*!
+     * --- Atlas / map / passage setup ---------------------------------------
+     */
     Atlas atlas(0);
     bool  wasEventPending{};
     ASSERT_EQ((atlas.consumeNewMapCreatedEvent(wasEventPending)),
@@ -188,7 +177,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     ASSERT_EQ((atlas.getCurrentMap(p_map)), AtlasStatus::ATLAS_STATUS_SUCCESS);
     EXPECT_NE(p_map, nullptr);
 
-    // Ground plane
+    /* Ground plane */
     geometric::Plane groundPlane;
     ASSERT_EQ((groundPlane.setId(0)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
@@ -230,7 +219,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     ASSERT_EQ((p_map->addMapPlane(&groundPlane)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    // Known-side room
+    /* Known-side room */
     semantic::Room knownRoom;
     ASSERT_EQ((knownRoom.setId(10)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -243,7 +232,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     ASSERT_EQ((p_map->addDetectedMapRoom(&knownRoom)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    // Far-side room (prospective)
+    /* Far-side room (prospective) */
     semantic::Room farRoom;
     ASSERT_EQ((farRoom.setId(11)),
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
@@ -256,7 +245,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     ASSERT_EQ((p_map->addDetectedMapRoom(&farRoom)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    // semantic::Passage#1 with geometry from the gate run
+    /* Passage#1 with geometry from the gate run */
     semantic::Passage passage;
     ASSERT_EQ((passage.setId(20)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
@@ -280,16 +269,14 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((passage.setKnownSideRoom(&knownRoom)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
+    /* known side is -X */
     ASSERT_EQ((passage.setKnownSideDirection(Eigen::Vector3d(-1.0, 0.0, 0.0))),
-              vs_graphs::core::semantic::PassageStatus::
-                  PASSAGE_STATUS_SUCCESS); // known
-                                           // side
-                                           // is -X
+              vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((passage.setProspectiveRoom(&farRoom)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
     ASSERT_EQ((p_map->addMapPassage(&passage)), MapStatus::MAP_STATUS_SUCCESS);
 
-    // --- KeyFrames (exactly 3) -------------------------------------------
+    /* --- KeyFrames (exactly 3) ------------------------------------------- */
     KeyFrame knownSideKeyFrame;
     knownSideKeyFrame.id = 0U;
     ASSERT_EQ((knownSideKeyFrame.setPose(
@@ -324,18 +311,24 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
     ASSERT_EQ((p_map->addKeyFrame(&farSideKeyFrame)),
               MapStatus::MAP_STATUS_SUCCESS);
 
-    // --- SemanticsManager + traversal evidence -----------------------------
+    /*!
+     * --- SemanticsManager + traversal evidence -----------------------------
+     */
     SemanticsManager manager(&atlas);
 
-    // Run the semantic cycle: this is where updateTraversalEvidence() iterates
-    // consecutive keyframe camera centres and checks
-    // segmentCrossesPassageOpening().
+    /*!
+     * Run the semantic cycle: this is where updateTraversalEvidence() iterates
+     * consecutive keyframe camera centres and checks
+     * segmentCrossesPassageOpening().
+     */
     ASSERT_EQ((manager.updateTraversalEvidence(&atlas)),
               SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
 
-    // --- Assertions --------------------------------------------------------
-    // The test expects that the UAV's known-side → far-side crossing is
-    // detected and recorded as KNOWN_TO_FAR evidence.
+    /*!
+     * --- Assertions --------------------------------------------------------
+     * The test expects that the UAV's known-side → far-side crossing is
+     * detected and recorded as KNOWN_TO_FAR evidence.
+     */
     std::size_t traversalKnownToFarCount2{};
     ASSERT_EQ((passage.getTraversalKnownToFarCount(traversalKnownToFarCount2)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
@@ -346,7 +339,7 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
            "not wired in, or ground-plane dependency, or dwell/confidence "
            "gating.";
 
-    // Also verify the passage is marked as having some traversal evidence.
+    /* Also verify the passage is marked as having some traversal evidence. */
     bool traversalEvidence{};
     ASSERT_EQ((passage.getTraversalEvidence(traversalEvidence)),
               vs_graphs::core::semantic::PassageStatus::PASSAGE_STATUS_SUCCESS);
@@ -355,6 +348,6 @@ TEST(PassageTraversalRepro, KnownSideToFarCrossingRecordsCount)
            "KNOWN_TO_FAR count > 0.";
 }
 
-} // namespace test
-} // namespace core
-} // namespace vs_graphs
+} /* namespace test */
+} /* namespace core */
+} /* namespace vs_graphs */

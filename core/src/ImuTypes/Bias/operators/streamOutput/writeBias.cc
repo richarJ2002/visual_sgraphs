@@ -56,6 +56,6 @@ std::ostream &operator<<(std::ostream &out_inout, const Bias &b_in)
     return out_inout;
 }
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */

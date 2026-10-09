@@ -287,7 +287,7 @@ enum class ResetAction : std::uint8_t
 [[nodiscard]] ResetCauseStatus reportResetAttribution(ResetCause  cause_in,
                                                       ResetAction action_in);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif /* VS_GRAPHS_CORE_RESET_CAUSE_H */

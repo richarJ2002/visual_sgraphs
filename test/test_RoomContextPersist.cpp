@@ -82,7 +82,7 @@ void makeRefitWallPlane(geometric::Plane &wall_inout, int id_in, Map *p_map_in)
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that exporting room context with no current map
@@ -272,9 +272,11 @@ TEST(RoomContextPersist, WallBoundsIndexAlignedWithMixedValidity)
     makeRefitWallPlane(refitWall, 1, p_map);
     ASSERT_EQ((p_map->addMapPlane(&refitWall)), MapStatus::MAP_STATUS_SUCCESS);
 
-    geometric::Plane
-        unrefitWall; // Never assigned a cloud: bounds stay at the
-                     // sentinel min>max default, so valid() is false.
+    /*!
+     * Never assigned a cloud: bounds stay at the sentinel min>max default, so
+     * valid() is false.
+     */
+    geometric::Plane unrefitWall;
     ASSERT_EQ((unrefitWall.setId(2)),
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
     ASSERT_EQ((unrefitWall.setMap(p_map)),
@@ -506,8 +508,8 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
     const semantic::PassageContext &sparse = p_knownSnap->passageContexts[1];
     EXPECT_EQ(sparse.id, 41);
     EXPECT_FALSE(sparse.isPassable);
-    EXPECT_FALSE(sparse.hasFarSideRoom);  // absence, not a sentinel ID
-    EXPECT_FALSE(sparse.isApertureValid); // negative width
+    EXPECT_FALSE(sparse.hasFarSideRoom);  /* absence, not a sentinel ID */
+    EXPECT_FALSE(sparse.isApertureValid); /* negative width */
     EXPECT_FALSE(sparse.hasKnownSideDirection);
     EXPECT_FALSE(sparse.hasKnownSideRoom);
     EXPECT_EQ(sparse.knownSideRoomId, -1);
@@ -518,7 +520,7 @@ TEST(RoomContextPersist, PassageContextIndexAlignedWithGenuineGetters)
 
     const semantic::PassageContext &nonFinite = p_knownSnap->passageContexts[2];
     EXPECT_EQ(nonFinite.id, 42);
-    EXPECT_FALSE(nonFinite.isApertureValid); // NaN height, default width
+    EXPECT_FALSE(nonFinite.isApertureValid); /* NaN height, default width */
     EXPECT_FALSE(nonFinite.hasFarSideRoom);
 }
 
@@ -878,5 +880,5 @@ TEST(RoomContextPersist,
     EXPECT_TRUE(readerComplete.load(std::memory_order_acquire));
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

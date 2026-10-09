@@ -74,7 +74,7 @@ bool Pinhole::reconstructWithTwoViews(const std::vector<cv::KeyPoint> &keys1_in,
     }
     return twoViewReconstructionIsReconstructed;
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

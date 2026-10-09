@@ -30,5 +30,5 @@ bool checkFault(const std::string &name_in)
 #endif
 }
 
-} // namespace testing
-} // namespace vs_graphs
+} /* namespace testing */
+} /* namespace vs_graphs */

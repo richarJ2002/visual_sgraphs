@@ -119,8 +119,8 @@ struct RawPlaneRef
     std::optional<EntityKey> wallKey;
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_RAW_PLANE_REF_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_RAW_PLANE_REF_H */

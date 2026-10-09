@@ -42,7 +42,7 @@ namespace core
 SystemStatus System::addSegmentedImage(
     std::tuple<uint64_t, cv::Mat, pcl::PCLPointCloud2::Ptr> *p_tuple_in)
 {
-    // Adding the segmented image to the buffer of the SemanticSegmentation
+    /* Adding the segmented image to the buffer of the SemanticSegmentation */
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -55,10 +55,12 @@ SystemStatus System::addSegmentedImage(
     if (p_params->general.modeOfOperation ==
         types::SystemParams::General::ModeOfOperation::GEO)
     {
-        // just clear the pointcloud of the keyframe and return, as semantic
-        // segmentation is not running. Still counts as "returned" -- the
-        // keyframe's round trip through the pipeline is over either way, and
-        // the lockstep backlog signal must not stall forever in GEO mode.
+        /*!
+         * just clear the pointcloud of the keyframe and return, as semantic
+         * segmentation is not running. Still counts as "returned" -- the
+         * keyframe's round trip through the pipeline is over either way, and
+         * the lockstep backlog signal must not stall forever in GEO mode.
+         */
         vs_graphs::core::KeyFrame *p_keyFrame = nullptr;
         if (p_atlas->getKeyFrameById(std::get<0>(*p_tuple_in), p_keyFrame) !=
             AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -100,5 +102,5 @@ SystemStatus System::addSegmentedImage(
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

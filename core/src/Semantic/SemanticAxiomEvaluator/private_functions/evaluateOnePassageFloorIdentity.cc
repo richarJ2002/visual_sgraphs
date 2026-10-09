@@ -89,8 +89,10 @@ SemanticAxiomEvaluatorStatus
             isKnownInvalidPassageEndpointReference2) !=
         SemanticAxiomEvaluatorStatus::SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // isKnownInvalidPassageEndpointReference cannot fail; continue as
-        // before.
+        /*!
+         * isKnownInvalidPassageEndpointReference cannot fail; continue as
+         * before.
+         */
     }
     bool isKnownInvalidPassageEndpointReference3{};
     if (!(isKnownInvalidPassageEndpointReference2) &&
@@ -100,8 +102,10 @@ SemanticAxiomEvaluatorStatus
             SemanticAxiomEvaluatorStatus::
                 SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
     {
-        // isKnownInvalidPassageEndpointReference cannot fail; continue as
-        // before.
+        /*!
+         * isKnownInvalidPassageEndpointReference cannot fail; continue as
+         * before.
+         */
     }
     if (isKnownInvalidPassageEndpointReference2 ||
         isKnownInvalidPassageEndpointReference3)
@@ -308,6 +312,6 @@ SemanticAxiomEvaluatorStatus
         SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

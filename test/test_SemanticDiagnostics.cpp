@@ -76,7 +76,7 @@ SemanticReportCacheEntry makeEntry(std::uint64_t               cycle_in,
     return entry;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that the first cycle emits a summary whose only
@@ -352,6 +352,6 @@ TEST(SemanticDiagnostics, OutputIsDeterministicAndJsonParseable)
     }
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

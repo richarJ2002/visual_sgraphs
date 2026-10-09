@@ -119,8 +119,10 @@ SemanticsManagerStatus SemanticsManager::recomputeRoomCentroidsFromWalls(void)
                                                       inwardNormal_world) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWallNormalTowardRoom_world cannot fail; continue as
-                // before.
+                /*!
+                 * getWallNormalTowardRoom_world cannot fail; continue as
+                 * before.
+                 */
             }
 
             wallCentroidSum +=
@@ -147,5 +149,5 @@ SemanticsManagerStatus SemanticsManager::recomputeRoomCentroidsFromWalls(void)
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

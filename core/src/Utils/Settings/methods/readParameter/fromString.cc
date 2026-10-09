@@ -87,7 +87,7 @@ SettingsStatus Settings::readParameter<std::string>(cv::FileStorage &storage_in,
     }
 }
 
-} // namespace settings
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace settings */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

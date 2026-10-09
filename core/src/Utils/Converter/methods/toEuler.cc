@@ -62,7 +62,7 @@ ConverterStatus Converter::toEuler(const cv::Mat      &rotationMatrix_in,
         rotationMatrix_in.at<float>(0, 0) * rotationMatrix_in.at<float>(0, 0) +
         rotationMatrix_in.at<float>(1, 0) * rotationMatrix_in.at<float>(1, 0));
 
-    bool singular = symmetricSum < 1e-6; // If
+    bool singular = symmetricSum < 1e-6; /* If */
 
     float xAngle, yAngle, zAngle;
     if (!singular)
@@ -91,7 +91,7 @@ ConverterStatus Converter::toEuler(const cv::Mat      &rotationMatrix_in,
     return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
-} // namespace converter
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace converter */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

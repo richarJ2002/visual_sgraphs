@@ -148,8 +148,8 @@ class SemanticReportCache
     bool                     hasCachedReport{false};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_REPORT_CACHE_H
+#endif /* SEMANTIC_REPORT_CACHE_H */

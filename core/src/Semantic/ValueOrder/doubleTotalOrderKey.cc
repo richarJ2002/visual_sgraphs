@@ -77,6 +77,6 @@ std::uint64_t doubleTotalOrderKey(double value_in)
     return bits ^ mask;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -148,7 +148,7 @@ semantic::Room *bootstrap(SemanticsManager &manager_inout, Atlas &atlas_inout)
     EXPECT_EQ(rooms.size(), 1U);
     return rooms.empty() ? nullptr : rooms.front();
 }
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that running the active-map bootstrap a second time
@@ -533,8 +533,7 @@ TEST(SemanticBootstrapPhase1,
     EXPECT_TRUE(allFloors.empty());
 
     /* No keyframes exist after the clear, so no usable camera pose. Recovery
-     * must still recreate semantic::Room#0/semantic::Floor#0 from the snapshot
-     * centroid. */
+     * must still recreate Room#0/Floor#0 from the snapshot centroid. */
     int bootstrapResult{};
     ASSERT_EQ(
         (manager.ensureActiveMapBootstrapHierarchyForTest(
@@ -615,9 +614,8 @@ TEST(SemanticBootstrapPhase1, BootstrapIgnoresSpuriousRoomWhenRecoveryPending)
               SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
     EXPECT_EQ(bootstrapResult, 1);
 
-    /* Recovery identity wins: current returns to semantic::Room#0, not the
-     * spurious lowest-ID fallback. Duplicate fusion owns the spurious room
-     * later. */
+    /* Recovery identity wins: current returns to Room#0, not the spurious
+     * lowest-ID fallback. Duplicate fusion owns the spurious room later. */
     int getCurrentRoomId2{};
     ASSERT_EQ((manager.getCurrentRoomId(getCurrentRoomId2)),
               SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS);
@@ -1662,5 +1660,5 @@ TEST(SemanticBootstrapPhase1, ZeroPoseKeyFrameFallsBackToSnapshotCentroid)
               vs_graphs::core::semantic::RoomStatus::ROOM_STATUS_SUCCESS);
     EXPECT_FALSE(centroid3.isZero());
 }
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

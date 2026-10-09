@@ -44,7 +44,7 @@ enum class GDirectionStatus : std::uint8_t
     GDIRECTION_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // GDIRECTION_STATUS_H
+#endif /* GDIRECTION_STATUS_H */

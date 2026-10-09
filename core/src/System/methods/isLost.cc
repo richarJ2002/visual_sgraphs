@@ -56,8 +56,7 @@ SystemStatus System::isLost(bool &isLost_out)
     }
     else
     {
-        if ((p_tracker->state ==
-             Tracking::LOST)) //||(mpTracker->mState==Tracking::RECENTLY_LOST))
+        if ((p_tracker->state == Tracking::LOST))
         {
             isLost_out = true;
             return SystemStatus::SYSTEM_STATUS_SUCCESS;
@@ -70,5 +69,5 @@ SystemStatus System::isLost(bool &isLost_out)
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

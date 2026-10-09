@@ -45,8 +45,8 @@ namespace vs_graphs
 namespace core
 {
 class KeyFrame;
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -105,7 +105,7 @@ class LocalMapping
      */
     [[nodiscard]] LocalMappingStatus setTracker(Tracking *p_tracker_in);
 
-    // Main function
+    /* Main function */
     /*!
      * @brief           Thread body: repeatedly takes the next queued key frame,
      *                  creates and culls map points, runs local bundle
@@ -133,7 +133,7 @@ class LocalMapping
      */
     [[nodiscard]] LocalMappingStatus emptyQueue();
 
-    // Thread Synch
+    /* Thread Synch */
     /*!
      * @brief           Asks the thread to stop at its next safe point and
      *                  aborts a running bundle adjustment.
@@ -661,6 +661,6 @@ class LocalMapping
     float initializationStartTime;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 #endif

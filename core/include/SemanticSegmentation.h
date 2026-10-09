@@ -283,7 +283,7 @@ class SemanticSegmentation
      */
     types::SystemParams *p_sysParams;
 
-    // Shutdown control (LocalMapping-style handshake)
+    /* Shutdown control (LocalMapping-style handshake) */
     /*!
      * @brief           Protects isFinishRequested and hasFinished.
      */
@@ -330,7 +330,7 @@ class SemanticSegmentation
      */
     SemanticSegmentation(Atlas *p_atlas_in);
 
-    // Semantic segmentation frame buffer processing
+    /* Semantic segmentation frame buffer processing */
     /*!
      * @brief           Queues one segmented frame for run(). When the buffer is
      *                  full the oldest queued frame is dropped and counted as
@@ -448,7 +448,7 @@ class SemanticSegmentation
                              int    clsId_in,
                              double confidence_in);
 
-    // Shutdown control
+    /* Shutdown control */
     /*!
      * @brief           Asks run() to leave its loop.
      *
@@ -466,10 +466,22 @@ class SemanticSegmentation
      */
     [[nodiscard]] SemanticSegmentationStatus isFinished(bool &isFinished_out);
 
-    // Running the thread
+    /* Running the thread */
+    /*!
+     * @brief           Thread loop: takes the queued segmentation results
+     *                  oldest first, splits each keyframe's point cloud into
+     *                  per-class clouds and adds the planes found to the atlas,
+     *                  until requestFinish() is called. Sleeps 3 ms while the
+     *                  queue is empty.
+     *
+     *                  Each queued item ends with one recorded outcome:
+     *                  accepted, or dropped because its keyframe is missing or
+     *                  bad, its cloud is missing, or its map is no longer the
+     *                  active map.
+     */
     void run();
 };
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTICSEG_H
+#endif /* SEMANTICSEG_H */

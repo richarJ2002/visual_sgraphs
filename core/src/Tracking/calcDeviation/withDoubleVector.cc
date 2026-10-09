@@ -54,5 +54,5 @@ TrackingStatus calcDeviation(std::vector<double> times_in,
 }
 #endif
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

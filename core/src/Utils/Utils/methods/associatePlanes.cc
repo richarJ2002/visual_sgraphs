@@ -287,8 +287,10 @@ UtilsStatus Utils::associatePlanes(
                                                  mappedObservationSide) !=
                 UtilsStatus::UTILS_STATUS_SUCCESS)
             {
-                // getMedianObservationSide_world_m cannot fail; continue as
-                // before.
+                /*!
+                 * getMedianObservationSide_world_m cannot fail; continue as
+                 * before.
+                 */
             }
 
             const double givenObservationSide_m =
@@ -523,7 +525,7 @@ UtilsStatus Utils::associatePlanes(
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

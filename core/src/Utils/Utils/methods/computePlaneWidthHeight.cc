@@ -49,19 +49,19 @@ UtilsStatus Utils::computePlaneWidthHeight(
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    // Apply PCA to find the principal axes of the point p_cloud_in
+    /* Apply PCA to find the principal axes of the point p_cloud_in */
     pcl::PCA<pcl::PointXYZRGBA> pca;
     pca.setInputCloud(p_cloud_in);
 
-    // Project all points onto the PCA space
+    /* Project all points onto the PCA space */
     pcl::PointCloud<pcl::PointXYZRGBA> projected;
     pca.project(*p_cloud_in, projected);
 
-    // Find min/max along each principal axis
+    /* Find min/max along each principal axis */
     pcl::PointXYZRGBA minimumPoint, maximumPoint;
     pcl::getMinMax3D(projected, minimumPoint, maximumPoint);
 
-    // Axis 0 = largest variance (width), Axis 1 = second (height)
+    /* Axis 0 = largest variance (width), Axis 1 = second (height) */
     double width  = static_cast<double>(maximumPoint.y - minimumPoint.y);
     double height = static_cast<double>(maximumPoint.x - minimumPoint.x);
 
@@ -69,7 +69,7 @@ UtilsStatus Utils::computePlaneWidthHeight(
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

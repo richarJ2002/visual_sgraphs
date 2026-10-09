@@ -70,7 +70,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
 
     int initialCorrespondenceCount = 0;
 
-    // Set Frame vertex
+    /* Set Frame vertex */
     g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
     Sophus::SE3<float>    cameraPose_worldToCamera{};
     if (p_frame_inout->getPose(cameraPose_worldToCamera) !=
@@ -88,7 +88,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
     p_se3Vertex->setFixed(false);
     optimizer.addVertex(p_se3Vertex);
 
-    // Set MapPoint vertices
+    /* Set MapPoint vertices */
     const int N = p_frame_inout->keyPointCount;
 
     std::vector<vs_graphs::core::EdgeSE3ProjectXYZOnlyPose *> edgesMonos;
@@ -105,7 +105,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
     edgesStereos.reserve(N);
     stereoEdgeIndices.reserve(N);
 
-    // DEPTH-AIDED TRACKING: For RGB-D, add depth residuals
+    /* DEPTH-AIDED TRACKING: For RGB-D, add depth residuals */
     std::vector<vs_graphs::core::EdgeSE3ProjectXYZDepth *> edgesDepths;
     std::vector<size_t>                                    depthEdgeIndices;
     edgesDepths.reserve(N);
@@ -113,7 +113,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
 
     const float deltaMono   = sqrt(5.991);
     const float deltaStereo = sqrt(7.815);
-    const float deltaDepth  = sqrt(3.841); // chi2 for 1 DoF at 95%
+    const float deltaDepth  = sqrt(3.841); /* chi2 for 1 DoF at 95% */
 
     {
         std::unique_lock<std::mutex> lock(MapPoint::globalMutex);
@@ -123,10 +123,10 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
             MapPoint *p_mapPoint = p_frame_inout->mapPoints[keyPointIndex];
             if (p_mapPoint)
             {
-                // Conventional SLAM
+                /* Conventional SLAM */
                 if (!p_frame_inout->p_camera2)
                 {
-                    // Monocular observation
+                    /* Monocular observation */
                     if (p_frame_inout->uRight[keyPointIndex] < 0)
                     {
                         initialCorrespondenceCount++;
@@ -174,7 +174,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                         edgesMonos.push_back(e);
                         monoEdgeIndices.push_back(keyPointIndex);
                     }
-                    else // Stereo observation
+                    else /* Stereo observation */
                     {
                         initialCorrespondenceCount++;
                         p_frame_inout->outlierFlags[keyPointIndex] = false;
@@ -230,7 +230,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                         stereoEdgeIndices.push_back(keyPointIndex);
                     }
                 }
-                // SLAM with respect a rigid body
+                /* SLAM with respect a rigid body */
                 else
                 {
                     initialCorrespondenceCount++;
@@ -238,7 +238,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                     cv::KeyPoint keyPointUn;
 
                     if (keyPointIndex < p_frame_inout->leftKeyPointCount)
-                    { // Left camera observation
+                    { /* Left camera observation */
                         keyPointUn = p_frame_inout->keyPoints[keyPointIndex];
 
                         p_frame_inout->outlierFlags[keyPointIndex] = false;
@@ -353,8 +353,10 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
         }
     }
 
-    // DEPTH-AIDED TRACKING: Add depth residuals for RGB-D frames
-    // This provides additional constraints from depth measurements
+    /*!
+     * DEPTH-AIDED TRACKING: Add depth residuals for RGB-D frames
+     * This provides additional constraints from depth measurements
+     */
     bool isRgbd =
         (p_frame_inout->depths.size() > 0 && !p_frame_inout->p_camera2);
     if (isRgbd)
@@ -367,10 +369,8 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                 keyPointIndex < static_cast<int>(p_frame_inout->depths.size()))
             {
                 float depth = p_frame_inout->depths[keyPointIndex];
-                if (depth > 0 &&
-                    depth <
-                        p_frame_inout
-                            ->depthThreshold) // Only use reliable close depths
+                /* Only use reliable close depths */
+                if (depth > 0 && depth < p_frame_inout->depthThreshold)
                 {
                     initialCorrespondenceCount++;
 
@@ -382,12 +382,14 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                                      optimizer.vertex(0)));
                     e->setMeasurement(depth);
 
-                    // Information matrix for depth (inverse variance)
-                    // Higher weight for closer points
+                    /*!
+                     * Information matrix for depth (inverse variance)
+                     * Higher weight for closer points
+                     */
                     float invSigma2 =
-                        1.0f / (depth * depth * 0.01f); // 1% relative error
+                        1.0f / (depth * depth * 0.01f); /* 1% relative error */
                     invSigma2 =
-                        std::min(invSigma2, 1000.0f); // Cap maximum weight
+                        std::min(invSigma2, 1000.0f); /* Cap maximum weight */
                     e->setInformation(Eigen::Matrix<double, 1, 1>::Identity() *
                                       invSigma2);
 
@@ -424,9 +426,11 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
         return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
     }
 
-    // We perform 4 optimizations, after each optimization we classify
-    // observation as inlier/outlier At the next optimization, outliers are not
-    // included, but at the end they can be classified as inliers again.
+    /*!
+     * We perform 4 optimizations, after each optimization we classify
+     * observation as inlier/outlier At the next optimization, outliers are not
+     * included, but at the end they can be classified as inliers again.
+     */
     const float chi2Mono[4]   = {5.991, 5.991, 5.991, 5.991};
     const float chi2Stereo[4] = {7.815, 7.815, 7.815, 7.815};
     const int   its[4]        = {10, 10, 10, 10};
@@ -451,7 +455,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
         optimizer.initializeOptimization(0);
         optimizer.optimize(its[iterationIndex]);
 
-        // before the last step, remove bad map points
+        /* before the last step, remove bad map points */
         KeyFrame *p_referenceKeyFrame = p_frame_inout->p_referenceKeyFrame;
         if (p_sysParams->refineMapPoints.enabled && p_referenceKeyFrame &&
             iterationIndex == 2)
@@ -459,8 +463,10 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
             std::vector<geometric::Plane *> planes;
             std::unordered_map<int, bool>   planeCheck;
 
-            // populate the vector of planes using the covisibility graph of the
-            // reference keyframe
+            /*!
+             * populate the vector of planes using the covisibility graph of the
+             * reference keyframe
+             */
             std::vector<KeyFrame *> referenceCovisibleKeyFrames{};
             if (p_referenceKeyFrame->getBestCovisibilityKeyFrames(
                     25,
@@ -565,11 +571,13 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                 Eigen::Vector4d planeEq =
                     candidatePlaneGetGlobalEquation.coeffs();
 
-                // if the camera center is behind the plane, skip the plane
+                /* if the camera center is behind the plane, skip the plane */
                 if (planeEq.head<3>().dot(cameraCenter) + planeEq(3) < 0)
                     continue;
 
-                // for each map point in the frame, check if it is on the plane
+                /*!
+                 * for each map point in the frame, check if it is on the plane
+                 */
                 for (size_t j = 0;
                      j < static_cast<size_t>(p_frame_inout->keyPointCount);
                      j++)
@@ -589,7 +597,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                     if (!p_mapPoint || mapPointIsBad)
                         continue;
 
-                    // calculate distance from the map point to the plane
+                    /* calculate distance from the map point to the plane */
                     Eigen::Vector3f mapPointWorldPos6{};
                     if (p_mapPoint->getWorldPos(mapPointWorldPos6) !=
                         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -605,8 +613,10 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                     if (distance <
                         -p_sysParams->refineMapPoints.maxDistanceForDelete)
                     {
-                        // get the intersection point of the line joining the
-                        // camera center and the map point with the plane
+                        /*!
+                         * get the intersection point of the line joining the
+                         * camera center and the map point with the plane
+                         */
                         Eigen::Vector3d intersect{};
                         if (utils::utils::Utils::lineIntersectsPlane(
                                 planeEq,
@@ -615,19 +625,23 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
                                 intersect) !=
                             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                         {
-                            // lineIntersectsPlane cannot fail; continue as
-                            // before.
+                            /*!
+                             * lineIntersectsPlane cannot fail; continue as
+                             * before.
+                             */
                         }
 
-                        // check if the map point is in the plane cloud
+                        /* check if the map point is in the plane cloud */
                         bool candidatePlaneIsPointinPlaneCloud{};
                         if (candidatePlane->isPointinPlaneCloud(
                                 intersect,
                                 candidatePlaneIsPointinPlaneCloud) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                         {
-                            // isPointinPlaneCloud cannot fail; continue as
-                            // before.
+                            /*!
+                             * isPointinPlaneCloud cannot fail; continue as
+                             * before.
+                             */
                         }
                         if (candidatePlaneIsPointinPlaneCloud)
                         {
@@ -762,7 +776,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
             }
         }
 
-        // DEPTH-AIDED TRACKING: Process depth edges
+        /* DEPTH-AIDED TRACKING: Process depth edges */
         for (size_t keyPointIndex = 0, iend = edgesDepths.size();
              keyPointIndex < iend;
              keyPointIndex++)
@@ -804,7 +818,7 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
             break;
     }
 
-    // Recover optimized pose and return number of inliers
+    /* Recover optimized pose and return number of inliers */
     g2o::VertexSE3Expmap *p_recoveredPoseVertex =
         static_cast<g2o::VertexSE3Expmap *>(optimizer.vertex(0));
     g2o::SE3Quat       recoveredPose = p_recoveredPoseVertex->estimate();
@@ -822,5 +836,5 @@ OptimizerStatus Optimizer::poseOptimization(Frame *p_frame_inout,
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

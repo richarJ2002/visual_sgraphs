@@ -45,7 +45,7 @@ enum class EdgePriorPoseImuStatus : std::uint8_t
     EDGE_PRIOR_POSE_IMU_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // EDGE_PRIOR_POSE_IMU_STATUS_H
+#endif /* EDGE_PRIOR_POSE_IMU_STATUS_H */

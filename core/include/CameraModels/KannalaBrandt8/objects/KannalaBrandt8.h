@@ -494,8 +494,7 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
      */
     const float precision;
 
-    // Parameters vector corresponds to
-    //[fx, fy, cx, cy, k0, k1, k2, k3]
+    /* Parameters vector corresponds to [fx, fy, cx, cy, k0, k1, k2, k3] */
 
     /*!
      * @brief           Owned two-view helper created on first
@@ -529,6 +528,6 @@ class KannalaBrandt8 : public geometriccamera::GeometricCamera
                     const Eigen::Matrix<float, 3, 4> &pose2_in,
                     Eigen::Vector3f                  &point3d_out);
 };
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */
 
-#endif // CAMERAMODELS_KANNALABRANDT8_H
+#endif /* CAMERAMODELS_KANNALABRANDT8_H */

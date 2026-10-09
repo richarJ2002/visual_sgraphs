@@ -58,7 +58,7 @@ namespace core
 [[nodiscard]] MissionHealthTopologyJsonStatus
     axiomCapabilitiesToJson(nlohmann::json &json_out);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif /* VS_GRAPHS_CORE_MISSIONHEALTHTOPOLOGYJSON_PRIVATE_FUNCTIONS_H */

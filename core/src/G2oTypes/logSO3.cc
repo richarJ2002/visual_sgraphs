@@ -67,5 +67,5 @@ G2oTypesStatus logSO3(const Eigen::Matrix3d &rotationMatrix_in,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -79,7 +79,7 @@ class SemanticsManager
      */
     mutable std::mutex currentRoomMutex;
 
-    // Shutdown control (LocalMapping-style handshake)
+    /* Shutdown control (LocalMapping-style handshake) */
     /*!
      * @brief           Protects isFinishRequested and hasFinished.
      */
@@ -1387,7 +1387,7 @@ class SemanticsManager
      */
     [[nodiscard]] SemanticsManagerStatus isFinished(bool &isFinished_out);
 };
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTICSEG_H
+#endif /* SEMANTICSEG_H */

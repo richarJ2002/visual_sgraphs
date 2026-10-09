@@ -50,14 +50,16 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
     std::vector<KeyFrame *> fixedKeyFrames_in,
     bool                   *p_pbStopFlag_in)
 {
-    // Variables
+    /* Variables */
     std::vector<MapPoint *> mapPoints;
     std::set<KeyFrame *>    keyFrameBas;
     long unsigned int       maximumKeyFrameId = 0;
     g2o::SparseOptimizer    optimizer;
 
-    // Define a linear solver to solve the linear system arising while
-    // optimization
+    /*!
+     * Define a linear solver to solve the linear system arising while
+     * optimization
+     */
     g2o::BlockSolver_6_3::LinearSolverType *p_linearSolver;
     p_linearSolver =
         new g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>();
@@ -68,11 +70,11 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
     optimizer.setAlgorithm(p_solver);
     optimizer.setVerbose(false);
 
-    // Force stop flag
+    /* Force stop flag */
     if (p_pbStopFlag_in)
         optimizer.setForceStopFlag(p_pbStopFlag_in);
 
-    // Get the current map
+    /* Get the current map */
     Map *p_currentMap = nullptr;
     if (p_mainKeyFrame_in->getMap(p_currentMap) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -83,11 +85,11 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                      __func__);
     }
 
-    // Set fixed KeyFrame vertices
+    /* Set fixed KeyFrame vertices */
     int insertedPointCount = 0;
     for (KeyFrame *p_adjustKeyFrame : fixedKeyFrames_in)
     {
-        // Skip the KeyFrame if it is bad or is not in the current map
+        /* Skip the KeyFrame if it is bad or is not in the current map */
         bool adjustKeyFrameIsBad{};
         if (p_adjustKeyFrame->isBad(adjustKeyFrameIsBad) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -123,10 +125,10 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
             continue;
         }
 
-        // Set the local BA id for the KeyFrame
+        /* Set the local BA id for the KeyFrame */
         p_adjustKeyFrame->baLocalMergeId = p_mainKeyFrame_in->id;
 
-        // Create a new vertex for the KeyFrame
+        /* Create a new vertex for the KeyFrame */
         g2o::VertexSE3Expmap *p_se3Vertex = new g2o::VertexSE3Expmap();
         Sophus::SE3<float>    cameraPose_worldToCamera{};
         if (p_adjustKeyFrame->getPose(cameraPose_worldToCamera) !=
@@ -146,7 +148,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         if (p_adjustKeyFrame->id > maximumKeyFrameId)
             maximumKeyFrameId = p_adjustKeyFrame->id;
 
-        // Get the map points observed by the KeyFrame
+        /* Get the map points observed by the KeyFrame */
         std::set<MapPoint *> viewMapPoints{};
         if (p_adjustKeyFrame->getMapPoints(viewMapPoints) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -184,8 +186,10 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                 {
                     if (p_viewMapPoint->baLocalMergeId != p_mainKeyFrame_in->id)
                     {
-                        // Add the map point to the list of optimizable map
-                        // points
+                        /*!
+                         * Add the map point to the list of optimizable map
+                         * points
+                         */
                         mapPoints.push_back(p_viewMapPoint);
                         p_viewMapPoint->baLocalMergeId = p_mainKeyFrame_in->id;
                         insertedPointCount++;
@@ -197,7 +201,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         keyFrameBas.insert(p_adjustKeyFrame);
     }
 
-    // Set non-fixed KeyFrame vertices
+    /* Set non-fixed KeyFrame vertices */
     std::set<KeyFrame *> adjustKeyFrames(adjustKeyFrames_in.begin(),
                                          adjustKeyFrames_in.end());
     insertedPointCount = 0;
@@ -318,7 +322,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
     const float thresholdHuber2d = sqrt(5.99);
     const float thresholdHuber3d = sqrt(7.815);
 
-    // Set MapPoint vertices
+    /* Set MapPoint vertices */
     std::map<KeyFrame *, int> observationKeyFrames;
     std::map<KeyFrame *, int> observationFinalKeyFrames;
     std::map<MapPoint *, int> observationMapPoints;
@@ -364,7 +368,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                          __func__);
         }
         int edgeCount = 0;
-        // SET EDGES
+        /* SET EDGES */
         for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator mit =
                  observations.begin();
              mit != observations.end();
@@ -402,7 +406,8 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
             const cv::KeyPoint &keyPointUn =
                 p_keyFrame->keyPointsUndistorted[std::get<0>(mit->second)];
 
-            if (p_keyFrame->uRight[std::get<0>(mit->second)] < 0) // Monocular
+            /* Monocular */
+            if (p_keyFrame->uRight[std::get<0>(mit->second)] < 0)
             {
                 observationMapPoints[p_viewMapPoint]++;
                 Eigen::Matrix<double, 2, 1> observation;
@@ -437,7 +442,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
 
                 observationKeyFrames[p_keyFrame]++;
             }
-            else // RGBD or Stereo
+            else /* RGBD or Stereo */
             {
                 observationMapPoints[p_viewMapPoint] += 2;
                 Eigen::Matrix<double, 3, 1> observation;
@@ -498,7 +503,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
     std::map<unsigned long int, int> wrongObservationKeyFrame;
     if (shouldOptimizeMore)
     {
-        // Check inlier observations
+        /* Check inlier observations */
         int badMonoMapPoint = 0, badStereoMapPoint = 0;
         for (size_t mapPointIndex = 0, iend = edgesMonos.size();
              mapPointIndex < iend;
@@ -576,7 +581,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
     std::set<MapPoint *> erasedMapPoints;
     std::set<KeyFrame *> erasedKeyFrames;
 
-    // Check inlier observations
+    /* Check inlier observations */
     int badMonoMapPoint = 0, badStereoMapPoint = 0;
     for (size_t mapPointIndex = 0, iend = edgesMonos.size();
          mapPointIndex < iend;
@@ -652,7 +657,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                      __func__);
     }
 
-    // Get Map Mutex
+    /* Get Map Mutex */
     Map *p_mainKeyFrameMap = nullptr;
     if (p_mainKeyFrame_in->getMap(p_mainKeyFrameMap) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -746,19 +751,22 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
                 !p_keyFrameMapPoint2)
                 continue;
 
-            if (p_keyFrame->uRight[std::get<0>(mit->second)] < 0) // Monocular
+            /* Monocular */
+            if (p_keyFrame->uRight[std::get<0>(mit->second)] < 0)
             {
                 observationFinalKeyFrames[p_keyFrame]++;
             }
-            else // RGBD or Stereo
+            else /* RGBD or Stereo */
             {
                 observationFinalKeyFrames[p_keyFrame]++;
             }
         }
     }
 
-    // Recover optimized data
-    // Keyframes
+    /*!
+     * Recover optimized data
+     * Keyframes
+     */
     for (KeyFrame *p_adjustKeyFrame : adjustKeyFrames_in)
     {
         bool adjustKeyFrameIsBad3{};
@@ -889,7 +897,7 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
         }
     }
 
-    // Points
+    /* Points */
     for (MapPoint *p_viewMapPoint : mapPoints)
     {
         bool viewMapPointIsBad5{};
@@ -929,5 +937,5 @@ OptimizerStatus Optimizer::loopClosureLocalBundleAdjustment(
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

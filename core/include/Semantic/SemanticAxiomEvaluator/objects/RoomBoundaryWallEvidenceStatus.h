@@ -68,8 +68,8 @@ enum class RoomBoundaryWallEvidenceStatus : std::uint8_t
     INVALID = 2U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_ROOM_BOUNDARY_WALL_EVIDENCE_STATUS_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_ROOM_BOUNDARY_WALL_EVIDENCE_STATUS_H */

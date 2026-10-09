@@ -44,7 +44,7 @@ enum class ViewerStatus : std::uint8_t
     VIEWER_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // VIEWER_STATUS_H
+#endif /* VIEWER_STATUS_H */

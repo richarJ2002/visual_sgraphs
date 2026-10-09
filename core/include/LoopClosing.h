@@ -49,8 +49,8 @@ namespace vs_graphs
 namespace core
 {
 class KeyFrame;
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -1066,7 +1066,7 @@ class LoopClosing
 #endif
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif

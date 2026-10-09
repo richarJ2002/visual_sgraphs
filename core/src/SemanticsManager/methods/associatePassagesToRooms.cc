@@ -357,8 +357,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                         observationOrigin_world_m) !=
                     geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                 {
-                    // getObservationOrigin_world cannot fail; continue as
-                    // before.
+                    /*!
+                     * getObservationOrigin_world cannot fail; continue as
+                     * before.
+                     */
                 }
 
                 std::optional<double> observedSide_m;
@@ -378,8 +380,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                             sideSnapshot) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                     {
-                        // getObservationSideSnapshot cannot fail; continue as
-                        // before.
+                        /*!
+                         * getObservationSideSnapshot cannot fail; continue as
+                         * before.
+                         */
                     }
                     observedSide_m = sideSnapshot.medianSignedDistance_m;
                 }
@@ -1892,8 +1896,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                 anteChurnGroundPlaneGetGlobalEquation) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
                         {
-                            // getGlobalEquation cannot fail; continue as
-                            // before.
+                            /*!
+                             * getGlobalEquation cannot fail; continue as
+                             * before.
+                             */
                         }
                         const Eigen::Vector4d anteChurnGroundEq =
                             anteChurnGroundPlaneGetGlobalEquation.coeffs();
@@ -1965,8 +1971,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                 {
-                                    // getRoomVariant cannot fail; continue as
-                                    // before.
+                                    /*!
+                                     * getRoomVariant cannot fail; continue as
+                                     * before.
+                                     */
                                 }
                                 if (p_otherRoom == nullptr || otherRoomIsBad ||
                                     p_otherRoom == p_knownRoom ||
@@ -1982,8 +1990,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         otherRoomCentroid) !=
                                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                                 {
-                                    // getCentroid cannot fail; continue as
-                                    // before.
+                                    /*!
+                                     * getCentroid cannot fail; continue as
+                                     * before.
+                                     */
                                 }
                                 bool crossesPassageOpening{};
                                 if (segmentCrossesPassageOpening(
@@ -2014,8 +2024,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         otherRoomCentroid2) !=
                                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                                 {
-                                    // getCentroid cannot fail; continue as
-                                    // before.
+                                    /*!
+                                     * getCentroid cannot fail; continue as
+                                     * before.
+                                     */
                                 }
                                 bool crossesForeignWall{};
                                 if (segmentCrossesForeignWall(
@@ -2071,8 +2083,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                     p_existingFarSideRoom) !=
                                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                             {
-                                // setProspectiveRoom cannot fail; continue as
-                                // before.
+                                /*!
+                                 * setProspectiveRoom cannot fail; continue as
+                                 * before.
+                                 */
                             }
 
                             int passageId14{};
@@ -2157,8 +2171,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                     candidateRoomVariant) !=
                                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                             {
-                                // getRoomVariant cannot fail; continue as
-                                // before.
+                                /*!
+                                 * getRoomVariant cannot fail; continue as
+                                 * before.
+                                 */
                             }
                             if (p_candidate != nullptr && !candidateIsBad &&
                                 candidateRoomVariant ==
@@ -2188,8 +2204,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                 passageTraversalEvidence) !=
                                 semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                         {
-                            // getTraversalEvidence cannot fail; continue as
-                            // before.
+                            /*!
+                             * getTraversalEvidence cannot fail; continue as
+                             * before.
+                             */
                         }
                         if (prospectiveRoomCount >= kMaxProspectiveRooms &&
                             !passageIsPassable && !passageTraversalEvidence &&
@@ -2238,8 +2256,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                 {
-                                    // getRoomVariant cannot fail; continue as
-                                    // before.
+                                    /*!
+                                     * getRoomVariant cannot fail; continue as
+                                     * before.
+                                     */
                                 }
                                 if (p_candidate == nullptr || candidateIsBad2 ||
                                     candidateRoomVariant2 !=
@@ -2253,8 +2273,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         candidateCentroid) !=
                                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                                 {
-                                    // getCentroid cannot fail; continue as
-                                    // before.
+                                    /*!
+                                     * getCentroid cannot fail; continue as
+                                     * before.
+                                     */
                                 }
                                 const double distance =
                                     (candidateCentroid - prospectiveCentroid)
@@ -2328,8 +2350,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                             semantic::PassageStatus::
                                                 PASSAGE_STATUS_SUCCESS)
                                         {
-                                            // getCentroid cannot fail; continue
-                                            // as before.
+                                            /*!
+                                             * getCentroid cannot fail; continue
+                                             * as before.
+                                             */
                                         }
                                         const double openingDistance_m =
                                             (candidatePassageCentroid -
@@ -2345,8 +2369,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                             semantic::PassageStatus::
                                                 PASSAGE_STATUS_SUCCESS)
                                         {
-                                            // getCentroid cannot fail; continue
-                                            // as before.
+                                            /*!
+                                             * getCentroid cannot fail; continue
+                                             * as before.
+                                             */
                                         }
                                         const double planeResidual_m = std::abs(
                                             passageEq.head<3>().dot(
@@ -2389,8 +2415,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                     {
-                                        // setDoorways cannot fail; continue as
-                                        // before.
+                                        /*!
+                                         * setDoorways cannot fail; continue as
+                                         * before.
+                                         */
                                     }
                                     prospectiveExists = true;
                                     int candidateId{};
@@ -2398,16 +2426,20 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                     {
-                                        // getId cannot fail; continue as
-                                        // before.
+                                        /*!
+                                         * getId cannot fail; continue as
+                                         * before.
+                                         */
                                     }
                                     int passageId16{};
                                     if (p_passage->getId(passageId16) !=
                                         semantic::PassageStatus::
                                             PASSAGE_STATUS_SUCCESS)
                                     {
-                                        // getId cannot fail; continue as
-                                        // before.
+                                        /*!
+                                         * getId cannot fail; continue as
+                                         * before.
+                                         */
                                     }
                                     std::cout
                                         << "[SemMgr] Reusing existing "
@@ -2449,8 +2481,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                     {
-                                        // setRoomVariant cannot fail; continue
-                                        // as before.
+                                        /*!
+                                         * setRoomVariant cannot fail; continue
+                                         * as before.
+                                         */
                                     }
                                     int prospectiveRoomId{};
                                     if (p_prospectiveRoom->getId(
@@ -2458,8 +2492,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                     {
-                                        // getId cannot fail; continue as
-                                        // before.
+                                        /*!
+                                         * getId cannot fail; continue as
+                                         * before.
+                                         */
                                     }
                                     if (p_prospectiveRoom->setName(
                                             "Prospective#" +
@@ -2468,8 +2504,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                     {
-                                        // setName cannot fail; continue as
-                                        // before.
+                                        /*!
+                                         * setName cannot fail; continue as
+                                         * before.
+                                         */
                                     }
 
                                     /* Add to atlas as a candidate (not yet a
@@ -2505,8 +2543,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                     {
-                                        // setDoorways cannot fail; continue as
-                                        // before.
+                                        /*!
+                                         * setDoorways cannot fail; continue as
+                                         * before.
+                                         */
                                     }
 
                                     /* Register the live passage-created handle.
@@ -2517,8 +2557,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                     {
-                                        // getId cannot fail; continue as
-                                        // before.
+                                        /*!
+                                         * getId cannot fail; continue as
+                                         * before.
+                                         */
                                     }
                                     prospectiveRoomCycles[prospectiveRoomId2] =
                                         0;
@@ -2529,16 +2571,20 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                         semantic::RoomStatus::
                                             ROOM_STATUS_SUCCESS)
                                     {
-                                        // getId cannot fail; continue as
-                                        // before.
+                                        /*!
+                                         * getId cannot fail; continue as
+                                         * before.
+                                         */
                                     }
                                     int passageId17{};
                                     if (p_passage->getId(passageId17) !=
                                         semantic::PassageStatus::
                                             PASSAGE_STATUS_SUCCESS)
                                     {
-                                        // getId cannot fail; continue as
-                                        // before.
+                                        /*!
+                                         * getId cannot fail; continue as
+                                         * before.
+                                         */
                                     }
                                     std::cout << "[SemMgr] Created prospective "
                                                  "Room#"
@@ -2866,8 +2912,10 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
                                     otherRoomRoomVariant2) !=
                                     semantic::RoomStatus::ROOM_STATUS_SUCCESS)
                             {
-                                // getRoomVariant cannot fail; continue as
-                                // before.
+                                /*!
+                                 * getRoomVariant cannot fail; continue as
+                                 * before.
+                                 */
                             }
                             if (p_otherRoom == nullptr || otherRoomIsBad2 ||
                                 p_otherRoom == p_prospectiveRoom ||
@@ -3214,5 +3262,5 @@ SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

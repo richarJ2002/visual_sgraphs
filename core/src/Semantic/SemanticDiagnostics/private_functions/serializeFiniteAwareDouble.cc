@@ -47,6 +47,6 @@ nlohmann::json serializeFiniteAwareDouble(double value_in)
     return value_in;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

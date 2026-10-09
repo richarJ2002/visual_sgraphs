@@ -119,6 +119,6 @@ struct WallPrfResult
 WallPrfResult computeGlobalWallMetrics(const nlohmann::json &truth_in,
                                        const nlohmann::json &generated_in);
 
-} // namespace test
-} // namespace core
-} // namespace vs_graphs
+} /* namespace test */
+} /* namespace core */
+} /* namespace vs_graphs */

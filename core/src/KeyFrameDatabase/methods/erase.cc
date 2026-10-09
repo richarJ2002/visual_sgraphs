@@ -38,14 +38,14 @@ KeyFrameDatabaseStatus KeyFrameDatabase::erase(KeyFrame *p_keyFrame_in)
 {
     std::unique_lock<std::mutex> lock(databaseMutex);
 
-    // Erase elements in the Inverse File for the entry
+    /* Erase elements in the Inverse File for the entry */
     for (DBoW2::BowVector::const_iterator
              wordIt  = p_keyFrame_in->bowVector.begin(),
              wordEnd = p_keyFrame_in->bowVector.end();
          wordIt != wordEnd;
          wordIt++)
     {
-        // List of keyframes that share the word
+        /* List of keyframes that share the word */
         std::list<KeyFrame *> &keyFramesForWord = invertedFile[wordIt->first];
 
         for (std::list<KeyFrame *>::iterator
@@ -65,5 +65,5 @@ KeyFrameDatabaseStatus KeyFrameDatabase::erase(KeyFrame *p_keyFrame_in)
     return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

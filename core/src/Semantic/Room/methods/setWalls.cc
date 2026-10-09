@@ -68,6 +68,6 @@ RoomStatus Room::setWalls(geometric::Plane *p_wall_in)
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

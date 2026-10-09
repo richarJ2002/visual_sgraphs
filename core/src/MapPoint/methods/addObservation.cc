@@ -76,5 +76,5 @@ MapPointStatus MapPoint::addObservation(KeyFrame *p_keyFrame_inout,
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

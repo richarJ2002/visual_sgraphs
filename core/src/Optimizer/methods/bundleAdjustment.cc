@@ -57,7 +57,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     const bool                                              useRobustKernel_in,
     const std::atomic_bool                                 *p_stopRequested_in)
 {
-    // System parameters
+    /* System parameters */
     vs_graphs::core::types::SystemParams *p_systemParams = nullptr;
     if (vs_graphs::core::types::SystemParams::getParams(p_systemParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -68,7 +68,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
                      __func__);
     }
 
-    // Variables
+    /* Variables */
     std::vector<bool> mapPointExcludedFlags;
     mapPointExcludedFlags.resize(mapPoints_in.size());
 
@@ -87,7 +87,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
 
     AtomicOptimizerStopBridge stopBridge(p_stopRequested_in, p_stopFlag_inout);
 
-    // Set up the solver
+    /* Set up the solver */
     g2o::SparseOptimizer                 optimizer;
     g2o::BlockSolverX::LinearSolverType *p_linearSolver;
     p_linearSolver =
@@ -138,7 +138,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     std::vector<MapPoint *> stereoEdgeMapPoints;
     stereoEdgeMapPoints.reserve(expectedEdgeCount);
 
-    // [GBA] KeyFrames
+    /* [GBA] KeyFrames */
     for (size_t elementIndex = 0; elementIndex < keyFrames_in.size();
          elementIndex++)
     {
@@ -192,7 +192,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     int maxGlobalOptimizationId = 0;
     int markerCount             = 1;
 
-    // [GBA] MapPoints
+    /* [GBA] MapPoints */
     for (size_t elementIndex = 0; elementIndex < mapPoints_in.size();
          elementIndex++)
     {
@@ -224,7 +224,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
         p_mapPointVertex->setMarginalized(true);
         optimizer.addVertex(p_mapPointVertex);
 
-        // Update the maxOpId to hold the biggest value
+        /* Update the maxOpId to hold the biggest value */
         if (mapPointVertexId > maxGlobalOptimizationId)
             maxGlobalOptimizationId = mapPointVertexId;
 
@@ -239,7 +239,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
 
         int mapPointEdgeCount = 0;
-        // SET EDGES
+        /* SET EDGES */
         for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
                  featureObservationIt = observations.begin();
              featureObservationIt != observations.end();
@@ -307,8 +307,8 @@ OptimizerStatus Optimizer::bundleAdjustment(
                 monoEdgeKeyFrames.push_back(p_keyFrame);
                 monoEdgeMapPoints.push_back(p_mapPoint);
             }
-            else if (leftIndex != -1 &&
-                     p_keyFrame->uRight[leftIndex] >= 0) // Stereo observation
+            /* Stereo observation */
+            else if (leftIndex != -1 && p_keyFrame->uRight[leftIndex] >= 0)
             {
                 const cv::KeyPoint &undistortedKeyPoint =
                     p_keyFrame->keyPointsUndistorted[leftIndex];
@@ -432,10 +432,10 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
-    // [GBA] Markers
+    /* [GBA] Markers */
     for (semantic::Marker *const &marker : markers_in)
     {
-        // Adding a vertex for each marker
+        /* Adding a vertex for each marker */
         g2o::VertexSE3Expmap *p_markerPoseVertex = new g2o::VertexSE3Expmap();
         Sophus::SE3f          markerGlobalPose{};
         if (marker->getGlobalPose(markerGlobalPose) !=
@@ -463,7 +463,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
         optimizer.addVertex(p_markerPoseVertex);
         markerCount++;
 
-        // Setting the Global Optimization ID for the marker
+        /* Setting the Global Optimization ID for the marker */
         if (marker->setOpIdG(globalOptimizationId) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
@@ -483,10 +483,10 @@ OptimizerStatus Optimizer::bundleAdjustment(
 
     maxGlobalOptimizationId += markerCount;
 
-    // [GBA] Planes
+    /* [GBA] Planes */
     for (geometric::Plane *const &plane : planes_in)
     {
-        // Skip undefined planes (if not wall for now)
+        /* Skip undefined planes (if not wall for now) */
         geometric::Plane::PlaneVariant planeType{};
         if (plane->getPlaneType(planeType) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -498,7 +498,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
         if (planeType == geometric::Plane::PlaneVariant::UNDEFINED)
             continue;
-        // Adding a vertex for each plane
+        /* Adding a vertex for each plane */
         g2o::VertexPlane *p_planeVertex = new g2o::VertexPlane();
         int globalOptimizationId        = maxGlobalOptimizationId + planeCount;
         p_planeVertex->setId(globalOptimizationId);
@@ -517,7 +517,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
         optimizer.addVertex(p_planeVertex);
         planeCount++;
 
-        // Setting the global optimization ID for the plane
+        /* Setting the global optimization ID for the plane */
         if (plane->setOpIdG(globalOptimizationId) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
@@ -527,7 +527,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
                          __func__);
         }
 
-        // Adding an edge between the plane and the keyframes
+        /* Adding an edge between the plane and the keyframes */
         std::map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
             observations{};
         if (plane->getObservations(observations) !=
@@ -606,10 +606,10 @@ OptimizerStatus Optimizer::bundleAdjustment(
                     optimizer.addEdge(p_edge);
                 }
 
-                // adding plane-point constraints
+                /* adding plane-point constraints */
                 if (p_systemParams->optimization.planePoint.enabled)
                 {
-                    // get the class index of the plane
+                    /* get the class index of the plane */
                     int                            planeClassIndex{};
                     geometric::Plane::PlaneVariant planeType2{};
                     if (plane->getPlaneType(planeType2) !=
@@ -626,12 +626,14 @@ OptimizerStatus Optimizer::bundleAdjustment(
                             planeClassIndex) !=
                         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                     {
-                        // getClassIdFromPlaneType cannot fail; continue as
-                        // before.
+                        /*!
+                         * getClassIdFromPlaneType cannot fail; continue as
+                         * before.
+                         */
                     }
                     if (planeClassIndex != -1)
                     {
-                        // add the plane-point constraint
+                        /* add the plane-point constraint */
                         vs_graphs::core::EdgeSE3KFPointToPlane *p_edge =
                             new vs_graphs::core::EdgeSE3KFPointToPlane();
                         p_edge->setVertex(
@@ -660,36 +662,21 @@ OptimizerStatus Optimizer::bundleAdjustment(
             }
         }
 
-        // 🚧 [vS-Graphs v.2.0] in contrast with the first version of visual
-        // S-Graphs, where there was an edge between Markers and Planes, in this
-        // version we removed that edge vector<Marker *> attachedMarkers =
-        // vpPlane->getMarkers(); for (const auto &planeMarker :
-        // attachedMarkers)
-        // {
-        //     // Adding an edge between the Plane and the Marker
-        //     vs_graphs::core::EdgeVertexPlaneProjectSE3M *e = new
-        //     vs_graphs::core::EdgeVertexPlaneProjectSE3M(); e->setVertex(1,
-        //     dynamic_cast<g2o::OptimizableGraph::Vertex
-        //     *>(optimizer.vertex(opIdG))); e->setVertex(0,
-        //     dynamic_cast<g2o::OptimizableGraph::Vertex
-        //     *>(optimizer.vertex(planeMarker->getOpIdG())));
-        //     e->setInformation(Eigen::Matrix<double, 4, 4>::Identity());
-
-        //     g2o::RobustKernelHuber *rk = new g2o::RobustKernelHuber;
-        //     e->setRobustKernel(rk);
-        //     rk->setDelta(thHuber2D);
-        //     optimizer.addEdge(e);
-        // }
+        /*!
+         * 🚧 [vS-Graphs v.2.0] in contrast with the first version of visual
+         * S-Graphs, where there was an edge between Markers and Planes, in this
+         * version we removed that edge
+         */
     }
 
     maxGlobalOptimizationId += planeCount;
 
-    // [GBA] Rooms
+    /* [GBA] Rooms */
     for (semantic::Room *const &room : rooms_in)
     {
         try
         {
-            // Variables
+            /* Variables */
             std::vector<vs_graphs::core::geometric::Plane *> walls{};
             if (room->getWalls(walls) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -700,14 +687,14 @@ OptimizerStatus Optimizer::bundleAdjustment(
                              __func__);
             }
 
-            // No need to optimize if there are no walls
+            /* No need to optimize if there are no walls */
             if (walls.empty())
                 continue;
 
-            // Adding a vertex for each room
+            /* Adding a vertex for each room */
             g2o::VertexSE3Expmap *p_roomPoseVertex = new g2o::VertexSE3Expmap();
 
-            // Setting the local optimization ID for the room
+            /* Setting the local optimization ID for the room */
             int globalOptimizationId = maxGlobalOptimizationId + roomCount;
             p_roomPoseVertex->setId(globalOptimizationId);
             if (room->setOpIdG(globalOptimizationId) !=
@@ -720,7 +707,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
             }
             roomCount++;
 
-            // Initialize the room vertex (centroid estimate)
+            /* Initialize the room vertex (centroid estimate) */
             Eigen::Vector3d roomCentroid{};
             if (room->getCentroid(roomCentroid) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -745,7 +732,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
              * below.
              */
 
-            // Optimizing the parallel walls of the room
+            /* Optimizing the parallel walls of the room */
             for (size_t elementIndex = 0; elementIndex < walls.size();
                  elementIndex++)
                 for (size_t secondElementIndex = elementIndex + 1;
@@ -757,7 +744,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
                     vs_graphs::core::geometric::Plane *p_secondWall =
                         walls[secondElementIndex];
 
-                    // If the same wall, skip
+                    /* If the same wall, skip */
                     int firstWallGetId{};
                     if (p_firstWall->getId(firstWallGetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -781,7 +768,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
                     if (firstWallGetId == secondWallGetId)
                         continue;
 
-                    // Check if the walls are parallel
+                    /* Check if the walls are parallel */
                     bool arePlanesParallel2{};
                     if (utils::utils::Utils::arePlanesParallel(
                             p_firstWall,
@@ -797,8 +784,10 @@ OptimizerStatus Optimizer::bundleAdjustment(
                     }
                     if (arePlanesParallel2)
                     {
-                        // If they are parallel, check if they are facing each
-                        // other
+                        /*!
+                         * If they are parallel, check if they are facing each
+                         * other
+                         */
                         bool arePlanesFacingEachOther2{};
                         if (utils::utils::Utils::arePlanesFacingEachOther(
                                 p_firstWall,
@@ -806,12 +795,14 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                 arePlanesFacingEachOther2) !=
                             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                         {
-                            // arePlanesFacingEachOther cannot fail; continue as
-                            // before.
+                            /*!
+                             * arePlanesFacingEachOther cannot fail; continue as
+                             * before.
+                             */
                         }
                         if (arePlanesFacingEachOther2)
                         {
-                            // Variables
+                            /* Variables */
                             int firstWallOptimizationId{};
                             if (p_firstWall->getOpIdG(
                                     firstWallOptimizationId) !=
@@ -839,12 +830,6 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                 optimizer.vertex(firstWallOptimizationId) &&
                                 optimizer.vertex(secondWallOptimizationId))
                             {
-                                // std::cout << "[Optimizer] Parallelism
-                                // constraint between walls "
-                                //           << wall1->getId() << " and " <<
-                                //           wall2->getId() << " of room " <<
-                                //           pMapRoom->getId() << std::endl;
-
                                 vs_graphs::core::EdgeVertexPlaneParallelism
                                     *p_edge = new vs_graphs::core::
                                         EdgeVertexPlaneParallelism();
@@ -858,16 +843,17 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                     dynamic_cast<g2o::OptimizableGraph::Vertex
                                                      *>(optimizer.vertex(
                                         secondWallOptimizationId)));
-                                p_edge->setMeasurement(
-                                    0.0); // We want the angle between the
-                                          // planes to be 0
+                                /*!
+                                 * We want the angle between the planes to be 0
+                                 */
+                                p_edge->setMeasurement(0.0);
 
-                                // Information matrix
+                                /* Information matrix */
                                 p_edge->setInformation(
                                     Eigen::Matrix<double, 1, 1>::Identity() *
                                     1e3);
 
-                                // Adding the edge to the optimizer
+                                /* Adding the edge to the optimizer */
                                 g2o::RobustKernelHuber *p_robustKernel =
                                     new g2o::RobustKernelHuber;
                                 p_edge->setRobustKernel(p_robustKernel);
@@ -877,7 +863,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
                         }
                     }
 
-                    // Check if the walls are perpendicular
+                    /* Check if the walls are perpendicular */
                     bool arePlanesPerpendicular2{};
                     if (utils::utils::Utils::arePlanesPerpendicular(
                             p_firstWall,
@@ -885,12 +871,14 @@ OptimizerStatus Optimizer::bundleAdjustment(
                             arePlanesPerpendicular2) !=
                         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                     {
-                        // arePlanesPerpendicular cannot fail; continue as
-                        // before.
+                        /*!
+                         * arePlanesPerpendicular cannot fail; continue as
+                         * before.
+                         */
                     }
                     if (arePlanesPerpendicular2)
                     {
-                        // Variables
+                        /* Variables */
                         int firstWallOptimizationId{};
                         if (p_firstWall->getOpIdG(firstWallOptimizationId) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -916,12 +904,6 @@ OptimizerStatus Optimizer::bundleAdjustment(
                             optimizer.vertex(firstWallOptimizationId) &&
                             optimizer.vertex(secondWallOptimizationId))
                         {
-                            // std::cout << "[Optimizer] Perpendicularity
-                            // constraint between walls "
-                            //           << wall1->getId() << " and " <<
-                            //           wall2->getId() << " of room " <<
-                            //           pMapRoom->getId() << std::endl;
-
                             vs_graphs::core::EdgeVertexPlanePerpendicularity
                                 *p_edge = new vs_graphs::core::
                                     EdgeVertexPlanePerpendicularity();
@@ -934,15 +916,17 @@ OptimizerStatus Optimizer::bundleAdjustment(
                                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                     optimizer.vertex(
                                         secondWallOptimizationId)));
-                            p_edge->setMeasurement(
-                                M_PI_2); // We want the angle between the planes
-                                         // to be 90 degrees
+                            /*!
+                             * We want the angle between the planes to be 90
+                             * degrees
+                             */
+                            p_edge->setMeasurement(M_PI_2);
 
-                            // Information matrix
+                            /* Information matrix */
                             p_edge->setInformation(
                                 Eigen::Matrix<double, 1, 1>::Identity() * 1e3);
 
-                            // Adding the edge to the optimizer
+                            /* Adding the edge to the optimizer */
                             g2o::RobustKernelHuber *p_robustKernel =
                                 new g2o::RobustKernelHuber;
                             p_edge->setRobustKernel(p_robustKernel);
@@ -962,7 +946,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
 
     maxGlobalOptimizationId += roomCount;
 
-    // Optimize!
+    /* Optimize! */
     optimizer.setVerbose(true);
     optimizer.initializeOptimization();
     optimizer.optimize(iterationCount_in);
@@ -978,7 +962,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
                      __func__);
     }
 
-    // [GBA] Globally optimized KeyFrames
+    /* [GBA] Globally optimized KeyFrames */
     for (size_t elementIndex = 0; elementIndex < keyFrames_in.size();
          elementIndex++)
     {
@@ -1163,7 +1147,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
-    // [GBA] Globally optimized MapPoints
+    /* [GBA] Globally optimized MapPoints */
     for (size_t elementIndex = 0; elementIndex < mapPoints_in.size();
          elementIndex++)
     {
@@ -1242,7 +1226,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
     }
     if (loopKeyFrameId_in == p_mapOriginKeyFrame4->id)
     {
-        // [GBA] Globally optimized markers
+        /* [GBA] Globally optimized markers */
         for (semantic::Marker *p_marker : markers_in)
         {
             int markerOpIdG{};
@@ -1279,7 +1263,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
-    // [GBA] Globally optimized planes
+    /* [GBA] Globally optimized planes */
     for (geometric::Plane *const &plane : planes_in)
     {
         int planeGetOpIdG{};
@@ -1340,7 +1324,7 @@ OptimizerStatus Optimizer::bundleAdjustment(
         }
     }
 
-    // [GBA] Globally optimized rooms
+    /* [GBA] Globally optimized rooms */
     KeyFrame *p_mapOriginKeyFrame6 = nullptr;
     if (p_map->getOriginKeyFrame(p_mapOriginKeyFrame6) !=
         MapStatus::MAP_STATUS_SUCCESS)
@@ -1395,5 +1379,5 @@ OptimizerStatus Optimizer::bundleAdjustment(
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

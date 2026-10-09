@@ -50,7 +50,7 @@ struct WallComponentSupport
     const double                                        clusterTolerance_m_in,
     WallComponentSupport &largestWallComponent_out);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif /* VS_GRAPHS_CORE_SEMANTICSEGMENTATION_PRIVATE_FUNCTIONS_H */

@@ -72,7 +72,7 @@ Tracking::Tracking(System                    *p_sys_in,
     hasCreatedMap(false),
     p_camera2(nullptr)
 {
-    // Load camera parameters from settings file
+    /* Load camera parameters from settings file */
     if (p_settings_in)
     {
         std::cout << "[Tracking] New parameters from the config file!"
@@ -90,7 +90,7 @@ Tracking::Tracking(System                    *p_sys_in,
     {
         cv::FileStorage settingsFile(settingPath_in, cv::FileStorage::READ);
 
-        // Load camera parameters
+        /* Load camera parameters */
         std::cout
             << "[Tracking] Loading camera parameters from the config file!"
             << std::endl;
@@ -108,7 +108,7 @@ Tracking::Tracking(System                    *p_sys_in,
                          "config file!"
                       << std::endl;
 
-        // Load ORB parameters
+        /* Load ORB parameters */
         std::cout << "[Tracking] Loading ORB parameters from the config file!"
                   << std::endl;
         bool boolParseOrbFeats{};
@@ -125,7 +125,7 @@ Tracking::Tracking(System                    *p_sys_in,
                          "config file!"
                       << std::endl;
 
-        // Load IMU parameters if needed
+        /* Load IMU parameters if needed */
         bool boolParseImu = true;
         std::cout << "[Tracking] Loading IMU parameters from the config file!"
                   << std::endl;
@@ -150,7 +150,7 @@ Tracking::Tracking(System                    *p_sys_in,
             framesToResetIMU = maxFrames;
         }
 
-        // Check if everything is correctly loaded
+        /* Check if everything is correctly loaded */
         if (!boolParseCameraParams || !boolParseOrbFeats || !boolParseImu)
         {
             std::cerr << "[Tracking] Error found in the config file! The "
@@ -181,7 +181,7 @@ Tracking::Tracking(System                    *p_sys_in,
         framesToResetIMU = maxFrames;
     }
 
-    // Obtain the angles which will be used to rotate the world frame
+    /* Obtain the angles which will be used to rotate the world frame */
     poseTc0w = Sophus::SE3f();
     if (sensorType_in == System::MONOCULAR)
     {
@@ -280,5 +280,5 @@ Tracking::Tracking(System                    *p_sys_in,
 #endif
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

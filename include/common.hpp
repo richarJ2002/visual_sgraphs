@@ -1335,6 +1335,28 @@ extern void publishPlanes(
     const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
     const rclcpp::Time                                     &msgTime_s_in);
 
+/*!
+ * @brief           Same as publishPlanes() without a sink, and also reports
+ *                  the plane publication time to a timing sink.
+ *
+ * @param[in]       mappedPlanes_in
+ *                  Collection of mapped planes to publish. Null, invalid,
+ *                  undefined, and empty planes are ignored.
+ *
+ * @param[in]       mappedRooms_in
+ *                  Mapped rooms; each plane's label lists the rooms that own
+ *                  it.
+ *
+ * @param[in]       msgTime_s_in
+ *                  ROS timestamp assigned to the published point cloud and
+ *                  visualisation markers.
+ *
+ * @param[in]       p_timingSink_in
+ *                  Borrowed sink told the start and end of each plane
+ *                  publication that runs (a rate-limited call reports
+ *                  nothing); null, or a sink with a null callback, reports
+ *                  nothing. An exception from the callback is swallowed.
+ */
 extern void publishPlanes(
     const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
     const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
@@ -1476,6 +1498,31 @@ extern void publishTopics(const rclcpp::Time    &msgTime_s_in,
                           const sensor_msgs::msg::PointCloud2::ConstSharedPtr
                               &pointCloud_cameraMessage_in);
 
+/*!
+ * @brief           Same as publishTopics() without a sink, and also reports
+ *                  the time of each topic publication to a timing sink; can
+ *                  skip the topic of all map points.
+ *
+ * @param[in]       msgTime_s_in
+ *                  ROS timestamp associated with the current SLAM update.
+ *
+ * @param[in]       angularVelocity_body_radps_in
+ *                  Angular velocity measured by the IMU and expressed in the
+ *                  body frame, in radians per second. This value is used only
+ *                  for inertial sensor configurations.
+ *
+ * @param[in]       pointCloud_cameraMessage_in
+ *                  Current point-cloud message whose points are assumed to be
+ *                  expressed in the camera frame.
+ *
+ * @param[in]       p_timingSink_in
+ *                  Borrowed sink that receives a timing report for each
+ *                  topic; null, or a sink with a null callback, reports
+ *                  nothing. An exception from the callback is swallowed.
+ *
+ * @param[in]       publishAllPoints_in
+ *                  False to skip publishing all map points.
+ */
 extern void publishTopics(
     const rclcpp::Time    &msgTime_s_in,
     const Eigen::Vector3f &angularVelocity_body_radps_in,
@@ -1754,4 +1801,4 @@ extern bool transformSkeletonPoint(
     const geometry_msgs::msg::Point       &skeletonPoint_marker_in,
     Eigen::Vector3d                       &skeletonPoint_world_out);
 
-#endif // VS_GRAPHS_COMMON_H
+#endif /* VS_GRAPHS_COMMON_H */

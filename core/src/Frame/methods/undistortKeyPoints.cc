@@ -58,7 +58,7 @@ FrameStatus Frame::undistortKeyPoints()
         return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
-    // Fill matrix with points
+    /* Fill matrix with points */
     cv::Mat matrix(keyPointCount, 2, CV_32F);
 
     for (int keyPointIndex = 0; keyPointIndex < keyPointCount; keyPointIndex++)
@@ -67,7 +67,7 @@ FrameStatus Frame::undistortKeyPoints()
         matrix.at<float>(keyPointIndex, 1) = keyPoints[keyPointIndex].pt.y;
     }
 
-    // Undistort points
+    /* Undistort points */
     matrix = matrix.reshape(2);
     cv::undistortPoints(
         matrix,
@@ -78,7 +78,7 @@ FrameStatus Frame::undistortKeyPoints()
         calibrationMatrix);
     matrix = matrix.reshape(1);
 
-    // Fill undistorted keypoint vector
+    /* Fill undistorted keypoint vector */
     keyPointsUndistorted.resize(keyPointCount);
     for (int keyPointIndex = 0; keyPointIndex < keyPointCount; keyPointIndex++)
     {
@@ -91,5 +91,5 @@ FrameStatus Frame::undistortKeyPoints()
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

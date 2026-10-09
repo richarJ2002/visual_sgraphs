@@ -53,7 +53,7 @@ namespace core
 
 FrameStatus Frame::computeStereoFishEyeMatches()
 {
-    // Speed it up by matching keypoints in the lapping area
+    /* Speed it up by matching keypoints in the lapping area */
     std::vector<cv::KeyPoint> stereoLeft(keyPoints.begin() + monoLeft,
                                          keyPoints.end());
     std::vector<cv::KeyPoint> stereoRight(keyPointsRight.begin() + monoRight,
@@ -70,7 +70,7 @@ FrameStatus Frame::computeStereoFishEyeMatches()
     uRight             = std::vector<float>(leftKeyPointCount, -1);
     stereoPoints3D     = std::vector<Eigen::Vector3f>(leftKeyPointCount);
 
-    // Perform a brute force between Keypoint in the left and right image
+    /* Perform a brute force between Keypoint in the left and right image */
     std::vector<std::vector<cv::DMatch>> matches;
 
     bfMatcher.knnMatch(stereoDescriptorLeft, stereoDescriptorRight, matches, 2);
@@ -78,7 +78,7 @@ FrameStatus Frame::computeStereoFishEyeMatches()
     int matchCount        = 0;
     int descriptorMatches = 0;
 
-    // Check matches using Lowe's ratio
+    /* Check matches using Lowe's ratio */
     for (std::vector<std::vector<cv::DMatch>>::iterator matchIt =
              matches.begin();
          matchIt != matches.end();
@@ -87,8 +87,10 @@ FrameStatus Frame::computeStereoFishEyeMatches()
         if ((*matchIt).size() >= 2 &&
             (*matchIt)[0].distance < (*matchIt)[1].distance * 0.7)
         {
-            // For every good match, check parallax and reprojection error to
-            // discard spurious matches
+            /*!
+             * For every good match, check parallax and reprojection error to
+             * discard spurious matches
+             */
             Eigen::Vector3f p3D;
             descriptorMatches++;
             float
@@ -133,5 +135,5 @@ FrameStatus Frame::computeStereoFishEyeMatches()
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

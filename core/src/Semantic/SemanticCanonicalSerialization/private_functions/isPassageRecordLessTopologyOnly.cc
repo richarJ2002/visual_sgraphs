@@ -131,6 +131,6 @@ bool isPassageRecordLessTopologyOnly(const PassageRecord &lhs_in,
     return lhs_in.endpointSlotReason < rhs_in.endpointSlotReason;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

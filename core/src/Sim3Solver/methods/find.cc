@@ -59,5 +59,5 @@ Sim3SolverStatus Sim3Solver::find(std::vector<bool> &inliers12Flags_inout,
     return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

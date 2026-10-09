@@ -128,7 +128,7 @@ MapStatus Map::preSave(
         }
     }
 
-    // Saves the id of KF origins
+    /* Saves the id of KF origins */
     backupKeyFrameOriginIds.clear();
     backupKeyFrameOriginIds.reserve(keyFrameOrigins.size());
     for (int elIndex = 0, elCount = keyFrameOrigins.size(); elIndex < elCount;
@@ -137,7 +137,7 @@ MapStatus Map::preSave(
         backupKeyFrameOriginIds.push_back(keyFrameOrigins[elIndex]->id);
     }
 
-    // Backup of MapPoints
+    /* Backup of MapPoints */
     backupMapPoints.clear();
 
     std::set<MapPoint *> temporaryMspMapPoints2;
@@ -168,7 +168,7 @@ MapStatus Map::preSave(
         }
     }
 
-    // Backup of KeyFrames
+    /* Backup of KeyFrames */
     backupKeyFrames.clear();
     for (KeyFrame *p_keyFrame : keyFrames)
     {
@@ -210,5 +210,5 @@ MapStatus Map::preSave(
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

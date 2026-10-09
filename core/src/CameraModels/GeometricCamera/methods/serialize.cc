@@ -52,8 +52,7 @@ namespace camera_models
 namespace geometriccamera
 {
 
-// Explicitly instantiated below for every archive the map save/load
-// code uses, so that no other translation unit compiles this body.
+/* Instantiated below for every archive used, so only this file compiles it */
 template <class Archive>
 void GeometricCamera::serialize(Archive                            &ar,
                                 [[maybe_unused]] const unsigned int version)
@@ -96,7 +95,7 @@ template void GeometricCamera::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,
     const unsigned int);
 
-} // namespace geometriccamera
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometriccamera */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

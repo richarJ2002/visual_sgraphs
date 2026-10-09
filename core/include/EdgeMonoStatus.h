@@ -44,7 +44,7 @@ enum class EdgeMonoStatus : std::uint8_t
     EDGE_MONO_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // EDGE_MONO_STATUS_H
+#endif /* EDGE_MONO_STATUS_H */

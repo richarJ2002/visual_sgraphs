@@ -44,5 +44,5 @@ AtlasStatus Atlas::peekNewMapCreatedEvent(bool &isEventPending_out) const
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

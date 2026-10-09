@@ -45,7 +45,7 @@ enum class LocalMappingStatus : std::uint8_t
     LOCAL_MAPPING_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // LOCAL_MAPPING_STATUS_H
+#endif /* LOCAL_MAPPING_STATUS_H */

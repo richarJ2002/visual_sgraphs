@@ -53,10 +53,10 @@ void Viewer::run()
 
     pangolin::CreateWindowAndBind("ORB-SLAM3: Map Viewer", 1024, 768);
 
-    // 3D Mouse handler requires depth testing to be enabled
+    /* 3D Mouse handler requires depth testing to be enabled */
     glEnable(GL_DEPTH_TEST);
 
-    // Issue specific OpenGl we might need
+    /* Issue specific OpenGl we might need */
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -67,7 +67,6 @@ void Viewer::run()
     pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", false, true);
     pangolin::Var<bool> menuCameraView("menu.Camera View", false, false);
     pangolin::Var<bool> menuTopView("menu.Top View", false, false);
-    // pangolin::Var<bool> menuSideView("menu.Side View",false,false);
     pangolin::Var<bool> menuShowPoints("menu.Show Points", true, true);
     pangolin::Var<bool> menuShowKeyFrames("menu.Show KeyFrames", true, true);
     pangolin::Var<bool> menuShowGraph("menu.Show Graph", false, true);
@@ -81,11 +80,11 @@ void Viewer::run()
     pangolin::Var<bool> menuStop("menu.Stop", false, false);
     pangolin::Var<bool> menuStepByStep("menu.Step By Step",
                                        false,
-                                       true); // false, true
+                                       true); /* false, true */
     pangolin::Var<bool> menuStep("menu.Step", false, false);
 
     pangolin::Var<bool> menuShowOptLba("menu.Show LBA opt", false, true);
-    // Define Camera Render Object (for view / scene browsing)
+    /* Define Camera Render Object (for view / scene browsing) */
     pangolin::OpenGlRenderState camera(pangolin::ProjectionMatrix(1024,
                                                                   768,
                                                                   viewpointF,
@@ -104,7 +103,7 @@ void Viewer::run()
                                                                  -1.0,
                                                                  0.0));
 
-    // Add named OpenGL viewport to window and provide 3D Handler
+    /* Add named OpenGL viewport to window and provide 3D Handler */
     pangolin::View &cameraView =
         pangolin::CreateDisplay()
             .SetBounds(0.0,
@@ -298,7 +297,6 @@ void Viewer::run()
 
         if (menuStepByStep && !stepByStep)
         {
-            // cout << "Viewer: step by step" << endl;
             if (p_tracker->setStepByStep(true) !=
                 TrackingStatus::TRACKING_STATUS_SUCCESS)
             {
@@ -365,7 +363,7 @@ void Viewer::run()
             }
         }
 
-        // Draw world frame
+        /* Draw world frame */
         pangolin::glDrawAxis(10.0);
 
         pangolin::FinishFrame();
@@ -459,7 +457,7 @@ void Viewer::run()
                 }
             }
 
-            // Stop all threads
+            /* Stop all threads */
             if (p_system->shutdown() != SystemStatus::SYSTEM_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -468,7 +466,7 @@ void Viewer::run()
                              __func__);
             }
 
-            // Save camera trajectory
+            /* Save camera trajectory */
             if (p_system->saveTrajectoryEuRoC("CameraTrajectory.txt") !=
                 SystemStatus::SYSTEM_STATUS_SUCCESS)
             {
@@ -542,5 +540,5 @@ void Viewer::run()
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

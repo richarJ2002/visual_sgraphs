@@ -59,8 +59,8 @@ enum class SemanticVerifyStatus : std::uint8_t
     SEMANTIC_VERIFY_STATUS_NUMERICAL_FAILURE = 2U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_VERIFY_STATUS_H
+#endif /* SEMANTIC_VERIFY_STATUS_H */

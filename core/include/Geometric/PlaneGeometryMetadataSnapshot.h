@@ -104,8 +104,8 @@ struct PlaneGeometryMetadataSnapshot
     std::uint64_t successfulRefitGeneration{0U};
 };
 
-} // namespace geometric
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometric */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // PLANE_GEOMETRY_METADATA_SNAPSHOT_H
+#endif /* PLANE_GEOMETRY_METADATA_SNAPSHOT_H */

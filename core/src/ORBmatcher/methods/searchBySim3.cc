@@ -51,7 +51,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
     const float &cx = p_keyframe1_in->cx;
     const float &cy = p_keyframe1_in->cy;
 
-    // Camera 1 & 2 from world
+    /* Camera 1 & 2 from world */
     Sophus::SE3f T1w{};
     if (p_keyframe1_in->getPose(T1w) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -71,7 +71,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
                      __func__);
     }
 
-    // Transformation between cameras
+    /* Transformation between cameras */
     Sophus::Sim3f S21 = relativeSimilarity_camera2ToCamera1_in.inverse();
 
     std::vector<MapPoint *> mapPoints1{};
@@ -124,7 +124,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
     std::vector<int> matchIndices1(N1, -1);
     std::vector<int> matchIndices2(N2, -1);
 
-    // Transform from KF1 to KF2 and search
+    /* Transform from KF1 to KF2 and search */
     for (int i1 = 0; i1 < N1; i1++)
     {
         MapPoint *p_mapPoint = mapPoints1[i1];
@@ -156,7 +156,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
         Eigen::Vector3f p3Dc1 = T1w * p3Dw;
         Eigen::Vector3f p3Dc2 = S21 * p3Dc1;
 
-        // Depth must be positive
+        /* Depth must be positive */
         if (p3Dc2(2) < 0.0)
             continue;
 
@@ -167,7 +167,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
         const float u = fx * x + cx;
         const float v = fy * y + cy;
 
-        // Point must be inside the image
+        /* Point must be inside the image */
         bool pKF2IsInImage{};
         if (p_keyframe2_in->isInImage(u, v, pKF2IsInImage) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -202,11 +202,11 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
         }
         const float distance3d = p3Dc2.norm();
 
-        // Depth must be inside the scale invariance region
+        /* Depth must be inside the scale invariance region */
         if (distance3d < minimumDistance || distance3d > maximumDistance)
             continue;
 
-        // Compute predicted octave
+        /* Compute predicted octave */
         int predictedLevelCount{};
         if (p_mapPoint->predictScale(distance3d,
                                      p_keyframe2_in,
@@ -219,7 +219,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
                          __func__);
         }
 
-        // Search in a radius
+        /* Search in a radius */
         const float radius =
             threshold_in * p_keyframe2_in->scaleFactors[predictedLevelCount];
 
@@ -236,7 +236,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
         if (indices.empty())
             continue;
 
-        // Match to the most similar keypoint in the radius
+        /* Match to the most similar keypoint in the radius */
         cv::Mat mapPointDescriptor{};
         if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -292,7 +292,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
         }
     }
 
-    // Transform from KF2 to KF2 and search
+    /* Transform from KF2 to KF2 and search */
     for (int i2 = 0; i2 < N2; i2++)
     {
         MapPoint *p_mapPoint = mapPoints2[i2];
@@ -324,7 +324,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
         Eigen::Vector3f p3Dc2 = T2w * p3Dw;
         Eigen::Vector3f p3Dc1 = relativeSimilarity_camera2ToCamera1_in * p3Dc2;
 
-        // Depth must be positive
+        /* Depth must be positive */
         if (p3Dc1(2) < 0.0)
             continue;
 
@@ -335,7 +335,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
         const float u = fx * x + cx;
         const float v = fy * y + cy;
 
-        // Point must be inside the image
+        /* Point must be inside the image */
         bool pKF1IsInImage{};
         if (p_keyframe1_in->isInImage(u, v, pKF1IsInImage) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -370,11 +370,11 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
         }
         const float distance3d = p3Dc1.norm();
 
-        // Depth must be inside the scale pyramid of the image
+        /* Depth must be inside the scale pyramid of the image */
         if (distance3d < minimumDistance || distance3d > maximumDistance)
             continue;
 
-        // Compute predicted octave
+        /* Compute predicted octave */
         int predictedLevelCount{};
         if (p_mapPoint->predictScale(distance3d,
                                      p_keyframe1_in,
@@ -387,7 +387,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
                          __func__);
         }
 
-        // Search in a radius of 2.5*sigma(ScaleLevel)
+        /* Search in a radius of 2.5*sigma(ScaleLevel) */
         const float radius =
             threshold_in * p_keyframe1_in->scaleFactors[predictedLevelCount];
 
@@ -404,7 +404,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
         if (indices.empty())
             continue;
 
-        // Match to the most similar keypoint in the radius
+        /* Match to the most similar keypoint in the radius */
         cv::Mat mapPointDescriptor{};
         if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -460,7 +460,7 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
         }
     }
 
-    // Check agreement
+    /* Check agreement */
     int foundCount = 0;
 
     for (int i1 = 0; i1 < N1; i1++)
@@ -482,5 +482,5 @@ ORBmatcherStatus ORBmatcher::searchBySim3(
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

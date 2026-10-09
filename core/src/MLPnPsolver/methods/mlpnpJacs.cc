@@ -519,5 +519,5 @@ MLPnPsolverStatus MLPnPsolver::mlpnpJacs(const Point3          &point_in,
     return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

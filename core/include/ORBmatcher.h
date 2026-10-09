@@ -386,11 +386,6 @@ class ORBmatcher
         int                                    &forTriangulation_out,
         const bool                              coarse_in = false);
 
-    // Search matches between MapPoints seen in KF1 and KF2 transforming by a
-    // Sim3 [s12*R12|t12] In the stereo and RGB-D case, s12=1 int
-    // SearchBySim3(KeyFrame* pKF1, KeyFrame* pKF2, std::vector<MapPoint *>
-    // &vpMatches12, const float &s12, const cv::Mat &R12, const cv::Mat &t12,
-    // const float th);
     /*!
      * @brief           Matches map points between keyframes under
      *                  a Sim3 transform.
@@ -417,6 +412,8 @@ class ORBmatcher
      *                  Number of matches found.
      *
      * @return          ORBMATCHER_STATUS_SUCCESS.
+     *
+     * @note            In the stereo and RGB-D case the Sim3 scale is 1.
      */
     [[nodiscard]] ORBmatcherStatus searchBySim3(
         KeyFrame                *p_keyframe1_in,
@@ -557,7 +554,7 @@ class ORBmatcher
     bool  shouldCheckOrientation;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // ORBMATCHER_H
+#endif /* ORBMATCHER_H */

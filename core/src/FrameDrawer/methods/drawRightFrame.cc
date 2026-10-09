@@ -23,15 +23,15 @@ FrameDrawerStatus FrameDrawer::drawRightFrame(cv::Mat &frameImage_out,
 {
     cv::Mat displayImage;
     std::vector<cv::KeyPoint>
-        initialKeyPoints; // Initialization: KeyPoints in reference frame
-    std::vector<int> initialMatchIndices; // Initialization: correspondeces with
-                                          // reference keypoints
-    std::vector<cv::KeyPoint> currentKeyPoints; // KeyPoints in current frame
+        initialKeyPoints; /* Initialization: KeyPoints in reference frame */
+    /* Initialization: correspondeces with reference keypoints */
+    std::vector<int>          initialMatchIndices;
+    std::vector<cv::KeyPoint> currentKeyPoints; /* KeyPoints in current frame */
     std::vector<bool>         visualOdometryFlags,
-        mapPointFlags; // Tracked MapPoints in current frame
-    int drawState;     // Tracking state
+        mapPointFlags; /* Tracked MapPoints in current frame */
+    int drawState;     /* Tracking state */
 
-    // Copy variables within scoped mutex
+    /* Copy variables within scoped mutex */
     {
         std::unique_lock<std::mutex> stateLock(frameStateMutex);
         drawState = state;
@@ -56,7 +56,7 @@ FrameDrawerStatus FrameDrawer::drawRightFrame(cv::Mat &frameImage_out,
         {
             currentKeyPoints = currentKeysRight;
         }
-    } // destroy scoped mutex -> release mutex
+    } /* destroy scoped mutex -> release mutex */
 
     if (imageScale_in != 1.f)
     {
@@ -67,11 +67,11 @@ FrameDrawerStatus FrameDrawer::drawRightFrame(cv::Mat &frameImage_out,
                    cv::Size(imageWidth, imageHeight));
     }
 
-    if (displayImage.channels() < 3) // this should be always true
+    if (displayImage.channels() < 3) /* this should be always true */
         cv::cvtColor(displayImage, displayImage, cv::COLOR_GRAY2BGR);
 
-    // Draw
-    if (drawState == Tracking::NOT_INITIALIZED) // INITIALIZING
+    /* Draw */
+    if (drawState == Tracking::NOT_INITIALIZED) /* INITIALIZING */
     {
         for (unsigned int keyPointIndex = 0;
              keyPointIndex < initialMatchIndices.size();
@@ -103,7 +103,7 @@ FrameDrawerStatus FrameDrawer::drawRightFrame(cv::Mat &frameImage_out,
             }
         }
     }
-    else if (drawState == Tracking::OK) // TRACKING
+    else if (drawState == Tracking::OK) /* TRACKING */
     {
         trackedCount                     = 0;
         trackedVOCount                   = 0;
@@ -145,7 +145,7 @@ FrameDrawerStatus FrameDrawer::drawRightFrame(cv::Mat &frameImage_out,
                         currentKeysRight[keyPointIndex].pt.y + markerHalfSize;
                 }
 
-                // This is a match to a MapPoint in the map
+                /* This is a match to a MapPoint in the map */
                 if (mapPointFlags[keyPointIndex + leftKeyPointCount])
                 {
                     cv::rectangle(displayImage,
@@ -159,8 +159,11 @@ FrameDrawerStatus FrameDrawer::drawRightFrame(cv::Mat &frameImage_out,
                                -1);
                     trackedCount++;
                 }
-                else // This is match to a "visual odometry" MapPoint created in
-                     // the last frame
+                /*!
+                 * This is match to a "visual odometry" MapPoint created in the
+                 * last frame
+                 */
+                else
                 {
                     cv::rectangle(displayImage,
                                   drawPoint1,
@@ -191,5 +194,5 @@ FrameDrawerStatus FrameDrawer::drawRightFrame(cv::Mat &frameImage_out,
     return FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

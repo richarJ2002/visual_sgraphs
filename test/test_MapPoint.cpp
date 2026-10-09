@@ -93,6 +93,6 @@ TEST(MapPoint, PostLoadReadsAMissingRightIndexAsUnseen)
     EXPECT_EQ(std::get<1>(observations[&observingKeyFrame]), -1);
 }
 
-} // namespace
-} // namespace core
-} // namespace vs_graphs
+} /* namespace */
+} /* namespace core */
+} /* namespace vs_graphs */

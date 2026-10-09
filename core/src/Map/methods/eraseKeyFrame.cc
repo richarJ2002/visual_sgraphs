@@ -78,11 +78,13 @@ MapStatus Map::eraseKeyFrame(KeyFrame *p_keyFrame_inout)
         p_lowerIdKeyFrame = 0;
     }
 
-    // TODO: This only erase the pointer.
-    // Delete the MapPoint
+    /*!
+     * TODO: This only erase the pointer.
+     * Delete the MapPoint
+     */
 
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

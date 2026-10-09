@@ -47,7 +47,7 @@ TrackingStatus
                               const std::vector<semantic::Marker *> markers_in,
                               Sophus::SE3f &cameraPose_out)
 {
-    // Adaptive FAST threshold: adjust before feature extraction
+    /* Adaptive FAST threshold: adjust before feature extraction */
     if (adjustFASTThreshold() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -185,5 +185,5 @@ TrackingStatus
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

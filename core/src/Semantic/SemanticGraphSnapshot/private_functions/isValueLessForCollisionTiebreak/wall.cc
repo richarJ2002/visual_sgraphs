@@ -158,6 +158,6 @@ bool isValueLessForCollisionTiebreak(const WallRecord &lhs_in,
            rhs_in.observationRayEvidenceReason;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

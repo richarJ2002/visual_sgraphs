@@ -47,8 +47,8 @@ enum class SemanticCandidatesStatus : std::uint8_t
     SEMANTIC_CANDIDATES_STATUS_SUCCESS = 0U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_CANDIDATES_STATUS_H
+#endif /* SEMANTIC_CANDIDATES_STATUS_H */

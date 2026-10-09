@@ -67,5 +67,5 @@ TEST(StereoMatchOutlierRejection, RejectsMatchesFarAboveTheMedianDistance)
     EXPECT_EQ(mvuRight[3], 5.0f);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

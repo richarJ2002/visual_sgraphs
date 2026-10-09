@@ -42,6 +42,6 @@ FloorStatus Floor::hasPlaneIdentity(bool &hasPlaneIdentity_out) const
     return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

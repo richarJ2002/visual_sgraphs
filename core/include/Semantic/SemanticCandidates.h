@@ -336,8 +336,8 @@ class SemanticCandidates
         std::optional<int> anchorRoomId_in = std::nullopt);
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_CANDIDATES_H
+#endif /* SEMANTIC_CANDIDATES_H */

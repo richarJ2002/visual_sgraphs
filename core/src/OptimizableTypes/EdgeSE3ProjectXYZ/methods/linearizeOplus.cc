@@ -51,9 +51,11 @@ void EdgeSE3ProjectXYZ::linearizeOplus()
     double transformedY = transformedPointPosition[1];
     double transformedZ = transformedPointPosition[2];
 
-    // Materialize eagerly: computeProjectionJacobian() returns by value,
-    // so `auto` would capture a lazy expression referencing a dead
-    // temporary (stack-use-after-scope under vectorized evaluation).
+    /*!
+     * Materialize eagerly: computeProjectionJacobian() returns by value,
+     * so `auto` would capture a lazy expression referencing a dead
+     * temporary (stack-use-after-scope under vectorized evaluation).
+     */
     const Eigen::Matrix<double, 2, 3> projectionJacobian =
         -p_camera->computeProjectionJacobian(transformedPointPosition);
 
@@ -68,5 +70,5 @@ void EdgeSE3ProjectXYZ::linearizeOplus()
     _jacobianOplusXj = projectionJacobian * se3Derivative;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

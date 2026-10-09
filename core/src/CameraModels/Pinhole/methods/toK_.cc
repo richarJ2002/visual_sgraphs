@@ -41,7 +41,7 @@ Eigen::Matrix3f Pinhole::toK_()
         parameters[3], 0.f, 0.f, 1.f;
     return cameraMatrix;
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

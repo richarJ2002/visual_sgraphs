@@ -61,7 +61,7 @@ ConverterStatus Converter::toCvMat(const g2o::SE3Quat &rigidTransform_in,
     return ConverterStatus::CONVERTER_STATUS_SUCCESS;
 }
 
-} // namespace converter
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace converter */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -44,7 +44,7 @@ enum class OptimizerStatus : std::uint8_t
     OPTIMIZER_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // OPTIMIZER_STATUS_H
+#endif /* OPTIMIZER_STATUS_H */

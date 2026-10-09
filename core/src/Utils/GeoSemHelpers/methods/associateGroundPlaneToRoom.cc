@@ -47,7 +47,7 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
     vs_graphs::core::geometric::Plane *p_associatedGroundPlane = nullptr;
     size_t                             maximumInliers          = 0;
 
-    // get the ground planes from the Atlas
+    /* get the ground planes from the Atlas */
     std::vector<vs_graphs::core::geometric::Plane *> groundPlanes;
     std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
     if (p_atlas_in->getAllPlanes(atlasAllPlanes) !=
@@ -78,25 +78,29 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
 
     if (groundPlanes.empty())
     {
-        // no ground planes in the Atlas
+        /* no ground planes in the Atlas */
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
     else
     {
-        // check which ground plane has the most points within the walls
+        /* check which ground plane has the most points within the walls */
         for (geometric::Plane *const &plane : groundPlanes)
         {
-            // count inliers of the plane
+            /* count inliers of the plane */
             size_t inliers{};
             if (countGroundPlanePointsWithinWalls(allWalls, plane, inliers) !=
                 GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS)
             {
-                // countGroundPlanePointsWithinWalls cannot fail; continue as
-                // before.
+                /*!
+                 * countGroundPlanePointsWithinWalls cannot fail; continue as
+                 * before.
+                 */
             }
 
-            // update the associated ground plane if the current plane has more
-            // inliers
+            /*!
+             * update the associated ground plane if the current plane has more
+             * inliers
+             */
             if (inliers > maximumInliers)
             {
                 maximumInliers          = inliers;
@@ -117,9 +121,11 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
         }
         else
         {
-            // set the biggest ground plane as the ground plane of the room
-            // [TODO] - logic for when ground plane is not found within the
-            // walls
+            /*!
+             * set the biggest ground plane as the ground plane of the room
+             * [TODO] - logic for when ground plane is not found within the
+             * walls
+             */
             geometric::Plane *p_atlasBiggestGroundPlane = nullptr;
             if (p_atlas_in->getBiggestGroundPlane(p_atlasBiggestGroundPlane) !=
                 AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -144,5 +150,5 @@ GeoSemHelpersStatus GeoSemHelpers::associateGroundPlaneToRoom(
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

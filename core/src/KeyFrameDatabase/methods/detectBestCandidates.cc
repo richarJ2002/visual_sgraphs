@@ -44,7 +44,7 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
     std::list<KeyFrame *> keyFramesSharingWords;
     std::set<KeyFrame *>  connectedKeyFrames;
 
-    // Search all keyframes that share a word with current frame
+    /* Search all keyframes that share a word with current frame */
     {
         std::unique_lock<std::mutex> lock(databaseMutex);
 
@@ -96,7 +96,7 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
     if (keyFramesSharingWords.empty())
         return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 
-    // Only compare against those keyframes that share enough words
+    /* Only compare against those keyframes that share enough words */
     int maxCommonWordCount = 0;
     for (std::list<KeyFrame *>::iterator
              keyFrameIt  = keyFramesSharingWords.begin(),
@@ -119,7 +119,7 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
 
     int scoredCandidateCount = 0;
 
-    // Compute similarity score.
+    /* Compute similarity score. */
     for (std::list<KeyFrame *>::iterator
              keyFrameIt  = keyFramesSharingWords.begin(),
              keyFrameEnd = keyFramesSharingWords.end();
@@ -146,7 +146,7 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
     std::list<std::pair<float, KeyFrame *>> accumulatedScoredCandidates;
     float                                   bestAccumulatedScore = 0;
 
-    // Lets now accumulate score by covisibility
+    /* Lets now accumulate score by covisibility */
     for (std::list<std::pair<float, KeyFrame *>>::iterator
              scoredCandidateIt  = scoredCandidates.begin(),
              scoredCandidateEnd = scoredCandidates.end();
@@ -194,7 +194,7 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
             bestAccumulatedScore = accumulatedScore;
     }
 
-    // Return all those keyframes with a score higher than 0.75*bestScore
+    /* Return all those keyframes with a score higher than 0.75*bestScore */
     float                minScoreToRetain = 0.75f * bestAccumulatedScore;
     std::set<KeyFrame *> alreadyAddedKeyFrames;
     loopCandidateKeyFrames_out.reserve(accumulatedScoredCandidates.size());
@@ -247,5 +247,5 @@ KeyFrameDatabaseStatus KeyFrameDatabase::detectBestCandidates(
     return KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -40,11 +40,13 @@ PreintegratedStatus Preintegrated::integrateNewMeasurement(
     measurements.push_back(
         Integrable(acceleration_in, angularVelocity_in, deltaTime_in));
 
-    // Position is updated firstly, as it depends on previously computed
-    // velocity and rotation. Velocity is updated secondly, as it depends on
-    // previously computed rotation. Rotation is the last to be updated.
+    /*!
+     * Position is updated firstly, as it depends on previously computed
+     * velocity and rotation. Velocity is updated secondly, as it depends on
+     * previously computed rotation. Rotation is the last to be updated.
+     */
 
-    // Matrices to compute covariance
+    /* Matrices to compute covariance */
     Eigen::Matrix<float, 9, 9> stateTransitionMatrix;
     stateTransitionMatrix.setIdentity();
     Eigen::Matrix<float, 9, 6> noiseJacobianMatrix;
@@ -61,14 +63,18 @@ PreintegratedStatus Preintegrated::integrateNewMeasurement(
     avgW = (dT * avgW + debiasedAngularVelocity * deltaTime_in) /
            (dT + deltaTime_in);
 
-    // Update delta position dP and velocity dV (rely on no-updated delta
-    // rotation)
+    /*!
+     * Update delta position dP and velocity dV (rely on no-updated delta
+     * rotation)
+     */
     dP = dP + dV * deltaTime_in +
          0.5f * dR * debiasedAcceleration * deltaTime_in * deltaTime_in;
     dV = dV + dR * debiasedAcceleration * deltaTime_in;
 
-    // Compute velocity and position parts of matrices A and B (rely on
-    // non-updated delta rotation)
+    /*!
+     * Compute velocity and position parts of matrices A and B (rely on
+     * non-updated delta rotation)
+     */
     Eigen::Matrix<float, 3, 3> accelerationSkewMatrix =
         Sophus::SO3f::hat(debiasedAcceleration);
 
@@ -84,7 +90,7 @@ PreintegratedStatus Preintegrated::integrateNewMeasurement(
     noiseJacobianMatrix.block<3, 3>(6, 3) =
         0.5f * dR * deltaTime_in * deltaTime_in;
 
-    // Update position and velocity jacobians wrt bias correction
+    /* Update position and velocity jacobians wrt bias correction */
     JPa = JPa + JVa * deltaTime_in - 0.5f * dR * deltaTime_in * deltaTime_in;
     JPg =
         JPg + JVg * deltaTime_in -
@@ -92,7 +98,7 @@ PreintegratedStatus Preintegrated::integrateNewMeasurement(
     JVa = JVa - dR * deltaTime_in;
     JVg = JVg - dR * deltaTime_in * accelerationSkewMatrix * JRg;
 
-    // Update delta rotation
+    /* Update delta rotation */
     IntegratedRotation integratedRotation(angularVelocity_in, b, deltaTime_in);
     Eigen::Matrix3f    rotation2{};
     if (normalizeRotation(dR * integratedRotation.deltaR, rotation2) !=
@@ -105,29 +111,29 @@ PreintegratedStatus Preintegrated::integrateNewMeasurement(
     }
     dR = rotation2;
 
-    // Compute rotation parts of matrices A and B
+    /* Compute rotation parts of matrices A and B */
     stateTransitionMatrix.block<3, 3>(0, 0) =
         integratedRotation.deltaR.transpose();
     noiseJacobianMatrix.block<3, 3>(0, 0) =
         integratedRotation.rightJ * deltaTime_in;
 
-    // Update covariance
+    /* Update covariance */
     C.block<9, 9>(0, 0) =
         stateTransitionMatrix * C.block<9, 9>(0, 0) *
             stateTransitionMatrix.transpose() +
         noiseJacobianMatrix * Nga * noiseJacobianMatrix.transpose();
     C.block<6, 6>(9, 9) += NgaWalk;
 
-    // Update rotation jacobian wrt bias correction
+    /* Update rotation jacobian wrt bias correction */
     JRg = integratedRotation.deltaR.transpose() * JRg -
           integratedRotation.rightJ * deltaTime_in;
 
-    // Total integrated time
+    /* Total integrated time */
     dT += deltaTime_in;
 
     return PreintegratedStatus::PREINTEGRATED_STATUS_SUCCESS;
 }
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -51,6 +51,6 @@ ImuTypesStatus rightJacobianSO3(const Eigen::Vector3f &rotationVector_in,
     return ImuTypesStatus::IMU_TYPES_STATUS_SUCCESS;
 }
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */

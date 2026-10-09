@@ -74,6 +74,57 @@ class LoopClosing;
 class Optimizer
 {
   public:
+    /*!
+     * @brief           Runs bundle adjustment over the given keyframes, map
+     *                  points, markers, planes and rooms.
+     *
+     *                  When loopKeyFrameId_in equals the id of the map's origin
+     *                  keyframe (the initial-map run), the optimised keyframe
+     *                  poses, map point positions, planes, markers and room
+     *                  centroids are written straight into those objects.
+     *                  Otherwise (a loop-triggered run) keyframe poses, map
+     *                  point positions and planes are stored in their
+     *                  global-BA fields for the loop closing thread to apply,
+     *                  and markers and rooms are left unchanged. Returns
+     *                  without optimising when keyFrames_in is empty.
+     *
+     * @param[in]       keyFrames_in
+     *                  Keyframes to optimise; the map is taken from the first.
+     *
+     * @param[in]       mapPoints_in
+     *                  Map points to optimise.
+     *
+     * @param[in]       markers_in
+     *                  Fiducial markers to optimise.
+     *
+     * @param[in]       planes_in
+     *                  Planes to optimise.
+     *
+     * @param[in]       rooms_in
+     *                  Rooms to optimise.
+     *
+     * @param[in]       iterationCount_in
+     *                  Number of optimiser iterations.
+     *
+     * @param[in,out]   p_stopFlag_inout
+     *                  Optional flag that, when set to true, makes the
+     *                  optimiser stop early; may be null.
+     *
+     * @param[in]       loopKeyFrameId_in
+     *                  Id of the loop keyframe that triggered this run; selects
+     *                  direct or deferred results as described above.
+     *
+     * @param[in]       useRobustKernel_in
+     *                  True to use a robust (Huber) cost on the reprojection
+     *                  edges.
+     *
+     * @param[in]       p_stopRequested_in
+     *                  Optional thread-safe cancellation request, read between
+     *                  iterations and copied into p_stopFlag_inout; may be
+     *                  null.
+     *
+     * @return          OPTIMIZER_STATUS_SUCCESS always.
+     */
     [[nodiscard]] static OptimizerStatus bundleAdjustment(
         const std::vector<vs_graphs::core::KeyFrame *>         &keyFrames_in,
         const std::vector<vs_graphs::core::MapPoint *>         &mapPoints_in,
@@ -513,7 +564,7 @@ class Optimizer
                      int                     &inlierCount_out,
                      const bool               shouldUseAllPoints_in = false);
 
-    // For inertial systems
+    /* For inertial systems */
 
     /*!
      * @brief           Refines a window of recent keyframes with visual and IMU
@@ -641,7 +692,7 @@ class Optimizer
                     const int             &end_in,
                     Eigen::MatrixXd       &marginalized_out);
 
-    // Inertial pose-graph
+    /* Inertial pose-graph */
     /*!
      * @brief           Estimates gravity direction, scale, IMU biases and
      *                  keyframe velocities of a map from its keyframe poses,
@@ -756,7 +807,7 @@ class Optimizer
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // OPTIMIZER_H
+#endif /* OPTIMIZER_H */

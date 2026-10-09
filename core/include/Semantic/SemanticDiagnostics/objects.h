@@ -30,4 +30,4 @@
 #include "Semantic/SemanticDiagnostics/objects/SemanticDiagnosticState.h"
 #include "Semantic/SemanticDiagnostics/objects/SemanticDiagnosticUpdate.h"
 
-#endif // SEMANTIC_DIAGNOSTICS_OBJECTS_H
+#endif /* SEMANTIC_DIAGNOSTICS_OBJECTS_H */

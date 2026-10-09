@@ -131,5 +131,5 @@ bool VertexPose::read(std::istream &inputStream_inout)
     return !inputStream_inout.fail();
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

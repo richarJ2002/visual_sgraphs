@@ -74,11 +74,11 @@ MLPnPsolverStatus MLPnPsolver::setRansacParameters(double probability_in,
     ransacEpsilon       = epsilon_in;
     ransacMinSet        = minimumSet_in;
 
-    correspondenceCount = points2D.size(); // number of correspondences
+    correspondenceCount = points2D.size(); /* number of correspondences */
 
     inlierFlags.resize(correspondenceCount);
 
-    // Adjust Parameters according to number of correspondences
+    /* Adjust Parameters according to number of correspondences */
     int minimumInlierCount = correspondenceCount * ransacEpsilon;
     if (minimumInlierCount < ransacMinInliers)
         minimumInlierCount = ransacMinInliers;
@@ -91,8 +91,10 @@ MLPnPsolverStatus MLPnPsolver::setRansacParameters(double probability_in,
         ransacEpsilon =
             static_cast<float>(ransacMinInliers) / correspondenceCount;
 
-    // Set RANSAC iterations according to probability, epsilon, and max
-    // iterations
+    /*!
+     * Set RANSAC iterations according to probability, epsilon, and max
+     * iterations
+     */
     int nIterations;
 
     if (ransacMinInliers == correspondenceCount)
@@ -113,5 +115,5 @@ MLPnPsolverStatus MLPnPsolver::setRansacParameters(double probability_in,
     return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

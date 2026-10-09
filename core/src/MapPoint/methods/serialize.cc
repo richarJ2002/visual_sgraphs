@@ -46,8 +46,7 @@ namespace vs_graphs
 namespace core
 {
 
-// Explicitly instantiated below for every archive the map save/load
-// code uses, so that no other translation unit compiles this body.
+/* Instantiated below for every archive used, so only this file compiles it */
 template <class Archive>
 void MapPoint::serialize(Archive &ar, const unsigned int version)
 {
@@ -55,47 +54,15 @@ void MapPoint::serialize(Archive &ar, const unsigned int version)
     ar & firstKeyFrameId;
     ar & firstFrameId;
     ar & observationCount;
-    // Variables used by the tracking
-    // ar & mTrackProjX;
-    // ar & mTrackProjY;
-    // ar & mTrackDepth;
-    // ar & mTrackDepthR;
-    // ar & mTrackProjXR;
-    // ar & mTrackProjYR;
-    // ar & mbTrackInView;
-    // ar & mbTrackInViewR;
-    // ar & mnTrackScaleLevel;
-    // ar & mnTrackScaleLevelR;
-    // ar & mTrackViewCos;
-    // ar & mTrackViewCosR;
-    // ar & trackReferenceFrameId;
-    // ar & lastSeenFrameId;
 
-    // Variables used by local mapping
-    // ar & baLocalKeyFrameId;
-    // ar & fuseCandidateKeyFrameId;
-
-    // Variables used by loop closing and merging
-    // ar & correctedByKeyFrameId;
-    // ar & correctedReferenceKeyFrameId;
-    // serializeMatrix(ar,mPosGBA,version);
-    // ar & baGlobalKeyFrameId;
-    // ar & baLocalMergeId;
-    // serializeMatrix(ar,mPosMerge,version);
-    // serializeMatrix(ar,mNormalVectorMerge,version);
-
-    // Protected variables
+    /* Protected variables */
     ar &boost::serialization::make_array(worldPos.data(), worldPos.size());
     ar &boost::serialization::make_array(normalVector.data(),
                                          normalVector.size());
-    // ar & BOOST_SERIALIZATION_NVP(mBackupObservationsId);
-    // ar & mObservations;
     ar & backupObservationIds1;
     ar & backupObservationIds2;
     serializeMatrix(ar, descriptor, version);
     ar & backupRefKeyFrameId;
-    // ar & mnVisible;
-    // ar & mnFound;
 
     ar & isFlaggedBad;
     ar & backupReplacedId;
@@ -129,5 +96,5 @@ template void MapPoint::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,
     const unsigned int);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

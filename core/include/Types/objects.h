@@ -28,4 +28,4 @@
 
 #include "Types/objects/SystemParams.h"
 
-#endif // TYPES_OBJECTS_H
+#endif /* TYPES_OBJECTS_H */

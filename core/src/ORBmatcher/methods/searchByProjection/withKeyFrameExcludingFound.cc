@@ -60,7 +60,7 @@ ORBmatcherStatus
     Eigen::Vector3f cameraCenter_world =
         cameraPose_worldToCamera.inverse().translation();
 
-    // Rotation Histogram (to check rotation consistency)
+    /* Rotation Histogram (to check rotation consistency) */
     std::vector<int> rotHist[HISTO_LENGTH];
     for (int histogramBinIndex = 0; histogramBinIndex < HISTO_LENGTH;
          histogramBinIndex++)
@@ -96,7 +96,7 @@ ORBmatcherStatus
             }
             if (!mapPointIsBad && !alreadyFound_in.count(p_mapPoint))
             {
-                // Project
+                /* Project */
                 Eigen::Vector3f x3Dw{};
                 if (p_mapPoint->getWorldPos(x3Dw) !=
                     MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -119,7 +119,7 @@ ORBmatcherStatus
                     uv(1) > currentFrame_inout.gridMaxY)
                     continue;
 
-                // Compute predicted scale level
+                /* Compute predicted scale level */
                 Eigen::Vector3f PO         = x3Dw - cameraCenter_world;
                 float           distance3d = PO.norm();
 
@@ -144,7 +144,7 @@ ORBmatcherStatus
                         __func__);
                 }
 
-                // Depth must be inside the scale pyramid of the image
+                /* Depth must be inside the scale pyramid of the image */
                 if (distance3d < minimumDistance ||
                     distance3d > maximumDistance)
                     continue;
@@ -162,7 +162,7 @@ ORBmatcherStatus
                         __func__);
                 }
 
-                // Search in a window
+                /* Search in a window */
                 const float radius =
                     threshold_in *
                     currentFrame_inout.scaleFactors[predictedLevelCount];
@@ -296,5 +296,5 @@ ORBmatcherStatus
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

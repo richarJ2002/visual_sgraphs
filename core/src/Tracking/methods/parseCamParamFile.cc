@@ -63,7 +63,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
         float cy   = 0.0F;
         imageScale = 1.f;
 
-        // Camera calibration parameters
+        /* Camera calibration parameters */
         cv::FileNode node = settings_in["Camera.fx"];
         if (!node.empty() && node.isReal())
         {
@@ -116,7 +116,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
             isParameterMissing = true;
         }
 
-        // Distortion parameters
+        /* Distortion parameters */
         node = settings_in["Camera.k1"];
         if (!node.empty() && node.isReal())
         {
@@ -190,7 +190,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
 
         if (imageScale != 1.f)
         {
-            // K matrix parameters must be scaled.
+            /* K matrix parameters must be scaled. */
             fx = fx * imageScale;
             fy = fy * imageScale;
             cx = cx * imageScale;
@@ -258,7 +258,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
         float k4   = 0.0F;
         imageScale = 1.f;
 
-        // Camera calibration parameters
+        /* Camera calibration parameters */
         cv::FileNode node = settings_in["Camera.fx"];
         if (!node.empty() && node.isReal())
         {
@@ -310,7 +310,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
             isParameterMissing = true;
         }
 
-        // Distortion parameters
+        /* Distortion parameters */
         node = settings_in["Camera.k1"];
         if (!node.empty() && node.isReal())
         {
@@ -372,7 +372,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
         {
             if (imageScale != 1.f)
             {
-                // K matrix parameters must be scaled.
+                /* K matrix parameters must be scaled. */
                 fx = fx * imageScale;
                 fy = fy * imageScale;
                 cx = cx * imageScale;
@@ -422,8 +422,10 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
         if (sensor == System::STEREO || sensor == System::IMU_STEREO ||
             sensor == System::IMU_RGBD)
         {
-            // Right camera
-            // Camera calibration parameters
+            /*!
+             * Right camera
+             * Camera calibration parameters
+             */
             cv::FileNode camera2Node = settings_in["Camera2.fx"];
             if (!camera2Node.empty() && camera2Node.isReal())
             {
@@ -475,7 +477,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
                 isParameterMissing = true;
             }
 
-            // Distortion parameters
+            /* Distortion parameters */
             camera2Node = settings_in["Camera2.k1"];
             if (!camera2Node.empty() && camera2Node.isReal())
             {
@@ -599,7 +601,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
             {
                 if (imageScale != 1.f)
                 {
-                    // K matrix parameters must be scaled.
+                    /* K matrix parameters must be scaled. */
                     fx = fx * imageScale;
                     fy = fy * imageScale;
                     cx = cx * imageScale;
@@ -722,7 +724,7 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
     if (fps == 0)
         fps = 30;
 
-    // Max/Min Frames to insert keyframes and to check relocalisation
+    /* Max/Min Frames to insert keyframes and to check relocalisation */
     minFrames = 0;
     maxFrames = fps;
 
@@ -797,5 +799,5 @@ TrackingStatus Tracking::parseCamParamFile(cv::FileStorage &settings_in,
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

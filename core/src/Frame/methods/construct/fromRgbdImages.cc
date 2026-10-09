@@ -98,13 +98,13 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
                      __func__);
     }
 
-    // Setting the color image for Semantic Segmentation
+    /* Setting the color image for Semantic Segmentation */
     colorImg = imageColor_in.clone();
 
-    // Frame ID
+    /* Frame ID */
     id = nextId++;
 
-    // Get the scale level info from the ORB extractor
+    /* Get the scale level info from the ORB extractor */
     int orbExtractorLeftLevelCount{};
     if (p_orbExtractorLeft->getLevelCount(orbExtractorLeftLevelCount) !=
         ORBextractorStatus::ORBEXTRACTOR_STATUS_SUCCESS)
@@ -170,7 +170,7 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
     }
     invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
-    // ORB extraction
+    /* ORB extraction */
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point timeStartExtOrb =
         std::chrono::steady_clock::now();
@@ -214,22 +214,24 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
                      __func__);
     }
 
-    // Initialize MapPoints
+    /* Initialize MapPoints */
     mapPoints = std::vector<MapPoint *>(keyPointCount,
                                         static_cast<MapPoint *>(nullptr));
 
-    // Initialize MapMarkers
+    /* Initialize MapMarkers */
     mapMarkers = markers_in;
 
-    // Initialize PointCloud
+    /* Initialize PointCloud */
     pointClouds = p_pointcloud_in;
 
     projectedPoints.clear();
 
     outlierFlags = std::vector<bool>(keyPointCount, false);
 
-    // This is done only for the first Frame (or after a change in the
-    // calibration)
+    /*!
+     * This is done only for the first Frame (or after a change in the
+     * calibration)
+     */
     if (areInitialComputationsDone)
     {
         if (computeImageBounds(imageGray_in) !=
@@ -295,7 +297,7 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
         }
     }
 
-    // Set no stereo fisheye information
+    /* Set no stereo fisheye information */
     leftKeyPointCount  = -1;
     rightKeyPointCount = -1;
     monoLeft           = -1;
@@ -313,5 +315,5 @@ Frame::Frame(const cv::Mat                                &imageColor_in,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

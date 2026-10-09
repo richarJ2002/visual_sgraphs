@@ -58,5 +58,5 @@ TrackingStatus calcDeviation(std::vector<int> values_in,
 }
 #endif
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

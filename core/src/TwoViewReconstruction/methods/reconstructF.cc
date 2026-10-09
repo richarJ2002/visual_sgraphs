@@ -55,13 +55,13 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructF(
         if (matchesInliersFlags_inout[matchIndex])
             N++;
 
-    // Compute Essential Matrix from Fundamental Matrix
+    /* Compute Essential Matrix from Fundamental Matrix */
     Eigen::Matrix3f E21 = K_in.transpose() * F21_in * K_in;
 
     Eigen::Matrix3f R1, R2;
     Eigen::Vector3f t;
 
-    // Recover the 4 motion hypotheses
+    /* Recover the 4 motion hypotheses */
     if (decomposeE(E21, R1, R2, t) !=
         TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS)
     {
@@ -74,7 +74,7 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructF(
     Eigen::Vector3f t1 = t;
     Eigen::Vector3f t2 = -t;
 
-    // Reconstruct with the 4 hyphoteses and check
+    /* Reconstruct with the 4 hyphoteses and check */
     std::vector<cv::Point3f> vP3D1, vP3D2, vP3D3, vP3D4;
     std::vector<bool>        triangulated1Flags, triangulated2Flags,
         triangulated3Flags, triangulated4Flags;
@@ -178,8 +178,10 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructF(
     if (good4Count > 0.7 * maximumGood)
         nsimilar++;
 
-    // If there is not a clear winner or not enough triangulated points reject
-    // initialization
+    /*!
+     * If there is not a clear winner or not enough triangulated points reject
+     * initialization
+     */
     if (maximumGood < minimumGoodCount || nsimilar > 1)
     {
         isReconstructed_out = false;
@@ -187,7 +189,7 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructF(
             TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
     }
 
-    // If best reconstruction has enough parallax initialize
+    /* If best reconstruction has enough parallax initialize */
     if (maximumGood == good1Count)
     {
         if (parallax1 > minimumParallax_in)
@@ -245,5 +247,5 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstructF(
     return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

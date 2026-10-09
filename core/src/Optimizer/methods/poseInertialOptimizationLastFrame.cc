@@ -67,7 +67,7 @@ OptimizerStatus
     int initialStereoCorrespondenceCount = 0;
     int initialCorrespondenceCount       = 0;
 
-    // Set Current Frame vertex
+    /* Set Current Frame vertex */
     VertexPose *p_poseVertex = new VertexPose(p_frame_inout);
     p_poseVertex->setId(0);
     p_poseVertex->setFixed(false);
@@ -85,7 +85,7 @@ OptimizerStatus
     p_accelerometerBiasVertex->setFixed(false);
     optimizer.addVertex(p_accelerometerBiasVertex);
 
-    // Set MapPoint vertices
+    /* Set MapPoint vertices */
     std::vector<EdgeMonoOnlyPose *>   edgesMonos;
     std::vector<EdgeStereoOnlyPose *> edgesStereos;
     std::vector<size_t>               monoEdgeIndices;
@@ -110,7 +110,7 @@ OptimizerStatus
     initialCorrespondenceCount =
         initialMonoCorrespondenceCount + initialStereoCorrespondenceCount;
 
-    // Set Previous Frame Vertex
+    /* Set Previous Frame Vertex */
     Frame *p_previousFrame = p_frame_inout->p_previousFrame;
 
     VertexPose *VPk = new VertexPose(p_previousFrame);
@@ -190,9 +190,11 @@ OptimizerStatus
         }
     }
 
-    // We perform 4 optimizations, after each optimization we classify
-    // observation as inlier/outlier At the next optimization, outliers are not
-    // included, but at the end they can be classified as inliers again.
+    /*!
+     * We perform 4 optimizations, after each optimization we classify
+     * observation as inlier/outlier At the next optimization, outliers are not
+     * included, but at the end they can be classified as inliers again.
+     */
     const float chi2Mono[4]   = {5.991, 5.991, 5.991, 5.991};
     const float chi2Stereo[4] = {15.6f, 9.8f, 7.815f, 7.815f};
     const int   its[4]        = {10, 10, 10, 10};
@@ -328,7 +330,7 @@ OptimizerStatus
 
     inlierCount = inliersMonoCount + inliersStereoCount;
 
-    // Recover optimized pose, velocity and biases
+    /* Recover optimized pose, velocity and biases */
     if (p_frame_inout->setImuPoseVelocity(
             p_poseVertex->estimate().Rwb.cast<float>(),
             p_poseVertex->estimate().twb.cast<float>(),
@@ -344,8 +346,10 @@ OptimizerStatus
     b << p_gyroBiasVertex->estimate(), p_accelerometerBiasVertex->estimate();
     p_frame_inout->imuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
 
-    // Recover Hessian, marginalize previous frame states and generate new prior
-    // for frame
+    /*!
+     * Recover Hessian, marginalize previous frame states and generate new prior
+     * for frame
+     */
     Eigen::Matrix<double, 30, 30> H;
     H.setZero();
 
@@ -478,5 +482,5 @@ OptimizerStatus
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

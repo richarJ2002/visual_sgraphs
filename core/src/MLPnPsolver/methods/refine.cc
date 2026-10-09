@@ -76,7 +76,7 @@ MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
         }
     }
 
-    // Bearing vectors and 3D points used for this ransac iteration
+    /* Bearing vectors and 3D points used for this ransac iteration */
     BearingVectors   bearingVecs;
     Points3          p3DS;
     std::vector<int> indexes;
@@ -91,13 +91,13 @@ MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
         indexes.push_back(bestInlierFlagIndex);
     }
 
-    // By the moment, we are using MLPnP without covariance info
+    /* By the moment, we are using MLPnP without covariance info */
     Covariance3Matrices covs(1);
 
-    // Result
+    /* Result */
     TransformationMatrix result;
 
-    // Compute camera pose
+    /* Compute camera pose */
     if (computePose(bearingVecs, p3DS, covs, indexes, result) !=
         MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
     {
@@ -107,7 +107,7 @@ MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
                      __func__);
     }
 
-    // Check inliers
+    /* Check inliers */
     if (checkInliers() != MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -166,5 +166,5 @@ MLPnPsolverStatus MLPnPsolver::refine(bool &isRefined_out)
     return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

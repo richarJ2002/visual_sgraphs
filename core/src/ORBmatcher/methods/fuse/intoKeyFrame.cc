@@ -101,7 +101,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
     const float &bf            = p_keyframe_inout->mbf;
     const int    mapPointCount = mapPoints_in.size();
 
-    // For debbuging
+    /* For debbuging */
     int notMapPointCount = 0, badCount = 0, isinKeyFrameCount = 0,
         negdepthCount = 0, notinimCount = 0, distanceCount = 0, normalCount = 0,
         notidxCount = 0, thcheckCount = 0;
@@ -159,7 +159,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
         }
         Eigen::Vector3f p3Dc = cameraPose_worldToCamera * p3Dw;
 
-        // Depth must be positive
+        /* Depth must be positive */
         if (p3Dc(2) < 0.0f)
         {
             negdepthCount++;
@@ -170,7 +170,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
 
         const Eigen::Vector2f uv = p_camera->project(p3Dc);
 
-        // Point must be inside the image
+        /* Point must be inside the image */
         bool keyframeIsInImage{};
         if (p_keyframe_inout->isInImage(uv(0), uv(1), keyframeIsInImage) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -211,14 +211,14 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
         Eigen::Vector3f PO         = p3Dw - cameraCenter_world;
         const float     distance3d = PO.norm();
 
-        // Depth must be inside the scale pyramid of the image
+        /* Depth must be inside the scale pyramid of the image */
         if (distance3d < minimumDistance || distance3d > maximumDistance)
         {
             distanceCount++;
             continue;
         }
 
-        // Viewing angle must be less than 60 deg
+        /* Viewing angle must be less than 60 deg */
         Eigen::Vector3f Pn{};
         if (p_mapPoint->getNormal(Pn) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -247,7 +247,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
                          __func__);
         }
 
-        // Search in a radius
+        /* Search in a radius */
         const float radius =
             threshold_in * p_keyframe_inout->scaleFactors[predictedLevelCount];
 
@@ -268,7 +268,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
             continue;
         }
 
-        // Match to the most similar keypoint in the radius
+        /* Match to the most similar keypoint in the radius */
 
         cv::Mat mapPointDescriptor{};
         if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
@@ -302,7 +302,7 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
 
             if (p_keyframe_inout->uRight[featureIndex] >= 0)
             {
-                // Check reprojection error in stereo
+                /* Check reprojection error in stereo */
                 const float &kpx = keyPoint.pt.x;
                 const float &kpy = keyPoint.pt.y;
                 const float &kpr = p_keyframe_inout->uRight[featureIndex];
@@ -354,7 +354,9 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
             }
         }
 
-        // If there is already a MapPoint replace otherwise add new measurement
+        /*!
+         * If there is already a MapPoint replace otherwise add new measurement
+         */
         if (bestDistance <= TH_LOW)
         {
             MapPoint *p_keyFrameMapPoint = nullptr;
@@ -459,5 +461,5 @@ ORBmatcherStatus ORBmatcher::fuse(KeyFrame *p_keyframe_inout,
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

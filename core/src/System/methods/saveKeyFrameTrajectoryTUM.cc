@@ -57,8 +57,10 @@ SystemStatus System::saveKeyFrameTrajectoryTUM(const std::string &filename_in)
     }
     std::sort(keyFrames.begin(), keyFrames.end(), KeyFrame::lId);
 
-    // Transform all keyframes so that the first keyframe is at the origin.
-    // After a loop closure the first keyframe might not be at the origin.
+    /*!
+     * Transform all keyframes so that the first keyframe is at the origin.
+     * After a loop closure the first keyframe might not be at the origin.
+     */
     ofstream f;
     f.open(filename_in.c_str());
     f << std::fixed;
@@ -102,5 +104,5 @@ SystemStatus System::saveKeyFrameTrajectoryTUM(const std::string &filename_in)
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

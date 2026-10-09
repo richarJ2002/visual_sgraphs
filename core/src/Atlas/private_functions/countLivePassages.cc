@@ -78,5 +78,5 @@ AtlasStatus countLivePassages(Map *p_map_in, std::size_t &livePassages_out)
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

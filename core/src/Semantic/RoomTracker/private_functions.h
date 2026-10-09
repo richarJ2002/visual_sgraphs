@@ -59,8 +59,8 @@ namespace semantic
 [[nodiscard]] RoomTrackerStatus eventLiteral(RoomTrackingEvent event_in,
                                              const char *&p_eventLiteral_out);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // VS_GRAPHS_CORE_SEMANTIC_ROOMTRACKER_PRIVATE_FUNCTIONS_H
+#endif /* VS_GRAPHS_CORE_SEMANTIC_ROOMTRACKER_PRIVATE_FUNCTIONS_H */

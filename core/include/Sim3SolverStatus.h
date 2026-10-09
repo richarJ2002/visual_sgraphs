@@ -44,7 +44,7 @@ enum class Sim3SolverStatus : std::uint8_t
     SIM3_SOLVER_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SIM3_SOLVER_STATUS_H
+#endif /* SIM3_SOLVER_STATUS_H */

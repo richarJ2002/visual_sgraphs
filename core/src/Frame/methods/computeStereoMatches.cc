@@ -61,7 +61,7 @@ FrameStatus Frame::computeStereoMatches()
 
     const int rowCount = p_orbExtractorLeft->imagePyramid[0].rows;
 
-    // Assign keypoints to row table
+    /* Assign keypoints to row table */
     std::vector<std::vector<size_t>> rowIndices(rowCount,
                                                 std::vector<size_t>());
 
@@ -82,12 +82,12 @@ FrameStatus Frame::computeStereoMatches()
             rowIndices[yi].push_back(iR);
     }
 
-    // Set limits for search
+    /* Set limits for search */
     const float minimumZ = mb;
     const float minimumD = 0;
     const float maximumD = mbf / minimumZ;
 
-    // For each left keypoint search a match in the right image
+    /* For each left keypoint search a match in the right image */
     std::vector<std::pair<int, int>> distanceIndices;
     distanceIndices.reserve(keyPointCount);
 
@@ -114,7 +114,7 @@ FrameStatus Frame::computeStereoMatches()
 
         const cv::Mat &dL = descriptors.row(iL);
 
-        // Compare descriptor to right keypoints
+        /* Compare descriptor to right keypoints */
         for (size_t iC = 0; iC < candidates.size(); iC++)
         {
             const size_t        iR        = candidates[iC];
@@ -147,10 +147,10 @@ FrameStatus Frame::computeStereoMatches()
             }
         }
 
-        // Subpixel match by correlation
+        /* Subpixel match by correlation */
         if (bestDistance < thresholdOrbDistance)
         {
-            // coordinates in image pyramid at keypoint scale
+            /* coordinates in image pyramid at keypoint scale */
             const float bestRightU         = keyPointsRight[bestIndexR].pt.x;
             const float inverseScaleFactor = invScaleFactors[keyPointL.octave];
             const float scaleduL =
@@ -159,7 +159,7 @@ FrameStatus Frame::computeStereoMatches()
                 std::round(keyPointL.pt.y * inverseScaleFactor);
             const float scaleduR0 = std::round(bestRightU * inverseScaleFactor);
 
-            // sliding window search
+            /* sliding window search */
             const int w  = 5;
             cv::Mat   IL = p_orbExtractorLeft->imagePyramid[keyPointL.octave]
                              .rowRange(scaledvL - w, scaledvL + w + 1)
@@ -198,7 +198,7 @@ FrameStatus Frame::computeStereoMatches()
             if (bestincR == -L || bestincR == L)
                 continue;
 
-            // Sub-pixel match (Parabola fitting)
+            /* Sub-pixel match (Parabola fitting) */
             const float distance1 = dists[L + bestincR - 1];
             const float distance2 = dists[L + bestincR];
             const float distance3 = dists[L + bestincR + 1];
@@ -210,7 +210,7 @@ FrameStatus Frame::computeStereoMatches()
             if (deltaR < -1 || deltaR > 1)
                 continue;
 
-            // Re-scaled coordinate
+            /* Re-scaled coordinate */
             float bestuR = scaleFactors[keyPointL.octave] *
                            (scaleduR0 + static_cast<float>(bestincR) + deltaR);
 
@@ -244,5 +244,5 @@ FrameStatus Frame::computeStereoMatches()
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -78,6 +78,6 @@ bool isFloorRecordLessTopologyOnly(const FloorRecord &lhs_in,
     return false;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

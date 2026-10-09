@@ -68,7 +68,7 @@ UtilsStatus Utils::getClassIdFromPlaneType(
     }
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

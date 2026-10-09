@@ -49,7 +49,7 @@ KannalaBrandt8Status
         return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
 
-    // getType() above confirmed the camera is a KannalaBrandt8
+    /* getType() above confirmed the camera is a KannalaBrandt8 */
     KannalaBrandt8 *p_kannalaCamera =
         static_cast<KannalaBrandt8 *>(p_camera_in);
 
@@ -125,4 +125,4 @@ KannalaBrandt8Status
     isEqual_out = isSameCamera;
     return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

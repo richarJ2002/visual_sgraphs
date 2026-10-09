@@ -52,8 +52,8 @@ enum class RoomStatus : std::uint8_t
     ROOM_STATUS_INVALID_ARGUMENT = 1U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // ROOM_STATUS_H
+#endif /* ROOM_STATUS_H */

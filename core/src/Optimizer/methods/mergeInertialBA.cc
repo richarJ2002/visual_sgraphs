@@ -58,12 +58,12 @@ OptimizerStatus
     std::vector<KeyFrame *> optimizableKeyFrames;
     optimizableKeyFrames.reserve(2 * Nd);
 
-    // For cov KFS, inertial parameters are not optimized
+    /* For cov KFS, inertial parameters are not optimized */
     const int               maximumCovisibleKeyFrameCount = 30;
     std::vector<KeyFrame *> optimizableCovisibleKeyFrames;
     optimizableCovisibleKeyFrames.reserve(maximumCovisibleKeyFrameCount);
 
-    // Add sliding window for current KF
+    /* Add sliding window for current KF */
     optimizableKeyFrames.push_back(p_currentKeyFrame_inout);
     p_currentKeyFrame_inout->baLocalKeyFrameId = p_currentKeyFrame_inout->id;
     for (int i = 1; i < Nd; i++)
@@ -93,11 +93,11 @@ OptimizerStatus
         optimizableKeyFrames.pop_back();
     }
 
-    // Add temporal neighbours to merge KF (previous and next KFs)
+    /* Add temporal neighbours to merge KF (previous and next KFs) */
     optimizableKeyFrames.push_back(p_mergeKeyFrame_inout);
     p_mergeKeyFrame_inout->baLocalKeyFrameId = p_currentKeyFrame_inout->id;
 
-    // Previous KFs
+    /* Previous KFs */
     for (int i = 1; i < (Nd / 2); i++)
     {
         if (optimizableKeyFrames.back()->p_prevKF)
@@ -111,7 +111,7 @@ OptimizerStatus
             break;
     }
 
-    // We fix just once the old map
+    /* We fix just once the old map */
     if (optimizableKeyFrames.back()->p_prevKF)
     {
         fixedKeyFrames.push_back(optimizableKeyFrames.back()->p_prevKF);
@@ -127,7 +127,7 @@ OptimizerStatus
         optimizableKeyFrames.pop_back();
     }
 
-    // Next KFs
+    /* Next KFs */
     if (p_mergeKeyFrame_inout->p_nextKF)
     {
         optimizableKeyFrames.push_back(p_mergeKeyFrame_inout->p_nextKF);
@@ -150,7 +150,7 @@ OptimizerStatus
 
     int N = optimizableKeyFrames.size();
 
-    // Optimizable points seen by optimizable keyframes
+    /* Optimizable points seen by optimizable keyframes */
     std::list<MapPoint *>     localMapPointList;
     std::map<MapPoint *, int> localObservationCounts;
     for (int i = 0; i < N; i++)
@@ -169,8 +169,10 @@ OptimizerStatus
              vit != vend;
              vit++)
         {
-            // Using mnBALocalForKF we avoid redundance here, one MP can not be
-            // added several times to localMapPointList
+            /*!
+             * Using mnBALocalForKF we avoid redundance here, one MP can not be
+             * added several times to localMapPointList
+             */
             MapPoint *p_mapPoint = *vit;
             if (p_mapPoint)
             {
@@ -211,8 +213,10 @@ OptimizerStatus
         pairs.push_back(*itr);
     std::sort(pairs.begin(), pairs.end(), sortByVal);
 
-    // Fixed Keyframes. Keyframes that see Local MapPoints but that are not
-    // Local Keyframes
+    /*!
+     * Fixed Keyframes. Keyframes that see Local MapPoints but that are not
+     * Local Keyframes
+     */
     int processedPairCount = 0;
     for (std::vector<std::pair<MapPoint *, int>>::iterator lit  = pairs.begin(),
                                                            lend = pairs.end();
@@ -241,7 +245,7 @@ OptimizerStatus
             if (p_keyFrame->baLocalKeyFrameId != p_currentKeyFrame_inout->id &&
                 p_keyFrame->baFixedKeyFrameId !=
                     p_currentKeyFrame_inout
-                        ->id) // If optimizable or already included...
+                        ->id) /* If optimizable or already included... */
             {
                 p_keyFrame->baLocalKeyFrameId = p_currentKeyFrame_inout->id;
                 bool keyFrameIsBad{};
@@ -277,7 +281,7 @@ OptimizerStatus
     optimizer.setAlgorithm(p_solver);
     optimizer.setVerbose(false);
 
-    // Set Local KeyFrame vertices
+    /* Set Local KeyFrame vertices */
     N = optimizableKeyFrames.size();
     for (int i = 0; i < N; i++)
     {
@@ -309,7 +313,7 @@ OptimizerStatus
         }
     }
 
-    // Set Local cov keyframes vertices
+    /* Set Local cov keyframes vertices */
     int optimizableCovisibleCount = optimizableCovisibleKeyFrames.size();
     for (int i = 0; i < optimizableCovisibleCount; i++)
     {
@@ -341,7 +345,7 @@ OptimizerStatus
         }
     }
 
-    // Set Fixed KeyFrame vertices
+    /* Set Fixed KeyFrame vertices */
     for (std::list<KeyFrame *>::iterator lit  = fixedKeyFrames.begin(),
                                          lend = fixedKeyFrames.end();
          lit != lend;
@@ -374,13 +378,12 @@ OptimizerStatus
         }
     }
 
-    // Create intertial constraints
+    /* Create intertial constraints */
     std::vector<EdgeInertial *> vei(N, nullptr);
     std::vector<EdgeGyroRW *>   vegr(N, nullptr);
     std::vector<EdgeAccRW *>    vear(N, nullptr);
     for (int i = 0; i < N; i++)
     {
-        // cout << "inserting inertial edge " << i << endl;
         KeyFrame *p_keyFrame = optimizableKeyFrames[i];
 
         if (!p_keyFrame->p_prevKF)
@@ -471,7 +474,7 @@ OptimizerStatus
                               dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                   p_secondVelocityVertex));
 
-            // TODO Uncomment
+            /* TODO Uncomment */
             g2o::RobustKernelHuber *p_rki = new g2o::RobustKernelHuber;
             vei[i]->setRobustKernel(p_rki);
             p_rki->setDelta(sqrt(16.92));
@@ -521,12 +524,12 @@ OptimizerStatus
                      __func__);
     }
 
-    // Set MapPoint vertices
+    /* Set MapPoint vertices */
     const int expectedSizeCount =
         (N + optimizableCovisibleCount + fixedKeyFrames.size()) *
         localMapPointList.size();
 
-    // Mono
+    /* Mono */
     std::vector<EdgeMono *> edgesMonos;
     edgesMonos.reserve(expectedSizeCount);
 
@@ -536,7 +539,7 @@ OptimizerStatus
     std::vector<MapPoint *> mapPointEdgeMonos;
     mapPointEdgeMonos.reserve(expectedSizeCount);
 
-    // Stereo
+    /* Stereo */
     std::vector<EdgeStereo *> edgesStereos;
     edgesStereos.reserve(expectedSizeCount);
 
@@ -589,7 +592,7 @@ OptimizerStatus
                          __func__);
         }
 
-        // Create visual constraints
+        /* Create visual constraints */
         for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
                  mit  = observations.begin(),
                  mend = observations.end();
@@ -630,7 +633,7 @@ OptimizerStatus
                     p_keyFrame->keyPointsUndistorted[std::get<0>(mit->second)];
 
                 if (p_keyFrame->uRight[std::get<0>(mit->second)] <
-                    0) // Monocular observation
+                    0) /* Monocular observation */
                 {
                     Eigen::Matrix<double, 2, 1> observation;
                     observation << keyPointUn.pt.x, keyPointUn.pt.y;
@@ -656,7 +659,7 @@ OptimizerStatus
                     edgeKeyFrameMonos.push_back(p_keyFrame);
                     mapPointEdgeMonos.push_back(p_mapPoint);
                 }
-                else // stereo observation
+                else /* stereo observation */
                 {
                     const float rightKeyPointU =
                         p_keyFrame->uRight[std::get<0>(mit->second)];
@@ -704,8 +707,10 @@ OptimizerStatus
     std::vector<std::pair<KeyFrame *, MapPoint *>> vToErase;
     vToErase.reserve(edgesMonos.size() + edgesStereos.size());
 
-    // Check inlier observations
-    // Mono
+    /*!
+     * Check inlier observations
+     * Mono
+     */
     for (size_t i = 0, iend = edgesMonos.size(); i < iend; i++)
     {
         EdgeMono *e          = edgesMonos[i];
@@ -730,7 +735,7 @@ OptimizerStatus
         }
     }
 
-    // Stereo
+    /* Stereo */
     for (size_t i = 0, iend = edgesStereos.size(); i < iend; i++)
     {
         EdgeStereo *e          = edgesStereos[i];
@@ -755,7 +760,7 @@ OptimizerStatus
         }
     }
 
-    // Get Map Mutex and erase outliers
+    /* Get Map Mutex and erase outliers */
     std::unique_lock<std::mutex> lock(p_map_inout->mapUpdateMutex);
     if (!vToErase.empty())
     {
@@ -782,8 +787,10 @@ OptimizerStatus
         }
     }
 
-    // Recover optimized data
-    // Keyframes
+    /*!
+     * Recover optimized data
+     * Keyframes
+     */
     for (int i = 0; i < N; i++)
     {
         KeyFrame *p_keyFrame = optimizableKeyFrames[i];
@@ -916,7 +923,7 @@ OptimizerStatus
         }
     }
 
-    // Points
+    /* Points */
     for (std::list<MapPoint *>::iterator lit  = localMapPointList.begin(),
                                          lend = localMapPointList.end();
          lit != lend;
@@ -955,5 +962,5 @@ OptimizerStatus
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -49,11 +49,13 @@ MapStatus Map::eraseMapPoint(MapPoint *p_mapPoint_in)
                                          p_mapPoint_in),
                              referenceMapPoints.end());
 
-    // TODO: This only erase the pointer.
-    // Delete the MapPoint
+    /*!
+     * TODO: This only erase the pointer.
+     * Delete the MapPoint
+     */
 
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -55,7 +55,7 @@ constexpr AxiomCode ALL_AXIOM_CODES[16] = {AxiomCode::AX_FRAME_01,
                                            AxiomCode::AX_TXN_01,
                                            AxiomCode::AX_COMP_01,
                                            AxiomCode::AX_MERGE_01};
-} // namespace
+} /* namespace */
 
 SemanticAxiomEvaluatorStatus
     aggregateFindings(const std::vector<Finding>        &findings_in,
@@ -125,6 +125,6 @@ SemanticAxiomEvaluatorStatus
         SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

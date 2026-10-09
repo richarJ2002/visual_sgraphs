@@ -326,8 +326,6 @@ class Calib
         isCalibrationSet = false;
     }
 
-    // void Set(const cv::Mat &cvTbc, const float &ng, const float &na, const
-    // float &ngw, const float &naw);
     /*!
      * @brief           Stores the transform and noise densities
      *                  and marks the calibration valid.
@@ -355,7 +353,7 @@ class Calib
                        const float              &naw_in);
 
   public:
-    // Sophus/Eigen implementation
+    /* Sophus/Eigen implementation */
     /*!
      * @brief           Camera-to-body transform.
      */
@@ -447,7 +445,7 @@ class IntegratedRotation
     /*!
      * @brief           Integration interval in seconds.
      */
-    float           deltaT; // integration time
+    float           deltaT; /* integration time */
     /*!
      * @brief           Integrated rotation increment.
      */
@@ -455,7 +453,7 @@ class IntegratedRotation
     /*!
      * @brief           Right Jacobian of the increment.
      */
-    Eigen::Matrix3f rightJ; // right jacobian
+    Eigen::Matrix3f rightJ; /* right jacobian */
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
@@ -514,7 +512,7 @@ class Preintegrated
      * @param[in]       p_sourcePreintegration_in
      *                  Non-owning source; shall be non-null.
      */
-    // Copy constructor
+    /* Copy constructor */
     Preintegrated(Preintegrated *p_sourcePreintegration_in) :
         dT(p_sourcePreintegration_in->dT),
         C(p_sourcePreintegration_in->C),
@@ -833,7 +831,7 @@ class Preintegrated
      */
     Eigen::DiagonalMatrix<float, 6> NgaWalk;
 
-    // Values for the original bias (when integration was computed)
+    /* Values for the original bias (when integration was computed) */
     /*!
      * @brief           Bias the deltas were integrated against.
      */
@@ -889,16 +887,15 @@ class Preintegrated
     Eigen::Vector3f avgW;
 
   private:
-    // Updated bias
+    /* Updated bias */
     /*!
      * @brief           Latest updated bias estimate.
      */
     Bias                       bu;
-    // Dif between original and updated bias
-    // This is used to compute the updated values of the preintegration
     /*!
      * @brief           Difference between the updated and the
-     *                  original bias.
+     *                  original bias, used to compute the updated values
+     *                  of the preintegration.
      */
     Eigen::Matrix<float, 6, 1> db;
 
@@ -1069,9 +1066,9 @@ class Preintegrated
     normalizeRotation(const Eigen::Matrix3f &rotationMatrix_in,
                       Eigen::Matrix3f       &rotation_out);
 
-} // namespace IMU
+} /* namespace IMU */
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // IMUTYPES_H
+#endif /* IMUTYPES_H */

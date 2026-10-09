@@ -77,7 +77,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         {
             const int &predictedLevelCount = p_mapPoint->trackScaleLevel;
 
-            // The size of the window will depend on the viewing direction
+            /* The size of the window will depend on the viewing direction */
             float r{};
             if (radiusByViewingCos(p_mapPoint->trackViewCos, r) !=
                 ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
@@ -91,8 +91,10 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
             if (isThresholdScaled)
                 r *= threshold_in;
 
-            // Depth-guided search: a tighter window for close points helps
-            // in repetitive corridors where visual ambiguity is high
+            /*!
+             * Depth-guided search: a tighter window for close points helps
+             * in repetitive corridors where visual ambiguity is high
+             */
             if (depthThreshold_in.has_value() && p_mapPoint->trackDepth > 0)
             {
                 if (p_mapPoint->trackDepth < *depthThreshold_in)
@@ -135,7 +137,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
                 int bestLevel2    = -1;
                 int bestIndex     = -1;
 
-                // Get best and second matches with near keypoints
+                /* Get best and second matches with near keypoints */
                 for (std::vector<size_t>::const_iterator vit  = indices.begin(),
                                                          vend = indices.end();
                      vit != vend;
@@ -228,8 +230,10 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
                     }
                 }
 
-                // Apply ratio to second match (only if best and second are in
-                // the same scale level)
+                /*!
+                 * Apply ratio to second match (only if best and second are in
+                 * the same scale level)
+                 */
                 if (bestDistance <= TH_HIGH)
                 {
                     if (bestLevel == bestLevel2 &&
@@ -243,8 +247,11 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
 
                         if (frame_inout.leftKeyPointCount != -1 &&
                             frame_inout.leftToRightMatches[bestIndex] != -1)
-                        { // Also match with the stereo observation at right
-                          // camera
+                        {
+                            /*!
+                             * Also match with the stereo observation at right
+                             * camera
+                             */
                             frame_inout.mapPoints
                                 [frame_inout.leftToRightMatches[bestIndex] +
                                  frame_inout.leftKeyPointCount] = p_mapPoint;
@@ -322,7 +329,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
                 int bestLevel2    = -1;
                 int bestIndex     = -1;
 
-                // Get best and second matches with near keypoints
+                /* Get best and second matches with near keypoints */
                 for (std::vector<size_t>::const_iterator vit  = indices.begin(),
                                                          vend = indices.end();
                      vit != vend;
@@ -385,8 +392,10 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
                     }
                 }
 
-                // Apply ratio to second match (only if best and second are in
-                // the same scale level)
+                /*!
+                 * Apply ratio to second match (only if best and second are in
+                 * the same scale level)
+                 */
                 if (bestDistance <= TH_HIGH)
                 {
                     if (bestLevel == bestLevel2 &&
@@ -395,7 +404,11 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
 
                     if (frame_inout.leftKeyPointCount != -1 &&
                         frame_inout.rightToLeftMatches[bestIndex] != -1)
-                    { // Also match with the stereo observation at right camera
+                    {
+                        /*!
+                         * Also match with the stereo observation at right
+                         * camera
+                         */
                         frame_inout.mapPoints
                             [frame_inout.rightToLeftMatches[bestIndex]] =
                             p_mapPoint;
@@ -416,5 +429,5 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

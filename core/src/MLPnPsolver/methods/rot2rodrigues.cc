@@ -81,5 +81,5 @@ MLPnPsolverStatus MLPnPsolver::rot2rodrigues(const Eigen::Matrix3d &R_in,
     return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

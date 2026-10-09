@@ -167,14 +167,16 @@ KeyFrameStatus KeyFrame::setBadFlag()
         mapPlanes.clear();
         mapMarkers.clear();
 
-        // Update Spanning Tree
+        /* Update Spanning Tree */
         std::set<KeyFrame *> parentCandidates;
         if (p_parent)
             parentCandidates.insert(p_parent);
 
-        // Assign at each iteration one children with a parent (the pair with
-        // highest covisibility weight) Include that children as new parent
-        // candidate for the rest
+        /*!
+         * Assign at each iteration one children with a parent (the pair with
+         * highest covisibility weight) Include that children as new parent
+         * candidate for the rest
+         */
         while (!childrens.empty())
         {
             bool shouldContinue = false;
@@ -201,7 +203,7 @@ KeyFrameStatus KeyFrame::setBadFlag()
                 if (keyFrameIsBad)
                     continue;
 
-                // Check if a parent candidate is connected to the keyframe
+                /* Check if a parent candidate is connected to the keyframe */
                 std::vector<KeyFrame *> connecteds{};
                 if (p_keyFrame->getVectorCovisibleKeyFrames(connecteds) !=
                     KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -265,8 +267,10 @@ KeyFrameStatus KeyFrame::setBadFlag()
                 break;
         }
 
-        // If a children has no covisibility links with any parent candidate,
-        // assign to the original parent of this KF
+        /*!
+         * If a children has no covisibility links with any parent candidate,
+         * assign to the original parent of this KF
+         */
         if (!childrens.empty())
         {
             for (std::set<KeyFrame *>::iterator sit = childrens.begin();
@@ -328,5 +332,5 @@ KeyFrameStatus KeyFrame::setBadFlag()
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

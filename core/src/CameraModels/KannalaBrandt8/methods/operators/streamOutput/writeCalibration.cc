@@ -42,4 +42,4 @@ std::ostream &operator<<(std::ostream         &outputStream_inout,
                        << kannala_in.parameters[7];
     return outputStream_inout;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

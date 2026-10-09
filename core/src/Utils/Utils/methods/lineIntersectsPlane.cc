@@ -39,19 +39,19 @@ UtilsStatus Utils::lineIntersectsPlane(const Eigen::Vector4d &plane_in,
                                        const Eigen::Vector3d &lineEnd_in,
                                        Eigen::Vector3d       &intersection_out)
 {
-    // Calculate the direction vector of the line
+    /* Calculate the direction vector of the line */
     Eigen::Vector3d lineDirection = lineEnd_in - lineStart_in;
 
-    // [TODO] - check if the line is parallel to the plane_in
+    /* [TODO] - check if the line is parallel to the plane_in */
 
-    // Calculate the intersection point
+    /* Calculate the intersection point */
     double t = -(plane_in.head<3>().dot(lineStart_in) + plane_in(3)) /
                plane_in.head<3>().dot(lineDirection);
     intersection_out = lineStart_in + t * lineDirection;
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

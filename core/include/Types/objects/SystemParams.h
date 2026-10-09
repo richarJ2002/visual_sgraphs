@@ -82,7 +82,7 @@ class SystemParams
     [[nodiscard]] SystemParamsStatus
         setParams(const std::string &configurationFilePath_in);
 
-    // Common struct definitions
+    /* Common struct definitions */
     /*!
      * @brief           Switch and weight of one optional plane-based
      *                  optimisation factor.
@@ -117,7 +117,7 @@ class SystemParams
          */
         unsigned int minPointsPerVoxel = 5;
     };
-    // Structs for different modules
+    /* Structs for different modules */
     /*!
      * @brief           Run mode and environment-database settings.
      */
@@ -1329,8 +1329,8 @@ class SystemParams
      */
     YAML::Node           config;
 };
-} // namespace types
-} // namespace core
-} // namespace vs_graphs
+} /* namespace types */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif

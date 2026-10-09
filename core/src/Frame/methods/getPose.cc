@@ -38,11 +38,13 @@ namespace core
 
 FrameStatus Frame::getPose(Sophus::SE3<float> &getPose_out) const
 {
-    // TODO: can the Frame pose be accsessed from several threads? should
-    // this be protected somehow?
+    /*!
+     * TODO: can the Frame pose be accsessed from several threads? should
+     * this be protected somehow?
+     */
     getPose_out = poseTcw;
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -43,5 +43,5 @@ bool EdgeVertex4PlaneProjectSE3Room::write(
     return writeInformationMatrix(outputStream_inout);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

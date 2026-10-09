@@ -49,9 +49,9 @@ enum class KannalaBrandt8Status : std::uint8_t
     KANNALA_BRANDT8_STATUS_SUCCESS = 0U
 };
 
-} // namespace kannalabrandt8
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace kannalabrandt8 */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // KANNALA_BRANDT8_STATUS_H
+#endif /* KANNALA_BRANDT8_STATUS_H */

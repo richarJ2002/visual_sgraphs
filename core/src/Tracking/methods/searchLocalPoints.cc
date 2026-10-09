@@ -44,7 +44,7 @@ namespace core
 
 TrackingStatus Tracking::searchLocalPoints()
 {
-    // Do not search map points already matched
+    /* Do not search map points already matched */
     for (std::vector<MapPoint *>::iterator vit = currentFrame.mapPoints.begin(),
                                            vend = currentFrame.mapPoints.end();
          vit != vend;
@@ -86,7 +86,7 @@ TrackingStatus Tracking::searchLocalPoints()
 
     int toMatchCount = 0;
 
-    // Project points in frame and check its visibility
+    /* Project points in frame and check its visibility */
     for (std::vector<MapPoint *>::iterator vit  = localMapPoints.begin(),
                                            vend = localMapPoints.end();
          vit != vend;
@@ -107,7 +107,7 @@ TrackingStatus Tracking::searchLocalPoints()
         }
         if (mapPointIsBad2)
             continue;
-        // Project (this fills MapPoint variables for matching)
+        /* Project (this fills MapPoint variables for matching) */
         bool currentFrameIsInFrustum{};
         if (currentFrame.isInFrustum(p_mapPoint,
                                      0.5,
@@ -201,16 +201,20 @@ TrackingStatus Tracking::searchLocalPoints()
             }
         }
 
-        // If the camera has been relocalised recently, perform a coarser search
+        /*!
+         * If the camera has been relocalised recently, perform a coarser search
+         */
         if (currentFrame.id < lastRelocFrameId + 2)
             threshold = 5;
 
         if (state == LOST ||
-            state == RECENTLY_LOST) // Lost for less than 1 second
-            threshold = 15;         // 15
+            state == RECENTLY_LOST) /* Lost for less than 1 second */
+            threshold = 15;         /* 15 */
 
-        // AGGRESSIVE: Even wider search during degraded tracking in corridors
-        // If we have very few inliers, expand search radius significantly
+        /*!
+         * AGGRESSIVE: Even wider search during degraded tracking in corridors
+         * If we have very few inliers, expand search radius significantly
+         */
         if (matchesInliers < 30 && matchesInliers > 0)
         {
             threshold = std::min(threshold * 3, motionModelMaxSearchRadius);
@@ -228,8 +232,10 @@ TrackingStatus Tracking::searchLocalPoints()
             }
         }
 
-        // DEPTH-AIDED TRACKING: For RGB-D, use depth to guide matching window
-        // In low-texture corridors, constrain search using known depth
+        /*!
+         * DEPTH-AIDED TRACKING: For RGB-D, use depth to guide matching window
+         * In low-texture corridors, constrain search using known depth
+         */
         const bool isDepthGuided =
             (sensor == System::RGBD || sensor == System::IMU_RGBD) &&
             currentFrame.depths.size() > 0;
@@ -255,5 +261,5 @@ TrackingStatus Tracking::searchLocalPoints()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

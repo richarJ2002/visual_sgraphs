@@ -155,11 +155,13 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos_in,
 
     p_frame_inout->descriptors.row(indexF_in).copyTo(descriptor);
 
-    // MapPoints can be created from Tracking and Local Mapping. This mutex
-    // avoid conflicts with id.
+    /*!
+     * MapPoints can be created from Tracking and Local Mapping. This mutex
+     * avoid conflicts with id.
+     */
     unique_lock<std::mutex> lock(p_map->pointCreationMutex);
     id = nextId++;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -49,8 +49,7 @@ namespace core
 namespace IMU
 {
 
-// Explicitly instantiated below for every archive the map save/load
-// code uses, so that no other translation unit compiles this body.
+/* Instantiated below for every archive used, so only this file compiles it */
 template <class Archive>
 void Preintegrated::serialize(Archive                            &ar,
                               [[maybe_unused]] const unsigned int version)
@@ -112,6 +111,6 @@ template void Preintegrated::serialize<boost::archive::text_oarchive>(
     boost::archive::text_oarchive &,
     const unsigned int);
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -27,5 +27,5 @@ std::unordered_map<std::string, FaultAction> &getFaultRegistry()
 #endif
 }
 
-} // namespace testing
-} // namespace vs_graphs
+} /* namespace testing */
+} /* namespace vs_graphs */

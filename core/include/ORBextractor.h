@@ -398,8 +398,7 @@ class ORBextractor
     std::vector<float> inverseLevelSigmaSquares;
 
   public:
-    // Adaptive FAST threshold: dynamically adjust thresholds when tracking
-    // degrades
+    /* Adaptive FAST threshold: adjusted dynamically when tracking degrades */
     /*!
      * @brief           Sets the FAST threshold used at extraction.
      *
@@ -457,7 +456,7 @@ class ORBextractor
     }
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif

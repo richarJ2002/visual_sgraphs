@@ -41,7 +41,7 @@ bool DoBoolWork()
     return true;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that an injected fault makes the probe function

@@ -223,6 +223,23 @@ class ImageGrabber : public rclcpp::Node
     vs_graphs::observability::RgbdObservability rgbdObservability;
 };
 
+/*!
+ * @brief           Starts the RGB-D node: reads parameters, creates the SLAM
+ *                  system, wires the publishers, services and subscriptions,
+ *                  starts the RGB-D processing thread and spins a three-thread
+ *                  executor until shutdown.
+ *
+ * @param[in]       argc
+ *                  Number of command-line arguments; they are ignored with a
+ *                  warning.
+ *
+ * @param[in]       argv
+ *                  Command-line arguments.
+ *
+ * @return          0 after a normal shutdown; 1 when the vocabulary, settings
+ *                  or system-parameter file is not given; -1 when the SLAM
+ *                  system cannot initialise.
+ */
 int main(int argc, char **argv)
 {
     /* Init ROS node */

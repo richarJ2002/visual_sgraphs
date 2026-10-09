@@ -152,8 +152,8 @@ struct SemanticGraphSnapshot
         UnavailableReason::NOT_CAPTURED_IN_FOUNDATION_SLICE};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_OBJECT_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_OBJECT_H */

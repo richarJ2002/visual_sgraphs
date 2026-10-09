@@ -44,7 +44,7 @@ enum class EdgeStereoStatus : std::uint8_t
     EDGE_STEREO_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // EDGE_STEREO_STATUS_H
+#endif /* EDGE_STEREO_STATUS_H */

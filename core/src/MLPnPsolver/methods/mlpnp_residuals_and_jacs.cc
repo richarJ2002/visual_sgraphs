@@ -96,7 +96,7 @@ MLPnPsolverStatus MLPnPsolver::mlpnp_residuals_and_jacs(
             nullspaces_in[pointIndex].col(1).transpose() * pointCamera;
         if (getJacs_in)
         {
-            // jacs
+            /* jacs */
             if (mlpnpJacs(points_in[pointIndex],
                           nullspaces_in[pointIndex].col(0),
                           nullspaces_in[pointIndex].col(1),
@@ -111,7 +111,7 @@ MLPnPsolverStatus MLPnPsolver::mlpnp_residuals_and_jacs(
                              __func__);
             }
 
-            // r
+            /* r */
             fjac_in(ii, 0) = jacs(0, 0);
             fjac_in(ii, 1) = jacs(0, 1);
             fjac_in(ii, 2) = jacs(0, 2);
@@ -119,7 +119,7 @@ MLPnPsolverStatus MLPnPsolver::mlpnp_residuals_and_jacs(
             fjac_in(ii, 3) = jacs(0, 3);
             fjac_in(ii, 4) = jacs(0, 4);
             fjac_in(ii, 5) = jacs(0, 5);
-            // s
+            /* s */
             fjac_in(ii + 1, 0) = jacs(1, 0);
             fjac_in(ii + 1, 1) = jacs(1, 1);
             fjac_in(ii + 1, 2) = jacs(1, 2);
@@ -134,5 +134,5 @@ MLPnPsolverStatus MLPnPsolver::mlpnp_residuals_and_jacs(
     return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -65,5 +65,5 @@ void EdgeSE3ProjectXYZToBody::linearizeOplus()
                        mTrl.rotation().toRotationMatrix() * se3Derivative;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

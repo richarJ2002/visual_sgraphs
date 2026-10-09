@@ -53,7 +53,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     int                       &mapPointCount_out,
     int                       &edgeCount_out)
 {
-    // System parameters
+    /* System parameters */
     vs_graphs::core::types::SystemParams *p_sysParams = nullptr;
     if (vs_graphs::core::types::SystemParams::getParams(p_sysParams) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -64,7 +64,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                      __func__);
     }
 
-    // Variables
+    /* Variables */
     fixedKeyFrameCount_inout = 0;
     optKeyFrameCount_out     = 0;
     mapPointCount_out        = 0;
@@ -92,21 +92,21 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    // Unorderd maps to keep track of the local entities
+    /* Unorderd maps to keep track of the local entities */
     std::unordered_map<int, bool> localPlaneId;
     std::unordered_map<int, bool> localMarkerId;
     std::unordered_map<int, bool> localMapPointId;
     std::unordered_map<int, bool> localKeyFrameId;
 
-    // [LBA] Initialize the KeyFrame-related variables
+    /* [LBA] Initialize the KeyFrame-related variables */
     localKeyFrameList.push_back(p_keyFrame_inout);
     localKeyFrameId[p_keyFrame_inout->id] = true;
     p_keyFrame_inout->baLocalKeyFrameId   = p_keyFrame_inout->id;
 
-    // [LBA] Fill in the neighbor KeyFrames
+    /* [LBA] Fill in the neighbor KeyFrames */
     if (p_sysParams->planeBasedCovisibility.enabled)
     {
-        // Get the KeyFrames that see the same planes
+        /* Get the KeyFrames that see the same planes */
         std::vector<KeyFrame *> keyFrameBestCovisibilityKeyFrames{};
         if (p_keyFrame_inout->getBestCovisibilityKeyFrames(
                 p_sysParams->planeBasedCovisibility.maxKeyframes,
@@ -123,7 +123,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     }
     else
     {
-        // Get the KeyFrames that see the same MapPoints
+        /* Get the KeyFrames that see the same MapPoints */
         std::vector<KeyFrame *> keyFrameVectorCovisibleKeyFrames{};
         if (p_keyFrame_inout->getVectorCovisibleKeyFrames(
                 keyFrameVectorCovisibleKeyFrames) !=
@@ -138,18 +138,20 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         neighborKeyFrameVector = keyFrameVectorCovisibleKeyFrames;
     }
 
-    // Iterate through all neighboring KeyFrames
+    /* Iterate through all neighboring KeyFrames */
     for (int markerIt = 0, indexEnd = neighborKeyFrameVector.size();
          markerIt < indexEnd;
          markerIt++)
     {
-        // Get the current KeyFrame's neighbors
+        /* Get the current KeyFrame's neighbors */
         vs_graphs::core::KeyFrame *p_keyFrame =
             neighborKeyFrameVector[markerIt];
-        // Mark the KeyFrame as a part of the current LBA
+        /* Mark the KeyFrame as a part of the current LBA */
         p_keyFrame->baLocalKeyFrameId = p_keyFrame_inout->id;
-        // If the KeyFrame is proper, add it to the list of local KeyFrames for
-        // LBA
+        /*!
+         * If the KeyFrame is proper, add it to the list of local KeyFrames for
+         * LBA
+         */
         bool keyFrameIsBad{};
         if (p_keyFrame->isBad(keyFrameIsBad) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -175,14 +177,14 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Loop through the local KeyFrames
+    /* [LBA] Loop through the local KeyFrames */
     for (std::list<vs_graphs::core::KeyFrame *>::iterator
              lit  = localKeyFrameList.begin(),
              lend = localKeyFrameList.end();
          lit != lend;
          lit++)
     {
-        // Variables
+        /* Variables */
         vs_graphs::core::KeyFrame                       *p_keyFrame = *lit;
         std::vector<vs_graphs::core::geometric::Plane *> localPlanesVector{};
         if (p_keyFrame->getMapPlanes(localPlanesVector) !=
@@ -212,8 +214,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          __func__);
         }
 
-        // If the KeyFrame is the initial KeyFrame of the map, mark that as a
-        // fixed KeyFrame
+        /*!
+         * If the KeyFrame is the initial KeyFrame of the map, mark that as a
+         * fixed KeyFrame
+         */
         unsigned long mapInitKeyFrameId{};
         if (p_map_inout->getInitKeyFrameId(mapInitKeyFrameId) !=
             MapStatus::MAP_STATUS_SUCCESS)
@@ -228,18 +232,20 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             fixedKeyFrameCount_inout = 1;
         }
 
-        // [LBA] Loop through all the MapPoints and prepare them for LBA
+        /* [LBA] Loop through all the MapPoints and prepare them for LBA */
         for (std::vector<vs_graphs::core::MapPoint *>::iterator
                  vit  = localMapPointsVector.begin(),
                  vend = localMapPointsVector.end();
              vit != vend;
              vit++)
         {
-            // Variables
+            /* Variables */
             vs_graphs::core::MapPoint *p_mapPoint = *vit;
 
-            // If the MapPoint is proper, add it to the list of local MapPoints
-            // for LBA
+            /*!
+             * If the MapPoint is proper, add it to the list of local MapPoints
+             * for LBA
+             */
             if (p_mapPoint)
             {
                 bool mapPointIsBad{};
@@ -274,7 +280,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             }
         }
 
-        // [LBA] Loop through all the Markers and prepare them for LBA
+        /* [LBA] Loop through all the Markers and prepare them for LBA */
         for (std::vector<vs_graphs::core::semantic::Marker *>::iterator
                  markerIt = localMarkersVector.begin(),
                  vend     = localMarkersVector.end();
@@ -307,7 +313,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             }
         }
 
-        // [LBA] Loop through all the Planes and prepare them for LBA
+        /* [LBA] Loop through all the Planes and prepare them for LBA */
         for (std::vector<vs_graphs::core::geometric::Plane *>::iterator
                  markerIt = localPlanesVector.begin(),
                  vend     = localPlanesVector.end();
@@ -315,12 +321,12 @@ OptimizerStatus Optimizer::localBundleAdjustment(
              markerIt++)
         {
             vs_graphs::core::geometric::Plane *p_localPlane = *markerIt;
-            // If the plane does not exist, skip it
+            /* If the plane does not exist, skip it */
             if (!p_localPlane)
             {
                 continue;
             }
-            // If the plane is not known, do not add it to the local map
+            /* If the plane is not known, do not add it to the local map */
             geometric::Plane::PlaneVariant localPlanePlaneType{};
             if (p_localPlane->getPlaneType(localPlanePlaneType) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -335,7 +341,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             {
                 continue;
             }
-            // Otherwise, add the plane to the local map
+            /* Otherwise, add the plane to the local map */
             int localPlaneGetId{};
             if (p_localPlane->getId(localPlaneGetId) !=
                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -362,10 +368,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Among all rooms, filter only the ones with a wall in LBA
+    /* [LBA] Among all rooms, filter only the ones with a wall in LBA */
     for (semantic::Room *const &room : allRooms)
     {
-        // Get the walls of the room
+        /* Get the walls of the room */
         std::vector<vs_graphs::core::geometric::Plane *> roomWalls{};
         if (room->getWalls(roomWalls) !=
             semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -375,8 +381,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          "cannot fail; continuing as before.",
                          __func__);
         }
-        // Add the room to the local map if any of the walls are in the local
-        // map
+        /*!
+         * Add the room to the local map if any of the walls are in the local
+         * map
+         */
         for (geometric::Plane *const &wall : roomWalls)
         {
             int wallGetId{};
@@ -396,7 +404,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Loop through all the local Rooms to add all their walls to LBA
+    /* [LBA] Loop through all the local Rooms to add all their walls to LBA */
     std::list<vs_graphs::core::geometric::Plane *> recentLocalMapPlanes;
     for (std::list<vs_graphs::core::semantic::Room *>::iterator
              markerIt = localRoomList.begin(),
@@ -442,8 +450,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Loop through the recently added planes, get all the KeyFrames and
-    // add them
+    /*!
+     * [LBA] Loop through the recently added planes, get all the KeyFrames and
+     * add them
+     */
     std::list<vs_graphs::core::KeyFrame *> recentLocalMapKeyFrames;
     for (std::list<vs_graphs::core::geometric::Plane *>::iterator
              markerIt = recentLocalMapPlanes.begin(),
@@ -504,8 +514,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Loop through the recently added keyframes, get all the map points
-    // and add them
+    /*!
+     * [LBA] Loop through the recently added keyframes, get all the map points
+     * and add them
+     */
     for (std::list<vs_graphs::core::KeyFrame *>::iterator
              markerIt = recentLocalMapKeyFrames.begin(),
              vend     = recentLocalMapKeyFrames.end();
@@ -563,8 +575,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Fixed Keyframes for MPs (Keyframes that see Local MapPoints but
-    // that are not Local Keyframes)
+    /*!
+     * [LBA] Fixed Keyframes for MPs (Keyframes that see Local MapPoints but
+     * that are not Local Keyframes)
+     */
     std::list<vs_graphs::core::KeyFrame *> fixedCameras;
     for (std::list<vs_graphs::core::MapPoint *>::iterator
              lit  = localMapPointList.begin(),
@@ -623,7 +637,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // Count fixed KeyFrames
+    /* Count fixed KeyFrames */
     fixedKeyFrameCount_inout = fixedCameras.size() + fixedKeyFrameCount_inout;
     if (fixedKeyFrameCount_inout == 0)
     {
@@ -632,7 +646,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
     }
 
-    // [LBA] Setup optimizer
+    /* [LBA] Setup optimizer */
     g2o::SparseOptimizer                 optimizer;
     g2o::BlockSolverX::LinearSolverType *p_linearSolver;
 
@@ -666,11 +680,11 @@ OptimizerStatus Optimizer::localBundleAdjustment(
 
     unsigned long maximumKeyFrameId = 0;
 
-    // Debug LBA
+    /* Debug LBA */
     p_currentMap->optKeyFrameIds.clear();
     p_currentMap->fixedKeyFrameIds.clear();
 
-    // [LBA] Local KeyFrame vertices
+    /* [LBA] Local KeyFrame vertices */
     for (std::list<vs_graphs::core::KeyFrame *>::iterator
              lit  = localKeyFrameList.begin(),
              lend = localKeyFrameList.end();
@@ -711,7 +725,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     }
     optKeyFrameCount_out = localKeyFrameList.size();
 
-    // [LBA] Fixed KeyFrame vertices
+    /* [LBA] Fixed KeyFrame vertices */
     for (std::list<vs_graphs::core::KeyFrame *>::iterator
              lit  = fixedCameras.begin(),
              lend = fixedCameras.end();
@@ -742,7 +756,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         p_currentMap->fixedKeyFrameIds.insert(p_keyFrame->id);
     }
 
-    // [LBA] MapPoint vertices
+    /* [LBA] MapPoint vertices */
     const int expectedSizeCount =
         (localKeyFrameList.size() + fixedCameras.size()) *
         localMapPointList.size();
@@ -830,7 +844,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         optimizer.addVertex(p_pointVertex);
         mapPointCount_out++;
 
-        // Update the maxOpId to hold the biggest value
+        /* Update the maxOpId to hold the biggest value */
         if (id > maximumOpId)
         {
             maximumOpId = id;
@@ -846,7 +860,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          __func__);
         }
 
-        // Set edges
+        /* Set edges */
         for (std::map<KeyFrame *, std::tuple<int, int>>::const_iterator
                  mit  = observations.begin(),
                  mend = observations.end();
@@ -878,7 +892,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             {
                 const int leftIndex = std::get<0>(mit->second);
 
-                // Monocular observation
+                /* Monocular observation */
                 if (leftIndex != -1 &&
                     p_keyFrame->uRight[std::get<0>(mit->second)] < 0)
                 {
@@ -917,7 +931,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                 }
                 else if (leftIndex != -1 &&
                          p_keyFrame->uRight[std::get<0>(mit->second)] >=
-                             0) // Stereo observation
+                             0) /* Stereo observation */
                 {
                     const cv::KeyPoint &keyPointUn =
                         p_keyFrame->keyPointsUndistorted[leftIndex];
@@ -1044,14 +1058,14 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     }
     edgeCount_out = edgeCount;
 
-    // [LBA] Markers
+    /* [LBA] Markers */
     for (std::list<semantic::Marker *>::iterator
              markerIt = localMarkerList.begin(),
              lend     = localMarkerList.end();
          markerIt != lend;
          markerIt++)
     {
-        // Adding a vertex for each marker
+        /* Adding a vertex for each marker */
         semantic::Marker     *p_mapMarker    = *markerIt;
         g2o::VertexSE3Expmap *p_markerVertex = new g2o::VertexSE3Expmap();
         Sophus::SE3f          mapMarkerGlobalPose{};
@@ -1080,7 +1094,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         optimizer.addVertex(p_markerVertex);
         markerCount++;
 
-        // Setting the local optimization ID for the marker
+        /* Setting the local optimization ID for the marker */
         if (p_mapMarker->setOpId(opId) !=
             semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
         {
@@ -1090,27 +1104,29 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          __func__);
         }
 
-        // 🚧 [vS-Graphs v.2.0] in contrast with the first version of visual
-        // S-Graphs, where there was an edge between the marker and the
-        // keyframe, in this version we removed that edge and added an edge
-        // between the plane and the keyframe, while still keeping the edge
-        // between the marker and the plane.
+        /*!
+         * 🚧 [vS-Graphs v.2.0] in contrast with the first version of visual
+         * S-Graphs, where there was an edge between the marker and the
+         * keyframe, in this version we removed that edge and added an edge
+         * between the plane and the keyframe, while still keeping the edge
+         * between the marker and the plane.
+         */
     }
 
     maximumOpId += markerCount;
 
-    // [LBA] Planes
+    /* [LBA] Planes */
     for (std::list<vs_graphs::core::geometric::Plane *>::iterator
              markerIt = localPlaneList.begin(),
              lend     = localPlaneList.end();
          markerIt != lend;
          markerIt++)
     {
-        // Variables
+        /* Variables */
         vs_graphs::core::geometric::Plane *p_mapPlane = *markerIt;
         g2o::VertexPlane *p_planeVertex               = new g2o::VertexPlane();
 
-        // Adding a vertex for each plane
+        /* Adding a vertex for each plane */
         int opId = maximumOpId + planeCount;
         p_planeVertex->setId(opId);
 
@@ -1132,7 +1148,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         optimizer.addVertex(p_planeVertex);
         planeCount++;
 
-        // Setting the local optimization ID for the plane
+        /* Setting the local optimization ID for the plane */
         if (p_mapPlane->setOpId(opId) !=
             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
         {
@@ -1142,7 +1158,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                          __func__);
         }
 
-        // Adding edge between plane and MapPoints
+        /* Adding edge between plane and MapPoints */
         if (p_sysParams->optimization.planeMapPoint.enabled &&
             !p_sysParams->optimization.shouldMarginalizePlanes)
         {
@@ -1204,7 +1220,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             }
         }
 
-        // Adding an edge between the plane and the keyframes
+        /* Adding an edge between the plane and the keyframes */
         std::map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
             observations{};
         if (p_mapPlane->getObservations(observations) !=
@@ -1300,10 +1316,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                     planeEdgePlanes.push_back(p_mapPlane);
                 }
 
-                // Adding plane-point constraints
+                /* Adding plane-point constraints */
                 if (p_sysParams->optimization.planePoint.enabled)
                 {
-                    // Get the class index of the plane
+                    /* Get the class index of the plane */
                     int                            clsCloudIndex{};
                     geometric::Plane::PlaneVariant mapPlanePlaneType{};
                     if (p_mapPlane->getPlaneType(mapPlanePlaneType) !=
@@ -1320,12 +1336,14 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                             clsCloudIndex) !=
                         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                     {
-                        // getClassIdFromPlaneType cannot fail; continue as
-                        // before.
+                        /*!
+                         * getClassIdFromPlaneType cannot fail; continue as
+                         * before.
+                         */
                     }
                     if (clsCloudIndex != -1)
                     {
-                        // Add the plane-point constraint
+                        /* Add the plane-point constraint */
                         vs_graphs::core::EdgeSE3KFPointToPlane *e =
                             new vs_graphs::core::EdgeSE3KFPointToPlane();
                         e->setVertex(
@@ -1362,7 +1380,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
 
     maximumOpId += planeCount;
 
-    // [LBA] Rooms
+    /* [LBA] Rooms */
     for (std::list<vs_graphs::core::semantic::Room *>::iterator
              markerIt = localRoomList.begin(),
              lend     = localRoomList.end();
@@ -1371,7 +1389,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     {
         try
         {
-            // Variables
+            /* Variables */
             vs_graphs::core::semantic::Room *p_mapRoom = *markerIt;
             std::vector<vs_graphs::core::geometric::Plane *> walls{};
             if (p_mapRoom->getWalls(walls) !=
@@ -1383,16 +1401,16 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                              __func__);
             }
 
-            // No need to optimize if there are no walls
+            /* No need to optimize if there are no walls */
             if (walls.empty())
             {
                 continue;
             }
 
-            // Adding a vertex for each room
+            /* Adding a vertex for each room */
             g2o::VertexSE3Expmap *p_vertexRoom = new g2o::VertexSE3Expmap();
 
-            // Setting the local optimization ID for the room
+            /* Setting the local optimization ID for the room */
             int opId = maximumOpId + roomCount;
             p_vertexRoom->setId(opId);
             if (p_mapRoom->setOpId(opId) !=
@@ -1405,7 +1423,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
             }
             roomCount++;
 
-            // Initialize the room vertex (centroid estimate)
+            /* Initialize the room vertex (centroid estimate) */
             Eigen::Vector3d mapRoomCentroid{};
             if (p_mapRoom->getCentroid(mapRoomCentroid) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
@@ -1426,7 +1444,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
              * is deliberately disabled because it can deform wall geometry.
              */
 
-            // Optimizing the parallel walls of the room
+            /* Optimizing the parallel walls of the room */
             for (size_t edgeIndex = 0; edgeIndex < walls.size(); edgeIndex++)
             {
                 for (size_t otherWallIndex = edgeIndex + 1;
@@ -1438,7 +1456,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                     vs_graphs::core::geometric::Plane *p_wall2 =
                         walls[otherWallIndex];
 
-                    // If the same wall, skip
+                    /* If the same wall, skip */
                     int wall1GetId{};
                     if (p_wall1->getId(wall1GetId) !=
                         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -1464,7 +1482,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                         continue;
                     }
 
-                    // Check if the walls are parallel
+                    /* Check if the walls are parallel */
                     bool arePlanesParallel2{};
                     if (utils::utils::Utils::arePlanesParallel(
                             p_wall1,
@@ -1480,8 +1498,10 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                     }
                     if (arePlanesParallel2)
                     {
-                        // If they are parallel, check if they are facing each
-                        // other
+                        /*!
+                         * If they are parallel, check if they are facing each
+                         * other
+                         */
                         bool arePlanesFacingEachOther2{};
                         if (utils::utils::Utils::arePlanesFacingEachOther(
                                 p_wall1,
@@ -1489,12 +1509,14 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                                 arePlanesFacingEachOther2) !=
                             utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                         {
-                            // arePlanesFacingEachOther cannot fail; continue as
-                            // before.
+                            /*!
+                             * arePlanesFacingEachOther cannot fail; continue as
+                             * before.
+                             */
                         }
                         if (arePlanesFacingEachOther2)
                         {
-                            // Variables
+                            /* Variables */
                             int opId1{};
                             if (p_wall1->getOpId(opId1) !=
                                 geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -1533,16 +1555,17 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                                     dynamic_cast<
                                         g2o::OptimizableGraph::Vertex *>(
                                         optimizer.vertex(opId2)));
-                                e->setMeasurement(
-                                    0.0); // We want the angle between the
-                                          // planes to be 0
+                                /*!
+                                 * We want the angle between the planes to be 0
+                                 */
+                                e->setMeasurement(0.0);
 
-                                // Information matrix
+                                /* Information matrix */
                                 e->setInformation(
                                     Eigen::Matrix<double, 1, 1>::Identity() *
                                     1e3);
 
-                                // Adding the edge to the optimizer
+                                /* Adding the edge to the optimizer */
                                 g2o::RobustKernelHuber *p_robustKernel =
                                     new g2o::RobustKernelHuber;
                                 e->setRobustKernel(p_robustKernel);
@@ -1552,7 +1575,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                         }
                     }
 
-                    // Check if the walls are perpendicular
+                    /* Check if the walls are perpendicular */
                     bool arePlanesPerpendicular2{};
                     if (utils::utils::Utils::arePlanesPerpendicular(
                             p_wall1,
@@ -1560,12 +1583,14 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                             arePlanesPerpendicular2) !=
                         utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                     {
-                        // arePlanesPerpendicular cannot fail; continue as
-                        // before.
+                        /*!
+                         * arePlanesPerpendicular cannot fail; continue as
+                         * before.
+                         */
                     }
                     if (arePlanesPerpendicular2)
                     {
-                        // Variables
+                        /* Variables */
                         int opId1{};
                         if (p_wall1->getOpId(opId1) !=
                             geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -1601,15 +1626,17 @@ OptimizerStatus Optimizer::localBundleAdjustment(
                                 1,
                                 dynamic_cast<g2o::OptimizableGraph::Vertex *>(
                                     optimizer.vertex(opId2)));
-                            e->setMeasurement(
-                                M_PI_2); // We want the angle between the planes
-                                         // to be 90 degrees
+                            /*!
+                             * We want the angle between the planes to be 90
+                             * degrees
+                             */
+                            e->setMeasurement(M_PI_2);
 
-                            // Information matrix
+                            /* Information matrix */
                             e->setInformation(
                                 Eigen::Matrix<double, 1, 1>::Identity() * 1e3);
 
-                            // Adding the edge to the optimizer
+                            /* Adding the edge to the optimizer */
                             g2o::RobustKernelHuber *p_robustKernel =
                                 new g2o::RobustKernelHuber;
                             e->setRobustKernel(p_robustKernel);
@@ -1630,7 +1657,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
 
     maximumOpId += roomCount;
 
-    // abort if no edges
+    /* abort if no edges */
     if (edgeCount == 0)
     {
         if (Verbose::printMess(
@@ -1664,7 +1691,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     std::vector<std::pair<KeyFrame *, geometric::Plane *>> vToErasePlane;
     vToErasePlane.reserve(edgesPlanes.size() * 2);
 
-    // Check inlier observations
+    /* Check inlier observations */
     for (size_t edgeIndex = 0, iend = edgesMonos.size(); edgeIndex < iend;
          edgeIndex++)
     {
@@ -1768,7 +1795,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         if (isChi2Exceeded || !eIsDistanceCorrect)
         {
 
-            // if not already in ToErase, add it
+            /* if not already in ToErase, add it */
             std::pair<KeyFrame *, geometric::Plane *> keyFramePlane =
                 std::make_pair(edgeKeyFramePlanes[edgeIndex], p_edgePlane);
             if (std::find(vToErasePlane.begin(),
@@ -1800,7 +1827,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
         if (isChi2Exceeded || !eIsDistanceCorrect2)
         {
-            // if not already in ToErase, add it
+            /* if not already in ToErase, add it */
             std::pair<KeyFrame *, geometric::Plane *> keyFramePlane =
                 std::make_pair(edgeKeyFramePlanePoints[edgeIndex], p_edgePlane);
             if (std::find(vToErasePlane.begin(),
@@ -1812,7 +1839,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // Get Map Mutex
+    /* Get Map Mutex */
     std::unique_lock<std::mutex> lock(p_map_inout->mapUpdateMutex);
 
     if (!vToErase.empty())
@@ -1866,7 +1893,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Locally optimized KeyFrames
+    /* [LBA] Locally optimized KeyFrames */
     for (std::list<KeyFrame *>::iterator lit  = localKeyFrameList.begin(),
                                          lend = localKeyFrameList.end();
          lit != lend;
@@ -1900,7 +1927,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Locally optimized MapPoints
+    /* [LBA] Locally optimized MapPoints */
     for (std::list<MapPoint *>::iterator lit  = localMapPointList.begin(),
                                          lend = localMapPointList.end();
          lit != lend;
@@ -1940,7 +1967,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Locally optimized markers
+    /* [LBA] Locally optimized markers */
     for (std::list<semantic::Marker *>::iterator
              markerIt = localMarkerList.begin(),
              lend     = localMarkerList.end();
@@ -1984,7 +2011,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Locally optimized planes
+    /* [LBA] Locally optimized planes */
     for (std::list<vs_graphs::core::geometric::Plane *>::iterator
              markerIt = localPlaneList.begin(),
              lend     = localPlaneList.end();
@@ -2024,27 +2051,11 @@ OptimizerStatus Optimizer::localBundleAdjustment(
         }
     }
 
-    // [LBA] Locally optimized rooms
-    // 🚧 Temporarily disabled: The reason is to avoid getting room centroid
-    // dragged into the wall equation centroid for
-    // (std::list<vs_graphs::core::semantic::Room
-    // *>::iterator idx = localRoomList.begin(), lend = localRoomList.end(); idx
-    // != lend; idx++)
-    // {
-    //     try
-    //     {
-    //         vs_graphs::core::semantic::Room *pMapRoom = *idx;
-    //         g2o::VertexSE3Expmap *vrtxRoom = static_cast<g2o::VertexSE3Expmap
-    //         *>(optimizer.vertex(pMapRoom->getOpId())); g2o::SE3Quat SE3quat =
-    //         vrtxRoom->estimate();
-    //         pMapRoom->setCentroid(SE3quat.translation());
-    //     }
-    //     catch (std::exception &e)
-    //     {
-    //         std::cerr << "[Optimizer] Error while locally updating optimized
-    //         room: " << e.what() << std::endl; continue;
-    //     }
-    // }
+    /*!
+     * [LBA] Locally optimized rooms
+     * 🚧 Temporarily disabled: The reason is to avoid getting room centroid
+     * dragged into the wall equation centroid
+     */
 
     if (p_map_inout->increaseChangeIndex() != MapStatus::MAP_STATUS_SUCCESS)
     {
@@ -2057,5 +2068,5 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

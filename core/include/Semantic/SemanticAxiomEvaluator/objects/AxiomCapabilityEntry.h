@@ -74,8 +74,8 @@ struct AxiomCapabilityEntry
     MissingProofOwner owner{MissingProofOwner::NONE};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_AXIOM_CAPABILITY_ENTRY_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_AXIOM_CAPABILITY_ENTRY_H */

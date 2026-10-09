@@ -297,7 +297,7 @@ struct SemanticMergeGateResult
  */
 enum class VerifyRejectReason
 {
-    NONE, // PASS, or verify() has not returned yet.
+    NONE, /* PASS, or verify() has not returned yet. */
     TOO_FEW_WALLS,
     NO_VALID_HYPOTHESIS,
     AMBIGUOUS_TOP_HYPOTHESES,
@@ -595,8 +595,8 @@ class SemanticVerify
         mergeReasonName(SemanticMergeReason reason_in, const char *&p_name_out);
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_VERIFY_H
+#endif /* SEMANTIC_VERIFY_H */

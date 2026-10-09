@@ -179,10 +179,10 @@ bool isRawPlaneRefLess(const RawPlaneRef &lhs_in, const RawPlaneRef &rhs_in);
 template <typename EntityT>
 bool isEntityIdLess(const EntityT *p_first_in, const EntityT *p_second_in);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #include "Semantic/ValueOrder/isEntityIdLess.tpp"
 
-#endif // SEMANTIC_VALUE_ORDER_H
+#endif /* SEMANTIC_VALUE_ORDER_H */

@@ -201,5 +201,5 @@ GeoSemHelpersStatus GeoSemHelpers::refitMappedPlaneFromCloud(
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -145,6 +145,6 @@ bool isRoomRecordLessTopologyOnly(const RoomRecord &lhs_in,
     return lhs_in.creationProvenanceReason < rhs_in.creationProvenanceReason;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

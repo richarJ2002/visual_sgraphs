@@ -127,7 +127,8 @@ struct WallRecord
     std::uint64_t cloudGeneration{0U};
 
     /*!
-     * @brief PlaneGeometryMetadataSnapshot::successfulRefitGeneration.
+     * @brief           See successfulRefitGeneration in
+     *                  PlaneGeometryMetadataSnapshot.
      */
     std::uint64_t successfulRefitGeneration{0U};
 
@@ -223,8 +224,8 @@ struct WallRecord
         UnavailableReason::NOT_TRACKED_BY_CURRENT_SCHEMA};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_WALL_RECORD_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_WALL_RECORD_H */

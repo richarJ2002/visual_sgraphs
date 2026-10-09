@@ -46,8 +46,8 @@ enum class BiasStatus : std::uint8_t
     BIAS_STATUS_SUCCESS = 0U
 };
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // BIAS_STATUS_H
+#endif /* BIAS_STATUS_H */

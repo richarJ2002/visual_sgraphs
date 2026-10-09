@@ -49,7 +49,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
     int                           &byProjection_out,
     float                          hammingRatio_in)
 {
-    // Get Calibration Parameters for later projection
+    /* Get Calibration Parameters for later projection */
     const float &fx = p_keyframe_in->fx;
     const float &fy = p_keyframe_in->fy;
     const float &cx = p_keyframe_in->cx;
@@ -62,14 +62,14 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
     Eigen::Vector3f cameraCenter_world =
         cameraPose_worldToCamera.inverse().translation();
 
-    // Set of MapPoints already found in the KeyFrame
+    /* Set of MapPoints already found in the KeyFrame */
     std::set<MapPoint *> alreadyFounds(matched_inout.begin(),
                                        matched_inout.end());
     alreadyFounds.erase(static_cast<MapPoint *>(nullptr));
 
     int nmatches = 0;
 
-    // For each Candidate MapPoint Project and Match
+    /* For each Candidate MapPoint Project and Match */
     for (int mapPointIndex = 0, iendMapPoint = points_in.size();
          mapPointIndex < iendMapPoint;
          mapPointIndex++)
@@ -77,7 +77,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         MapPoint *p_mapPoint = points_in[mapPointIndex];
         KeyFrame *p_keyFrame = pointsKeyframes_in[mapPointIndex];
 
-        // Discard Bad MapPoints and already found
+        /* Discard Bad MapPoints and already found */
         bool mapPointIsBad{};
         if (p_mapPoint->isBad(mapPointIsBad) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -90,7 +90,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         if (mapPointIsBad || alreadyFounds.count(p_mapPoint))
             continue;
 
-        // Get 3D Coords.
+        /* Get 3D Coords. */
         Eigen::Vector3f p3Dw{};
         if (p_mapPoint->getWorldPos(p3Dw) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -101,14 +101,14 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
                          __func__);
         }
 
-        // Transform into Camera Coords.
+        /* Transform into Camera Coords. */
         Eigen::Vector3f p3Dc = cameraPose_worldToCamera * p3Dw;
 
-        // Depth must be positive
+        /* Depth must be positive */
         if (p3Dc(2) < 0.0)
             continue;
 
-        // Project into Image
+        /* Project into Image */
         const float invz = 1 / p3Dc(2);
         const float x    = p3Dc(0) * invz;
         const float y    = p3Dc(1) * invz;
@@ -116,7 +116,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         const float u = fx * x + cx;
         const float v = fy * y + cy;
 
-        // Point must be inside the image
+        /* Point must be inside the image */
         bool pKFIsInImage{};
         if (p_keyframe_in->isInImage(u, v, pKFIsInImage) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -129,7 +129,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         if (!pKFIsInImage)
             continue;
 
-        // Depth must be inside the scale invariance region of the point
+        /* Depth must be inside the scale invariance region of the point */
         float maximumDistance{};
         if (p_mapPoint->getMaxDistanceInvariance(maximumDistance) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -156,7 +156,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         if (distance < minimumDistance || distance > maximumDistance)
             continue;
 
-        // Viewing angle must be less than 60 deg
+        /* Viewing angle must be less than 60 deg */
         Eigen::Vector3f Pn{};
         if (p_mapPoint->getNormal(Pn) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -182,7 +182,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
                          __func__);
         }
 
-        // Search in a radius
+        /* Search in a radius */
         const float radius =
             threshold_in * p_keyframe_in->scaleFactors[predictedLevelCount];
 
@@ -199,7 +199,7 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
         if (indices.empty())
             continue;
 
-        // Match to the most similar keypoint in the radius
+        /* Match to the most similar keypoint in the radius */
         cv::Mat mapPointDescriptor{};
         if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -263,5 +263,5 @@ ORBmatcherStatus ORBmatcher::searchByProjection(
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

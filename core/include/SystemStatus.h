@@ -59,7 +59,7 @@ enum class SystemStatus : std::uint8_t
     SYSTEM_STATUS_ATLAS_UNREADABLE = 3U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SYSTEM_STATUS_H
+#endif /* SYSTEM_STATUS_H */

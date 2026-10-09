@@ -70,7 +70,7 @@ bool isRecordVectorEqual(std::vector<RecordT> lhs_in,
     return !isRecordVectorLess(lhs_in, rhs_in, isLess_in) &&
            !isRecordVectorLess(rhs_in, lhs_in, isLess_in);
 }
-} // namespace
+} /* namespace */
 
 bool isMapSnapshotLessTotalOrder(const MapSnapshot &lhs_in,
                                  const MapSnapshot &rhs_in,
@@ -116,6 +116,6 @@ bool isMapSnapshotLessTotalOrder(const MapSnapshot &lhs_in,
     return isRecordVectorLess(lhs_in.floors, rhs_in.floors, p_floorLess);
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -45,5 +45,5 @@ float Frame::cx, Frame::cy, Frame::fx, Frame::fy, Frame::invfx, Frame::invfy;
 float Frame::gridMinX, Frame::gridMinY, Frame::gridMaxX, Frame::gridMaxY;
 float Frame::gridElementWidthInverse, Frame::gridElementHeightInverse;
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

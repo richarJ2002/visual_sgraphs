@@ -52,8 +52,8 @@ enum class PassageStatus : std::uint8_t
     PASSAGE_STATUS_INVALID_ARGUMENT = 1U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // PASSAGE_STATUS_H
+#endif /* PASSAGE_STATUS_H */

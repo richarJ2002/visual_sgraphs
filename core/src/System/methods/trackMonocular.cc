@@ -49,7 +49,7 @@ SystemStatus
                            std::string                           filename_in,
                            const std::vector<semantic::Marker *> markers_in)
 {
-    // Multi-thread to prevent race conditions
+    /* Multi-thread to prevent race conditions */
     {
         std::unique_lock<std::mutex> lock(resetMutex);
         if (isShutdownRequested)
@@ -59,7 +59,7 @@ SystemStatus
         }
     }
 
-    // Check if the sensor is Monocular
+    /* Check if the sensor is Monocular */
     if (sensor != MONOCULAR && sensor != IMU_MONOCULAR)
     {
         std::cerr
@@ -69,7 +69,7 @@ SystemStatus
         exit(-1);
     }
 
-    // Obtain the images
+    /* Obtain the images */
     cv::Mat imToFeed = image_in.clone();
     bool    settingsNeedToResize{};
     if ((p_settings) &&
@@ -146,5 +146,5 @@ SystemStatus
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

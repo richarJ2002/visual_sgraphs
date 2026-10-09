@@ -46,7 +46,7 @@ AtlasStatus Atlas::addCamera(
     /* Only camera methods run under the lock; they take no lock. */
     std::unique_lock<std::mutex> atlasLock(atlasMutex);
 
-    // Check if the camera already exists
+    /* Check if the camera already exists */
     bool isAlreadyInMap     = false;
     int  matchedCameraIndex = -1;
     for (size_t cameraIndex = 0; cameraIndex < cameras.size(); ++cameraIndex)
@@ -94,7 +94,7 @@ AtlasStatus Atlas::addCamera(
             camera_models::geometriccamera::GeometricCamera::CAM_PINHOLE)
         {
             bool isEqual2{};
-            // the camera type check above makes this downcast exact
+            /* the camera type check above makes this downcast exact */
             if (static_cast<camera_models::pinhole::Pinhole *>(p_existingCamera)
                     ->isEqual(p_camera_in, isEqual2) !=
                 camera_models::pinhole::PinholeStatus::PINHOLE_STATUS_SUCCESS)
@@ -114,7 +114,7 @@ AtlasStatus Atlas::addCamera(
                  camera_models::geometriccamera::GeometricCamera::CAM_FISHEYE)
         {
             bool isEqual3{};
-            // the camera type check above makes this downcast exact
+            /* the camera type check above makes this downcast exact */
             if (static_cast<camera_models::kannalabrandt8::KannalaBrandt8 *>(
                     p_existingCamera)
                     ->isEqual(p_camera_in, isEqual3) !=
@@ -147,5 +147,5 @@ AtlasStatus Atlas::addCamera(
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

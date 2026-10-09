@@ -46,8 +46,8 @@ enum class MarkerStatus : std::uint8_t
     MARKER_STATUS_SUCCESS = 0U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // MARKER_STATUS_H
+#endif /* MARKER_STATUS_H */

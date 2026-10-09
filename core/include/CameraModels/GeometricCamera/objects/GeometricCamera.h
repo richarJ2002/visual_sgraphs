@@ -416,8 +416,8 @@ class GeometricCamera
      */
     unsigned int type;
 };
-} // namespace geometriccamera
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
-#endif // CAMERAMODELS_GEOMETRICCAMERA_H
+} /* namespace geometriccamera */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */
+#endif /* CAMERAMODELS_GEOMETRICCAMERA_H */

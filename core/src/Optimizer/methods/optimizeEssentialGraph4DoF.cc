@@ -50,7 +50,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
     const LoopClosing::KeyFrameAndPose               &CorrectedSim3_in,
     const std::map<KeyFrame *, std::set<KeyFrame *>> &loopConnections_in)
 {
-    // Setup optimizer
+    /* Setup optimizer */
     g2o::SparseOptimizer optimizer;
     optimizer.setVerbose(false);
     g2o::BlockSolverX::LinearSolverType *p_linearSolver =
@@ -101,7 +101,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
     std::vector<VertexPose4DoF *> vertices(maximumKeyFrameIdCount + 1);
 
     const int minimumFeature = 100;
-    // Set KeyFrame vertices
+    /* Set KeyFrame vertices */
     for (size_t keyFrameIndex = 0, iend = keyFrames.size();
          keyFrameIndex < iend;
          keyFrameIndex++)
@@ -169,15 +169,17 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
     }
     std::set<std::pair<long unsigned int, long unsigned int>> insertedEdges;
 
-    // Edge used in posegraph has still 6Dof, even if updates of camera poses
-    // are just in 4DoF
+    /*!
+     * Edge used in posegraph has still 6Dof, even if updates of camera poses
+     * are just in 4DoF
+     */
     Eigen::Matrix<double, 6, 6> matrixLambda =
         Eigen::Matrix<double, 6, 6>::Identity();
     matrixLambda(0, 0) = 1e3;
     matrixLambda(1, 1) = 1e3;
     matrixLambda(0, 0) = 1e3;
 
-    // Set Loop edges
+    /* Set Loop edges */
     for (std::map<KeyFrame *, std::set<KeyFrame *>>::const_iterator
              mit  = loopConnections_in.begin(),
              mend = loopConnections_in.end();
@@ -238,7 +240,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
         }
     }
 
-    // 1. Set normal edges
+    /* 1. Set normal edges */
     for (size_t keyFrameIndex = 0, iend = keyFrames.size();
          keyFrameIndex < iend;
          keyFrameIndex++)
@@ -249,7 +251,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
 
         g2o::Sim3 Siw;
 
-        // Use noncorrected poses for posegraph edges
+        /* Use noncorrected poses for posegraph edges */
         LoopClosing::KeyFrameAndPose::const_iterator iti =
             NonCorrectedSim3_in.find(p_keyFrame);
 
@@ -258,7 +260,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
         else
             Siw = vScw[idCount];
 
-        // 1.1.0 Spanning tree edge
+        /* 1.1.0 Spanning tree edge */
         KeyFrame *p_parentKeyFrame = static_cast<KeyFrame *>(nullptr);
         if (p_parentKeyFrame)
         {
@@ -293,7 +295,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
             optimizer.addEdge(e);
         }
 
-        // 1.1.1 Inertial edges
+        /* 1.1.1 Inertial edges */
         KeyFrame *p_previousKeyFrame = p_keyFrame->p_prevKF;
         if (p_previousKeyFrame)
         {
@@ -328,7 +330,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
             optimizer.addEdge(e);
         }
 
-        // 1.2 Loop edges
+        /* 1.2 Loop edges */
         std::set<KeyFrame *> loopEdges{};
         if (p_keyFrame->getLoopEdges(loopEdges) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -377,7 +379,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
             }
         }
 
-        // 1.3 Covisibility graph edges
+        /* 1.3 Covisibility graph edges */
         std::vector<KeyFrame *> connectedKeyFrames{};
         if (p_keyFrame->getCovisiblesByWeight(minimumFeature,
                                               connectedKeyFrames) !=
@@ -463,7 +465,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
 
     std::unique_lock<std::mutex> lock(p_map_inout->mapUpdateMutex);
 
-    // SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1]
+    /* SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1] */
     for (size_t keyFrameIndex = 0; keyFrameIndex < keyFrames.size();
          keyFrameIndex++)
     {
@@ -491,8 +493,10 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
         }
     }
 
-    // Correct points. Transform to "non-optimized" reference keyframe pose and
-    // transform back with optimized pose
+    /*!
+     * Correct points. Transform to "non-optimized" reference keyframe pose and
+     * transform back with optimized pose
+     */
     for (size_t keyFrameIndex = 0, iend = mapPoints.size();
          keyFrameIndex < iend;
          keyFrameIndex++)
@@ -568,5 +572,5 @@ OptimizerStatus Optimizer::optimizeEssentialGraph4DoF(
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

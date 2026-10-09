@@ -45,5 +45,5 @@ bool ImuCamPose::isDepthPositive(const Eigen::Vector3d &Xw_in,
     return (Rcw[cameraIndex_in].row(2) * Xw_in + tcw[cameraIndex_in](2)) > 0.0;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

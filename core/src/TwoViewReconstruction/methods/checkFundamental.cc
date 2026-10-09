@@ -75,8 +75,10 @@ TwoViewReconstructionStatus TwoViewReconstruction::checkFundamental(
         const float u2 = keyPoint2.pt.x;
         const float v2 = keyPoint2.pt.y;
 
-        // Reprojection error in second image
-        // l2=F21x1=(a2,b2,c2)
+        /*!
+         * Reprojection error in second image
+         * l2=F21x1=(a2,b2,c2)
+         */
 
         const float a2 = f11 * u1 + f12 * v1 + f13;
         const float b2 = f21 * u1 + f22 * v1 + f23;
@@ -93,8 +95,10 @@ TwoViewReconstructionStatus TwoViewReconstruction::checkFundamental(
         else
             score += thresholdScore - chiSquare1;
 
-        // Reprojection error in second image
-        // l1 =x2tF21=(a1,b1,c1)
+        /*!
+         * Reprojection error in second image
+         * l1 =x2tF21=(a1,b1,c1)
+         */
 
         const float a1 = f11 * u2 + f21 * v2 + f31;
         const float b1 = f12 * u2 + f22 * v2 + f32;
@@ -121,5 +125,5 @@ TwoViewReconstructionStatus TwoViewReconstruction::checkFundamental(
     return TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

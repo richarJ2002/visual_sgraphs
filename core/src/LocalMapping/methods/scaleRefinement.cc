@@ -45,13 +45,15 @@ namespace core
 
 LocalMappingStatus LocalMapping::scaleRefinement()
 {
-    // Minimum number of keyframes to compute a solution
-    // Minimum time (seconds) between first and last keyframe to compute a
-    // solution. Make the difference between monocular and stereo
+    /*!
+     * Minimum number of keyframes to compute a solution
+     * Minimum time (seconds) between first and last keyframe to compute a
+     * solution. Make the difference between monocular and stereo
+     */
     if (isResetRequested)
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 
-    // Retrieve all keyframes in temporal order
+    /* Retrieve all keyframes in temporal order */
     std::list<KeyFrame *> temporalKeyFrames;
     KeyFrame             *p_walkKeyFrame = p_currentKeyFrame;
     while (p_walkKeyFrame->p_prevKF)
@@ -111,7 +113,7 @@ LocalMappingStatus LocalMapping::scaleRefinement()
                      __func__);
     }
 
-    if (scale < 1e-1) // 1e-1
+    if (scale < 1e-1) /* 1e-1 */
     {
         std::cout << "scale too small" << std::endl;
         isInitializationInProgress = false;
@@ -119,7 +121,7 @@ LocalMappingStatus LocalMapping::scaleRefinement()
     }
 
     Sophus::SO3d                 so3wg(mRwg);
-    // Before this line we are not changing the map
+    /* Before this line we are not changing the map */
     std::unique_lock<std::mutex> semanticUpdateLock{};
     if (p_atlas->acquireSemanticUpdateLock(semanticUpdateLock) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -199,7 +201,7 @@ LocalMappingStatus LocalMapping::scaleRefinement()
     }
     newKeyFrames.clear();
 
-    // To perform pose-inertial opt w.r.t. last keyframe
+    /* To perform pose-inertial opt w.r.t. last keyframe */
     Map *p_currentKeyFrameMap = nullptr;
     if (p_currentKeyFrame->getMap(p_currentKeyFrameMap) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -221,5 +223,5 @@ LocalMappingStatus LocalMapping::scaleRefinement()
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

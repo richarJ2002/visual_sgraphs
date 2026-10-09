@@ -49,11 +49,11 @@ KeyFrameStatus KeyFrame::clearPointCloud()
         currentFramePointClouds->clear();
     currentFramePointClouds = nullptr;
 
-    // clear images
+    /* clear images */
     colorImg.release();
 
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

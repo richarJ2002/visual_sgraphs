@@ -39,6 +39,6 @@ MarkerStatus Marker::getGlobalPose(Sophus::SE3f &globalPose_out) const
     return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -48,9 +48,9 @@ enum class UtilsStatus : std::uint8_t
     UTILS_STATUS_SUCCESS = 0U
 };
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // UTILS_STATUS_H
+#endif /* UTILS_STATUS_H */

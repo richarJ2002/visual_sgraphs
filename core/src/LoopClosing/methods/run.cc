@@ -295,7 +295,7 @@ void LoopClosing::run(void)
                                 }
                                 continue;
                             }
-                            // If inertial, force only yaw
+                            /* If inertial, force only yaw */
                             Map *p_currentKFMap3 = nullptr;
                             if (((p_tracker->sensor == System::IMU_MONOCULAR ||
                                   p_tracker->sensor == System::IMU_STEREO ||
@@ -969,5 +969,5 @@ void LoopClosing::run(void)
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

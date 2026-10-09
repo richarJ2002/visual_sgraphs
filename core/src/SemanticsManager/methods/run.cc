@@ -605,6 +605,7 @@ void SemanticsManager::run(void)
         if (p_sysParams->roomSeg.method ==
             types::SystemParams::RoomSeg::Method::FREE_SPACE)
         {
+            /* Second pass - updates existing rooms */
             if (detectRoom_FreeSpaceCluster() !=
                 SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
             {
@@ -613,8 +614,7 @@ void SemanticsManager::run(void)
                     "%s: detectRoom_FreeSpaceCluster returned a failure status "
                     "although it cannot fail; continuing as before.",
                     __func__);
-            } // Second pass - updates existing
-              // rooms
+            }
         }
 
         /* Re-associate walls to rooms after second-pass cluster splitting.
@@ -1417,5 +1417,5 @@ void SemanticsManager::run(void)
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

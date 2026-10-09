@@ -385,7 +385,7 @@ bool overlapProductionPublishAndConsume(ProductionCrossingScene &scene_inout,
     consumer.join();
     return consumerObservedContention;
 }
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that two simultaneous tracking-lost notifications
@@ -1205,5 +1205,5 @@ TEST(RoomTrackerProductionIntegration, SeedFallbackLeavesRoomUnvisited)
     EXPECT_FALSE(hasPreviouslyVisited2);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

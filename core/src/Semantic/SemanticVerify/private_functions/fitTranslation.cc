@@ -86,7 +86,7 @@ SemanticVerifyStatus
             offsetsA_in[index] - offsetsB_in[index];
     }
     static_cast<void>(
-        rotation_in); // rotation already baked into normalsA_in via caller
+        rotation_in); /* rotation already baked into normalsA_in via caller */
 
     const Eigen::JacobiSVD<Eigen::MatrixXd> svd(N_B,
                                                 Eigen::ComputeThinU |
@@ -121,6 +121,6 @@ SemanticVerifyStatus
     return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

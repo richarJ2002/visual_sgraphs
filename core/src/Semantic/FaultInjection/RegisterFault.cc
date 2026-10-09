@@ -24,5 +24,5 @@ void registerFault(const std::string &name_in, FaultAction action_in)
 #endif
 }
 
-} // namespace testing
-} // namespace vs_graphs
+} /* namespace testing */
+} /* namespace vs_graphs */

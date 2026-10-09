@@ -134,7 +134,7 @@ std::unique_ptr<geometric::Plane>
     return wall;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that two parallel wall faces 0.2 m apart, seen from
@@ -469,5 +469,5 @@ TEST(WallPairing, UnlinksAPreviouslyPairedPlaneThatDrifted)
     EXPECT_EQ(p_getTwinFace4, nullptr);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

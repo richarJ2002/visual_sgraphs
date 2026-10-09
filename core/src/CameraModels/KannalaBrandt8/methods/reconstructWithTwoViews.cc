@@ -131,4 +131,4 @@ bool KannalaBrandt8::reconstructWithTwoViews(
     }
     return twoViewReconstructionIsReconstructed;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

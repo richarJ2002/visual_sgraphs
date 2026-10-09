@@ -59,5 +59,5 @@ G2oTypesStatus rightJacobianSO3(const Eigen::Vector3d &rotationVector_in,
     return G2oTypesStatus::G2O_TYPES_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

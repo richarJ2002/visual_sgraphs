@@ -60,7 +60,7 @@ FrameStatus Frame::isInFrustum(MapPoint *p_mapPoint_inout,
         p_mapPoint_inout->trackProjX      = -1;
         p_mapPoint_inout->trackProjY      = -1;
 
-        // 3D in absolute coordinates
+        /* 3D in absolute coordinates */
         Eigen::Matrix<float, 3, 1> P{};
         if (p_mapPoint_inout->getWorldPos(P) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -71,11 +71,11 @@ FrameStatus Frame::isInFrustum(MapPoint *p_mapPoint_inout,
                          __func__);
         }
 
-        // 3D in camera coordinates
+        /* 3D in camera coordinates */
         const Eigen::Matrix<float, 3, 1> Pc = rotationRcw * P + translationTcw;
         const float                      Pc_dist = Pc.norm();
 
-        // Check positive depth
+        /* Check positive depth */
         const float &PcZ  = Pc(2);
         const float  invz = 1.0f / PcZ;
         if (PcZ < 0.0f)
@@ -100,7 +100,7 @@ FrameStatus Frame::isInFrustum(MapPoint *p_mapPoint_inout,
         p_mapPoint_inout->trackProjX = uv(0);
         p_mapPoint_inout->trackProjY = uv(1);
 
-        // Check distance is in the scale invariance region of the MapPoint
+        /* Check distance is in the scale invariance region of the MapPoint */
         float maximumDistance{};
         if (p_mapPoint_inout->getMaxDistanceInvariance(maximumDistance) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -130,7 +130,7 @@ FrameStatus Frame::isInFrustum(MapPoint *p_mapPoint_inout,
             return FrameStatus::FRAME_STATUS_SUCCESS;
         }
 
-        // Check viewing angle
+        /* Check viewing angle */
         Eigen::Vector3f Pn{};
         if (p_mapPoint_inout->getNormal(Pn) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -149,7 +149,7 @@ FrameStatus Frame::isInFrustum(MapPoint *p_mapPoint_inout,
             return FrameStatus::FRAME_STATUS_SUCCESS;
         }
 
-        // Predict scale in the image
+        /* Predict scale in the image */
         int predictedLevelCount{};
         if (p_mapPoint_inout->predictScale(distance,
                                            this,
@@ -162,7 +162,7 @@ FrameStatus Frame::isInFrustum(MapPoint *p_mapPoint_inout,
                          __func__);
         }
 
-        // Data used by the tracking
+        /* Data used by the tracking */
         p_mapPoint_inout->isTrackedInView = true;
         p_mapPoint_inout->trackProjX      = uv(0);
         p_mapPoint_inout->trackProjXR     = uv(0) - mbf * invz;
@@ -214,5 +214,5 @@ FrameStatus Frame::isInFrustum(MapPoint *p_mapPoint_inout,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

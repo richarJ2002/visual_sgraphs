@@ -45,6 +45,6 @@ const PassageRecord *findPassageRecord(const MapSnapshot &mapSnapshot_in,
     return nullptr;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

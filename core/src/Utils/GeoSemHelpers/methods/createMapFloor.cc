@@ -52,12 +52,12 @@ GeoSemHelpersStatus
         return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
     }
 
-    // Create a new floor object
+    /* Create a new floor object */
     Eigen::Vector3d                   centroid = Eigen::Vector3d::Zero();
     vs_graphs::core::semantic::Floor *p_newMapFloor =
         new vs_graphs::core::semantic::Floor();
 
-    // Variables
+    /* Variables */
     int atlasFloorId{};
     if (!(stableFloorId_in.has_value()) &&
         p_atlas_inout->reserveFloorIdentity(atlasFloorId) !=
@@ -79,7 +79,7 @@ GeoSemHelpersStatus
                      __func__);
     }
 
-    // Fill the floor entity
+    /* Fill the floor entity */
     if (p_newMapFloor->setOpId(-1) !=
         semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
     {
@@ -129,7 +129,7 @@ GeoSemHelpersStatus
                      __func__);
     }
 
-    // Add the floor to the map
+    /* Add the floor to the map */
     if (p_atlas_inout->addMapFloor(p_newMapFloor) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -154,5 +154,5 @@ GeoSemHelpersStatus
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

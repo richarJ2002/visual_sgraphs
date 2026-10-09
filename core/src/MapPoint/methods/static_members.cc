@@ -44,5 +44,5 @@ namespace core
 long unsigned int MapPoint::nextId = 0;
 std::mutex        MapPoint::globalMutex;
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

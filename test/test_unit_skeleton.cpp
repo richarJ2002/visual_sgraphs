@@ -278,5 +278,5 @@ TEST(RoomTrackerSkeleton, DefaultConfiguration)
     EXPECT_EQ(config.reacquire_min_planes, 3U);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

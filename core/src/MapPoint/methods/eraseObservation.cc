@@ -102,7 +102,7 @@ MapPointStatus MapPoint::eraseObservation(KeyFrame *p_keyFrame_in)
                 }
             }
 
-            // If only 2 observations or less, discard point
+            /* If only 2 observations or less, discard point */
             if (observationCount <= 2)
                 bBad = true;
         }
@@ -122,5 +122,5 @@ MapPointStatus MapPoint::eraseObservation(KeyFrame *p_keyFrame_in)
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -45,7 +45,7 @@ enum class OptimizerEdgeLookupStatus : std::uint8_t
     OPTIMIZER_EDGE_LOOKUP_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // OPTIMIZER_EDGE_LOOKUP_STATUS_H
+#endif /* OPTIMIZER_EDGE_LOOKUP_STATUS_H */

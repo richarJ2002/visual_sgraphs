@@ -48,9 +48,9 @@ enum class ConverterStatus : std::uint8_t
     CONVERTER_STATUS_SUCCESS = 0U
 };
 
-} // namespace converter
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace converter */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // CONVERTER_STATUS_H
+#endif /* CONVERTER_STATUS_H */

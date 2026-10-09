@@ -77,5 +77,5 @@ AtlasStatus countLiveRooms(Map *p_map_in, std::size_t &liveRooms_out)
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

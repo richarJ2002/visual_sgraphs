@@ -44,7 +44,7 @@ enum class G2oTypesStatus : std::uint8_t
     G2O_TYPES_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // G2O_TYPES_STATUS_H
+#endif /* G2O_TYPES_STATUS_H */

@@ -47,6 +47,6 @@ PlaneStatus Plane::getLocalEquation(g2o::Plane3D &getLocalEquation_out) const
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
-} // namespace geometric
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometric */
+} /* namespace core */
+} /* namespace vs_graphs */

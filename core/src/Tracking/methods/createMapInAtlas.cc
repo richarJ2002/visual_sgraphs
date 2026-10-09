@@ -64,10 +64,8 @@ TrackingStatus Tracking::createMapInAtlas()
     initialFrameId = currentFrame.id + 1;
     state          = NO_IMAGES_YET;
 
-    // Restart the variable with information about the last KF
+    /* Restart the variable with information about the last KF */
     isVelocityAvailable = false;
-    // mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is
-    // the current id, because it is the new starting point for new map
     if (Verbose::printMess(
             "First frame id in map: " + std::to_string(lastInitFrameId + 1),
             Verbose::VERBOSITY_NORMAL) != VerboseStatus::VERBOSE_STATUS_SUCCESS)
@@ -77,8 +75,8 @@ TrackingStatus Tracking::createMapInAtlas()
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    isVisualOdometry = false; // Init value for know if there are enough
-                              // MapPoints in the last KF
+    /* Init value for know if there are enough MapPoints in the last KF */
+    isVisualOdometry = false;
     if (sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR)
     {
         isReadyToInitialize = false;
@@ -108,5 +106,5 @@ TrackingStatus Tracking::createMapInAtlas()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

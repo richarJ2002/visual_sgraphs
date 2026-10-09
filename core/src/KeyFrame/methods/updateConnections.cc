@@ -59,8 +59,10 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
         keyFrameMapPoints = mapPoints;
     }
 
-    // for all plane observations in the keyframe check in which other keyframes
-    // are they seen increase counter for those keyframes
+    /*!
+     * for all plane observations in the keyframe check in which other keyframes
+     * are they seen increase counter for those keyframes
+     */
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -149,15 +151,17 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
                 if (planeType == geometric::Plane::PlaneVariant::UNDEFINED)
                     keyFrameCounter[mit->first] += static_cast<int>(
                         scorePerPlane *
-                        0.2); // undefined planes have less weight
+                        0.2); /* undefined planes have less weight */
                 else
                     keyFrameCounter[mit->first] += scorePerPlane;
             }
         }
     }
 
-    // For all map points in keyframe check in which other keyframes are they
-    // seen Increase counter for those keyframes
+    /*!
+     * For all map points in keyframe check in which other keyframes are they
+     * seen Increase counter for those keyframes
+     */
     for (std::vector<MapPoint *>::iterator vit  = keyFrameMapPoints.begin(),
                                            vend = keyFrameMapPoints.end();
          vit != vend;
@@ -222,13 +226,15 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
         }
     }
 
-    // This should not happen
+    /* This should not happen */
     if (keyFrameCounter.empty())
         return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 
-    // If the counter is greater than threshold add connection
-    // In case no keyframe counter is over threshold add the one with maximum
-    // counter
+    /*!
+     * If the counter is greater than threshold add connection
+     * In case no keyframe counter is over threshold add the one with maximum
+     * counter
+     */
     int       nmax              = 0;
     KeyFrame *p_keyFrameMaximum = nullptr;
     int       threshold         = 15;
@@ -322,5 +328,5 @@ KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
     return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

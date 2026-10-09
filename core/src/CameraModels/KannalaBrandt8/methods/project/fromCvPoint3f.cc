@@ -54,4 +54,4 @@ cv::Point2f KannalaBrandt8::project(const cv::Point3f &point3d_in)
         parameters[1] * distortedIncidenceAngle * sin(azimuthAngle) +
             parameters[3]);
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

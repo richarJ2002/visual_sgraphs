@@ -131,6 +131,6 @@ TEST_F(KeyFrameTest, ClearPointCloudCanRunTwice)
     EXPECT_EQ(p_pointCloud, nullptr);
 }
 
-} // namespace
-} // namespace core
-} // namespace vs_graphs
+} /* namespace */
+} /* namespace core */
+} /* namespace vs_graphs */

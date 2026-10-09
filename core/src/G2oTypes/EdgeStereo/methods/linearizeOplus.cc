@@ -82,5 +82,5 @@ void EdgeStereo::linearizeOplus()
         projectionJacobian * extrinsicRotation_bodyToCamera * se3Derivative;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

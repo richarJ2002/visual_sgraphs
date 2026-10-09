@@ -40,6 +40,6 @@ nlohmann::json serializeVector4d(const Eigen::Vector4d &value_in)
                                   serializeDouble(value_in.w())});
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

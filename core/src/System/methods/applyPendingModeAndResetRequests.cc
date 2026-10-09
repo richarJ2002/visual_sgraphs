@@ -45,7 +45,7 @@ namespace core
 
 SystemStatus System::applyPendingModeAndResetRequests()
 {
-    // Check mode change
+    /* Check mode change */
     {
         std::unique_lock<std::mutex> lock(modeMutex);
         if (isLocalizationModeActivationRequested)
@@ -59,7 +59,7 @@ SystemStatus System::applyPendingModeAndResetRequests()
                              __func__);
             }
 
-            // Wait until Local Mapping has effectively stopped
+            /* Wait until Local Mapping has effectively stopped */
             for (;;)
             {
                 bool localMapperIsStopped{};
@@ -111,7 +111,7 @@ SystemStatus System::applyPendingModeAndResetRequests()
         }
     }
 
-    // Check reset
+    /* Check reset */
     {
         std::unique_lock<std::mutex> lock(resetMutex);
         if (isResetRequested)
@@ -174,5 +174,5 @@ SystemStatus System::applyPendingModeAndResetRequests()
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

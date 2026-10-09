@@ -108,8 +108,8 @@ class ConfigParser
     IMUConfig          imuConfig;
 };
 
-} // namespace config
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
-#endif // CONFIG_H
+} /* namespace config */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */
+#endif /* CONFIG_H */

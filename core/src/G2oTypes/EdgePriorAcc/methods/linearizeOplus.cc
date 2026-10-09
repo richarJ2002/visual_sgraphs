@@ -41,9 +41,9 @@ namespace core
 
 void EdgePriorAcc::linearizeOplus()
 {
-    // Jacobian wrt bias
+    /* Jacobian wrt bias */
     _jacobianOplusXi.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

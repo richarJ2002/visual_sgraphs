@@ -71,7 +71,7 @@ enum class AtlasCurrentMapStatus : std::uint8_t
     CURRENT_MAP_NOT_ACTIVE = 2U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // ATLAS_CURRENT_MAP_STATUS_H
+#endif /* ATLAS_CURRENT_MAP_STATUS_H */

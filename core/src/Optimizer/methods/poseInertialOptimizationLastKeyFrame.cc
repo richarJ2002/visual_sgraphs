@@ -67,7 +67,7 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
     int initialStereoCorrespondenceCount = 0;
     int initialCorrespondenceCount       = 0;
 
-    // Set Frame vertex
+    /* Set Frame vertex */
     VertexPose *p_poseVertex = new VertexPose(p_frame_inout);
     p_poseVertex->setId(0);
     p_poseVertex->setFixed(false);
@@ -85,7 +85,7 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
     p_accelerometerBiasVertex->setFixed(false);
     optimizer.addVertex(p_accelerometerBiasVertex);
 
-    // Set MapPoint vertices
+    /* Set MapPoint vertices */
     std::vector<EdgeMonoOnlyPose *>   edgesMonos;
     std::vector<EdgeStereoOnlyPose *> edgesStereos;
     std::vector<size_t>               monoEdgeIndices;
@@ -158,9 +158,11 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
     p_ear->setInformation(informationA);
     optimizer.addEdge(p_ear);
 
-    // We perform 4 optimizations, after each optimization we classify
-    // observation as inlier/outlier At the next optimization, outliers are not
-    // included, but at the end they can be classified as inliers again.
+    /*!
+     * We perform 4 optimizations, after each optimization we classify
+     * observation as inlier/outlier At the next optimization, outliers are not
+     * included, but at the end they can be classified as inliers again.
+     */
     float chi2Mono[4]   = {12, 7.5, 5.991, 5.991};
     float chi2Stereo[4] = {15.6, 9.8, 7.815, 7.815};
 
@@ -185,7 +187,7 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
         inliersStereoCount             = 0;
         float closeChiSquaredThreshold = 1.5 * chi2Mono[iterationIndex];
 
-        // For monocular observations
+        /* For monocular observations */
         for (size_t keyPointIndex = 0, iend = edgesMonos.size();
              keyPointIndex < iend;
              keyPointIndex++)
@@ -222,7 +224,7 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
                 e->setRobustKernel(0);
         }
 
-        // For stereo observations
+        /* For stereo observations */
         for (size_t keyPointIndex = 0, iend = edgesStereos.size();
              keyPointIndex < iend;
              keyPointIndex++)
@@ -241,7 +243,7 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
             if (chi2 > chi2Stereo[iterationIndex])
             {
                 p_frame_inout->outlierFlags[featureIndex] = true;
-                e->setLevel(1); // not included in next optimization
+                e->setLevel(1); /* not included in next optimization */
                 badStereoCount++;
             }
             else
@@ -264,7 +266,7 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
         }
     }
 
-    // If not too much tracks, recover not too bad points
+    /* If not too much tracks, recover not too bad points */
     if ((inlierCount < 30) && !isRecentlyInitialized_in)
     {
         badCount                          = 0;
@@ -298,7 +300,7 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
         }
     }
 
-    // Recover optimized pose, velocity and biases
+    /* Recover optimized pose, velocity and biases */
     if (p_frame_inout->setImuPoseVelocity(
             p_poseVertex->estimate().Rwb.cast<float>(),
             p_poseVertex->estimate().twb.cast<float>(),
@@ -314,8 +316,10 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
     b << p_gyroBiasVertex->estimate(), p_accelerometerBiasVertex->estimate();
     p_frame_inout->imuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
 
-    // Recover Hessian, marginalize keyFframe states and generate new prior for
-    // frame
+    /*!
+     * Recover Hessian, marginalize keyFframe states and generate new prior for
+     * frame
+     */
     Eigen::Matrix<double, 15, 15> H;
     H.setZero();
 
@@ -415,5 +419,5 @@ OptimizerStatus Optimizer::poseInertialOptimizationLastKeyFrame(
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

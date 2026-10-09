@@ -47,8 +47,8 @@ enum class SemanticReportCacheStatus : std::uint8_t
     SEMANTIC_REPORT_CACHE_STATUS_SUCCESS = 0U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_REPORT_CACHE_STATUS_H
+#endif /* SEMANTIC_REPORT_CACHE_STATUS_H */

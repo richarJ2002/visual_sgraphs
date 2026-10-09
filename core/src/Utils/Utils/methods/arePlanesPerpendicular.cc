@@ -43,7 +43,7 @@ UtilsStatus Utils::arePlanesPerpendicular(
     const vs_graphs::core::geometric::Plane *p_plane2_in,
     bool                                    &arePlanesPerpendicular_out)
 {
-    // Get the threshold value
+    /* Get the threshold value */
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -56,7 +56,7 @@ UtilsStatus Utils::arePlanesPerpendicular(
     double threshold =
         p_params->roomSeg.wallsPerpendicularityThresh * Utils::DEG_TO_RAD;
 
-    // Extract and normalize plane normals
+    /* Extract and normalize plane normals */
     g2o::Plane3D plane1GetGlobalEquation{};
     if (p_plane1_in->getGlobalEquation(plane1GetGlobalEquation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -78,18 +78,18 @@ UtilsStatus Utils::arePlanesPerpendicular(
     }
     Eigen::Vector3d normal2 = plane2GetGlobalEquation.normal().normalized();
 
-    // Compute the absolute dot product (clamped for safety)
+    /* Compute the absolute dot product (clamped for safety) */
     double dotProduct = std::clamp(std::abs(normal1.dot(normal2)), -1.0, 1.0);
 
-    // Calculate the angle between the planes
+    /* Calculate the angle between the planes */
     double angle = std::acos(dotProduct);
 
-    // Check if the angle is within the threshold
+    /* Check if the angle is within the threshold */
     arePlanesPerpendicular_out = std::abs(angle - M_PI_2) < threshold;
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -52,8 +52,10 @@ SemanticAxiomEvaluatorStatus
                 SemanticAxiomEvaluatorStatus::
                     SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
             {
-                // evaluateOnePassageMapAndFloor cannot fail; continue as
-                // before.
+                /*!
+                 * evaluateOnePassageMapAndFloor cannot fail; continue as
+                 * before.
+                 */
             }
         }
     }
@@ -62,6 +64,6 @@ SemanticAxiomEvaluatorStatus
         SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -50,6 +50,6 @@ bool isAggregateAxiomResultLessTotalOrder(const AggregateAxiomResult &lhs_in,
     return lhs_in.contributingFindingCount < rhs_in.contributingFindingCount;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

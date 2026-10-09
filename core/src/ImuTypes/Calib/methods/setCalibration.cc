@@ -43,7 +43,7 @@ CalibStatus Calib::setCalibration(
     const float ngw2 = ngw_in * ngw_in;
     const float naw2 = naw_in * naw_in;
 
-    // Sophus/Eigen
+    /* Sophus/Eigen */
     mTbc = extrinsicPose_cameraToBody_in;
     mTcb = mTbc.inverse();
     Cov.diagonal() << ng2, ng2, ng2, na2, na2, na2;
@@ -52,6 +52,6 @@ CalibStatus Calib::setCalibration(
     return CalibStatus::CALIB_STATUS_SUCCESS;
 }
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */

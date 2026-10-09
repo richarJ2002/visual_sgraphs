@@ -46,7 +46,7 @@ SystemStatus System::saveAtlas(int type_in, bool &isSaved_out)
     {
         if (!saveAtlasFile.empty())
         {
-            // Save the current session
+            /* Save the current session */
             if (p_atlas->preSave() != AtlasStatus::ATLAS_STATUS_SUCCESS)
             {
                 RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -73,7 +73,7 @@ SystemStatus System::saveAtlas(int type_in, bool &isSaved_out)
             std::size_t found          = vocabularyFilePath.find_last_of("/\\");
             std::string vocabularyName = vocabularyFilePath.substr(found + 1);
 
-            if (type_in == TEXT_FILE) // File text
+            if (type_in == TEXT_FILE) /* File text */
             {
                 std::cout << "Starting to write the save text file to "
                           << pathSaveFileName.c_str() << std::endl;
@@ -86,7 +86,7 @@ SystemStatus System::saveAtlas(int type_in, bool &isSaved_out)
                 oa << p_atlas;
                 std::cout << "End to write the save text file" << std::endl;
             }
-            else if (type_in == BINARY_FILE) // File binary
+            else if (type_in == BINARY_FILE) /* File binary */
             {
                 std::cout << "Starting to write the save binary file to "
                           << pathSaveFileName.c_str() << std::endl;
@@ -117,5 +117,5 @@ SystemStatus System::saveAtlas(int type_in, bool &isSaved_out)
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

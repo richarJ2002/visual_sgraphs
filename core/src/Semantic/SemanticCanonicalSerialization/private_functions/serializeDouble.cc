@@ -52,6 +52,6 @@ nlohmann::json serializeDouble(double value_in)
     return nlohmann::json(value_in);
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

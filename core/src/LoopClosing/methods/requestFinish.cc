@@ -42,11 +42,10 @@ namespace core
 LoopClosingStatus LoopClosing::requestFinish()
 {
     std::unique_lock<std::mutex> lock(finishMutex);
-    // cout << "LC: Finish requested" << endl;
     isFinishRequested = true;
 
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

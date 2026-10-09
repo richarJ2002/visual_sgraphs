@@ -48,5 +48,5 @@ MapStatus Map::setFollowingMap(Map *p_map_in)
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

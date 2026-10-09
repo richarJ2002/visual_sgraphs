@@ -746,8 +746,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                                                   crossesOpening) !=
                     UtilsStatus::UTILS_STATUS_SUCCESS)
                 {
-                    // crossesPassablePassageOpening cannot fail; continue as
-                    // before.
+                    /*!
+                     * crossesPassablePassageOpening cannot fail; continue as
+                     * before.
+                     */
                 }
                 return crossesOpening;
             });
@@ -844,8 +846,10 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
                                                   crossesOpening) !=
                         UtilsStatus::UTILS_STATUS_SUCCESS)
                 {
-                    // crossesPassablePassageOpening cannot fail; continue as
-                    // before.
+                    /*!
+                     * crossesPassablePassageOpening cannot fail; continue as
+                     * before.
+                     */
                 }
                 if (p_passage != nullptr && crossesOpening)
                 {
@@ -1344,7 +1348,7 @@ UtilsStatus Utils::fuseDuplicateRoomsAfterMerge(
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

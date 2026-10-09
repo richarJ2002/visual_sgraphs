@@ -380,8 +380,8 @@ std::vector<LegacyAxiomResultRecord>
 LegacyReplayResult
     replayLegacyCaptures(const std::filesystem::path &corpusDir_in);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // LEGACY_CAPTURE_REPLAY_H
+#endif /* LEGACY_CAPTURE_REPLAY_H */

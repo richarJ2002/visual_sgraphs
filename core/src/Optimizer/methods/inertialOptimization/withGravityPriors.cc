@@ -46,7 +46,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                                                 float gyroBiasPriorWeight_in,
                                                 float accelBiasPriorWeight_in)
 {
-    int           iterationCount = 200; // Check number of iterations
+    int           iterationCount = 200; /* Check number of iterations */
     unsigned long maxKeyFrameIdValue{};
     if (p_map_in->getMaxKeyFrameId(maxKeyFrameIdValue) !=
         MapStatus::MAP_STATUS_SUCCESS)
@@ -67,7 +67,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                      __func__);
     }
 
-    // Setup optimizer
+    /* Setup optimizer */
     g2o::SparseOptimizer                 optimizer;
     g2o::BlockSolverX::LinearSolverType *p_linearSolver;
 
@@ -82,7 +82,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
 
     optimizer.setAlgorithm(p_solver);
 
-    // Set KeyFrame vertices (fixed poses and optimizable velocities)
+    /* Set KeyFrame vertices (fixed poses and optimizable velocities) */
     for (size_t elementIndex = 0; elementIndex < keyFrames.size();
          elementIndex++)
     {
@@ -101,7 +101,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
         optimizer.addVertex(p_velocityVertex);
     }
 
-    // Biases
+    /* Biases */
     VertexGyroBias *p_gyroBiasVertex = new VertexGyroBias(keyFrames.front());
     p_gyroBiasVertex->setId(maxKeyFrameId * 2 + 2);
     p_gyroBiasVertex->setFixed(false);
@@ -112,7 +112,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
     p_accelBiasVertex->setFixed(false);
 
     optimizer.addVertex(p_accelBiasVertex);
-    // prior acc bias
+    /* prior acc bias */
     Eigen::Vector3f biasPrior;
     biasPrior.setZero();
 
@@ -133,7 +133,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                                         Eigen::Matrix3d::Identity());
     optimizer.addEdge(p_gyroBiasPriorEdge);
 
-    // Gravity and scale
+    /* Gravity and scale */
     VertexGDir *p_gravityDirectionVertex =
         new VertexGDir(Eigen::Matrix3d::Identity());
     p_gravityDirectionVertex->setId(maxKeyFrameId * 2 + 4);
@@ -141,12 +141,14 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
     optimizer.addVertex(p_gravityDirectionVertex);
     VertexScale *p_scaleVertex = new VertexScale(1.0);
     p_scaleVertex->setId(maxKeyFrameId * 2 + 5);
-    p_scaleVertex->setFixed(true); // Fixed since scale is obtained from already
-                                   // well initialized map
+    /* Fixed since scale is obtained from already well initialized map */
+    p_scaleVertex->setFixed(true);
     optimizer.addVertex(p_scaleVertex);
 
-    // Graph edges
-    // IMU links with gravity and scale
+    /*!
+     * Graph edges
+     * IMU links with gravity and scale
+     */
     std::vector<EdgeInertialGS *> inertialEdges;
     inertialEdges.reserve(keyFrames.size());
     std::vector<std::pair<KeyFrame *, KeyFrame *>> usedKeyFramePairs;
@@ -264,13 +266,15 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
         }
     }
 
-    // Compute error for different scales
+    /* Compute error for different scales */
     optimizer.setVerbose(false);
     optimizer.initializeOptimization();
     optimizer.optimize(iterationCount);
 
-    // Recover optimized data
-    // Biases
+    /*!
+     * Recover optimized data
+     * Biases
+     */
     p_gyroBiasVertex =
         static_cast<VertexGyroBias *>(optimizer.vertex(maxKeyFrameId * 2 + 2));
     p_accelBiasVertex =
@@ -287,7 +291,7 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
                       biasVector[1],
                       biasVector[2]);
 
-    // Keyframes velocities and biases
+    /* Keyframes velocities and biases */
     const size_t keyFrameCount = keyFrames.size();
     for (size_t elementIndex = 0; elementIndex < keyFrameCount; elementIndex++)
     {
@@ -355,5 +359,5 @@ OptimizerStatus Optimizer::inertialOptimization(Map             *p_map_in,
     return OptimizerStatus::OPTIMIZER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

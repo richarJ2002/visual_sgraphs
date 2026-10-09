@@ -96,7 +96,7 @@ TrackingStatus
         distortionCoefficients = cv::Mat::zeros(4, 1, CV_32F);
     }
 
-    // TODO: missing image scaling and rectification
+    /* TODO: missing image scaling and rectification */
     imageScale = 1.0f;
 
     calibrationMatrix = cv::Mat::eye(3, 3, CV_32F);
@@ -320,7 +320,7 @@ TrackingStatus
     }
     isRgbEnabled = settingsIsRgbEnabled;
 
-    // ORB parameters
+    /* ORB parameters */
     int featureCount{};
     if (p_settings_inout->nFeatures(featureCount) !=
         utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
@@ -392,7 +392,7 @@ TrackingStatus
                                            initialThresholdFast,
                                            minimumThresholdFast);
 
-    // Adaptive FAST threshold initialization
+    /* Adaptive FAST threshold initialization */
     lastFrameFeatures        = 0;
     consecutiveLowFeatures   = 0;
     baseInitialFastThreshold = initialThresholdFast;
@@ -507,5 +507,5 @@ TrackingStatus
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

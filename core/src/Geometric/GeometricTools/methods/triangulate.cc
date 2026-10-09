@@ -56,11 +56,11 @@ GeometricToolsStatus
     if (x3Dh(3) == 0)
         return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_NUMERICAL_FAILURE;
 
-    // Euclidean coordinates
+    /* Euclidean coordinates */
     x3D_inout = x3Dh.head(3) / x3Dh(3);
 
     return GeometricToolsStatus::GEOMETRIC_TOOLS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

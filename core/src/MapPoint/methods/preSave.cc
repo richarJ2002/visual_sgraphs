@@ -49,9 +49,11 @@ MapPointStatus MapPoint::preSave(std::set<KeyFrame *> &keyFrames_in,
     backupObservationIds1.clear();
     backupObservationIds2.clear();
 
-    // Snapshot the observation map and replaced pointer under the feature lock.
-    // Dropped keyframes are erased below, after the lock is released, because
-    // EraseObservation() takes featuresMutex again.
+    /*!
+     * Snapshot the observation map and replaced pointer under the feature lock.
+     * Dropped keyframes are erased below, after the lock is released, because
+     * EraseObservation() takes featuresMutex again.
+     */
     std::map<KeyFrame *, std::tuple<int, int>> savedObservations;
     {
         std::unique_lock<std::mutex> lock(featuresMutex);
@@ -88,7 +90,7 @@ MapPointStatus MapPoint::preSave(std::set<KeyFrame *> &keyFrames_in,
         }
     }
 
-    // Save the id of the reference KF
+    /* Save the id of the reference KF */
     std::unique_lock<std::mutex> lock(featuresMutex);
     if (keyFrames_in.find(p_referenceKeyFrame) != keyFrames_in.end())
     {
@@ -98,5 +100,5 @@ MapPointStatus MapPoint::preSave(std::set<KeyFrame *> &keyFrames_in,
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

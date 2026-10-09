@@ -48,5 +48,5 @@ MapPointStatus MapPoint::isInKeyFrame(KeyFrame *p_keyFrame_in,
     return MapPointStatus::MAP_POINT_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

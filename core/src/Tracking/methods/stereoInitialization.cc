@@ -45,10 +45,10 @@ namespace vs_graphs
 namespace core
 {
 
-// Map initialization for Stereo and RGB-D (with/without IMU) setups
+/* Map initialization for Stereo and RGB-D (with/without IMU) setups */
 TrackingStatus Tracking::stereoInitialization()
 {
-    // Require more points for robust initialization in corridors
+    /* Require more points for robust initialization in corridors */
     if (currentFrame.keyPointCount > initializationMinPoints)
     {
         if (sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
@@ -62,7 +62,7 @@ TrackingStatus Tracking::stereoInitialization()
                 return TrackingStatus::TRACKING_STATUS_SUCCESS;
             }
 
-            // Check acceleration difference for fast initialization
+            /* Check acceleration difference for fast initialization */
             if (!isFastInitEnabled)
             {
                 const double accelDiff =
@@ -83,13 +83,13 @@ TrackingStatus Tracking::stereoInitialization()
             if (p_imuPreintegratedFromLastKF)
                 delete p_imuPreintegratedFromLastKF;
 
-            // Reset IMU preintegration from last keyframe
+            /* Reset IMU preintegration from last keyframe */
             p_imuPreintegratedFromLastKF =
                 new IMU::Preintegrated(IMU::Bias(), *p_imuCalibration);
             currentFrame.p_imuPreintegrated = p_imuPreintegratedFromLastKF;
         }
 
-        // Set Frame pose to the origin
+        /* Set Frame pose to the origin */
         if (sensor == System::IMU_STEREO || sensor == System::IMU_RGBD)
         {
             Eigen::Matrix3f bodyRotation_body0ToWorld =
@@ -121,7 +121,7 @@ TrackingStatus Tracking::stereoInitialization()
             }
         }
 
-        // Create KeyFrame
+        /* Create KeyFrame */
         Map *p_atlasCurrentMap = nullptr;
         if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
             AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -136,7 +136,7 @@ TrackingStatus Tracking::stereoInitialization()
                                           p_atlasCurrentMap,
                                           p_keyFrameDatabase);
 
-        // Insert KeyFrame in the map
+        /* Insert KeyFrame in the map */
         if (p_atlas->addKeyFrame(p_keyFrameInitial) !=
             AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
@@ -146,7 +146,7 @@ TrackingStatus Tracking::stereoInitialization()
                          __func__);
         }
 
-        // Create MapPoints and asscoiate to KeyFrame
+        /* Create MapPoints and asscoiate to KeyFrame */
         int pointsCreatedCount = 0;
         if (!p_camera2)
         {
@@ -357,7 +357,7 @@ TrackingStatus Tracking::stereoInitialization()
                          std::to_string(atlasMapPointCount) + " points!"
                   << std::endl;
 
-        // Require minimum points for successful initialization
+        /* Require minimum points for successful initialization */
         if (pointsCreatedCount < initializationMinPoints)
         {
             std::cout << "[Tracking] Insufficient points for initialization ("
@@ -447,5 +447,5 @@ TrackingStatus Tracking::stereoInitialization()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

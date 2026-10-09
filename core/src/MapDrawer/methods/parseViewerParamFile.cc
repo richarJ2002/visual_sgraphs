@@ -103,5 +103,5 @@ MapDrawerStatus MapDrawer::parseViewerParamFile(cv::FileStorage &settings_in,
     return MapDrawerStatus::MAP_DRAWER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

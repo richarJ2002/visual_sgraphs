@@ -128,7 +128,7 @@ MapStatus Map::postLoad(
         keyFrameId[p_keyFrame->id] = p_keyFrame;
     }
 
-    // References reconstruction between different instances
+    /* References reconstruction between different instances */
     for (MapPoint *p_mapPoint : mapPoints)
     {
         bool mapPointIsBad2{};
@@ -210,5 +210,5 @@ MapStatus Map::postLoad(
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

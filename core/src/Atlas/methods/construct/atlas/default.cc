@@ -42,5 +42,5 @@ Atlas::Atlas()
     p_activeMap = static_cast<Map *>(nullptr);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

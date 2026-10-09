@@ -46,7 +46,7 @@ ORBmatcherStatus
                      std::vector<MapPoint *>       &replacePoints_inout,
                      int                           &fusedCount_out)
 {
-    // Decompose Scw
+    /* Decompose Scw */
     Sophus::SE3f cameraPose_worldToCamera =
         Sophus::SE3f(cameraSimilarity_worldToCamera_in.rotationMatrix(),
                      cameraSimilarity_worldToCamera_in.translation() /
@@ -54,7 +54,7 @@ ORBmatcherStatus
     Eigen::Vector3f cameraCenter_world =
         cameraPose_worldToCamera.inverse().translation();
 
-    // Set of MapPoints already found in the KeyFrame
+    /* Set of MapPoints already found in the KeyFrame */
     std::set<MapPoint *> alreadyFounds{};
     if (p_keyframe_inout->getMapPoints(alreadyFounds) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -69,12 +69,12 @@ ORBmatcherStatus
 
     const int pointCount = points_in.size();
 
-    // For each candidate MapPoint project and match
+    /* For each candidate MapPoint project and match */
     for (int mapPointIndex = 0; mapPointIndex < pointCount; mapPointIndex++)
     {
         MapPoint *p_mapPoint = points_in[mapPointIndex];
 
-        // Discard Bad MapPoints and already found
+        /* Discard Bad MapPoints and already found */
         bool mapPointIsBad{};
         if (p_mapPoint->isBad(mapPointIsBad) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -87,7 +87,7 @@ ORBmatcherStatus
         if (mapPointIsBad || alreadyFounds.count(p_mapPoint))
             continue;
 
-        // Get 3D Coords.
+        /* Get 3D Coords. */
         Eigen::Vector3f p3Dw{};
         if (p_mapPoint->getWorldPos(p3Dw) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -98,17 +98,17 @@ ORBmatcherStatus
                          __func__);
         }
 
-        // Transform into Camera Coords.
+        /* Transform into Camera Coords. */
         Eigen::Vector3f p3Dc = cameraPose_worldToCamera * p3Dw;
 
-        // Depth must be positive
+        /* Depth must be positive */
         if (p3Dc(2) < 0.0f)
             continue;
 
-        // Project into Image
+        /* Project into Image */
         const Eigen::Vector2f uv = p_keyframe_inout->p_camera->project(p3Dc);
 
-        // Point must be inside the image
+        /* Point must be inside the image */
         bool keyframeIsInImage{};
         if (p_keyframe_inout->isInImage(uv(0), uv(1), keyframeIsInImage) !=
             KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -121,7 +121,7 @@ ORBmatcherStatus
         if (!keyframeIsInImage)
             continue;
 
-        // Depth must be inside the scale pyramid of the image
+        /* Depth must be inside the scale pyramid of the image */
         float maximumDistance{};
         if (p_mapPoint->getMaxDistanceInvariance(maximumDistance) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -148,7 +148,7 @@ ORBmatcherStatus
         if (distance3d < minimumDistance || distance3d > maximumDistance)
             continue;
 
-        // Viewing angle must be less than 60 deg
+        /* Viewing angle must be less than 60 deg */
         Eigen::Vector3f Pn{};
         if (p_mapPoint->getNormal(Pn) !=
             MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -162,7 +162,7 @@ ORBmatcherStatus
         if (PO.dot(Pn) < 0.5 * distance3d)
             continue;
 
-        // Compute predicted scale level
+        /* Compute predicted scale level */
         int predictedLevelCount{};
         if (p_mapPoint->predictScale(distance3d,
                                      p_keyframe_inout,
@@ -175,7 +175,7 @@ ORBmatcherStatus
                          __func__);
         }
 
-        // Search in a radius
+        /* Search in a radius */
         const float radius =
             threshold_in * p_keyframe_inout->scaleFactors[predictedLevelCount];
 
@@ -195,7 +195,7 @@ ORBmatcherStatus
         if (indices.empty())
             continue;
 
-        // Match to the most similar keypoint in the radius
+        /* Match to the most similar keypoint in the radius */
 
         cv::Mat mapPointDescriptor{};
         if (p_mapPoint->getDescriptor(mapPointDescriptor) !=
@@ -244,7 +244,9 @@ ORBmatcherStatus
             }
         }
 
-        // If there is already a MapPoint replace otherwise add new measurement
+        /*!
+         * If there is already a MapPoint replace otherwise add new measurement
+         */
         if (bestDistance <= TH_LOW)
         {
             MapPoint *p_keyFrameMapPoint = nullptr;
@@ -299,5 +301,5 @@ ORBmatcherStatus
     return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -28,4 +28,4 @@
 namespace vs_graphs::core::camera_models::geometriccamera
 {
 long unsigned int GeometricCamera::nextId = 0;
-} // namespace vs_graphs::core::camera_models::geometriccamera
+} /* namespace vs_graphs::core::camera_models::geometriccamera */

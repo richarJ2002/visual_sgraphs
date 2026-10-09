@@ -49,4 +49,4 @@ KannalaBrandt8Status
 
     return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

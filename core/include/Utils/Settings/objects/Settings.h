@@ -32,8 +32,7 @@
 #ifndef VS_GRAPHS_CORE_SETTINGS_H
 #define VS_GRAPHS_CORE_SETTINGS_H
 
-// Flag to activate the measurement of time in each process (track,localmap,
-// place recognition). #define REGISTER_TIMES
+/* Define REGISTER_TIMES to time tracking, mapping and place recognition */
 
 #include "CameraModels/GeometricCamera/objects/GeometricCamera.h"
 #include "Utils/Settings/objects/SettingsStatus.h"
@@ -336,7 +335,7 @@ class Settings
         return SettingsStatus::SETTINGS_STATUS_SUCCESS;
     }
 
-    // IMU parameters
+    /* IMU parameters */
     /*!
      * @brief           Returns the accelerometer random-walk density.
      *
@@ -922,7 +921,7 @@ class Settings
     /*!
      * @brief           Active camera model tag.
      */
-    CameraType cameraModel; // Camera type
+    CameraType cameraModel; /* Camera type */
 
     /*
      * Visual stuff
@@ -1344,9 +1343,9 @@ template <>
                                      bool              &found_out,
                                      cv::Mat           &parameter_out,
                                      const bool         required_in);
-} // namespace settings
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace settings */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // VS_GRAPHS_CORE_SETTINGS_H
+#endif /* VS_GRAPHS_CORE_SETTINGS_H */

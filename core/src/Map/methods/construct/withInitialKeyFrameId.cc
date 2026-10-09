@@ -66,5 +66,5 @@ Map::Map(int initialKeyFrameId_in) :
     id = nextId++;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

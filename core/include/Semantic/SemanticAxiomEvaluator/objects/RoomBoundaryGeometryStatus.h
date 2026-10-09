@@ -74,8 +74,8 @@ enum class RoomBoundaryGeometryStatus : std::uint8_t
     NON_FINITE_CORNER = 4U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_ROOM_BOUNDARY_GEOMETRY_STATUS_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_ROOM_BOUNDARY_GEOMETRY_STATUS_H */

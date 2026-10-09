@@ -54,7 +54,7 @@ PinholeStatus Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in,
         return PinholeStatus::PINHOLE_STATUS_SUCCESS;
     }
 
-    // getType() above confirmed the camera is a Pinhole
+    /* getType() above confirmed the camera is a Pinhole */
     Pinhole *p_otherPinhole = static_cast<Pinhole *>(p_camera_in);
 
     size_t size2{};
@@ -113,7 +113,7 @@ PinholeStatus Pinhole::isEqual(geometriccamera::GeometricCamera *p_camera_in,
     isEqual_out = isSameCamera;
     return PinholeStatus::PINHOLE_STATUS_SUCCESS;
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

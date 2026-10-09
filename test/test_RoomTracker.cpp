@@ -77,7 +77,7 @@ semantic::TrackingStatusInput nominalTracking()
     return semantic::TrackingStatusInput();
 }
 
-} // namespace
+} /* namespace */
 
 /* ------------------------------------------------------------------------ *
  * Unconditional rows (4): event triggers the target state with no guard.
@@ -1771,5 +1771,5 @@ TEST(RoomTrackerStep, ReacquireRetriesThenTimeouts)
               semantic::RoomTrackingEvent::REACQUIRE_TIMEOUT);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -48,7 +48,7 @@ KannalaBrandt8Status KannalaBrandt8::triangulateMatches(
     Eigen::Vector3f cameraRay2 =
         p_otherCamera_inout->unprojectEig(keypoint2_in.pt);
 
-    // Check parallax
+    /* Check parallax */
     Eigen::Vector3f ray2InFrame1 = rotation12_in * cameraRay2;
 
     const float parallaxCosine = cameraRay1.dot(ray2InFrame1) /
@@ -60,7 +60,7 @@ KannalaBrandt8Status KannalaBrandt8::triangulateMatches(
         return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
 
-    // Parallax is good, so we try to triangulate
+    /* Parallax is good, so we try to triangulate */
     cv::Point2f imagePoint1, imagePoint2;
 
     imagePoint1.x = cameraRay1[0];
@@ -90,7 +90,6 @@ KannalaBrandt8Status KannalaBrandt8::triangulateMatches(
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    // cv::Mat x3Dt = x3D.t();
 
     float cameraDepth1 = triangulatedPoint3D(2);
     if (cameraDepth1 <= 0)
@@ -107,7 +106,7 @@ KannalaBrandt8Status KannalaBrandt8::triangulateMatches(
         return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
 
-    // Check reprojection error
+    /* Check reprojection error */
     Eigen::Vector2f projectedPoint1 = this->project(triangulatedPoint3D);
 
     float reprojectionErrorX1 = projectedPoint1(0) - keypoint1_in.pt.x;
@@ -115,7 +114,7 @@ KannalaBrandt8Status KannalaBrandt8::triangulateMatches(
 
     if ((reprojectionErrorX1 * reprojectionErrorX1 +
          reprojectionErrorY1 * reprojectionErrorY1) > 5.991 * sigmaLevel_in)
-    { // Reprojection error is high
+    { /* Reprojection error is high */
         parallax_out = -4;
         return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
@@ -130,7 +129,7 @@ KannalaBrandt8Status KannalaBrandt8::triangulateMatches(
 
     if ((reprojectionErrorX2 * reprojectionErrorX2 +
          reprojectionErrorY2 * reprojectionErrorY2) > 5.991 * uncertainty_in)
-    { // Reprojection error is high
+    { /* Reprojection error is high */
         parallax_out = -5;
         return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
     }
@@ -140,4 +139,4 @@ KannalaBrandt8Status KannalaBrandt8::triangulateMatches(
     parallax_out = cameraDepth1;
     return KannalaBrandt8Status::KANNALA_BRANDT8_STATUS_SUCCESS;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

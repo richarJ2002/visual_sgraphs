@@ -130,8 +130,8 @@ namespace semantic
 [[nodiscard]] SemanticGraphSnapshotStatus
     rawPlaneRef(geometric::Plane *p_plane_in, RawPlaneRef &rawPlaneRef_out);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_PUBLIC_FUNCTIONS_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_PUBLIC_FUNCTIONS_H */

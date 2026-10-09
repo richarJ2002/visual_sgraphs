@@ -57,7 +57,7 @@ enum class KeyFrameStatus : std::uint8_t
     KEY_FRAME_STATUS_NO_MAP_POINTS = 2U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // KEY_FRAME_STATUS_H
+#endif /* KEY_FRAME_STATUS_H */

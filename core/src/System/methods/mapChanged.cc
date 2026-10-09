@@ -62,5 +62,5 @@ SystemStatus System::mapChanged(bool &hasMapChanged_out)
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

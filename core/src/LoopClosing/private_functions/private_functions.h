@@ -24,7 +24,7 @@ class Map;
 namespace semantic
 {
 class Floor;
-} // namespace semantic
+} /* namespace semantic */
 
 /*!
  * @brief           Merges duplicate floor evidence and rooms.
@@ -38,7 +38,7 @@ class Floor;
  */
 [[nodiscard]] LoopClosingStatus collapseMergedFloors(Map *p_survivingMap_inout);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif /* VS_GRAPHS_CORE_LOOPCLOSING_PRIVATE_FUNCTIONS_H */

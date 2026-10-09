@@ -44,7 +44,7 @@ enum class MapDrawerStatus : std::uint8_t
     MAP_DRAWER_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // MAP_DRAWER_STATUS_H
+#endif /* MAP_DRAWER_STATUS_H */

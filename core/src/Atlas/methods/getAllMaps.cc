@@ -70,5 +70,5 @@ AtlasStatus Atlas::getAllMaps(std::vector<Map *> &allMaps_out)
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

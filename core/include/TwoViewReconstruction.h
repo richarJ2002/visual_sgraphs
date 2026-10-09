@@ -507,34 +507,34 @@ class TwoViewReconstruction
                    Eigen::Matrix3f       &R2_out,
                    Eigen::Vector3f       &t_out);
 
-    // Keypoints from Reference Frame (Frame 1)
+    /* Keypoints from Reference Frame (Frame 1) */
     /*!
      * @brief           Key points of frame 1 (reference), in pixels, copied by
      *                  reconstruct().
      */
     std::vector<cv::KeyPoint> keys1;
 
-    // Keypoints from Current Frame (Frame 2)
+    /* Keypoints from Current Frame (Frame 2) */
     /*!
      * @brief           Key points of frame 2 (current), in pixels, copied by
      *                  reconstruct().
      */
     std::vector<cv::KeyPoint> keys2;
 
-    // Current Matches from Reference to Current
+    /* Current Matches from Reference to Current */
     /*!
      * @brief           Matches of the current reconstruct() call as key point
      *                  index pairs, frame 1 to frame 2.
      */
     std::vector<Match> matches12;
 
-    // Calibration
+    /* Calibration */
     /*!
      * @brief           Camera intrinsic matrix K of both views, in pixels.
      */
     Eigen::Matrix3f calibrationMatrix;
 
-    // Standard Deviation and Variance
+    /* Standard Deviation and Variance */
     /*!
      * @brief           Standard deviation of the key point position noise, in
      *                  pixels.
@@ -547,13 +547,13 @@ class TwoViewReconstruction
      */
     float sigmaSquared;
 
-    // Ransac max iterations
+    /* Ransac max iterations */
     /*!
      * @brief           Number of RANSAC iterations for each model.
      */
     int maxIterations;
 
-    // Ransac sets
+    /* Ransac sets */
     /*!
      * @brief           Random sets of eight match indices, one set per RANSAC
      *                  iteration, drawn by reconstruct() and shared by the
@@ -562,7 +562,7 @@ class TwoViewReconstruction
     std::vector<std::vector<size_t>> sets;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // TwoViewReconstruction_H
+#endif /* TwoViewReconstruction_H */

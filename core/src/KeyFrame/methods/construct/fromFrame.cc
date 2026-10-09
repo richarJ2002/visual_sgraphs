@@ -240,5 +240,5 @@ KeyFrame::KeyFrame(Frame            &F_inout,
     originMapId = mapId;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -51,7 +51,7 @@ nlohmann::json loadOfficeCleanGroundTruth()
     return parsed;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that a graph compared against an identical copy
@@ -468,6 +468,6 @@ TEST(GlobalWallMetrics, WallOffsetGateBoundaryIsInclusiveAtExactly035Meters)
  * angles (0 deg matches, 90 deg does not).
  */
 
-} // namespace test
-} // namespace core
-} // namespace vs_graphs
+} /* namespace test */
+} /* namespace core */
+} /* namespace vs_graphs */

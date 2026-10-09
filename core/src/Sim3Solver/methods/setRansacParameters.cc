@@ -46,15 +46,17 @@ Sim3SolverStatus Sim3Solver::setRansacParameters(double probability_in,
     ransacMinInliers    = minimumInliers_in;
     ransacMaxIterations = maximumIterations_in;
 
-    correspondenceCount = mapPoints1.size(); // number of correspondences
+    correspondenceCount = mapPoints1.size(); /* number of correspondences */
 
     inlierFlags.resize(correspondenceCount);
 
-    // Adjust Parameters according to number of correspondences
+    /* Adjust Parameters according to number of correspondences */
     float epsilon = static_cast<float>(ransacMinInliers) / correspondenceCount;
 
-    // Set RANSAC iterations according to probability, epsilon, and max
-    // iterations
+    /*!
+     * Set RANSAC iterations according to probability, epsilon, and max
+     * iterations
+     */
     int nIterations;
 
     if (ransacMinInliers == correspondenceCount)
@@ -70,5 +72,5 @@ Sim3SolverStatus Sim3Solver::setRansacParameters(double probability_in,
     return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -47,7 +47,7 @@ namespace core
 
 TrackingStatus Tracking::createInitialMapMonocular()
 {
-    // Create KeyFrames
+    /* Create KeyFrames */
     Map *p_atlasCurrentMap = nullptr;
     if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -91,7 +91,7 @@ TrackingStatus Tracking::createInitialMapMonocular()
                      __func__);
     }
 
-    // Insert KFs in the map
+    /* Insert KFs in the map */
     if (p_atlas->addKeyFrame(p_keyFrameInitial) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
     {
@@ -115,7 +115,7 @@ TrackingStatus Tracking::createInitialMapMonocular()
         if (iniMatches[initialMatchIndex] < 0)
             continue;
 
-        // Create MapPoint.
+        /* Create MapPoint. */
         Eigen::Vector3f worldPosition;
         worldPosition << iniP3D[initialMatchIndex].x,
             iniP3D[initialMatchIndex].y, iniP3D[initialMatchIndex].z;
@@ -188,11 +188,11 @@ TrackingStatus Tracking::createInitialMapMonocular()
                          __func__);
         }
 
-        // Fill Current Frame structure
+        /* Fill Current Frame structure */
         currentFrame.mapPoints[iniMatches[initialMatchIndex]]    = p_mapPoint;
         currentFrame.outlierFlags[iniMatches[initialMatchIndex]] = false;
 
-        // Add to Map
+        /* Add to Map */
         if (p_atlas->addMapPoint(p_mapPoint) !=
             AtlasStatus::ATLAS_STATUS_SUCCESS)
         {
@@ -203,7 +203,7 @@ TrackingStatus Tracking::createInitialMapMonocular()
         }
     }
 
-    // Update Connections
+    /* Update Connections */
     if (p_keyFrameInitial->updateConnections() !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -233,7 +233,7 @@ TrackingStatus Tracking::createInitialMapMonocular()
     }
     mapPoints = keyFrameInitialMapPoints;
 
-    // Bundle Adjustment
+    /* Bundle Adjustment */
     std::cout << "\n[Tracking]" << std::endl;
     unsigned long atlasMapPointCount{};
     if (p_atlas->getMapPointCount(atlasMapPointCount) !=
@@ -296,9 +296,8 @@ TrackingStatus Tracking::createInitialMapMonocular()
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    if (medianDepth < 0 ||
-        keyFrameCurrentTrackedMapPointCount < 50) // TODO Check, originally 100
-                                                  // tracks
+    /* TODO Check, originally 100 tracks */
+    if (medianDepth < 0 || keyFrameCurrentTrackedMapPointCount < 50)
     {
         if (Verbose::printMess("Wrong initialization, reseting...",
                                Verbose::VERBOSITY_QUIET) !=
@@ -322,7 +321,7 @@ TrackingStatus Tracking::createInitialMapMonocular()
         return TrackingStatus::TRACKING_STATUS_SUCCESS;
     }
 
-    // Scale initial baseline
+    /* Scale initial baseline */
     Sophus::SE3f Tc2w{};
     if (p_keyFrameCurrent->getPose(Tc2w) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -342,7 +341,7 @@ TrackingStatus Tracking::createInitialMapMonocular()
                      __func__);
     }
 
-    // Scale points
+    /* Scale points */
     std::vector<MapPoint *> allMapPoints{};
     if (p_keyFrameInitial->getMapPointMatches(allMapPoints) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -445,7 +444,6 @@ TrackingStatus Tracking::createInitialMapMonocular()
     }
     lastKeyFrameId = currentFrame.id;
     p_lastKeyFrame = p_keyFrameCurrent;
-    // mnLastRelocFrameId = mInitialFrame.id;
 
     localKeyFrames.push_back(p_keyFrameCurrent);
     localKeyFrames.push_back(p_keyFrameInitial);
@@ -462,7 +460,7 @@ TrackingStatus Tracking::createInitialMapMonocular()
     p_referenceKF                    = p_keyFrameCurrent;
     currentFrame.p_referenceKeyFrame = p_keyFrameCurrent;
 
-    // Compute here initial velocity
+    /* Compute here initial velocity */
     std::vector<KeyFrame *> keyFrames{};
     if (p_atlas->getAllKeyFrames(keyFrames) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -546,5 +544,5 @@ TrackingStatus Tracking::createInitialMapMonocular()
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

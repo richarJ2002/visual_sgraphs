@@ -48,7 +48,7 @@ void LocalMapping::run()
 
     while (1)
     {
-        // Tracking will see that Local Mapping is busy
+        /* Tracking will see that Local Mapping is busy */
         if (setAcceptKeyFrames(false) !=
             LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
         {
@@ -58,7 +58,7 @@ void LocalMapping::run()
                          __func__);
         }
 
-        // Check if there are keyframes in the queue
+        /* Check if there are keyframes in the queue */
         bool hasNewKeyFrames{};
         if (checkNewKeyFrames(hasNewKeyFrames) !=
             LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
@@ -77,7 +77,7 @@ void LocalMapping::run()
             std::chrono::steady_clock::time_point processKeyFrameStartTime =
                 std::chrono::steady_clock::now();
 #endif
-            // BoW conversion and insertion in Map
+            /* BoW conversion and insertion in Map */
             if (processNewKeyFrame() !=
                 LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
             {
@@ -98,7 +98,7 @@ void LocalMapping::run()
             keyFrameInsertTimes_ms.push_back(timeProcessKeyFrame);
 #endif
 
-            // Check recent MapPoints
+            /* Check recent MapPoints */
             if (mapPointCulling() !=
                 LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
             {
@@ -119,7 +119,7 @@ void LocalMapping::run()
             mapPointCullingTimes_ms.push_back(timeMapPointCulling);
 #endif
 
-            // Triangulate new MapPoints
+            /* Triangulate new MapPoints */
             if (createNewMapPoints() !=
                 LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
             {
@@ -142,8 +142,10 @@ void LocalMapping::run()
             }
             if (!hasNewKeyFrames2)
             {
-                // Find more matches in neighbor keyframes and fuse point
-                // duplications
+                /*!
+                 * Find more matches in neighbor keyframes and fuse point
+                 * duplications
+                 */
                 if (searchInNeighbors() !=
                     LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
                 {
@@ -167,7 +169,7 @@ void LocalMapping::run()
             mapPointCreationTimes_ms.push_back(timeMapPointCreation);
 #endif
 
-            // Only consumed by the REGISTER_TIMES statistics block below.
+            /* Only consumed by the REGISTER_TIMES statistics block below. */
             [[maybe_unused]] bool wasLocalBaExecuted = false;
 
             int baFixedKeyFrameCount     = 0;
@@ -425,7 +427,7 @@ void LocalMapping::run()
 
 #endif
 
-                // IMU initialization
+                /* IMU initialization */
                 Map *p_currentKeyFrameMap5 = nullptr;
                 if (p_currentKeyFrame->getMap(p_currentKeyFrameMap5) !=
                     KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -474,7 +476,7 @@ void LocalMapping::run()
                     }
                 }
 
-                // Check redundant local Keyframes
+                /* Check redundant local Keyframes */
                 if (keyFrameCulling() !=
                     LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
                 {
@@ -497,13 +499,15 @@ void LocalMapping::run()
                 keyFrameCullingTimes_ms.push_back(timeKeyFrameCulling_ms);
 #endif
 
-                // Staged IMU initialization
-                // [Hint] For Visual-Inertial SLAM, the IMU biases and scale are
-                // initially unknown (the first 5secs). After 15 seconds, they
-                // are locked to avoid drift.
+                /*!
+                 * Staged IMU initialization
+                 * [Hint] For Visual-Inertial SLAM, the IMU biases and scale are
+                 * initially unknown (the first 5secs). After 15 seconds, they
+                 * are locked to avoid drift.
+                 */
                 if ((initializationStartTime < 50.0f) && isInertial)
                 {
-                    // Enter here everytime local-mapping is called
+                    /* Enter here everytime local-mapping is called */
                     Map *p_currentKeyFrameMap6 = nullptr;
                     if (p_currentKeyFrame->getMap(p_currentKeyFrameMap6) !=
                         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -548,8 +552,10 @@ void LocalMapping::run()
                         }
                         if (!inertialBA1)
                         {
-                            // First stage of IMU initialization (5 seconds
-                            // after initialization)
+                            /*!
+                             * First stage of IMU initialization (5 seconds
+                             * after initialization)
+                             */
                             if (initializationStartTime > 5.0f)
                             {
                                 std::cout
@@ -638,8 +644,10 @@ void LocalMapping::run()
                             }
                             if (!inertialBA22)
                             {
-                                // Second stage of IMU initialization (15
-                                // seconds after initialization)
+                                /*!
+                                 * Second stage of IMU initialization (15
+                                 * seconds after initialization)
+                                 */
                                 if (initializationStartTime > 15.0f)
                                 {
                                     std::cout
@@ -708,7 +716,7 @@ void LocalMapping::run()
                             }
                         }
 
-                        // Scale refinement
+                        /* Scale refinement */
                         unsigned long atlasKeyFrameCount2{};
                         if (p_atlas->getKeyFrameCount(atlasKeyFrameCount2) !=
                             AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -791,7 +799,7 @@ void LocalMapping::run()
             }
             if (isStopped2 && !isImuBad)
             {
-                // Safe area to stop
+                /* Safe area to stop */
                 for (;;)
                 {
                     bool isStopped3{};
@@ -847,7 +855,7 @@ void LocalMapping::run()
                          __func__);
         }
 
-        // Tracking will see that Local Mapping is busy
+        /* Tracking will see that Local Mapping is busy */
         if (setAcceptKeyFrames(true) !=
             LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
         {
@@ -881,5 +889,5 @@ void LocalMapping::run()
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

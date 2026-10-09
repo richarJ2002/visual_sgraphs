@@ -71,8 +71,8 @@ struct UnresolvedWallHypothesisRecord
     std::size_t observationCount{0U};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_GRAPH_SNAPSHOT_UNRESOLVED_WALL_HYPOTHESIS_RECORD_H
+#endif /* SEMANTIC_GRAPH_SNAPSHOT_UNRESOLVED_WALL_HYPOTHESIS_RECORD_H */

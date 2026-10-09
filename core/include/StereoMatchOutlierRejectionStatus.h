@@ -45,7 +45,7 @@ enum class StereoMatchOutlierRejectionStatus : std::uint8_t
     STEREO_MATCH_OUTLIER_REJECTION_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // STEREO_MATCH_OUTLIER_REJECTION_STATUS_H
+#endif /* STEREO_MATCH_OUTLIER_REJECTION_STATUS_H */

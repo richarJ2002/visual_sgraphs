@@ -52,5 +52,5 @@ MapStatus Map::getAllRooms(std::vector<semantic::Room *> &allRooms_out)
     return MapStatus::MAP_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

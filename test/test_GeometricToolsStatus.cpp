@@ -77,5 +77,5 @@ TEST(GeometricToolsStatus, ReportsASolutionAtInfinityAsNumericalFailure)
     EXPECT_EQ(x3D, Eigen::Vector3f(7.0F, 8.0F, 9.0F));
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

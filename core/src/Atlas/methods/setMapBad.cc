@@ -60,5 +60,5 @@ AtlasStatus Atlas::setMapBad(Map *p_map_inout)
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

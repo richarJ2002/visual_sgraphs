@@ -44,7 +44,7 @@ namespace core
     std::vector<float>               &mvuRight_inout,
     std::vector<float>               &depths_inout);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif

@@ -46,8 +46,8 @@ enum class ImuTypesStatus : std::uint8_t
     IMU_TYPES_STATUS_SUCCESS = 0U
 };
 
-} // namespace IMU
-} // namespace core
-} // namespace vs_graphs
+} /* namespace IMU */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // IMU_TYPES_STATUS_H
+#endif /* IMU_TYPES_STATUS_H */

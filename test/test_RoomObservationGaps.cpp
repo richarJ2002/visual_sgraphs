@@ -211,7 +211,7 @@ std::unique_ptr<geometric::Plane>
     return wall;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that a room with no walls reports one observation gap
@@ -394,5 +394,5 @@ TEST(RoomObservationGaps, ReportsNoGapsForARoomWithACompleteBoundary)
     EXPECT_TRUE(observationGaps.empty());
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

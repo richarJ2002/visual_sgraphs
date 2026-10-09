@@ -191,8 +191,8 @@ struct ResolvedRoomEndpoint
     bool isContainingMapAmbiguous{false};
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_RESOLVED_ROOM_ENDPOINT_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_RESOLVED_ROOM_ENDPOINT_H */

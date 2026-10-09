@@ -55,7 +55,7 @@ FrameStatus Frame::extractOrbFeatures(int            flag_in,
                                       const int      x1_in)
 {
     std::vector<int> lappings = {x0_in, x1_in};
-    // Compute ORB based on the flag (0: left, 1: right)
+    /* Compute ORB based on the flag (0: left, 1: right) */
     if (flag_in == 0)
         monoLeft = (*p_orbExtractorLeft)(imageGray_in,
                                          cv::Mat(),
@@ -72,5 +72,5 @@ FrameStatus Frame::extractOrbFeatures(int            flag_in,
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

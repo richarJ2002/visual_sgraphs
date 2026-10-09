@@ -46,5 +46,5 @@ LocalMappingStatus LocalMapping::checkNewKeyFrames(bool &hasNewKeyFrames_out)
     return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

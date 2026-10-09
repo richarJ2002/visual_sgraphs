@@ -208,8 +208,6 @@ class Viewer
      */
     [[nodiscard]] ViewerStatus release();
 
-    // void SetTrackingPause();
-
     /*!
      * @brief           True when the camera has a right image that run() shows
      *                  next to the left one. Set by the system from the frame
@@ -363,6 +361,6 @@ class Viewer
     std::mutex stopMutex;
 };
 
-} // namespace core
-} // namespace vs_graphs
-#endif // VIEWER_H
+} /* namespace core */
+} /* namespace vs_graphs */
+#endif /* VIEWER_H */

@@ -60,4 +60,4 @@ Eigen::Vector2d KannalaBrandt8::project(const Eigen::Vector3d &point3d_in)
 
     return projectedPoint;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

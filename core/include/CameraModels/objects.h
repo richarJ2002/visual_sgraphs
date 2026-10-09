@@ -30,4 +30,4 @@
 #include "CameraModels/KannalaBrandt8/objects/KannalaBrandt8.h"
 #include "CameraModels/Pinhole/objects/Pinhole.h"
 
-#endif // CAMERAMODELS_OBJECTS_H
+#endif /* CAMERAMODELS_OBJECTS_H */

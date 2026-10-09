@@ -59,7 +59,7 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
     {
         isRectificationNeeded = true;
 
-        // Read intrinsic parameters
+        /* Read intrinsic parameters */
         float fx{};
         if (readParameter<float>(storage_inout, "Camera2.fx", found, fx) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
@@ -104,7 +104,7 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
         p_originalCalibration2 =
             std::make_unique<camera_models::pinhole::Pinhole>(calibrations);
 
-        // Check if it is a distorted Pinhole
+        /* Check if it is a distorted Pinhole */
         float parameter{};
         if (readParameter<float>(storage_inout,
                                  "Camera2.k1",
@@ -211,7 +211,7 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
     }
     else if (cameraModel == CameraType::KANNALA_BRANDT)
     {
-        // Read intrinsic parameters
+        /* Read intrinsic parameters */
         float fx{};
         if (readParameter<float>(storage_inout, "Camera2.fx", found, fx) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
@@ -326,7 +326,7 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
             ->lappingArea = overlappings;
     }
 
-    // Load stereo extrinsic calibration
+    /* Load stereo extrinsic calibration */
     if (cameraModel == CameraType::RECTIFIED)
     {
         float parameter8{};
@@ -379,7 +379,7 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
         }
         stereoTransform = sophus;
 
-        // TODO: also search for Trl and invert if necessary
+        /* TODO: also search for Trl and invert if necessary */
 
         stereoBaseline = stereoTransform.translation().norm();
         float calibration1Parameter2{};
@@ -412,7 +412,7 @@ SettingsStatus Settings::readCamera2(cv::FileStorage &storage_inout)
     return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
-} // namespace settings
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace settings */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

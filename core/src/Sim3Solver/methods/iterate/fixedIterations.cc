@@ -70,7 +70,7 @@ Sim3SolverStatus Sim3Solver::iterate(int   iterationCount_in,
 
         availableIndices = allIndices;
 
-        // Get min set of points
+        /* Get min set of points */
         for (short keyPointIndex = 0; keyPointIndex < 3; ++keyPointIndex)
         {
             int randi =
@@ -131,5 +131,5 @@ Sim3SolverStatus Sim3Solver::iterate(int   iterationCount_in,
     return Sim3SolverStatus::SIM3_SOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

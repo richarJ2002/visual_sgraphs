@@ -91,6 +91,6 @@ PlaneStatus Plane::rebuildSemanticVotesWithoutLock(void)
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
-} // namespace geometric
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometric */
+} /* namespace core */
+} /* namespace vs_graphs */

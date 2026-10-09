@@ -40,6 +40,6 @@ MarkerStatus Marker::setMap(core::Map *p_map_in)
     return MarkerStatus::MARKER_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

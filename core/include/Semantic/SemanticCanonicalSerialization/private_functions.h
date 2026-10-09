@@ -396,8 +396,8 @@ bool isUnresolvedWallHypothesisRecordLessTotalOrder(
     const UnresolvedWallHypothesisRecord &lhs_in,
     const UnresolvedWallHypothesisRecord &rhs_in);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_CANONICAL_SERIALIZATION_PRIVATE_FUNCTIONS_H
+#endif /* SEMANTIC_CANONICAL_SERIALIZATION_PRIVATE_FUNCTIONS_H */

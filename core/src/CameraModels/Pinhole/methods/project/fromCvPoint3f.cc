@@ -41,7 +41,7 @@ cv::Point2f Pinhole::project(const cv::Point3f &point3d_in)
         parameters[0] * point3d_in.x / point3d_in.z + parameters[2],
         parameters[1] * point3d_in.y / point3d_in.z + parameters[3]);
 }
-} // namespace pinhole
-} // namespace camera_models
-} // namespace core
-} // namespace vs_graphs
+} /* namespace pinhole */
+} /* namespace camera_models */
+} /* namespace core */
+} /* namespace vs_graphs */

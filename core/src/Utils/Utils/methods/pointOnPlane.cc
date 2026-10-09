@@ -54,7 +54,7 @@ UtilsStatus Utils::pointOnPlane(Eigen::Vector4d planeEquation_in,
         return UtilsStatus::UTILS_STATUS_SUCCESS;
     }
 
-    // Find the distance of the point from a given plane
+    /* Find the distance of the point from a given plane */
     double          pointPlaneDistance{};
     Eigen::Vector3f mapPointWorldPos{};
     if (p_mapPoint_in->getWorldPos(mapPointWorldPos) !=
@@ -76,7 +76,7 @@ UtilsStatus Utils::pointOnPlane(Eigen::Vector4d planeEquation_in,
                      __func__);
     }
 
-    // Apply a threshold
+    /* Apply a threshold */
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -96,7 +96,7 @@ UtilsStatus Utils::pointOnPlane(Eigen::Vector4d planeEquation_in,
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

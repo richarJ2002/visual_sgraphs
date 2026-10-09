@@ -45,7 +45,7 @@ enum class EdgeVertexNPlaneProjectSE3RoomStatus : std::uint8_t
     EDGE_VERTEX_NPLANE_PROJECT_SE3_ROOM_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // EDGE_VERTEX_NPLANE_PROJECT_SE3_ROOM_STATUS_H
+#endif /* EDGE_VERTEX_NPLANE_PROJECT_SE3_ROOM_STATUS_H */

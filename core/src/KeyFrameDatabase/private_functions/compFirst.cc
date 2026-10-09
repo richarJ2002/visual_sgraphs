@@ -42,5 +42,5 @@ bool compFirst(const std::pair<float, KeyFrame *> &firstScoredCandidate_in,
     return firstScoredCandidate_in.first > secondScoredCandidate_in.first;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -55,7 +55,7 @@ FrameStatus Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
                                      bool     &isInFrustumChecks_out,
                                      bool      isRightCamera_in)
 {
-    // 3D in absolute coordinates
+    /* 3D in absolute coordinates */
     Eigen::Vector3f P{};
     if (p_mapPoint_inout->getWorldPos(P) !=
         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -87,19 +87,19 @@ FrameStatus Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
         cameraTranslation_cameraToWorld = centerOw;
     }
 
-    // 3D in camera coordinates
+    /* 3D in camera coordinates */
     Eigen::Vector3f Pc      = mR * P + mt;
     const float     Pc_dist = Pc.norm();
     const float    &PcZ     = Pc(2);
 
-    // Check positive depth
+    /* Check positive depth */
     if (PcZ < 0.0f)
     {
         isInFrustumChecks_out = false;
         return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
-    // Project in image and check it is not outside
+    /* Project in image and check it is not outside */
     Eigen::Vector2f uv;
     if (isRightCamera_in)
         uv = p_camera2->project(Pc);
@@ -117,7 +117,7 @@ FrameStatus Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
         return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
-    // Check distance is in the scale invariance region of the MapPoint
+    /* Check distance is in the scale invariance region of the MapPoint */
     float maximumDistance{};
     if (p_mapPoint_inout->getMaxDistanceInvariance(maximumDistance) !=
         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -145,7 +145,7 @@ FrameStatus Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
         return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
-    // Check viewing angle
+    /* Check viewing angle */
     Eigen::Vector3f Pn{};
     if (p_mapPoint_inout->getNormal(Pn) !=
         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -164,7 +164,7 @@ FrameStatus Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
         return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
-    // Predict scale in the image
+    /* Predict scale in the image */
     int predictedLevelCount{};
     if (p_mapPoint_inout->predictScale(distance, this, predictedLevelCount) !=
         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -196,5 +196,5 @@ FrameStatus Frame::isInFrustumChecks(MapPoint *p_mapPoint_inout,
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

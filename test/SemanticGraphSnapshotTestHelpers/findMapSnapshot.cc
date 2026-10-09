@@ -45,6 +45,6 @@ const MapSnapshot *findMapSnapshot(const SemanticGraphSnapshot &snapshot_in,
     return nullptr;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

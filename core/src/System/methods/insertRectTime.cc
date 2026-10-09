@@ -46,5 +46,5 @@ SystemStatus System::insertRectTime(double &time_inout)
 }
 #endif
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

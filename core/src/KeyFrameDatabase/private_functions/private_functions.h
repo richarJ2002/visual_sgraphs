@@ -32,7 +32,7 @@ namespace core
 bool compFirst(const std::pair<float, KeyFrame *> &firstScoredCandidate_in,
                const std::pair<float, KeyFrame *> &secondScoredCandidate_in);
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #endif /* VS_GRAPHS_CORE_KEYFRAMEDATABASE_PRIVATE_FUNCTIONS_H */

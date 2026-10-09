@@ -96,4 +96,4 @@ Eigen::Matrix<double, 2, 3>
 
     return projectionJacobian;
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

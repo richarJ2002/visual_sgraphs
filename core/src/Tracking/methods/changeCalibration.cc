@@ -78,5 +78,5 @@ TrackingStatus Tracking::changeCalibration(const std::string &settingPath_in)
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -310,8 +310,10 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
                         clusterCentroid_world_m) !=
                     utils::utils::UtilsStatus::UTILS_STATUS_SUCCESS)
                 {
-                    // computeCentroidFromPoints cannot fail; continue as
-                    // before.
+                    /*!
+                     * computeCentroidFromPoints cannot fail; continue as
+                     * before.
+                     */
                 }
                 if (!clusterCentroid_world_m.allFinite() ||
                     (clusterCentroid_world_m -
@@ -594,5 +596,5 @@ SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
     return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

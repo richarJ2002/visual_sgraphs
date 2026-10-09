@@ -51,7 +51,7 @@ enum class GeometricToolsStatus : std::uint8_t
     GEOMETRIC_TOOLS_STATUS_NUMERICAL_FAILURE = 1U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // GEOMETRIC_TOOLS_STATUS_H
+#endif /* GEOMETRIC_TOOLS_STATUS_H */

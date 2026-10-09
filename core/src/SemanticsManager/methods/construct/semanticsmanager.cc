@@ -67,5 +67,5 @@ SemanticsManager::SemanticsManager(Atlas *p_atlas_in)
     roomTracker = semantic::RoomTracker(trackerConfiguration);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -307,7 +307,7 @@ void loadSceneCorrespondences(const PlanarTwoViewScene &scene_in,
         TwoViewReconstructionStatus::TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS);
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that the homography reconstruction branch hands the
@@ -436,5 +436,5 @@ TEST(TwoViewReconstruction, HomographyBranchRejectsAnEmptyInlierSet)
     EXPECT_TRUE(pointsView1_m.empty());
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

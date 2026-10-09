@@ -50,8 +50,8 @@ namespace semantic
 [[nodiscard]] Sha256DigestStatus sha256HexDigest(const std::string &bytes_in,
                                                  std::string &hexDigest_out);
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_SHA256_DIGEST_H
+#endif /* SEMANTIC_SHA256_DIGEST_H */

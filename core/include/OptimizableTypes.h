@@ -176,11 +176,11 @@ class EdgeSE3ProjectXYZDepth
     {
         const g2o::VertexSE3Expmap *v1 =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        // Transform 3D point to camera frame
+        /* Transform 3D point to camera frame */
         Eigen::Vector3d Xc = v1->estimate().map(Xw);
-        // Depth measurement
+        /* Depth measurement */
         double          observation = _measurement;
-        // Error is difference between measured depth and estimated depth
+        /* Error is difference between measured depth and estimated depth */
         _error[0] = observation - Xc(2);
     }
 
@@ -769,24 +769,26 @@ class EdgeSE3ProjectSE3 : public g2o::BaseBinaryEdge<6,
      */
     void computeError()
     {
-        // Marker's global pose
+        /* Marker's global pose */
         const g2o::VertexSE3Expmap *p_markerGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        // KeyFrame's global pose
+        /* KeyFrame's global pose */
         const g2o::VertexSE3Expmap *p_keyFrameGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[1]);
 
-        // Calculate the local pose of the marker w.r.t. the keyframe
+        /* Calculate the local pose of the marker w.r.t. the keyframe */
         g2o::SE3Quat markerLp =
             p_keyFrameGpVertex->estimate() * p_markerGpVertex->estimate();
 
         g2o::Isometry3D markerLpIso = g2o::Isometry3D::Identity();
         markerLpIso.matrix()        = markerLp.to_homogeneous_matrix();
-        // Calculating the transformation between the measuremenent and the
-        // marker's local pose
+        /*!
+         * Calculating the transformation between the measuremenent and the
+         * marker's local pose
+         */
         g2o::Isometry3D delta = _measurement.inverse() * markerLpIso;
 
-        // Calculating the final error
+        /* Calculating the final error */
         _error = g2o::internal::toVectorMQT(delta);
     }
 };
@@ -812,24 +814,26 @@ class EdgeSE3DoorwayProjectSE3Room : public EdgeSE3ProjectSE3
      */
     void computeError()
     {
-        // Room's global pose
+        /* Room's global pose */
         const g2o::VertexSE3Expmap *p_roomGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        // Passage's global pose
+        /* Passage's global pose */
         const g2o::VertexSE3Expmap *p_doorwayGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[1]);
 
-        // Calculate the local pose of the doorway w.r.t. the keyframe
+        /* Calculate the local pose of the doorway w.r.t. the keyframe */
         g2o::SE3Quat doorwayLp = p_roomGpVertex->estimate().inverse() *
                                  p_doorwayGpVertex->estimate();
 
         g2o::Isometry3D doorwayLpIso = g2o::Isometry3D::Identity();
         doorwayLpIso.matrix()        = doorwayLp.to_homogeneous_matrix();
-        // Calculating the transformation between the measuremenent and the
-        // doorway's local pose
+        /*!
+         * Calculating the transformation between the measuremenent and the
+         * doorway's local pose
+         */
         g2o::Isometry3D delta = _measurement.inverse() * doorwayLpIso;
 
-        // Calculating the final error
+        /* Calculating the final error */
         _error = g2o::internal::toVectorMQT(delta);
     }
 };
@@ -924,7 +928,7 @@ class EdgeSE3KFPointToPlane : public g2o::BaseBinaryEdge<1,
         const g2o::VertexPlane *p_planeGpVertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
-        // local plane equation
+        /* local plane equation */
         Eigen::Isometry3d keyFramePose = p_keyFrameGpVertex->estimate();
         g2o::Plane3D localPlane = keyFramePose * p_planeGpVertex->estimate();
 
@@ -995,18 +999,18 @@ class EdgeVertexPlaneProjectSE3KF
      */
     void computeError()
     {
-        // KeyFrame's global pose
+        /* KeyFrame's global pose */
         const g2o::VertexSE3Expmap *p_keyFrameGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        // Plane's global pose
+        /* Plane's global pose */
         const g2o::VertexPlane *p_planeGpVertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
-        // Calculating poses (in global frame)
+        /* Calculating poses (in global frame) */
         Eigen::Isometry3d keyFramePose = p_keyFrameGpVertex->estimate();
         g2o::Plane3D localPlane = keyFramePose * p_planeGpVertex->estimate();
 
-        // Calculating the error
+        /* Calculating the error */
         _error = localPlane.ominus(_measurement);
     }
 
@@ -1028,7 +1032,7 @@ class EdgeVertexPlaneProjectSE3KF
         const g2o::VertexPlane *p_planeGpVertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
-        // local plane equation
+        /* local plane equation */
         Eigen::Isometry3d keyFramePose = p_keyFrameGpVertex->estimate();
         g2o::Plane3D localPlane = keyFramePose * p_planeGpVertex->estimate();
 
@@ -1084,15 +1088,17 @@ class EdgeVertexPlaneProjectPointXYZ
      */
     void computeError()
     {
-        // Map Point's position
+        /* Map Point's position */
         const g2o::VertexSBAPointXYZ *p_pointVertex =
             static_cast<const g2o::VertexSBAPointXYZ *>(_vertices[0]);
-        // Plane's global pose
+        /* Plane's global pose */
         const g2o::VertexPlane *p_planeGpVertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
-        // Calculating the error
-        // plane equation is already normalized -> D = n.x + d
+        /*!
+         * Calculating the error
+         * plane equation is already normalized -> D = n.x + d
+         */
         _error[0] = p_planeGpVertex->estimate().coeffs().head(3).dot(
                         p_pointVertex->estimate().head(3)) +
                     p_planeGpVertex->estimate().coeffs()(3);
@@ -1149,39 +1155,39 @@ class EdgeVertexPlaneProjectSE3M
      */
     void computeError()
     {
-        // Marker's global pose
+        /* Marker's global pose */
         const g2o::VertexSE3Expmap *p_markerGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        // Plane's global pose
+        /* Plane's global pose */
         const g2o::VertexPlane *p_planeGpVertex =
             static_cast<const g2o::VertexPlane *>(_vertices[1]);
 
-        // Calculating poses (in global frame)
+        /* Calculating poses (in global frame) */
         g2o::Isometry3D markerPose  = p_markerGpVertex->estimate();
         g2o::Vector4D   planeCoeffs = p_planeGpVertex->estimate().coeffs();
 
-        // Normalize the plane vector if necessary
+        /* Normalize the plane vector if necessary */
         if (planeCoeffs(3) < 0)
             planeCoeffs *= -1;
 
-        // Create the plane plane in global frame
+        /* Create the plane plane in global frame */
         g2o::Plane3D plane_g(planeCoeffs);
 
-        // Calculate the plane in marker's frame
+        /* Calculate the plane in marker's frame */
         g2o::Plane3D plane_m = markerPose.inverse() * plane_g;
 
-        // Calculate the normal of the marker in marker's frame
+        /* Calculate the normal of the marker in marker's frame */
         g2o::Plane3D markerNormal_m =
             markerPose.inverse() * markerPose.matrix().col(2);
 
-        // Calculate the difference of the planes
+        /* Calculate the difference of the planes */
         Eigen::Vector3d planeDiff =
             plane_m.coeffs().head(3) - markerNormal_m.coeffs().head(3);
 
         _error[0] = planeDiff(0);
         _error[1] = planeDiff(1);
         _error[2] = planeDiff(2);
-        _error[3] = plane_m.coeffs()(3); // Distance (d) of the cacmera
+        _error[3] = plane_m.coeffs()(3); /* Distance (d) of the cacmera */
     }
 };
 
@@ -1227,7 +1233,7 @@ class EdgeVertexPlaneParallelism
      */
     void computeError() override
     {
-        // Planes
+        /* Planes */
         const g2o::VertexPlane *p_plane1Vertex =
             static_cast<const g2o::VertexPlane *>(_vertices[0]);
         const g2o::VertexPlane *p_plane2Vertex =
@@ -1236,7 +1242,7 @@ class EdgeVertexPlaneParallelism
         Eigen::Vector3d n1 = p_plane1Vertex->estimate().normal().normalized();
         Eigen::Vector3d n2 = p_plane2Vertex->estimate().normal().normalized();
 
-        // Compute deviation from parallelism
+        /* Compute deviation from parallelism */
         double error = std::fabs(n1.dot(n2));
         _error[0]    = 1 - error;
     }
@@ -1285,7 +1291,7 @@ class EdgeVertexPlanePerpendicularity
      */
     void computeError() override
     {
-        // Planes
+        /* Planes */
         const g2o::VertexPlane *p_plane1Vertex =
             static_cast<const g2o::VertexPlane *>(_vertices[0]);
         const g2o::VertexPlane *p_plane2Vertex =
@@ -1294,7 +1300,7 @@ class EdgeVertexPlanePerpendicularity
         Eigen::Vector3d n1 = p_plane1Vertex->estimate().normal().normalized();
         Eigen::Vector3d n2 = p_plane2Vertex->estimate().normal().normalized();
 
-        // Compute deviation from perpendicularity
+        /* Compute deviation from perpendicularity */
         double error = std::fabs(n1.dot(n2));
         _error[0]    = error;
     }
@@ -1440,7 +1446,7 @@ class EdgeVertexNPlaneProjectSE3Room
     virtual bool write(std::ostream &outputStream_inout) const;
     EdgeVertexNPlaneProjectSE3Room()
     {
-        // Dynamically sized edge: at least one SE3 (room center) + N planes
+        /* Dynamically sized edge: at least one SE3 (room center) + N planes */
         resize(1);
     }
 
@@ -1451,12 +1457,12 @@ class EdgeVertexNPlaneProjectSE3Room
      */
     void computeError() override
     {
-        // First vertex is always the room pose (SE3)
+        /* First vertex is always the room pose (SE3) */
         const g2o::VertexSE3Expmap *p_roomVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
         Eigen::Vector3d roomPose = p_roomVertex->estimate().translation();
 
-        // Remaining vertices are walls
+        /* Remaining vertices are walls */
         std::vector<Eigen::Vector4d> walls;
         for (size_t vertexIndex = 1; vertexIndex < _vertices.size();
              ++vertexIndex)
@@ -1477,15 +1483,17 @@ class EdgeVertexNPlaneProjectSE3Room
             walls.push_back(plane);
         }
 
-        // Compute representative position from all walls enclosing the cluster
+        /*!
+         * Compute representative position from all walls enclosing the cluster
+         */
         Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
         for (const Eigen::Vector4d &wall : walls)
         {
-            // Each wall equation ax+by+cz+d=0 → normal = (a,b,c), offset = d
+            /* Each wall equation ax+by+cz+d=0 → normal = (a,b,c), offset = d */
             Eigen::Vector3d normal = wall.head<3>();
             double          d      = wall(3);
 
-            // Approximate contribution: project along the normal
+            /* Approximate contribution: project along the normal */
             Eigen::Vector3d contrib = -d * normal;
             centroid += contrib;
         }
@@ -1493,7 +1501,7 @@ class EdgeVertexNPlaneProjectSE3Room
         if (!walls.empty())
             centroid /= static_cast<double>(walls.size());
 
-        // Final error
+        /* Final error */
         _error = roomPose - centroid;
     }
 
@@ -1569,19 +1577,19 @@ class EdgeVertexSE3RoomProjectSE3Marker
      */
     void computeError()
     {
-        // Marker's global pose
+        /* Marker's global pose */
         const g2o::VertexSE3Expmap *p_markerGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
-        // Room's center point in global pose
+        /* Room's center point in global pose */
         const g2o::VertexSE3Expmap *p_roomCenterGpVertex =
             static_cast<const g2o::VertexSE3Expmap *>(_vertices[1]);
 
-        // Calculating poses (in global frame)
+        /* Calculating poses (in global frame) */
         g2o::Isometry3D markerPose = p_markerGpVertex->estimate();
         Eigen::Vector3d roomPose =
             p_roomCenterGpVertex->estimate().translation();
 
-        // Calculating the error
+        /* Calculating the error */
         _error[0] = markerPose.translation()(0) - roomPose(0);
         _error[1] = markerPose.translation()(1) - roomPose(1);
         _error[2] = markerPose.translation()(2) - roomPose(2);
@@ -1691,16 +1699,20 @@ class EdgePlaneTransformSE3
         const Eigen::Matrix3d R        = estimate.rotation().toRotationMatrix();
         const Eigen::Vector3d t        = estimate.translation();
 
-        // Plane.cc:transformPlaneEquation law (scale fixed at 1 here):
-        // n' = R n ; d' = sigma*d - n'^T t
+        /*!
+         * Plane.cc:transformPlaneEquation law (scale fixed at 1 here):
+         * n' = R n ; d' = sigma*d - n'^T t
+         */
         const Eigen::Vector3d predCount =
             static_cast<double>(_measurement.sigma) * (R * _measurement.n_A);
         const double predictedDistance =
             static_cast<double>(_measurement.sigma) * _measurement.d_A -
             predCount.dot(t);
 
-        // Minimal rotation vector (axis-angle) that rotates n_pred onto
-        // n_B, i.e. Log_SO3(n_pred, n_B).
+        /*!
+         * Minimal rotation vector (axis-angle) that rotates n_pred onto
+         * n_B, i.e. Log_SO3(n_pred, n_B).
+         */
         const Eigen::Vector3d &n_B      = _measurement.n_B;
         const Eigen::Vector3d  axis     = predCount.cross(n_B);
         const double           sinAngle = axis.norm();
@@ -1714,17 +1726,19 @@ class EdgePlaneTransformSE3
         }
         else if (cosAngle < 0.0)
         {
-            // Antipodal singularity: axis/sinAngle is 0/0 exactly where
-            // the true orientation error is at its maximum (angle ~ pi),
-            // not zero -- leaving logVec at zero here would silently
-            // mask a 180 degree misalignment as a perfect fit. Any unit
-            // vector orthogonal to n_pred is a valid rotation axis at
-            // this isolated point; unitOrthogonal() picks one
-            // deterministically.
+            /*!
+             * Antipodal singularity: axis/sinAngle is 0/0 exactly where
+             * the true orientation error is at its maximum (angle ~ pi),
+             * not zero -- leaving logVec at zero here would silently
+             * mask a 180 degree misalignment as a perfect fit. Any unit
+             * vector orthogonal to n_pred is a valid rotation axis at
+             * this isolated point; unitOrthogonal() picks one
+             * deterministically.
+             */
             logVector = predCount.unitOrthogonal() * angle;
         }
 
-        // Orthonormal 2D basis for the tangent plane at n_B (B_B).
+        /* Orthonormal 2D basis for the tangent plane at n_B (B_B). */
         const Eigen::Vector3d referenceAxis = (std::abs(n_B.x()) <= 0.9)
                                                   ? Eigen::Vector3d::UnitX()
                                                   : Eigen::Vector3d::UnitY();
@@ -1736,6 +1750,6 @@ class EdgePlaneTransformSE3
         _error[2] = predictedDistance - _measurement.d_B;
     }
 };
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 #endif

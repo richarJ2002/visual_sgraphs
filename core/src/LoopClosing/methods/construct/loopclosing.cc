@@ -98,5 +98,5 @@ LoopClosing::LoopClosing(Atlas            *p_atlas_in,
     correctionGBA = 0;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -59,5 +59,5 @@ AtlasStatus Atlas::isActiveMap(Map *p_map_in, bool &isActiveMap_out)
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

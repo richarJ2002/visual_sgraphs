@@ -38,7 +38,7 @@ GeoSemHelpersStatus GeoSemHelpers::checkIfMarkerIsDoorway(
 {
     bool        isDoorway = true;
     std::string name      = "";
-    // Loop over all markers attached to doorways
+    /* Loop over all markers attached to doorways */
     for (semantic::Room *const &room : envRooms_in)
     {
         int roomMetaMarkerId{};
@@ -63,13 +63,13 @@ GeoSemHelpersStatus GeoSemHelpers::checkIfMarkerIsDoorway(
                              __func__);
             }
             name = roomName;
-            break; // No need to continue searching if found
+            break; /* No need to continue searching if found */
         }
     }
-    // Returning
+    /* Returning */
     doorwayMatch_out = std::make_pair(isDoorway, name);
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

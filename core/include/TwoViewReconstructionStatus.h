@@ -45,7 +45,7 @@ enum class TwoViewReconstructionStatus : std::uint8_t
     TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // TWO_VIEW_RECONSTRUCTION_STATUS_H
+#endif /* TWO_VIEW_RECONSTRUCTION_STATUS_H */

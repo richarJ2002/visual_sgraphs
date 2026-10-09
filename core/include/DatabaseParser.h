@@ -95,6 +95,6 @@ class DBParser
         Json                           environmentData_in,
         std::vector<semantic::Room *> &environmentRooms_out);
 };
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 #endif

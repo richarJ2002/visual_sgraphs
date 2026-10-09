@@ -55,11 +55,11 @@ namespace settings
 
 SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
 {
-    // Variables
+    /* Variables */
     bool               found;
     std::vector<float> calibrations;
 
-    // Camera model
+    /* Camera model */
     std::string cameraModelName{};
     if (readParameter<std::string>(storage_inout,
                                    "Camera.type",
@@ -77,7 +77,7 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
     {
         cameraModel = CameraType::PINHOLE;
 
-        // Intrinsic parameters
+        /* Intrinsic parameters */
         float fx{};
         if (readParameter<float>(storage_inout, "Camera1.fx", found, fx) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
@@ -121,7 +121,7 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
         p_originalCalibration1 =
             std::make_unique<camera_models::pinhole::Pinhole>(calibrations);
 
-        // Check if the Pinhole is distorted
+        /* Check if the Pinhole is distorted */
         float parameter{};
         if (readParameter<float>(storage_inout,
                                  "Camera1.k1",
@@ -224,7 +224,7 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
             pinholeDistortion1[3] = parameter7;
         }
 
-        // Check if we need to correct distortion from the images
+        /* Check if we need to correct distortion from the images */
         if ((sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR) &&
             pinholeDistortion1.size() != 0)
             isUndistortionNeeded = true;
@@ -233,7 +233,7 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
     {
         cameraModel = CameraType::RECTIFIED;
 
-        // Intrinsic parameters
+        /* Intrinsic parameters */
         float fx{};
         if (readParameter<float>(storage_inout, "Camera1.fx", found, fx) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
@@ -281,7 +281,7 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
     {
         cameraModel = CameraType::KANNALA_BRANDT;
 
-        // Read intrinsic parameters
+        /* Read intrinsic parameters */
         float fx{};
         if (readParameter<float>(storage_inout, "Camera1.fx", found, fx) !=
             SettingsStatus::SETTINGS_STATUS_SUCCESS)
@@ -407,7 +407,7 @@ SettingsStatus Settings::readCamera1(cv::FileStorage &storage_inout)
     return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
-} // namespace settings
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace settings */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -44,7 +44,7 @@ enum class MapStatus : std::uint8_t
     MAP_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // MAP_STATUS_H
+#endif /* MAP_STATUS_H */

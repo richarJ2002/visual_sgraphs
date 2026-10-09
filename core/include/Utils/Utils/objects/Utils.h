@@ -72,7 +72,7 @@ class Utils
         std::less<KeyFrame *>,
         Eigen::aligned_allocator<std::pair<KeyFrame *const, g2o::Sim3>>>;
 
-    // Variables
+    /* Variables */
     /*!
      * @brief           Conversion factor from degrees to radians.
      */
@@ -717,9 +717,9 @@ class Utils
     [[nodiscard]] static UtilsStatus calcSoftMin(std::vector<double> &values_in,
                                                  double &softMin_out);
 };
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // UTILS_H
+#endif /* UTILS_H */

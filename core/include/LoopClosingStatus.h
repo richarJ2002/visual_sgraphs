@@ -44,7 +44,7 @@ enum class LoopClosingStatus : std::uint8_t
     LOOP_CLOSING_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // LOOP_CLOSING_STATUS_H
+#endif /* LOOP_CLOSING_STATUS_H */

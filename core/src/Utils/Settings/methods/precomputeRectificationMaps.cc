@@ -52,7 +52,7 @@ namespace settings
 
 SettingsStatus Settings::precomputeRectificationMaps()
 {
-    // Precompute rectification maps, new calibrations, ...
+    /* Precompute rectification maps, new calibrations, ... */
     cv::Mat K1 =
         static_cast<camera_models::pinhole::Pinhole *>(p_calibration1.get())
             ->toK();
@@ -140,7 +140,7 @@ SettingsStatus Settings::precomputeRectificationMaps()
                                 rectifyMap1Right,
                                 rectifyMap2Right);
 
-    // Update calibration
+    /* Update calibration */
     if (p_calibration1->setParameter(P1.at<double>(0, 0), 0) !=
         camera_models::geometriccamera::GeometricCameraStatus::
             GEOMETRIC_CAMERA_STATUS_SUCCESS)
@@ -215,10 +215,10 @@ SettingsStatus Settings::precomputeRectificationMaps()
                      __func__);
     }
 
-    // Update bf
+    /* Update bf */
     baselineFocal = stereoBaseline * P1.at<double>(0, 0);
 
-    // Update relative pose between camera 1 and IMU if necessary
+    /* Update relative pose between camera 1 and IMU if necessary */
     if (sensor == System::IMU_STEREO)
     {
         Eigen::Matrix3f eigenR_r1_u1;
@@ -231,7 +231,7 @@ SettingsStatus Settings::precomputeRectificationMaps()
     return SettingsStatus::SETTINGS_STATUS_SUCCESS;
 }
 
-} // namespace settings
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace settings */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -53,5 +53,5 @@ SystemStatus System::getCamTwc(Sophus::SE3f &cameraPose_cameraToWorld_out)
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

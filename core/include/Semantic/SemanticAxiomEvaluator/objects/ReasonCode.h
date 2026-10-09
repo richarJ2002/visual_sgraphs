@@ -928,8 +928,8 @@ enum class ReasonCode : std::uint8_t
     FLOOR_PASSAGE_ENDPOINT_ROOM_FLOOR_UNVERIFIED = 134U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_REASON_CODE_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_REASON_CODE_H */

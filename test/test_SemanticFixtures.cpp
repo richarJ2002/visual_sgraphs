@@ -264,7 +264,7 @@ TEST(SemanticFixtures, NonTrivialSim3IsDeterministic)
     EXPECT_TRUE(first.map(probe).isApprox(second.map(probe)));
 }
 
-} // namespace
-} // namespace test
-} // namespace core
-} // namespace vs_graphs
+} /* namespace */
+} /* namespace test */
+} /* namespace core */
+} /* namespace vs_graphs */

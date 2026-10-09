@@ -32,6 +32,6 @@ namespace core
 namespace types
 {
 SystemParams *SystemParams::p_systemParams = nullptr;
-} // namespace types
-} // namespace core
-} // namespace vs_graphs
+} /* namespace types */
+} /* namespace core */
+} /* namespace vs_graphs */

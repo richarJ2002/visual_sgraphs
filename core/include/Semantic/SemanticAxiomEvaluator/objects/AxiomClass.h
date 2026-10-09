@@ -62,8 +62,8 @@ enum class AxiomClass : std::uint8_t
     DERIVED = 1U
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_AXIOM_CLASS_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_AXIOM_CLASS_H */

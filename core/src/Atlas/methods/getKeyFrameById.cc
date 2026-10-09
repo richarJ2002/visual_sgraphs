@@ -56,5 +56,5 @@ AtlasStatus Atlas::getKeyFrameById(long unsigned int idCount_in,
     return AtlasStatus::ATLAS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

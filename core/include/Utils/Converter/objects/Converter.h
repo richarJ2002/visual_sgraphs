@@ -350,7 +350,7 @@ class Converter
         toEuler(const cv::Mat      &rotationMatrix_in,
                 std::vector<float> &euler_out);
 
-    // TODO: Sophus migration, to be deleted in the future
+    /* TODO: Sophus migration, to be deleted in the future */
     /*!
      * @brief           Converts a 4x4 pose matrix to a Sophus SE3 pose.
      *
@@ -381,11 +381,11 @@ class Converter
         toSophus(const g2o::Sim3 &similarity_in, Sophus::Sim3f &sophus_out);
 };
 
-} // namespace converter
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace converter */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 #include "Utils/Converter/methods/toCvMat.tpp"
 
-#endif // CONVERTER_H
+#endif /* CONVERTER_H */

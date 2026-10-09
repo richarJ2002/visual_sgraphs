@@ -126,7 +126,7 @@ void makeWallWithGridCloud(geometric::Plane      &wall_inout,
               geometric::PlaneStatus::PLANE_STATUS_SUCCESS);
 }
 
-} // namespace
+} /* namespace */
 
 /* ---------------------------------------------------------------------- *
  * Fix 1: ground-aligned height/width gate (door-frame-post filter)
@@ -352,7 +352,7 @@ std::unique_ptr<geometric::Plane> makeAdmissibleWallAtOrigin(int  id_in,
     return wall;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that a wall whose observation origin and all
@@ -841,7 +841,7 @@ std::unique_ptr<geometric::Plane>
     return wall;
 }
 
-} // namespace
+} /* namespace */
 
 /*!
  * @brief           Checks that a candidate wall whose finite extent clearly
@@ -913,7 +913,7 @@ TEST(WallAdmission, RejectsACandidateWallThatCrossesAnotherRoomsWall)
 /* ---------------------------------------------------------------------- *
  * Far-side wall churn: the per-cycle passage-side sweep must not evict a
  * wall from the prospective room the aperture backstop routed it to.
- * Live-observed: Wall#1 removed from semantic::Room#2, redirected back and
+ * Live-observed: Wall#1 removed from Room#2, redirected back and
  * re-admitted every cycle (42 admissions, stable owner). The wall's
  * observation origin sits on the near side while a deep far-side room's
  * centroid sits beyond the wall plane, so the bare face check always
@@ -1152,5 +1152,5 @@ TEST(WallAdmission, BoundsTrimStrayOutliersButKeepTheGridSurface)
     EXPECT_LT(geometry.maxPlaneV_m, 1.9);
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

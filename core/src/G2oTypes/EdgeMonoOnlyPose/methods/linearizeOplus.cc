@@ -66,9 +66,10 @@ void EdgeMonoOnlyPose::linearizeOplus()
     se3Derivative << 0.0, bodyPointZ, -bodyPointY, 1.0, 0.0, 0.0, -bodyPointZ,
         0.0, bodyPointX, 0.0, 1.0, 0.0, bodyPointY, -bodyPointX, 0.0, 0.0, 0.0,
         1.0;
-    _jacobianOplusXi = projectionJacobian * extrinsicRotation_bodyToCamera *
-                       se3Derivative; // symbol different becasue of update mode
+    /* symbol different becasue of update mode */
+    _jacobianOplusXi =
+        projectionJacobian * extrinsicRotation_bodyToCamera * se3Derivative;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

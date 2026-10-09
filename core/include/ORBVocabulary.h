@@ -40,7 +40,7 @@ namespace core
 typedef DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB>
     ORBVocabulary;
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // ORBVOCABULARY_H
+#endif /* ORBVOCABULARY_H */

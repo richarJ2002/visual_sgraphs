@@ -57,7 +57,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-    // Compute Bag of Words Vector
+    /* Compute Bag of Words Vector */
     if (currentFrame.computeBagOfWords() != FrameStatus::FRAME_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -66,9 +66,11 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                      __func__);
     }
 
-    // STRUCTURAL PRIORS: Use room centroids from S-Graph to guide
-    // relocalization In office corridors, room/passage markers provide strong
-    // topological priors
+    /*!
+     * STRUCTURAL PRIORS: Use room centroids from S-Graph to guide
+     * relocalization In office corridors, room/passage markers provide strong
+     * topological priors
+     */
     std::vector<Eigen::Vector3f>  roomCentroids;
     std::vector<semantic::Room *> currentRooms;
     Map                          *p_currentMap = nullptr;
@@ -132,9 +134,11 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
         }
     }
 
-    // Relocalization is performed when tracking is lost
-    // Track Lost: Query KeyFrame Database for keyframe candidates for
-    // relocalisation
+    /*!
+     * Relocalization is performed when tracking is lost
+     * Track Lost: Query KeyFrame Database for keyframe candidates for
+     * relocalisation
+     */
     Map *p_atlasCurrentMap = nullptr;
     if (p_atlas->getCurrentMap(p_atlasCurrentMap) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -174,8 +178,10 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
 
     const int keyFrameCount = candidateKeyFrames.size();
 
-    // We perform first an ORB matching with each candidate
-    // If enough matches are found we setup a PnP solver
+    /*!
+     * We perform first an ORB matching with each candidate
+     * If enough matches are found we setup a PnP solver
+     */
     ORBmatcher matcher(0.75, true);
 
     std::vector<MLPnPsolver *> pnpSolvers;
@@ -236,19 +242,23 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                         "%s: setRansacParameters returned a failure status "
                         "although it cannot fail; continuing as before.",
                         __func__);
-                } // This solver needs at least 6 points
+                } /* This solver needs at least 6 points */
                 pnpSolvers[keyFrameIndex] = p_solver;
                 candidateCount++;
             }
         }
     }
 
-    // STRUCTURAL PRIOR: Re-rank candidates by proximity to room centroids
-    // This helps in repetitive corridors where visual appearance is similar
+    /*!
+     * STRUCTURAL PRIOR: Re-rank candidates by proximity to room centroids
+     * This helps in repetitive corridors where visual appearance is similar
+     */
     if (!roomCentroids.empty() && !candidateKeyFrames.empty())
     {
-        // Score candidates by: visual matches + proximity to known room
-        // centroids
+        /*!
+         * Score candidates by: visual matches + proximity to known room
+         * centroids
+         */
         std::vector<float> candidateScores(keyFrameCount, 0.0f);
         for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount;
              keyFrameIndex++)
@@ -269,22 +279,24 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
             Eigen::Vector3f keyFramePosition =
                 keyFramePose.translation().head<3>();
 
-            // Visual match score (normalized)
+            /* Visual match score (normalized) */
             int nmatches = vvpMapPointMatches[keyFrameIndex].size();
             candidateScores[keyFrameIndex] = nmatches * 1.0f;
 
-            // Structural prior: proximity to room centroids
+            /* Structural prior: proximity to room centroids */
             for (size_t r = 0; r < roomCentroids.size(); r++)
             {
                 float distance = (keyFramePosition - roomCentroids[r]).norm();
-                // Boost score if KF is near a known room centroid (within 3m)
+                /*!
+                 * Boost score if KF is near a known room centroid (within 3m)
+                 */
                 if (distance < 3.0f)
                     candidateScores[keyFrameIndex] +=
-                        (3.0f - distance) * 2.0f; // Max boost of 6
+                        (3.0f - distance) * 2.0f; /* Max boost of 6 */
             }
         }
 
-        // Re-sort candidates by combined score (highest first)
+        /* Re-sort candidates by combined score (highest first) */
         std::vector<int> sortedIndices(keyFrameCount);
         for (int keyFrameIndex = 0; keyFrameIndex < keyFrameCount;
              keyFrameIndex++)
@@ -294,7 +306,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                   [&](int a, int b)
                   { return candidateScores[a] > candidateScores[b]; });
 
-        // Reorder vectors for processing
+        /* Reorder vectors for processing */
         std::vector<KeyFrame *> reorderedKeyFrames = candidateKeyFrames;
         std::vector<std::vector<MapPoint *>> reorderedMatches =
             vvpMapPointMatches;
@@ -315,8 +327,10 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
         }
     }
 
-    // Alternatively perform some iterations of P4P RANSAC
-    // Until we found a camera pose supported by enough inliers
+    /*!
+     * Alternatively perform some iterations of P4P RANSAC
+     * Until we found a camera pose supported by enough inliers
+     */
     bool       isMatched = false;
     ORBmatcher matcher2(0.9, true);
 
@@ -328,7 +342,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
             if (discardedFlags[keyFrameIndex])
                 continue;
 
-            // Perform 5 Ransac Iterations
+            /* Perform 5 Ransac Iterations */
             std::vector<bool> inliersFlags;
             int               inlierCount;
             bool              areIterationsExhausted;
@@ -350,14 +364,14 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                              __func__);
             }
 
-            // If Ransac reachs max. iterations discard keyframe
+            /* If Ransac reachs max. iterations discard keyframe */
             if (areIterationsExhausted)
             {
                 discardedFlags[keyFrameIndex] = true;
                 candidateCount--;
             }
 
-            // If a Camera Pose is computed, optimize
+            /* If a Camera Pose is computed, optimize */
             if (bTcw)
             {
                 Sophus::SE3f cameraPose_worldToCamera(poseEigen_worldToCamera);
@@ -370,7 +384,6 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                         "cannot fail; continuing as before.",
                         __func__);
                 }
-                // Tcw.copyTo(mCurrentFrame.poseTcw);
 
                 std::set<MapPoint *> founds;
 
@@ -407,8 +420,10 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                         currentFrame.mapPoints[io] =
                             static_cast<MapPoint *>(nullptr);
 
-                // If few inliers, search by projection in a coarse window and
-                // optimize again
+                /*!
+                 * If few inliers, search by projection in a coarse window and
+                 * optimize again
+                 */
                 if (goodCount < 50)
                 {
                     int nadditional{};
@@ -443,9 +458,11 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                         }
                         goodCount = inlierCount2;
 
-                        // If many inliers but still not enough, search by
-                        // projection again in a narrower window the camera has
-                        // been already optimized with many points
+                        /*!
+                         * If many inliers but still not enough, search by
+                         * projection again in a narrower window the camera has
+                         * been already optimized with many points
+                         */
                         if (goodCount > 30 && goodCount < 50)
                         {
                             founds.clear();
@@ -472,7 +489,7 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                             }
                             nadditional = matcher2ByProjection;
 
-                            // Final optimization
+                            /* Final optimization */
                             if (goodCount + nadditional >= 50)
                             {
                                 int inlierCount3{};
@@ -499,10 +516,12 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
                     }
                 }
 
-                // If the pose is supported by enough inliers stop ransacs and
-                // continue
-                // LOWERED: 25 -> 10 inliers for relocalization in textureless
-                // corridors Use configurable threshold
+                /*!
+                 * If the pose is supported by enough inliers stop ransacs and
+                 * continue
+                 * LOWERED: 25 -> 10 inliers for relocalization in textureless
+                 * corridors Use configurable threshold
+                 */
                 if (goodCount >= relocalizationMinInliers)
                 {
                     isMatched = true;
@@ -526,5 +545,5 @@ TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -92,8 +92,10 @@ UtilsStatus Utils::matchWallsBetweenRooms(
                                                          wallNormal_world) !=
                 semantic::RoomStatus::ROOM_STATUS_SUCCESS)
             {
-                // getWallNormalTowardRoom_world cannot fail; continue as
-                // before.
+                /*!
+                 * getWallNormalTowardRoom_world cannot fail; continue as
+                 * before.
+                 */
             }
 
             if (!wallNormal_world.has_value())
@@ -214,7 +216,7 @@ UtilsStatus Utils::matchWallsBetweenRooms(
     return UtilsStatus::UTILS_STATUS_SUCCESS;
 }
 
-} // namespace utils
-} // namespace utils
-} // namespace core
-} // namespace vs_graphs
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */

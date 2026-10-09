@@ -58,7 +58,7 @@ FrameStatus Frame::projectPointDistort(MapPoint    *p_mapPoint_in,
                                        bool        &isProjected_out)
 {
 
-    // 3D in absolute coordinates
+    /* 3D in absolute coordinates */
     Eigen::Vector3f P{};
     if (p_mapPoint_in->getWorldPos(P) !=
         MapPointStatus::MAP_POINT_STATUS_SUCCESS)
@@ -69,13 +69,13 @@ FrameStatus Frame::projectPointDistort(MapPoint    *p_mapPoint_in,
                      __func__);
     }
 
-    // 3D in camera coordinates
+    /* 3D in camera coordinates */
     const Eigen::Vector3f Pc  = rotationRcw * P + translationTcw;
     const float          &PcX = Pc(0);
     const float          &PcY = Pc(1);
     const float          &PcZ = Pc(2);
 
-    // Check positive depth
+    /* Check positive depth */
     if (PcZ < 0.0f)
     {
         std::cout << "Negative depth: " << PcZ << std::endl;
@@ -83,7 +83,7 @@ FrameStatus Frame::projectPointDistort(MapPoint    *p_mapPoint_in,
         return FrameStatus::FRAME_STATUS_SUCCESS;
     }
 
-    // Project in image and check it is not outside
+    /* Project in image and check it is not outside */
     const float invz = 1.0f / PcZ;
     u_out            = fx * PcX * invz + cx;
     v_out            = fy * PcY * invz + cy;
@@ -114,11 +114,11 @@ FrameStatus Frame::projectPointDistort(MapPoint    *p_mapPoint_in,
         k3 = distortionCoefficients.at<float>(4);
     }
 
-    // Radial distorsion
+    /* Radial distorsion */
     float distortedX = x * (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2);
     float distortedY = y * (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2);
 
-    // Tangential distorsion
+    /* Tangential distorsion */
     distortedX = distortedX + (2 * p1 * x * y + p2 * (r2 + 2 * x * x));
     distortedY = distortedY + (p1 * (r2 + 2 * y * y) + 2 * p2 * x * y);
 
@@ -134,5 +134,5 @@ FrameStatus Frame::projectPointDistort(MapPoint    *p_mapPoint_in,
     return FrameStatus::FRAME_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

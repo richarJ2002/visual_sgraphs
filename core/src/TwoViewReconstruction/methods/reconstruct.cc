@@ -52,8 +52,10 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
     keys1 = keys1_in;
     keys2 = keys2_in;
 
-    // Fill structures with current keypoints and matches with reference frame
-    // Reference Frame: 1, Current Frame: 2
+    /*!
+     * Fill structures with current keypoints and matches with reference frame
+     * Reference Frame: 1, Current Frame: 2
+     */
     matches12.clear();
     matches12.reserve(keys2.size());
     for (size_t matchIndex = 0, iend = matches12_in.size(); matchIndex < iend;
@@ -68,7 +70,7 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
 
     const int N = matches12.size();
 
-    // Indices for minimum set selection
+    /* Indices for minimum set selection */
     std::vector<size_t> allIndices;
     allIndices.reserve(N);
     std::vector<size_t> availableIndices;
@@ -78,7 +80,7 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
         allIndices.push_back(matchIndex);
     }
 
-    // Generate sets of 8 points for each RANSAC iteration
+    /* Generate sets of 8 points for each RANSAC iteration */
     sets = std::vector<std::vector<size_t>>(maxIterations,
                                             std::vector<size_t>(8, 0));
 
@@ -89,7 +91,7 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
     {
         availableIndices = allIndices;
 
-        // Select a minimum set
+        /* Select a minimum set */
         for (size_t setPointIndex = 0; setPointIndex < 8; setPointIndex++)
         {
             int randi =
@@ -103,8 +105,10 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
         }
     }
 
-    // Launch threads to compute in parallel a fundamental matrix and a
-    // homography
+    /*!
+     * Launch threads to compute in parallel a fundamental matrix and a
+     * homography
+     */
     std::vector<bool> matchesInliersHFlags, matchesInliersFFlags;
     float             SH, SF;
     Eigen::Matrix3f   H, F;
@@ -120,11 +124,11 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
                         std::ref(SF),
                         std::ref(F));
 
-    // Wait until both threads have finished
+    /* Wait until both threads have finished */
     threadH.join();
     threadF.join();
 
-    // Compute ratio of scores
+    /* Compute ratio of scores */
     if (SH + SF == 0.f)
     {
         isReconstructed_out = false;
@@ -135,11 +139,12 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
 
     float minimumParallax = 1.0;
 
-    // Try to reconstruct from homography or fundamental depending on the ratio
-    // (0.40-0.45)
-    if (RH > 0.50) // if(RH>0.40)
+    /*!
+     * Try to reconstruct from homography or fundamental depending on the ratio
+     * (0.40-0.45)
+     */
+    if (RH > 0.50)
     {
-        // cout << "Initialization from Homography" << endl;
         bool isReconstructed{};
         if (reconstructH(matchesInliersHFlags,
                          H,
@@ -161,9 +166,8 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
         return TwoViewReconstructionStatus::
             TWO_VIEW_RECONSTRUCTION_STATUS_SUCCESS;
     }
-    else // if(pF_HF>0.6)
+    else
     {
-        // cout << "Initialization from Fundamental" << endl;
         bool isReconstructed2{};
         if (reconstructF(matchesInliersFFlags,
                          F,
@@ -187,5 +191,5 @@ TwoViewReconstructionStatus TwoViewReconstruction::reconstruct(
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

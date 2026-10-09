@@ -71,18 +71,20 @@ MLPnPsolverStatus
 {
     const int observationCount = points_in.size();
     const int unknownCount     = 6;
-    // check redundancy
+    /* check redundancy */
     assert((2 * observationCount - unknownCount) > 0);
 
-    // =============
-    // set all matrices up
-    // =============
+    /*!
+     * =============
+     * set all matrices up
+     * =============
+     */
 
     Eigen::VectorXd r(2 * observationCount);
     Eigen::VectorXd rd(2 * observationCount);
     Eigen::MatrixXd Jac(2 * observationCount, unknownCount);
     Eigen::VectorXd g(unknownCount, 1);
-    Eigen::VectorXd dx(unknownCount, 1); // result vector
+    Eigen::VectorXd dx(unknownCount, 1); /* result vector */
 
     Jac.setZero();
     r.setZero();
@@ -96,7 +98,7 @@ MLPnPsolverStatus
 
     Eigen::MatrixXd jacTsKll;
     Eigen::MatrixXd A;
-    // solve simple gradient descent
+    /* solve simple gradient descent */
     while (it_cnt < maximumIt && !stop)
     {
         if (mlpnp_residuals_and_jacs(x_inout,
@@ -121,18 +123,20 @@ MLPnPsolverStatus
 
         A = jacTsKll * Jac;
 
-        // get system matrix
+        /* get system matrix */
         g = jacTsKll * r;
 
-        // solve
+        /* solve */
         Eigen::LDLT<Eigen::MatrixXd> chol(A);
         dx = chol.solve(g);
-        // this is to prevent the solution from falling into a wrong minimum
-        // if the linear estimate is spurious
+        /*!
+         * this is to prevent the solution from falling into a wrong minimum
+         * if the linear estimate is spurious
+         */
         if (dx.array().abs().maxCoeff() > 5.0 ||
             dx.array().abs().minCoeff() > 1.0)
             break;
-        // observation update
+        /* observation update */
         Eigen::MatrixXd dl = Jac * dx;
         if (dl.array().abs().maxCoeff() < epsP)
         {
@@ -144,11 +148,11 @@ MLPnPsolverStatus
             x_inout = x_inout - dx;
 
         ++it_cnt;
-    } // while
-    // result
+    } /* while */
+    /* result */
 
     return MLPnPsolverStatus::MLPN_PSOLVER_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

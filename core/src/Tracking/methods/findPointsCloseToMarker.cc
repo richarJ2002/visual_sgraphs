@@ -38,12 +38,12 @@ namespace vs_graphs
 namespace core
 {
 
-// Semantic Entities
+/* Semantic Entities */
 TrackingStatus Tracking::findPointsCloseToMarker(
     const semantic::Marker  *p_currentMarker_in,
     std::vector<MapPoint *> &pointsClose_out)
 {
-    // Get all map points
+    /* Get all map points */
     std::vector<MapPoint *> allmapPoints{};
     if (p_atlas->getAllMapPoints(allmapPoints) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -53,7 +53,7 @@ TrackingStatus Tracking::findPointsCloseToMarker(
                      "it cannot fail; continuing as before.",
                      __func__);
     }
-    // Get all map points close to the marker
+    /* Get all map points close to the marker */
     Sophus::SE3f currentMarker_inGlobalPose{};
     if (p_currentMarker_in->getGlobalPose(currentMarker_inGlobalPose) !=
         semantic::MarkerStatus::MARKER_STATUS_SUCCESS)
@@ -75,10 +75,10 @@ TrackingStatus Tracking::findPointsCloseToMarker(
                      "although it cannot fail; continuing as before.",
                      __func__);
     }
-    // Return the close points
+    /* Return the close points */
     pointsClose_out = closePoints;
     return TrackingStatus::TRACKING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -41,6 +41,6 @@ RoomStatus Room::getGroundPlane(geometric::Plane *&p_groundPlane_out) const
     return RoomStatus::ROOM_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

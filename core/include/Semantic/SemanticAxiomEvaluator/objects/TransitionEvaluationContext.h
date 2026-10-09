@@ -54,8 +54,8 @@ struct TransitionEvaluationContext
 {
 };
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SEMANTIC_AXIOM_EVALUATOR_TRANSITION_EVALUATION_CONTEXT_H
+#endif /* SEMANTIC_AXIOM_EVALUATOR_TRANSITION_EVALUATION_CONTEXT_H */

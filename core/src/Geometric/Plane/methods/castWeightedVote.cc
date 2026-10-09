@@ -49,14 +49,16 @@ PlaneStatus Plane::castWeightedVote(Plane::PlaneVariant semanticType_in,
     if (semanticType_in == PlaneVariant::UNDEFINED)
         return PlaneStatus::PLANE_STATUS_SUCCESS;
 
-    // check if semantic type is already in the semanticVotes map
+    /* check if semantic type is already in the semanticVotes map */
     if (semanticVotes.find(semanticType_in) == semanticVotes.end())
         semanticVotes[semanticType_in] = voteWeight_in;
     else
         semanticVotes[semanticType_in] += voteWeight_in;
 
-    // update based on new vote rankings
-    // find the semantic type with the maximum votes
+    /*!
+     * update based on new vote rankings
+     * find the semantic type with the maximum votes
+     */
     double       maximumVotes = 0;
     PlaneVariant maximumType  = PlaneVariant::UNDEFINED;
     for (const std::pair<const Plane::PlaneVariant, double> &vote :
@@ -69,7 +71,7 @@ PlaneStatus Plane::castWeightedVote(Plane::PlaneVariant semanticType_in,
         }
     }
 
-    // set the plane type if votes above a certain threshold
+    /* set the plane type if votes above a certain threshold */
     types::SystemParams *p_params = nullptr;
     if (types::SystemParams::getParams(p_params) !=
         types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
@@ -87,6 +89,6 @@ PlaneStatus Plane::castWeightedVote(Plane::PlaneVariant semanticType_in,
     return PlaneStatus::PLANE_STATUS_SUCCESS;
 }
 
-} // namespace geometric
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometric */
+} /* namespace core */
+} /* namespace vs_graphs */

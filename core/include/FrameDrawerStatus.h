@@ -44,7 +44,7 @@ enum class FrameDrawerStatus : std::uint8_t
     FRAME_DRAWER_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // FRAME_DRAWER_STATUS_H
+#endif /* FRAME_DRAWER_STATUS_H */

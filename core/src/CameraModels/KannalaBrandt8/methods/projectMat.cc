@@ -37,4 +37,4 @@ Eigen::Vector2f KannalaBrandt8::projectMat(const cv::Point3f &point3d_in)
     /* Return a 2D vector of point in camera projection frame */
     return Eigen::Vector2f(projectedPoint.x, projectedPoint.y);
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

@@ -74,6 +74,6 @@ FloorStatus Floor::detachRoom(Room *p_room_inout)
     return FloorStatus::FLOOR_STATUS_SUCCESS;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

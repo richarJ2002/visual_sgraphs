@@ -57,5 +57,5 @@ TrackingStatus calcAverage(std::vector<int> values_in, double &average_out)
 }
 #endif
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

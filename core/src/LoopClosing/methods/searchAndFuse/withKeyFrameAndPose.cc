@@ -51,9 +51,6 @@ LoopClosingStatus
 
     int totalReplaces = 0;
 
-    // cout << "[FUSE]: Initially there are " << vpMapPoints.size() << " MPs" <<
-    // endl; cout << "FUSE: Intially there are " << CorrectedPosesMap.size() <<
-    // " KFs" << endl;
     for (KeyFrameAndPose::const_iterator mit  = correctedPosesMap_in.begin(),
                                          mend = correctedPosesMap_in.end();
          mit != mend;
@@ -99,7 +96,7 @@ LoopClosingStatus
                          __func__);
         }
 
-        // Get Map Mutex
+        /* Get Map Mutex */
         std::unique_lock<std::mutex> lock(p_map->mapUpdateMutex);
         const int                    lpCount = mapPoints_in.size();
         for (int lpIndex = 0; lpIndex < lpCount; lpIndex++)
@@ -123,10 +120,9 @@ LoopClosingStatus
 
         totalReplaces += replaceCount;
     }
-    // cout << "[FUSE]: " << total_replaces << " MPs had been fused" << endl;
 
     return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

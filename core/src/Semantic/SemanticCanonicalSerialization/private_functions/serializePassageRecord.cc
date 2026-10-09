@@ -99,6 +99,6 @@ nlohmann::json serializePassageRecord(const PassageRecord &value_in,
     return json;
 }
 
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

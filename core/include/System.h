@@ -45,7 +45,7 @@
 #include <thread>
 #include <unistd.h>
 
-// JSON library
+/* JSON library */
 #include "SystemStatus.h"
 #include "Thirdparty/nlohmann/json.hpp"
 #include "VerboseStatus.h"
@@ -65,8 +65,8 @@ namespace vs_graphs
 namespace core
 {
 class KeyFrameDatabase;
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -75,9 +75,9 @@ namespace core
 namespace geometric
 {
 class Plane;
-} // namespace geometric
-} // namespace core
-} // namespace vs_graphs
+} /* namespace geometric */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -88,9 +88,9 @@ namespace semantic
 class Marker;
 class Passage;
 class Room;
-} // namespace semantic
-} // namespace core
-} // namespace vs_graphs
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */
 
 namespace vs_graphs
 {
@@ -291,8 +291,8 @@ namespace utils
 namespace settings
 {
 class Settings;
-} // namespace settings
-} // namespace utils
+} /* namespace settings */
+} /* namespace utils */
 class SemanticSegmentation;
 class SemanticsManager;
 
@@ -2347,7 +2347,7 @@ class System
     utils::settings::Settings *p_settings;
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // SYSTEM_H
+#endif /* SYSTEM_H */

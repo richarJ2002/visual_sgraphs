@@ -554,8 +554,10 @@ SystemStatus System::getMissionHealthSnapshot(
                         passageTraversalKnownToFarCount) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getTraversalKnownToFarCount cannot fail; continue as
-                    // before.
+                    /*!
+                     * getTraversalKnownToFarCount cannot fail; continue as
+                     * before.
+                     */
                 }
                 passage.primaryTraversalCount = passageTraversalKnownToFarCount;
                 std::size_t passageTraversalFarToKnownCount{};
@@ -563,8 +565,10 @@ SystemStatus System::getMissionHealthSnapshot(
                         passageTraversalFarToKnownCount) !=
                     semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
                 {
-                    // getTraversalFarToKnownCount cannot fail; continue as
-                    // before.
+                    /*!
+                     * getTraversalFarToKnownCount cannot fail; continue as
+                     * before.
+                     */
                 }
                 passage.secondaryTraversalCount =
                     passageTraversalFarToKnownCount;
@@ -665,5 +669,5 @@ SystemStatus System::getMissionHealthSnapshot(
     return SystemStatus::SYSTEM_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

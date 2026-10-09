@@ -43,7 +43,7 @@ SystemStatus System::saveMapPointsAsPCD(const std::string &filename_in,
 {
     try
     {
-        // make a pointcloud out of all map points
+        /* make a pointcloud out of all map points */
         pcl::PointCloud<pcl::PointXYZ>::Ptr p_cloud(
             new pcl::PointCloud<pcl::PointXYZ>);
         std::vector<MapPoint *> mapPoints{};
@@ -97,7 +97,7 @@ SystemStatus System::saveMapPointsAsPCD(const std::string &filename_in,
             p_cloud->push_back(point);
         }
 
-        // save the pointcloud
+        /* save the pointcloud */
         pcl::io::savePCDFileBinary(filename_in + ".pcd", *p_cloud);
 
         isSaved_out = true;
@@ -117,5 +117,5 @@ SystemStatus System::saveMapPointsAsPCD(const std::string &filename_in,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

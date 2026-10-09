@@ -43,7 +43,7 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
     vs_graphs::core::geometric::Plane::PlaneVariant semanticType_in,
     double                                          confidence_in)
 {
-    // Find the matched plane among all planes of the map
+    /* Find the matched plane among all planes of the map */
     vs_graphs::core::geometric::Plane *p_currentPlane = nullptr;
     if (p_atlas_in->getPlaneById(planeId_in, p_currentPlane) !=
         AtlasStatus::ATLAS_STATUS_SUCCESS)
@@ -54,13 +54,13 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
                      __func__);
     }
 
-    // the observation of the plane
+    /* the observation of the plane */
     vs_graphs::core::geometric::Plane::Observation observation;
 
-    // the observation of the plane equation
+    /* the observation of the plane equation */
     observation.localPlane = estimatedPlane_in;
 
-    // the observation of the plane point cloud (measurement)
+    /* the observation of the plane point cloud (measurement) */
     Eigen::Matrix4d pointPlaneConstraintMatrix;
     pointPlaneConstraintMatrix.setZero();
     types::SystemParams *p_params = nullptr;
@@ -85,10 +85,10 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
     }
     observation.pointPlaneConstraintMatrix = pointPlaneConstraintMatrix;
 
-    // the semantic class of the observation
+    /* the semantic class of the observation */
     observation.semanticType = semanticType_in;
 
-    // the aggregated confidence of the plane
+    /* the aggregated confidence of the plane */
     observation.confidence = confidence_in;
     if (p_currentPlane->addObservation(p_keyFrame_inout, observation) !=
         geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
@@ -99,7 +99,7 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
                      __func__);
     }
 
-    // Add the plane to the list of planes in the current KeyFrame
+    /* Add the plane to the list of planes in the current KeyFrame */
     if (p_keyFrame_inout->addMapPlane(p_currentPlane) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
     {
@@ -109,7 +109,7 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
                      __func__);
     }
 
-    // transform the plane cloud to the global frame
+    /* transform the plane cloud to the global frame */
     Sophus::SE3f keyFramePoseInverse{};
     if (p_keyFrame_inout->getPoseInverse(keyFramePoseInverse) !=
         KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
@@ -216,5 +216,5 @@ GeoSemHelpersStatus GeoSemHelpers::updateMapPlane(
     return GeoSemHelpersStatus::GEO_SEM_HELPERS_STATUS_SUCCESS;
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

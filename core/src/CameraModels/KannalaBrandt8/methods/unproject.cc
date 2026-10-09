@@ -33,7 +33,7 @@ namespace vs_graphs::core::camera_models::kannalabrandt8
 {
 cv::Point3f KannalaBrandt8::unproject(const cv::Point2f &point2d_in)
 {
-    // Use Newthon method to solve for theta with good precision (err ~ e-6)
+    /* Use Newthon method to solve for theta with good precision (err ~ e-6) */
     cv::Point2f normalizedImagePoint(
         (point2d_in.x - parameters[2]) / parameters[0],
         (point2d_in.y - parameters[3]) / parameters[1]);
@@ -46,7 +46,7 @@ cv::Point3f KannalaBrandt8::unproject(const cv::Point2f &point2d_in)
 
     if (distortedIncidenceAngle > 1e-8)
     {
-        // Compensate distortion iteratively
+        /* Compensate distortion iteratively */
         float incidenceAngle = distortedIncidenceAngle;
 
         for (int iterationIndex = 0; iterationIndex < 10; iterationIndex++)
@@ -78,4 +78,4 @@ cv::Point3f KannalaBrandt8::unproject(const cv::Point2f &point2d_in)
                        normalizedImagePoint.y * rayScale,
                        1.f);
 }
-} // namespace vs_graphs::core::camera_models::kannalabrandt8
+} /* namespace vs_graphs::core::camera_models::kannalabrandt8 */

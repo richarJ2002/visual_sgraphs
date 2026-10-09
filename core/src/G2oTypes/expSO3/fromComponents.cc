@@ -88,5 +88,5 @@ G2oTypesStatus expSO3(const double     angleAxisX_in,
     }
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

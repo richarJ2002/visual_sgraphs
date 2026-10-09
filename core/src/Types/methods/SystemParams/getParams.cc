@@ -38,6 +38,6 @@ SystemParamsStatus SystemParams::getParams(SystemParams *&p_params_out)
     p_params_out = p_systemParams;
     return SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS;
 }
-} // namespace types
-} // namespace core
-} // namespace vs_graphs
+} /* namespace types */
+} /* namespace core */
+} /* namespace vs_graphs */

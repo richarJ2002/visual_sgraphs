@@ -49,5 +49,5 @@ bool EdgeSE3ProjectSE3::read(std::istream &inputStream_inout)
     return inputStream_inout.good() || inputStream_inout.eof();
 }
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */

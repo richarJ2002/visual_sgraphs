@@ -32,4 +32,4 @@
 #include "Utils/Settings/objects/Settings.h"
 #include "Utils/Utils/objects/Utils.h"
 
-#endif // UTILS_OBJECTS_H
+#endif /* UTILS_OBJECTS_H */

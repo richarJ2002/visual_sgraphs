@@ -44,7 +44,7 @@ enum class TrackingStatus : std::uint8_t
     TRACKING_STATUS_SUCCESS = 0U
 };
 
-} // namespace core
-} // namespace vs_graphs
+} /* namespace core */
+} /* namespace vs_graphs */
 
-#endif // TRACKING_STATUS_H
+#endif /* TRACKING_STATUS_H */
