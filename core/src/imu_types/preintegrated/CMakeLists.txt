@@ -1,0 +1,24 @@
+# Preintegrated object sources.
+set(VS_GRAPHS_IMUTYPES_PREINTEGRATED_SOURCES
+  core/src/imu_types/preintegrated/methods/copyFrom.cc
+  core/src/imu_types/preintegrated/methods/getDeltaBias.cc
+  core/src/imu_types/preintegrated/methods/getDeltaPosition.cc
+  core/src/imu_types/preintegrated/methods/getDeltaRotation.cc
+  core/src/imu_types/preintegrated/methods/getDeltaVelocity.cc
+  core/src/imu_types/preintegrated/methods/getOriginalBias.cc
+  core/src/imu_types/preintegrated/methods/getOriginalDeltaPosition.cc
+  core/src/imu_types/preintegrated/methods/getOriginalDeltaRotation.cc
+  core/src/imu_types/preintegrated/methods/getOriginalDeltaVelocity.cc
+  core/src/imu_types/preintegrated/methods/getUpdatedBias.cc
+  core/src/imu_types/preintegrated/methods/getUpdatedDeltaPosition.cc
+  core/src/imu_types/preintegrated/methods/getUpdatedDeltaRotation.cc
+  core/src/imu_types/preintegrated/methods/getUpdatedDeltaVelocity.cc
+  core/src/imu_types/preintegrated/methods/initialize.cc
+  core/src/imu_types/preintegrated/methods/integrateNewMeasurement.cc
+  core/src/imu_types/preintegrated/methods/mergePrevious.cc
+  core/src/imu_types/preintegrated/methods/printMeasurements.cc
+  core/src/imu_types/preintegrated/methods/reintegrate.cc
+  core/src/imu_types/preintegrated/methods/serialize.cc
+  core/src/imu_types/preintegrated/methods/serializeIntegrable.cc
+  core/src/imu_types/preintegrated/methods/setNewBias.cc
+)

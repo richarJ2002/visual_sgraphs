@@ -1,0 +1,99 @@
+# SemanticsManager object sources.
+set(VS_GRAPHS_SEMANTICSMANAGER_SOURCES
+  core/src/semantics_manager/methods/admitWallToRoom.cc
+  core/src/semantics_manager/methods/admitWallToRoomForTest.cc
+  core/src/semantics_manager/methods/associateAllWallsToRooms.cc
+  core/src/semantics_manager/methods/associateAllWallsToRoomsForTest.cc
+  core/src/semantics_manager/methods/associatePassagesToRooms.cc
+  core/src/semantics_manager/methods/associatePassagesToRoomsForTest.cc
+  core/src/semantics_manager/methods/associateRooms.cc
+  core/src/semantics_manager/methods/captureOpenPassageHypotheses.cc
+  core/src/semantics_manager/methods/captureUnresolvedWallHypotheses.cc
+  core/src/semantics_manager/methods/checkFinish.cc
+  core/src/semantics_manager/methods/computeGroundPlaneHeight.cc
+  core/src/semantics_manager/methods/computeGroundPlaneHeightForTest.cc
+  core/src/semantics_manager/methods/computePlaneToHorizontal.cc
+  core/src/semantics_manager/methods/consolidateRoomsInFreeSpaceCluster.cc
+  core/src/semantics_manager/methods/detachWallsBeyondConfirmedPassages.cc
+  core/src/semantics_manager/methods/detectDoorsAndDoorways.cc
+  core/src/semantics_manager/methods/detectOpenPassagesFromSkeletonEdges.cc
+  core/src/semantics_manager/methods/detectRoom_FreeSpaceCluster.cc
+  core/src/semantics_manager/methods/enforcePassageApertureBackstop.cc
+  core/src/semantics_manager/methods/enforcePassageSideInvariant.cc
+  core/src/semantics_manager/methods/enforcePassageSideInvariantForTest.cc
+  core/src/semantics_manager/methods/enforceUniqueWallOwnership.cc
+  core/src/semantics_manager/methods/ensureActiveMapBootstrapHierarchy.cc
+  core/src/semantics_manager/methods/ensureActiveMapBootstrapHierarchyForTest.cc
+  core/src/semantics_manager/methods/evaluateTopCandidateVerification.cc
+  core/src/semantics_manager/methods/evaluateTopCandidateVerificationForTest.cc
+  core/src/semantics_manager/methods/evaluateWallAdmissionEvidenceAdmissibleForTest.cc
+  core/src/semantics_manager/methods/filterGroundPlanes.cc
+  core/src/semantics_manager/methods/filterWallPlanes.cc
+  core/src/semantics_manager/methods/findRoomByMapAndId.cc
+  core/src/semantics_manager/methods/getCurrentRoomId.cc
+  core/src/semantics_manager/methods/getLastKnownRoomId.cc
+  core/src/semantics_manager/methods/getLatestSkeletonCluster.cc
+  core/src/semantics_manager/methods/getPendingWallAgeForTest.cc
+  core/src/semantics_manager/methods/getRoomTrackerEventHistoryForTest.cc
+  core/src/semantics_manager/methods/getRoomTrackerPendingForTest.cc
+  core/src/semantics_manager/methods/getRoomTrackerStateForTest.cc
+  core/src/semantics_manager/methods/getSemanticReportCacheEntry.cc
+  core/src/semantics_manager/methods/getUpdatedFloors.cc
+  core/src/semantics_manager/methods/getUpdatedFloorsForTest.cc
+  core/src/semantics_manager/methods/isFinished.cc
+  core/src/semantics_manager/methods/isSemanticReportCacheAvailable.cc
+  core/src/semantics_manager/methods/isWallFaceForeignToRoom.cc
+  core/src/semantics_manager/methods/logSemanticDiagnostics.cc
+  core/src/semantics_manager/methods/mergeOverlappingPassages.cc
+  core/src/semantics_manager/methods/onTrackingLost.cc
+  core/src/semantics_manager/methods/onTrackingRecovered.cc
+  core/src/semantics_manager/methods/partitionFreeSpaceAtPassages.cc
+  core/src/semantics_manager/methods/processRoomTrackerPendingForTest.cc
+  core/src/semantics_manager/methods/recomputeRoomCentroidsFromWalls.cc
+  core/src/semantics_manager/methods/reconcileRoomGroundPlanes.cc
+  core/src/semantics_manager/methods/reconcileRoomGroundPlanesForTest.cc
+  core/src/semantics_manager/methods/reconcileWallFacePairs.cc
+  core/src/semantics_manager/methods/reconcileWallFacePairsForTest.cc
+  core/src/semantics_manager/methods/requestFinish.cc
+  core/src/semantics_manager/methods/resetTemporalStateForMap.cc
+  core/src/semantics_manager/methods/run.cc
+  core/src/semantics_manager/methods/seedCurrentRoomFromActiveMap.cc
+  core/src/semantics_manager/methods/seedCurrentRoomFromActiveMapForTest.cc
+  core/src/semantics_manager/methods/setCurrentRoomIdForTest.cc
+  core/src/semantics_manager/methods/setFinish.cc
+  core/src/semantics_manager/methods/setRoomTrackerPendingPublishHookForTest.cc
+  core/src/semantics_manager/methods/submitVerificationVerdict.cc
+  core/src/semantics_manager/methods/suppressUndefendedWalls.cc
+  core/src/semantics_manager/methods/suppressUndefendedWallsForTest.cc
+  core/src/semantics_manager/methods/transformPlaneEqToGroundReference.cc
+  core/src/semantics_manager/methods/tryLockRoomTrackerPendingMutexForTest.cc
+  core/src/semantics_manager/methods/updatePassages.cc
+  core/src/semantics_manager/methods/updateRoomTrackerState.cc
+  core/src/semantics_manager/methods/updateTraversalEvidence.cc
+  core/src/semantics_manager/methods/validateRoomBoundaries.cc
+  core/src/semantics_manager/methods/validateRoomBoundariesForTest.cc
+  core/src/semantics_manager/private_functions/arePlausibleTwinWallFaces.cc
+  core/src/semantics_manager/private_functions/buildFiniteWallSegment2d.cc
+  core/src/semantics_manager/private_functions/computePolygonArea_m2.cc
+  core/src/semantics_manager/private_functions/computeRoomObservationGaps.cc
+  core/src/semantics_manager/private_functions/computeRotationBetweenDirections.cc
+  core/src/semantics_manager/private_functions/crossProduct2d.cc
+  core/src/semantics_manager/private_functions/evaluateWallAdmissionEvidence.cc
+  core/src/semantics_manager/private_functions/hasSeparatingFiniteWall.cc
+  core/src/semantics_manager/private_functions/intersectSupportingLines.cc
+  core/src/semantics_manager/private_functions/pointToSegmentDistance_m.cc
+  core/src/semantics_manager/private_functions/projectPlaneFootprintOntoSharedAxes.cc
+  core/src/semantics_manager/private_functions/segmentCrossesAperture.cc
+  core/src/semantics_manager/private_functions/segmentCrossesForeignWall.cc
+  core/src/semantics_manager/private_functions/segmentCrossesOpenPassageEvidence.cc
+  core/src/semantics_manager/private_functions/segmentCrossesPassageOpening.cc
+  core/src/semantics_manager/private_functions/sharesRoomNameTag.cc
+  core/src/semantics_manager/private_functions/tryCloseWallLoop.cc
+)
+
+# The Eigen setFromTwoVectors diagnostic deviation (see the file header) only
+# holds while Eigen is first included by this file, so never batch it.
+set_source_files_properties(
+  core/src/semantics_manager/private_functions/computeRotationBetweenDirections.cc
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
+)

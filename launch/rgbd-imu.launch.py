@@ -189,7 +189,7 @@ def generate_launch_description():
                             "voc_file",
                             default=[
                                 get_package_share_directory("vs_graphs"),
-                                "/Vocabulary/ORBvoc.txt.bin",
+                                "/vocabulary/ORBvoc.txt.bin",
                             ],
                         )
                     },
@@ -233,9 +233,6 @@ def generate_launch_description():
                     },
                     {
                         "frame_camera": "camera"
-                    },
-                    {
-                        "enable_pangolin": False
                     },
                     {
                         "static_transform": True

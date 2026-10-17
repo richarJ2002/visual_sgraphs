@@ -1,0 +1,34 @@
+# MapPoint object sources: exactly this object's translation units.
+set(VS_GRAPHS_MAPPOINT_SOURCES
+  core/src/map_point/methods/addObservation.cc
+  core/src/map_point/methods/computeDistinctiveDescriptors.cc
+  core/src/map_point/methods/eraseObservation.cc
+  core/src/map_point/methods/getDescriptor.cc
+  core/src/map_point/methods/getFoundRatio.cc
+  core/src/map_point/methods/getIndexInKeyFrame.cc
+  core/src/map_point/methods/getMap.cc
+  core/src/map_point/methods/getMaxDistanceInvariance.cc
+  core/src/map_point/methods/getMinDistanceInvariance.cc
+  core/src/map_point/methods/getNormal.cc
+  core/src/map_point/methods/getObservationCount.cc
+  core/src/map_point/methods/getObservations.cc
+  core/src/map_point/methods/getReferenceKeyFrame.cc
+  core/src/map_point/methods/getReplaced.cc
+  core/src/map_point/methods/getWorldPos.cc
+  core/src/map_point/methods/increaseFound.cc
+  core/src/map_point/methods/increaseVisible.cc
+  core/src/map_point/methods/isBad.cc
+  core/src/map_point/methods/isInKeyFrame.cc
+  core/src/map_point/methods/postLoad.cc
+  core/src/map_point/methods/preSave.cc
+  core/src/map_point/methods/predictScale.cc
+  core/src/map_point/methods/printObservations.cc
+  core/src/map_point/methods/replace.cc
+  core/src/map_point/methods/serialize.cc
+  core/src/map_point/methods/setBadFlag.cc
+  core/src/map_point/methods/setNormalVector.cc
+  core/src/map_point/methods/setWorldPos.cc
+  core/src/map_point/methods/static_members.cc
+  core/src/map_point/methods/updateMap.cc
+  core/src/map_point/methods/updateNormalAndDepth.cc
+)

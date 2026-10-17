@@ -1,0 +1,7 @@
+# MissionHealthTopologyJson module sources.
+set(VS_GRAPHS_MISSIONHEALTHTOPOLOGYJSON_SOURCES
+  core/src/mission_health_topology_json/methods/augmentMissionHealthTopologyJsonWithSemantics.cc
+  core/src/mission_health_topology_json/private_functions/axiomCapabilitiesToJson.cc
+  core/src/mission_health_topology_json/private_functions/entityKeysToJson.cc
+  core/src/mission_health_topology_json/private_functions/finiteAwareDoubleToJson.cc
+)

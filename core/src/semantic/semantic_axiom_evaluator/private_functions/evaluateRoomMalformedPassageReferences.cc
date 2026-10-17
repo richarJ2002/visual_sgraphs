@@ -1,0 +1,93 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            evaluateRoomMalformedPassageReferences.cc
+ *
+ * @brief           Implements evaluateRoomMalformedPassageReferences(),
+ *                  declared in private_functions.h.
+ *
+ *                  A room's own passageRefs entry with a local id but no
+ *                  key is genuine evidence that *some* Passage object this
+ *                  room references is malformed, but never proof of *which*
+ *                  passage -- local ids are unique only within one map
+ *                  (EntityKey.h) and are not themselves a map-qualified
+ *                  identity. This function therefore runs once per map (not
+ *                  once per evaluated passage) and reports the evidence
+ *                  scoped to the room alone.
+ */
+
+#include "semantic/semantic_axiom_evaluator/private_functions/private_functions.h"
+#include "semantic/semantic_graph_snapshot/semantic_graph_snapshot.h"
+#include <rclcpp/logging.hpp>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
+{
+
+SemanticAxiomEvaluatorStatus
+    evaluateRoomMalformedPassageReferences(const MapSnapshot    &mapSnapshot_in,
+                                           std::vector<Finding> &findings_inout)
+{
+    for (const RoomRecord &room : mapSnapshot_in.rooms)
+    {
+        if (!room.isLive)
+        {
+            continue;
+        }
+        bool anyMalformed = false;
+        for (const EntityRef &passageReference : room.passageRefs)
+        {
+            if (!passageReference.key.has_value() &&
+                passageReference.localId.has_value())
+            {
+                anyMalformed = true;
+                break;
+            }
+        }
+        if (anyMalformed)
+        {
+            Finding finding{};
+            if (makeFinding(
+                    AxiomCode::AX_PASS_02,
+                    AxiomResult::FAIL,
+                    ReasonCode::
+                        PASSAGE_CARDINALITY_ROOM_HAS_MALFORMED_REFERENCE,
+                    {room.key},
+                    finding) != SemanticAxiomEvaluatorStatus::
+                                    SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: makeFinding returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            findings_inout.push_back(finding);
+        }
+    }
+
+    return SemanticAxiomEvaluatorStatus::
+        SEMANTIC_AXIOM_EVALUATOR_STATUS_SUCCESS;
+}
+
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

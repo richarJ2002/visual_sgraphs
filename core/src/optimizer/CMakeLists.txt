@@ -1,0 +1,20 @@
+# Optimizer object sources: exactly this object's translation units.
+set(VS_GRAPHS_OPTIMIZER_SOURCES
+  core/src/optimizer/methods/bundleAdjustment.cc
+  core/src/optimizer/methods/fullInertialBA.cc
+  core/src/optimizer/methods/globalBundleAdjustment.cc
+  core/src/optimizer/methods/inertialOptimization.cc
+  core/src/optimizer/methods/localBundleAdjustment.cc
+  core/src/optimizer/methods/localInertialBA.cc
+  core/src/optimizer/methods/loopClosureLocalBundleAdjustment.cc
+  core/src/optimizer/methods/marginalize.cc
+  core/src/optimizer/methods/mergeInertialBA.cc
+  core/src/optimizer/methods/optimizeEssentialGraph.cc
+  core/src/optimizer/methods/optimizeEssentialGraph4DoF.cc
+  core/src/optimizer/methods/optimizeSim3.cc
+  core/src/optimizer/methods/poseInertialOptimizationLastFrame.cc
+  core/src/optimizer/methods/poseInertialOptimizationLastKeyFrame.cc
+  core/src/optimizer/methods/poseOptimization.cc
+  core/src/optimizer/private_functions/addPoseOnlyObservationEdges.cc
+  core/src/optimizer/private_functions/sortByVal.cc
+)

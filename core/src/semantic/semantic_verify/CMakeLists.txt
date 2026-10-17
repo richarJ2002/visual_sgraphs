@@ -1,0 +1,31 @@
+# semantic_verify module sources.
+set(VS_GRAPHS_SEMANTIC_SEMANTICVERIFY_SOURCES
+  core/src/semantic/semantic_verify/methods/collectWallObservations.cc
+  core/src/semantic/semantic_verify/methods/configFromSystemParams.cc
+  core/src/semantic/semantic_verify/methods/evaluateConsecutiveMergeGate.cc
+  core/src/semantic/semantic_verify/methods/evaluateMapMergeGate.cc
+  core/src/semantic/semantic_verify/methods/evaluateMergeAlignment.cc
+  core/src/semantic/semantic_verify/methods/mapMergeConfigFromSystemParams.cc
+  core/src/semantic/semantic_verify/methods/mergeDecisionName.cc
+  core/src/semantic/semantic_verify/methods/mergeReasonName.cc
+  core/src/semantic/semantic_verify/methods/runFloorGate.cc
+  core/src/semantic/semantic_verify/methods/verify.cc
+  core/src/semantic/semantic_verify/private_functions/angleBetween_rad.cc
+  core/src/semantic/semantic_verify/private_functions/checkAnchorRoomCentroids.cc
+  core/src/semantic/semantic_verify/private_functions/checkConsecutiveFloors.cc
+  core/src/semantic/semantic_verify/private_functions/checkConsecutivePassageTopology.cc
+  core/src/semantic/semantic_verify/private_functions/checkConsecutiveWallEdgeOverlap.cc
+  core/src/semantic/semantic_verify/private_functions/checkFixedTransformWalls.cc
+  core/src/semantic/semantic_verify/private_functions/checkPassageTopology.cc
+  core/src/semantic/semantic_verify/private_functions/collectConsecutiveAnchors.cc
+  core/src/semantic/semantic_verify/private_functions/copyMergeRoomEvidence.cc
+  core/src/semantic/semantic_verify/private_functions/findByWallId.cc
+  core/src/semantic/semantic_verify/private_functions/fitRotationFromNormals.cc
+  core/src/semantic/semantic_verify/private_functions/fitTranslation.cc
+  core/src/semantic/semantic_verify/private_functions/isFiniteVector.cc
+  core/src/semantic/semantic_verify/private_functions/passageGeometryIsUsable.cc
+  core/src/semantic/semantic_verify/private_functions/stableRoomIdentity.cc
+  core/src/semantic/semantic_verify/private_functions/symmetricSupportDistance.cc
+  core/src/semantic/semantic_verify/private_functions/transformAbsorbedPoint.cc
+  core/src/semantic/semantic_verify/private_functions/wallSamplesSpanInterval.cc
+)

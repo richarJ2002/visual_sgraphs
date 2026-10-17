@@ -1,0 +1,21 @@
+# KannalaBrandt8 object sources.
+set(VS_GRAPHS_CAMERAMODELS_KANNALABRANDT8_SOURCES
+  core/src/camera_models/kannala_brandt8/methods/computeProjectionJacobian.cc
+  core/src/camera_models/kannala_brandt8/methods/epipolarConstrain.cc
+  core/src/camera_models/kannala_brandt8/methods/getPrecision.cc
+  core/src/camera_models/kannala_brandt8/methods/isEqual.cc
+  core/src/camera_models/kannala_brandt8/methods/matchAndTriangulate.cc
+  core/src/camera_models/kannala_brandt8/methods/project.cc
+  core/src/camera_models/kannala_brandt8/methods/projectMat.cc
+  core/src/camera_models/kannala_brandt8/methods/readCalibration.cc
+  core/src/camera_models/kannala_brandt8/methods/reconstructWithTwoViews.cc
+  core/src/camera_models/kannala_brandt8/methods/serialize.cc
+  core/src/camera_models/kannala_brandt8/methods/toK.cc
+  core/src/camera_models/kannala_brandt8/methods/toK_.cc
+  core/src/camera_models/kannala_brandt8/methods/triangulate.cc
+  core/src/camera_models/kannala_brandt8/methods/triangulateMatches.cc
+  core/src/camera_models/kannala_brandt8/methods/uncertainty2.cc
+  core/src/camera_models/kannala_brandt8/methods/unproject.cc
+  core/src/camera_models/kannala_brandt8/methods/unprojectEig.cc
+  core/src/camera_models/kannala_brandt8/methods/writeCalibration.cc
+)

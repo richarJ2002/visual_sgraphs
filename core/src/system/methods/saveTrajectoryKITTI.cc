@@ -1,0 +1,188 @@
+/*!
+ * This file is a modified version of a file from ORB-SLAM3.
+ *
+ * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
+ * Original Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * vS-Graphs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*!
+ * @file            saveTrajectoryKITTI.cc
+ *
+ * @brief           Implements System::saveTrajectoryKITTI(), declared in
+ *                  System.h.
+ */
+
+#include "system/objects/SystemClass.h"
+#include "atlas/objects/AtlasStatusEnum.h"
+#include "keyframe/keyframe.h"
+#include "keyframe/objects/KeyFrameStatusEnum.h"
+#include "tracking/tracking.h"
+
+#include <iomanip>
+#include <rclcpp/logging.hpp>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace system
+{
+
+SystemStatus System::saveTrajectoryKITTI(const std::string &filename_in)
+{
+    std::cout << std::endl
+              << "Saving camera trajectory to " << filename_in << " ..."
+              << std::endl;
+    if (sensor == MONOCULAR)
+    {
+        std::cerr << "ERROR: SaveTrajectoryKITTI cannot be used for monocular."
+                  << std::endl;
+        return SystemStatus::SYSTEM_STATUS_SUCCESS;
+    }
+
+    std::vector<keyframe::KeyFrame *> keyFrames{};
+    if (p_atlas->getAllKeyFrames(keyFrames) !=
+        atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllKeyFrames returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+    std::sort(keyFrames.begin(), keyFrames.end(), keyframe::KeyFrame::lId);
+
+    /*!
+     * Transform all keyframes so that the first keyframe is at the origin.
+     * After a loop closure the first keyframe might not be at the origin.
+     */
+    Sophus::SE3f firstKeyFramePose_cameraToWorld{};
+    if (keyFrames[0]->getPoseInverse(firstKeyFramePose_cameraToWorld) !=
+        keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPoseInverse returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    std::ofstream f;
+    f.open(filename_in.c_str());
+    f << std::fixed;
+
+    /*!
+     * frame::Frame pose is stored relative to its reference keyframe (which is
+     * optimized by BA and pose graph). We need to get first the keyframe pose
+     * and then concatenate the relative transformation. Frames not localized
+     * (tracking failure) are not saved.
+     */
+
+    /*!
+     * For each frame we have a reference keyframe (lRit), the timestamp (lT)
+     * and a flag which is true when tracking failed (lbL).
+     */
+    std::list<vs_graphs::core::keyframe::KeyFrame *>::iterator rits =
+        p_tracker->referenceKeyFrames.begin();
+    std::list<double>::iterator lT = p_tracker->frameTimes.begin();
+    for (std::list<Sophus::SE3f>::iterator
+             lit  = p_tracker->relativeFramePoses.begin(),
+             lend = p_tracker->relativeFramePoses.end();
+         lit != lend;
+         lit++, rits++, lT++)
+    {
+        vs_graphs::core::keyframe::KeyFrame *p_keyFrame = *rits;
+
+        Sophus::SE3f referenceKeyFramePose_firstKeyFrameToCamera;
+
+        if (!p_keyFrame)
+            continue;
+
+        for (;;)
+        {
+            bool keyFrameIsBad{};
+            if (p_keyFrame->isBad(keyFrameIsBad) !=
+                keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!(keyFrameIsBad))
+            {
+                break;
+            }
+            referenceKeyFramePose_firstKeyFrameToCamera =
+                referenceKeyFramePose_firstKeyFrameToCamera * p_keyFrame->tcp;
+            keyframe::KeyFrame *p_keyFrameParent = nullptr;
+            if (p_keyFrame->getParent(p_keyFrameParent) !=
+                keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getParent returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            p_keyFrame = p_keyFrameParent;
+        }
+
+        Sophus::SE3f keyFramePose{};
+        if (p_keyFrame->getPose(keyFramePose) !=
+            keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPose returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        referenceKeyFramePose_firstKeyFrameToCamera =
+            referenceKeyFramePose_firstKeyFrameToCamera * keyFramePose *
+            firstKeyFramePose_cameraToWorld;
+
+        Sophus::SE3f cameraPose_worldToCamera =
+            (*lit) * referenceKeyFramePose_firstKeyFrameToCamera;
+        Sophus::SE3f cameraPose_cameraToWorld =
+            cameraPose_worldToCamera.inverse();
+        Eigen::Matrix3f cameraRotation_cameraToWorld =
+            cameraPose_cameraToWorld.rotationMatrix();
+        Eigen::Vector3f cameraTranslation_cameraToWorld =
+            cameraPose_cameraToWorld.translation();
+
+        f << std::setprecision(9) << cameraRotation_cameraToWorld(0, 0) << " "
+          << cameraRotation_cameraToWorld(0, 1) << " "
+          << cameraRotation_cameraToWorld(0, 2) << " "
+          << cameraTranslation_cameraToWorld(0) << " "
+          << cameraRotation_cameraToWorld(1, 0) << " "
+          << cameraRotation_cameraToWorld(1, 1) << " "
+          << cameraRotation_cameraToWorld(1, 2) << " "
+          << cameraTranslation_cameraToWorld(1) << " "
+          << cameraRotation_cameraToWorld(2, 0) << " "
+          << cameraRotation_cameraToWorld(2, 1) << " "
+          << cameraRotation_cameraToWorld(2, 2) << " "
+          << cameraTranslation_cameraToWorld(2) << std::endl;
+    }
+    f.close();
+
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
+}
+
+} /* namespace system */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -1,0 +1,40 @@
+# Frame object sources: exactly this object's translation units.
+set(VS_GRAPHS_FRAME_SOURCES
+  core/src/frame/methods/assignFeaturesToGrid.cc
+  core/src/frame/methods/computeBagOfWords.cc
+  core/src/frame/methods/computeImageBounds.cc
+  core/src/frame/methods/computeStereoFishEyeMatches.cc
+  core/src/frame/methods/computeStereoFromRGBD.cc
+  core/src/frame/methods/computeStereoMatches.cc
+  core/src/frame/methods/extractOrbFeatures.cc
+  core/src/frame/methods/getCameraCenter.cc
+  core/src/frame/methods/getFeaturesInArea.cc
+  core/src/frame/methods/getImuPose.cc
+  core/src/frame/methods/getImuPosition.cc
+  core/src/frame/methods/getImuRotation.cc
+  core/src/frame/methods/getPose.cc
+  core/src/frame/methods/getRelativePoseTlr.cc
+  core/src/frame/methods/getRelativePoseTlrRotation.cc
+  core/src/frame/methods/getRelativePoseTlrTranslation.cc
+  core/src/frame/methods/getRelativePoseTrl.cc
+  core/src/frame/methods/getRotationRwc.cc
+  core/src/frame/methods/getVelocity.cc
+  core/src/frame/methods/hasVelocity.cc
+  core/src/frame/methods/inReferenceCoordinates.cc
+  core/src/frame/methods/isImuPreintegrated.cc
+  core/src/frame/methods/isInFrustum.cc
+  core/src/frame/methods/isInFrustumChecks.cc
+  core/src/frame/methods/isPositionInGrid.cc
+  core/src/frame/methods/isSet.cc
+  core/src/frame/methods/projectPointDistort.cc
+  core/src/frame/methods/setImuPoseVelocity.cc
+  core/src/frame/methods/setIntegrated.cc
+  core/src/frame/methods/setNewBias.cc
+  core/src/frame/methods/setPose.cc
+  core/src/frame/methods/setVelocity.cc
+  core/src/frame/methods/static_members.cc
+  core/src/frame/methods/undistortKeyPoints.cc
+  core/src/frame/methods/unprojectStereo.cc
+  core/src/frame/methods/unprojectStereoFishEye.cc
+  core/src/frame/methods/updatePoseMatrices.cc
+)

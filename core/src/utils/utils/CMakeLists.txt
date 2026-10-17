@@ -1,0 +1,37 @@
+# utils module sources.
+set(VS_GRAPHS_UTILS_UTILS_SOURCES
+  core/src/utils/utils/methods/applyPoseToPlane.cc
+  core/src/utils/utils/methods/arePlanesApartEnough.cc
+  core/src/utils/utils/methods/arePlanesFacingEachOther.cc
+  core/src/utils/utils/methods/arePlanesParallel.cc
+  core/src/utils/utils/methods/arePlanesPerpendicular.cc
+  core/src/utils/utils/methods/associatePlanes.cc
+  core/src/utils/utils/methods/calcSoftMin.cc
+  core/src/utils/utils/methods/calculateDistancePointToPlane.cc
+  core/src/utils/utils/methods/calculateEuclideanDistance.cc
+  core/src/utils/utils/methods/clusterPlaneClouds.cc
+  core/src/utils/utils/methods/collectCorrespondingWalls.cc
+  core/src/utils/utils/methods/computeCentroidFromPoints.cc
+  core/src/utils/utils/methods/computeMapTransform_Horn.cc
+  core/src/utils/utils/methods/computePlaneWidthHeight.cc
+  core/src/utils/utils/methods/consolidateProvisionalRooms.cc
+  core/src/utils/utils/methods/correctPlaneDirection.cc
+  core/src/utils/utils/methods/fuseDuplicateRoomsAfterMerge.cc
+  core/src/utils/utils/methods/getClassIdFromPlaneType.cc
+  core/src/utils/utils/methods/getFacingPlanes.cc
+  core/src/utils/utils/methods/getPlaneTypeFromClassId.cc
+  core/src/utils/utils/methods/lineIntersectsPlane.cc
+  core/src/utils/utils/methods/matchWallsBetweenRooms.cc
+  core/src/utils/utils/methods/pointOnPlane.cc
+  core/src/utils/utils/methods/pointcloudDistanceFilter.cc
+  core/src/utils/utils/methods/pointcloudDownsample.cc
+  core/src/utils/utils/methods/propagateSemanticPoseCorrections.cc
+  core/src/utils/utils/methods/ransacPlaneFitting.cc
+  core/src/utils/utils/methods/reAssociatePassages.cc
+  core/src/utils/utils/methods/reAssociateRooms.cc
+  core/src/utils/utils/methods/reAssociateSemanticPlanes.cc
+  core/src/utils/utils/private_functions/finiteWallExtentsAreCompatible.cc
+  core/src/utils/utils/private_functions/observationSide.cc
+  core/src/utils/utils/private_functions/passageOpening.cc
+  core/src/utils/utils/private_functions/projectPlaneBounds.cc
+)

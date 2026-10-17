@@ -1,0 +1,35 @@
+# LoopClosing object sources: exactly this object's translation units.
+set(VS_GRAPHS_LOOPCLOSING_SOURCES
+  core/src/loop_closing/methods/checkFinish.cc
+  core/src/loop_closing/methods/checkNewKeyFrames.cc
+  core/src/loop_closing/methods/checkObservations.cc
+  core/src/loop_closing/methods/correctLoop.cc
+  core/src/loop_closing/methods/detectAndReffineSim3FromLastKF.cc
+  core/src/loop_closing/methods/detectCommonRegionsFromBoW.cc
+  core/src/loop_closing/methods/detectCommonRegionsFromLastKF.cc
+  core/src/loop_closing/methods/findMatchesByProjection.cc
+  core/src/loop_closing/methods/getLoopCorrectionStatus.cc
+  core/src/loop_closing/methods/insertKeyFrame.cc
+  core/src/loop_closing/methods/isFinished.cc
+  core/src/loop_closing/methods/isMergeInProgress.cc
+  core/src/loop_closing/methods/mergeLocal.cc
+  core/src/loop_closing/methods/mergeLocalInertial.cc
+  core/src/loop_closing/methods/newDetectCommonRegions.cc
+  core/src/loop_closing/methods/recordLoopCorrectionEvent.cc
+  core/src/loop_closing/methods/relaunchGlobalBundleAdjustment.cc
+  core/src/loop_closing/methods/requestFinish.cc
+  core/src/loop_closing/methods/requestReset.cc
+  core/src/loop_closing/methods/requestResetActiveMap.cc
+  core/src/loop_closing/methods/resetIfRequested.cc
+  core/src/loop_closing/methods/run.cc
+  core/src/loop_closing/methods/runGlobalBundleAdjustment.cc
+  core/src/loop_closing/methods/searchAndFuse.cc
+  core/src/loop_closing/methods/setFinish.cc
+  core/src/loop_closing/methods/setLocalMapper.cc
+  core/src/loop_closing/methods/setMergeStatus.cc
+  core/src/loop_closing/methods/setTracker.cc
+  core/src/loop_closing/methods/stopGlobalBundleAdjustment.cc
+  core/src/loop_closing/private_functions/collapseMergedFloors.cc
+  core/src/loop_closing/private_functions/mergeFloorEvidenceAndRooms.cc
+  core/src/loop_closing/private_functions/verifyLoopMergeFloors.cc
+)

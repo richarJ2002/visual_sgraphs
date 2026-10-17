@@ -1,0 +1,54 @@
+# G2oTypes module aggregation: each object subdirectory declares exactly
+# its own sources; free SO(3) helpers live in g2o_types/public_functions/.
+# No source file is listed twice.
+include(${CMAKE_CURRENT_LIST_DIR}/g2o_types/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/imu_cam_pose/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/vertex_pose/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/edge_mono/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/edge_mono_only_pose/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/edge_stereo/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/edge_stereo_only_pose/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/edge_inertial/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/edge_inertial_gs/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/gravity_direction/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/vertex_gravity_direction/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/vertex_scale/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/edge_prior_pose_imu/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/edge_prior_acc/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/edge_prior_gyro/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/vertex_velocity/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/vertex_gyro_bias/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/vertex_acc_bias/CMakeLists.txt)
+
+set(VS_GRAPHS_G2OTYPES_SOURCES
+  ${VS_GRAPHS_G2OTYPES_IMUCAMPOSE_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_VERTEXPOSE_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_EDGEMONO_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_EDGEMONOONLYPOSE_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_EDGESTEREO_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_EDGESTEREOONLYPOSE_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_EDGEINERTIAL_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_EDGEINERTIALGS_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_G2OTYPES_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_GRAVITY_DIRECTION_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_VERTEXGRAVITYDIRECTION_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_VERTEXSCALE_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_EDGEPRIORPOSEIMU_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_EDGEPRIORACC_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_EDGEPRIORGYRO_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_VERTEXVELOCITY_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_VERTEXGYROBIAS_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_VERTEXACCBIAS_SOURCES}
+)
+
+include(${CMAKE_CURRENT_LIST_DIR}/edge_gyro_rw/CMakeLists.txt)
+list(APPEND VS_GRAPHS_G2OTYPES_SOURCES ${VS_GRAPHS_G2O_TYPES_EDGE_GYRO_RW_SOURCES})
+
+include(${CMAKE_CURRENT_LIST_DIR}/edge_acc_rw/CMakeLists.txt)
+list(APPEND VS_GRAPHS_G2OTYPES_SOURCES ${VS_GRAPHS_G2O_TYPES_EDGE_ACC_RW_SOURCES})
+
+include(${CMAKE_CURRENT_LIST_DIR}/vertex_pose_4_dof/CMakeLists.txt)
+list(APPEND VS_GRAPHS_G2OTYPES_SOURCES ${VS_GRAPHS_G2O_TYPES_VERTEX_POSE_4_DOF_SOURCES})
+
+include(${CMAKE_CURRENT_LIST_DIR}/edge_4_dof/CMakeLists.txt)
+list(APPEND VS_GRAPHS_G2OTYPES_SOURCES ${VS_GRAPHS_G2O_TYPES_EDGE_4_DOF_SOURCES})

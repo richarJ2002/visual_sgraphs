@@ -1,0 +1,186 @@
+/*!
+ * This file is a modified version of a file from ORB-SLAM3.
+ *
+ * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
+ * Original Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * vS-Graphs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*!
+ * @file            trackReferenceKeyFrame.cc
+ *
+ * @brief           Implements Tracking::trackReferenceKeyFrame(), declared in
+ *                  Tracking.h.
+ */
+
+#include "tracking/objects/TrackingClass.h"
+#include "frame/objects/FrameStatusEnum.h"
+#include "map_point/map_point.h"
+#include "map_point/objects/MapPointStatusEnum.h"
+#include "optimizer/objects/OptimizerStatusEnum.h"
+#include "orb_matcher/objects/ORBmatcherStatusEnum.h"
+
+#include "orb_matcher/orb_matcher.h"
+#include "optimizer/optimizer.h"
+#include "system/system.h"
+
+#include <iostream>
+#include <rclcpp/logging.hpp>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace tracking
+{
+
+TrackingStatus Tracking::trackReferenceKeyFrame(bool &isTracked_out)
+{
+    /* Compute Bag of Words vector */
+    if (currentFrame.computeBagOfWords() != frame::FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: computeBagOfWords returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /*!
+     * We perform first an ORB matching with the reference keyframe
+     * If enough matches are found we setup a PnP solver
+     */
+    orb_matcher::ORBmatcher                         matcher(0.7, true);
+    std::vector<map_point::MapPoint *> mapPointMatches;
+
+    int nmatches{};
+    if (matcher.searchByBoW(p_referenceKF,
+                            currentFrame,
+                            mapPointMatches,
+                            nmatches) !=
+        orb_matcher::ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: searchByBoW returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    if (nmatches < 8)
+    {
+        std::cout << "[Tracking] Warning: Less than 8 features matched!"
+                  << std::endl;
+        isTracked_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
+
+    currentFrame.mapPoints = mapPointMatches;
+    Sophus::SE3<float> lastFrameGetPose{};
+    if (lastFrame.getPose(lastFrameGetPose) !=
+        frame::FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (currentFrame.setPose(lastFrameGetPose) !=
+        frame::FrameStatus::FRAME_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setPose returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+
+    int inlierCount{};
+    if (optimizer::Optimizer::poseOptimization(&currentFrame, inlierCount) !=
+        optimizer::OptimizerStatus::OPTIMIZER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: poseOptimization returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* Discard outliers */
+    int nmatchesMap = 0;
+    for (int keyPointIndex = 0; keyPointIndex < currentFrame.keyPointCount;
+         keyPointIndex++)
+    {
+        if (currentFrame.mapPoints[keyPointIndex])
+        {
+            if (currentFrame.outlierFlags[keyPointIndex])
+            {
+                map_point::MapPoint *p_mapPoint =
+                    currentFrame.mapPoints[keyPointIndex];
+
+                currentFrame.mapPoints[keyPointIndex] =
+                    static_cast<map_point::MapPoint *>(nullptr);
+                currentFrame.outlierFlags[keyPointIndex] = false;
+                if (keyPointIndex < currentFrame.leftKeyPointCount)
+                {
+                    p_mapPoint->isTrackedInView = false;
+                }
+                else
+                {
+                    p_mapPoint->isTrackedInRightView = false;
+                }
+                p_mapPoint->isTrackedInView = false;
+                p_mapPoint->lastSeenFrameId = currentFrame.id;
+                nmatches--;
+            }
+            else
+            {
+                int observationCount{};
+                if (currentFrame.mapPoints[keyPointIndex]->getObservationCount(
+                        observationCount) !=
+                    map_point::MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getObservationCount returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (observationCount > 0)
+                {
+                    nmatchesMap++;
+                }
+            }
+        }
+    }
+
+    if (sensor == system::System::IMU_MONOCULAR ||
+        sensor == system::System::IMU_STEREO ||
+        sensor == system::System::IMU_RGBD)
+    {
+        isTracked_out = true;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
+    else
+    {
+        isTracked_out = nmatchesMap >= 10;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
+}
+
+} /* namespace tracking */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -1,0 +1,13 @@
+/*!
+ * @file            GeometricTools.h
+ *
+ * @brief           Public interface of the GeometricTools module.
+ */
+
+#ifndef VS_GRAPHS_CORE_SRC_GEOMETRIC_GEOMETRICTOOLS_GEOMETRICTOOLS_H
+#define VS_GRAPHS_CORE_SRC_GEOMETRIC_GEOMETRICTOOLS_GEOMETRICTOOLS_H
+
+#include "geometric/GeometricTools/objects/GeometricToolsClass.h"
+#include "geometric/GeometricTools/objects/GeometricToolsStatusEnum.h"
+
+#endif /* VS_GRAPHS_CORE_SRC_GEOMETRIC_GEOMETRICTOOLS_GEOMETRICTOOLS_H */

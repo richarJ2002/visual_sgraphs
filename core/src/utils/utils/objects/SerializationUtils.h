@@ -1,0 +1,267 @@
+/*!
+ * This file is part of vS-Graphs.
+ * Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * ORB-SLAM3 is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details:
+ * https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            SerializationUtils.h
+ *
+ * @brief           Declares helpers that save and load Sophus, Eigen and OpenCV
+ *                  types with Boost serialization.
+ */
+
+#ifndef VS_GRAPHS_CORE_SRC_UTILS_UTILS_OBJECTS_SERIALIZATION_UTILS_H
+#define VS_GRAPHS_CORE_SRC_UTILS_UTILS_OBJECTS_SERIALIZATION_UTILS_H
+
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/vector.hpp>
+
+#include <Eigen/Core>
+#include "sophus/objects/se3.hpp"
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
+
+#include <limits>
+#include <vector>
+
+namespace vs_graphs
+{
+namespace core
+{
+
+/*!
+ * @brief           Id written to a saved map for an absent link held in an
+ *                  unsigned id (a key frame's cameras, a map's initial and
+ *                  lowest-id key frames). ORB-SLAM3 stores -1, which an
+ *                  unsigned id holds as its largest value; the file format
+ *                  keeps that value, so a loaded id equals NO_SAVED_ID exactly
+ *                  when the link was absent.
+ *
+ * @tparam          IdType
+ *                  Unsigned id type of the stored field.
+ */
+template <typename IdType>
+inline constexpr IdType NO_SAVED_ID = std::numeric_limits<IdType>::max();
+
+/*!
+ * @brief           Saves or loads a Sophus rigid transform as a unit quaternion
+ *                  (w, x, y, z) followed by a translation, so the file does not
+ *                  depend on Sophus internals.
+ *
+ * @tparam          Archive
+ *                  Boost archive type; saving or loading is read from it.
+ *
+ * @param[in,out]   ar
+ *                  Archive written when saving, read when loading.
+ *
+ * @param[in,out]   T
+ *                  Transform written when saving; replaced when
+ *                  loading.
+ *
+ * @param[in]       version
+ *                  Archive version; currently unused.
+ */
+template <class Archive>
+void serializeSophusSE3(Archive                            &ar,
+                        Sophus::SE3f                       &T,
+                        [[maybe_unused]] const unsigned int version)
+{
+    Eigen::Vector4f quaternionCoefficients;
+    Eigen::Vector3f translation;
+
+    if (Archive::is_saving::value)
+    {
+        Eigen::Quaternionf quaternion = T.unit_quaternion();
+        quaternionCoefficients << quaternion.w(), quaternion.x(),
+            quaternion.y(), quaternion.z();
+        translation = T.translation();
+    }
+
+    ar &boost::serialization::make_array(quaternionCoefficients.data(),
+                                         quaternionCoefficients.size());
+    ar &boost::serialization::make_array(translation.data(),
+                                         translation.size());
+
+    if (Archive::is_loading::value)
+    {
+        Eigen::Quaternionf quaternion(quaternionCoefficients[0],
+                                      quaternionCoefficients[1],
+                                      quaternionCoefficients[2],
+                                      quaternionCoefficients[3]);
+        T = Sophus::SE3f(quaternion, translation);
+    }
+}
+
+/*!
+ * @brief           Saves or loads an OpenCV matrix as its size, type and
+ *                  continuity flag followed by the raw element bytes.
+ *
+ * @tparam          Archive
+ *                  Boost archive type; saving or loading is read from it.
+ *
+ * @param[in,out]   ar
+ *                  Archive written when saving, read when loading.
+ *
+ * @param[in,out]   mat
+ *                  Matrix written when saving; re-created with the
+ *                  stored size and type and filled when loading.
+ *
+ * @param[in]       version
+ *                  Archive version; currently unused.
+ */
+template <class Archive>
+void serializeMatrix(Archive                            &ar,
+                     cv::Mat                            &mat,
+                     [[maybe_unused]] const unsigned int version)
+{
+    int  columnCount, rowCount, matType;
+    bool isContinuous;
+
+    if (Archive::is_saving::value)
+    {
+        columnCount  = mat.cols;
+        rowCount     = mat.rows;
+        matType      = mat.type();
+        isContinuous = mat.isContinuous();
+    }
+
+    ar & columnCount & rowCount & matType & isContinuous;
+
+    if (Archive::is_loading::value)
+        mat.create(rowCount, columnCount, matType);
+
+    if (isContinuous)
+    {
+        const unsigned int dataByteCount =
+            rowCount * columnCount * mat.elemSize();
+        ar &boost::serialization::make_array(mat.ptr(), dataByteCount);
+    }
+    else
+    {
+        const unsigned int rowByteCount = columnCount * mat.elemSize();
+        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+        {
+            ar &boost::serialization::make_array(mat.ptr(rowIndex),
+                                                 rowByteCount);
+        }
+    }
+}
+
+/*!
+ * @brief           Saves or loads an OpenCV matrix held through a const
+ *                  reference; when loading, the result is written back into the
+ *                  referenced matrix by casting away const.
+ *
+ * @tparam          Archive
+ *                  Boost archive type; saving or loading is read from it.
+ *
+ * @param[in,out]   ar
+ *                  Archive written when saving, read when loading.
+ *
+ * @param[in,out]   mat
+ *                  Matrix written when saving; replaced when loading.
+ *
+ * @param[in]       version
+ *                  Archive version, forwarded to the non-const
+ *                  overload.
+ */
+template <class Archive>
+void serializeMatrix(Archive           &ar,
+                     const cv::Mat     &mat,
+                     const unsigned int version)
+{
+    cv::Mat mutableMatrixCopy = mat;
+
+    serializeMatrix(ar, mutableMatrixCopy, version);
+
+    if (Archive::is_loading::value)
+    {
+        cv::Mat *p_matrixWriteback;
+        p_matrixWriteback  = const_cast<cv::Mat *>(&mat);
+        *p_matrixWriteback = mutableMatrixCopy;
+    }
+}
+
+/*!
+ * @brief           Saves or loads a list of OpenCV key points, one field at a
+ *                  time. When loading, the result is written back into the
+ *                  referenced vector by casting away const.
+ *
+ * @tparam          Archive
+ *                  Boost archive type; saving or loading is read from it.
+ *
+ * @param[in,out]   ar
+ *                  Archive written when saving, read when loading.
+ *
+ * @param[in,out]   vKP
+ *                  Key points written when saving; replaced when
+ *                  loading.
+ *
+ * @param[in]       version
+ *                  Archive version; currently unused.
+ */
+template <class Archive>
+void serializeVectorKeyPoints(Archive                            &ar,
+                              const std::vector<cv::KeyPoint>    &vKP,
+                              [[maybe_unused]] const unsigned int version)
+{
+    int keyPointCount;
+
+    if (Archive::is_saving::value)
+    {
+        keyPointCount = vKP.size();
+    }
+
+    ar & keyPointCount;
+
+    std::vector<cv::KeyPoint> keyPointsCopy = vKP;
+    if (Archive::is_loading::value)
+        keyPointsCopy.reserve(keyPointCount);
+
+    for (int keyPointIndex = 0; keyPointIndex < keyPointCount; ++keyPointIndex)
+    {
+        cv::KeyPoint keyPoint;
+
+        if (Archive::is_loading::value)
+            keyPoint = cv::KeyPoint();
+
+        if (Archive::is_saving::value)
+            keyPoint = keyPointsCopy[keyPointIndex];
+
+        ar & keyPoint.angle;
+        ar & keyPoint.response;
+        ar & keyPoint.size;
+        ar & keyPoint.pt.x;
+        ar & keyPoint.pt.y;
+        ar & keyPoint.class_id;
+        ar & keyPoint.octave;
+
+        if (Archive::is_loading::value)
+            keyPointsCopy.push_back(keyPoint);
+    }
+
+    if (Archive::is_loading::value)
+    {
+        std::vector<cv::KeyPoint> *p_keyPointsWriteback;
+        p_keyPointsWriteback  = const_cast<std::vector<cv::KeyPoint> *>(&vKP);
+        *p_keyPointsWriteback = keyPointsCopy;
+    }
+}
+
+} /* namespace core */
+} /* namespace vs_graphs */
+
+#endif /* VS_GRAPHS_CORE_SRC_UTILS_UTILS_OBJECTS_SERIALIZATION_UTILS_H */

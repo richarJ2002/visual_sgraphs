@@ -1,0 +1,138 @@
+/*!
+ * This file is a modified version of a file from ORB-SLAM3.
+ *
+ * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
+ * Original Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * vS-Graphs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*!
+ * @file            checkObservations.cc
+ *
+ * @brief           Implements LoopClosing::checkObservations(), declared in
+ *                  LoopClosing.h.
+ */
+
+#include "loop_closing/objects/LoopClosingClass.h"
+#include "keyframe/keyframe.h"
+#include "keyframe/objects/KeyFrameStatusEnum.h"
+#include "map_point/map_point.h"
+#include "map_point/objects/MapPointStatusEnum.h"
+#include <rclcpp/logging.hpp>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace loop_closing
+{
+
+LoopClosingStatus LoopClosing::checkObservations(
+    std::set<keyframe::KeyFrame *> &keyFramesMap1_in,
+    std::set<keyframe::KeyFrame *> &keyFramesMap2_in)
+{
+    std::cout << "----------------------" << std::endl;
+    for (keyframe::KeyFrame *p_keyFrameInMap1 : keyFramesMap1_in)
+    {
+        std::map<keyframe::KeyFrame *, int> matchedMapPointCounts;
+        std::set<map_point::MapPoint *>     mapPoints{};
+        if (p_keyFrameInMap1->getMapPoints(mapPoints) !=
+            keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getMapPoints returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        for (map_point::MapPoint *p_sharedMapPoint : mapPoints)
+        {
+            bool sharedMapPointIsBad{};
+            if (!(!p_sharedMapPoint) &&
+                p_sharedMapPoint->isBad(sharedMapPointIsBad) !=
+                    map_point::MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (!p_sharedMapPoint || sharedMapPointIsBad)
+            {
+                continue;
+            }
+
+            std::map<keyframe::KeyFrame *, std::tuple<int, int>>
+                mapPointObservations{};
+            if (p_sharedMapPoint->getObservations(mapPointObservations) !=
+                map_point::MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getObservations returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            for (keyframe::KeyFrame *p_keyFrameInMap2 : keyFramesMap2_in)
+            {
+                if (mapPointObservations.find(p_keyFrameInMap2) !=
+                    mapPointObservations.end())
+                {
+                    if (matchedMapPointCounts.find(p_keyFrameInMap2) !=
+                        matchedMapPointCounts.end())
+                    {
+                        matchedMapPointCounts[p_keyFrameInMap2] =
+                            matchedMapPointCounts[p_keyFrameInMap2] + 1;
+                    }
+                    else
+                    {
+                        matchedMapPointCounts[p_keyFrameInMap2] = 1;
+                    }
+                }
+            }
+        }
+
+        if (matchedMapPointCounts.size() == 0)
+        {
+            std::cout << "CHECK-OBS: KF " << p_keyFrameInMap1->id
+                      << " has not any matched MP with the other map"
+                      << std::endl;
+        }
+        else
+        {
+            std::cout << "CHECK-OBS: KF " << p_keyFrameInMap1->id
+                      << " has matched MP with " << matchedMapPointCounts.size()
+                      << " KF from the other map" << std::endl;
+            for (std::pair<keyframe::KeyFrame *, int> matchedKeyFrame :
+                 matchedMapPointCounts)
+            {
+                std::cout << "   -KF: " << matchedKeyFrame.first->id
+                          << ", Number of matches: " << matchedKeyFrame.second
+                          << std::endl;
+            }
+        }
+    }
+    std::cout << "----------------------" << std::endl;
+
+    return LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS;
+}
+
+} /* namespace loop_closing */
+} /* namespace core */
+} /* namespace vs_graphs */

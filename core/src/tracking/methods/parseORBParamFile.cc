@@ -1,0 +1,173 @@
+/*!
+ * This file is a modified version of a file from ORB-SLAM3.
+ *
+ * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
+ * Original Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * vS-Graphs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*!
+ * @file            parseORBParamFile.cc
+ *
+ * @brief           Implements Tracking::parseORBParamFile(), declared in
+ *                  Tracking.h.
+ */
+
+#include "system/system.h"
+#include "orb_extractor/orb_extractor.h"
+#include "tracking/objects/TrackingClass.h"
+
+#include <iostream>
+#include <memory>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace tracking
+{
+
+TrackingStatus Tracking::parseORBParamFile(cv::FileStorage &settings_in,
+                                           bool            &isParsed_out)
+{
+    bool  isParameterMissing   = false;
+    int   featureCount         = 0;
+    int   levelCount           = 0;
+    int   initialThresholdFast = 0;
+    int   minimumThresholdFast = 0;
+    float scaleFactor          = 0.0F;
+
+    cv::FileNode node = settings_in["ORBextractor.nFeatures"];
+    if (!node.empty() && node.isInt())
+    {
+        featureCount = node.operator int();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.nFeatures parameter doesn't exist or is "
+                     "not an integer*"
+                  << std::endl;
+        isParameterMissing = true;
+    }
+
+    node = settings_in["ORBextractor.scaleFactor"];
+    if (!node.empty() && node.isReal())
+    {
+        scaleFactor = node.real();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.scaleFactor parameter doesn't exist or is "
+                     "not a real number*"
+                  << std::endl;
+        isParameterMissing = true;
+    }
+
+    node = settings_in["ORBextractor.nLevels"];
+    if (!node.empty() && node.isInt())
+    {
+        levelCount = node.operator int();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.nLevels parameter doesn't exist or is not "
+                     "an integer*"
+                  << std::endl;
+        isParameterMissing = true;
+    }
+
+    node = settings_in["ORBextractor.iniThFAST"];
+    if (!node.empty() && node.isInt())
+    {
+        initialThresholdFast = node.operator int();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.iniThFAST parameter doesn't exist or is "
+                     "not an integer*"
+                  << std::endl;
+        isParameterMissing = true;
+    }
+
+    node = settings_in["ORBextractor.minThFAST"];
+    if (!node.empty() && node.isInt())
+    {
+        minimumThresholdFast = node.operator int();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.minThFAST parameter doesn't exist or is "
+                     "not an integer*"
+                  << std::endl;
+        isParameterMissing = true;
+    }
+
+    if (isParameterMissing)
+    {
+        isParsed_out = false;
+        return TrackingStatus::TRACKING_STATUS_SUCCESS;
+    }
+
+    p_orbExtractorLeft = std::make_unique<orb_extractor::ORBextractor>(featureCount,
+                                                        scaleFactor,
+                                                        levelCount,
+                                                        initialThresholdFast,
+                                                        minimumThresholdFast);
+
+    if (sensor == system::System::STEREO ||
+        sensor == system::System::IMU_STEREO)
+        p_orbExtractorRight =
+            std::make_unique<orb_extractor::ORBextractor>(featureCount,
+                                           scaleFactor,
+                                           levelCount,
+                                           initialThresholdFast,
+                                           minimumThresholdFast);
+
+    if (sensor == system::System::MONOCULAR ||
+        sensor == system::System::IMU_MONOCULAR)
+        p_iniOrbExtractor =
+            std::make_unique<orb_extractor::ORBextractor>(5 * featureCount,
+                                           scaleFactor,
+                                           levelCount,
+                                           initialThresholdFast,
+                                           minimumThresholdFast);
+
+    /* Adaptive FAST threshold initialization */
+    lastFrameFeatures        = 0;
+    consecutiveLowFeatures   = 0;
+    baseInitialFastThreshold = initialThresholdFast;
+    baseMinimumFastThreshold = minimumThresholdFast;
+
+    std::cout << std::endl << "ORB Extractor Parameters: " << std::endl;
+    std::cout << "- Number of Features: " << featureCount << std::endl;
+    std::cout << "- Scale Levels: " << levelCount << std::endl;
+    std::cout << "- Scale Factor: " << scaleFactor << std::endl;
+    std::cout << "- Initial Fast Threshold: " << initialThresholdFast
+              << std::endl;
+    std::cout << "- Minimum Fast Threshold: " << minimumThresholdFast
+              << std::endl;
+
+    isParsed_out = true;
+    return TrackingStatus::TRACKING_STATUS_SUCCESS;
+}
+
+} /* namespace tracking */
+} /* namespace core */
+} /* namespace vs_graphs */

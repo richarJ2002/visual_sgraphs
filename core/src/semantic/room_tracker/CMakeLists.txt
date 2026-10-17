@@ -1,0 +1,20 @@
+# room_tracker module sources.
+set(VS_GRAPHS_SEMANTIC_ROOMTRACKER_SOURCES
+  core/src/semantic/room_tracker/methods/accumulateDwell.cc
+  core/src/semantic/room_tracker/methods/applyEvent.cc
+  core/src/semantic/room_tracker/methods/applyRow.cc
+  core/src/semantic/room_tracker/methods/commit.cc
+  core/src/semantic/room_tracker/methods/computeConfidence.cc
+  core/src/semantic/room_tracker/methods/eventToJSON.cc
+  core/src/semantic/room_tracker/methods/eventToString.cc
+  core/src/semantic/room_tracker/methods/getConfig.cc
+  core/src/semantic/room_tracker/methods/getEventHistory.cc
+  core/src/semantic/room_tracker/methods/getLastEvent.cc
+  core/src/semantic/room_tracker/methods/getState.cc
+  core/src/semantic/room_tracker/methods/reset.cc
+  core/src/semantic/room_tracker/methods/stateToString.cc
+  core/src/semantic/room_tracker/methods/step.cc
+  core/src/semantic/room_tracker/private_functions/eventLiteral.cc
+  core/src/semantic/room_tracker/private_functions/formatDouble.cc
+  core/src/semantic/room_tracker/private_functions/stateLiteral.cc
+)

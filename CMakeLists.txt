@@ -10,6 +10,9 @@ endif()
 
 project(vs_graphs)
 
+# Symbol-aware tools (clang-rename, clang-tidy) read the compile database.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
@@ -28,6 +31,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 # 20260830-150425 showed Eigen's handmade_aligned_free reading eight bytes
 # before such a buffer. Use the same malloc/free path across this ABI boundary.
 add_compile_definitions(EIGEN_MALLOC_ALREADY_ALIGNED=1)
+
+# Preserve the existing g2o/Eigen allocation ABI on both sides of the library
+# boundary; changing C++17 over-aligned allocation for only one side is unsafe.
+add_compile_definitions(EIGEN_HAS_CXX17_OVERALIGN=0)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -96,13 +103,12 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs
 )
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
+# Headers live with their owning source packages; generated and vendored
+# include roots are supplied separately below.
 include_directories(
   ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/core/include
-  ${PROJECT_SOURCE_DIR}/core/include/CameraModels
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/core/src
   ${EIGEN3_INCLUDE_DIR}
   ${Pangolin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
@@ -112,12 +118,11 @@ include_directories(
 # Vendored code is not project-owned (CPP_CODING_STANDARD.md sections 1.2 and
 # 15.3), so it is exposed as SYSTEM: diagnostics raised inside its headers
 # (e.g. g2o's use of the deprecated Eigen::AlignedBit) are not reported.
-# Only these roots are affected; project-owned headers under core/include keep
-# the full warning set. `core` is the root of the `Thirdparty/...` includes.
+# Only these roots are affected; project-owned headers under core/src keep
+# the full warning set, including Sophus reached through legacy headers.
 include_directories(SYSTEM
-  ${PROJECT_SOURCE_DIR}/core
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/Sophus
+  ${CMAKE_CURRENT_BINARY_DIR}/g2o_generated
+  ${PROJECT_SOURCE_DIR}/core/src/g2o
 )
 include_directories(${OPENGL_INCLUDE_DIRS})
 
@@ -125,117 +130,136 @@ include_directories(${OPENGL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-# Include third-party CMakeLists
-include(${PROJECT_SOURCE_DIR}/core/Thirdparty/DBoW2/CMakeLists.txt)
-include(${PROJECT_SOURCE_DIR}/core/Thirdparty/g2o/CMakeLists.txt)
+# Quarantine the vendored lists' private include roots. Their targets retain
+# those includes, while owned targets use only the authorized SYSTEM roots.
+get_directory_property(VS_GRAPHS_OWNED_INCLUDE_DIRS INCLUDE_DIRECTORIES)
+# Include the relocated g2o CMakeLists
+include(${PROJECT_SOURCE_DIR}/core/src/g2o/CMakeLists.txt)
+set_property(DIRECTORY PROPERTY INCLUDE_DIRECTORIES
+  ${VS_GRAPHS_OWNED_INCLUDE_DIRS})
 
-# The vendored files above write their libraries into the source tree, which
-# the Debug, Release and sanitizer build trees would then share and overwrite.
-# Every library of this package is built into its own build tree instead.
+# Keep every library of this package in its own build tree, so the Debug,
+# Release and sanitizer builds do not share or overwrite source-tree outputs.
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-set_target_properties(DBoW2 g2o PROPERTIES
+set_target_properties(g2o PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 # Types module sources (objects/methods layout)
-include(${PROJECT_SOURCE_DIR}/cmake/auto_sources_Types_Types.cmake)
+include(${PROJECT_SOURCE_DIR}/core/src/types/CMakeLists.txt)
 
 # CameraModels module sources (object-subpackage layout)
-include(${PROJECT_SOURCE_DIR}/core/src/CameraModels/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/camera_models/CMakeLists.txt)
 
 # Utils module sources (object-subpackage layout)
-include(${PROJECT_SOURCE_DIR}/core/src/Utils/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/utils/CMakeLists.txt)
 
 # Geometric module sources (Plane + GeometricTools object packages, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/Geometric/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/geometric/CMakeLists.txt)
 
 # Semantic object packages (Room/Passage/Floor/Marker/RoomTracker/…, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/Semantic/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/semantic/CMakeLists.txt)
 
 # StereoMatchOutlierRejection module sources (single free function, §5.4)
-include(${PROJECT_SOURCE_DIR}/core/src/StereoMatchOutlierRejection/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/stereo_match_outlier_rejection/CMakeLists.txt)
 
 # DatabaseParser module sources (single DBParser object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/DatabaseParser/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/database_parser/CMakeLists.txt)
 
 # MissionHealthTopologyJson module sources (free functions, §5.4)
-include(${PROJECT_SOURCE_DIR}/core/src/MissionHealthTopologyJson/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/mission_health_topology_json/CMakeLists.txt)
 
 # ImuTypes module sources (Bias/Calib/IntegratedRotation/Preintegrated, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/ImuTypes/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/imu_types/CMakeLists.txt)
 
 # MapDrawer object sources (single MapDrawer object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/MapDrawer/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/map_drawer/CMakeLists.txt)
 
 # FrameDrawer object sources (single FrameDrawer object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/FrameDrawer/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/frame_drawer/CMakeLists.txt)
 
 # ResetCause module sources (ResetCauseRetention object + free functions)
-include(${PROJECT_SOURCE_DIR}/core/src/ResetCause/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/reset_cause/CMakeLists.txt)
 
 # Sim3Solver object sources (single Sim3Solver object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/Sim3Solver/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/sim3_solver/CMakeLists.txt)
 
 # G2oTypes module sources (g2o vertex/edge objects + SO(3) helpers, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/G2oTypes/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/g2o_types/CMakeLists.txt)
 
 # KeyFrameDatabase module sources (single KeyFrameDatabase object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/KeyFrameDatabase/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/keyframe_database/CMakeLists.txt)
 
 # TwoViewReconstruction object sources (single object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/TwoViewReconstruction/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/two_view_reconstruction/CMakeLists.txt)
 
 # MLPnPsolver object sources (single object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/MLPnPsolver/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/mlpnp_solver/CMakeLists.txt)
 
 # ORBextractor module sources (single object + internal helpers, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/ORBextractor/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/orb_extractor/CMakeLists.txt)
 
 # ORBmatcher object sources (single object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/ORBmatcher/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/orb_matcher/CMakeLists.txt)
 
 # MapPoint object sources (single object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/MapPoint/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/map_point/CMakeLists.txt)
 
 # Map object sources (single object, SCC construct/ out-of-line, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/Map/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/map/CMakeLists.txt)
 
 # Frame object sources (single object, SCC construct/ out-of-line, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/Frame/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/frame/CMakeLists.txt)
 
 # KeyFrame object sources (single object, SCC construct/ out-of-line, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/KeyFrame/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/keyframe/CMakeLists.txt)
 
 # System object sources (single System object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/System/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/system/CMakeLists.txt)
 
 # Tracking object sources (single Tracking object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/Tracking/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/tracking/CMakeLists.txt)
 
 # LocalMapping object sources (single LocalMapping object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/LocalMapping/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/local_mapping/CMakeLists.txt)
 
 # LoopClosing object sources (single LoopClosing object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/LoopClosing/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/loop_closing/CMakeLists.txt)
 
 # Optimizer module sources (static methods + internal helpers, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/Optimizer/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/optimizer/CMakeLists.txt)
 
 # SemanticSegmentation object sources (single object + internal helpers, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/SemanticSegmentation/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/semantic_segmentation/CMakeLists.txt)
 
 # SemanticsManager object sources (single object + internal helpers, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/SemanticsManager/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/semantics_manager/CMakeLists.txt)
 
 # Atlas object sources (single Atlas object + internal helpers, §4.5, LAST)
-include(${PROJECT_SOURCE_DIR}/core/src/Atlas/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/atlas/CMakeLists.txt)
 # OptimizableTypes module sources (g2o edge objects, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/OptimizableTypes/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/optimizable_types/CMakeLists.txt)
 
-# Viewer object sources (single Viewer object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/Viewer/CMakeLists.txt)
+# pcl_custom module sources (weighted PCL plane segmentation templates, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/pcl_custom/CMakeLists.txt)
+
+# d_utils module sources (random and timestamp packages, §4.5)
+include(${PROJECT_SOURCE_DIR}/core/src/d_utils/CMakeLists.txt)
+
+# dbow2 package sources (kept after existing lists to preserve unity batches)
+include(${PROJECT_SOURCE_DIR}/core/src/dbow2/bow_vector/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/dbow2/feature_vector/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/dbow2/descriptors/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/dbow2/scoring/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/dbow2/vocabulary/CMakeLists.txt)
+
+# Sophus template coverage, without changing existing unity batches
+include(${PROJECT_SOURCE_DIR}/core/src/sophus/CMakeLists.txt)
+
+# JSON template coverage (last, outside existing unity batches)
+include(${PROJECT_SOURCE_DIR}/core/src/nlohmann/CMakeLists.txt)
 
 # Create the main library
 add_library(${PROJECT_NAME}_lib SHARED
@@ -258,7 +282,6 @@ add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_STEREOMATCHOUTLIERREJECTION_SOURCES}
   ${VS_GRAPHS_KEYFRAMEDATABASE_SOURCES}
   ${VS_GRAPHS_SIM3SOLVER_SOURCES}
-  ${VS_GRAPHS_VIEWER_SOURCES}
   ${VS_GRAPHS_IMUTYPES_SOURCES}
   ${VS_GRAPHS_G2OTYPES_SOURCES}
   ${VS_GRAPHS_CAMERAMODELS_CAMERAMODELS_SOURCES}
@@ -270,188 +293,19 @@ add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_UTILS_SOURCES}
 
   ${VS_GRAPHS_DATABASEPARSER_SOURCES}
-  core/src/Semantic/SemanticGraphSnapshot/objects/EntityKey/operators/equality.cc
-  core/src/Semantic/SemanticGraphSnapshot/objects/EntityKey/operators/inequality.cc
-  core/src/Semantic/SemanticGraphSnapshot/objects/EntityKey/operators/lessThan.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/makeKey.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/entityRefForRoom.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/entityRefForFloor.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/entityRefForPassage.cc
-  core/src/Semantic/SemanticGraphSnapshot/public_functions/rawPlaneRef.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/appendWallRef.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/appendRoomRef.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/appendPassageRef.cc
-  core/src/Semantic/ValueOrder/doubleTotalOrderKey.cc
-  core/src/Semantic/ValueOrder/isDoubleLess.cc
-  core/src/Semantic/ValueOrder/isVector3dLess.cc
-  core/src/Semantic/ValueOrder/isVector4dLess.cc
-  core/src/Semantic/ValueOrder/isEntityRefLess.cc
-  core/src/Semantic/ValueOrder/isRawPlaneRefLess.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/isValueLessForCollisionTiebreak/room.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/isValueLessForCollisionTiebreak/wall.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/isValueLessForCollisionTiebreak/passage.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/isValueLessForCollisionTiebreak/floor.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/captureRoom.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/captureWall.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/capturePassage.cc
-  core/src/Semantic/SemanticGraphSnapshot/private_functions/captureFloor.cc
-  core/src/Semantic/SemanticGraphSnapshot/public_functions/captureSemanticGraphSnapshot.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/axiomClassFor.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/makeFinding.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/sortFindings.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/aggregateFindings.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/resolveRoomEndpoint.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/isRealPassageEndpoint.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/isKnownInvalidPassageEndpointReference.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/roomListsPassageBack.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/countRoomRecordsWithKey.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/countFloorRecordsWithKey.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/countWallRecordsWithKey.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/countPassageRecordsWithKey.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/countMapSnapshotsWithId.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/scanReversePassageEndpoints.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateRoomMalformedPassageReferences.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/canonicalRoomFloorResultFor.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluatePassageFloorAgreement.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/newellNormal.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/planeNormalFallback.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/orientation2d.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/isOnSegmentBoundingBox.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/doSegmentsIntersect.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/hasNonFiniteCoordinate.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/checkRoomBoundaryGeometry.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/isValidBoundaryWallEvidence.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/anyFindingIs.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/appendKeysFromFindings.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxFrame01.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOneWall.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxWall01.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxWall02.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/findWallByKeyInSnapshot.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOneWallTwin.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxWall03.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOnePassageProvenance.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxPass01.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOnePassageCardinality.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxPass02.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOnePassageSlotState.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxPass03.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOnePassageMapAndFloor.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxPass04.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOneRoomCreationProvenance.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxRoom01.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxRoom02.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOneRoomBoundary.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxBound01.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOneRoomFloorReciprocity.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateOnePassageFloorIdentity.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxFloor01.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxLife01.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxTxn01.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxComp01.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/evaluateAxMerge01.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/computeLegacyMapCompleteness.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/computeConservativeMapCompleteness.cc
-  core/src/Semantic/SemanticAxiomEvaluator/public_functions/evaluateState.cc
-  core/src/Semantic/SemanticAxiomEvaluator/public_functions/evaluateTransition.cc
-  core/src/Semantic/SemanticAxiomEvaluator/public_functions/evaluateMapCompleteness.cc
-  core/src/Semantic/SemanticAxiomEvaluator/private_functions/makeAxiomCapabilityEntry.cc
-  core/src/Semantic/SemanticAxiomEvaluator/public_functions/computeAxiomCapabilityTable.cc
-  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/axiomCodeName.cc
-  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/axiomResultName.cc
-  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/axiomClassName.cc
-  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/reasonCodeName.cc
-  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/entityKindName.cc
-  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/unavailableReasonName.cc
-  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/capabilityLevelName.cc
-  core/src/Semantic/SemanticAxiomEvaluator/EnumNames/missingProofOwnerName.cc
-  core/src/Semantic/SemanticReportCache/update.cc
-  core/src/Semantic/SemanticReportCache/getLatest.cc
-  core/src/Semantic/SemanticReportCache/isAvailable.cc
-  core/src/Semantic/SemanticDiagnostics/private_functions/serializeFiniteAwareDouble.cc
-  core/src/Semantic/SemanticDiagnostics/private_functions/findingEvidenceToJson.cc
-  core/src/Semantic/SemanticDiagnostics/private_functions/entityKeysToJson.cc
-  core/src/Semantic/SemanticDiagnostics/private_functions/violationDetailToJson.cc
-  core/src/Semantic/SemanticDiagnostics/public_functions/buildSemanticDiagnosticUpdate.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeDouble.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeVector3d.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeVector4d.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeEntityKey.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeEntityRef.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeRawPlaneRef.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeRoomRecord.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeWallRecord.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializePassageRecord.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeFloorRecord.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeMapSnapshot.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeSnapshot.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeFinding.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeAggregateAxiomResult.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeLegacyMapCompletenessResult.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeMapCompletenessResult.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isFindingLessTotalOrder.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isAggregateAxiomResultLessTotalOrder.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isMapCompletenessResultLessTotalOrder.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isRoomRecordLessTopologyOnly.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isRoomRecordLessFullGeometry.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isWallRecordLessTopologyOnly.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isWallRecordLessFullGeometry.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isPassageRecordLessTopologyOnly.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isPassageRecordLessFullGeometry.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isFloorRecordLessTopologyOnly.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isFloorRecordLessFullGeometry.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isMapSnapshotLessTotalOrder.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeOpenPassageHypothesisRecord.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/serializeUnresolvedWallHypothesisRecord.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isOpenPassageHypothesisRecordLessTopologyOnly.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isOpenPassageHypothesisRecordLessFullGeometry.cc
-  core/src/Semantic/SemanticCanonicalSerialization/private_functions/isUnresolvedWallHypothesisRecordLessTotalOrder.cc
-  core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeSnapshotTopologyOnly.cc
-  core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeSnapshotFullGeometry.cc
-  core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeEvaluationReport.cc
-  core/src/Semantic/SemanticCanonicalSerialization/public_functions/serializeMapCompletenessResults.cc
-  ${VS_GRAPHS_TYPES_TYPES_SOURCES}
+  ${VS_GRAPHS_TYPES_SOURCES}
   ${VS_GRAPHS_SEMANTICSEGMENTATION_SOURCES}
   ${VS_GRAPHS_SEMANTICSMANAGER_SOURCES}
-  core/include/System.h
-  core/include/Tracking.h
-  core/include/LocalMapping.h
-  core/include/LoopClosing.h
-  core/include/ORBextractor.h
-  core/include/ORBmatcher.h
-  core/include/FrameDrawer.h
-  core/include/MapPoint.h
-  core/include/KeyFrame.h
-  core/include/Atlas.h
-  core/include/AtlasCurrentMapStatus.h
-  core/include/Map.h
-  core/include/MapDrawer.h
-  core/include/Optimizer.h
-  core/include/Frame.h
-  core/include/KeyFrameDatabase.h
-  core/include/Sim3Solver.h
-  core/include/Viewer.h
-  core/include/ImuTypes.h
-  core/include/G2oTypes.h
-  ${VS_GRAPHS_CAMERAMODELS_CAMERAMODELS_OBJECT_HEADERS}
-  core/include/OptimizableTypes.h
-  core/include/MLPnPsolver.h
-  core/include/GeometricTools.h
-  core/include/TwoViewReconstruction.h
-  core/include/SerializationUtils.h
-  ${VS_GRAPHS_UTILS_OBJECT_HEADERS}
-  core/include/GeoSemHelpers.h
-  core/include/Semantic/Room.h
-  core/include/Semantic/Floor.h
-  core/include/DatabaseParser.h
-  core/include/Semantic/Marker.h
-  core/include/Geometric/Plane.h
-  core/include/Geometric/PlaneGeometryMetadataSnapshot.h
-  core/include/Semantic/Passage.h
-  ${VS_GRAPHS_TYPES_TYPES_OBJECT_HEADERS}
-  core/include/SemanticSegmentation.h
-  core/include/SemanticsManager.h
-  core/include/Semantic/RoomTracker.h
+  ${VS_GRAPHS_PCLCUSTOM_SOURCES}
+  ${VS_GRAPHS_DUTILS_SOURCES}
+  ${VS_GRAPHS_DBOW2_BOWVECTOR_SOURCES}
+  ${VS_GRAPHS_DBOW2_FEATUREVECTOR_SOURCES}
+  ${VS_GRAPHS_DBOW2_DESCRIPTORS_SOURCES}
+  ${VS_GRAPHS_DBOW2_SCORING_SOURCES}
+  ${VS_GRAPHS_DBOW2_VOCABULARY_SOURCES}
+  ${VS_GRAPHS_SOPHUS_SOURCES}
+  ${VS_GRAPHS_NLOHMANN_SOURCES}
+
 )
 
 # The library keeps one function per source file; each small file still parses
@@ -459,7 +313,7 @@ add_library(${PROJECT_NAME}_lib SHARED
 # build compiles neighbouring files of the same list together (measured on 16
 # KeyFrame methods: 111 s separately, 8 s together, same peak memory). Only
 # this library is batched: ROS-generated interface code is not unity-safe.
-option(VS_GRAPHS_UNITY_BUILD "Compile the library sources in unity batches" OFF)
+option(VS_GRAPHS_UNITY_BUILD "Compile the library sources in unity batches" ON)
 if(VS_GRAPHS_UNITY_BUILD)
   set_target_properties(${PROJECT_NAME}_lib PROPERTIES
     UNITY_BUILD ON
@@ -469,7 +323,12 @@ if(VS_GRAPHS_UNITY_BUILD)
   # equal names never meet in one unity unit.
   get_target_property(VS_GRAPHS_LIB_SOURCES ${PROJECT_NAME}_lib SOURCES)
   foreach(source IN LISTS VS_GRAPHS_LIB_SOURCES)
-    file(STRINGS ${PROJECT_SOURCE_DIR}/${source} file_local
+    if(IS_ABSOLUTE "${source}")
+      set(scan_source "${source}")
+    else()
+      set(scan_source "${PROJECT_SOURCE_DIR}/${source}")
+    endif()
+    file(STRINGS "${scan_source}" file_local
          REGEX "^[ \t]*namespace[ \t]*(\\{.*)?$|^(static|const|constexpr)[ \t][^(]*=")
     if(file_local)
       set_source_files_properties(${source} PROPERTIES
@@ -479,15 +338,24 @@ if(VS_GRAPHS_UNITY_BUILD)
 endif()
 
 # The core library declares no name that hides another (a local hiding a
-# local, parameter or member); keep it that way.
-target_compile_options(${PROJECT_NAME}_lib PRIVATE -Wshadow)
+# local, parameter or member); keep it that way. The -Werror checks turn
+# silent behaviour changes into build errors: an overriding function without
+# `override` (renaming a base virtual would leave it unused), self-recursion
+# from a half-renamed CRTP accessor, deleting an incomplete type (its
+# destructor would not run) and a discarded [[nodiscard]] result.
+set(VS_GRAPHS_STRICT_WARNINGS
+  -Wall -Wextra -Wpedantic -Wshadow
+  -Wsuggest-override -Werror=suggest-override
+  -Werror=infinite-recursion
+  -Werror=delete-incomplete
+  -Werror=unused-result)
+target_compile_options(${PROJECT_NAME}_lib PRIVATE ${VS_GRAPHS_STRICT_WARNINGS})
 
 target_link_libraries(${PROJECT_NAME}_lib
   ${OpenCV_LIBS}
   ${EIGEN3_LIBS}
   ${Pangolin_LIBRARIES}
   ${PCL_LIBRARIES}
-  DBoW2
   g2o
   -lboost_system
   -lboost_serialization
@@ -516,10 +384,7 @@ ament_target_dependencies(${PROJECT_NAME}_lib
 # Common source files
 # ---------------------------------------------------------------------------
 
-set(COMMON_SOURCES
-  ${PROJECT_SOURCE_DIR}/src/common.cc
-  ${PROJECT_SOURCE_DIR}/src/classifySparseMarker.cc
-)
+include(${PROJECT_SOURCE_DIR}/src/CMakeLists.txt)
 
 # ---------------------------------------------------------------------------
 # Dependencies required by the common source files
@@ -547,11 +412,14 @@ set(COMMON_DEPENDENCIES
 # ROS2 node creation helper
 # ---------------------------------------------------------------------------
 
-function(add_ros2_node target_name cpp_file)
+function(add_ros2_node target_name)
   add_executable(${target_name}
-    ${COMMON_SOURCES}
-    ${cpp_file}
+    ${VS_GRAPHS_FRONTEND_COMMON_SOURCES}
+    ${VS_GRAPHS_FRONTEND_SPARSE_SOURCES}
+    ${ARGN}
   )
+
+  target_compile_options(${target_name} PRIVATE ${VS_GRAPHS_STRICT_WARNINGS})
 
   target_link_libraries(${target_name}
     ${PROJECT_NAME}_lib
@@ -589,19 +457,19 @@ endfunction()
 
 add_ros2_node(
   ros_rgbd
-  ${PROJECT_SOURCE_DIR}/src/ros_rgbd.cc
-)
-target_sources(ros_rgbd PRIVATE
-  ${PROJECT_SOURCE_DIR}/src/RgbdObservability.cc
-  ${PROJECT_SOURCE_DIR}/src/RgbdAllPointsCadence.cc
+  ${VS_GRAPHS_FRONTEND_RGBD_ENTRY_SOURCES}
+  ${VS_GRAPHS_FRONTEND_RGBD_GRABBER_SOURCES}
+  ${VS_GRAPHS_FRONTEND_OBSERVABILITY_SOURCES}
 )
 
 add_ros2_node(
   ros_rgbd_inertial
-  ${PROJECT_SOURCE_DIR}/src/ros_rgbd_inertial.cc
+  ${VS_GRAPHS_FRONTEND_INERTIAL_ENTRY_SOURCES}
+  ${VS_GRAPHS_FRONTEND_INERTIAL_GRABBER_SOURCES}
+  ${VS_GRAPHS_FRONTEND_IMU_GRABBER_SOURCES}
 )
 
-# libvs_graphs_lib.so must also be able to find libDBoW2.so and libg2o.so
+# libvs_graphs_lib.so must also be able to find the remaining libg2o.so
 # in the same install/vs_graphs/lib/ folder.
 set_target_properties(${PROJECT_NAME}_lib PROPERTIES
   INSTALL_RPATH "\$ORIGIN"
@@ -609,7 +477,7 @@ set_target_properties(${PROJECT_NAME}_lib PROPERTIES
 
 # Install other resources
 install(
-  DIRECTORY launch config core/Vocabulary
+  DIRECTORY launch config core/vocabulary
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -626,472 +494,13 @@ install(TARGETS ${PROJECT_NAME}_lib
 )
 
 # Install third-party shared libraries needed at runtime
-install(TARGETS DBoW2 g2o
+install(TARGETS g2o
   EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
 )
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
-# ---------------------------------------------------------------------------
-# Deterministic unit tests, no Gazebo.
-# RoomTracker is standalone, so the unit targets link its sources directly and
-# do not depend on the heavy production library. The multi-process bag-replay
-# harness is intentionally deferred.
-# ---------------------------------------------------------------------------
-if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
-
-  target_compile_definitions(${PROJECT_NAME}_lib PRIVATE
-    VS_GRAPHS_ENABLE_ATLAS_LOCK_ORDER_TEST_HOOK
-  )
-
-  ament_add_gtest(test_unit_skeleton
-    test/test_unit_skeleton.cpp
-    ${VS_GRAPHS_SEMANTIC_ROOMTRACKER_SOURCES}
-  )
-
-  ament_add_gtest(test_RoomTracker
-    test/test_RoomTracker.cpp
-    ${VS_GRAPHS_SEMANTIC_ROOMTRACKER_SOURCES}
-  )
-
-  ament_add_gtest(test_CandidateGen
-    test/test_CandidateGen.cpp
-    ${VS_GRAPHS_SEMANTIC_SEMANTICCANDIDATES_SOURCES}
-  )
-
-  ament_add_gtest(test_atlas_lock_order
-    test/test_atlas_lock_order.cpp
-  )
-  target_link_libraries(test_atlas_lock_order
-    ${PROJECT_NAME}_lib
-  )
-
-  ament_add_gtest(test_RoomContextPersist
-    test/test_RoomContextPersist.cpp
-  )
-  target_link_libraries(test_RoomContextPersist
-    ${PROJECT_NAME}_lib
-  )
-
-  ament_add_gtest(test_GeometricVerify
-    test/test_GeometricVerify.cpp
-  )
-  target_link_libraries(test_GeometricVerify
-    ${PROJECT_NAME}_lib
-  )
-
-  ament_add_gtest(test_SemanticStatus
-    test/test_SemanticStatus.cpp
-  )
-  target_link_libraries(test_SemanticStatus
-    ${PROJECT_NAME}_lib
-  )
-
-  ament_add_gtest(test_GeometricToolsStatus
-    test/test_GeometricToolsStatus.cpp
-  )
-  target_link_libraries(test_GeometricToolsStatus
-    ${PROJECT_NAME}_lib
-  )
-
-  ament_add_gtest(test_SystemInitialize
-    test/test_SystemInitialize.cpp
-  )
-  target_link_libraries(test_SystemInitialize
-    ${PROJECT_NAME}_lib
-  )
-
-  ament_add_gtest(test_room_tracker_integration
-    test/test_room_tracker_integration.cpp
-  )
-
-  # Test-only SemanticsManager methods (*ForTest) live in their own small
-  # library on top of the production library; SemanticsManager's layout is the
-  # same in both, so the production sources are compiled once.
-  add_library(${PROJECT_NAME}_room_tracker_test_lib SHARED
-    ${VS_GRAPHS_SEMANTICSMANAGER_TEST_HOOK_SOURCES}
-  )
-  target_link_libraries(${PROJECT_NAME}_room_tracker_test_lib
-    ${PROJECT_NAME}_lib
-  )
-  ament_target_dependencies(${PROJECT_NAME}_room_tracker_test_lib
-    rclcpp
-    std_msgs
-    cv_bridge
-    sensor_msgs
-    geometry_msgs
-    tf2
-    tf2_ros
-    pcl_ros
-    nav_msgs
-    message_filters
-    image_transport
-    rviz_visual_tools
-    situational_graphs_msgs
-    segmenter_ros
-  )
-  set_target_properties(${PROJECT_NAME}_room_tracker_test_lib PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-  )
-  target_link_libraries(test_room_tracker_integration
-    ${PROJECT_NAME}_room_tracker_test_lib
-  )
-  target_link_options(test_atlas_lock_order PRIVATE
-    "-Wl,--export-dynamic-symbol=vsGraphsAtlasLockOrderBeforeMapSnapshot"
-  )
-
-  # Exercises SemanticsManager::evaluateTopCandidateVerification
-  # against real Atlas/Map/Room/Plane/Floor objects, through the same
-  # test-only SemanticsManager library as test_room_tracker_integration.
-  ament_add_gtest(test_verification_wiring_integration
-    test/test_verification_wiring_integration.cpp
-  )
-  target_link_libraries(test_verification_wiring_integration
-    ${PROJECT_NAME}_room_tracker_test_lib
-  )
-
-  # Two wall-admission fixes reported directly against a
-  # live sim run (ground-aligned height/width gate, wrong-side observation
-  # backstop). Reuses the same instrumented production library as above.
-  ament_add_gtest(test_WallAdmission
-    test/test_WallAdmission.cpp
-  )
-  target_link_libraries(test_WallAdmission
-    ${PROJECT_NAME}_room_tracker_test_lib
-  )
-
-  ament_add_gtest(test_SemanticBootstrapPhase1
-    test/test_SemanticBootstrapPhase1.cpp
-  )
-  target_link_libraries(test_SemanticBootstrapPhase1
-    ${PROJECT_NAME}_room_tracker_test_lib
-  )
-
-  # Phase 1: wall-pair (twin-face) reconciliation (axiom (e)). Needs the
-  # private-method test hook, so it links the same instrumented production
-  # library as test_WallAdmission above.
-  ament_add_gtest(test_WallPairing
-    test/test_WallPairing.cpp
-  )
-  target_link_libraries(test_WallPairing
-    ${PROJECT_NAME}_room_tracker_test_lib
-  )
-
-  # Phase 2(ii): front-end floor-flatness reconciliation. Needs the
-  # private-method test hook, so it links the same instrumented production
-  # library as test_WallAdmission above.
-  ament_add_gtest(test_FloorFlatness
-    test/test_FloorFlatness.cpp
-  )
-  target_link_libraries(test_FloorFlatness
-    ${PROJECT_NAME}_room_tracker_test_lib
-  )
-
-  # User rule: a map may hold at most one more room than it has passable
-  # passages, enforced at GeoSemHelpers::createBlankRoomCandidate() (a
-  # public static method -- no private test hook needed, but reuses the
-  # already-built instrumented library for consistency).
-  ament_add_gtest(test_RoomCreationBudget
-    test/test_RoomCreationBudget.cpp
-  )
-  target_link_libraries(test_RoomCreationBudget
-    ${PROJECT_NAME}_room_tracker_test_lib
-  )
-
-  # User rule: a wall not part of a room's true closed boundary loop, and
-  # not explained by a passage, must be detached rather than silently
-  # blocking that room from ever reaching COMPLETE. Needs the private-method
-  # test hook.
-  ament_add_gtest(test_BoundaryLoopOutlierPruning
-    test/test_BoundaryLoopOutlierPruning.cpp
-  )
-  target_link_libraries(test_BoundaryLoopOutlierPruning
-    ${PROJECT_NAME}_room_tracker_test_lib
-  )
-
-  # User rule: manage incomplete rooms explicitly -- track unobserved
-  # angular sectors as situational-awareness data. Needs the private-method
-  # test hook.
-  ament_add_gtest(test_RoomObservationGaps
-    test/test_RoomObservationGaps.cpp
-  )
-  target_link_libraries(test_RoomObservationGaps
-    ${PROJECT_NAME}_room_tracker_test_lib
-  )
-
-  ament_add_gtest(test_rgbd_observability
-    test/test_rgbd_observability.cpp
-    src/RgbdObservability.cc
-    src/RgbdAllPointsCadence.cc
-    ${VS_GRAPHS_RESETCAUSE_SOURCES}
-  )
-  target_include_directories(test_rgbd_observability PRIVATE
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/core/include
-  )
-
-  ament_add_gtest(test_SparseClusterVerdict
-    test/test_SparseClusterVerdict.cpp
-    src/classifySparseMarker.cc
-  )
-
-  # Phase 0 bug sweep (B1): computeGroundPlaneHeight() empty-cloud guard.
-  # Needs the private-method test hook, so it links the same instrumented
-  # production library as test_WallAdmission above.
-  ament_add_gtest(test_GroundPlaneFilter
-    test/test_GroundPlaneFilter.cpp
-  )
-  target_link_libraries(test_GroundPlaneFilter
-    ${PROJECT_NAME}_room_tracker_test_lib
-  )
-
-  # Phase 0 bug sweep (B3): Frame::ComputeStereoMatches()'s outlier-rejection
-  # step, extracted into a small dependency-free helper so it's testable in
-  # isolation, without pulling in Frame's full ORB-SLAM3 dependency chain.
-  ament_add_gtest(test_StereoMatchOutlierRejection
-    test/test_StereoMatchOutlierRejection.cpp
-    ${VS_GRAPHS_STEREOMATCHOUTLIERREJECTION_SOURCES}
-  )
-  target_include_directories(test_StereoMatchOutlierRejection PRIVATE
-    ${PROJECT_SOURCE_DIR}/core/include
-  )
-
-  # Phase 0 bug sweep (B4): Optimizer.cc's swapped mono/stereo edge-keyframe
-  # vector lookups, extracted into a bounds-checked, dependency-free header.
-  ament_add_gtest(test_OptimizerEdgeLookup
-    test/test_OptimizerEdgeLookup.cpp
-  )
-  target_include_directories(test_OptimizerEdgeLookup PRIVATE
-    ${PROJECT_SOURCE_DIR}/core/include
-  )
-
-  # Regression test: TwoViewReconstruction::reconstructH() computed the
-  # triangulated structure of its winning hypothesis but never published it
-  # through vP3D, unlike its sibling reconstructF(). The test drives
-  # reconstructH() on a synthetic tilted-plane scene and needs the production
-  # TwoViewReconstruction and GeometricTools code, so it links the plain
-  # production library.
-  ament_add_gtest(test_TwoViewReconstruction
-    test/test_TwoViewReconstruction.cpp
-  )
-  target_link_libraries(test_TwoViewReconstruction
-    ${PROJECT_NAME}_lib
-  )
-
-  # Deterministic, ROS/Gazebo-free fixture builders shared by later
-  # semantic-axiom tests. Self-test only exercises plain model construction
-  # (no SemanticsManager private methods), so it links the plain production
-  # library.
-  ament_add_gtest(test_SemanticFixtures
-    test/test_SemanticFixtures.cpp
-    test/SemanticFixtures.cc
-  )
-  target_link_libraries(test_SemanticFixtures
-    ${PROJECT_NAME}_lib
-  )
-
-  # Scoped global wall precision/recall/F1 adapter fixing the comparator's
-  # matched-room-only wall denominator. Header-only nlohmann::json parsing
-  # plus plain Eigen geometry -- no production library dependency.
-  get_filename_component(VS_GRAPHS_WORKSPACE_ROOT
-    "${PROJECT_SOURCE_DIR}/../.." ABSOLUTE
-  )
-  ament_add_gtest(test_GlobalWallMetrics
-    test/test_GlobalWallMetrics.cpp
-    test/GlobalWallMetrics.cc
-  )
-  target_compile_definitions(test_GlobalWallMetrics PRIVATE
-    VS_GRAPHS_WORKSPACE_ROOT="${VS_GRAPHS_WORKSPACE_ROOT}"
-  )
-
-  # Focused, ROS/Gazebo-free tests for the value-only
-  # SemanticGraphSnapshot capture contract. Links the production library
-  # (captureSemanticGraphSnapshot() and the model classes it reads) plus
-  # the shared fixture builders.
-  ament_add_gtest(test_SemanticGraphSnapshot
-    test/test_SemanticGraphSnapshot.cpp
-    test/SemanticFixtures.cc
-    test/SemanticGraphSnapshotTestHelpers/findRoomRecord.cc
-    test/SemanticGraphSnapshotTestHelpers/findWallRecord.cc
-    test/SemanticGraphSnapshotTestHelpers/findPassageRecord.cc
-    test/SemanticGraphSnapshotTestHelpers/findMapSnapshot.cc
-  )
-  # SemanticGraphSnapshotTestHelpers/*.cc quote-includes the sibling
-  # SemanticGraphSnapshotTestHelpers.h declaration header one directory up;
-  # that quoted include only resolves via the including file's own
-  # directory or an explicit include path, so add test/ explicitly.
-  target_include_directories(test_SemanticGraphSnapshot PRIVATE
-    ${PROJECT_SOURCE_DIR}/test
-  )
-  target_link_libraries(test_SemanticGraphSnapshot
-    ${PROJECT_NAME}_lib
-  )
-
-  # Focused, ROS/Gazebo-free tests for the pure SemanticAxiomEvaluator
-  # module (evaluateState(), evaluateTransition(),
-  # evaluateMapCompleteness(), computeAxiomCapabilityTable()).
-  ament_add_gtest(test_SemanticAxiomEvaluator
-    test/test_SemanticAxiomEvaluator.cpp
-    test/SemanticFixtures.cc
-  )
-  target_link_libraries(test_SemanticAxiomEvaluator
-    ${PROJECT_NAME}_lib
-  )
-
-  # Focused, ROS/Gazebo-free tests for versioned canonical JSON
-  # serialization of SemanticGraphSnapshot/AxiomEvaluationReport/
-  # MapCompletenessResult.
-  ament_add_gtest(test_SemanticCanonicalSerialization
-    test/test_SemanticCanonicalSerialization.cpp
-    test/SemanticFixtures.cc
-  )
-  target_link_libraries(test_SemanticCanonicalSerialization
-    ${PROJECT_NAME}_lib
-  )
-
-  # Focused, ROS/Gazebo-free tests for the copied-value
-  # SemanticReportCache contract.
-  ament_add_gtest(test_SemanticReportCache
-    test/test_SemanticReportCache.cpp
-    test/SemanticFixtures.cc
-  )
-  target_link_libraries(test_SemanticReportCache
-    ${PROJECT_NAME}_lib
-  )
-
-  # Focused, ROS/Gazebo-free tests for the pure mission-health topology
-  # schema-2 extension.
-  ament_add_gtest(test_MissionHealthTopologyJson
-    test/test_MissionHealthTopologyJson.cpp
-  )
-  target_link_libraries(test_MissionHealthTopologyJson
-    ${PROJECT_NAME}_lib
-  )
-
-  # Focused, ROS/Gazebo-free tests for the pure SG_AXIOM/SG_VIOLATION
-  # diagnostic-update builder.
-  ament_add_gtest(test_SemanticDiagnostics
-    test/test_SemanticDiagnostics.cpp
-  )
-  target_link_libraries(test_SemanticDiagnostics
-    ${PROJECT_NAME}_lib
-  )
-
-  # Deterministic replay of 147 preserved legacy capture_attempt_*.json
-  # files through the current evaluator. Produces topology-hash stability
-  # proof and malformed-file report.
-  ament_add_gtest(test_LegacyCaptureReplay
-    test/test_LegacyCaptureReplay.cpp
-    test/LegacyCaptureReplay.cc
-  )
-  target_compile_definitions(test_LegacyCaptureReplay PRIVATE
-    VS_GRAPHS_WORKSPACE_ROOT="${VS_GRAPHS_WORKSPACE_ROOT}"
-  )
-  target_link_libraries(test_LegacyCaptureReplay
-    ${PROJECT_NAME}_lib
-  )
-
-  # Gate-run traversal repro: synthetic 3-keyframe crossing of a Passage#1-like
-  # aperture through updateTraversalEvidence().
-  ament_add_gtest(test_PassageTraversalRepro
-    test/test_PassageTraversalRepro.cpp
-  )
-  target_link_libraries(test_PassageTraversalRepro
-    ${PROJECT_NAME}_lib
-  )
-  ament_add_gtest(test_ConsecutiveMapMatcher
-    test/test_ConsecutiveMapMatcher.cpp
-  )
-  target_link_libraries(test_ConsecutiveMapMatcher
-    ${PROJECT_NAME}_lib
-  )
-
-  # Boost serialization round-trip self-consistency over
-  # all Boost sites (Map/MapPoint/Atlas/ImuTypes/KeyFrameDatabase/KeyFrame/
-  # SerializationUtils + 3 CameraModels). ROS/Gazebo-free, links production
-  # library like test_atlas_lock_order.
-  ament_add_gtest(test_SerializationRoundTrip
-    test/test_SerializationRoundTrip.cpp
-  )
-  target_link_libraries(test_SerializationRoundTrip
-    ${PROJECT_NAME}_lib
-  )
-
-  # DBParser::getEnvironmentRooms on an in-memory JSON document.
-  ament_add_gtest(test_DatabaseParser
-    test/test_DatabaseParser.cpp
-  )
-  target_link_libraries(test_DatabaseParser
-    ${PROJECT_NAME}_lib
-  )
-
-  # G2oTypes: ImuCamPose rotations and their periodic re-orthonormalisation,
-  # ConstraintPoseImu, VertexPose read/write.
-  ament_add_gtest(test_G2oTypes
-    test/test_G2oTypes.cpp
-  )
-  target_link_libraries(test_G2oTypes
-    ${PROJECT_NAME}_lib
-  )
-
-  # Sim3Solver inlier thresholds and convergence iterate on synthetic key frames.
-  ament_add_gtest(test_Sim3Solver
-    test/test_Sim3Solver.cpp
-  )
-  target_link_libraries(test_Sim3Solver
-    ${PROJECT_NAME}_lib
-  )
-
-  # KeyFrame scene median depth failures and repeated point-cloud release.
-  ament_add_gtest(test_KeyFrame
-    test/test_KeyFrame.cpp
-  )
-  target_link_libraries(test_KeyFrame
-    ${PROJECT_NAME}_lib
-  )
-
-  # MapPoint::postLoad with a missing right key point index.
-  ament_add_gtest(test_MapPoint
-    test/test_MapPoint.cpp
-  )
-  target_link_libraries(test_MapPoint
-    ${PROJECT_NAME}_lib
-  )
-
-  # Skeleton fault-injection registry + probe-macro test. Test-only
-  # TU (never linked into ${PROJECT_NAME}_lib); the toggle is enabled for
-  # this target only so production builds keep zero-cost disabled probes.
-  ament_add_gtest(test_FaultInjection
-    test/test_FaultInjection.cpp
-    ${VS_GRAPHS_SEMANTIC_FAULTINJECTION_SOURCES}
-  )
-  target_compile_definitions(test_FaultInjection PRIVATE
-    VS_GRAPHS_ENABLE_FAULT_INJECTION=1
-  )
-
-  # Small command-line tool (not a test) that replays a corpus directory and
-  # writes the bounded LegacyReplayResult::report JSON to a file, so a
-  # Phase-1 verification session can produce legacy_replay_report.json
-  # without a gtest harness.
-  add_executable(legacy_capture_replay
-    test/legacy_capture_replay_main.cc
-    test/LegacyCaptureReplay.cc
-  )
-  target_link_libraries(legacy_capture_replay
-    ${PROJECT_NAME}_lib
-  )
-
-  # Unit targets that compile module sources directly (standalone of the
-  # production library) still need rclcpp: failure branches log through the
-  # vs_graphs ROS logger.
-  foreach(standalone_test IN ITEMS test_unit_skeleton test_RoomTracker
-          test_CandidateGen test_rgbd_observability
-          test_StereoMatchOutlierRejection test_FaultInjection)
-    ament_target_dependencies(${standalone_test} rclcpp)
-  endforeach()
-endif()
 
 # Ament package configuration
 ament_package()

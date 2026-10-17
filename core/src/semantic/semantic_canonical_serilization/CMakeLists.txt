@@ -1,0 +1,40 @@
+# semantic_canonical_serilization module sources.
+set(VS_GRAPHS_SEMANTIC_SEMANTICCANONICALSERILIZATION_SOURCES
+  core/src/semantic/semantic_canonical_serilization/methods/serializeEvaluationReport.cc
+  core/src/semantic/semantic_canonical_serilization/methods/serializeMapCompletenessResults.cc
+  core/src/semantic/semantic_canonical_serilization/methods/serializeSnapshotFullGeometry.cc
+  core/src/semantic/semantic_canonical_serilization/methods/serializeSnapshotTopologyOnly.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isAggregateAxiomResultLessTotalOrder.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isFindingLessTotalOrder.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isFloorRecordLessFullGeometry.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isFloorRecordLessTopologyOnly.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isMapCompletenessResultLessTotalOrder.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isMapSnapshotLessTotalOrder.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isOpenPassageHypothesisRecordLessFullGeometry.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isOpenPassageHypothesisRecordLessTopologyOnly.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isPassageRecordLessFullGeometry.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isPassageRecordLessTopologyOnly.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isRoomRecordLessFullGeometry.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isRoomRecordLessTopologyOnly.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isUnresolvedWallHypothesisRecordLessTotalOrder.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isWallRecordLessFullGeometry.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/isWallRecordLessTopologyOnly.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeAggregateAxiomResult.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeDouble.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeEntityKey.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeEntityRef.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeFinding.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeFloorRecord.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeLegacyMapCompletenessResult.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeMapCompletenessResult.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeMapSnapshot.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeOpenPassageHypothesisRecord.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializePassageRecord.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeRawPlaneRef.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeRoomRecord.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeSnapshot.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeUnresolvedWallHypothesisRecord.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeVector3d.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeVector4d.cc
+  core/src/semantic/semantic_canonical_serilization/private_functions/serializeWallRecord.cc
+)

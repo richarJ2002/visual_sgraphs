@@ -1,0 +1,441 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            consolidateProvisionalRooms.cc
+ *
+ * @brief           Implements Utils::consolidateProvisionalRooms(), declared in
+ *                  Utils/Utils/objects/Utils.h.
+ */
+
+#include "utils/utils/objects/UtilsClass.h"
+#include "atlas/atlas.h"
+#include "atlas/objects/AtlasStatusEnum.h"
+#include "geometric/Plane/Plane.h"
+#include "geometric/Plane/objects/PlaneStatusEnum.h"
+#include "semantic/floor/floor.h"
+#include "semantic/floor/objects/FloorStatusEnum.h"
+#include "semantic/passage/objects/PassageStatusEnum.h"
+#include "semantic/passage/passage.h"
+#include "semantic/room/objects/RoomStatusEnum.h"
+#include "semantic/room/room.h"
+
+#include <algorithm>
+#include <cmath>
+#include <rclcpp/logging.hpp>
+#include <unordered_set>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace utils
+{
+namespace utils
+{
+
+UtilsStatus Utils::consolidateProvisionalRooms(
+    vs_graphs::core::semantic::Room *p_selectedRoom_inout,
+    atlas::Atlas                           *p_atlas_in)
+{
+    /* Confirm the selected room is valid */
+    bool selectedRoom_inoutIsBad{};
+    if (!(p_selectedRoom_inout == nullptr) &&
+        p_selectedRoom_inout->isBad(selectedRoom_inoutIsBad) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: isBad returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_selectedRoom_inout == nullptr || selectedRoom_inoutIsBad)
+    {
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
+
+    /* Extract all walls assigned to the cluster-backed room */
+    std::vector<vs_graphs::core::geometric::Plane *> selectedWalls{};
+    if (p_selectedRoom_inout->getWalls(selectedWalls) !=
+        semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getWalls returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* Create a set containing the selected wall IDs */
+    std::unordered_set<int> selectedWallIds;
+    selectedWallIds.reserve(selectedWalls.size());
+
+    /* Insert every valid selected wall ID into the set */
+    for (vs_graphs::core::geometric::Plane *p_wall : selectedWalls)
+    {
+        bool wallIsBad{};
+        if ((p_wall != nullptr) &&
+            p_wall->isBad(wallIsBad) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_wall != nullptr && !wallIsBad)
+        {
+            int wallGetId{};
+            if (p_wall->getId(wallGetId) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getId returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            selectedWallIds.insert(wallGetId);
+        }
+    }
+
+    /* A room without walls cannot absorb another structural element */
+    if (selectedWallIds.empty())
+    {
+        return UtilsStatus::UTILS_STATUS_SUCCESS;
+    }
+
+    /* Extract all rooms and provisional structural elements */
+    std::vector<vs_graphs::core::semantic::Room *> allRooms{};
+    if (p_atlas_in->getAllRooms(allRooms) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getAllRooms returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* Iterate through every possible redundant structural element */
+    for (vs_graphs::core::semantic::Room *p_candidateRoom : allRooms)
+    {
+        /* Skip invalid rooms and the selected room itself */
+        bool candidateRoomIsBad{};
+        if (!(p_candidateRoom == nullptr ||
+              p_candidateRoom == p_selectedRoom_inout) &&
+            p_candidateRoom->isBad(candidateRoomIsBad) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (p_candidateRoom == nullptr ||
+            p_candidateRoom == p_selectedRoom_inout || candidateRoomIsBad)
+        {
+            continue;
+        }
+
+        std::vector<vs_graphs::core::semantic::Passage *> activePassages{};
+        if (p_atlas_in->getAllPassages(activePassages) !=
+            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllPassages returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const bool candidateIsLiveProspective = std::any_of(
+            activePassages.begin(),
+            activePassages.end(),
+            [p_candidateRoom](vs_graphs::core::semantic::Passage *p_passage)
+            {
+                vs_graphs::core::semantic::Room *p_passageProspectiveRoom =
+                    nullptr;
+                if ((p_passage != nullptr) &&
+                    p_passage->getProspectiveRoom(p_passageProspectiveRoom) !=
+                        semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getProspectiveRoom returned a failure status "
+                        "although it cannot fail; continuing as before.",
+                        __func__);
+                }
+                return p_passage != nullptr &&
+                       p_passageProspectiveRoom == p_candidateRoom;
+            });
+
+        if (candidateIsLiveProspective)
+        {
+            continue;
+        }
+
+        /*!
+         * Only automatically absorb undefined structural elements.
+         * Classified rooms and corridors must never be merged automatically.
+         */
+        semantic::Room::RoomVariant candidateRoomRoomVariant{};
+        if (p_candidateRoom->getRoomVariant(candidateRoomRoomVariant) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getRoomVariant returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (candidateRoomRoomVariant !=
+            vs_graphs::core::semantic::Room::RoomVariant::UNDEFINED)
+        {
+            continue;
+        }
+
+        /* Extract the candidate room walls */
+        std::vector<vs_graphs::core::geometric::Plane *> candidateWalls{};
+        if (p_candidateRoom->getWalls(candidateWalls) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getWalls returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        /*!
+         * Orphan-wall fallback creates one provisional SE per wall. Restrict
+         * automatic consolidation to those single-wall provisional elements.
+         * This prevents an emerging room on the opposite side of a shared wall
+         * from being removed before it has enough evidence for classification.
+         */
+        std::vector<vs_graphs::core::geometric::Plane *> validCandidateWalls;
+        validCandidateWalls.reserve(candidateWalls.size());
+
+        for (vs_graphs::core::geometric::Plane *p_candidateWall :
+             candidateWalls)
+        {
+            bool candidateWallIsBad{};
+            if ((p_candidateWall != nullptr) &&
+                p_candidateWall->isBad(candidateWallIsBad) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (p_candidateWall != nullptr && !candidateWallIsBad)
+            {
+                validCandidateWalls.push_back(p_candidateWall);
+            }
+        }
+
+        /* Only single-wall provisional elements are safe to absorb */
+        if (validCandidateWalls.size() != 1)
+        {
+            continue;
+        }
+
+        /* Extract the single wall represented by the provisional element */
+        vs_graphs::core::geometric::Plane *p_candidateWall =
+            validCandidateWalls.front();
+
+        /* The selected room must already contain the candidate wall */
+        int candidateWallGetId{};
+        if (p_candidateWall->getId(candidateWallGetId) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getId returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (selectedWallIds.count(candidateWallGetId) == 0)
+        {
+            continue;
+        }
+
+        /*!
+         * Confirm the candidate centroid is still close to its wall plane.
+         * This identifies a wall-centred orphan SE rather than a free-space
+         * cluster which may represent a genuine room on the opposite side.
+         */
+        g2o::Plane3D candidateWallGetGlobalEquation{};
+        if (p_candidateWall->getGlobalEquation(
+                candidateWallGetGlobalEquation) !=
+            geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getGlobalEquation returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        Eigen::Vector4d wallEquation = candidateWallGetGlobalEquation.coeffs();
+
+        const double normalNorm = wallEquation.head<3>().norm();
+
+        if (!std::isfinite(normalNorm) || normalNorm < 1e-8)
+        {
+            continue;
+        }
+
+        wallEquation /= normalNorm;
+
+        Eigen::Vector3d candidateRoomCentroid{};
+        if (p_candidateRoom->getCentroid(candidateRoomCentroid) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getCentroid returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        const double candidatePlaneDistance =
+            std::abs(wallEquation.head<3>().dot(candidateRoomCentroid) +
+                     wallEquation(3));
+
+        constexpr double provisionalWallDistanceThreshold = 0.25;
+
+        if (candidatePlaneDistance > provisionalWallDistanceThreshold)
+        {
+            continue;
+        }
+
+        /* Preserve passage relationships before invalidating the candidate */
+        std::vector<vs_graphs::core::semantic::Passage *> candidatePassages{};
+        if (p_candidateRoom->getPassages(candidatePassages) !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getPassages returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        for (vs_graphs::core::semantic::Passage *p_candidatePassage :
+             candidatePassages)
+        {
+            /* Skip invalid passages */
+            if (p_candidatePassage == nullptr)
+            {
+                continue;
+            }
+
+            /* Check whether the selected room already contains the passage */
+            std::vector<vs_graphs::core::semantic::Passage *>
+                selectedPassages{};
+            if (p_selectedRoom_inout->getPassages(selectedPassages) !=
+                semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getPassages returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+
+            const bool alreadyPresent = std::any_of(
+                selectedPassages.begin(),
+                selectedPassages.end(),
+                [p_candidatePassage](
+                    vs_graphs::core::semantic::Passage *p_existingPassage)
+                {
+                    int existingPassageId{};
+                    if ((p_existingPassage != nullptr) &&
+                        p_existingPassage->getId(existingPassageId) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    int candidatePassageId{};
+                    if ((p_existingPassage != nullptr) &&
+                        p_candidatePassage->getId(candidatePassageId) !=
+                            semantic::PassageStatus::PASSAGE_STATUS_SUCCESS)
+                    {
+                        RCLCPP_ERROR(
+                            rclcpp::get_logger("vs_graphs"),
+                            "%s: getId returned a failure status although it "
+                            "cannot fail; continuing as before.",
+                            __func__);
+                    }
+                    return p_existingPassage != nullptr &&
+                           existingPassageId == candidatePassageId;
+                });
+
+            /* Copy the passage relationship if required */
+            if (!alreadyPresent)
+            {
+                if (p_selectedRoom_inout->setDoorways(p_candidatePassage) !=
+                    semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: setDoorways returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+            }
+        }
+
+        /* Preserve floor membership before retiring the provisional room. */
+        std::vector<semantic::Floor *> atlasAllFloors{};
+        if (p_atlas_in->getAllFloors(atlasAllFloors) !=
+            atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllFloors returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        for (vs_graphs::core::semantic::Floor *p_floor : atlasAllFloors)
+        {
+            if (p_floor != nullptr)
+            {
+                bool floorWasRoomReplaced{};
+                if (p_floor->replaceRoom(p_candidateRoom,
+                                         p_selectedRoom_inout,
+                                         floorWasRoomReplaced) !=
+                    semantic::FloorStatus::FLOOR_STATUS_SUCCESS)
+                {
+                    floorWasRoomReplaced = false;
+                    RCLCPP_WARN(rclcpp::get_logger("vs_graphs"),
+                                "%s: replaceRoom rejected its input; "
+                                "continuing as before.",
+                                __func__);
+                }
+            }
+        }
+
+        /* Mark the redundant provisional structural element as invalid */
+        if (p_candidateRoom->setBad() !=
+            semantic::RoomStatus::ROOM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+
+    return UtilsStatus::UTILS_STATUS_SUCCESS;
+}
+
+} /* namespace utils */
+} /* namespace utils */
+} /* namespace core */
+} /* namespace vs_graphs */
