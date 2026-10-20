@@ -1,0 +1,14 @@
+/*!
+ * @file            EdgeVertex4PlaneProjectSE3Room.h
+ *
+ * @brief           Public interface of the EdgeVertex4PlaneProjectSE3Room
+ * module.
+ */
+
+#ifndef VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGEVERTEX4PLANEPROJECTSE3ROOM_EDGEVERTEX4PLANEPROJECTSE3ROOM_H
+#define VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGEVERTEX4PLANEPROJECTSE3ROOM_EDGEVERTEX4PLANEPROJECTSE3ROOM_H
+
+#include "optimization/optimizable_types/EdgeVertex4PlaneProjectSE3Room/objects/EdgeVertex4PlaneProjectSE3RoomClass.h"
+
+#endif /* VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGEVERTEX4PLANEPROJECTSE3ROOM_EDGEVERTEX4PLANEPROJECTSE3ROOM_H \
+        */

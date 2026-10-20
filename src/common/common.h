@@ -67,7 +67,7 @@
  * JSON
  * -------------------------------------------------------------------------- */
 
-#include "nlohmann/nlohmann.h"
+#include "dependency_lineage/nlohmann/nlohmann.h"
 
 /* -------------------------------------------------------------------------- *
  * OPENCV
@@ -200,23 +200,23 @@
  * ORB-SLAM3
  * -------------------------------------------------------------------------- */
 
-#include "atlas/atlas.h"
-#include "imu_types/point/point.h"
-#include "keyframe/keyframe.h"
-#include "map/map.h"
-#include "map_point/map_point.h"
-#include "system/system.h"
-#include "types/types.h"
+#include "map_state/atlas/atlas.h"
+#include "sensor_models/imu_types/point/point.h"
+#include "map_state/keyframe/keyframe.h"
+#include "map_state/map/map.h"
+#include "map_state/map_point/map_point.h"
+#include "execution/system/system.h"
+#include "configuration/types/types.h"
 
 /* -------------------------------------------------------------------------- *
  * SEMANTIC ELEMENTS
  * -------------------------------------------------------------------------- */
 
-#include "geometric/Plane/Plane.h"
-#include "semantic/floor/floor.h"
-#include "semantic/marker/marker.h"
-#include "semantic/passage/passage.h"
-#include "semantic/room/room.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "scene_understanding/semantic/floor/floor.h"
+#include "scene_understanding/semantic/marker/marker.h"
+#include "scene_understanding/semantic/passage/passage.h"
+#include "scene_understanding/semantic/room/room.h"
 namespace vs_graphs::common
 {
 

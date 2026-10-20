@@ -1,0 +1,340 @@
+/*!
+ * This file is a modified version of a file from ORB-SLAM3.
+ *
+ * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
+ * Original Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * vS-Graphs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*!
+ * @file            updateConnections.cc
+ *
+ * @brief           Implements KeyFrame::updateConnections(), declared in
+ *                  KeyFrame.h.
+ */
+
+#include "map_state/keyframe/objects/KeyFrameClass.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "map_state/map/objects/MapStatusEnum.h"
+#include "map_state/map_point/objects/MapPointStatusEnum.h"
+#include "configuration/types/objects/SystemParamsStatusEnum.h"
+
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/Plane.h"
+
+#include "map_state/map/map.h"
+#include "map_state/map_point/map_point.h"
+#include "configuration/types/types.h"
+#include "estimation/converter/converter.h"
+
+#include <mutex>
+#include <rclcpp/logging.hpp>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace keyframe
+{
+
+KeyFrameStatus KeyFrame::updateConnections(bool upParent_in)
+{
+    std::map<KeyFrame *, int> keyFrameCounter;
+
+    std::vector<map_point::MapPoint *> keyFrameMapPoints;
+
+    {
+        std::unique_lock<std::mutex> lockMapPoints(featuresMutex);
+        keyFrameMapPoints = mapPoints;
+    }
+
+    /*!
+     * for all plane observations in the keyframe check in which other keyframes
+     * are they seen increase counter for those keyframes
+     */
+    types::SystemParams *p_params = nullptr;
+    if (types::SystemParams::getParams(p_params) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_params->planeBasedCovisibility.enabled)
+    {
+        types::SystemParams *p_params2 = nullptr;
+        if (types::SystemParams::getParams(p_params2) !=
+            types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getParams returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        unsigned int scorePerPlane =
+            p_params2->planeBasedCovisibility.scorePerPlane;
+        for (std::vector<geometric::Plane *>::iterator vit  = mapPlanes.begin(),
+                                                       vend = mapPlanes.end();
+             vit != vend;
+             vit++)
+        {
+            geometric::Plane *p_plane = *vit;
+
+            if (!p_plane)
+                continue;
+
+            std::map<KeyFrame *, vs_graphs::core::geometric::Plane::Observation>
+                observations{};
+            if (p_plane->getObservations(observations) !=
+                geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getObservations returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+
+            for (std::map<
+                     KeyFrame *,
+                     vs_graphs::core::geometric::Plane::Observation>::iterator
+                     mit  = observations.begin(),
+                     mend = observations.end();
+                 mit != mend;
+                 mit++)
+            {
+                bool isBad2{};
+                if (!(mit->first->id == id) &&
+                    mit->first->isBad(isBad2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                map::Map *p_map2 = nullptr;
+                if (!(mit->first->id == id || isBad2) &&
+                    mit->first->getMap(p_map2) !=
+                        KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getMap returned a failure status although it "
+                        "cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (mit->first->id == id || isBad2 || p_map2 != p_map)
+                    continue;
+
+                geometric::Plane::PlaneVariant planeType{};
+                if (p_plane->getPlaneType(planeType) !=
+                    geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(
+                        rclcpp::get_logger("vs_graphs"),
+                        "%s: getPlaneType returned a failure status although "
+                        "it cannot fail; continuing as before.",
+                        __func__);
+                }
+                if (planeType == geometric::Plane::PlaneVariant::UNDEFINED)
+                    keyFrameCounter[mit->first] += static_cast<int>(
+                        scorePerPlane *
+                        0.2); /* undefined planes have less weight */
+                else
+                    keyFrameCounter[mit->first] += scorePerPlane;
+            }
+        }
+    }
+
+    /*!
+     * For all map points in keyframe check in which other keyframes are they
+     * seen Increase counter for those keyframes
+     */
+    for (std::vector<map_point::MapPoint *>::iterator
+             vit  = keyFrameMapPoints.begin(),
+             vend = keyFrameMapPoints.end();
+         vit != vend;
+         vit++)
+    {
+        map_point::MapPoint *p_mapPoint = *vit;
+
+        if (!p_mapPoint)
+            continue;
+
+        bool mapPointIsBad{};
+        if (p_mapPoint->isBad(mapPointIsBad) !=
+            map_point::MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: isBad returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (mapPointIsBad)
+            continue;
+
+        std::map<KeyFrame *, std::tuple<int, int>> observations{};
+        if (p_mapPoint->getObservations(observations) !=
+            map_point::MapPointStatus::MAP_POINT_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getObservations returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        for (std::map<KeyFrame *, std::tuple<int, int>>::iterator
+                 mit  = observations.begin(),
+                 mend = observations.end();
+             mit != mend;
+             mit++)
+        {
+            bool isBad3{};
+            if (!(mit->first->id == id) &&
+                mit->first->isBad(isBad3) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: isBad returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            map::Map *p_map3 = nullptr;
+            if (!(mit->first->id == id || isBad3) &&
+                mit->first->getMap(p_map3) !=
+                    KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getMap returned a failure status although it "
+                             "cannot fail; continuing as before.",
+                             __func__);
+            }
+            if (mit->first->id == id || isBad3 || p_map3 != p_map)
+                continue;
+            keyFrameCounter[mit->first]++;
+        }
+    }
+
+    /* This should not happen */
+    if (keyFrameCounter.empty())
+        return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+
+    /*!
+     * If the counter is greater than threshold add connection
+     * In case no keyframe counter is over threshold add the one with maximum
+     * counter
+     */
+    int       nmax              = 0;
+    KeyFrame *p_keyFrameMaximum = nullptr;
+    int       threshold         = 15;
+
+    std::vector<std::pair<int, KeyFrame *>> pairs;
+    pairs.reserve(keyFrameCounter.size());
+    if (!upParent_in)
+        std::cout << "UPDATE_CONN: current KF " << id << std::endl;
+    for (std::map<KeyFrame *, int>::iterator mit  = keyFrameCounter.begin(),
+                                             mend = keyFrameCounter.end();
+         mit != mend;
+         mit++)
+    {
+        if (!upParent_in)
+            std::cout << "  UPDATE_CONN: KF " << mit->first->id
+                      << " ; num matches: " << mit->second << std::endl;
+        if (mit->second > nmax)
+        {
+            nmax              = mit->second;
+            p_keyFrameMaximum = mit->first;
+        }
+        if (mit->second >= threshold)
+        {
+            pairs.push_back(std::make_pair(mit->second, mit->first));
+            if ((mit->first)->addConnection(this, mit->second) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addConnection returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+        }
+    }
+
+    if (pairs.empty())
+    {
+        pairs.push_back(std::make_pair(nmax, p_keyFrameMaximum));
+        if (p_keyFrameMaximum->addConnection(this, nmax) !=
+            KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: addConnection returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+
+    std::sort(pairs.begin(), pairs.end());
+    std::list<KeyFrame *> keyFrames;
+    std::list<int>        weights;
+    for (size_t pairIndex = 0; pairIndex < pairs.size(); pairIndex++)
+    {
+        keyFrames.push_front(pairs[pairIndex].second);
+        weights.push_front(pairs[pairIndex].first);
+    }
+
+    {
+        std::unique_lock<std::mutex> lockCon(connectionsMutex);
+
+        connectedKeyFrameWeights = keyFrameCounter;
+        orderedConnectedKeyFrames =
+            std::vector<KeyFrame *>(keyFrames.begin(), keyFrames.end());
+        orderedWeights = std::vector<int>(weights.begin(), weights.end());
+
+        unsigned long mapInitKeyFrameId{};
+        if ((isFirstConnection) &&
+            p_map->getInitKeyFrameId(mapInitKeyFrameId) !=
+                map::MapStatus::MAP_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getInitKeyFrameId returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        if (isFirstConnection && id != mapInitKeyFrameId)
+        {
+            p_parent = orderedConnectedKeyFrames.front();
+            if (p_parent->addChild(this) !=
+                KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: addChild returned a failure status although "
+                             "it cannot fail; continuing as before.",
+                             __func__);
+            }
+            isFirstConnection = false;
+        }
+    }
+
+    return KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS;
+}
+
+} /* namespace keyframe */
+} /* namespace core */
+} /* namespace vs_graphs */

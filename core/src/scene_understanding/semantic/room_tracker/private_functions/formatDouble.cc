@@ -1,0 +1,53 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            formatDouble.cc
+ *
+ * @brief           Implements formatDouble(), declared in
+ *                  Semantic/RoomTracker/private_functions.h.
+ */
+
+#include "scene_understanding/semantic/room_tracker/room_tracker.h"
+
+#include <cmath>
+#include <iostream>
+#include <sstream>
+
+#include "scene_understanding/semantic/room_tracker/private_functions/private_functions.h"
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
+{
+
+/*!
+ * @brief           Formats a double for JSON output without trailing exponent
+ *                  noise.
+ */
+RoomTrackerStatus formatDouble(double       numericValue_in,
+                               std::string &formattedValue_out)
+{
+    std::ostringstream textStream;
+    textStream << numericValue_in;
+    formattedValue_out = textStream.str();
+    return RoomTrackerStatus::ROOM_TRACKER_STATUS_SUCCESS;
+}
+
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -1,0 +1,62 @@
+/*!
+ * This file is a modified version of a file from ORB-SLAM3.
+ *
+ * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
+ * Original Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * vS-Graphs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*!
+ * @file            getCurrentFrame.cc
+ *
+ * @brief           Implements System::getCurrentFrame(), declared in
+ * system/objects/SystemClass.h.
+ */
+
+#include "views_io/frame_drawer/frame_drawer.h"
+#include "views_io/frame_drawer/objects/FrameDrawerStatusEnum.h"
+#include "execution/system/objects/SystemClass.h"
+#include <rclcpp/logging.hpp>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace system
+{
+
+SystemStatus System::getCurrentFrame(cv::Mat &currentFrame_out)
+{
+    cv::Mat frameDrawerFrameImage{};
+    if (p_frameDrawer->drawFrame(frameDrawerFrameImage) !=
+        frame_drawer::FrameDrawerStatus::FRAME_DRAWER_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: drawFrame returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    currentFrame_out = frameDrawerFrameImage;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
+}
+
+} /* namespace system */
+} /* namespace core */
+} /* namespace vs_graphs */

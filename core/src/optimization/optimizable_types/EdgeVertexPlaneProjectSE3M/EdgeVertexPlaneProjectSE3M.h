@@ -1,0 +1,13 @@
+/*!
+ * @file            EdgeVertexPlaneProjectSE3M.h
+ *
+ * @brief           Public interface of the EdgeVertexPlaneProjectSE3M module.
+ */
+
+#ifndef VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGEVERTEXPLANEPROJECTSE3M_EDGEVERTEXPLANEPROJECTSE3M_H
+#define VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGEVERTEXPLANEPROJECTSE3M_EDGEVERTEXPLANEPROJECTSE3M_H
+
+#include "optimization/optimizable_types/EdgeVertexPlaneProjectSE3M/objects/EdgeVertexPlaneProjectSE3MClass.h"
+
+#endif /* VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGEVERTEXPLANEPROJECTSE3M_EDGEVERTEXPLANEPROJECTSE3M_H \
+        */

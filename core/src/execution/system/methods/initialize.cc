@@ -1,0 +1,484 @@
+/*!
+ * This file is a modified version of a file from ORB-SLAM3.
+ *
+ * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
+ * Original Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * vS-Graphs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*!
+ * @file            initialize.cc
+ *
+ * @brief           Implements System::initialize(), declared in
+ * system/objects/SystemClass.h.
+ */
+
+#include "views_io/frame_drawer/frame_drawer.h"
+#include "map_state/atlas/atlas.h"
+#include "map_state/atlas/objects/AtlasStatusEnum.h"
+#include "mapping/local_mapping/objects/LocalMappingStatusEnum.h"
+#include "place_recognition_and_loop_closure/loop_closing/objects/LoopClosingStatusEnum.h"
+#include "views_io/map_drawer/map_drawer.h"
+#include "estimation/tracking/objects/TrackingStatusEnum.h"
+#include "configuration/types/objects/SystemParamsStatusEnum.h"
+#include "configuration/types/types.h"
+#include "configuration/settings/objects/SettingsStatusEnum.h"
+#include "configuration/settings/settings.h"
+#include "place_recognition_and_loop_closure/keyframe_database/keyframe_database.h"
+#include "scene_understanding/semantic_segmentation/semantic_segmentation.h"
+#include "scene_understanding/semantics_manager/semantics_manager.h"
+#include "mapping/local_mapping/local_mapping.h"
+#include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
+#include "execution/system/objects/SystemClass.h"
+#include "estimation/tracking/tracking.h"
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/string.hpp>
+#include <iomanip>
+#include <memory>
+#include <openssl/evp.h>
+#include <rclcpp/logging.hpp>
+#include <thread>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace system
+{
+
+SystemStatus System::initialize(const std::string            &vocabularyFile_in,
+                                const std::string            &settingsFile_in,
+                                const std::string            &sysParamsFile_in,
+                                const SensorType              sensor_in,
+                                const Verbose::VerbosityLevel verboseLevel_in)
+{
+    sensor = sensor_in;
+
+    /* Output welcome message */
+    std::cout << std::endl
+              << "------------------------------------------------------"
+              << std::endl
+              << "🚀 Visual S-Graphs (vS-Graphs) Copyright © 2023-2025 by A. "
+                 "Tourani, S. Ejaz, H. Bavle, J.L. Sanchez-Lopez, and H. Voos, "
+                 "SnT - University of Luxembourg."
+              << std::endl
+              << "✨ Based on ORB-SLAM3 Copyright © 2017-2023 by C. Campos, R. "
+                 "Elvira, J.J. Gómez, J.M.M. Montiel, and J.D. Tardós, "
+                 "University of Zaragoza."
+              << std::endl
+              << "To redistribute the software please see LICENSE.txt."
+              << std::endl
+              << "------------------------------------------------------"
+              << std::endl
+              << std::endl;
+
+    /* Output msg of what sensor is being used */
+    std::cout << "[System] Input sensor is set to: ";
+    if (sensor_in == MONOCULAR)
+    {
+        std::cout << "Monocular" << std::endl;
+    }
+    else if (sensor_in == STEREO)
+    {
+        std::cout << "Stereo" << std::endl;
+    }
+    else if (sensor_in == RGBD)
+    {
+        std::cout << "RGB-D" << std::endl;
+    }
+    else if (sensor_in == IMU_MONOCULAR)
+    {
+        std::cout << "Monocular-Inertial" << std::endl;
+    }
+    else if (sensor_in == IMU_STEREO)
+    {
+        std::cout << "Stereo-Inertial" << std::endl;
+    }
+    else if (sensor_in == IMU_RGBD)
+    {
+        std::cout << "RGB-D-Inertial" << std::endl;
+    }
+
+    /* Check settings file can be opened */
+    cv::FileStorage fsSettings(settingsFile_in.c_str(), cv::FileStorage::READ);
+    if (!fsSettings.isOpened())
+    {
+        std::cerr << "[System] Failed to open settings file at '"
+                  << settingsFile_in << "'! Exiting ..." << std::endl;
+        return SystemStatus::SYSTEM_STATUS_SETTINGS_UNREADABLE;
+    }
+
+    cv::FileNode node = fsSettings["File.version"];
+    if (!node.empty() && node.isString() && node.string() == "1.0")
+    {
+        p_settings = new utils::settings::Settings(settingsFile_in, sensor_in);
+        std::string settingsAtlasLoadFile{};
+        if (p_settings->atlasLoadFile(settingsAtlasLoadFile) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: atlasLoadFile returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        loadAtlasFile = settingsAtlasLoadFile;
+        std::string settingsAtlasSaveFile{};
+        if (p_settings->atlasSaveFile(settingsAtlasSaveFile) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: atlasSaveFile returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        saveAtlasFile = settingsAtlasSaveFile;
+        std::cout << (*p_settings) << std::endl;
+    }
+    else
+    {
+        p_settings                 = nullptr;
+        cv::FileNode atlasFileNode = fsSettings["System.LoadAtlasFromFile"];
+        if (!atlasFileNode.empty() && atlasFileNode.isString())
+            loadAtlasFile = std::string(atlasFileNode);
+
+        atlasFileNode = fsSettings["System.SaveAtlasToFile"];
+        if (!atlasFileNode.empty() && atlasFileNode.isString())
+            saveAtlasFile = std::string(atlasFileNode);
+    }
+
+    if ((sensor_in == RGBD || sensor_in == IMU_RGBD) && p_settings != nullptr)
+    {
+        double stereoDepthThreshold{};
+        if (p_settings->thDepth(stereoDepthThreshold) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: thDepth returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+        double settingsB{};
+        if (p_settings->b(settingsB) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: b returned a failure status although it cannot "
+                         "fail; continuing as before.",
+                         __func__);
+        }
+        const double metricCloseDepth_m = settingsB * stereoDepthThreshold;
+        std::cout << "Stereo.ThDepth=" << stereoDepthThreshold
+                  << " closeDepthMeters=" << metricCloseDepth_m << std::endl;
+    }
+
+    node          = fsSettings["loopClosing"];
+    bool activeLc = true;
+    if (!node.empty())
+    {
+        activeLc = static_cast<int>(fsSettings["loopClosing"]) != 0;
+    }
+
+    vocabularyFilePath = vocabularyFile_in;
+
+    /* Init the ORB vocabulary */
+    std::cout << "[System] Loading ORB Vocabulary ..." << std::endl;
+    p_vocabulary            = new ORBVocabulary();
+    bool isVocabularyLoaded = p_vocabulary->loadFromBinFile(vocabularyFile_in);
+    if (!isVocabularyLoaded)
+    {
+        std::cerr << "- Wrong path to vocabulary. " << std::endl;
+        std::cerr << "- Failed to open at: " << vocabularyFile_in << std::endl;
+        return SystemStatus::SYSTEM_STATUS_VOCABULARY_UNREADABLE;
+    }
+
+    /* Create keyframe database */
+    p_keyFrameDatabase = new keyframe_database::KeyFrameDatabase(*p_vocabulary);
+
+    /* Check to see if there is a string to an atlas::Atlas map file to load */
+    if (loadAtlasFile.empty())
+    {
+        /* If no file given, create a new atlas::Atlas map */
+        p_atlas = new atlas::Atlas(0);
+
+        std::cout
+            << "[System] Initializing atlas::Atlas from scratch in 'mpAtlas'"
+            << std::endl;
+    }
+    else
+    {
+        /* If file given, load atlas::Atlas map from earlier session */
+        bool isRead{};
+        if (loadAtlas(FileType::BINARY_FILE, isRead) !=
+            SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: loadAtlas returned a failure status although it "
+                         "cannot fail; continuing as before.",
+                         __func__);
+        }
+
+        std::cout << "[System] Initializing atlas::Atlas from file: "
+                  << loadAtlasFile << "... " << std::endl;
+
+        if (!isRead)
+        {
+            std::cout
+                << "[System] Error while loading atlas::Atlas file! Previous "
+                   "atlas::Atlas file could not be loaded. Exiting ..."
+                << std::endl;
+            return SystemStatus::SYSTEM_STATUS_ATLAS_UNREADABLE;
+        }
+
+        if (p_atlas->createNewMap() != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: createNewMap returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+
+    /* Load the system parameters */
+    types::SystemParams *p_sysParams = nullptr;
+    if (types::SystemParams::getParams(p_sysParams) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_sysParams->setParams(sysParamsFile_in) !=
+        types::SystemParamsStatus::SYSTEM_PARAMS_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setParams returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* Parse the environment database, if provided */
+    if (parseJsonDatabase(p_sysParams->general.envDatabase) !=
+        SystemStatus::SYSTEM_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: parseJsonDatabase returned a failure status although "
+                     "it cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* If the sensor is integrated with IMU, initialize the IMU first */
+    if (sensor_in == IMU_STEREO || sensor_in == IMU_MONOCULAR ||
+        sensor_in == IMU_RGBD)
+    {
+        if (p_atlas->setInertialSensor() != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: setInertialSensor returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+    }
+
+    /* ---------------------------------------------------------------------- *
+     * FRAME + MAP + TRACKER OBJECTS
+     * ---------------------------------------------------------------------- */
+
+    /* Create drawers for the tracking pipeline. */
+    p_frameDrawer = new frame_drawer::FrameDrawer(p_atlas);
+    p_mapDrawer   = new map_drawer::MapDrawer(p_atlas, settingsFile_in, p_settings);
+
+    /* Initialize the tracking::Tracking thread */
+    p_tracker = new tracking::Tracking(this,
+                                       p_vocabulary,
+                                       p_frameDrawer,
+                                       p_mapDrawer,
+                                       p_atlas,
+                                       p_keyFrameDatabase,
+                                       settingsFile_in,
+                                       sensor_in,
+                                       p_settings);
+
+    /* ---------------------------------------------------------------------- *
+     * LOCAL MAPPING THREAD
+     * ---------------------------------------------------------------------- */
+
+    /* Initialize the Local Mapping object */
+    p_localMapper = new local_mapping::LocalMapping(
+        p_atlas,
+        sensor_in == MONOCULAR || sensor_in == IMU_MONOCULAR,
+        sensor_in == IMU_MONOCULAR || sensor_in == IMU_STEREO ||
+            sensor_in == IMU_RGBD);
+
+    /* Set up thread to run the mpLocalMapper and call Run() method */
+    p_localMappingThread =
+        new std::thread(&vs_graphs::core::local_mapping::LocalMapping::run,
+                        p_localMapper);
+
+    if (p_settings)
+    {
+        double settingsThFarPoints{};
+        if (p_settings->thFarPoints(settingsThFarPoints) !=
+            utils::settings::SettingsStatus::SETTINGS_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: thFarPoints returned a failure status although "
+                         "it cannot fail; continuing as before.",
+                         __func__);
+        }
+        p_localMapper->farPointsThreshold = settingsThFarPoints;
+    }
+    else
+    {
+        p_localMapper->farPointsThreshold = fsSettings["thFarPoints"];
+    }
+
+    if (p_localMapper->farPointsThreshold != 0)
+    {
+        std::cout << "Discard points further than "
+                  << p_localMapper->farPointsThreshold
+                  << " m from current camera" << std::endl;
+        p_localMapper->shouldSkipFarPoints = true;
+    }
+    else
+    {
+        p_localMapper->shouldSkipFarPoints = false;
+    }
+
+    /* ---------------------------------------------------------------------- *
+     * LOOP CLOSING THREAD
+     * ---------------------------------------------------------------------- */
+
+    /* Initialize the Loop Closing thread */
+    p_loopCloser = new loop_closing::LoopClosing(p_atlas,
+                                                 p_keyFrameDatabase,
+                                                 p_vocabulary,
+                                                 sensor_in != MONOCULAR,
+                                                 activeLc);
+
+    /* Launch the loop closing thread */
+    p_loopClosingThread =
+        new std::thread(&vs_graphs::core::loop_closing::LoopClosing::run,
+                        p_loopCloser);
+
+    /* ---------------------------------------------------------------------- *
+     * SEMANTIC SEGMENTATION THREAD
+     * ---------------------------------------------------------------------- */
+
+    /* Initialize the Semantic Segmentation thread */
+    p_semanticSegmentation = new semantic_segmentation::SemanticSegmentation(p_atlas);
+
+    /* Launch the Semantic Segmentation thread */
+    p_semanticSegmentationThread =
+        new std::thread(&semantic_segmentation::SemanticSegmentation::run, p_semanticSegmentation);
+
+    /* ---------------------------------------------------------------------- *
+     * SEMANTIC MANAGER THREAD
+     * ---------------------------------------------------------------------- */
+
+    /* Initialize the Semantic Manager thread */
+    p_semanticsManager = new SemanticsManager(p_atlas);
+
+    /* Launch the Semantic Manager thread */
+    p_semanticsManagerThread =
+        new std::thread(&SemanticsManager::run, p_semanticsManager);
+
+    /* ---------------------------------------------------------------------- *
+     * THREAD POINTER STORAGE
+     * ---------------------------------------------------------------------- */
+
+    /* Store loop closing and local mapper thread pointers in tracker object */
+    if (p_tracker->setLoopClosing(p_loopCloser) !=
+        tracking::TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setLoopClosing returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_tracker->setLocalMapper(p_localMapper) !=
+        tracking::TrackingStatus::TRACKING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setLocalMapper returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* Store tracking object and loop closing thread pointer in local mapper */
+    if (p_localMapper->setTracker(p_tracker) !=
+        local_mapping::LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setTracker returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_localMapper->setLoopCloser(p_loopCloser) !=
+        local_mapping::LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setLoopCloser returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* Store tracking object and local mapper thread pointer in loop closer */
+    if (p_loopCloser->setTracker(p_tracker) !=
+        loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setTracker returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+    if (p_loopCloser->setLocalMapper(p_localMapper) !=
+        loop_closing::LoopClosingStatus::LOOP_CLOSING_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setLocalMapper returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    /* Set verbosity level */
+    if (Verbose::setTh(verboseLevel_in) !=
+        VerboseStatus::VERBOSE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setTh returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+
+    isInitialized = true;
+    return SystemStatus::SYSTEM_STATUS_SUCCESS;
+}
+
+} /* namespace system */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -13,7 +13,7 @@
 #include "common/common.h"
 #include "image_grabber/objects/SynchronizedRgbdPacketStruct.h"
 #include "imu_grabber/imu_grabber.h"
-#include "imu_types/point/point.h"
+#include "sensor_models/imu_types/point/point.h"
 
 #include <algorithm>
 #include <atomic>

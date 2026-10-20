@@ -40,7 +40,7 @@
 
 #include "common/common.h"
 
-#include "mission_health_topology_json/mission_health_topology_json.h"
+#include "views_io/mission_health_topology_json/mission_health_topology_json.h"
 
 #include "sparse/sparse.h"
 

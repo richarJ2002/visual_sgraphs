@@ -1,0 +1,182 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors: Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ * and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            tryCloseWallLoop.cc
+ *
+ * @brief           Implements tryCloseWallLoop(), declared in
+ *                  SemanticsManager/private_functions.h.
+ */
+
+#include "scene_understanding/semantics_manager/semantics_manager.h"
+#include "configuration/types/types.h"
+
+#include "private_functions.h"
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <rclcpp/logging.hpp>
+
+namespace vs_graphs
+{
+namespace core
+{
+
+SemanticsManagerStatus tryCloseWallLoop(
+    std::vector<FiniteWallSegment2d> wallSegments_in,
+    const Eigen::Vector2d           &roomCentroidGround_m_in,
+    const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters_in,
+    WallLoopClosure                                      &closure_out)
+{
+    WallLoopClosure result;
+
+    if (wallSegments_in.empty())
+    {
+        closure_out = result;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
+
+    std::sort(
+        wallSegments_in.begin(),
+        wallSegments_in.end(),
+        [&roomCentroidGround_m_in](const FiniteWallSegment2d &firstSegment,
+                                   const FiniteWallSegment2d &secondSegment)
+        {
+            const Eigen::Vector2d firstMidpoint =
+                0.5 * (firstSegment.wallStart_world_m +
+                       firstSegment.wallEnd_world_m) -
+                roomCentroidGround_m_in;
+            const Eigen::Vector2d secondMidpoint =
+                0.5 * (secondSegment.wallStart_world_m +
+                       secondSegment.wallEnd_world_m) -
+                roomCentroidGround_m_in;
+
+            return std::atan2(firstMidpoint.y(), firstMidpoint.x()) <
+                   std::atan2(secondMidpoint.y(), secondMidpoint.x());
+        });
+
+    result.loopCorners_world_m.reserve(wallSegments_in.size());
+
+    for (std::size_t wallIndex = 0U; wallIndex < wallSegments_in.size();
+         ++wallIndex)
+    {
+        const FiniteWallSegment2d &currentWall = wallSegments_in[wallIndex];
+        const FiniteWallSegment2d &nextWall =
+            wallSegments_in[(wallIndex + 1U) % wallSegments_in.size()];
+        Eigen::Vector2d loopCorner_world_m;
+        double          currentParameter = 0.0;
+        double          nextParameter    = 0.0;
+
+        bool hasIntersection{};
+        if (intersectSupportingLines(currentWall,
+                                     nextWall,
+                                     loopCorner_world_m,
+                                     currentParameter,
+                                     nextParameter,
+                                     hasIntersection) !=
+            SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("vs_graphs"),
+                "%s: intersectSupportingLines returned a failure status "
+                "although it cannot fail; continuing as before.",
+                __func__);
+        }
+        if (hasIntersection)
+        {
+            double currentCornerGap_m{};
+            if (pointToSegmentDistance_m(loopCorner_world_m,
+                                         currentWall,
+                                         currentCornerGap_m) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: pointToSegmentDistance_m returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+            double nextCornerGap_m{};
+            if (pointToSegmentDistance_m(loopCorner_world_m,
+                                         nextWall,
+                                         nextCornerGap_m) !=
+                SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(
+                    rclcpp::get_logger("vs_graphs"),
+                    "%s: pointToSegmentDistance_m returned a failure status "
+                    "although it cannot fail; continuing as before.",
+                    __func__);
+            }
+
+            if (currentCornerGap_m <=
+                    topologyParameters_in.maximumCornerGap_m &&
+                nextCornerGap_m <= topologyParameters_in.maximumCornerGap_m)
+            {
+                result.loopCorners_world_m.push_back(loopCorner_world_m);
+                continue;
+            }
+        }
+
+        const std::array<std::pair<Eigen::Vector2d, Eigen::Vector2d>, 4>
+            endpointPairs = {
+                {{currentWall.wallStart_world_m, nextWall.wallStart_world_m},
+                 {currentWall.wallStart_world_m, nextWall.wallEnd_world_m},
+                 {currentWall.wallEnd_world_m, nextWall.wallStart_world_m},
+                 {currentWall.wallEnd_world_m, nextWall.wallEnd_world_m}}};
+
+        const std::pair<Eigen::Vector2d, Eigen::Vector2d>
+            *p_nearestEndpointPair = std::min_element(
+                endpointPairs.begin(),
+                endpointPairs.end(),
+                [](const auto &firstPair, const auto &secondPair)
+                {
+                    return (firstPair.first - firstPair.second).squaredNorm() <
+                           (secondPair.first - secondPair.second).squaredNorm();
+                });
+
+        if ((p_nearestEndpointPair->first - p_nearestEndpointPair->second)
+                .norm() <= topologyParameters_in.maximumCornerGap_m)
+        {
+            result.loopCorners_world_m.push_back(
+                0.5 *
+                (p_nearestEndpointPair->first + p_nearestEndpointPair->second));
+            continue;
+        }
+
+        result.loopCorners_world_m.clear();
+        closure_out = result;
+        return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+    }
+
+    if (result.loopCorners_world_m.size() == wallSegments_in.size())
+    {
+        result.hasOpenBoundary = false;
+    }
+    else
+    {
+        result.loopCorners_world_m.clear();
+    }
+
+    closure_out = result;
+    return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;
+}
+
+} /* namespace core */
+} /* namespace vs_graphs */

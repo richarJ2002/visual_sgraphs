@@ -122,7 +122,7 @@ include_directories(
 # the full warning set, including Sophus reached through legacy headers.
 include_directories(SYSTEM
   ${CMAKE_CURRENT_BINARY_DIR}/g2o_generated
-  ${PROJECT_SOURCE_DIR}/core/src/g2o
+  ${PROJECT_SOURCE_DIR}/core/src/dependency_lineage/g2o
 )
 include_directories(${OPENGL_INCLUDE_DIRS})
 
@@ -134,7 +134,7 @@ add_definitions(${PCL_DEFINITIONS})
 # those includes, while owned targets use only the authorized SYSTEM roots.
 get_directory_property(VS_GRAPHS_OWNED_INCLUDE_DIRS INCLUDE_DIRECTORIES)
 # Include the relocated g2o CMakeLists
-include(${PROJECT_SOURCE_DIR}/core/src/g2o/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/dependency_lineage/g2o/CMakeLists.txt)
 set_property(DIRECTORY PROPERTY INCLUDE_DIRECTORIES
   ${VS_GRAPHS_OWNED_INCLUDE_DIRS})
 
@@ -147,119 +147,20 @@ set_target_properties(g2o PROPERTIES
   ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-# Types module sources (objects/methods layout)
-include(${PROJECT_SOURCE_DIR}/core/src/types/CMakeLists.txt)
-
-# CameraModels module sources (object-subpackage layout)
-include(${PROJECT_SOURCE_DIR}/core/src/camera_models/CMakeLists.txt)
-
-# Utils module sources (object-subpackage layout)
-include(${PROJECT_SOURCE_DIR}/core/src/utils/CMakeLists.txt)
-
-# Geometric module sources (Plane + GeometricTools object packages, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/geometric/CMakeLists.txt)
-
-# Semantic object packages (Room/Passage/Floor/Marker/RoomTracker/…, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/semantic/CMakeLists.txt)
-
-# StereoMatchOutlierRejection module sources (single free function, §5.4)
-include(${PROJECT_SOURCE_DIR}/core/src/stereo_match_outlier_rejection/CMakeLists.txt)
-
-# DatabaseParser module sources (single DBParser object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/database_parser/CMakeLists.txt)
-
-# MissionHealthTopologyJson module sources (free functions, §5.4)
-include(${PROJECT_SOURCE_DIR}/core/src/mission_health_topology_json/CMakeLists.txt)
-
-# ImuTypes module sources (Bias/Calib/IntegratedRotation/Preintegrated, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/imu_types/CMakeLists.txt)
-
-# MapDrawer object sources (single MapDrawer object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/map_drawer/CMakeLists.txt)
-
-# FrameDrawer object sources (single FrameDrawer object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/frame_drawer/CMakeLists.txt)
-
-# ResetCause module sources (ResetCauseRetention object + free functions)
-include(${PROJECT_SOURCE_DIR}/core/src/reset_cause/CMakeLists.txt)
-
-# Sim3Solver object sources (single Sim3Solver object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/sim3_solver/CMakeLists.txt)
-
-# G2oTypes module sources (g2o vertex/edge objects + SO(3) helpers, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/g2o_types/CMakeLists.txt)
-
-# KeyFrameDatabase module sources (single KeyFrameDatabase object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/keyframe_database/CMakeLists.txt)
-
-# TwoViewReconstruction object sources (single object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/two_view_reconstruction/CMakeLists.txt)
-
-# MLPnPsolver object sources (single object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/mlpnp_solver/CMakeLists.txt)
-
-# ORBextractor module sources (single object + internal helpers, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/orb_extractor/CMakeLists.txt)
-
-# ORBmatcher object sources (single object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/orb_matcher/CMakeLists.txt)
-
-# MapPoint object sources (single object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/map_point/CMakeLists.txt)
-
-# Map object sources (single object, SCC construct/ out-of-line, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/map/CMakeLists.txt)
-
-# Frame object sources (single object, SCC construct/ out-of-line, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/frame/CMakeLists.txt)
-
-# KeyFrame object sources (single object, SCC construct/ out-of-line, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/keyframe/CMakeLists.txt)
-
-# System object sources (single System object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/system/CMakeLists.txt)
-
-# Tracking object sources (single Tracking object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/tracking/CMakeLists.txt)
-
-# LocalMapping object sources (single LocalMapping object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/local_mapping/CMakeLists.txt)
-
-# LoopClosing object sources (single LoopClosing object, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/loop_closing/CMakeLists.txt)
-
-# Optimizer module sources (static methods + internal helpers, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/optimizer/CMakeLists.txt)
-
-# SemanticSegmentation object sources (single object + internal helpers, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/semantic_segmentation/CMakeLists.txt)
-
-# SemanticsManager object sources (single object + internal helpers, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/semantics_manager/CMakeLists.txt)
-
-# Atlas object sources (single Atlas object + internal helpers, §4.5, LAST)
-include(${PROJECT_SOURCE_DIR}/core/src/atlas/CMakeLists.txt)
-# OptimizableTypes module sources (g2o edge objects, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/optimizable_types/CMakeLists.txt)
-
-# pcl_custom module sources (weighted PCL plane segmentation templates, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/pcl_custom/CMakeLists.txt)
-
-# d_utils module sources (random and timestamp packages, §4.5)
-include(${PROJECT_SOURCE_DIR}/core/src/d_utils/CMakeLists.txt)
-
-# dbow2 package sources (kept after existing lists to preserve unity batches)
-include(${PROJECT_SOURCE_DIR}/core/src/dbow2/bow_vector/CMakeLists.txt)
-include(${PROJECT_SOURCE_DIR}/core/src/dbow2/feature_vector/CMakeLists.txt)
-include(${PROJECT_SOURCE_DIR}/core/src/dbow2/descriptors/CMakeLists.txt)
-include(${PROJECT_SOURCE_DIR}/core/src/dbow2/scoring/CMakeLists.txt)
-include(${PROJECT_SOURCE_DIR}/core/src/dbow2/vocabulary/CMakeLists.txt)
-
-# Sophus template coverage, without changing existing unity batches
-include(${PROJECT_SOURCE_DIR}/core/src/sophus/CMakeLists.txt)
-
-# JSON template coverage (last, outside existing unity batches)
-include(${PROJECT_SOURCE_DIR}/core/src/nlohmann/CMakeLists.txt)
+# Capability dispatchers only set source lists; the main library below
+# fixes the flattened source order independently of this visit order.
+include(${PROJECT_SOURCE_DIR}/core/src/configuration/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/dependency_lineage/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/estimation/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/execution/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/map_state/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/mapping/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/optimization/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/place_recognition_and_loop_closure/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/scene_understanding/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/sensor_models/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/views_io/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/visual_features/CMakeLists.txt)
 
 # Create the main library
 add_library(${PROJECT_NAME}_lib SHARED
@@ -290,7 +191,11 @@ add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_GEOMETRIC_SOURCES}
   ${VS_GRAPHS_SEMANTIC_OBJECTS_SOURCES}
   ${VS_GRAPHS_TWOVIEWRECONSTRUCTION_SOURCES}
-  ${VS_GRAPHS_UTILS_SOURCES}
+  ${VS_GRAPHS_UTILS_UTILS_SOURCES}
+  ${VS_GRAPHS_UTILS_CONVERTER_SOURCES}
+  ${VS_GRAPHS_UTILS_SETTINGS_SOURCES}
+  ${VS_GRAPHS_UTILS_CONFIG_SOURCES}
+  ${VS_GRAPHS_UTILS_GEOSEMHELPERS_SOURCES}
 
   ${VS_GRAPHS_DATABASEPARSER_SOURCES}
   ${VS_GRAPHS_TYPES_SOURCES}

@@ -33,7 +33,7 @@
 #include "common/common.h"
 #include "image_grabber/image_grabber.h"
 #include "imu_grabber/imu_grabber.h"
-#include "reset_cause/reset_cause.h"
+#include "execution/reset_cause/reset_cause.h"
 #include <rclcpp/logging.hpp>
 
 /*!
