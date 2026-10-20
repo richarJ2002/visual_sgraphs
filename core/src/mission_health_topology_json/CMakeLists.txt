@@ -1,7 +1,7 @@
 # MissionHealthTopologyJson module sources.
 set(VS_GRAPHS_MISSIONHEALTHTOPOLOGYJSON_SOURCES
-  core/src/mission_health_topology_json/methods/augmentMissionHealthTopologyJsonWithSemantics.cc
-  core/src/mission_health_topology_json/private_functions/axiomCapabilitiesToJson.cc
-  core/src/mission_health_topology_json/private_functions/entityKeysToJson.cc
-  core/src/mission_health_topology_json/private_functions/finiteAwareDoubleToJson.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/augmentMissionHealthTopologyJsonWithSemantics.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/axiomCapabilitiesToJson.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/entityKeysToJson.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/finiteAwareDoubleToJson.cc
 )

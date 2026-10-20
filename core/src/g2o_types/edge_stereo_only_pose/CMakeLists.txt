@@ -1,6 +1,6 @@
 # EdgeStereoOnlyPose object sources.
 set(VS_GRAPHS_G2OTYPES_EDGESTEREOONLYPOSE_SOURCES
-  core/src/g2o_types/edge_stereo_only_pose/methods/computeError.cc
-  core/src/g2o_types/edge_stereo_only_pose/methods/getHessian.cc
-  core/src/g2o_types/edge_stereo_only_pose/methods/linearizeOplus.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeError.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getHessian.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/linearizeOplus.cc
 )

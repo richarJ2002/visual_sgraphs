@@ -1,6 +1,6 @@
 # Sophus move-step template coverage; upstream names remain unchanged.
 set(VS_GRAPHS_SOPHUS_SOURCES
-  core/src/sophus/methods/explicit_instantiations.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/explicit_instantiations.cc
 )
 
 # Keep emitted template copies after existing sources and out of unity batches

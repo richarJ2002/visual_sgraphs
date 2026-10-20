@@ -1,24 +1,24 @@
 # Preintegrated object sources.
 set(VS_GRAPHS_IMUTYPES_PREINTEGRATED_SOURCES
-  core/src/imu_types/preintegrated/methods/copyFrom.cc
-  core/src/imu_types/preintegrated/methods/getDeltaBias.cc
-  core/src/imu_types/preintegrated/methods/getDeltaPosition.cc
-  core/src/imu_types/preintegrated/methods/getDeltaRotation.cc
-  core/src/imu_types/preintegrated/methods/getDeltaVelocity.cc
-  core/src/imu_types/preintegrated/methods/getOriginalBias.cc
-  core/src/imu_types/preintegrated/methods/getOriginalDeltaPosition.cc
-  core/src/imu_types/preintegrated/methods/getOriginalDeltaRotation.cc
-  core/src/imu_types/preintegrated/methods/getOriginalDeltaVelocity.cc
-  core/src/imu_types/preintegrated/methods/getUpdatedBias.cc
-  core/src/imu_types/preintegrated/methods/getUpdatedDeltaPosition.cc
-  core/src/imu_types/preintegrated/methods/getUpdatedDeltaRotation.cc
-  core/src/imu_types/preintegrated/methods/getUpdatedDeltaVelocity.cc
-  core/src/imu_types/preintegrated/methods/initialize.cc
-  core/src/imu_types/preintegrated/methods/integrateNewMeasurement.cc
-  core/src/imu_types/preintegrated/methods/mergePrevious.cc
-  core/src/imu_types/preintegrated/methods/printMeasurements.cc
-  core/src/imu_types/preintegrated/methods/reintegrate.cc
-  core/src/imu_types/preintegrated/methods/serialize.cc
-  core/src/imu_types/preintegrated/methods/serializeIntegrable.cc
-  core/src/imu_types/preintegrated/methods/setNewBias.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/copyFrom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getDeltaBias.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getDeltaPosition.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getDeltaRotation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getDeltaVelocity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginalBias.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginalDeltaPosition.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginalDeltaRotation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginalDeltaVelocity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedBias.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedDeltaPosition.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedDeltaRotation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedDeltaVelocity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/initialize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/integrateNewMeasurement.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mergePrevious.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/printMeasurements.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reintegrate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serializeIntegrable.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setNewBias.cc
 )

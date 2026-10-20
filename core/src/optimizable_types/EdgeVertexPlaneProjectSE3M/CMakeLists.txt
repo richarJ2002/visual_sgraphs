@@ -1,5 +1,5 @@
 # EdgeVertexPlaneProjectSE3M object sources: exactly this object's translation units.
 set(VS_GRAPHS_OPTIMIZABLETYPES_EDGEVERTEXPLANEPROJECTSE3M_SOURCES
-  core/src/optimizable_types/EdgeVertexPlaneProjectSE3M/methods/read.cc
-  core/src/optimizable_types/EdgeVertexPlaneProjectSE3M/methods/write.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/read.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/write.cc
 )

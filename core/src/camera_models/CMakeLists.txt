@@ -12,10 +12,10 @@ set(VS_GRAPHS_CAMERAMODELS_CAMERAMODELS_SOURCES
 )
 
 set(VS_GRAPHS_CAMERAMODELS_CAMERAMODELS_OBJECT_HEADERS
-  core/src/camera_models/geometric_camera/geometric_camera.h
-  core/src/camera_models/geometric_camera/objects/GeometricCameraClass.h
-  core/src/camera_models/kannala_brandt8/kannala_brandt8.h
-  core/src/camera_models/kannala_brandt8/objects/KannalaBrandt8Class.h
-  core/src/camera_models/pinhole/pinhole.h
-  core/src/camera_models/pinhole/objects/PinholeClass.h
+  ${CMAKE_CURRENT_LIST_DIR}/geometric_camera/geometric_camera.h
+  ${CMAKE_CURRENT_LIST_DIR}/geometric_camera/objects/GeometricCameraClass.h
+  ${CMAKE_CURRENT_LIST_DIR}/kannala_brandt8/kannala_brandt8.h
+  ${CMAKE_CURRENT_LIST_DIR}/kannala_brandt8/objects/KannalaBrandt8Class.h
+  ${CMAKE_CURRENT_LIST_DIR}/pinhole/pinhole.h
+  ${CMAKE_CURRENT_LIST_DIR}/pinhole/objects/PinholeClass.h
 )

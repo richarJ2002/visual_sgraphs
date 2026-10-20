@@ -1,12 +1,12 @@
 # EdgeInertialGS object sources.
 set(VS_GRAPHS_G2OTYPES_EDGEINERTIALGS_SOURCES
-  core/src/g2o_types/edge_inertial_gs/methods/computeError.cc
-  core/src/g2o_types/edge_inertial_gs/methods/getHessian.cc
-  core/src/g2o_types/edge_inertial_gs/methods/getHessian2.cc
-  core/src/g2o_types/edge_inertial_gs/methods/getHessian3.cc
-  core/src/g2o_types/edge_inertial_gs/methods/getHessianBiasAcc.cc
-  core/src/g2o_types/edge_inertial_gs/methods/getHessianBiasGyro.cc
-  core/src/g2o_types/edge_inertial_gs/methods/getHessianGravityDirection.cc
-  core/src/g2o_types/edge_inertial_gs/methods/getHessianScale.cc
-  core/src/g2o_types/edge_inertial_gs/methods/linearizeOplus.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeError.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getHessian.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getHessian2.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getHessian3.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getHessianBiasAcc.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getHessianBiasGyro.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getHessianGravityDirection.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getHessianScale.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/linearizeOplus.cc
 )

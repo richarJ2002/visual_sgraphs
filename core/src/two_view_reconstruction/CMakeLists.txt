@@ -1,15 +1,15 @@
 # TwoViewReconstruction object sources: exactly this object's translation units.
 set(VS_GRAPHS_TWOVIEWRECONSTRUCTION_SOURCES
-  core/src/two_view_reconstruction/methods/checkFundamental.cc
-  core/src/two_view_reconstruction/methods/checkHomography.cc
-  core/src/two_view_reconstruction/methods/checkRT.cc
-  core/src/two_view_reconstruction/methods/computeF21.cc
-  core/src/two_view_reconstruction/methods/computeH21.cc
-  core/src/two_view_reconstruction/methods/decomposeE.cc
-  core/src/two_view_reconstruction/methods/findFundamental.cc
-  core/src/two_view_reconstruction/methods/findHomography.cc
-  core/src/two_view_reconstruction/methods/normalize.cc
-  core/src/two_view_reconstruction/methods/reconstruct.cc
-  core/src/two_view_reconstruction/methods/reconstructF.cc
-  core/src/two_view_reconstruction/methods/reconstructH.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkFundamental.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkHomography.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkRT.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeF21.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeH21.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/decomposeE.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/findFundamental.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/findHomography.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/normalize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reconstruct.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reconstructF.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reconstructH.cc
 )

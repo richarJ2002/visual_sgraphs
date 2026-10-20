@@ -1,21 +1,21 @@
 # KannalaBrandt8 object sources.
 set(VS_GRAPHS_CAMERAMODELS_KANNALABRANDT8_SOURCES
-  core/src/camera_models/kannala_brandt8/methods/computeProjectionJacobian.cc
-  core/src/camera_models/kannala_brandt8/methods/epipolarConstrain.cc
-  core/src/camera_models/kannala_brandt8/methods/getPrecision.cc
-  core/src/camera_models/kannala_brandt8/methods/isEqual.cc
-  core/src/camera_models/kannala_brandt8/methods/matchAndTriangulate.cc
-  core/src/camera_models/kannala_brandt8/methods/project.cc
-  core/src/camera_models/kannala_brandt8/methods/projectMat.cc
-  core/src/camera_models/kannala_brandt8/methods/readCalibration.cc
-  core/src/camera_models/kannala_brandt8/methods/reconstructWithTwoViews.cc
-  core/src/camera_models/kannala_brandt8/methods/serialize.cc
-  core/src/camera_models/kannala_brandt8/methods/toK.cc
-  core/src/camera_models/kannala_brandt8/methods/toK_.cc
-  core/src/camera_models/kannala_brandt8/methods/triangulate.cc
-  core/src/camera_models/kannala_brandt8/methods/triangulateMatches.cc
-  core/src/camera_models/kannala_brandt8/methods/uncertainty2.cc
-  core/src/camera_models/kannala_brandt8/methods/unproject.cc
-  core/src/camera_models/kannala_brandt8/methods/unprojectEig.cc
-  core/src/camera_models/kannala_brandt8/methods/writeCalibration.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeProjectionJacobian.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/epipolarConstrain.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getPrecision.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isEqual.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/matchAndTriangulate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/project.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/projectMat.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/readCalibration.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reconstructWithTwoViews.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toK.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toK_.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/triangulate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/triangulateMatches.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/uncertainty2.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/unproject.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/unprojectEig.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/writeCalibration.cc
 )

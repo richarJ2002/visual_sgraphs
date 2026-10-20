@@ -1,18 +1,18 @@
 # Pinhole object sources.
 set(VS_GRAPHS_CAMERAMODELS_PINHOLE_SOURCES
-  core/src/camera_models/pinhole/methods/computeProjectionJacobian.cc
-  core/src/camera_models/pinhole/methods/epipolarConstrain.cc
-  core/src/camera_models/pinhole/methods/isEqual.cc
-  core/src/camera_models/pinhole/methods/matchAndTriangulate.cc
-  core/src/camera_models/pinhole/methods/project.cc
-  core/src/camera_models/pinhole/methods/projectMat.cc
-  core/src/camera_models/pinhole/methods/readCalibration.cc
-  core/src/camera_models/pinhole/methods/reconstructWithTwoViews.cc
-  core/src/camera_models/pinhole/methods/serialize.cc
-  core/src/camera_models/pinhole/methods/toK.cc
-  core/src/camera_models/pinhole/methods/toK_.cc
-  core/src/camera_models/pinhole/methods/uncertainty2.cc
-  core/src/camera_models/pinhole/methods/unproject.cc
-  core/src/camera_models/pinhole/methods/unprojectEig.cc
-  core/src/camera_models/pinhole/methods/writeCalibration.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeProjectionJacobian.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/epipolarConstrain.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isEqual.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/matchAndTriangulate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/project.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/projectMat.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/readCalibration.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reconstructWithTwoViews.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toK.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toK_.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/uncertainty2.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/unproject.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/unprojectEig.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/writeCalibration.cc
 )

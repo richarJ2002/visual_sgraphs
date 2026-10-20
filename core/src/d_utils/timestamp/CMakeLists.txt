@@ -1,25 +1,25 @@
 # timestamp package sources.
 set(VS_GRAPHS_DUTILS_TIMESTAMP_SOURCES
-  core/src/d_utils/timestamp/methods/computeEarlierTimestamp.cc
-  core/src/d_utils/timestamp/methods/computeLaterTimestamp.cc
-  core/src/d_utils/timestamp/methods/formatDateTime.cc
-  core/src/d_utils/timestamp/methods/formatElapsedTime.cc
-  core/src/d_utils/timestamp/methods/getFloatTime.cc
-  core/src/d_utils/timestamp/methods/getStringTime.cc
-  core/src/d_utils/timestamp/methods/isEmpty.cc
-  core/src/d_utils/timestamp/methods/operators/addition/withSeconds.cc
-  core/src/d_utils/timestamp/methods/operators/addition_assignment/withSeconds.cc
-  core/src/d_utils/timestamp/methods/operators/equality/withTimestamp.cc
-  core/src/d_utils/timestamp/methods/operators/greater_than/withTimestamp.cc
-  core/src/d_utils/timestamp/methods/operators/greater_than_or_equal/withTimestamp.cc
-  core/src/d_utils/timestamp/methods/operators/less_than/withTimestamp.cc
-  core/src/d_utils/timestamp/methods/operators/less_than_or_equal/withTimestamp.cc
-  core/src/d_utils/timestamp/methods/operators/subtraction/withSeconds.cc
-  core/src/d_utils/timestamp/methods/operators/subtraction/withTimestamp.cc
-  core/src/d_utils/timestamp/methods/operators/subtraction_assignment/withSeconds.cc
-  core/src/d_utils/timestamp/methods/setTime/fromEpochTime.cc
-  core/src/d_utils/timestamp/methods/setTime/fromText.cc
-  core/src/d_utils/timestamp/methods/setToCurrentTime.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeEarlierTimestamp.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeLaterTimestamp.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/formatDateTime.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/formatElapsedTime.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFloatTime.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getStringTime.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isEmpty.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/addition/withSeconds.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/addition_assignment/withSeconds.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/equality/withTimestamp.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/greater_than/withTimestamp.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/greater_than_or_equal/withTimestamp.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/less_than/withTimestamp.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/less_than_or_equal/withTimestamp.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/subtraction/withSeconds.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/subtraction/withTimestamp.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/subtraction_assignment/withSeconds.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setTime/fromEpochTime.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setTime/fromText.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setToCurrentTime.cc
 )
 
 # Every source of this package compiles on its own, outside the unity

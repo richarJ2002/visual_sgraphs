@@ -1,10 +1,10 @@
 # GeometricCamera object sources.
 set(VS_GRAPHS_CAMERAMODELS_GEOMETRICCAMERA_SOURCES
-  core/src/camera_models/geometric_camera/methods/getId.cc
-  core/src/camera_models/geometric_camera/methods/getParameter.cc
-  core/src/camera_models/geometric_camera/methods/getType.cc
-  core/src/camera_models/geometric_camera/methods/serialize.cc
-  core/src/camera_models/geometric_camera/methods/setParameter.cc
-  core/src/camera_models/geometric_camera/methods/size.cc
-  core/src/camera_models/geometric_camera/methods/static_members.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getParameter.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getType.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setParameter.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/size.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/static_members.cc
 )

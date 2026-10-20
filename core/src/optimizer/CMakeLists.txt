@@ -1,20 +1,20 @@
 # Optimizer object sources: exactly this object's translation units.
 set(VS_GRAPHS_OPTIMIZER_SOURCES
-  core/src/optimizer/methods/bundleAdjustment.cc
-  core/src/optimizer/methods/fullInertialBA.cc
-  core/src/optimizer/methods/globalBundleAdjustment.cc
-  core/src/optimizer/methods/inertialOptimization.cc
-  core/src/optimizer/methods/localBundleAdjustment.cc
-  core/src/optimizer/methods/localInertialBA.cc
-  core/src/optimizer/methods/loopClosureLocalBundleAdjustment.cc
-  core/src/optimizer/methods/marginalize.cc
-  core/src/optimizer/methods/mergeInertialBA.cc
-  core/src/optimizer/methods/optimizeEssentialGraph.cc
-  core/src/optimizer/methods/optimizeEssentialGraph4DoF.cc
-  core/src/optimizer/methods/optimizeSim3.cc
-  core/src/optimizer/methods/poseInertialOptimizationLastFrame.cc
-  core/src/optimizer/methods/poseInertialOptimizationLastKeyFrame.cc
-  core/src/optimizer/methods/poseOptimization.cc
-  core/src/optimizer/private_functions/addPoseOnlyObservationEdges.cc
-  core/src/optimizer/private_functions/sortByVal.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/bundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/fullInertialBA.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/globalBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/inertialOptimization.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/localBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/localInertialBA.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/loopClosureLocalBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/marginalize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mergeInertialBA.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/optimizeEssentialGraph.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/optimizeEssentialGraph4DoF.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/optimizeSim3.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/poseInertialOptimizationLastFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/poseInertialOptimizationLastKeyFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/poseOptimization.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/addPoseOnlyObservationEdges.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/sortByVal.cc
 )

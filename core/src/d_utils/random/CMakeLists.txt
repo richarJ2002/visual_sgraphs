@@ -1,16 +1,16 @@
 # random package sources.
 set(VS_GRAPHS_DUTILS_RANDOM_SOURCES
-  core/src/d_utils/random/methods/RandomClass/generateUniformInteger.cc
-  core/src/d_utils/random/methods/RandomClass/seedGenerator/fromCurrentTime.cc
-  core/src/d_utils/random/methods/RandomClass/seedGenerator/fromGivenSeed.cc
-  core/src/d_utils/random/methods/RandomClass/seedGeneratorOnce/fromCurrentTime.cc
-  core/src/d_utils/random/methods/RandomClass/seedGeneratorOnce/fromGivenSeed.cc
-  core/src/d_utils/random/methods/RandomClass/static_members.cc
-  core/src/d_utils/random/methods/UnrepeatedRandomizerClass/createValues.cc
-  core/src/d_utils/random/methods/UnrepeatedRandomizerClass/drawNextValue.cc
-  core/src/d_utils/random/methods/UnrepeatedRandomizerClass/operators/assignment/fromRandomizer.cc
-  core/src/d_utils/random/methods/UnrepeatedRandomizerClass/reset.cc
-  core/src/d_utils/random/methods/explicit_instantiations.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/RandomClass/generateUniformInteger.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/RandomClass/seedGenerator/fromCurrentTime.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/RandomClass/seedGenerator/fromGivenSeed.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/RandomClass/seedGeneratorOnce/fromCurrentTime.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/RandomClass/seedGeneratorOnce/fromGivenSeed.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/RandomClass/static_members.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/UnrepeatedRandomizerClass/createValues.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/UnrepeatedRandomizerClass/drawNextValue.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/UnrepeatedRandomizerClass/operators/assignment/fromRandomizer.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/UnrepeatedRandomizerClass/reset.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/explicit_instantiations.cc
 )
 
 # Every source of this package compiles on its own, outside the unity

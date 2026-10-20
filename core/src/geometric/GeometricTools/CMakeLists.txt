@@ -1,5 +1,5 @@
 # GeometricTools object sources: exactly this object's translation units.
 set(VS_GRAPHS_GEOMETRIC_GEOMETRICTOOLS_SOURCES
-  core/src/geometric/GeometricTools/methods/computeF12.cc
-  core/src/geometric/GeometricTools/methods/triangulate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeF12.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/triangulate.cc
 )

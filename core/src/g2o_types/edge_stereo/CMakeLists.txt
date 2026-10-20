@@ -1,7 +1,7 @@
 # EdgeStereo object sources.
 set(VS_GRAPHS_G2OTYPES_EDGESTEREO_SOURCES
-  core/src/g2o_types/edge_stereo/methods/computeError.cc
-  core/src/g2o_types/edge_stereo/methods/getHessian.cc
-  core/src/g2o_types/edge_stereo/methods/getJacobian.cc
-  core/src/g2o_types/edge_stereo/methods/linearizeOplus.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeError.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getHessian.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getJacobian.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/linearizeOplus.cc
 )

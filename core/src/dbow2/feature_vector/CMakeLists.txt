@@ -1,6 +1,6 @@
 set(VS_GRAPHS_DBOW2_FEATUREVECTOR_SOURCES
-  core/src/dbow2/feature_vector/methods/addFeature.cc
-  core/src/dbow2/feature_vector/methods/operators/stream_output/withFeatureVector.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addFeature.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/operators/stream_output/withFeatureVector.cc
 )
 
 # Preserve existing unity batches and isolate library/instantiation context.

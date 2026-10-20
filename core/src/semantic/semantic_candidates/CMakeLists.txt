@@ -1,20 +1,20 @@
 # semantic_candidates module sources.
 set(VS_GRAPHS_SEMANTIC_SEMANTICCANDIDATES_SOURCES
-  core/src/semantic/semantic_candidates/methods/generate.cc
-  core/src/semantic/semantic_candidates/methods/generateWithStatus.cc
-  core/src/semantic/semantic_candidates/methods/rejectionReasonName.cc
-  core/src/semantic/semantic_candidates/methods/validateConfig.cc
-  core/src/semantic/semantic_candidates/private_functions/angleSignature.cc
-  core/src/semantic/semantic_candidates/private_functions/apertureSignature.cc
-  core/src/semantic/semantic_candidates/private_functions/extentSignature.cc
-  core/src/semantic/semantic_candidates/private_functions/finiteNonnegative.cc
-  core/src/semantic/semantic_candidates/private_functions/isValidWallBounds.cc
-  core/src/semantic/semantic_candidates/private_functions/medianExtent.cc
-  core/src/semantic/semantic_candidates/private_functions/missingBoundsFraction.cc
-  core/src/semantic/semantic_candidates/private_functions/paddedMeanL1.cc
-  core/src/semantic/semantic_candidates/private_functions/pairedManhattanDistance.cc
-  core/src/semantic/semantic_candidates/private_functions/stringDistance.cc
-  core/src/semantic/semantic_candidates/private_functions/topologySignature.cc
-  core/src/semantic/semantic_candidates/private_functions/validNormalCount.cc
-  core/src/semantic/semantic_candidates/private_functions/validWallEvidenceCount.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/generate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/generateWithStatus.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/rejectionReasonName.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/validateConfig.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/angleSignature.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/apertureSignature.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/extentSignature.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/finiteNonnegative.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isValidWallBounds.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/medianExtent.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/missingBoundsFraction.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/paddedMeanL1.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/pairedManhattanDistance.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/stringDistance.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/topologySignature.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/validNormalCount.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/validWallEvidenceCount.cc
 )

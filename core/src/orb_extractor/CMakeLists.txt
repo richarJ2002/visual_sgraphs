@@ -1,15 +1,15 @@
 # ORBextractor object sources: exactly this object's translation units.
 set(VS_GRAPHS_ORBEXTRACTOR_SOURCES
-  core/src/orb_extractor/methods/call.cc
-  core/src/orb_extractor/methods/computeKeyPointsOctTree.cc
-  core/src/orb_extractor/methods/computeKeyPointsOld.cc
-  core/src/orb_extractor/methods/computePyramid.cc
-  core/src/orb_extractor/methods/construct.cc
-  core/src/orb_extractor/methods/distributeOctTree.cc
-  core/src/orb_extractor/methods/divideNode.cc
-  core/src/orb_extractor/private_functions/compareNodes.cc
-  core/src/orb_extractor/private_functions/computeDescriptors.cc
-  core/src/orb_extractor/private_functions/computeOrbDescriptor.cc
-  core/src/orb_extractor/private_functions/computeOrientation.cc
-  core/src/orb_extractor/private_functions/icAngle.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/call.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeKeyPointsOctTree.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeKeyPointsOld.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computePyramid.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/construct.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/distributeOctTree.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/divideNode.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/compareNodes.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeDescriptors.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeOrbDescriptor.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/computeOrientation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/icAngle.cc
 )

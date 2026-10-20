@@ -1,5 +1,5 @@
 # EdgeVertexSE3RoomProjectSE3Marker object sources: exactly this object's translation units.
 set(VS_GRAPHS_OPTIMIZABLETYPES_EDGEVERTEXSE3ROOMPROJECTSE3MARKER_SOURCES
-  core/src/optimizable_types/EdgeVertexSE3RoomProjectSE3Marker/methods/read.cc
-  core/src/optimizable_types/EdgeVertexSE3RoomProjectSE3Marker/methods/write.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/read.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/write.cc
 )

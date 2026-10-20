@@ -1,13 +1,13 @@
 # ResetCause object sources: exactly this object's translation units.
 set(VS_GRAPHS_RESETCAUSE_SOURCES
-  core/src/reset_cause/methods/clearResetCause.cc
-  core/src/reset_cause/methods/consume.cc
-  core/src/reset_cause/methods/consumeResetCause.cc
-  core/src/reset_cause/methods/formatResetAttribution.cc
-  core/src/reset_cause/methods/hasRetainedCause.cc
-  core/src/reset_cause/methods/reportResetAttribution.cc
-  core/src/reset_cause/methods/resetActionToString.cc
-  core/src/reset_cause/methods/resetCauseToString.cc
-  core/src/reset_cause/methods/retain.cc
-  core/src/reset_cause/methods/retainResetCause.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/clearResetCause.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/consume.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/consumeResetCause.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/formatResetAttribution.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/hasRetainedCause.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reportResetAttribution.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/resetActionToString.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/resetCauseToString.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/retain.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/retainResetCause.cc
 )

@@ -1,15 +1,15 @@
 # KeyFrameDatabase object sources: exactly this object's translation units.
 set(VS_GRAPHS_KEYFRAMEDATABASE_SOURCES
-  core/src/keyframe_database/methods/add.cc
-  core/src/keyframe_database/methods/clear.cc
-  core/src/keyframe_database/methods/clearMap.cc
-  core/src/keyframe_database/methods/detectBestCandidates.cc
-  core/src/keyframe_database/methods/detectCandidates.cc
-  core/src/keyframe_database/methods/detectLoopCandidates.cc
-  core/src/keyframe_database/methods/detectNBestCandidates.cc
-  core/src/keyframe_database/methods/detectRelocalizationCandidates.cc
-  core/src/keyframe_database/methods/erase.cc
-  core/src/keyframe_database/methods/serialize.cc
-  core/src/keyframe_database/methods/setORBVocabulary.cc
-  core/src/keyframe_database/private_functions/compFirst.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/add.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/clear.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/clearMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/detectBestCandidates.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/detectCandidates.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/detectLoopCandidates.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/detectNBestCandidates.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/detectRelocalizationCandidates.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/erase.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setORBVocabulary.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/compFirst.cc
 )

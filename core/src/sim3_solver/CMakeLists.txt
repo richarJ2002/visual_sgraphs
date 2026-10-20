@@ -1,15 +1,15 @@
 # Sim3Solver object sources: exactly this object's translation units.
 set(VS_GRAPHS_SIM3SOLVER_SOURCES
-  core/src/sim3_solver/methods/checkInliers.cc
-  core/src/sim3_solver/methods/computeCentroid.cc
-  core/src/sim3_solver/methods/computeSim3.cc
-  core/src/sim3_solver/methods/find.cc
-  core/src/sim3_solver/methods/fromCameraToImage.cc
-  core/src/sim3_solver/methods/getEstimatedRotation.cc
-  core/src/sim3_solver/methods/getEstimatedScale.cc
-  core/src/sim3_solver/methods/getEstimatedTransformation.cc
-  core/src/sim3_solver/methods/getEstimatedTranslation.cc
-  core/src/sim3_solver/methods/iterate.cc
-  core/src/sim3_solver/methods/project.cc
-  core/src/sim3_solver/methods/setRansacParameters.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkInliers.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeCentroid.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeSim3.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/find.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/fromCameraToImage.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getEstimatedRotation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getEstimatedScale.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getEstimatedTransformation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getEstimatedTranslation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/iterate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/project.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setRansacParameters.cc
 )

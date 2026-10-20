@@ -1,14 +1,14 @@
 # geo_sem_helpers module sources.
 set(VS_GRAPHS_UTILS_GEOSEMHELPERS_SOURCES
-  core/src/utils/geo_sem_helpers/methods/associateGroundPlaneToRoom.cc
-  core/src/utils/geo_sem_helpers/methods/checkIfMarkerIsDoorway.cc
-  core/src/utils/geo_sem_helpers/methods/countGroundPlanePointsWithinWalls.cc
-  core/src/utils/geo_sem_helpers/methods/createBlankRoomCandidate.cc
-  core/src/utils/geo_sem_helpers/methods/createMapFloor.cc
-  core/src/utils/geo_sem_helpers/methods/createMapMarker.cc
-  core/src/utils/geo_sem_helpers/methods/createMapPassage.cc
-  core/src/utils/geo_sem_helpers/methods/createMapPlane.cc
-  core/src/utils/geo_sem_helpers/methods/markerSemanticAnalysis.cc
-  core/src/utils/geo_sem_helpers/methods/refitMappedPlaneFromCloud.cc
-  core/src/utils/geo_sem_helpers/methods/updateMapPlane.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/associateGroundPlaneToRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkIfMarkerIsDoorway.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/countGroundPlanePointsWithinWalls.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/createBlankRoomCandidate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/createMapFloor.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/createMapMarker.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/createMapPassage.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/createMapPlane.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/markerSemanticAnalysis.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/refitMappedPlaneFromCloud.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/updateMapPlane.cc
 )

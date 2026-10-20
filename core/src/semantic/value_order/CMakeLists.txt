@@ -1,9 +1,9 @@
 # value_order module sources.
 set(VS_GRAPHS_SEMANTIC_VALUEORDER_SOURCES
-  core/src/semantic/value_order/methods/doubleTotalOrderKey.cc
-  core/src/semantic/value_order/methods/isDoubleLess.cc
-  core/src/semantic/value_order/methods/isEntityRefLess.cc
-  core/src/semantic/value_order/methods/isRawPlaneRefLess.cc
-  core/src/semantic/value_order/methods/isVector3dLess.cc
-  core/src/semantic/value_order/methods/isVector4dLess.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/doubleTotalOrderKey.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isDoubleLess.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isEntityRefLess.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isRawPlaneRefLess.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isVector3dLess.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isVector4dLess.cc
 )

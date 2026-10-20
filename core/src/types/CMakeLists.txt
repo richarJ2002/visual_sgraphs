@@ -1,6 +1,6 @@
 # Types object sources.
 set(VS_GRAPHS_TYPES_SOURCES
-  core/src/types/methods/getParams.cc
-  core/src/types/methods/setParams.cc
-  core/src/types/methods/static_members.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getParams.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setParams.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/static_members.cc
 )

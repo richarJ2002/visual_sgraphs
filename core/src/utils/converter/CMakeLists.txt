@@ -1,18 +1,18 @@
 # converter module sources.
 set(VS_GRAPHS_UTILS_CONVERTER_SOURCES
-  core/src/utils/converter/methods/isRotationMatrix.cc
-  core/src/utils/converter/methods/toCvMat.cc
-  core/src/utils/converter/methods/toCvSE3.cc
-  core/src/utils/converter/methods/toCvSkewMatrix.cc
-  core/src/utils/converter/methods/toDescriptorVector.cc
-  core/src/utils/converter/methods/toEuler.cc
-  core/src/utils/converter/methods/toMatrix3d.cc
-  core/src/utils/converter/methods/toMatrix3f.cc
-  core/src/utils/converter/methods/toMatrix4d.cc
-  core/src/utils/converter/methods/toMatrix4f.cc
-  core/src/utils/converter/methods/toQuaternion.cc
-  core/src/utils/converter/methods/toSE3Quat.cc
-  core/src/utils/converter/methods/toSophus.cc
-  core/src/utils/converter/methods/toVector3d.cc
-  core/src/utils/converter/methods/toVector3f.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isRotationMatrix.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toCvMat.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toCvSE3.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toCvSkewMatrix.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toDescriptorVector.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toEuler.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toMatrix3d.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toMatrix3f.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toMatrix4d.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toMatrix4f.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toQuaternion.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toSE3Quat.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toSophus.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toVector3d.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/toVector3f.cc
 )
