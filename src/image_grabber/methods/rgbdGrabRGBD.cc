@@ -33,7 +33,10 @@
 #include "image_grabber/objects/RgbdImageGrabberClass.h"
 #include "observability/observability.h"
 
+#include <algorithm>
 #include <condition_variable>
+#include <cstdint>
+#include <cstdlib>
 #include <rclcpp/logging.hpp>
 
 namespace vs_graphs::image_grabber
@@ -48,17 +51,17 @@ void RgbdImageGrabber::grabRgbd(
         std::chrono::steady_clock::now();
     rgbdObservability.recordCallbackAdmission(callbackArrival);
 
-    const double rgbTimestamp_seconds =
-        rclcpp::Time(p_rgbImageMessage_in->header.stamp).seconds();
-    const double depthTimestamp_seconds =
-        rclcpp::Time(p_depthImageMessage_in->header.stamp).seconds();
-    const double pointCloudTimestamp_seconds =
-        rclcpp::Time(p_pointCloudMessage_in->header.stamp).seconds();
+    const rclcpp::Time rgbTimestamp(p_rgbImageMessage_in->header.stamp);
+    const rclcpp::Time depthTimestamp(p_depthImageMessage_in->header.stamp);
+    const rclcpp::Time pointCloudTimestamp(
+        p_pointCloudMessage_in->header.stamp);
+    const double rgbTimestamp_seconds = rgbTimestamp.seconds();
 
-    constexpr double maximumRgbDepthSkew_seconds = 0.010;
-    const double     rgbDepthSkew_seconds =
-        std::abs(rgbTimestamp_seconds - depthTimestamp_seconds);
-    if (rgbDepthSkew_seconds > maximumRgbDepthSkew_seconds)
+    /* Keep inclusive skew limits exact regardless of the sensor epoch. */
+    constexpr std::int64_t MAXIMUM_RGB_DEPTH_SKEW_NS = 10'000'000;
+    const std::int64_t     rgbDepthSkew_ns =
+        std::abs((rgbTimestamp - depthTimestamp).nanoseconds());
+    if (rgbDepthSkew_ns > MAXIMUM_RGB_DEPTH_SKEW_NS)
     {
         rgbdObservability.recordRgbDepthSkewReject();
         RCLCPP_WARN_THROTTLE(
@@ -66,15 +69,15 @@ void RgbdImageGrabber::grabRgbd(
             *get_clock(),
             5000,
             "Discarding an RGB-D packet with %.3f seconds of RGB-depth skew.",
-            rgbDepthSkew_seconds);
+            rclcpp::Duration::from_nanoseconds(rgbDepthSkew_ns).seconds());
         return;
     }
 
-    constexpr double maximumCloudImageSkew_seconds = 0.033;
-    const double     cloudImageSkew_seconds        = std::max(
-        std::abs(rgbTimestamp_seconds - pointCloudTimestamp_seconds),
-        std::abs(depthTimestamp_seconds - pointCloudTimestamp_seconds));
-    if (cloudImageSkew_seconds > maximumCloudImageSkew_seconds)
+    constexpr std::int64_t MAXIMUM_CLOUD_IMAGE_SKEW_NS = 33'000'000;
+    const std::int64_t     cloudImageSkew_ns           = std::max(
+        std::abs((rgbTimestamp - pointCloudTimestamp).nanoseconds()),
+        std::abs((depthTimestamp - pointCloudTimestamp).nanoseconds()));
+    if (cloudImageSkew_ns > MAXIMUM_CLOUD_IMAGE_SKEW_NS)
     {
         rgbdObservability.recordCloudImageSkewReject();
         RCLCPP_WARN_THROTTLE(
@@ -83,7 +86,7 @@ void RgbdImageGrabber::grabRgbd(
             5000,
             "Discarding an RGB-D packet with %.3f seconds of cloud-image "
             "skew.",
-            cloudImageSkew_seconds);
+            rclcpp::Duration::from_nanoseconds(cloudImageSkew_ns).seconds());
         return;
     }
 
