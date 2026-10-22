@@ -135,23 +135,34 @@ def generate_launch_description():
                 "test_run_dir",
                 default_value="",
                 description=(
-                    "Absolute test run directory. SGraph JSON archives are "
-                    "written to <test_run_dir>/output/sgraph; empty "
-                    "disables archiving."
+                    "Absolute root of the test-run folder "
+                    "(test_runs/<YYYY-MM-DD-HH-MM-SS>[_<name>]); empty "
+                    "writes nothing. Each snapshot writes "
+                    "archive/sgraph/sgraph_<sec>_<nsec>.json, "
+                    "output/sgraph_latest.json, "
+                    "archive/trajectory/estimated_<sec>_<nsec>.csv "
+                    "(keyframe camera poses) and "
+                    "archive/map_points/map_points_<sec>_<nsec>.csv "
+                    "(map points on a 0.1 m voxel grid); about once a "
+                    "second the tracking image goes to archive/loccams/."
                 ),
             ),
 
             DeclareLaunchArgument(
                 "sgraph_archive_enabled",
                 default_value="true",
-                description="Master on/off switch for SGraph JSON archiving.",
+                description=(
+                    "Master on/off switch for everything written below "
+                    "test_run_dir (snapshots, CSVs and loccams)."
+                ),
             ),
 
             DeclareLaunchArgument(
                 "sgraph_archive_interval_sec",
                 default_value="5.0",
                 description=(
-                    "Minimum sim-clock seconds between SGraph JSON archives."
+                    "Minimum sim-clock seconds between snapshots (S-Graph "
+                    "JSON, trajectory and map-point CSVs)."
                 ),
             ),
 
@@ -159,7 +170,8 @@ def generate_launch_description():
                 "sgraph_archive_max_files",
                 default_value="0",
                 description=(
-                    "Maximum retained SGraph JSON archives; 0 keeps all."
+                    "Maximum retained files per snapshot series (S-Graph "
+                    "JSON, trajectory CSV, map-point CSV); 0 keeps all."
                 ),
             ),
 

@@ -493,16 +493,21 @@ extern rclcpp::Time lastPlanePublishTime;
  * -------------------------------------------------------------------------- */
 
 /*!
- * @brief           Absolute test-run directory receiving SGraph JSON archives.
+ * @brief           Absolute root of the test-run folder this node writes into.
  *
- *                  Archives are written to `<test_run_dir>/output/sgraph`. An
- *                  empty value disables archiving. Assigned during node
+ *                  maybeArchiveSGraph() writes the S-Graph snapshots,
+ *                  trajectory and map-point CSVs below `archive/` and the
+ *                  latest snapshot to `output/sgraph_latest.json`;
+ *                  publishTrackingImage() writes `archive/loccams/`. An empty
+ *                  value disables all of them. Assigned during node
  *                  initialisation from the `test_run_dir` ROS parameter.
  */
 extern std::string sgraphArchiveTestRunDir;
 
 /*!
- * @brief           Master on/off switch for periodic SGraph JSON archiving.
+ * @brief           Master on/off switch for everything written below
+ *                  sgraphArchiveTestRunDir: S-Graph snapshots, trajectory and
+ *                  map-point CSVs, and loccams.
  *
  *                  Assigned during node initialisation from the
  *                  `sgraph_archive_enabled` ROS parameter.
@@ -518,10 +523,12 @@ extern bool sgraphArchiveEnabled;
 extern double sgraphArchiveIntervalSec;
 
 /*!
- * @brief           Maximum number of retained SGraph JSON archives.
+ * @brief           Maximum number of retained files per snapshot series: the
+ *                  S-Graph JSONs, the trajectory CSVs and the map-point CSVs.
  *
  *                  Zero keeps every file; a positive value deletes the oldest
- *                  files first. Assigned during node initialisation from the
+ *                  files of each series first. Loccams are not pruned.
+ *                  Assigned during node initialisation from the
  *                  `sgraph_archive_max_files` ROS parameter.
  */
 extern int sgraphArchiveMaxFiles;
@@ -1109,17 +1116,40 @@ extern void publishAllMappedFloors(
     rclcpp::Time                                    msgTime_s_in);
 
 /*!
- * @brief           Archives the current SGraph to a timestamped JSON file.
+ * @brief           Archives the current SGraph, keyframe trajectory and map
+ *                  points as one timestamped snapshot.
  *
  *                  Every active Atlas map is archived under a 0-based `mapN`
- *                  key (sorted by raw map id) holding its `map_id`, `is_active`
- *                  and `world_frame_epoch` fields plus its
- *                  `floorN`/`roomN`/`wallN`/ `passageN` hierarchy. The archive
- *                  uses the ROS sim-clock timestamp and is written to
- *                  `<sgraphArchiveTestRunDir>/output/sgraph/sgraph_<sec>_<nsec>.json`.
- *                  Archiving is rate-limited by `sgraphArchiveIntervalSec` and
- *                  disabled when `sgraphArchiveEnabled` is false or
- *                  `sgraphArchiveTestRunDir` is empty.
+ *                  key (sorted by raw map id) holding its `map_id`,
+ *                  `is_active`, `world_frame_epoch`, `keyframe_count`
+ *                  (non-bad keyframes) and `map_point_count` (non-bad map
+ *                  points, before voxel thinning) fields plus its
+ *                  `floorN`/`roomN`/`wallN`/`passageN` hierarchy. Below
+ *                  sgraphArchiveTestRunDir, with `<stamp>` the ROS sim-clock
+ *                  time as `<sec:06>_<nsec:09>`:
+ *
+ *                  - `archive/sgraph/sgraph_<stamp>.json`: the snapshot;
+ *                  - `output/sgraph_latest.json`: the same snapshot, replaced
+ *                    through a temporary file and a rename;
+ *                  - `archive/trajectory/estimated_<stamp>.csv`:
+ *                    `map_id,keyframe_id,timestamp_s,x_m,y_m,z_m,qx,qy,qz,qw`,
+ *                    one row per non-bad keyframe of every map in id order;
+ *                    map_id matches the snapshot's `map_id`, timestamp_s is
+ *                    the keyframe's image stamp in seconds, and position (m)
+ *                    and unit quaternion are the camera optical frame to the
+ *                    map's world frame (KeyFrame::getPoseInverse()), the frame
+ *                    of the S-Graph entities;
+ *                  - `archive/map_points/map_points_<stamp>.csv`:
+ *                    `map_id,x_m,y_m,z_m`, the non-bad map points of every map
+ *                    in its world frame (m), keeping the first point per
+ *                    MAP_POINT_ARCHIVE_VOXEL_SIZE_M voxel.
+ *
+ *                  Archiving is rate-limited by `sgraphArchiveIntervalSec`,
+ *                  each series is pruned to `sgraphArchiveMaxFiles`, and
+ *                  nothing is written when `sgraphArchiveEnabled` is false or
+ *                  `sgraphArchiveTestRunDir` is empty. Runs on the caller's
+ *                  thread without the semantic-update lock, so one snapshot
+ *                  can straddle a semantics cycle or a map merge.
  *
  * @param[in]       mappedFloors_in
  *                  Fallback current-map floors, used only when the Atlas is
@@ -1582,6 +1612,12 @@ extern void publishTrackedPoints(
  *                  The published image is associated with frameCamera because
  *                  its pixels originate from the current camera image rather
  *                  than the world coordinate frame.
+ *
+ *                  At most once per second (steady clock), when
+ *                  sgraphArchiveEnabled is true and sgraphArchiveTestRunDir is
+ *                  set, the image is also saved as
+ *                  `archive/loccams/loccams_<sec:06>_<nsec:09>.jpeg` below
+ *                  sgraphArchiveTestRunDir, stamped with msgTime_s_in.
  *
  * @param[in]       trackingImage_bgr8_in
  *                  Current annotated tracking image in OpenCV BGR8 format.

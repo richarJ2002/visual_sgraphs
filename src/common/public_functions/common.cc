@@ -40,6 +40,8 @@
 
 #include "common/common.h"
 
+#include "common/private_functions/private_functions.h"
+
 #include "views_io/mission_health_topology_json/mission_health_topology_json.h"
 
 #include "sparse/sparse.h"
@@ -3343,16 +3345,28 @@ Json archiveVector3(const Eigen::Vector3d &vector_in)
 }
 
 /*!
- * @brief           Deletes the oldest SGraph archives beyond the retain limit.
+ * @brief           Deletes the oldest files of one snapshot series beyond the
+ *                  retain limit.
+ *
+ *                  Only files named `<prefix><sec>_<nsec><extension>` count,
+ *                  so other files in the directory are never removed.
  *
  * @param[in]       archiveDir_in
- *                  Directory holding `sgraph_<sec>_<nsec>.json` files.
+ *                  Directory holding the series.
+ *
+ * @param[in]       fileNamePrefix_in
+ *                  File-name prefix of the series, e.g. `sgraph_`.
+ *
+ * @param[in]       fileExtension_in
+ *                  File extension of the series, with the dot, e.g. `.json`.
  *
  * @param[in]       maxFiles_in
  *                  Maximum number of files to retain (positive by contract).
  */
-void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
-                         const int                    maxFiles_in)
+void pruneArchiveSeries(const std::filesystem::path &archiveDir_in,
+                        const std::string           &fileNamePrefix_in,
+                        const std::string           &fileExtension_in,
+                        const int                    maxFiles_in)
 {
     std::error_code          error;
     std::vector<std::string> fileNames;
@@ -3367,9 +3381,9 @@ void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
         {
             continue;
         }
-        const std::string fileName  = entry.path().filename().string();
-        const bool        isArchive = fileName.rfind("sgraph_", 0U) == 0U &&
-                               entry.path().extension() == ".json";
+        const std::string fileName = entry.path().filename().string();
+        const bool isArchive = fileName.rfind(fileNamePrefix_in, 0U) == 0U &&
+                               entry.path().extension() == fileExtension_in;
         if (isArchive)
         {
             fileNames.push_back(fileName);
@@ -3378,7 +3392,7 @@ void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
     if (error)
     {
         RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                    "Cannot prune SGraph archives in '%s'.",
+                    "Cannot prune archives in '%s'.",
                     archiveDir_in.string().c_str());
         return;
     }
@@ -3393,7 +3407,7 @@ void pruneSgraphArchives(const std::filesystem::path &archiveDir_in,
         if (removeError)
         {
             RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                        "Cannot remove old SGraph archive '%s'.",
+                        "Cannot remove old archive '%s'.",
                         fileNames.front().c_str());
             break;
         }
@@ -3456,6 +3470,8 @@ void maybeArchiveSGraph(
      * current-map snapshot when the Atlas is unavailable. */
     struct SgraphMapInput
     {
+        /* Borrowed Atlas map; null for the fallback snapshot. */
+        vs_graphs::core::map::Map                        *p_map{nullptr};
         long                                              mapId{-1};
         bool                                              isActive{true};
         std::uint64_t                                     worldFrameEpoch{0U};
@@ -3532,7 +3548,8 @@ void maybeArchiveSGraph(
                 continue;
             }
             SgraphMapInput mapInput;
-            unsigned long  mapId2{};
+            mapInput.p_map = p_map;
+            unsigned long mapId2{};
             if (p_map->getId(mapId2) !=
                 vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
             {
@@ -3610,6 +3627,14 @@ void maybeArchiveSGraph(
     std::size_t totalFloors   = 0U;
     std::size_t totalRooms    = 0U;
     std::size_t totalPassages = 0U;
+
+    /* The two CSVs of this snapshot are filled in the same map loop as the
+     * S-Graph, so the Atlas is traversed once. */
+    std::ostringstream trajectoryCsv;
+    trajectoryCsv << std::fixed
+                  << "map_id,keyframe_id,timestamp_s,x_m,y_m,z_m,qx,qy,qz,qw\n";
+    std::ostringstream mapPointCsv;
+    mapPointCsv << std::fixed << std::setprecision(3) << "map_id,x_m,y_m,z_m\n";
 
     for (std::size_t mapOrdinal = 0U; mapOrdinal < mapInputs.size();
          ++mapOrdinal)
@@ -4016,10 +4041,134 @@ void maybeArchiveSGraph(
             }
         }
 
+        /*!
+         * Keyframe and map-point rows of this map, in the map's world frame
+         * (the frame of its S-Graph entities). The fallback snapshot has no
+         * map, so it adds no rows and counts zero.
+         */
+        std::size_t keyFrameCount = 0U;
+        std::size_t mapPointCount = 0U;
+        if (mapInput.p_map != nullptr)
+        {
+            std::vector<vs_graphs::core::keyframe::KeyFrame *> mapKeyFrames{};
+            if (mapInput.p_map->getAllKeyFrames(mapKeyFrames) !=
+                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllKeyFrames returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            std::sort(mapKeyFrames.begin(),
+                      mapKeyFrames.end(),
+                      vs_graphs::core::keyframe::KeyFrame::lId);
+            for (vs_graphs::core::keyframe::KeyFrame *p_keyFrame : mapKeyFrames)
+            {
+                bool keyFrameIsBad{};
+                if ((p_keyFrame != nullptr) &&
+                    p_keyFrame->isBad(keyFrameIsBad) !=
+                        vs_graphs::core::keyframe::KeyFrameStatus::
+                            KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_keyFrame == nullptr || keyFrameIsBad)
+                {
+                    continue;
+                }
+
+                /* Camera optical frame (x right, y down, z forward) to the
+                 * map's world frame; the translation is the camera centre. */
+                Sophus::SE3f cameraPose_cameraToWorld{};
+                if (p_keyFrame->getPoseInverse(cameraPose_cameraToWorld) !=
+                    vs_graphs::core::keyframe::KeyFrameStatus::
+                        KEY_FRAME_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getPoseInverse returned a failure status "
+                                 "although it cannot fail; continuing as "
+                                 "before.",
+                                 __func__);
+                }
+                const Eigen::Vector3f cameraPosition_world_m =
+                    cameraPose_cameraToWorld.translation();
+                const Eigen::Quaternionf cameraQuat_cameraToWorld =
+                    cameraPose_cameraToWorld.unit_quaternion();
+                trajectoryCsv << mapInput.mapId << ',' << p_keyFrame->id << ','
+                              << std::setprecision(9) << p_keyFrame->timeStamp
+                              << ',' << std::setprecision(6)
+                              << cameraPosition_world_m.x() << ','
+                              << cameraPosition_world_m.y() << ','
+                              << cameraPosition_world_m.z() << ','
+                              << cameraQuat_cameraToWorld.x() << ','
+                              << cameraQuat_cameraToWorld.y() << ','
+                              << cameraQuat_cameraToWorld.z() << ','
+                              << cameraQuat_cameraToWorld.w() << '\n';
+                keyFrameCount++;
+            }
+
+            std::vector<vs_graphs::core::map_point::MapPoint *> mapMapPoints{};
+            if (mapInput.p_map->getAllMapPoints(mapMapPoints) !=
+                vs_graphs::core::map::MapStatus::MAP_STATUS_SUCCESS)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                             "%s: getAllMapPoints returned a failure status "
+                             "although it cannot fail; continuing as before.",
+                             __func__);
+            }
+            std::vector<Eigen::Vector3f> mapPointPositions_world_m;
+            mapPointPositions_world_m.reserve(mapMapPoints.size());
+            for (vs_graphs::core::map_point::MapPoint *p_mapPoint :
+                 mapMapPoints)
+            {
+                bool mapPointIsBad{};
+                if ((p_mapPoint != nullptr) &&
+                    p_mapPoint->isBad(mapPointIsBad) !=
+                        vs_graphs::core::map_point::MapPointStatus::
+                            MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: isBad returned a failure status although "
+                                 "it cannot fail; continuing as before.",
+                                 __func__);
+                }
+                if (p_mapPoint == nullptr || mapPointIsBad)
+                {
+                    continue;
+                }
+                Eigen::Vector3f mapPointPosition_world_m{};
+                if (p_mapPoint->getWorldPos(mapPointPosition_world_m) !=
+                    vs_graphs::core::map_point::MapPointStatus::
+                        MAP_POINT_STATUS_SUCCESS)
+                {
+                    RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                                 "%s: getWorldPos returned a failure status "
+                                 "although it cannot fail; continuing as "
+                                 "before.",
+                                 __func__);
+                }
+                mapPointPositions_world_m.push_back(mapPointPosition_world_m);
+            }
+            mapPointCount = mapPointPositions_world_m.size();
+
+            for (const Eigen::Vector3f &keptPosition_world_m :
+                 keepFirstPointPerVoxel(mapPointPositions_world_m))
+            {
+                mapPointCsv << mapInput.mapId << ',' << keptPosition_world_m.x()
+                            << ',' << keptPosition_world_m.y() << ','
+                            << keptPosition_world_m.z() << '\n';
+            }
+        }
+
         Json mapJson;
         mapJson["map_id"]            = mapInput.mapId;
         mapJson["is_active"]         = mapInput.isActive;
         mapJson["world_frame_epoch"] = mapInput.worldFrameEpoch;
+        mapJson["keyframe_count"]    = keyFrameCount;
+        mapJson["map_point_count"]   = mapPointCount;
 
         for (std::size_t floorIndex = 0U; floorIndex < floorCount; ++floorIndex)
         {
@@ -4544,9 +4693,9 @@ void maybeArchiveSGraph(
     archive["metadata"]               = std::move(metadata);
 
     namespace filesystem = std::filesystem;
-    const filesystem::path archiveDir =
-        filesystem::path(sgraphArchiveTestRunDir) / "output" / "sgraph";
-    std::error_code makeError;
+    const filesystem::path testRunDir(sgraphArchiveTestRunDir);
+    const filesystem::path archiveDir = testRunDir / "archive" / "sgraph";
+    std::error_code        makeError;
     filesystem::create_directories(archiveDir, makeError);
     if (makeError)
     {
@@ -4556,14 +4705,14 @@ void maybeArchiveSGraph(
         return;
     }
 
-    /* Fixed-width zero-padded stamp: sgraph_<sec:06>_<nsec:09>.json, so
-     * lexical file order matches chronological order. */
-    std::ostringstream fileName;
-    fileName << "sgraph_" << std::setfill('0') << std::setw(6) << stampSeconds
-             << "_" << std::setfill('0') << std::setw(9) << stampNanoseconds
-             << ".json";
-    const filesystem::path archiveFile = archiveDir / fileName.str();
-    std::ofstream          output(archiveFile);
+    /* Fixed-width zero-padded stamp <sec:06>_<nsec:09>, shared by the three
+     * files of this snapshot, so lexical file order is chronological. */
+    std::ostringstream snapshotStamp;
+    snapshotStamp << std::setfill('0') << std::setw(6) << stampSeconds << "_"
+                  << std::setw(9) << stampNanoseconds;
+    const filesystem::path archiveFile =
+        archiveDir / ("sgraph_" + snapshotStamp.str() + ".json");
+    std::ofstream output(archiveFile);
     if (!output.is_open())
     {
         RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
@@ -4574,10 +4723,40 @@ void maybeArchiveSGraph(
     output << archive.dump(2);
     output.close();
 
-    /* Mirror the latest snapshot into archive/ (the live-UAV-RAM
-     * equivalent); the full time series stays in output/sgraph/. */
-    const filesystem::path liveArchiveDir =
-        filesystem::path(sgraphArchiveTestRunDir) / "archive";
+    /* Writes one CSV of this snapshot, creating its directory; failures
+     * only warn, so the S-Graph files are kept. */
+    const auto writeSnapshotCsv =
+        [](const filesystem::path &csvFile_in, const std::string &csvText_in)
+    {
+        std::error_code csvDirError;
+        filesystem::create_directories(csvFile_in.parent_path(), csvDirError);
+        std::ofstream csvOutput;
+        if (!csvDirError)
+        {
+            csvOutput.open(csvFile_in);
+        }
+        if (!csvOutput.is_open())
+        {
+            RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                        "Cannot write archive '%s'.",
+                        csvFile_in.string().c_str());
+            return;
+        }
+        csvOutput << csvText_in;
+    };
+    const filesystem::path trajectoryDir =
+        testRunDir / "archive" / "trajectory";
+    const filesystem::path mapPointDir = testRunDir / "archive" / "map_points";
+    writeSnapshotCsv(trajectoryDir /
+                         ("estimated_" + snapshotStamp.str() + ".csv"),
+                     trajectoryCsv.str());
+    writeSnapshotCsv(mapPointDir /
+                         ("map_points_" + snapshotStamp.str() + ".csv"),
+                     mapPointCsv.str());
+
+    /* The latest snapshot is what a live UAV would hand on, so it goes to
+     * output/; the time series above stays in archive/. */
+    const filesystem::path liveArchiveDir = testRunDir / "output";
     filesystem::create_directories(liveArchiveDir, makeError);
     if (!makeError)
     {
@@ -4611,7 +4790,18 @@ void maybeArchiveSGraph(
 
     if (sgraphArchiveMaxFiles > 0)
     {
-        pruneSgraphArchives(archiveDir, sgraphArchiveMaxFiles);
+        pruneArchiveSeries(archiveDir,
+                           "sgraph_",
+                           ".json",
+                           sgraphArchiveMaxFiles);
+        pruneArchiveSeries(trajectoryDir,
+                           "estimated_",
+                           ".csv",
+                           sgraphArchiveMaxFiles);
+        pruneArchiveSeries(mapPointDir,
+                           "map_points_",
+                           ".csv",
+                           sgraphArchiveMaxFiles);
     }
 
     lastArchiveTime_s = now_s;
@@ -7234,13 +7424,13 @@ void publishTrackingImage(const cv::Mat      &trackingImage_bgr8_in,
             std::chrono::steady_clock::now() - std::chrono::hours(1);
         const std::chrono::steady_clock::time_point nowTime =
             std::chrono::steady_clock::now();
-        if (!sgraphArchiveTestRunDir.empty() &&
+        if (sgraphArchiveEnabled && !sgraphArchiveTestRunDir.empty() &&
             (nowTime - lastDumpTime) >= std::chrono::seconds(1))
         {
             lastDumpTime         = nowTime;
             namespace filesystem = std::filesystem;
             const filesystem::path loccamsDir =
-                filesystem::path(sgraphArchiveTestRunDir) / "output" /
+                filesystem::path(sgraphArchiveTestRunDir) / "archive" /
                 "loccams";
             std::error_code makeError;
             filesystem::create_directories(loccamsDir, makeError);
