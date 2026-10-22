@@ -1,0 +1,34 @@
+# MapPoint object sources: exactly this object's translation units.
+set(VS_GRAPHS_MAPPOINT_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addObservation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeDistinctiveDescriptors.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseObservation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getDescriptor.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFoundRatio.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getIndexInKeyFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMaxDistanceInvariance.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMinDistanceInvariance.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getNormal.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getObservationCount.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getObservations.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getReferenceKeyFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getReplaced.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getWorldPos.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/increaseFound.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/increaseVisible.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isBad.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isInKeyFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/postLoad.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/preSave.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/predictScale.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/printObservations.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/replace.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setBadFlag.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setNormalVector.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setWorldPos.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/static_members.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/updateMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/updateNormalAndDepth.cc
+)

@@ -1,0 +1,3 @@
+---
+float64 frames_per_second
+float64 last_frame_age_seconds

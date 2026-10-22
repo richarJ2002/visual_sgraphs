@@ -1,0 +1,14 @@
+/*!
+ * @file            EdgeVertexPlaneProjectPointXYZ.h
+ *
+ * @brief           Public interface of the EdgeVertexPlaneProjectPointXYZ
+ * module.
+ */
+
+#ifndef VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGEVERTEXPLANEPROJECTPOINTXYZ_EDGEVERTEXPLANEPROJECTPOINTXYZ_H
+#define VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGEVERTEXPLANEPROJECTPOINTXYZ_EDGEVERTEXPLANEPROJECTPOINTXYZ_H
+
+#include "optimization/optimizable_types/EdgeVertexPlaneProjectPointXYZ/objects/EdgeVertexPlaneProjectPointXYZClass.h"
+
+#endif /* VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGEVERTEXPLANEPROJECTPOINTXYZ_EDGEVERTEXPLANEPROJECTPOINTXYZ_H \
+        */

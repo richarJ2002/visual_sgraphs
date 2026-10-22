@@ -1,0 +1,35 @@
+# LocalMapping object sources: exactly this object's translation units.
+set(VS_GRAPHS_LOCALMAPPING_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkNewKeyFrames.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/createNewMapPoints.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/emptyQueue.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentKeyFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getCurrentKeyFrameTime.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/initializeIMU.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/insertKeyFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/interruptBA.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isAcceptingKeyFrames.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isFinished.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isInitializing.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isStopped.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/keyFrameCulling.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mapPointCulling.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/processNewKeyFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/release.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/requestFinish.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/requestReset.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/requestResetActiveMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/requestStop.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/resetIfRequested.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/run.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/scaleRefinement.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/searchInNeighbors.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setAcceptKeyFrames.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setLoopCloser.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setNotStop.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setTracker.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/stop.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/stopRequested.cc
+)

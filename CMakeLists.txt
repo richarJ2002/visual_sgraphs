@@ -1,18 +1,46 @@
 cmake_minimum_required(VERSION 3.5)
+
+if(POLICY CMP0072)
+  cmake_policy(SET CMP0072 NEW)
+endif()
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW)
+  set(CMAKE_POLICY_DEFAULT_CMP0144 NEW)
+endif()
+
 project(vs_graphs)
+
+# Symbol-aware tools (clang-rename, clang-tidy) read the compile database.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
-MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
+# Do not force -O3 here: CMake's own per-config defaults already give
+# Release "-O3 -DNDEBUG" and Debug "-g". Appending -O3 unconditionally used
+# to outrank a Debug build's "-O0 -g" (the compiler takes the last -O flag
+# on its command line), producing an optimized binary that claimed to be a
+# debuggable Debug build.
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
+# System PCL allocates point buffers with plain malloc. ASan run
+# 20260830-150425 showed Eigen's handmade_aligned_free reading eight bytes
+# before such a buffer. Use the same malloc/free path across this ABI boundary.
+add_compile_definitions(EIGEN_MALLOC_ALREADY_ALIGNED=1)
+
+# Preserve the existing g2o/Eigen allocation ABI on both sides of the library
+# boundary; changing C++17 over-aligned allocation for only one side is unsafe.
+add_compile_definitions(EIGEN_HAS_CXX17_OVERALIGN=0)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -24,14 +52,14 @@ if(NOT OpenCV_FOUND)
   message(FATAL_ERROR "OpenCV 4.2 not found.")
 endif()
 
-MESSAGE("OPENCV VERSION:")
-MESSAGE(${OpenCV_VERSION})
+message(STATUS "OpenCV version: ${OpenCV_VERSION}")
 
 # Find required packages
 find_package(PCL REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(rclpy REQUIRED)
+set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -52,8 +80,8 @@ find_package(rviz_visual_tools REQUIRED)
 find_package(rosidl_default_runtime REQUIRED)
 find_package(situational_graphs_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-# find_package(aruco_ros REQUIRED)
-# find_package(aruco_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -62,27 +90,39 @@ add_definitions(${PCL_DEFINITIONS})
 # Generate services
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SaveMap.srv"
+  "srv/GetMissionHealth.srv"
+  "srv/EstimatorHealth.srv"
   "msg/VSGraphsWallData.msg"
   "msg/VSGraphsRoomData.msg"
   "msg/VSGraphsAllWallsData.msg"
   "msg/VSGraphsAllDetectdetRooms.msg"
+  "msg/VSGraphsPassageData.msg"
+  "msg/VSGraphsAllPassagesData.msg"
+  "msg/VSGraphsFloorData.msg"
+  "msg/VSGraphsAllFloorsData.msg"
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs
 )
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
+# Headers live with their owning source packages; generated and vendored
+# include roots are supplied separately below.
 include_directories(
   ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/core
-  ${PROJECT_SOURCE_DIR}/core/include
-  ${PROJECT_SOURCE_DIR}/core/include/CameraModels
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/Sophus
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/core/src
   ${EIGEN3_INCLUDE_DIR}
   ${Pangolin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${segmenter_ros_INCLUDE_DIRS}
+)
+
+# Vendored code is not project-owned (CPP_CODING_STANDARD.md sections 1.2 and
+# 15.3), so it is exposed as SYSTEM: diagnostics raised inside its headers
+# (e.g. g2o's use of the deprecated Eigen::AlignedBit) are not reported.
+# Only these roots are affected; project-owned headers under core/src keep
+# the full warning set, including Sophus reached through legacy headers.
+include_directories(SYSTEM
+  ${CMAKE_CURRENT_BINARY_DIR}/g2o_generated
+  ${PROJECT_SOURCE_DIR}/core/src/dependency_lineage/g2o
 )
 include_directories(${OPENGL_INCLUDE_DIRS})
 
@@ -90,111 +130,145 @@ include_directories(${OPENGL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-# Include third-party CMakeLists
-include(${PROJECT_SOURCE_DIR}/core/Thirdparty/DBoW2/CMakeLists.txt)
-include(${PROJECT_SOURCE_DIR}/core/Thirdparty/g2o/CMakeLists.txt)
+# Quarantine the vendored lists' private include roots. Their targets retain
+# those includes, while owned targets use only the authorized SYSTEM roots.
+get_directory_property(VS_GRAPHS_OWNED_INCLUDE_DIRS INCLUDE_DIRECTORIES)
+# Include the relocated g2o CMakeLists
+include(${PROJECT_SOURCE_DIR}/core/src/dependency_lineage/g2o/CMakeLists.txt)
+set_property(DIRECTORY PROPERTY INCLUDE_DIRECTORIES
+  ${VS_GRAPHS_OWNED_INCLUDE_DIRS})
 
-# Set library output directory
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/core/lib)
+# Keep every library of this package in its own build tree, so the Debug,
+# Release and sanitizer builds do not share or overwrite source-tree outputs.
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+set_target_properties(g2o PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+# Capability dispatchers only set source lists; the main library below
+# fixes the flattened source order independently of this visit order.
+include(${PROJECT_SOURCE_DIR}/core/src/configuration/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/dependency_lineage/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/estimation/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/execution/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/map_state/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/mapping/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/optimization/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/place_recognition_and_loop_closure/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/scene_understanding/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/sensor_models/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/views_io/CMakeLists.txt)
+include(${PROJECT_SOURCE_DIR}/core/src/visual_features/CMakeLists.txt)
 
 # Create the main library
 add_library(${PROJECT_NAME}_lib SHARED
-  core/src/System.cc
-  core/src/Tracking.cc
-  core/src/LocalMapping.cc
-  core/src/LoopClosing.cc
-  core/src/ORBextractor.cc
-  core/src/ORBmatcher.cc
-  core/src/FrameDrawer.cc
-  core/src/Converter.cc
-  core/src/MapPoint.cc
-  core/src/KeyFrame.cc
-  core/src/Atlas.cc
-  core/src/Map.cc
-  core/src/MapDrawer.cc
-  core/src/Optimizer.cc
-  core/src/Frame.cc
-  core/src/KeyFrameDatabase.cc
-  core/src/Sim3Solver.cc
-  core/src/Viewer.cc
-  core/src/ImuTypes.cc
-  core/src/G2oTypes.cc
-  core/src/CameraModels/Pinhole.cpp
-  core/src/CameraModels/KannalaBrandt8.cpp
-  core/src/OptimizableTypes.cpp
-  core/src/MLPnPsolver.cpp
-  core/src/GeometricTools.cc
-  core/src/TwoViewReconstruction.cc
-  core/src/Utils.cc
-  core/src/Config.cc
-  core/src/Settings.cc
-  core/src/GeoSemHelpers.cc
-  core/src/Semantic/Room.cc
-  core/src/Semantic/Floor.cc
-  core/src/DatabaseParser.cc
-  core/src/Semantic/Marker.cc
-  core/src/Geometric/Plane.cc
-  core/src/Semantic/Passage.cc
-  core/src/Types/SystemParams.cc
-  core/src/SemanticSegmentation.cc
-  core/src/SemanticsManager.cc
-  core/include/System.h
-  core/include/Tracking.h
-  core/include/LocalMapping.h
-  core/include/LoopClosing.h
-  core/include/ORBextractor.h
-  core/include/ORBmatcher.h
-  core/include/FrameDrawer.h
-  core/include/Converter.h
-  core/include/MapPoint.h
-  core/include/KeyFrame.h
-  core/include/Atlas.h
-  core/include/Map.h
-  core/include/MapDrawer.h
-  core/include/Optimizer.h
-  core/include/Frame.h
-  core/include/KeyFrameDatabase.h
-  core/include/Sim3Solver.h
-  core/include/Viewer.h
-  core/include/ImuTypes.h
-  core/include/G2oTypes.h
-  core/include/CameraModels/GeometricCamera.h
-  core/include/CameraModels/Pinhole.h
-  core/include/CameraModels/KannalaBrandt8.h
-  core/include/OptimizableTypes.h
-  core/include/MLPnPsolver.h
-  core/include/GeometricTools.h
-  core/include/TwoViewReconstruction.h
-  core/include/SerializationUtils.h
-  core/include/Config.h
-  core/include/Utils.h
-  core/include/Settings.h
-  core/include/GeoSemHelpers.h
-  core/include/Semantic/Room.h
-  core/include/Semantic/Floor.h
-  core/include/DatabaseParser.h
-  core/include/Semantic/Marker.h
-  core/include/Geometric/Plane.h
-  core/include/Semantic/Passage.h
-  core/include/Types/SystemParams.h
-  core/include/SemanticSegmentation.h
-  core/include/SemanticsManager.h
+  ${VS_GRAPHS_MISSIONHEALTHTOPOLOGYJSON_SOURCES}
+  ${VS_GRAPHS_TRACKING_SOURCES}
+  ${VS_GRAPHS_RESETCAUSE_SOURCES}
+  ${VS_GRAPHS_LOCALMAPPING_SOURCES}
+  ${VS_GRAPHS_LOOPCLOSING_SOURCES}
+  ${VS_GRAPHS_ORBEXTRACTOR_SOURCES}
+  ${VS_GRAPHS_ORBMATCHER_SOURCES}
+  ${VS_GRAPHS_FRAMEDRAWER_SOURCES}
+  ${VS_GRAPHS_MAPPOINT_SOURCES}
+  ${VS_GRAPHS_KEYFRAME_SOURCES}
+  ${VS_GRAPHS_SYSTEM_SOURCES}
+  ${VS_GRAPHS_ATLAS_SOURCES}
+  ${VS_GRAPHS_MAP_SOURCES}
+  ${VS_GRAPHS_MAPDRAWER_SOURCES}
+  ${VS_GRAPHS_OPTIMIZER_SOURCES}
+  ${VS_GRAPHS_FRAME_SOURCES}
+  ${VS_GRAPHS_STEREOMATCHOUTLIERREJECTION_SOURCES}
+  ${VS_GRAPHS_KEYFRAMEDATABASE_SOURCES}
+  ${VS_GRAPHS_SIM3SOLVER_SOURCES}
+  ${VS_GRAPHS_IMUTYPES_SOURCES}
+  ${VS_GRAPHS_G2OTYPES_SOURCES}
+  ${VS_GRAPHS_CAMERAMODELS_CAMERAMODELS_SOURCES}
+  ${VS_GRAPHS_OPTIMIZABLETYPES_SOURCES}
+  ${VS_GRAPHS_MLPNPSOLVER_SOURCES}
+  ${VS_GRAPHS_GEOMETRIC_SOURCES}
+  ${VS_GRAPHS_SEMANTIC_OBJECTS_SOURCES}
+  ${VS_GRAPHS_TWOVIEWRECONSTRUCTION_SOURCES}
+  ${VS_GRAPHS_UTILS_UTILS_SOURCES}
+  ${VS_GRAPHS_UTILS_CONVERTER_SOURCES}
+  ${VS_GRAPHS_UTILS_SETTINGS_SOURCES}
+  ${VS_GRAPHS_UTILS_CONFIG_SOURCES}
+  ${VS_GRAPHS_UTILS_GEOSEMHELPERS_SOURCES}
+
+  ${VS_GRAPHS_DATABASEPARSER_SOURCES}
+  ${VS_GRAPHS_TYPES_SOURCES}
+  ${VS_GRAPHS_SEMANTICSEGMENTATION_SOURCES}
+  ${VS_GRAPHS_SEMANTICSMANAGER_SOURCES}
+  ${VS_GRAPHS_PCLCUSTOM_SOURCES}
+  ${VS_GRAPHS_DUTILS_SOURCES}
+  ${VS_GRAPHS_DBOW2_BOWVECTOR_SOURCES}
+  ${VS_GRAPHS_DBOW2_FEATUREVECTOR_SOURCES}
+  ${VS_GRAPHS_DBOW2_DESCRIPTORS_SOURCES}
+  ${VS_GRAPHS_DBOW2_SCORING_SOURCES}
+  ${VS_GRAPHS_DBOW2_VOCABULARY_SOURCES}
+  ${VS_GRAPHS_SOPHUS_SOURCES}
+  ${VS_GRAPHS_NLOHMANN_SOURCES}
+
 )
 
-target_link_libraries(${PROJECT_NAME}_lib 
+# The library keeps one function per source file; each small file still parses
+# the full third-party header set, which dominates the compile time. A unity
+# build compiles neighbouring files of the same list together (measured on 16
+# KeyFrame methods: 111 s separately, 8 s together, same peak memory). Only
+# this library is batched: ROS-generated interface code is not unity-safe.
+option(VS_GRAPHS_UNITY_BUILD "Compile the library sources in unity batches" ON)
+if(VS_GRAPHS_UNITY_BUILD)
+  set_target_properties(${PROJECT_NAME}_lib PROPERTIES
+    UNITY_BUILD ON
+    UNITY_BUILD_BATCH_SIZE 16)
+  # A source with file-local definitions (anonymous namespace, or a
+  # namespace-scope static/const/constexpr variable) compiles on its own, so
+  # equal names never meet in one unity unit.
+  get_target_property(VS_GRAPHS_LIB_SOURCES ${PROJECT_NAME}_lib SOURCES)
+  foreach(source IN LISTS VS_GRAPHS_LIB_SOURCES)
+    if(IS_ABSOLUTE "${source}")
+      set(scan_source "${source}")
+    else()
+      set(scan_source "${PROJECT_SOURCE_DIR}/${source}")
+    endif()
+    file(STRINGS "${scan_source}" file_local
+         REGEX "^[ \t]*namespace[ \t]*(\\{.*)?$|^(static|const|constexpr)[ \t][^(]*=")
+    if(file_local)
+      set_source_files_properties(${source} PROPERTIES
+        SKIP_UNITY_BUILD_INCLUSION ON)
+    endif()
+  endforeach()
+endif()
+
+# The core library declares no name that hides another (a local hiding a
+# local, parameter or member); keep it that way. The -Werror checks turn
+# silent behaviour changes into build errors: an overriding function without
+# `override` (renaming a base virtual would leave it unused), self-recursion
+# from a half-renamed CRTP accessor, deleting an incomplete type (its
+# destructor would not run) and a discarded [[nodiscard]] result.
+set(VS_GRAPHS_STRICT_WARNINGS
+  -Wall -Wextra -Wpedantic -Wshadow
+  -Wsuggest-override -Werror=suggest-override
+  -Werror=infinite-recursion
+  -Werror=delete-incomplete
+  -Werror=unused-result)
+target_compile_options(${PROJECT_NAME}_lib PRIVATE ${VS_GRAPHS_STRICT_WARNINGS})
+
+target_link_libraries(${PROJECT_NAME}_lib
   ${OpenCV_LIBS}
   ${EIGEN3_LIBS}
   ${Pangolin_LIBRARIES}
   ${PCL_LIBRARIES}
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/DBoW2/lib/libDBoW2.so
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/g2o/lib/libg2o.so
+  g2o
   -lboost_system
   -lboost_serialization
   -lcrypto
 )
 
 # ROS2 specific: Use ament_target_dependencies for ROS2 packages
-ament_target_dependencies(${PROJECT_NAME}_lib 
+ament_target_dependencies(${PROJECT_NAME}_lib
   rclcpp
   std_msgs
   cv_bridge
@@ -211,57 +285,96 @@ ament_target_dependencies(${PROJECT_NAME}_lib
   segmenter_ros
 )
 
+# ---------------------------------------------------------------------------
 # Common source files
-set(COMMON_SOURCES
-  src/common.cc
-)
+# ---------------------------------------------------------------------------
 
-# Common dependencies
+include(${PROJECT_SOURCE_DIR}/src/CMakeLists.txt)
+
+# ---------------------------------------------------------------------------
+# Dependencies required by the common source files
+# ---------------------------------------------------------------------------
+
 set(COMMON_DEPENDENCIES
-  tf2
   rclcpp
-  tf2_ros
-  nav_msgs
   std_msgs
-  cv_bridge
+  nav_msgs
   sensor_msgs
   geometry_msgs
-  segmenter_ros
+  visualization_msgs
+  cv_bridge
+  image_transport
   message_filters
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  pcl_ros
+  segmenter_ros
   situational_graphs_msgs
 )
 
-# ROS2 nodes
-function(add_ros2_node target_name cpp_file)
+# ---------------------------------------------------------------------------
+# ROS2 node creation helper
+# ---------------------------------------------------------------------------
+
+function(add_ros2_node target_name)
   add_executable(${target_name}
-    ${COMMON_SOURCES}
-    ${cpp_file}
+    ${VS_GRAPHS_FRONTEND_COMMON_SOURCES}
+    ${VS_GRAPHS_FRONTEND_SPARSE_SOURCES}
+    ${ARGN}
   )
+
+  target_compile_options(${target_name} PRIVATE ${VS_GRAPHS_STRICT_WARNINGS})
 
   target_link_libraries(${target_name}
     ${PROJECT_NAME}_lib
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
   )
 
   ament_target_dependencies(${target_name}
     ${COMMON_DEPENDENCIES}
   )
 
-  rosidl_target_interfaces(${target_name} ${PROJECT_NAME} "rosidl_typesupport_cpp")
+  rosidl_get_typesupport_target(
+    cpp_typesupport_target
+    ${PROJECT_NAME}
+    rosidl_typesupport_cpp
+  )
+  target_link_libraries(
+    ${target_name}
+    "${cpp_typesupport_target}"
+  )
 
   set_target_properties(${target_name} PROPERTIES
     INSTALL_RPATH "\$ORIGIN/.."
   )
 
-  install(TARGETS ${target_name}
+  install(
+    TARGETS ${target_name}
     DESTINATION lib/${PROJECT_NAME}
   )
 endfunction()
 
+# ---------------------------------------------------------------------------
 # ROS2 nodes
-add_ros2_node(ros_rgbd          src/ros_rgbd.cc)
-add_ros2_node(ros_rgbd_inertial src/ros_rgbd_inertial.cc)
+# ---------------------------------------------------------------------------
 
-# libvs_graphs_lib.so must also be able to find libDBoW2.so and libg2o.so
+add_ros2_node(
+  ros_rgbd
+  ${VS_GRAPHS_FRONTEND_RGBD_ENTRY_SOURCES}
+  ${VS_GRAPHS_FRONTEND_RGBD_GRABBER_SOURCES}
+  ${VS_GRAPHS_FRONTEND_OBSERVABILITY_SOURCES}
+)
+
+add_ros2_node(
+  ros_rgbd_inertial
+  ${VS_GRAPHS_FRONTEND_INERTIAL_ENTRY_SOURCES}
+  ${VS_GRAPHS_FRONTEND_INERTIAL_GRABBER_SOURCES}
+  ${VS_GRAPHS_FRONTEND_IMU_GRABBER_SOURCES}
+)
+
+# libvs_graphs_lib.so must also be able to find the remaining libg2o.so
 # in the same install/vs_graphs/lib/ folder.
 set_target_properties(${PROJECT_NAME}_lib PROPERTIES
   INSTALL_RPATH "\$ORIGIN"
@@ -269,7 +382,7 @@ set_target_properties(${PROJECT_NAME}_lib PROPERTIES
 
 # Install other resources
 install(
-  DIRECTORY launch config core/Vocabulary
+  DIRECTORY launch config core/vocabulary
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -286,19 +399,13 @@ install(TARGETS ${PROJECT_NAME}_lib
 )
 
 # Install third-party shared libraries needed at runtime
-install(DIRECTORY
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/DBoW2/lib/
-  DESTINATION lib
-  FILES_MATCHING PATTERN "libDBoW2.so*"
-)
-
-install(DIRECTORY
-  ${PROJECT_SOURCE_DIR}/core/Thirdparty/g2o/lib/
-  DESTINATION lib
-  FILES_MATCHING PATTERN "libg2o.so*"
+install(TARGETS g2o
+  EXPORT export_${PROJECT_NAME}
+  LIBRARY DESTINATION lib
 )
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
 
 # Ament package configuration
 ament_package()

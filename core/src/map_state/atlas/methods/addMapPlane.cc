@@ -1,0 +1,71 @@
+/*!
+ * This file is a modified version of a file from ORB-SLAM3.
+ *
+ * Modifications Copyright (C) 2023-2025 SnT, University of Luxembourg
+ * Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez, and Holger
+ * Voos
+ *
+ * Original Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * This file is part of vS-Graphs, which is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * vS-Graphs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*!
+ * @file            addMapPlane.cc
+ *
+ * @brief           Implements Atlas::addMapPlane(), declared in
+ * atlas/objects/AtlasClass.h.
+ */
+
+#include "map_state/atlas/objects/AtlasClass.h"
+#include "mapping/geometric/Plane/Plane.h"
+#include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
+#include "map_state/map/map.h"
+#include "map_state/map/objects/MapStatusEnum.h"
+#include <rclcpp/logging.hpp>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace atlas
+{
+
+AtlasStatus Atlas::addMapPlane(vs_graphs::core::geometric::Plane *p_plane_in)
+{
+    map::Map *p_ownerMap = nullptr;
+    if (p_plane_in->getMap(p_ownerMap) !=
+        geometric::PlaneStatus::PLANE_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: getMap returned a failure status although it cannot "
+                     "fail; continuing as before.",
+                     __func__);
+    }
+    if (p_ownerMap->addMapPlane(p_plane_in) != map::MapStatus::MAP_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: addMapPlane returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
+
+    return AtlasStatus::ATLAS_STATUS_SUCCESS;
+}
+
+} /* namespace atlas */
+} /* namespace core */
+} /* namespace vs_graphs */

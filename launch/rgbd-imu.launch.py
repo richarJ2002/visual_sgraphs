@@ -5,7 +5,11 @@ from launch.actions import DeclareLaunchArgument
 from launch_ros.descriptions import ComposableNode
 from launch_ros.actions import ComposableNodeContainer
 from ament_index_python.packages import get_package_share_directory
-from launch.substitutions import LaunchConfiguration, EqualsSubstitution
+from launch.substitutions import (
+    EqualsSubstitution,
+    LaunchConfiguration,
+    PythonExpression,
+)
 
 
 def generate_launch_description():
@@ -18,6 +22,12 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "offline",
                 default_value="true"
+            ),
+
+            DeclareLaunchArgument(
+                "use_sim_time",
+                default_value="false",
+                description="Use timestamps published on /clock.",
             ),
 
             DeclareLaunchArgument(
@@ -78,8 +88,79 @@ def generate_launch_description():
             ),
 
             DeclareLaunchArgument(
+                "pointcloud_topic",
+                default_value="/camera/depth/points",
+            ),
+
+            DeclareLaunchArgument(
+                "generate_pointcloud",
+                default_value="true",
+                description=(
+                    "Generate a registered cloud when the sensor does not "
+                    "publish one."
+                ),
+            ),
+
+            DeclareLaunchArgument(
+                "direct_gazebo_flu_cloud",
+                default_value=PythonExpression([
+                    "'true' if '",
+                    LaunchConfiguration("sensor_config"),
+                    "' == 'Alpha_Gazebo' and '",
+                    LaunchConfiguration("generate_pointcloud"),
+                    "' == 'false' else 'false'",
+                ]),
+                description=(
+                    "Convert a raw Gazebo FLU cloud to the optical camera "
+                    "frame. Alpha_Gazebo raw clouds enable this by default."
+                ),
+            ),
+
+            DeclareLaunchArgument(
                 "imu_topic",
                 default_value="/camera/realsense/imu",
+            ),
+
+            DeclareLaunchArgument(
+                "log_level",
+                default_value="info",
+                description=(
+                    "Verbosity for core/ROS logging: quiet, error, warn, info "
+                    "or debug. Sets both the RCLCPP logger threshold and the "
+                    "core Verbose threshold via the log_level parameter."
+                ),
+            ),
+
+            DeclareLaunchArgument(
+                "test_run_dir",
+                default_value="",
+                description=(
+                    "Absolute test run directory. SGraph JSON archives are "
+                    "written to <test_run_dir>/output/sgraph; empty "
+                    "disables archiving."
+                ),
+            ),
+
+            DeclareLaunchArgument(
+                "sgraph_archive_enabled",
+                default_value="true",
+                description="Master on/off switch for SGraph JSON archiving.",
+            ),
+
+            DeclareLaunchArgument(
+                "sgraph_archive_interval_sec",
+                default_value="5.0",
+                description=(
+                    "Minimum sim-clock seconds between SGraph JSON archives."
+                ),
+            ),
+
+            DeclareLaunchArgument(
+                "sgraph_archive_max_files",
+                default_value="0",
+                description=(
+                    "Maximum retained SGraph JSON archives; 0 keeps all."
+                ),
             ),
 
             # ---------------------------------------------------------------- #
@@ -90,17 +171,25 @@ def generate_launch_description():
                 name="vs_graphs",
                 package="vs_graphs",
                 executable="ros_rgbd_inertial",
-                output="screen",
+                output="both",
+                arguments=[
+                    "--ros-args",
+                    "--log-level",
+                    LaunchConfiguration("log_level"),
+                ],
                 parameters=[
                     {
-                        "use_sim_time": LaunchConfiguration("offline")
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
+                    {
+                        "log_level": LaunchConfiguration("log_level")
                     },
                     {
                         "voc_file": LaunchConfiguration(
                             "voc_file",
                             default=[
                                 get_package_share_directory("vs_graphs"),
-                                "/Vocabulary/ORBvoc.txt.bin",
+                                "/vocabulary/ORBvoc.txt.bin",
                             ],
                         )
                     },
@@ -146,9 +235,6 @@ def generate_launch_description():
                         "frame_camera": "camera"
                     },
                     {
-                        "enable_pangolin": False
-                    },
-                    {
                         "static_transform": True
                     },
                     {
@@ -156,6 +242,35 @@ def generate_launch_description():
                     },
                     {
                         "publish_pointclouds": True
+                    },
+                    {
+                        "maximum_tracking_rate_hz": 30.0
+                    },
+                    {
+                        "maximum_sensor_buffer_seconds": 3.0
+                    },
+                    {
+                        "direct_gazebo_flu_cloud": LaunchConfiguration(
+                            "direct_gazebo_flu_cloud"
+                        )
+                    },
+                    {
+                        "test_run_dir": LaunchConfiguration("test_run_dir")
+                    },
+                    {
+                        "sgraph_archive_enabled": LaunchConfiguration(
+                            "sgraph_archive_enabled"
+                        )
+                    },
+                    {
+                        "sgraph_archive_interval_sec": LaunchConfiguration(
+                            "sgraph_archive_interval_sec"
+                        )
+                    },
+                    {
+                        "sgraph_archive_max_files": LaunchConfiguration(
+                            "sgraph_archive_max_files"
+                        )
                     },
                 ],
                 remappings=[
@@ -171,6 +286,10 @@ def generate_launch_description():
                         "/camera/depth_registered/image_raw",
                         LaunchConfiguration("depth_image_topic"),
                     ),
+                    (
+                        "/camera/depth/points",
+                        LaunchConfiguration("pointcloud_topic"),
+                    ),
                 ],
             ),
 
@@ -182,15 +301,12 @@ def generate_launch_description():
                 package="tf2_ros",
                 name="map_to_map_elevated",  # For Voxblox Skeleton
                 executable="static_transform_publisher",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "map",
-                    "map_elevated"
+                    "--frame-id", "map",
+                    "--child-frame-id", "map_elevated",
                 ],
             ),
 
@@ -198,15 +314,13 @@ def generate_launch_description():
                 name="bc_to_se",
                 package="tf2_ros",
                 executable="static_transform_publisher",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0",
-                    "3",
-                    "0",
-                    "0",
-                    "0",
-                    "build_comp",
-                    "struc_elem"
+                    "--z", "3",
+                    "--frame-id", "build_comp",
+                    "--child-frame-id", "struc_elem",
                 ],
             ),
 
@@ -214,15 +328,13 @@ def generate_launch_description():
                 package="tf2_ros",
                 name="world_to_bc",
                 executable="static_transform_publisher",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0",
-                    "3",
-                    "0",
-                    "0",
-                    "0",
-                    "world",
-                    "build_comp"
+                    "--z", "3",
+                    "--frame-id", "world",
+                    "--child-frame-id", "build_comp",
                 ],
             ),
 
@@ -230,15 +342,19 @@ def generate_launch_description():
                 package="tf2_ros",
                 name="camera_to_imu",
                 executable="static_transform_publisher",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0",
-                    "0",
-                    "1.5708",
-                    "0",
-                    "1.5708",
-                    "camera",
-                    "imu"
+                    "--x", "0.0",
+                    "--y", "0.08",
+                    "--z", "-0.22",
+                    "--qx", "0.5",
+                    "--qy", "-0.5",
+                    "--qz", "0.5",
+                    "--qw", "0.5",
+                    "--frame-id", "camera",
+                    "--child-frame-id", "imu",
                 ],
             ),
 
@@ -246,15 +362,12 @@ def generate_launch_description():
                 package="tf2_ros",
                 name="camera_to_camera_optical",
                 executable="static_transform_publisher",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "camera",
-                    "camera_color_optical_frame",
+                    "--frame-id", "camera",
+                    "--child-frame-id", "camera_color_optical_frame",
                     # RealSense: camera_color_optical_frame, OpenLoris: d400_color
                 ],
             ),
@@ -275,6 +388,9 @@ def generate_launch_description():
                         "/config/Visualization/vsgraphs_rgbd.rviz",
                     ],
                 ],
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 output="screen",
             ),
 
@@ -283,6 +399,9 @@ def generate_launch_description():
             # ---------------------------------------------------------------- #
 
             ComposableNodeContainer(
+                condition=IfCondition(
+                    LaunchConfiguration("generate_pointcloud")
+                ),
                 name="depth_image_proc_container",
                 package="rclcpp_components",
                 namespace="",
@@ -292,6 +411,11 @@ def generate_launch_description():
                         package="depth_image_proc",
                         name="point_cloud_xyzrgb_node",
                         parameters=[
+                            {
+                                "use_sim_time": LaunchConfiguration(
+                                    "use_sim_time"
+                                )
+                            },
                             {
                                 "target_frame": "map"
                             }
@@ -312,7 +436,7 @@ def generate_launch_description():
                             ),
                             (
                                 "points",
-                                "/camera/depth/points"
+                                LaunchConfiguration("pointcloud_topic")
                             ),
                         ],
                     ),
@@ -332,6 +456,9 @@ def generate_launch_description():
                 executable="segmenter_yoso.py",
                 output="screen",
                 parameters=[
+                    {
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
                     {
                         "visualize": LaunchConfiguration(
                             "visualize_segmented_scene"
@@ -364,6 +491,9 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
+                    {
                         "visualize": LaunchConfiguration(
                             "visualize_segmented_scene"
                         )
@@ -393,6 +523,9 @@ def generate_launch_description():
                 executable="segmenter_yolo26.py",
                 output="screen",
                 parameters=[
+                    {
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
                     {
                         "visualize": LaunchConfiguration(
                             "visualize_segmented_scene"

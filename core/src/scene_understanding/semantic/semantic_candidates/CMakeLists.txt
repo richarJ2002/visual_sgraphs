@@ -1,0 +1,20 @@
+# semantic_candidates module sources.
+set(VS_GRAPHS_SEMANTIC_SEMANTICCANDIDATES_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/generate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/generateWithStatus.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/rejectionReasonName.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/validateConfig.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/angleSignature.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/apertureSignature.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/extentSignature.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/finiteNonnegative.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isValidWallBounds.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/medianExtent.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/missingBoundsFraction.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/paddedMeanL1.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/pairedManhattanDistance.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/stringDistance.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/topologySignature.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/validNormalCount.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/validWallEvidenceCount.cc
+)

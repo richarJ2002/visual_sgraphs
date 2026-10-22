@@ -21,6 +21,12 @@ def generate_launch_description():
             ),
 
             DeclareLaunchArgument(
+                "use_sim_time",
+                default_value="false",
+                description="Use timestamps published on /clock.",
+            ),
+
+            DeclareLaunchArgument(
                 "launch_rviz",
                 default_value="true"
             ),
@@ -41,8 +47,59 @@ def generate_launch_description():
             ),
 
             DeclareLaunchArgument(
+                "direct_gazebo_flu_cloud",
+                default_value="false",
+                description=(
+                    "Convert a direct Gazebo FLU cloud to the optical camera "
+                    "frame. Generated RGB-D clouds remain optical by default."
+                ),
+            ),
+
+            DeclareLaunchArgument(
                 "segmented_image_topic",
                 default_value="/camera/color/image_segment",
+            ),
+
+            DeclareLaunchArgument(
+                "log_level",
+                default_value="info",
+                description=(
+                    "Verbosity for core/ROS logging: quiet, error, warn, info "
+                    "or debug. Sets both the RCLCPP logger threshold and the "
+                    "core Verbose threshold via the log_level parameter."
+                ),
+            ),
+
+            DeclareLaunchArgument(
+                "test_run_dir",
+                default_value="",
+                description=(
+                    "Absolute test run directory. SGraph JSON archives are "
+                    "written to <test_run_dir>/output/sgraph; empty "
+                    "disables archiving."
+                ),
+            ),
+
+            DeclareLaunchArgument(
+                "sgraph_archive_enabled",
+                default_value="true",
+                description="Master on/off switch for SGraph JSON archiving.",
+            ),
+
+            DeclareLaunchArgument(
+                "sgraph_archive_interval_sec",
+                default_value="5.0",
+                description=(
+                    "Minimum sim-clock seconds between SGraph JSON archives."
+                ),
+            ),
+
+            DeclareLaunchArgument(
+                "sgraph_archive_max_files",
+                default_value="0",
+                description=(
+                    "Maximum retained SGraph JSON archives; 0 keeps all."
+                ),
             ),
 
             DeclareLaunchArgument(
@@ -95,17 +152,25 @@ def generate_launch_description():
                 name="vs_graphs",
                 package="vs_graphs",
                 executable="ros_rgbd",
-                output="screen",
+                output="both",
+                arguments=[
+                    "--ros-args",
+                    "--log-level",
+                    LaunchConfiguration("log_level"),
+                ],
                 parameters=[
                     {
-                        "use_sim_time": LaunchConfiguration("offline")
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
+                    {
+                        "log_level": LaunchConfiguration("log_level")
                     },
                     {
                         "voc_file": LaunchConfiguration(
                             "voc_file",
                             default=[
                                 get_package_share_directory("vs_graphs"),
-                                "/Vocabulary/ORBvoc.txt.bin",
+                                "/vocabulary/ORBvoc.txt.bin",
                             ],
                         )
                     },
@@ -148,9 +213,6 @@ def generate_launch_description():
                         "frame_camera": "camera"
                     },
                     {
-                        "enable_pangolin": False
-                    },
-                    {
                         "static_transform": True
                     },
                     {
@@ -158,6 +220,29 @@ def generate_launch_description():
                     },
                     {
                         "publish_pointclouds": True
+                    },
+                    {
+                        "direct_gazebo_flu_cloud": LaunchConfiguration(
+                            "direct_gazebo_flu_cloud"
+                        )
+                    },
+                    {
+                        "test_run_dir": LaunchConfiguration("test_run_dir")
+                    },
+                    {
+                        "sgraph_archive_enabled": LaunchConfiguration(
+                            "sgraph_archive_enabled"
+                        )
+                    },
+                    {
+                        "sgraph_archive_interval_sec": LaunchConfiguration(
+                            "sgraph_archive_interval_sec"
+                        )
+                    },
+                    {
+                        "sgraph_archive_max_files": LaunchConfiguration(
+                            "sgraph_archive_max_files"
+                        )
                     },
                 ],
                 remappings=[
@@ -168,6 +253,10 @@ def generate_launch_description():
                     (
                         "/camera/depth_registered/image_raw",
                         LaunchConfiguration("depth_image_topic"),
+                    ),
+                    (
+                        "/camera/depth/points",
+                        LaunchConfiguration("pointcloud_topic"),
                     ),
                 ],
             ),
@@ -180,15 +269,12 @@ def generate_launch_description():
                 package="tf2_ros",
                 name="map_to_map_elevated",
                 executable="static_transform_publisher",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "map",
-                    "map_elevated"
+                    "--frame-id", "map",
+                    "--child-frame-id", "map_elevated",
                 ],
             ),
 
@@ -196,15 +282,12 @@ def generate_launch_description():
                 package="tf2_ros",
                 executable="static_transform_publisher",
                 name="bc_to_se",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "-3",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "build_comp",
-                    "struc_elem"
+                    "--frame-id", "build_comp",
+                    "--child-frame-id", "struc_elem",
                 ],
             ),
 
@@ -212,15 +295,12 @@ def generate_launch_description():
                 package="tf2_ros",
                 executable="static_transform_publisher",
                 name="world_to_bc",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0.5",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "world",
-                    "build_comp"
+                    "--frame-id", "world",
+                    "--child-frame-id", "build_comp",
                 ],
             ),
 
@@ -228,21 +308,18 @@ def generate_launch_description():
                 package="tf2_ros",
                 executable="static_transform_publisher",
                 name="camera_to_camera_optical",
+                parameters=[{
+                    "use_sim_time": LaunchConfiguration("use_sim_time")
+                }],
                 arguments=[
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "0",
-                    "camera",
-                    "camera_color_optical_frame",
+                    "--frame-id", "camera",
+                    "--child-frame-id", "camera_color_optical_frame",
                     # RealSense: camera_color_optical_frame, OpenLoris: d400_color
                 ],
             ),
 
             # ---------------------------------------------------------------- #
-            # RViz
+            # RVIZ
             # ---------------------------------------------------------------- #
 
             Node(
@@ -259,7 +336,7 @@ def generate_launch_description():
                 ],
                 parameters=[
                     {
-                        "use_sim_time": LaunchConfiguration("offline")
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
                     }
                 ],
                 output="screen",
@@ -279,6 +356,9 @@ def generate_launch_description():
                         package="depth_image_proc",
                         plugin="depth_image_proc::PointCloudXyzrgbNode",
                         name="point_cloud_xyzrgb_node",
+                        parameters=[{
+                            "use_sim_time": LaunchConfiguration("use_sim_time")
+                        }],
                         remappings=[
                             (
                                 "rgb/camera_info",
@@ -301,37 +381,38 @@ def generate_launch_description():
                 ],
             ),
 
-            # Semantic Scene Segmenter Node (based on semantic_scene_segmenter argument)
-            # Node(
-            #     condition=IfCondition(
-            #         EqualsSubstitution(
-            #             LaunchConfiguration("semantic_scene_segmenter"),
-            #             "yoso"
-            #         )
-            #     ),
-            #     name="segmenter_ros",
-            #     package="segmenter_ros",
-            #     executable="segmenter_yoso.py",
-            #     output="screen",
-            #     parameters=[
-            #         {
-            #             "use_sim_time": LaunchConfiguration("offline")
-            #         },
-            #         {
-            #             "visualize": LaunchConfiguration(
-            #                 "visualize_segmented_scene")
-            #         }
-            #     ],
+            # Semantic Scene Segmenter Node 
+            # (based on semantic_scene_segmenter argument)
+            Node(
+                condition=IfCondition(
+                    EqualsSubstitution(
+                        LaunchConfiguration("semantic_scene_segmenter"),
+                        "yoso"
+                    )
+                ),
+                name="segmenter_ros",
+                package="segmenter_ros",
+                executable="segmenter_yoso.py",
+                output="screen",
+                parameters=[
+                    {
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
+                    {
+                        "visualize": LaunchConfiguration(
+                            "visualize_segmented_scene")
+                    }
+                ],
 
-            #     arguments=[
-            #         "--ros-args",
-            #         "--params-file",
-            #         [
-            #             get_package_share_directory("segmenter_ros"),
-            #             "/config/cfg_yoso.yaml",
-            #         ],
-            #     ],
-            # ),
+                arguments=[
+                    "--ros-args",
+                    "--params-file",
+                    [
+                        get_package_share_directory("segmenter_ros"),
+                        "/config/cfg_yoso.yaml",
+                    ],
+                ],
+            ),
 
             Node(
                 condition=IfCondition(
@@ -347,6 +428,9 @@ def generate_launch_description():
                 executable="segmenter_pFCN.py",
                 output="screen",
                 parameters=[
+                    {
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
                     {
                         "visualize": LaunchConfiguration(
                             "visualize_segmented_scene"
@@ -378,6 +462,9 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
+                        "use_sim_time": LaunchConfiguration("use_sim_time")
+                    },
+                    {
                         "visualize": LaunchConfiguration(
                             "visualize_segmented_scene"
                         )
@@ -391,27 +478,6 @@ def generate_launch_description():
                         "/config/cfg_yolo26.yaml",
                     ],
                 ],
-            ),
-
-            # Structural Element Detectors
-            # Node(
-            #     name="situational_graphs_reasoning",
-            #     package="situational_graphs_reasoning",
-            #     executable="situational_graphs_reasoning",
-            #     output="screen",
-            #     # parameters=[
-            #     #     os.path.join(
-            #     #         get_package_share_directory("situational_graphs_reasoning"),
-            #     #         "config",
-            #     #         "params.yaml",
-            #     #     )
-            #     # ],
-            #     # remappings=[
-            #     #     (
-            #     #         "situational_graphs_reasoning/graphs",
-            #     #         "/s_graphs/graph_structure",
-            #     #     ),
-            #     # ],
-            # ),
+            )
         ]
     )

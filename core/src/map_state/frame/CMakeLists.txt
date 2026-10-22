@@ -1,0 +1,40 @@
+# Frame object sources: exactly this object's translation units.
+set(VS_GRAPHS_FRAME_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/assignFeaturesToGrid.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeBagOfWords.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeImageBounds.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeStereoFishEyeMatches.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeStereoFromRGBD.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeStereoMatches.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/extractOrbFeatures.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getCameraCenter.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getFeaturesInArea.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getImuPose.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getImuPosition.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getImuRotation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getPose.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRelativePoseTlr.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRelativePoseTlrRotation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRelativePoseTlrTranslation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRelativePoseTrl.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRotationRwc.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getVelocity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/hasVelocity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/inReferenceCoordinates.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isImuPreintegrated.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isInFrustum.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isInFrustumChecks.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isPositionInGrid.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isSet.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/projectPointDistort.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setImuPoseVelocity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setIntegrated.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setNewBias.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setPose.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setVelocity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/static_members.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/undistortKeyPoints.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/unprojectStereo.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/unprojectStereoFishEye.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/updatePoseMatrices.cc
+)

@@ -1,0 +1,24 @@
+# Preintegrated object sources.
+set(VS_GRAPHS_IMUTYPES_PREINTEGRATED_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/copyFrom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getDeltaBias.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getDeltaPosition.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getDeltaRotation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getDeltaVelocity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginalBias.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginalDeltaPosition.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginalDeltaRotation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOriginalDeltaVelocity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedBias.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedDeltaPosition.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedDeltaRotation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getUpdatedDeltaVelocity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/initialize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/integrateNewMeasurement.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mergePrevious.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/printMeasurements.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reintegrate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serialize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serializeIntegrable.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setNewBias.cc
+)

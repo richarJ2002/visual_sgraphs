@@ -1,0 +1,35 @@
+# LoopClosing object sources: exactly this object's translation units.
+set(VS_GRAPHS_LOOPCLOSING_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkFinish.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkNewKeyFrames.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/checkObservations.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/correctLoop.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/detectAndReffineSim3FromLastKF.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/detectCommonRegionsFromBoW.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/detectCommonRegionsFromLastKF.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/findMatchesByProjection.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getLoopCorrectionStatus.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/insertKeyFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isFinished.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isMergeInProgress.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mergeLocal.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mergeLocalInertial.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/newDetectCommonRegions.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/recordLoopCorrectionEvent.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/relaunchGlobalBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/requestFinish.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/requestReset.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/requestResetActiveMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/resetIfRequested.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/run.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/runGlobalBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/searchAndFuse.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setFinish.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setLocalMapper.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setMergeStatus.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setTracker.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/stopGlobalBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collapseMergedFloors.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/mergeFloorEvidenceAndRooms.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/verifyLoopMergeFloors.cc
+)

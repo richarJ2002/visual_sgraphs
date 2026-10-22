@@ -40,8 +40,8 @@ ros2 launch realsense2_camera rs_launch.py \
     pointcloud.enable:=true \
     align_depth.enable:=true \
     rgb_camera.color_profile:="640,480,30" \
-    depth_camera.depth_profile:="640,480,30"
-# [Optional] enable IMU data: enable_accel:=true enable_gyro:=true gyro_fps:=200 accel_fps:=63 unite_imu_method:=0
+    depth_module.depth_profile:="640,480,30"
+# [Optional] enable IMU data: enable_accel:=true enable_gyro:=true gyro_fps:=200 accel_fps:=63 unite_imu_method:=2
 ```
 
 > 🛎️ Tip: If you intend to use IR images instead of RGB, you will need to disable the RealSense **emitter**. While the launch file includes related arguments, they may not always take effect. The simplest method is to open `realsense-viewer` and manually set `Emitter Enabled` to `False`.

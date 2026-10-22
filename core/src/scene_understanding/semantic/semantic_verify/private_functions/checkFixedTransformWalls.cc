@@ -1,0 +1,134 @@
+/*!
+ * @file            checkFixedTransformWalls.cc
+ *
+ * @brief           Implements checkFixedTransformWalls(), declared in
+ *                  Semantic/SemanticVerify/private_functions.h.
+ */
+
+#include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
+
+#include "mapping/geometric/Plane/Plane.h"
+#include "place_recognition_and_loop_closure/loop_closing/loop_closing.h"
+#include "map_state/map/map.h"
+
+#include <vs_graphs_g2o/core/block_solver.h>
+#include <vs_graphs_g2o/core/optimization_algorithm_levenberg.h>
+#include <vs_graphs_g2o/core/robust_kernel_impl.h>
+#include <vs_graphs_g2o/core/sparse_optimizer.h>
+#include <vs_graphs_g2o/solvers/linear_solver_eigen.h>
+#include <vs_graphs_g2o/types/sim3.h>
+#include "configuration/types/types.h"
+#include "scene_understanding/semantic/room/objects/RoomClass.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <set>
+
+#include "scene_understanding/semantic/semantic_verify/private_functions/private_functions.h"
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace semantic
+{
+
+SemanticVerifyStatus checkFixedTransformWalls(
+    const std::vector<VerifyWallObservation> &survivingWalls_in,
+    const std::vector<VerifyWallObservation> &absorbedWalls_in,
+    const g2o::Sim3                          &transform_in,
+    const SemanticVerifyConfig               &configuration_in,
+    std::size_t                              &matchedCount_out,
+    AlignmentCheck                           &alignmentCheck_out)
+{
+    matchedCount_out = 0U;
+    if (survivingWalls_in.size() < 3U || absorbedWalls_in.size() < 3U)
+    {
+        alignmentCheck_out = AlignmentCheck::MISSING;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+
+    const double scale = transform_in.scale();
+    if (!std::isfinite(scale) || scale <= 0.0)
+    {
+        alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+    const Eigen::Matrix3d rotation =
+        transform_in.rotation().toRotationMatrix().cast<double>();
+    const Eigen::Vector3d translation =
+        transform_in.translation().cast<double>();
+    if (!rotation.allFinite() || !translation.allFinite())
+    {
+        alignmentCheck_out = AlignmentCheck::CONTRADICTION;
+        return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+    }
+
+    std::set<std::size_t> usedSurvivingWalls;
+    for (const VerifyWallObservation &absorbedWall : absorbedWalls_in)
+    {
+        const Eigen::Vector3d transformedNormal =
+            rotation * absorbedWall.wallNormal_world;
+        const double transformedOffset =
+            scale * absorbedWall.d - transformedNormal.dot(translation);
+        if (!transformedNormal.allFinite() || !std::isfinite(transformedOffset))
+        {
+            continue;
+        }
+
+        std::size_t bestIndex    = survivingWalls_in.size();
+        double      bestResidual = std::numeric_limits<double>::infinity();
+        for (std::size_t index = 0U; index < survivingWalls_in.size(); ++index)
+        {
+            if (usedSurvivingWalls.count(index) > 0U)
+            {
+                continue;
+            }
+            const VerifyWallObservation &survivingWall =
+                survivingWalls_in[index];
+            const double cosine = std::clamp(
+                transformedNormal.dot(survivingWall.wallNormal_world),
+                -1.0,
+                1.0);
+            const double angle_deg =
+                std::acos(cosine) * 180.0 / std::acos(-1.0);
+            const double offset_m =
+                std::abs(transformedOffset - survivingWall.d);
+            if (angle_deg > configuration_in.maxNormalAngle_deg ||
+                offset_m > configuration_in.maxOffset_m)
+            {
+                continue;
+            }
+            const double residual =
+                angle_deg /
+                    std::max(configuration_in.maxNormalAngle_deg, 1e-9) +
+                offset_m / std::max(configuration_in.maxOffset_m, 1e-9);
+            if (residual < bestResidual)
+            {
+                bestResidual = residual;
+                bestIndex    = index;
+            }
+        }
+        if (bestIndex != survivingWalls_in.size())
+        {
+            usedSurvivingWalls.insert(bestIndex);
+            ++matchedCount_out;
+        }
+    }
+
+    const std::size_t evidenceCount =
+        std::max(survivingWalls_in.size(), absorbedWalls_in.size());
+    const double inlierRatio = static_cast<double>(matchedCount_out) /
+                               static_cast<double>(evidenceCount);
+    alignmentCheck_out =
+        matchedCount_out >= 3U && inlierRatio >= configuration_in.minInlierRatio
+            ? AlignmentCheck::ALIGNED
+            : AlignmentCheck::CONTRADICTION;
+    return SemanticVerifyStatus::SEMANTIC_VERIFY_STATUS_SUCCESS;
+}
+
+} /* namespace semantic */
+} /* namespace core */
+} /* namespace vs_graphs */

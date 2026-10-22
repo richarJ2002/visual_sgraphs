@@ -1,0 +1,20 @@
+# room_tracker module sources.
+set(VS_GRAPHS_SEMANTIC_ROOMTRACKER_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/accumulateDwell.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/applyEvent.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/applyRow.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/commit.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/computeConfidence.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/eventToJSON.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/eventToString.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getConfig.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getEventHistory.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getLastEvent.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getState.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/reset.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/stateToString.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/step.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/eventLiteral.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/formatDouble.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/stateLiteral.cc
+)

@@ -1,0 +1,66 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors:  Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ *              and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            KeyFrameStatusEnum.h
+ *
+ * @brief           Declares the status returned by every KeyFrame operation.
+ */
+
+#ifndef VS_GRAPHS_CORE_SRC_KEYFRAME_OBJECTS_KEYFRAME_STATUS_ENUM_H
+#define VS_GRAPHS_CORE_SRC_KEYFRAME_OBJECTS_KEYFRAME_STATUS_ENUM_H
+
+#include <cstdint>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace keyframe
+{
+
+/*!
+ * @brief           Result of a KeyFrame operation. Values are fixed and never
+ *                  reordered.
+ */
+enum class KeyFrameStatus : std::uint8_t
+{
+    /*!
+     * @brief           The operation completed and every output was written.
+     */
+    KEY_FRAME_STATUS_SUCCESS = 0U,
+
+    /*!
+     * @brief           An input was null, repeated or not finite; the object
+     *                  and the outputs were left unchanged.
+     */
+    KEY_FRAME_STATUS_INVALID_ARGUMENT = 1U,
+
+    /*!
+     * @brief           The key frame has key points but no matched map point,
+     *                  so there is nothing to compute from; the outputs were
+     *                  left unchanged.
+     */
+    KEY_FRAME_STATUS_NO_MAP_POINTS = 2U
+};
+
+} /* namespace keyframe */
+} /* namespace core */
+} /* namespace vs_graphs */
+
+#endif /* VS_GRAPHS_CORE_SRC_KEYFRAME_OBJECTS_KEYFRAME_STATUS_ENUM_H */

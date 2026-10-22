@@ -1,0 +1,31 @@
+# semantic_verify module sources.
+set(VS_GRAPHS_SEMANTIC_SEMANTICVERIFY_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/collectWallObservations.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/configFromSystemParams.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateConsecutiveMergeGate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateMapMergeGate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/evaluateMergeAlignment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mapMergeConfigFromSystemParams.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mergeDecisionName.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mergeReasonName.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/runFloorGate.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/verify.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/angleBetween_rad.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkAnchorRoomCentroids.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkConsecutiveFloors.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkConsecutivePassageTopology.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkConsecutiveWallEdgeOverlap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkFixedTransformWalls.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/checkPassageTopology.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/collectConsecutiveAnchors.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/copyMergeRoomEvidence.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/findByWallId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/fitRotationFromNormals.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/fitTranslation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isFiniteVector.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/passageGeometryIsUsable.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/stableRoomIdentity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/symmetricSupportDistance.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/transformAbsorbedPoint.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/wallSamplesSpanInterval.cc
+)

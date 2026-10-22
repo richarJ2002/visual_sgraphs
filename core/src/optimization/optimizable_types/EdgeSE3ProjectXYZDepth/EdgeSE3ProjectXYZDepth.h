@@ -1,0 +1,13 @@
+/*!
+ * @file            EdgeSE3ProjectXYZDepth.h
+ *
+ * @brief           Public interface of the EdgeSE3ProjectXYZDepth module.
+ */
+
+#ifndef VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGESE3PROJECTXYZDEPTH_EDGESE3PROJECTXYZDEPTH_H
+#define VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGESE3PROJECTXYZDEPTH_EDGESE3PROJECTXYZDEPTH_H
+
+#include "optimization/optimizable_types/EdgeSE3ProjectXYZDepth/objects/EdgeSE3ProjectXYZDepthClass.h"
+
+#endif /* VS_GRAPHS_CORE_SRC_OPTIMIZABLE_TYPES_EDGESE3PROJECTXYZDEPTH_EDGESE3PROJECTXYZDEPTH_H \
+        */

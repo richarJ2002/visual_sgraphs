@@ -1,0 +1,40 @@
+# semantic_canonical_serilization module sources.
+set(VS_GRAPHS_SEMANTIC_SEMANTICCANONICALSERILIZATION_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serializeEvaluationReport.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serializeMapCompletenessResults.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serializeSnapshotFullGeometry.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/serializeSnapshotTopologyOnly.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isAggregateAxiomResultLessTotalOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isFindingLessTotalOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isFloorRecordLessFullGeometry.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isFloorRecordLessTopologyOnly.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isMapCompletenessResultLessTotalOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isMapSnapshotLessTotalOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isOpenPassageHypothesisRecordLessFullGeometry.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isOpenPassageHypothesisRecordLessTopologyOnly.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageRecordLessFullGeometry.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isPassageRecordLessTopologyOnly.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isRoomRecordLessFullGeometry.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isRoomRecordLessTopologyOnly.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isUnresolvedWallHypothesisRecordLessTotalOrder.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isWallRecordLessFullGeometry.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/isWallRecordLessTopologyOnly.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeAggregateAxiomResult.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeDouble.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeEntityKey.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeEntityRef.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeFinding.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeFloorRecord.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeLegacyMapCompletenessResult.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeMapCompletenessResult.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeMapSnapshot.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeOpenPassageHypothesisRecord.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializePassageRecord.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeRawPlaneRef.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeRoomRecord.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeSnapshot.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeUnresolvedWallHypothesisRecord.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeVector3d.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeVector4d.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/serializeWallRecord.cc
+)

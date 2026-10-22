@@ -1,0 +1,20 @@
+# Optimizer object sources: exactly this object's translation units.
+set(VS_GRAPHS_OPTIMIZER_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/bundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/fullInertialBA.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/globalBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/inertialOptimization.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/localBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/localInertialBA.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/loopClosureLocalBundleAdjustment.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/marginalize.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/mergeInertialBA.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/optimizeEssentialGraph.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/optimizeEssentialGraph4DoF.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/optimizeSim3.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/poseInertialOptimizationLastFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/poseInertialOptimizationLastKeyFrame.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/poseOptimization.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/addPoseOnlyObservationEdges.cc
+  ${CMAKE_CURRENT_LIST_DIR}/private_functions/sortByVal.cc
+)

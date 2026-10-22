@@ -1,0 +1,28 @@
+# Floor object sources: exactly this object's translation units.
+set(VS_GRAPHS_SEMANTIC_FLOOR_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/applyTransform.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/clearPlaneIdentity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/detachRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getCentroid.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getName.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOpId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOpIdG.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getPlaneIdentity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getRooms.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/hasPlaneIdentity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/planeIdentitiesMatch.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/replaceRoom.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/selectBestObservedFloor.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setCentroid.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setName.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setOpId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setOpIdG.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setPlaneIdentity.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setRooms.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/transformPlaneIdentity.cc
+)

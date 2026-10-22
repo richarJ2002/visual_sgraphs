@@ -1,0 +1,25 @@
+# Marker object sources: exactly this object's translation units.
+set(VS_GRAPHS_SEMANTIC_MARKER_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/methods/addObservation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/applyTransform.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/eraseObservation.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getGlobalPose.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getLocalPose.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getMarkerType.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getObservations.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOpId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getOpIdG.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/getTime.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/isMarkerInGMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setGlobalPose.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setLocalPose.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setMarkerInGMap.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setMarkerType.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setOpId.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setOpIdG.cc
+  ${CMAKE_CURRENT_LIST_DIR}/methods/setTime.cc
+)

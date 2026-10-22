@@ -1,0 +1,57 @@
+/*!
+ * This file is part of ORB-SLAM3.
+ * Copyright (C) 2014-2021 University of Zaragoza:
+ * Raúl Mur-Artal, Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez,
+ * José M.M. Montiel, and Juan D. Tardós.
+ *
+ * ORB-SLAM3 is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details:
+ * https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            radiusByViewingCos.cc
+ *
+ * @brief           Implements ORBmatcher::radiusByViewingCos(), declared in
+ *                  ORBmatcher.h.
+ */
+
+#include "visual_features/orb_matcher/objects/ORBmatcherClass.h"
+
+#include <limits.h>
+
+#include <opencv2/core/core.hpp>
+
+#include <cstdint>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace orb_matcher
+{
+
+ORBmatcherStatus ORBmatcher::radiusByViewingCos(const float &viewCos,
+                                                float       &radius_out)
+{
+    if (viewCos > 0.998)
+    {
+        radius_out = 2.5;
+        return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
+    }
+    else
+    {
+        radius_out = 4.0;
+        return ORBmatcherStatus::ORBMATCHER_STATUS_SUCCESS;
+    }
+}
+
+} /* namespace orb_matcher */
+} /* namespace core */
+} /* namespace vs_graphs */

@@ -1,0 +1,80 @@
+/*!
+ * This file is part of Visual S-Graphs (vS-Graphs).
+ * Copyright (C) 2023-2025 SnT, University of Luxembourg
+ *
+ * 📝 Authors:  Ali Tourani, Saad Ejaz, Hriday Bavle, Jose Luis Sanchez-Lopez,
+ *              and Holger Voos
+ *
+ * vS-Graphs is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details: https://www.gnu.org/licenses/
+ */
+
+/*!
+ * @file            AtlasCurrentMapStatusEnum.h
+ *
+ * @brief           Declares the truthful status of
+ *                  Atlas::GetCoherentMapView()'s reported current-map id
+ *                  relative to its own reported active map set.
+ */
+
+#ifndef VS_GRAPHS_CORE_SRC_ATLAS_OBJECTS_ATLAS_CURRENT_MAP_STATUS_ENUM_H
+#define VS_GRAPHS_CORE_SRC_ATLAS_OBJECTS_ATLAS_CURRENT_MAP_STATUS_ENUM_H
+
+#include <cstdint>
+
+namespace vs_graphs
+{
+namespace core
+{
+namespace atlas
+{
+
+/*!
+ * @brief           Status of Atlas::GetCoherentMapView()'s reported current-map
+ *                  id relative to the active map vector it returns in the same
+ *                  call.
+ *
+ *                  Atlas::SetMapBad() erases a map from the active set
+ *                  (Atlas::maps) and marks it bad without clearing
+ *                  Atlas::p_activeMap; a later Atlas::ChangeMap() call is what
+ *                  eventually installs a new current map. Between those two
+ *                  calls, a truthful coherent read must be able to report that
+ *                  the current map id names a map genuinely absent from the
+ *                  active set, rather than silently claiming an invariant that
+ *                  does not hold at that instant.
+ */
+enum class AtlasCurrentMapStatus : std::uint8_t
+{
+    /*!
+     * @brief           Atlas::p_activeMap was nullptr at the moment of the
+     *                  read.
+     */
+    NO_CURRENT_MAP = 0U,
+
+    /*!
+     * @brief           Atlas::p_activeMap was non-null and present in the
+     *                  returned active map vector.
+     */
+    CURRENT_MAP_ACTIVE = 1U,
+
+    /*!
+     * @brief           Atlas::p_activeMap was non-null but absent from the
+     *                  returned active map vector -- reachable via
+     *                  Atlas::SetMapBad(currentMap) followed by no
+     *                  Atlas::ChangeMap() call yet.
+     */
+    CURRENT_MAP_NOT_ACTIVE = 2U
+};
+
+} /* namespace atlas */
+} /* namespace core */
+} /* namespace vs_graphs */
+
+#endif /* VS_GRAPHS_CORE_SRC_ATLAS_OBJECTS_ATLAS_CURRENT_MAP_STATUS_ENUM_H */
