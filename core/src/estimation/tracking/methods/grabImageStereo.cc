@@ -168,11 +168,6 @@ TrackingStatus
     currentFrame.fileName  = filename_in;
     currentFrame.datasetId = numDataset;
 
-#ifdef REGISTER_TIMES
-    orbExtractionTimes_ms.push_back(currentFrame.orbExtractionTime);
-    stereoMatchTimes_ms.push_back(currentFrame.stereoMatchTime);
-#endif
-
     if (track() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),

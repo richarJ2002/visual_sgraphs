@@ -44,6 +44,8 @@
 #include <iostream>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -53,6 +55,7 @@ namespace tracking
 
 TrackingStatus Tracking::trackReferenceKeyFrame(bool &isTracked_out)
 {
+    PROFILE_FUNCTION();
     /* Compute Bag of Words vector */
     if (currentFrame.computeBagOfWords() != frame::FrameStatus::FRAME_STATUS_SUCCESS)
     {

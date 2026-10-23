@@ -34,6 +34,8 @@
 #include <cmath>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -41,6 +43,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::mergeOverlappingPassages(void)
 {
+    PROFILE_FUNCTION();
     geometric::Plane *p_groundPlane = nullptr;
     if (p_atlas->getBiggestGroundPlane(p_groundPlane) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)

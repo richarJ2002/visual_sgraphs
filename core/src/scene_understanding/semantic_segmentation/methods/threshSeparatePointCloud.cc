@@ -26,6 +26,8 @@
 
 #include "scene_understanding/semantic_segmentation/objects/SemanticSegmentationClass.h"
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -39,6 +41,7 @@ SemanticSegmentationStatus SemanticSegmentation::threshSeparatePointCloud(
     std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> &p_clsCloudPtrs_out,
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_thisKeyFramePointCloud_in)
 {
+    PROFILE_FUNCTION();
     /* Extract parameters on thresholds */
     const uint8_t confidenceThreshold =
         static_cast<uint8_t>(p_sysParams->semSeg.confThresh * 255);

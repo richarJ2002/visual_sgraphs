@@ -70,6 +70,8 @@
 #include <rclcpp/logging.hpp>
 #include <thread>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -80,6 +82,7 @@ namespace loop_closing
 LoopClosingStatus
     LoopClosing::mergeLocal(semantic::SemanticMergeDecision &local_out)
 {
+    PROFILE_FUNCTION();
     /* ---------------------------------------------------------------------- *
      * SECTION 1 - INITIALISATION
      *

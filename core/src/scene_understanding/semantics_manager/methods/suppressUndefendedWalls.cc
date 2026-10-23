@@ -47,6 +47,8 @@
 #include <rclcpp/logging.hpp>
 #include <unordered_set>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -54,6 +56,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::suppressUndefendedWalls(void)
 {
+    PROFILE_FUNCTION();
     map::Map *p_currentMap = nullptr;
     if (p_atlas->getCurrentMap(p_currentMap) !=
         atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)

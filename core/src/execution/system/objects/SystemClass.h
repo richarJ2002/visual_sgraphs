@@ -1833,12 +1833,6 @@ class System
         const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
             &skeletonEdges_world_m_in);
 
-#ifdef REGISTER_TIMES
-    [[nodiscard]] SystemStatus insertRectTime(double &time_inout);
-    [[nodiscard]] SystemStatus insertResizeTime(double &time_inout);
-    [[nodiscard]] SystemStatus insertTrackTime(double &time_inout);
-#endif
-
   private:
     /*!
      * @brief           Sensor type. Indicates the camera/IMU configuration used

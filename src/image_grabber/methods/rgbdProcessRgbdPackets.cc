@@ -41,26 +41,14 @@ namespace vs_graphs::image_grabber
 
 void RgbdImageGrabber::processRgbdPackets()
 {
-    constexpr std::chrono::seconds        summaryPeriod{10};
-    std::chrono::steady_clock::time_point nextSummaryDeadline =
-        std::chrono::steady_clock::now() + summaryPeriod;
-
     while (true)
     {
-        if (std::chrono::steady_clock::now() >= nextSummaryDeadline)
-        {
-            logRgbdObservabilitySummary("periodic");
-            nextSummaryDeadline =
-                std::chrono::steady_clock::now() + summaryPeriod;
-        }
-
         RgbdPacket rgbdPacket;
 
         {
             std::unique_lock<std::mutex> packetLock(rgbdPacketMutex);
-            const bool packetOrStopReady = rgbdPacketCondition.wait_until(
+            rgbdPacketCondition.wait(
                 packetLock,
-                nextSummaryDeadline,
                 [this]() { return stopRequested || hasPendingRgbdPacket; });
 
             if (stopRequested)
@@ -76,23 +64,11 @@ void RgbdImageGrabber::processRgbdPackets()
                 break;
             }
 
-            if (!packetOrStopReady)
-            {
-                packetLock.unlock();
-                logRgbdObservabilitySummary("periodic");
-                nextSummaryDeadline =
-                    std::chrono::steady_clock::now() + summaryPeriod;
-                continue;
-            }
-
             rgbdPacket           = std::move(latestRgbdPacket);
             hasPendingRgbdPacket = false;
         }
 
-        const std::chrono::steady_clock::time_point workerStartTime =
-            std::chrono::steady_clock::now();
-        rgbdObservability.recordWorkerStart(rgbdPacket.callbackArrival,
-                                            workerStartTime);
+        rgbdObservability.recordWorkerStart();
         publishRgbdFrontendHealth();
 
         const double rgbTimestamp_seconds =
@@ -101,8 +77,6 @@ void RgbdImageGrabber::processRgbdPackets()
         cv_bridge::CvImageConstPtr p_depthImage;
         cv_bridge::CvImageConstPtr p_rgbImage;
 
-        const std::chrono::steady_clock::time_point imageConversionStart =
-            std::chrono::steady_clock::now();
         try
         {
             p_depthImage = cv_bridge::toCvShare(rgbdPacket.p_depthImageMessage);
@@ -120,15 +94,10 @@ void RgbdImageGrabber::processRgbdPackets()
                 exception.what());
             continue;
         }
-        rgbdObservability.recordImageConversion(
-            imageConversionStart,
-            std::chrono::steady_clock::now());
 
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr        p_pointCloud;
         sensor_msgs::msg::PointCloud2::ConstSharedPtr p_pointCloudCameraMessage;
         std::string                                   cloudFailureReason;
-        const std::chrono::steady_clock::time_point   cloudPreparationStart =
-            std::chrono::steady_clock::now();
         if (!vs_graphs::common::preparePointCloudForTracking(
                 rgbdPacket.p_pointCloudMessage,
                 directGazeboFluCloud,
@@ -145,25 +114,14 @@ void RgbdImageGrabber::processRgbdPackets()
                                  cloudFailureReason.c_str());
             continue;
         }
-        rgbdObservability.recordCloudPreparation(
-            cloudPreparationStart,
-            std::chrono::steady_clock::now());
 
-        const std::chrono::steady_clock::time_point markerAssociationStart =
-            std::chrono::steady_clock::now();
         std::pair<double, std::vector<vs_graphs::core::semantic::Marker *>>
             nearestMarker =
                 vs_graphs::common::findNearestMarker(rgbTimestamp_seconds);
         const double markerTimeDifference_seconds = nearestMarker.first;
         std::vector<vs_graphs::core::semantic::Marker *> matchedMarkers =
             std::move(nearestMarker.second);
-        rgbdObservability.recordMarkerAssociation(
-            markerAssociationStart,
-            std::chrono::steady_clock::now());
 
-        rgbdObservability.recordTrackCall();
-        const std::chrono::steady_clock::time_point trackStart =
-            std::chrono::steady_clock::now();
         try
         {
             if (markerTimeDifference_seconds < 0.05)
@@ -212,13 +170,8 @@ void RgbdImageGrabber::processRgbdPackets()
         {
             rgbdObservability.recordTrackFailure();
             publishRgbdFrontendHealth();
-            logRgbdObservabilitySummary("track_exception");
             throw;
         }
-        const std::chrono::steady_clock::time_point trackEnd =
-            std::chrono::steady_clock::now();
-        rgbdObservability.recordTrackDuration(trackStart, trackEnd);
-        rgbdObservability.recordTrackCompletion();
         if (markerTimeDifference_seconds < 0.05)
         {
             vs_graphs::common::markersBuffer.clear();
@@ -246,40 +199,21 @@ void RgbdImageGrabber::processRgbdPackets()
 
         const rclcpp::Time messageTimestamp =
             rgbdPacket.p_rgbImageMessage->header.stamp;
-        const std::chrono::steady_clock::time_point publishStart =
-            std::chrono::steady_clock::now();
-        vs_graphs::observability::PublishTopicsTimingSink timingSink =
-            rgbdObservability.publishTopicsTimingSink();
         try
         {
             vs_graphs::common::publishTopics(messageTimestamp,
                                              Eigen::Vector3f::Zero(),
-                                             p_pointCloudCameraMessage,
-                                             &timingSink,
-                                             true);
+                                             p_pointCloudCameraMessage);
         }
         catch (...)
         {
-            const std::chrono::steady_clock::time_point publishEnd =
-                std::chrono::steady_clock::now();
-            rgbdObservability.recordPublishTopics(publishStart, publishEnd);
             rgbdObservability.recordPublishTopicsFailure();
             publishRgbdFrontendHealth();
             throw;
         }
-        rgbdObservability.recordPublishTopics(publishStart,
-                                              std::chrono::steady_clock::now());
-        rgbdObservability.recordProcessed(rgbdPacket.sensorTimestampNanoseconds,
-                                          workerStartTime,
-                                          std::chrono::steady_clock::now());
+        rgbdObservability.recordProcessed(
+            rgbdPacket.sensorTimestampNanoseconds);
         publishRgbdFrontendHealth();
-
-        if (std::chrono::steady_clock::now() >= nextSummaryDeadline)
-        {
-            logRgbdObservabilitySummary("periodic");
-            nextSummaryDeadline =
-                std::chrono::steady_clock::now() + summaryPeriod;
-        }
     }
 }
 

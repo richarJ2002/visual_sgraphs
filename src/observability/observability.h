@@ -13,10 +13,6 @@
 /* Object Include */
 #include "objects/ObservabilityClass.h"
 #include "objects/ObservabilitySnapshotStruct.h"
-#include "objects/PublishTopicEnum.h"
-#include "objects/PublishTopicTimingCallbackAlias.h"
-#include "objects/PublishTopicsTimingSinkStruct.h"
-#include "observability/public_functions/public_functions.h"
 
 /* Data include */
 /* None */

@@ -39,6 +39,8 @@
 #include "scene_understanding/semantic/semantic_verify/semantic_verify.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -47,6 +49,7 @@ namespace core
 SemanticsManagerStatus SemanticsManager::evaluateTopCandidateVerification(
     const std::vector<semantic::SemanticCandidate> &candidates_in)
 {
+    PROFILE_FUNCTION();
     if (candidates_in.empty())
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

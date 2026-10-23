@@ -44,6 +44,8 @@
 #include "execution/system/system.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -53,6 +55,7 @@ namespace tracking
 
 TrackingStatus Tracking::trackWithMotionModel(bool &isTracked_out)
 {
+    PROFILE_FUNCTION();
     orb_matcher::ORBmatcher matcher(0.9, true);
 
     /*!

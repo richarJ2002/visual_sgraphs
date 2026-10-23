@@ -47,6 +47,8 @@
 #include "estimation/tracking/tracking.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -56,6 +58,7 @@ namespace local_mapping
 
 LocalMappingStatus LocalMapping::createNewMapPoints()
 {
+    PROFILE_FUNCTION();
     /* Retrieve neighbor keyframes in covisibility graph */
     int neighborKeyFrameCount = 10;
     /* For stereo inertial case */

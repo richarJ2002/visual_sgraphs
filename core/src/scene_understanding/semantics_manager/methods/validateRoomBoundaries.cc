@@ -40,6 +40,8 @@
 #include <numeric>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -47,6 +49,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::validateRoomBoundaries(void)
 {
+    PROFILE_FUNCTION();
     std::cout << "[SemMgr] validateRoomBoundaries() called" << std::endl;
 
     const types::SystemParams::RoomSeg::BoundaryTopology &topologyParameters =

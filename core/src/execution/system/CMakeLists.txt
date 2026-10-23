@@ -32,9 +32,6 @@ set(VS_GRAPHS_SYSTEM_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/methods/haveWorkersFinished.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/incrementSegmentationPublishedCount.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/initialize.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/insertRectTime.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/insertResizeTime.cc
-  ${CMAKE_CURRENT_LIST_DIR}/methods/insertTrackTime.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isFinished.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isImuPreintegrated.cc
   ${CMAKE_CURRENT_LIST_DIR}/methods/isLost.cc

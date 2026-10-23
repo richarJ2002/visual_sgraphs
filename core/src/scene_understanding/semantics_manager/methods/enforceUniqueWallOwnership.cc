@@ -44,6 +44,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -51,6 +53,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::enforceUniqueWallOwnership(void)
 {
+    PROFILE_FUNCTION();
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
     if (p_atlas->getAllRooms(allRooms) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {

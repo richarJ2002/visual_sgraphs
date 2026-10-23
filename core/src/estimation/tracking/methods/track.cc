@@ -59,6 +59,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -68,6 +70,7 @@ namespace tracking
 
 TrackingStatus Tracking::track()
 {
+    PROFILE_FUNCTION();
     if (isStepByStepMode)
     {
         std::cout << "Waiting for the next step in Tracking ..." << std::endl;
@@ -271,10 +274,6 @@ TrackingStatus Tracking::track()
          sensor == system::System::IMU_RGBD) &&
         !hasCreatedMap)
     {
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartPreImu =
-            std::chrono::steady_clock::now();
-#endif
         if (preintegrateIMU() != TrackingStatus::TRACKING_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -282,16 +281,6 @@ TrackingStatus Tracking::track()
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndPreImu =
-            std::chrono::steady_clock::now();
-
-        double timePreImu = std::chrono::duration_cast<
-                                std::chrono::duration<double, std::milli>>(
-                                timeEndPreImu - timeStartPreImu)
-                                .count();
-        imuIntegrationTimes_ms.push_back(timePreImu);
-#endif
     }
     hasCreatedMap = false;
 
@@ -384,11 +373,6 @@ TrackingStatus Tracking::track()
     {
         /* system::System is initialized. Track frame::Frame. */
         bool isOk = false;
-
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartPosePred =
-            std::chrono::steady_clock::now();
-#endif
 
         /*!
          * Initial camera pose estimation using motion model or relocalization
@@ -897,21 +881,6 @@ TrackingStatus Tracking::track()
         if (!currentFrame.p_referenceKeyFrame)
             currentFrame.p_referenceKeyFrame = p_referenceKF;
 
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndPosePred =
-            std::chrono::steady_clock::now();
-
-        double timePosePred = std::chrono::duration_cast<
-                                  std::chrono::duration<double, std::milli>>(
-                                  timeEndPosePred - timeStartPosePred)
-                                  .count();
-        posePredictionTimes_ms.push_back(timePosePred);
-#endif
-
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartLmTrack =
-            std::chrono::steady_clock::now();
-#endif
         /*!
          * If we have an initial estimation of the camera pose and matching.
          * Track the local map.
@@ -1015,17 +984,6 @@ TrackingStatus Tracking::track()
                     lastBias = currentFrame.imuBias;
             }
         }
-
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndLmTrack =
-            std::chrono::steady_clock::now();
-
-        double timeLmTrack = std::chrono::duration_cast<
-                                 std::chrono::duration<double, std::milli>>(
-                                 timeEndLmTrack - timeStartLmTrack)
-                                 .count();
-        localMapTrackTimes_ms.push_back(timeLmTrack);
-#endif
 
         /* Update drawer */
         if (p_frameDrawer->update(this) !=
@@ -1185,10 +1143,6 @@ TrackingStatus Tracking::track()
             }
             temporalMapPoints.clear();
 
-#ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point timeStartNewKeyFrame =
-                std::chrono::steady_clock::now();
-#endif
             bool isNeedKeyFrame{};
             if (needNewKeyFrame(isNeedKeyFrame) !=
                 TrackingStatus::TRACKING_STATUS_SUCCESS)
@@ -1218,18 +1172,6 @@ TrackingStatus Tracking::track()
                         __func__);
                 }
             }
-
-#ifdef REGISTER_TIMES
-            std::chrono::steady_clock::time_point timeEndNewKeyFrame =
-                std::chrono::steady_clock::now();
-
-            double timeNewKeyFrame =
-                std::chrono::duration_cast<
-                    std::chrono::duration<double, std::milli>>(
-                    timeEndNewKeyFrame - timeStartNewKeyFrame)
-                    .count();
-            newKeyFrameTimes_ms.push_back(timeNewKeyFrame);
-#endif
 
             /*!
              * We allow points with high innovation (considererd outliers by the

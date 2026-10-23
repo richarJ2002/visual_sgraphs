@@ -167,6 +167,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   ${VS_GRAPHS_MISSIONHEALTHTOPOLOGYJSON_SOURCES}
   ${VS_GRAPHS_TRACKING_SOURCES}
   ${VS_GRAPHS_RESETCAUSE_SOURCES}
+  ${VS_GRAPHS_PROFILING_SOURCES}
   ${VS_GRAPHS_LOCALMAPPING_SOURCES}
   ${VS_GRAPHS_LOOPCLOSING_SOURCES}
   ${VS_GRAPHS_ORBEXTRACTOR_SOURCES}
@@ -418,6 +419,19 @@ if(BUILD_TESTING)
   )
   target_compile_options(test_keepFirstPointPerVoxel PRIVATE
     ${VS_GRAPHS_STRICT_WARNINGS})
+
+  # The timer registry compiles to nothing without the timers flag, so its
+  # test defines the flag for itself whatever the build variant.
+  ament_add_gtest(test_timerRegistryWriteReport
+    tests/core/execution/profiling/writeReport.cc
+    ${VS_GRAPHS_PROFILING_SOURCES}
+  )
+  target_compile_definitions(test_timerRegistryWriteReport PRIVATE
+    VS_GRAPHS_BUILT_TIMERS
+    VS_GRAPHS_SOURCE_ROOT="${PROJECT_SOURCE_DIR}")
+  target_compile_options(test_timerRegistryWriteReport PRIVATE
+    ${VS_GRAPHS_STRICT_WARNINGS})
+  ament_target_dependencies(test_timerRegistryWriteReport rclcpp)
 endif()
 
 

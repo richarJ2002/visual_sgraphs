@@ -37,6 +37,8 @@
 #include <algorithm>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -44,6 +46,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::associateAllWallsToRooms(void)
 {
+    PROFILE_FUNCTION();
     /*!
      * A wall must be observed from several keyframes before it is inserted into
      * the higher-level semantic hierarchy.

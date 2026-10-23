@@ -40,6 +40,8 @@
 #include "estimation/tracking/objects/TrackingClass.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -49,6 +51,7 @@ namespace tracking
 
 TrackingStatus Tracking::createMapInAtlas()
 {
+    PROFILE_FUNCTION();
     lastInitFrameId = currentFrame.id;
     if (p_atlas->createNewMap() != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)
     {

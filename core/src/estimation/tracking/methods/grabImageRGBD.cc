@@ -41,6 +41,8 @@
 #include "scene_understanding/semantic/marker/marker.h"
 #include "execution/system/system.h"
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -57,6 +59,7 @@ TrackingStatus Tracking::grabImageRGBD(
     const std::vector<semantic::Marker *>         markers_in,
     Sophus::SE3f                                 &cameraPose_out)
 {
+    PROFILE_FUNCTION();
     /* Adaptive FAST threshold: adjust before feature extraction */
     if (adjustFASTThreshold() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {
@@ -125,10 +128,6 @@ TrackingStatus Tracking::grabImageRGBD(
 
     currentFrame.fileName  = filename_in;
     currentFrame.datasetId = numDataset;
-
-#ifdef REGISTER_TIMES
-    orbExtractionTimes_ms.push_back(currentFrame.orbExtractionTime);
-#endif
 
     if (track() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {

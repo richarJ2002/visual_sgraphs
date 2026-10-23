@@ -31,8 +31,10 @@
  */
 
 #include "common/common.h"
+
+#include "execution/profiling/profiling.h"
+
 #include "image_grabber/image_grabber.h"
-#include "observability/observability.h"
 
 #include <condition_variable>
 #include <rclcpp/logging.hpp>
@@ -373,10 +375,10 @@ int main(int argc, char **argv)
     executor.add_node(node);
     executor.add_node(igb);
     executor.spin();
+    PROFILE_WRITE_REPORT(vs_graphs::common::sgraphArchiveTestRunDir);
 
     igb->requestStop();
     rgbdProcessingThread.join();
-    igb->logRgbdObservabilitySummary("shutdown_after_worker_join");
     if (vs_graphs::common::p_slamSystem->shutdown() !=
         vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
     {

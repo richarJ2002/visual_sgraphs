@@ -145,10 +145,6 @@ TrackingStatus Tracking::grabImageMonocular(
     currentFrame.fileName  = filename_in;
     currentFrame.datasetId = numDataset;
 
-#ifdef REGISTER_TIMES
-    orbExtractionTimes_ms.push_back(currentFrame.orbExtractionTime);
-#endif
-
     lastId = currentFrame.id;
     if (track() != TrackingStatus::TRACKING_STATUS_SUCCESS)
     {

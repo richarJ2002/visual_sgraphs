@@ -41,6 +41,8 @@
 #include "map_state/map_point/objects/MapPointStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -50,6 +52,7 @@ namespace local_mapping
 
 LocalMappingStatus LocalMapping::keyFrameCulling()
 {
+    PROFILE_FUNCTION();
     /*!
      * Check redundant keyframes (only local keyframes)
      * A keyframe is considered redundant if the 90% of the MapPoints it sees,

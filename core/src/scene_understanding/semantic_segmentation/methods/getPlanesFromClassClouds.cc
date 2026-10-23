@@ -31,6 +31,8 @@
 #include <pcl/point_cloud.h>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -44,6 +46,7 @@ SemanticSegmentationStatus SemanticSegmentation::getPlanesFromClassClouds(
         std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, Eigen::Vector4d>>>
         &planesFromClassClouds_out)
 {
+    PROFILE_FUNCTION();
     /*!
      * We have a vector, where each element in the vector represents a class.
      * Then, for each class we have a vector of pairs. These pairs store

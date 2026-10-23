@@ -46,6 +46,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -64,6 +66,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                     &nonCorrectedMapPoints_in,
     const g2o::Sim3 &mergeTransform_mergeWorldToCurrentWorld_in)
 {
+    PROFILE_FUNCTION();
     /* Variables */
     g2o::SparseOptimizer optimizer;
     optimizer.setVerbose(false);
@@ -912,6 +915,7 @@ OptimizerStatus Optimizer::optimizeEssentialGraph(
                &loopConnections_in,
     const bool &isScaleFixed_in)
 {
+    PROFILE_FUNCTION();
     /* Setup optimizer */
     g2o::SparseOptimizer optimizer;
     optimizer.setVerbose(false);

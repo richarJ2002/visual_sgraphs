@@ -31,6 +31,9 @@
  */
 
 #include "common/common.h"
+
+#include "execution/profiling/profiling.h"
+
 #include "image_grabber/image_grabber.h"
 #include "imu_grabber/imu_grabber.h"
 #include "execution/reset_cause/reset_cause.h"
@@ -349,6 +352,7 @@ int main(int argc, char **argv)
     executor.add_node(imugb);
     executor.add_node(igb);
     executor.spin();
+    PROFILE_WRITE_REPORT(vs_graphs::common::sgraphArchiveTestRunDir);
 
     /* Signal the sync thread to stop and wait for it */
     igb->mustStop = true;

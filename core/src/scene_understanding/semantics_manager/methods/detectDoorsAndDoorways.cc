@@ -37,6 +37,8 @@
 #include <cmath>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -45,6 +47,7 @@ namespace core
 SemanticsManagerStatus
     SemanticsManager::detectDoorsAndDoorways(atlas::Atlas *p_atlas_in)
 {
+    PROFILE_FUNCTION();
     /* Confirm that the Atlas is valid */
     if (p_atlas_in == nullptr)
     {

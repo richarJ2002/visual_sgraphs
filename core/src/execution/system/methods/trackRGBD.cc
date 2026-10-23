@@ -46,6 +46,8 @@
 #include <opencv2/imgproc.hpp>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -63,6 +65,7 @@ SystemStatus System::trackRGBD(
     std::string                                   filename_in,
     const std::vector<semantic::Marker *>         markers_in)
 {
+    PROFILE_FUNCTION();
     /* Check if the sensor is correctly set as RGB-D */
     if (sensor != RGBD && sensor != IMU_RGBD)
     {
@@ -180,16 +183,11 @@ SystemStatus System::trackRGBD(
 
     /* Feed the real per-frame tracking state to SemanticsManager's reset
      * anchor (lastKnownRoomId via onTrackingLost()/onTrackingRecovered()).
-     * Previously the ONLY caller of these was GetMissionHealthSnapshot(),
-     * itself only invoked from the get_mission_health ROS service -- which
-     * nothing calls unless scripts/sim_lockstep_controller.py's opt-in
-     * --lockstep mode is running. Every run without --lockstep therefore
-     * left lastKnownRoomId at its unset default (-1) for the whole
-     * mission: SemanticCandidates::generate() silently fell back to
-     * unanchored scoring on every single reset, never told which room the
-     * UAV was actually in when tracking was lost. This is the same
-     * TrackRGBD() call every real frame already goes through, so it fires
-     * at real tracking-loss/recovery cadence instead of only on-demand. */
+     * GetMissionHealthSnapshot() also calls these, but only when the
+     * get_mission_health service is queried, which a normal run does not
+     * do; without this per-frame call lastKnownRoomId would stay at its
+     * unset default (-1) and SemanticCandidates::generate() would fall back
+     * to unanchored scoring on every reset. */
     if (p_semanticsManager != nullptr)
     {
         if (trackingState == tracking::Tracking::LOST)

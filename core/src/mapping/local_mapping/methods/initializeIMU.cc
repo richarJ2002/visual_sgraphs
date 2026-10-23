@@ -51,6 +51,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -62,6 +64,7 @@ LocalMappingStatus LocalMapping::initializeIMU(float gyroPriorWeight_in,
                                                float accelPriorWeight_in,
                                                bool  shouldRunFullInertialBa_in)
 {
+    PROFILE_FUNCTION();
     if (isResetRequested)
         return LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS;
 

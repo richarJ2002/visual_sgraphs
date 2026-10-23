@@ -42,6 +42,8 @@
 #include "execution/system/system.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -51,6 +53,7 @@ namespace tracking
 
 TrackingStatus Tracking::trackLocalMap(bool &isTracked_out)
 {
+    PROFILE_FUNCTION();
 
     /*!
      * We have an estimation of the camera pose and some map points tracked in

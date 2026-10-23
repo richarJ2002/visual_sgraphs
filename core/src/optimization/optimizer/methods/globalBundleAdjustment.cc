@@ -40,6 +40,8 @@
 #include "scene_understanding/semantic/room/room.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -55,6 +57,7 @@ OptimizerStatus Optimizer::globalBundleAdjustment(
     const bool              useRobustKernel_in,
     const std::atomic_bool *p_stopRequested_in)
 {
+    PROFILE_FUNCTION();
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
     if (p_map_in->getAllRooms(allRooms) != map::MapStatus::MAP_STATUS_SUCCESS)
     {

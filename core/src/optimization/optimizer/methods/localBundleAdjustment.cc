@@ -61,6 +61,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -77,6 +79,7 @@ OptimizerStatus Optimizer::localBundleAdjustment(
     int                                 &mapPointCount_out,
     int                                 &edgeCount_out)
 {
+    PROFILE_FUNCTION();
     /* System parameters */
     vs_graphs::core::types::SystemParams *p_sysParams = nullptr;
     if (vs_graphs::core::types::SystemParams::getParams(p_sysParams) !=

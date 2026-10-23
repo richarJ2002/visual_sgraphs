@@ -46,8 +46,6 @@
 
 #include "sparse/sparse.h"
 
-#include "observability/observability.h"
-
 #include <opencv2/imgcodecs.hpp>
 
 #include <chrono>
@@ -59,6 +57,8 @@
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "execution/profiling/profiling.h"
 
 /* -------------------------------------------------------------------------- *
  * ORB-SLAM3 STATE
@@ -513,6 +513,7 @@ void addSegmentationToSystem(
     const segmenter_ros::msg::SegmenterDataMsg &msgSegImage_in,
     const rclcpp::Logger                       &logger_in)
 {
+    PROFILE_FUNCTION();
     cv_bridge::CvImageConstPtr cv_imgSeg;
     const uint64_t             keyFrameId = msgSegImage_in.key_frame_id.data;
     try
@@ -3422,6 +3423,7 @@ void maybeArchiveSGraph(
     const std::vector<vs_graphs::core::semantic::Passage *> &mappedPassages_in,
     const rclcpp::Time                                      &msgTime_s_in)
 {
+    PROFILE_FUNCTION();
     static double        lastArchiveTime_s = -1.0e100;
     static std::uint64_t captureCycle      = 0U;
     static bool          warnedMissingDir  = false;
@@ -5538,22 +5540,7 @@ void publishKeyFrameMarkers(
 void publishPlanes(
     const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
     const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
-    const rclcpp::Time                                     &msgTime_s_in,
-    vs_graphs::observability::PublishTopicsTimingSink      *p_timingSink_in);
-
-void publishPlanes(
-    const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
-    const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
     const rclcpp::Time                                     &msgTime_s_in)
-{
-    publishPlanes(mappedPlanes_in, mappedRooms_in, msgTime_s_in, nullptr);
-}
-
-void publishPlanes(
-    const std::vector<vs_graphs::core::geometric::Plane *> &mappedPlanes_in,
-    const std::vector<vs_graphs::core::semantic::Room *>   &mappedRooms_in,
-    const rclcpp::Time                                     &msgTime_s_in,
-    vs_graphs::observability::PublishTopicsTimingSink      *p_timingSink_in)
 {
     /* Return when neither required publisher has been initialised */
     if (pubBuildingComponents == nullptr && pubPlaneLabel == nullptr)
@@ -5582,9 +5569,6 @@ void publishPlanes(
     }
 
     lastPlanePublishTime = msgTime_s_in;
-
-    const std::chrono::steady_clock::time_point planePublishStart =
-        std::chrono::steady_clock::now();
 
     /* Initialise the combined building-component point cloud */
     pcl::PointCloud<pcl::PointXYZRGB> buildingComponentPointCloud_BC;
@@ -6284,23 +6268,6 @@ void publishPlanes(
     {
         pubPlaneLabel->publish(planeVisualizationArray);
     }
-
-    if (p_timingSink_in != nullptr && p_timingSink_in->callback != nullptr)
-    {
-        try
-        {
-            p_timingSink_in->callback(
-                p_timingSink_in->p_context,
-                vs_graphs::observability::PublishTopic::PLANES,
-                true,
-                planePublishStart,
-                std::chrono::steady_clock::now());
-        }
-        catch (...)
-        {
-            /* Timing is diagnostic only and must never affect publication. */
-        }
-    }
 }
 
 void publishSegmentedCloud(
@@ -6854,74 +6821,7 @@ void publishTopics(const rclcpp::Time    &msgTime_s_in,
                    const sensor_msgs::msg::PointCloud2::ConstSharedPtr
                        &pointCloud_cameraMessage_in)
 {
-    publishTopics(msgTime_s_in,
-                  angularVelocity_body_radps_in,
-                  pointCloud_cameraMessage_in,
-                  nullptr);
-}
-
-void publishTopics(
-    const rclcpp::Time    &msgTime_s_in,
-    const Eigen::Vector3f &angularVelocity_body_radps_in,
-    const sensor_msgs::msg::PointCloud2::ConstSharedPtr
-        &pointCloud_cameraMessage_in,
-    vs_graphs::observability::PublishTopicsTimingSink *p_timingSink_in,
-    const bool                                         publishAllPoints_in)
-{
-    const auto notifyTiming =
-        [p_timingSink_in](const vs_graphs::observability::PublishTopic topic_in,
-                          const bool isActualExecution_in,
-                          const std::chrono::steady_clock::time_point start_in,
-                          const std::chrono::steady_clock::time_point end_in)
-    {
-        if (p_timingSink_in == nullptr || p_timingSink_in->callback == nullptr)
-        {
-            return;
-        }
-        try
-        {
-            p_timingSink_in->callback(p_timingSink_in->p_context,
-                                      topic_in,
-                                      isActualExecution_in,
-                                      start_in,
-                                      end_in);
-        }
-        catch (...)
-        {
-            /* Timing is best-effort and must not alter publisher behaviour. */
-        }
-    };
-
-    const auto publishTimed =
-        [p_timingSink_in,
-         &notifyTiming](const vs_graphs::observability::PublishTopic topic_in,
-                        const auto &publishFunction_in)
-    {
-        if (p_timingSink_in == nullptr || p_timingSink_in->callback == nullptr)
-        {
-            publishFunction_in();
-            return;
-        }
-
-        const std::chrono::steady_clock::time_point startTime =
-            std::chrono::steady_clock::now();
-        try
-        {
-            publishFunction_in();
-        }
-        catch (...)
-        {
-            notifyTiming(topic_in,
-                         true,
-                         startTime,
-                         std::chrono::steady_clock::now());
-            throw;
-        }
-        notifyTiming(topic_in,
-                     true,
-                     startTime,
-                     std::chrono::steady_clock::now());
-    };
+    PROFILE_FUNCTION();
     /* Confirm that the SLAM system has been initialised */
     if (p_slamSystem == nullptr)
     {
@@ -7140,8 +7040,7 @@ void publishTopics(
      * Publish mapped walls independently of the point-cloud visualisation
      * setting because they are consumed by GNN-based room detection.
      */
-    publishTimed(vs_graphs::observability::PublishTopic::ALL_MAPPED_WALLS,
-                 [&]() { publishAllMappedWalls(mappedPlanes, msgTime_s_in); });
+    publishAllMappedWalls(mappedPlanes, msgTime_s_in);
 
     /*!
      * Publish mapped rooms and passages alongside walls so an offline
@@ -7164,86 +7063,43 @@ void publishTopics(
 
     if (pubPointClouds)
     {
-        publishTimed(vs_graphs::observability::PublishTopic::SEGMENTED_CLOUD,
-                     [&]() { publishSegmentedCloud(mappedKeyFrames); });
+        publishSegmentedCloud(mappedKeyFrames);
+        publishPlanes(mappedPlanes, mappedRooms, msgTime_s_in);
 
-        const std::chrono::steady_clock::time_point planeCallStart =
-            p_timingSink_in != nullptr && p_timingSink_in->callback != nullptr
-                ? std::chrono::steady_clock::now()
-                : std::chrono::steady_clock::time_point{};
-        notifyTiming(vs_graphs::observability::PublishTopic::PLANES,
-                     false,
-                     planeCallStart,
-                     planeCallStart);
-        publishPlanes(mappedPlanes, mappedRooms, msgTime_s_in, p_timingSink_in);
+        std::vector<vs_graphs::core::map_point::MapPoint *>
+            slamSystemAllMapPoints{};
+        if (p_slamSystem->getAllMapPoints(slamSystemAllMapPoints) !=
+            vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getAllMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
+        }
+        publishAllPoints(slamSystemAllMapPoints, msgTime_s_in);
 
-        if (publishAllPoints_in)
+        std::vector<vs_graphs::core::map_point::MapPoint *>
+            slamSystemTrackedMapPoints{};
+        if (p_slamSystem->getTrackedMapPoints(slamSystemTrackedMapPoints) !=
+            vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
         {
-            publishTimed(
-                vs_graphs::observability::PublishTopic::ALL_POINTS,
-                [&]()
-                {
-                    std::vector<vs_graphs::core::map_point::MapPoint *>
-                        slamSystemAllMapPoints{};
-                    if (p_slamSystem->getAllMapPoints(slamSystemAllMapPoints) !=
-                        vs_graphs::core::system::SystemStatus::
-                            SYSTEM_STATUS_SUCCESS)
-                    {
-                        RCLCPP_ERROR(
-                            rclcpp::get_logger("vs_graphs"),
-                            "%s: getAllMapPoints returned a failure status "
-                            "although it cannot fail; continuing as before.",
-                            __func__);
-                    }
-                    publishAllPoints(slamSystemAllMapPoints, msgTime_s_in);
-                });
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getTrackedMapPoints returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
-        else
+        publishTrackedPoints(slamSystemTrackedMapPoints, msgTime_s_in);
+
+        std::vector<std::vector<Eigen::Vector3d>> slamSystemSkeletonCluster{};
+        if (p_slamSystem->getSkeletonCluster(slamSystemSkeletonCluster) !=
+            vs_graphs::core::system::SystemStatus::SYSTEM_STATUS_SUCCESS)
         {
-            notifyTiming(vs_graphs::observability::PublishTopic::ALL_POINTS,
-                         false,
-                         std::chrono::steady_clock::time_point{},
-                         std::chrono::steady_clock::time_point{});
+            RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                         "%s: getSkeletonCluster returned a failure status "
+                         "although it cannot fail; continuing as before.",
+                         __func__);
         }
-        publishTimed(
-            vs_graphs::observability::PublishTopic::TRACKED_POINTS,
-            [&]()
-            {
-                std::vector<vs_graphs::core::map_point::MapPoint *>
-                    slamSystemTrackedMapPoints{};
-                if (p_slamSystem->getTrackedMapPoints(
-                        slamSystemTrackedMapPoints) !=
-                    vs_graphs::core::system::SystemStatus::
-                        SYSTEM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getTrackedMapPoints returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                publishTrackedPoints(slamSystemTrackedMapPoints, msgTime_s_in);
-            });
-        publishTimed(
-            vs_graphs::observability::PublishTopic::FREE_SPACE_CLUSTERS,
-            [&]()
-            {
-                std::vector<std::vector<Eigen::Vector3d>>
-                    slamSystemSkeletonCluster{};
-                if (p_slamSystem->getSkeletonCluster(
-                        slamSystemSkeletonCluster) !=
-                    vs_graphs::core::system::SystemStatus::
-                        SYSTEM_STATUS_SUCCESS)
-                {
-                    RCLCPP_ERROR(
-                        rclcpp::get_logger("vs_graphs"),
-                        "%s: getSkeletonCluster returned a failure status "
-                        "although it cannot fail; continuing as before.",
-                        __func__);
-                }
-                publishFreeSpaceClusters(slamSystemSkeletonCluster,
-                                         msgTime_s_in);
-            });
+        publishFreeSpaceClusters(slamSystemSkeletonCluster, msgTime_s_in);
     }
     else
     {
@@ -8390,6 +8246,7 @@ void setupServices(const std::shared_ptr<rclcpp::Node> &node_in,
 void setVoxbloxSkeletonCluster(
     const visualization_msgs::msg::MarkerArray &skeletonMarkerArray_in)
 {
+    PROFILE_FUNCTION();
     /* Confirm that the SLAM system has been initialised */
     if (p_slamSystem == nullptr)
     {

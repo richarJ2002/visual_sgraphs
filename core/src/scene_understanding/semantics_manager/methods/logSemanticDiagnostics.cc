@@ -29,6 +29,8 @@
 #include "scene_understanding/semantic/semantic_report_cache/semantic_report_cache.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -37,6 +39,7 @@ namespace core
 SemanticsManagerStatus SemanticsManager::logSemanticDiagnostics(
     const semantic::SemanticReportCacheEntry &entry_in)
 {
+    PROFILE_FUNCTION();
     /* Pure diff/JSON construction lives in SemanticDiagnostics; this
      * method's only job is deciding whether/what to print.
      * semanticDiagnosticState is the only mutable state carried across

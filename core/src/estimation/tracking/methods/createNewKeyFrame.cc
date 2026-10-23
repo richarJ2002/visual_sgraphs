@@ -48,6 +48,8 @@
 #include "estimation/tracking/objects/TrackingClass.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -57,6 +59,7 @@ namespace tracking
 
 TrackingStatus Tracking::createNewKeyFrame()
 {
+    PROFILE_FUNCTION();
     bool localMapperIsInitializing{};
     if (p_localMapper->isInitializing(localMapperIsInitializing) !=
         local_mapping::LocalMappingStatus::LOCAL_MAPPING_STATUS_SUCCESS)

@@ -435,19 +435,6 @@ class Tracking
             else
                 std::cout << " is unknown!" << std::endl;
         }
-
-#ifdef REGISTER_TIMES
-        stereoRectificationTimes_ms.clear();
-        imageResizeTimes_ms.clear();
-        orbExtractionTimes_ms.clear();
-        stereoMatchTimes_ms.clear();
-        imuIntegrationTimes_ms.clear();
-        posePredictionTimes_ms.clear();
-        localMapTrackTimes_ms.clear();
-        newKeyFrameTimes_ms.clear();
-        trackTotalTimes_ms.clear();
-#endif
-
     }
 
         /*!
@@ -1041,22 +1028,6 @@ class Tracking
          * the acceleration changed enough.
          */
         bool isFastInitEnabled = false;
-
-#ifdef REGISTER_TIMES
-        [[nodiscard]] TrackingStatus localMapStats2File();
-        [[nodiscard]] TrackingStatus trackStats2File();
-        [[nodiscard]] TrackingStatus printTimeStats();
-
-        std::vector<double> stereoRectificationTimes_ms;
-        std::vector<double> imageResizeTimes_ms;
-        std::vector<double> orbExtractionTimes_ms;
-        std::vector<double> stereoMatchTimes_ms;
-        std::vector<double> imuIntegrationTimes_ms;
-        std::vector<double> posePredictionTimes_ms;
-        std::vector<double> localMapTrackTimes_ms;
-        std::vector<double> newKeyFrameTimes_ms;
-        std::vector<double> trackTotalTimes_ms;
-#endif /* VS_GRAPHS_CORE_SRC_TRACKING_OBJECTS_TRACKING_CLASS_H */
 
       protected:
         /*!

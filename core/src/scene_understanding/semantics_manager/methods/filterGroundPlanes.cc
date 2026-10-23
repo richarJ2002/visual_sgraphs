@@ -29,6 +29,8 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -37,6 +39,7 @@ namespace core
 SemanticsManagerStatus
     SemanticsManager::filterGroundPlanes(geometric::Plane *p_groundPlane_in)
 {
+    PROFILE_FUNCTION();
     /*!
      * Discard gound planes that have a height above a threshold from the
      * biggest ground plane.

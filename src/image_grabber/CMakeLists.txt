@@ -1,7 +1,6 @@
 set(VS_GRAPHS_FRONTEND_RGBD_GRABBER_SOURCES
   methods/rgbdGrabRGBD.cc
   methods/rgbdGrabVoxbloxSkeletonGraph.cc
-  methods/rgbdLogRgbdObservabilitySummary.cc
   methods/rgbdProcessRgbdPackets.cc
   methods/rgbdPublishRgbdFrontendHealth.cc
   methods/rgbdRequestStop.cc

@@ -51,6 +51,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -58,6 +60,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::associatePassagesToRooms(void)
 {
+    PROFILE_FUNCTION();
     /* Extract all rooms from the current map */
     std::vector<vs_graphs::core::semantic::Room *> allRooms{};
     if (p_atlas->getAllRooms(allRooms) != atlas::AtlasStatus::ATLAS_STATUS_SUCCESS)

@@ -53,6 +53,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -70,6 +72,7 @@ OptimizerStatus Optimizer::localInertialBA(keyframe::KeyFrame *p_keyFrame_inout,
                                            bool isLargeWindow_in,
                                            bool isRecentlyInitialized_in)
 {
+    PROFILE_FUNCTION();
     map::Map *p_currentMap = nullptr;
     if (p_keyFrame_inout->getMap(p_currentMap) !=
         keyframe::KeyFrameStatus::KEY_FRAME_STATUS_SUCCESS)

@@ -55,6 +55,8 @@
 #include <iostream>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -64,6 +66,7 @@ namespace tracking
 
 TrackingStatus Tracking::relocalization(bool &isRelocalized_out)
 {
+    PROFILE_FUNCTION();
     if (system::Verbose::printMess("Starting relocalization",
                            system::Verbose::VERBOSITY_NORMAL) !=
         system::VerboseStatus::VERBOSE_STATUS_SUCCESS)

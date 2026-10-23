@@ -35,6 +35,8 @@
 #include "map_state/map_point/objects/MapPointStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -44,6 +46,7 @@ namespace local_mapping
 
 LocalMappingStatus LocalMapping::mapPointCulling()
 {
+    PROFILE_FUNCTION();
     /* Check Recent Added MapPoints */
     std::list<map_point::MapPoint *>::iterator recentMapPointIt =
         recentAddedMapPoints.begin();

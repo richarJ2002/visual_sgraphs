@@ -33,6 +33,8 @@
 #include "scene_understanding/semantics_manager/private_functions/private_functions.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -40,6 +42,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::updateRoomTrackerState(double now_s_in)
 {
+    PROFILE_FUNCTION();
     /* Consume the per-cycle signals. isTrackingLostPending is set on another
      * thread (System::TrackRGBD's real per-frame tracking state, and also
      * reachable via the on-demand System::GetMissionHealthSnapshot RPC), so

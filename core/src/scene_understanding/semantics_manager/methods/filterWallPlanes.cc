@@ -29,6 +29,8 @@
 #include "mapping/geometric/Plane/objects/PlaneStatusEnum.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -36,6 +38,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::filterWallPlanes(void)
 {
+    PROFILE_FUNCTION();
     /* Iterate through all the planes and filter the walls */
     std::vector<vs_graphs::core::geometric::Plane *> atlasAllPlanes{};
     if (p_atlas->getAllPlanes(atlasAllPlanes) !=

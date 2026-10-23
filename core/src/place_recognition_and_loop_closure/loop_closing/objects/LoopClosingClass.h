@@ -297,36 +297,6 @@ class LoopClosing
         fullBundleAdjustmentIndex(0),
         isLoopClosingActive(isActiveLc_in)
     {
-#ifdef REGISTER_TIMES
-
-        dataQueryTimes_ms.clear();
-        sim3EstimationTimes_ms.clear();
-        placeRecognitionTotalTimes_ms.clear();
-
-        mergeMapsTimes_ms.clear();
-        weldingBaTimes_ms.clear();
-        mergeEssentialGraphTimes_ms.clear();
-        mergeTotalTimes_ms.clear();
-        mergeKeyFrameCounts.clear();
-        mergeMapPointCounts.clear();
-        mergeCount = 0;
-
-        loopFusionTimes_ms.clear();
-        loopEssentialGraphTimes_ms.clear();
-        loopTotalTimes_ms.clear();
-        loopKeyFrameCounts.clear();
-        loopCount = 0;
-
-        gbaTimes_ms.clear();
-        updateMapTimes_ms.clear();
-        fullGbaTotalTimes_ms.clear();
-        gbaKeyFrameCounts.clear();
-        gbaMapPointCounts.clear();
-        fullGbaExecutionCount = 0;
-        fullGbaAbortCount     = 0;
-
-#endif
-
         numCorrection = 0;
         correctionGBA = 0;
     }
@@ -479,36 +449,6 @@ class LoopClosing
     [[nodiscard]] LoopClosingStatus
         getLoopCorrectionStatus(loop_closing::LoopClosing::LoopCorrectionStatus
                                     &getLoopCorrectionStatus_out) const;
-
-#ifdef REGISTER_TIMES
-
-    std::vector<double> dataQueryTimes_ms;
-    std::vector<double> sim3EstimationTimes_ms;
-    std::vector<double> placeRecognitionTotalTimes_ms;
-
-    std::vector<double> mergeMapsTimes_ms;
-    std::vector<double> weldingBaTimes_ms;
-    std::vector<double> mergeEssentialGraphTimes_ms;
-    std::vector<double> mergeTotalTimes_ms;
-    std::vector<int>    mergeKeyFrameCounts;
-    std::vector<int>    mergeMapPointCounts;
-    int                 mergeCount;
-
-    std::vector<double> loopFusionTimes_ms;
-    std::vector<double> loopEssentialGraphTimes_ms;
-    std::vector<double> loopTotalTimes_ms;
-    std::vector<int>    loopKeyFrameCounts;
-    int                 loopCount;
-
-    std::vector<double> gbaTimes_ms;
-    std::vector<double> updateMapTimes_ms;
-    std::vector<double> fullGbaTotalTimes_ms;
-    std::vector<int>    gbaKeyFrameCounts;
-    std::vector<int>    gbaMapPointCounts;
-    int                 fullGbaExecutionCount;
-    int                 fullGbaAbortCount;
-
-#endif /* VS_GRAPHS_CORE_SRC_LOOP_CLOSING_OBJECTS_LOOP_CLOSING_CLASS_H */
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 

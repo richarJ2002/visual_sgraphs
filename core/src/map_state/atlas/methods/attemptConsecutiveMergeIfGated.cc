@@ -49,6 +49,8 @@
 #include <algorithm>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -58,6 +60,7 @@ namespace atlas
 
 AtlasStatus Atlas::attemptConsecutiveMergeIfGated(void)
 {
+    PROFILE_FUNCTION();
     /* LOCK ORDER: the caller holds semanticUpdateMutex for the whole call.
      * This method briefly takes atlasMutex for attempt-state bookkeeping,
      * and MergeMapPair takes both maps' mapUpdateMutex. No path in the

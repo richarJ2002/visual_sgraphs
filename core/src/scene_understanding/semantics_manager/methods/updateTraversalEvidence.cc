@@ -46,6 +46,8 @@
 #include <cmath>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -54,6 +56,7 @@ namespace core
 SemanticsManagerStatus SemanticsManager::updateTraversalEvidence(
     atlas::Atlas *p_atlas_in)
 {
+    PROFILE_FUNCTION();
     if (p_atlas_in == nullptr)
     {
         return SemanticsManagerStatus::SEMANTICS_MANAGER_STATUS_SUCCESS;

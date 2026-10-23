@@ -32,6 +32,8 @@
 #include "scene_understanding/semantic/room/room.h"
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -39,6 +41,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::recomputeRoomCentroidsFromWalls(void)
 {
+    PROFILE_FUNCTION();
     /* Same inward-nudge-then-average construction as
      * detectRoom_FreeSpaceCluster()'s wall-centroid correction -- see that
      * site's comment for why a plain mean of wall centroids is not

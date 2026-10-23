@@ -45,6 +45,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -54,6 +56,7 @@ namespace loop_closing
 
 LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
 {
+    PROFILE_FUNCTION();
     /*!
      * To deactivate placerecognition. No loopclosing nor merging will be
      * performed
@@ -201,10 +204,6 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
      */
     bool isLoopDetectedInKeyFrame = false;
 
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartEstSim3_1 =
-        std::chrono::steady_clock::now();
-#endif
     if (loopNumCoincidences > 0)
     {
         /* Find from the last KF candidates */
@@ -410,21 +409,9 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
             }
         }
     }
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndEstSim3_1 =
-        std::chrono::steady_clock::now();
-
-    double timeEstSim3 =
-        std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_EndEstSim3_1 - time_StartEstSim3_1)
-            .count();
-#endif
 
     if (isMergeDetected || isLoopDetected)
     {
-#ifdef REGISTER_TIMES
-        sim3EstimationTimes_ms.push_back(timeEstSim3);
-#endif
         if (p_keyFrameDatabase->add(p_currentKF) !=
             keyframe_database::KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)
         {
@@ -456,10 +443,6 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
     if (!isMergeDetectedInKeyFrame || !isLoopDetectedInKeyFrame)
     {
         /* Search in BoW */
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartQuery =
-            std::chrono::steady_clock::now();
-#endif
         if (p_keyFrameDatabase->detectNBestCandidates(p_currentKF,
                                                       loopBowCandidates,
                                                       mergeBowCandidates,
@@ -471,22 +454,8 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndQuery =
-            std::chrono::steady_clock::now();
-
-        double timeDataQuery = std::chrono::duration_cast<
-                                   std::chrono::duration<double, std::milli>>(
-                                   timeEndQuery - timeStartQuery)
-                                   .count();
-        dataQueryTimes_ms.push_back(timeDataQuery);
-#endif
     }
 
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_StartEstSim3_2 =
-        std::chrono::steady_clock::now();
-#endif
     /*!
      * Check the BoW candidates if the geometric candidate list is empty
      * Loop candidates
@@ -534,17 +503,6 @@ LoopClosingStatus LoopClosing::newDetectCommonRegions(bool &isDetected_out)
         }
         isMergeDetected = isDetected2;
     }
-
-#ifdef REGISTER_TIMES
-    std::chrono::steady_clock::time_point time_EndEstSim3_2 =
-        std::chrono::steady_clock::now();
-
-    timeEstSim3 +=
-        std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            time_EndEstSim3_2 - time_StartEstSim3_2)
-            .count();
-    sim3EstimationTimes_ms.push_back(timeEstSim3);
-#endif
 
     if (p_keyFrameDatabase->add(p_currentKF) !=
         keyframe_database::KeyFrameDatabaseStatus::KEY_FRAME_DATABASE_STATUS_SUCCESS)

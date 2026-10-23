@@ -46,6 +46,8 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -55,6 +57,7 @@ namespace local_mapping
 
 LocalMappingStatus LocalMapping::scaleRefinement()
 {
+    PROFILE_FUNCTION();
     /*!
      * Minimum number of keyframes to compute a solution
      * Minimum time (seconds) between first and last keyframe to compute a

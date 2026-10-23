@@ -43,6 +43,8 @@
 #include <numeric>
 #include <rclcpp/logging.hpp>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -55,6 +57,7 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
     std::vector<std::vector<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr,
                                       Eigen::Vector4d>>> &p_clsPlanes_in)
 {
+    PROFILE_FUNCTION();
     /* Iterate through each semantic class of planes */
     for (size_t clsId = 0; clsId < p_clsPlanes_in.size(); clsId++)
     {

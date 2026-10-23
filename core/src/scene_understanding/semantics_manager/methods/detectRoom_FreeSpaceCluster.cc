@@ -47,6 +47,8 @@
 #include <rclcpp/logging.hpp>
 #include <unordered_set>
 
+#include "execution/profiling/profiling.h"
+
 namespace vs_graphs
 {
 namespace core
@@ -54,6 +56,7 @@ namespace core
 
 SemanticsManagerStatus SemanticsManager::detectRoom_FreeSpaceCluster(void)
 {
+    PROFILE_FUNCTION();
     /* Extract latest skeleton cluster */
     std::vector<std::vector<Eigen::Vector3d>> latestSkeletonCluster{};
     if (getLatestSkeletonCluster(latestSkeletonCluster) !=

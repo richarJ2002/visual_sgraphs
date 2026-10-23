@@ -124,12 +124,7 @@ class Frame
         p_referenceKeyFrame(static_cast<keyframe::KeyFrame *>(nullptr)),
         isFrameSet(false),
         hasImuPreintegration(false)
-    {
-#ifdef REGISTER_TIMES
-        stereoMatchTime   = 0;
-        orbExtractionTime = 0;
-#endif
-    }
+    {}
 
     /*!
      * @brief           Copies a frame. Descriptors, calibration and distortion
@@ -278,11 +273,6 @@ class Frame
         }
 
         projectedPoints = frame_in.projectedPoints;
-
-#ifdef REGISTER_TIMES
-        stereoMatchTime   = frame_in.stereoMatchTime;
-        orbExtractionTime = frame_in.orbExtractionTime;
-#endif
     }
 
     /*!
@@ -468,10 +458,6 @@ class Frame
         invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
         /* ORB extraction */
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartExtOrb =
-            std::chrono::steady_clock::now();
-#endif
         std::thread threadLeft(&Frame::extractOrbFeatures,
                                this,
                                0,
@@ -486,15 +472,6 @@ class Frame
                                 0);
         threadLeft.join();
         threadRight.join();
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndExtOrb =
-            std::chrono::steady_clock::now();
-
-        orbExtractionTime = std::chrono::duration_cast<
-                                std::chrono::duration<double, std::milli>>(
-                                timeEndExtOrb - timeStartExtOrb)
-                                .count();
-#endif
 
         keyPointCount = keyPoints.size();
         if (keyPoints.empty())
@@ -508,10 +485,6 @@ class Frame
                          __func__);
         }
 
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartStereoMatches =
-            std::chrono::steady_clock::now();
-#endif
         if (computeStereoMatches() != FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
@@ -519,15 +492,6 @@ class Frame
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndStereoMatches =
-            std::chrono::steady_clock::now();
-
-        stereoMatchTime = std::chrono::duration_cast<
-                              std::chrono::duration<double, std::milli>>(
-                              timeEndStereoMatches - timeStartStereoMatches)
-                              .count();
-#endif
 
         /* Initialize MapPoints */
         mapPoints = std::vector<map_point::MapPoint *>(
@@ -821,10 +785,6 @@ class Frame
         invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
         /* ORB extraction */
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartExtOrb =
-            std::chrono::steady_clock::now();
-#endif
         std::thread threadLeft(
             &Frame::extractOrbFeatures,
             this,
@@ -849,15 +809,6 @@ class Frame
                 ->lappingArea[1]);
         threadLeft.join();
         threadRight.join();
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndExtOrb =
-            std::chrono::steady_clock::now();
-
-        orbExtractionTime = std::chrono::duration_cast<
-                                std::chrono::duration<double, std::milli>>(
-                                timeEndExtOrb - timeStartExtOrb)
-                                .count();
-#endif
 
         leftKeyPointCount  = keyPoints.size();
         rightKeyPointCount = keyPointsRight.size();
@@ -904,10 +855,6 @@ class Frame
         rotationRlr    = poseTlr.rotationMatrix();
         translationTlr = poseTlr.translation();
 
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartStereoMatches =
-            std::chrono::steady_clock::now();
-#endif
         if (computeStereoFishEyeMatches() != FrameStatus::FRAME_STATUS_SUCCESS)
         {
             RCLCPP_ERROR(
@@ -916,15 +863,6 @@ class Frame
                 "status although it cannot fail; continuing as before.",
                 __func__);
         }
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndStereoMatches =
-            std::chrono::steady_clock::now();
-
-        stereoMatchTime = std::chrono::duration_cast<
-                              std::chrono::duration<double, std::milli>>(
-                              timeEndStereoMatches - timeStartStereoMatches)
-                              .count();
-#endif
 
         /* Put all descriptors in the same matrix */
         cv::vconcat(descriptors, descriptorsRight, descriptors);
@@ -1137,10 +1075,6 @@ class Frame
         invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
         /* ORB extraction */
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartExtOrb =
-            std::chrono::steady_clock::now();
-#endif
         if (extractOrbFeatures(0, imageGray_in, 0, 0) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
@@ -1149,15 +1083,6 @@ class Frame
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndExtOrb =
-            std::chrono::steady_clock::now();
-
-        orbExtractionTime = std::chrono::duration_cast<
-                                std::chrono::duration<double, std::milli>>(
-                                timeEndExtOrb - timeStartExtOrb)
-                                .count();
-#endif
 
         keyPointCount = keyPoints.size();
         if (keyPoints.empty())
@@ -1447,10 +1372,6 @@ class Frame
         invLevelSigmaSquared = orbExtractorLeftInverseScaleSigmaSquares;
 
         /* ORB extraction */
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeStartExtOrb =
-            std::chrono::steady_clock::now();
-#endif
         if (extractOrbFeatures(0, imageGray_in, 0, 1000) !=
             FrameStatus::FRAME_STATUS_SUCCESS)
         {
@@ -1459,15 +1380,6 @@ class Frame
                          "although it cannot fail; continuing as before.",
                          __func__);
         }
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point timeEndExtOrb =
-            std::chrono::steady_clock::now();
-
-        orbExtractionTime = std::chrono::duration_cast<
-                                std::chrono::duration<double, std::milli>>(
-                                timeEndExtOrb - timeStartExtOrb)
-                                .count();
-#endif
 
         keyPointCount = keyPoints.size();
 
@@ -2431,11 +2343,6 @@ class Frame
      *                  Tracking and carried to the key frame.
      */
     int datasetId;
-
-#ifdef REGISTER_TIMES
-    double orbExtractionTime;
-    double stereoMatchTime;
-#endif
 
   private:
     /*!
