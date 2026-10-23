@@ -29,7 +29,7 @@ class TimerRegistry
 
     /*!
      * @brief           Returns the single registry of the process, created on
-     *                  first use and destroyed at process exit.
+     *                  first use and never destroyed.
      *
      * @return          The process-wide registry.
      */
@@ -55,18 +55,9 @@ class TimerRegistry
                     double      callDuration_ms_in) noexcept;
 
     /*!
-     * @brief           Writes
-     *                  `<testRunDirectory_in>/archive/profiling/timers/
-     *                  vs_graphs.csv` with the header
-     *                  `function,file,calls,total_ms,mean_ms,max_ms`, one row
-     *                  per function, creating the folders. Each file is
-     *                  relative to the package source root. Logs and returns
-     *                  on a write failure.
-     *
-     * @param[in]       testRunDirectory_in
-     *                  Test-run folder; empty writes nothing.
+     * @brief           Lets the report writer read the statistics.
      */
-    void writeReport(const std::string &testRunDirectory_in);
+    friend void writeTimerReport(const std::string &testRunDirectory_in);
 
   private:
     /*!

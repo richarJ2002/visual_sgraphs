@@ -375,7 +375,8 @@ int main(int argc, char **argv)
     executor.add_node(node);
     executor.add_node(igb);
     executor.spin();
-    PROFILE_WRITE_REPORT(vs_graphs::common::sgraphArchiveTestRunDir);
+    vs_graphs::core::profiling::writeTimerReport(
+        vs_graphs::common::sgraphArchiveTestRunDir);
 
     igb->requestStop();
     rgbdProcessingThread.join();

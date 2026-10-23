@@ -1,13 +1,12 @@
 /*!
- * @file            writeReport.cc
+ * @file            writeTimerReport.cc
  *
- * @brief           Implements TimerRegistry::writeReport() declared in
- *                  TimerRegistryClass.h.
+ * @brief           Implements writeTimerReport() declared in profiling.h.
  */
 
-#ifdef VS_GRAPHS_BUILT_TIMERS
+#include "execution/profiling/profiling.h"
 
-#include "execution/profiling/objects/TimerRegistryClass.h"
+#ifdef VS_GRAPHS_BUILT_TIMERS
 
 #include <filesystem>
 #include <fstream>
@@ -21,7 +20,7 @@
 namespace vs_graphs::core::profiling
 {
 
-void TimerRegistry::writeReport(const std::string &testRunDirectory_in)
+void writeTimerReport(const std::string &testRunDirectory_in)
 {
     if (testRunDirectory_in.empty())
     {
@@ -49,8 +48,10 @@ void TimerRegistry::writeReport(const std::string &testRunDirectory_in)
 
     reportFile << "function,file,calls,total_ms,mean_ms,max_ms\n"
                << std::fixed << std::setprecision(3);
-    const std::lock_guard<std::mutex> registryLock(registryMutex);
-    for (const auto &[functionKey, functionStatistics] : timerStatistics)
+    TimerRegistry &timerRegistry = TimerRegistry::getInstance();
+    const std::lock_guard<std::mutex> registryLock(timerRegistry.registryMutex);
+    for (const auto &[functionKey, functionStatistics] :
+         timerRegistry.timerStatistics)
     {
         reportFile << functionKey.second << ','
                    << std::filesystem::path(functionKey.first)
@@ -63,6 +64,15 @@ void TimerRegistry::writeReport(const std::string &testRunDirectory_in)
                    << ',' << functionStatistics.maximumDuration_ms << '\n';
     }
 }
+
+} /* namespace vs_graphs::core::profiling */
+
+#else
+
+namespace vs_graphs::core::profiling
+{
+
+void writeTimerReport(const std::string & /* testRunDirectory_in */) {}
 
 } /* namespace vs_graphs::core::profiling */
 

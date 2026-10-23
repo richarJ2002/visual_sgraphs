@@ -55,6 +55,7 @@
 #include <mutex>
 #include <rclcpp/logging.hpp>
 #include <sstream>
+#include <system_error>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -3415,6 +3416,58 @@ void pruneArchiveSeries(const std::filesystem::path &archiveDir_in,
         fileNames.erase(fileNames.begin());
     }
 }
+
+/*!
+ * @brief           Writes one archive file so that a reader never sees it
+ *                  half written.
+ *
+ *                  The text goes to `<file>.partial`, which is renamed to the
+ *                  final name only after the write and close succeed. On any
+ *                  failure a warning is logged and the partial file removed;
+ *                  the node keeps running.
+ *
+ * @param[in]       archiveFile_in
+ *                  Final path of the file; its directory is created.
+ *
+ * @param[in]       fileText_in
+ *                  Complete file contents.
+ *
+ * @return          True when the final file holds the text.
+ */
+bool writeArchiveFile(const std::filesystem::path &archiveFile_in,
+                      const std::string           &fileText_in)
+{
+    std::filesystem::path partialFile = archiveFile_in;
+    partialFile += ".partial";
+    std::error_code fileError;
+    std::filesystem::create_directories(archiveFile_in.parent_path(),
+                                        fileError);
+    if (!fileError)
+    {
+        std::ofstream fileOutput(partialFile);
+        fileOutput << fileText_in;
+        fileOutput.close();
+        if (fileOutput.fail())
+        {
+            fileError = std::make_error_code(std::errc::io_error);
+        }
+        else
+        {
+            std::filesystem::rename(partialFile, archiveFile_in, fileError);
+        }
+    }
+    if (fileError)
+    {
+        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
+                    "Cannot write archive '%s': %s.",
+                    archiveFile_in.string().c_str(),
+                    fileError.message().c_str());
+        std::error_code removeError;
+        std::filesystem::remove(partialFile, removeError);
+        return false;
+    }
+    return true;
+}
 } /* namespace */
 
 void maybeArchiveSGraph(
@@ -4697,88 +4750,34 @@ void maybeArchiveSGraph(
     namespace filesystem = std::filesystem;
     const filesystem::path testRunDir(sgraphArchiveTestRunDir);
     const filesystem::path archiveDir = testRunDir / "archive" / "sgraph";
-    std::error_code        makeError;
-    filesystem::create_directories(archiveDir, makeError);
-    if (makeError)
-    {
-        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                    "Cannot create SGraph archive directory '%s'.",
-                    archiveDir.string().c_str());
-        return;
-    }
 
     /* Fixed-width zero-padded stamp <sec:06>_<nsec:09>, shared by the three
      * files of this snapshot, so lexical file order is chronological. */
     std::ostringstream snapshotStamp;
     snapshotStamp << std::setfill('0') << std::setw(6) << stampSeconds << "_"
                   << std::setw(9) << stampNanoseconds;
+    const std::string      archiveText = archive.dump(2);
     const filesystem::path archiveFile =
         archiveDir / ("sgraph_" + snapshotStamp.str() + ".json");
-    std::ofstream output(archiveFile);
-    if (!output.is_open())
+    if (!writeArchiveFile(archiveFile, archiveText))
     {
-        RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                    "Cannot write SGraph archive '%s'.",
-                    archiveFile.string().c_str());
         return;
     }
-    output << archive.dump(2);
-    output.close();
 
-    /* Writes one CSV of this snapshot, creating its directory; failures
-     * only warn, so the S-Graph files are kept. */
-    const auto writeSnapshotCsv =
-        [](const filesystem::path &csvFile_in, const std::string &csvText_in)
-    {
-        std::error_code csvDirError;
-        filesystem::create_directories(csvFile_in.parent_path(), csvDirError);
-        std::ofstream csvOutput;
-        if (!csvDirError)
-        {
-            csvOutput.open(csvFile_in);
-        }
-        if (!csvOutput.is_open())
-        {
-            RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                        "Cannot write archive '%s'.",
-                        csvFile_in.string().c_str());
-            return;
-        }
-        csvOutput << csvText_in;
-    };
+    /* CSV failures only warn, so the S-Graph files are kept. */
     const filesystem::path trajectoryDir =
         testRunDir / "archive" / "trajectory";
     const filesystem::path mapPointDir = testRunDir / "archive" / "map_points";
-    writeSnapshotCsv(trajectoryDir /
+    writeArchiveFile(trajectoryDir /
                          ("estimated_" + snapshotStamp.str() + ".csv"),
                      trajectoryCsv.str());
-    writeSnapshotCsv(mapPointDir /
+    writeArchiveFile(mapPointDir /
                          ("map_points_" + snapshotStamp.str() + ".csv"),
                      mapPointCsv.str());
 
     /* The latest snapshot is what a live UAV would hand on, so it goes to
      * output/; the time series above stays in archive/. */
-    const filesystem::path liveArchiveDir = testRunDir / "output";
-    filesystem::create_directories(liveArchiveDir, makeError);
-    if (!makeError)
-    {
-        const filesystem::path liveFile = liveArchiveDir / "sgraph_latest.json";
-        const filesystem::path stagingFile =
-            liveArchiveDir / "sgraph_latest.json.tmp";
-        std::ofstream liveOutput(stagingFile);
-        if (liveOutput.is_open())
-        {
-            liveOutput << archive.dump(2);
-            liveOutput.close();
-            filesystem::rename(stagingFile, liveFile, makeError);
-            if (makeError)
-            {
-                RCLCPP_WARN(rclcpp::get_logger("visual_sgraphs"),
-                            "Cannot publish latest SGraph to '%s'.",
-                            liveFile.string().c_str());
-            }
-        }
-    }
+    writeArchiveFile(testRunDir / "output" / "sgraph_latest.json", archiveText);
 
     RCLCPP_INFO(rclcpp::get_logger("visual_sgraphs"),
                 "Archived SGraph #%llu to '%s' (%zu maps, %zu floors, "

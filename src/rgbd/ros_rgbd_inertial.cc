@@ -352,7 +352,8 @@ int main(int argc, char **argv)
     executor.add_node(imugb);
     executor.add_node(igb);
     executor.spin();
-    PROFILE_WRITE_REPORT(vs_graphs::common::sgraphArchiveTestRunDir);
+    vs_graphs::core::profiling::writeTimerReport(
+        vs_graphs::common::sgraphArchiveTestRunDir);
 
     /* Signal the sync thread to stop and wait for it */
     igb->mustStop = true;

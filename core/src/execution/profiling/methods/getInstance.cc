@@ -14,9 +14,12 @@ namespace vs_graphs::core::profiling
 
 TimerRegistry &TimerRegistry::getInstance()
 {
-    /* C++11 guarantees thread-safe initialisation of a function-local static
-     * on first use. */
-    static TimerRegistry processTimerRegistry;
+    /* Intentionally leaked: System::shutdown() does not join the worker
+     * threads (a global bundle adjustment may still be running), so a timer
+     * can still record a call after main() returns. A destroyed registry
+     * would then be used after destruction. C++11 guarantees thread-safe
+     * initialisation of a function-local static on first use. */
+    static TimerRegistry &processTimerRegistry = *new TimerRegistry;
     return processTimerRegistry;
 }
 
