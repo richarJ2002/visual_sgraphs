@@ -336,7 +336,7 @@ int main(int argc, char **argv)
                 { vs_graphs::common::observeVoxbloxSkeletonPublication(*msg); },
                 skeletonSubscriptionOptions);
 
-    static std::shared_ptr<image_transport::ImageTransport> image_transport =
+    std::shared_ptr<image_transport::ImageTransport> image_transport =
         std::make_shared<image_transport::ImageTransport>(node);
     vs_graphs::common::setupPublishers(node, image_transport, nodeName);
     vs_graphs::common::setupServices(node, nodeName);
@@ -368,7 +368,11 @@ int main(int argc, char **argv)
                      "cannot fail; continuing as before.",
                      __func__);
     }
-
+    /* ~System joins the worker threads: none may outlive main(). */
+    delete vs_graphs::common::p_slamSystem;
+    vs_graphs::common::p_slamSystem = nullptr;
+    vs_graphs::common::shutdownRosInterfaces();
+    image_transport.reset();
     rclcpp::shutdown();
 
     return 0;

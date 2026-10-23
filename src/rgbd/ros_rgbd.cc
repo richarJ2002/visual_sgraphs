@@ -388,6 +388,7 @@ int main(int argc, char **argv)
                      "cannot fail; continuing as before.",
                      __func__);
     }
+    /* ~System joins the worker threads: none may outlive main(). */
     delete vs_graphs::common::p_slamSystem;
     vs_graphs::common::p_slamSystem = nullptr;
     vs_graphs::common::shutdownRosInterfaces();

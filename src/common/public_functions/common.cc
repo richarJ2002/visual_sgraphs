@@ -7865,6 +7865,9 @@ void shutdownRosInterfaces()
     pubSegmentedPointcloud.reset();
     pubAllWalls_new.reset();
     pubAllWalls_legacy.reset();
+    pubAllRooms.reset();
+    pubAllPassages.reset();
+    pubAllFloors.reset();
     pubStructuralElements.reset();
 
     srvSaveMap.reset();

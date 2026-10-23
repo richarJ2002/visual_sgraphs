@@ -1673,6 +1673,11 @@ extern void setupPublishers(
  *                  The cleanup is null-safe and releases the tracking-image
  *                  publisher before its image-transport owner. The TF listener
  *                  is released before the broadcasters and TF buffer.
+ *
+ *                  Must release every global ROS entity, and be called before
+ *                  rclcpp::shutdown(): an entity left for static destruction
+ *                  is destroyed after the dynamically loaded DDS middleware
+ *                  has been finalised, which crashes the process at exit.
  */
 extern void shutdownRosInterfaces();
 
