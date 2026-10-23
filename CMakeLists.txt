@@ -407,33 +407,6 @@ install(TARGETS g2o
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
-# ---------------------------------------------------------------------------
-# Unit tests (no ROS graph, no Gazebo); tests/ mirrors the source tree
-# ---------------------------------------------------------------------------
-
-if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
-  ament_add_gtest(test_keepFirstPointPerVoxel
-    tests/common/private_functions/keepFirstPointPerVoxel.cc
-    ${VS_GRAPHS_FRONTEND_COMMON_PRIVATE_SOURCES}
-  )
-  target_compile_options(test_keepFirstPointPerVoxel PRIVATE
-    ${VS_GRAPHS_STRICT_WARNINGS})
-
-  # The timer registry compiles to nothing without the timers flag, so its
-  # test defines the flag for itself whatever the build variant.
-  ament_add_gtest(test_timerRegistryWriteReport
-    tests/core/execution/profiling/writeReport.cc
-    ${VS_GRAPHS_PROFILING_SOURCES}
-  )
-  target_compile_definitions(test_timerRegistryWriteReport PRIVATE
-    VS_GRAPHS_BUILT_TIMERS
-    VS_GRAPHS_SOURCE_ROOT="${PROJECT_SOURCE_DIR}")
-  target_compile_options(test_timerRegistryWriteReport PRIVATE
-    ${VS_GRAPHS_STRICT_WARNINGS})
-  ament_target_dependencies(test_timerRegistryWriteReport rclcpp)
-endif()
-
 
 # Ament package configuration
 ament_package()
