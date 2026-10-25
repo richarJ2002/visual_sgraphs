@@ -521,6 +521,16 @@ void SemanticSegmentation::run()
                          __func__);
         }
     }
+
+    /* Only now has every frame taken from the buffer been handled. */
+    if (setFinish() !=
+        SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
+                     "%s: setFinish returned a failure status although it "
+                     "cannot fail; continuing as before.",
+                     __func__);
+    }
 }
 
 } /* namespace semantic_segmentation */

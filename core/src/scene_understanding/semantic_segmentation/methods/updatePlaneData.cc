@@ -569,15 +569,6 @@ SemanticSegmentationStatus SemanticSegmentation::updatePlaneData(
         }
     }
 
-    if (setFinish() !=
-        SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("vs_graphs"),
-                     "%s: setFinish returned a failure status although it "
-                     "cannot fail; continuing as before.",
-                     __func__);
-    }
-
     return SemanticSegmentationStatus::SEMANTIC_SEGMENTATION_STATUS_SUCCESS;
 }
 
